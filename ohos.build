@@ -1,0 +1,50 @@
+{
+  "subsystem": "multimedia",
+  "parts": {
+    "multimedia_audio_standard": {
+      "variants": [
+        "phone"
+      ],
+      "module_list": [
+        "//foundation/multimedia/audio_standard/services:audio_service",
+        "//foundation/multimedia/audio_standard/services:audio_service.rc",
+        "//foundation/multimedia/audio_standard/sa_profile:audio_service_sa_profile",
+        "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager:audio",
+        "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager:audio_js"
+      ],
+      "inner_kits": [
+        {
+          "type": "none",
+          "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
+          "header": {
+          "header_files": [
+              "audio_svc_manager.h"
+          ],
+            "header_base": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager/include"
+          }
+        },
+        {
+          "type": "none",
+          "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
+          "header": {
+          "header_files": [
+              "audio_capturer.h"
+          ],
+            "header_base": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include"
+          }
+        },
+        {
+          "type": "none",
+          "name": "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager:audio",
+          "header": {
+          "header_files": [
+              "audio_manager_napi.h",
+              "audio_device_descriptor_napi.h"
+          ],
+            "header_base": "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include"
+          }
+        }
+      ]
+    }
+  }
+}
