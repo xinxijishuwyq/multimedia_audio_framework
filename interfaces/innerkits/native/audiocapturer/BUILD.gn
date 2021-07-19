@@ -27,6 +27,8 @@ ohos_shared_library("audio_capturer") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
+    "//foundation/multimedia/media_standard/interfaces/innerkits/native/media/include",
+    "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//drivers/peripheral/codec/interfaces/include",
@@ -45,7 +47,6 @@ ohos_shared_library("audio_capturer") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/bounds_checking_function:libsec_static",
   ]
-  external_deps = [ "multimedia_media_standard:media_common" ]
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"
 }
