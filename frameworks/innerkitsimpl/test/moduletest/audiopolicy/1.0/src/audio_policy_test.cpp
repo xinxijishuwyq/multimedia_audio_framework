@@ -37,12 +37,12 @@ void AudioPolicyTest::TearDown(void) {}
 namespace {
 const PolicyParam VOLUME_PARAMS[] = {
     {
-        .streamType = STREAM_MUSIC,
-        .volume = 0.5
+        .volume = 0.5,
+        .streamType = STREAM_MUSIC
     },
     {
-        .streamType = STREAM_RING,
-        .volume = 0.5
+        .volume = 0.5,
+        .streamType = STREAM_RING
     }
 };
 
@@ -158,13 +158,13 @@ const PolicyParam AUDIO_PARAMS[] = {
 
 const PolicyParam DEVICES_PARAMS[] = {
     {
-        .deviceFlag = AudioDeviceDescriptor::DeviceFlag::INPUT_DEVICES_FLAG,
         .deviceType = MIC,
+        .deviceFlag = AudioDeviceDescriptor::DeviceFlag::INPUT_DEVICES_FLAG,
         .deviceRole = AudioDeviceDescriptor::DeviceRole::INPUT_DEVICE
     },
     {
-        .deviceFlag = AudioDeviceDescriptor::DeviceFlag::OUTPUT_DEVICES_FLAG,
         .deviceType = SPEAKER,
+        .deviceFlag = AudioDeviceDescriptor::DeviceFlag::OUTPUT_DEVICES_FLAG,
         .deviceRole = AudioDeviceDescriptor::DeviceRole::OUTPUT_DEVICE
     }
 };
