@@ -137,10 +137,10 @@ void AudioSystemManager::SetAudioParameter(const std::string key, const std::str
     g_sProxy->SetAudioParameter(key, value);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, float volume) const
+int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     /* Validate and return INVALID_PARAMS error */
-    if ((volume < 0) || (volume > 1)) {
+    if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
         MEDIA_ERR_LOG("Invalid Volume Input!");
         return ERR_INVALID_PARAM;
     }
@@ -156,10 +156,11 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
 
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volume);
+    float volumeToHdi = MapVolumeToHDI(volume);
+    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
 }
 
-float AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volumeType) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -172,15 +173,31 @@ float AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volumeTy
 
     /* Call Audio Policy SetStreamMute */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
+    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
+
+    return MapVolumeFromHDI(volumeFromHdi);
 }
 
-float AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const
+float AudioSystemManager::MapVolumeToHDI(int32_t volume) const
+{
+    float value = (float)volume / MAX_VOLUME_LEVEL;
+    float roundValue = (int)(value * CONST_FACTOR);
+
+    return (float)roundValue / CONST_FACTOR;
+}
+
+int32_t AudioSystemManager::MapVolumeFromHDI(float volume) const
+{
+    float value = (float)volume * MAX_VOLUME_LEVEL;
+    return nearbyint(value);
+}
+
+int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const
 {
     return g_sProxy->GetMaxVolume(volumeType);
 }
 
-float AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const
 {
     return g_sProxy->GetMinVolume(volumeType);
 }

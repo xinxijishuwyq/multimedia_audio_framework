@@ -35,8 +35,8 @@ public:
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
-    float GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) override;
-    float GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
+    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) override;
+    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag) override;
@@ -44,8 +44,8 @@ public:
     void SetAudioParameter(const std::string key, const std::string value) override;
     const std::string GetAudioParameter(const std::string key) override;
 private:
-    static constexpr float MAX_VOLUME = 1.0;
-    static constexpr float MIN_VOLUME = 0;
+    static constexpr int32_t MAX_VOLUME = 15;
+    static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptor_;
     static std::map<std::string, std::string> audioParameters;

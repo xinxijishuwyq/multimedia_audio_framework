@@ -24,7 +24,7 @@ AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
 {
 }
 
-float AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -35,11 +35,11 @@ float AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volume
         MEDIA_ERR_LOG("Get max volume failed, error: %d", error);
         return error;
     }
-    float volume = reply.ReadFloat();
+    int32_t volume = reply.ReadInt32();
     return volume;
 }
 
-float AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -52,7 +52,7 @@ float AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volume
         return error;
     }
 
-    float volume = reply.ReadFloat();
+    float volume = reply.ReadInt32();
     return volume;
 }
 
