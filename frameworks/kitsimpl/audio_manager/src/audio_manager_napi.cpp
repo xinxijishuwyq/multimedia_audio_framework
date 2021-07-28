@@ -229,13 +229,13 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioManagerNapi::MEDIA; i <= AudioManagerNapi::RINGTONE; i++) {
+        for (int i = AudioManagerNapi::RINGTONE; i <= AudioManagerNapi::MEDIA; i++) {
             switch (i) {
-                case AudioManagerNapi::MEDIA:
-                    propName = "MEDIA";
-                    break;
                 case AudioManagerNapi::RINGTONE:
                     propName = "RINGTONE";
+                    break;
+                case AudioManagerNapi::MEDIA:
+                    propName = "MEDIA";
                     break;
                 default:
                     HiLog::Error(LABEL, "Invalid prop!");
@@ -408,16 +408,16 @@ napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = RINGER_MODE_NORMAL; i <= RINGER_MODE_VIBRATE; i++) {
+        for (int i = AudioManagerNapi::RINGER_MODE_SILENT; i <= AudioManagerNapi::RINGER_MODE_NORMAL; i++) {
             switch (i) {
-                case RINGER_MODE_NORMAL:
-                    propName = "RINGER_MODE_NORMAL";
-                    break;
-                case RINGER_MODE_SILENT:
+                case AudioManagerNapi::RINGER_MODE_SILENT:
                     propName = "RINGER_MODE_SILENT";
                     break;
-                case RINGER_MODE_VIBRATE:
+                case AudioManagerNapi::RINGER_MODE_VIBRATE:
                     propName = "RINGER_MODE_VIBRATE";
+                    break;
+                case AudioManagerNapi::RINGER_MODE_NORMAL:
+                    propName = "RINGER_MODE_NORMAL";
                     break;
                 default:
                     HiLog::Error(LABEL, "Invalid prop!");
