@@ -918,16 +918,18 @@ int ohos_pa_main(int argc, char *argv[]) {
 
     pa_set_env_and_record("PULSE_INTERNAL", "1");
     pa_assert_se(chdir("/") == 0);
+#ifdef HAVE_NO_OHOS
     umask(0077);
-
+#endif
 #ifdef HAVE_SYS_RESOURCE_H
     set_all_rlimits(conf);
 #endif
     pa_rtclock_hrtimer_enable();
 
+#ifdef HAVE_NO_OHOS
     if (conf->high_priority)
         pa_raise_priority(conf->nice_level);
-
+#endif
     if (conf->system_instance)
         if (change_user() < 0)
             goto finish;
@@ -1005,10 +1007,11 @@ int ohos_pa_main(int argc, char *argv[]) {
 
     pa_log_info("Running in system mode: %s", pa_yes_no(pa_in_system_mode()));
 
+#ifdef HAVE_NO_OHOS
     if (pa_in_system_mode())
         pa_log_warn(_("OK, so you are running PA in system mode. Please make sure that you actually do want to do that.\n"
                       "Please read http://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/WhatIsWrongWithSystemWide/ for an explanation why system mode is usually a bad idea."));
-
+#endif
     if (conf->use_pid_file) {
         int z;
         pa_pid_file_remove();
