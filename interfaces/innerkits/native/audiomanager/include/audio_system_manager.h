@@ -144,10 +144,10 @@ enum AudioVolumeType {
         STREAM_ACCESSIBILITY = 10
     };
     static AudioSystemManager* GetInstance();
-    int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, float volume) const;
-    float GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
-    float GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const;
-    float GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
+    int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const;
     int32_t SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const;
     bool IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute) const;
@@ -164,6 +164,11 @@ private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
     void init();
+    float MapVolumeToHDI(int32_t volume) const;
+    int32_t MapVolumeFromHDI(float volume) const;
+    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
+    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
+    static constexpr int32_t CONST_FACTOR = 100;
 };
 } // namespace AudioStandard
 } // namespace OHOS

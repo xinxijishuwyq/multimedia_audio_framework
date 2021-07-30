@@ -98,13 +98,13 @@ const std::string AudioServer::GetAudioParameter(const std::string key)
     }
 }
 
-float AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
     MEDIA_DEBUG_LOG("GetMaxVolume server");
     return MAX_VOLUME;
 }
 
-float AudioServer::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioServer::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
     MEDIA_DEBUG_LOG("GetMinVolume server");
     return MIN_VOLUME;

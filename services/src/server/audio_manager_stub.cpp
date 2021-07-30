@@ -36,8 +36,8 @@ int AudioManagerStub::OnRemoteRequest(
             AudioSystemManager::AudioVolumeType volumeStreamConfig =
                    static_cast<AudioSystemManager::AudioVolumeType>(volumeType);
             MEDIA_DEBUG_LOG("GET_MAX_VOLUME volumeType= %{public}d", volumeStreamConfig);
-            float ret = GetMaxVolume(volumeStreamConfig);
-            reply.WriteFloat(ret);
+            int32_t ret = GetMaxVolume(volumeStreamConfig);
+            reply.WriteInt32(ret);
             return MEDIA_OK;
         }
         case GET_MIN_VOLUME: {
@@ -47,8 +47,8 @@ int AudioManagerStub::OnRemoteRequest(
             AudioSystemManager::AudioVolumeType volumeStreamConfig =
                    static_cast<AudioSystemManager::AudioVolumeType>(volumeType);
             MEDIA_DEBUG_LOG("GET_MIN_VOLUME volumeType= %{public}d", volumeStreamConfig);
-            float ret = GetMinVolume(volumeStreamConfig);
-            reply.WriteFloat(ret);
+            int32_t ret = GetMinVolume(volumeStreamConfig);
+            reply.WriteInt32(ret);
             return MEDIA_OK;
         }
         case GET_DEVICES: {

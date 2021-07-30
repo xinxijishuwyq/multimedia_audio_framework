@@ -31,14 +31,14 @@ public:
      *
      * @return Returns the max volume.
      */
-    virtual float GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) = 0;
+    virtual int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) = 0;
 
     /**
      * Obtains min volume.
      *
      * @return Returns the min volume.
      */
-    virtual float GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) = 0;
+    virtual int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) = 0;
     
     /**
      * Sets Microphone Mute status.
