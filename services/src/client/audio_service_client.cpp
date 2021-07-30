@@ -560,10 +560,9 @@ int32_t AudioServiceClient::StartStream()
     }
 }
 
-int32_t AudioServiceClient::PauseStream(uint32_t sessionID)
+int32_t AudioServiceClient::PauseStream()
 {
-    CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
-    return AUDIO_CLIENT_SUCCESS;
+    return StopStream();
 }
 
 int32_t AudioServiceClient::StopStream()
@@ -628,6 +627,9 @@ int32_t AudioServiceClient::FlushStream()
         return AUDIO_CLIENT_ERR;
     } else {
         MEDIA_INFO_LOG("Stream Flushed Successfully");
+        acache.readIndex = 0;
+        acache.writeIndex = 0;
+        acache.isFull = false;
         return AUDIO_CLIENT_SUCCESS;
     }
 }

@@ -32,7 +32,9 @@ public:
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
+    bool Pause() const override;
     bool Stop() const override;
+    bool Flush() const override;
     bool Release() const override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
 

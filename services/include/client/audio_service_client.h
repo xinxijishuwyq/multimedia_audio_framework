@@ -132,12 +132,11 @@ public:
     int32_t DrainStream();
 
     /**
-    * Pauses the stream using the session ID
+    * Pauses the stream
     *
-    * @param sessionID indicates the ID for the active stream to be controlled
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t PauseStream(uint32_t sessionID);
+    int32_t PauseStream();
 
     /**
     * Sets the volume of the stream associated with session ID

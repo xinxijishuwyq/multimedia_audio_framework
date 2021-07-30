@@ -26,6 +26,10 @@ namespace AudioTestConstants {
     constexpr int32_t ARGS_INDEX_TWO = 2;
     constexpr int32_t ARGS_COUNT_TWO = 2;
     constexpr int32_t SUCCESS = 0;
+    constexpr int32_t STOP_BUFFER_POSITION = 700000;
+    constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;
+    constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
+    constexpr int32_t STOP_RENDER_TIME_SECONDS = 1;
 }
 
 class AudioRendererTest {
@@ -115,11 +119,40 @@ public:
         size_t bytesWritten = 0;
         size_t minBytes = 4;
         uint64_t latency;
+        bool stopTested = false;
+        bool pauseTested = false;
 
         while (!feof(wavFile)) {
             bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
             bytesWritten = 0;
             MEDIA_INFO_LOG("AudioRendererTest: Bytes to write: %{public}d", bytesToWrite);
+
+            uint64_t currFilePos = ftell(wavFile);
+            MEDIA_INFO_LOG("AudioRendererTest: Current file position: %{public}llu", currFilePos);
+            if (!stopTested && (currFilePos > AudioTestConstants::STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
+                MEDIA_INFO_LOG("Audio render stopping for 1 second");
+                stopTested = true;
+                sleep(AudioTestConstants::STOP_RENDER_TIME_SECONDS);
+                MEDIA_INFO_LOG("Audio render resume");
+                if (!audioRenderer->Start()) {
+                    MEDIA_ERR_LOG("resume stream failed");
+                    break;
+                }
+            } else if (!pauseTested && (currFilePos > AudioTestConstants::PAUSE_BUFFER_POSITION)
+                       && audioRenderer->Pause()) {
+                MEDIA_INFO_LOG("Audio render pausing for 1 second");
+                pauseTested = true;
+                sleep(AudioTestConstants::PAUSE_RENDER_TIME_SECONDS);
+                MEDIA_INFO_LOG("Audio render resume");
+                if (!audioRenderer->Flush()) {
+                    MEDIA_ERR_LOG("AudioRendererTest: flush failed");
+                    break;
+                }
+                if (!audioRenderer->Start()) {
+                    MEDIA_ERR_LOG("resume stream failed");
+                    break;
+                }
+            }
 
             if (audioRenderer->GetLatency(latency)) {
                 MEDIA_ERR_LOG("AudioRendererTest: GetLatency failed");
@@ -183,7 +216,7 @@ public:
             return false;
         }
 
-        if (StartRender(audioRenderer, wavFile)) {
+        if (!StartRender(audioRenderer, wavFile)) {
             MEDIA_ERR_LOG("AudioRendererTest: Start render failed");
             return false;
         }
