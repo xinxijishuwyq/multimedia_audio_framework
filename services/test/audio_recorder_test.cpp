@@ -109,11 +109,22 @@ public:
 
         size_t size = 1;
         size_t numBuffersToRecord = 1024;
-        int32_t bytesRead = 0;
+        int32_t len = 0;
         while (numBuffersToRecord) {
-            bytesRead = audioRecorder->Read(*buffer, bufferLen, isBlocking);
+            size_t bytesRead = 0;
+            while (bytesRead < bufferLen) {
+                len = audioRecorder->Read(*(buffer + bytesRead), bufferLen - bytesRead, isBlocking);
+                if (len >= 0) {
+                    bytesRead += len;
+                } else {
+                    bytesRead = -1;
+                    MEDIA_INFO_LOG("Bytes read failed");
+                    break;
+                }
+            }
             MEDIA_INFO_LOG("Bytes read: %{public}d", bytesRead);
             if (bytesRead < 0) {
+                MEDIA_INFO_LOG("Bytes read less than 0");
                 break;
             }
             if (bytesRead > 0) {

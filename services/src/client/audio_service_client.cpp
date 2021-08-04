@@ -891,7 +891,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     pa_threaded_mainloop_wait(mainLoop);
                 else {
                     pa_threaded_mainloop_unlock(mainLoop);
-                    return 0;
+                    return readSize;
                 }
             } else if (!internalReadBuffer) {
                 retVal = pa_stream_drop(paStream);
