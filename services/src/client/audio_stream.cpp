@@ -207,7 +207,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
 
 bool AudioStream::StartAudioStream()
 {
-    if ((state_ != PREPARED) && (state_ != STOPPED)) {
+    if ((state_ != PREPARED) && (state_ != STOPPED) && (state_ != PAUSED)) {
         MEDIA_ERR_LOG("StartAudioStream Illegal state:%{public}u", state_);
         return false;
     }
@@ -279,6 +279,28 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     return bytesWritten;
 }
 
+bool AudioStream::PauseAudioStream()
+{
+    if (state_ != RUNNING) {
+        MEDIA_ERR_LOG("PauseAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
+        return false;
+    }
+    State oldState = state_;
+    state_ = PAUSED; // Set it before stopping as Read/Write and Stop can be called from different threads
+    while (isReadInProgress_ || isWriteInProgress_) {
+    }
+
+    int32_t ret = PauseStream();
+    if (ret != SUCCESS) {
+        MEDIA_DEBUG_LOG("StreamPause fail,ret:0x%{public}x", ret);
+        state_ = oldState;
+        return false;
+    }
+    MEDIA_INFO_LOG("PauseAudioStream SUCCESS");
+
+    return true;
+}
+
 bool AudioStream::StopAudioStream()
 {
     if (state_ != RUNNING) {
@@ -303,7 +325,7 @@ bool AudioStream::StopAudioStream()
 
 bool AudioStream::FlushAudioStream()
 {
-    if (state_ != RUNNING) {
+    if ((state_ != RUNNING) && (state_ != PAUSED)) {
         MEDIA_ERR_LOG("FlushAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
     }

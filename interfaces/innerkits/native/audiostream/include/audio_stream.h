@@ -43,7 +43,9 @@ enum State {
     /** Released */
     RELEASED,
     /** INVALID */
-    INVALID
+    INVALID,
+    /** Paused */
+    PAUSED
 };
 
 class AudioStream : public AudioSession {
@@ -68,6 +70,7 @@ public:
 
     // Common APIs
     bool StartAudioStream();
+    bool PauseAudioStream();
     bool StopAudioStream();
     bool ReleaseAudioStream();
     bool FlushAudioStream();

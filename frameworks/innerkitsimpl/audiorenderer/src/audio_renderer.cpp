@@ -95,6 +95,16 @@ bool AudioRendererPrivate::Drain() const
     return audioRenderer->DrainAudioStream();
 }
 
+bool AudioRendererPrivate::Flush() const
+{
+    return audioRenderer->FlushAudioStream();
+}
+
+bool AudioRendererPrivate::Pause() const
+{
+    return audioRenderer->PauseAudioStream();
+}
+
 bool AudioRendererPrivate::Stop() const
 {
     return audioRenderer->StopAudioStream();

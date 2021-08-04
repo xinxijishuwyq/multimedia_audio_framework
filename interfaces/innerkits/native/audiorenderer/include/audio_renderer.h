@@ -53,7 +53,9 @@ enum RendererState {
     /** Renderer Released state */
     RENDERER_RELEASED,
     /** INVALID state */
-    RENDERER_INVALID
+    RENDERER_INVALID,
+    /** Renderer Paused state */
+    RENDERER_PAUSED
 };
 
 /**
@@ -153,6 +155,20 @@ public:
      * @return Returns <b>true</b> if the buffer is successfully drained; returns <b>false</b> otherwise.
      */
     virtual bool Drain() const = 0;
+
+    /**
+     * @brief flush renderer stream.
+     *
+     * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
+     */
+    virtual bool Flush() const = 0;
+
+    /**
+     * @brief Pauses audio rendering.
+     *
+     * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
+     */
+    virtual bool Pause() const = 0;
 
     /**
      * @brief Stops audio rendering.
