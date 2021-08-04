@@ -37,7 +37,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStream
 
 AudioStream::~AudioStream()
 {
-    if (state_ != RELEASED) {
+    if (state_ != RELEASED && state_ != NEW) {
         ReleaseAudioStream();
     }
 }
@@ -359,8 +359,8 @@ bool AudioStream::DrainAudioStream()
 
 bool AudioStream::ReleaseAudioStream()
 {
-    if (state_ == RELEASED) {
-        MEDIA_ERR_LOG("Already Released. Illegal state: state = %{public}u", state_);
+    if (state_ == RELEASED || state_ == NEW) {
+        MEDIA_ERR_LOG("Illegal state: state = %{public}u", state_);
         return false;
     }
     // If state_ is RUNNING try to Stop it first and Release

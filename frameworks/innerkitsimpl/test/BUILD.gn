@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-group("audio_test") {
-    testonly = true
+group("audio_module_test") {
+  testonly = true
 
-    deps = [
-        "moduletest/renderer_test:moduletest",
-        "moduletest/recorder_test:audio_recorder_module_test",
-        "moduletest/audiopolicy:audio_policy_module_test"
-    ]
+  deps = [
+    "moduletest/audiopolicy:audio_policy_module_test",
+    "moduletest/recorder_test:audio_recorder_module_test",
+    "moduletest/renderer_test:audio_renderer_module_test",
+  ]
 }

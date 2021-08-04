@@ -20,13 +20,15 @@ ohos_moduletest("audio_recorder_module_test") {
   include_dirs = [
     "./include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
   ]
 
-  sources = [
-    "src/audio_recorder_module_test.cpp",
+  cflags = [
+    "-Wall",
+    "-Werror",
   ]
 
-  deps = [
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder:audio_recorder",
-  ]
+  sources = [ "src/audio_recorder_module_test.cpp" ]
+
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder:audio_recorder" ]
 }
