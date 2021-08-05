@@ -42,16 +42,6 @@
         },
         {
           "type": "none",
-          "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
-          "header": {
-          "header_files": [
-              "audio_capturer.h"
-          ],
-            "header_base": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include"
-          }
-        },
-        {
-          "type": "none",
           "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder:audio_recorder",
           "header": {
           "header_files": [
