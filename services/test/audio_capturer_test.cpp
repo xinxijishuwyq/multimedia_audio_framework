@@ -15,7 +15,7 @@
 
 #include <vector>
 
-#include "audio_recorder.h"
+#include "audio_capturer.h"
 #include "media_log.h"
 
 using namespace std;
@@ -30,115 +30,109 @@ namespace AudioTestConstants {
     constexpr int32_t SUCCESS = 0;
 }
 
-class AudioRecorderTest {
+class AudioCapturerTest {
 public:
     void CheckSupportedParams() const
     {
-        vector<AudioSampleFormat> supportedFormatList = AudioRecorder::GetSupportedFormats();
+        vector<AudioSampleFormat> supportedFormatList = AudioCapturer::GetSupportedFormats();
         MEDIA_INFO_LOG("Supported formats:");
         for (auto i = supportedFormatList.begin(); i != supportedFormatList.end(); ++i) {
             MEDIA_INFO_LOG("Format %{public}d", *i);
         }
 
-        vector<AudioChannel> supportedChannelList = AudioRecorder::GetSupportedChannels();
+        vector<AudioChannel> supportedChannelList = AudioCapturer::GetSupportedChannels();
         MEDIA_INFO_LOG("Supported channels:");
         for (auto i = supportedChannelList.begin(); i != supportedChannelList.end(); ++i) {
             MEDIA_INFO_LOG("channel %{public}d", *i);
         }
 
         vector<AudioEncodingType> supportedEncodingTypes
-                                    = AudioRecorder::GetSupportedEncodingTypes();
+                                    = AudioCapturer::GetSupportedEncodingTypes();
         MEDIA_INFO_LOG("Supported encoding types:");
         for (auto i = supportedEncodingTypes.begin(); i != supportedEncodingTypes.end(); ++i) {
             MEDIA_INFO_LOG("encoding type %{public}d", *i);
         }
 
-        vector<AudioSamplingRate> supportedSamplingRates = AudioRecorder::GetSupportedSamplingRates();
+        vector<AudioSamplingRate> supportedSamplingRates = AudioCapturer::GetSupportedSamplingRates();
         MEDIA_INFO_LOG("Supported sampling rates:");
         for (auto i = supportedSamplingRates.begin(); i != supportedSamplingRates.end(); ++i) {
             MEDIA_INFO_LOG("sampling rate %{public}d", *i);
         }
     }
 
-    bool InitRecord(const unique_ptr<AudioRecorder> &audioRecorder, const AudioRecorderParams &recorderParams) const
+    bool InitCapture(const unique_ptr<AudioCapturer> &audioCapturer, const AudioCapturerParams &capturerParams) const
     {
-        if (audioRecorder->SetParams(recorderParams) != AudioTestConstants::SUCCESS) {
+        if (audioCapturer->SetParams(capturerParams) != AudioTestConstants::SUCCESS) {
             MEDIA_ERR_LOG("Set audio stream parameters failed");
-            audioRecorder->Release();
+            audioCapturer->Release();
             return false;
         }
-        MEDIA_INFO_LOG("Record stream created");
+        MEDIA_INFO_LOG("Capture stream created");
 
         MEDIA_INFO_LOG("Starting Stream");
-        if (!audioRecorder->Start()) {
+        if (!audioCapturer->Start()) {
             MEDIA_ERR_LOG("Start stream failed");
-            audioRecorder->Release();
+            audioCapturer->Release();
             return false;
         }
-        MEDIA_INFO_LOG("Recording started");
+        MEDIA_INFO_LOG("Capturing started");
 
         MEDIA_INFO_LOG("Get Audio parameters:");
-        AudioRecorderParams getRecorderParams;
-        if (audioRecorder->GetParams(getRecorderParams) == AudioTestConstants::SUCCESS) {
-            MEDIA_INFO_LOG("Get Audio format: %{public}d", getRecorderParams.audioSampleFormat);
-            MEDIA_INFO_LOG("Get Audio sampling rate: %{public}d", getRecorderParams.samplingRate);
-            MEDIA_INFO_LOG("Get Audio channels: %{public}d", getRecorderParams.audioChannel);
+        AudioCapturerParams getCapturerParams;
+        if (audioCapturer->GetParams(getCapturerParams) == AudioTestConstants::SUCCESS) {
+            MEDIA_INFO_LOG("Get Audio format: %{public}d", getCapturerParams.audioSampleFormat);
+            MEDIA_INFO_LOG("Get Audio sampling rate: %{public}d", getCapturerParams.samplingRate);
+            MEDIA_INFO_LOG("Get Audio channels: %{public}d", getCapturerParams.audioChannel);
         }
 
         return true;
     }
 
-    bool StartRecord(const unique_ptr<AudioRecorder> &audioRecorder, bool isBlocking, FILE *pFile) const
+    bool StartCapture(const unique_ptr<AudioCapturer> &audioCapturer, bool isBlocking, FILE *pFile) const
     {
         size_t bufferLen;
-        if (audioRecorder->GetBufferSize(bufferLen) < 0) {
+        if (audioCapturer->GetBufferSize(bufferLen) < 0) {
             MEDIA_ERR_LOG(" GetMinimumBufferSize failed");
             return false;
         }
-        MEDIA_INFO_LOG("Buffer size: %{public}d", bufferLen);
 
         uint32_t frameCount;
-        if (audioRecorder->GetFrameCount(frameCount) < 0) {
+        if (audioCapturer->GetFrameCount(frameCount) < 0) {
             MEDIA_ERR_LOG(" GetMinimumFrameCount failed");
             return false;
         }
-        MEDIA_INFO_LOG("Frame count: %{public}d", frameCount);
 
         uint8_t* buffer = nullptr;
         buffer = (uint8_t *) malloc(bufferLen);
 
         size_t size = 1;
-        size_t numBuffersToRecord = 1024;
+        size_t numBuffersToCapture = 1024;
         int32_t len = 0;
-        while (numBuffersToRecord) {
+        while (numBuffersToCapture) {
             size_t bytesRead = 0;
             while (bytesRead < bufferLen) {
-                len = audioRecorder->Read(*(buffer + bytesRead), bufferLen - bytesRead, isBlocking);
+                len = audioCapturer->Read(*(buffer + bytesRead), bufferLen - bytesRead, isBlocking);
                 if (len >= 0) {
                     bytesRead += len;
                 } else {
-                    bytesRead = -1;
-                    MEDIA_INFO_LOG("Bytes read failed");
+                    bytesRead = len;
                     break;
                 }
             }
-            MEDIA_INFO_LOG("Bytes read: %{public}d", bytesRead);
             if (bytesRead < 0) {
-                MEDIA_INFO_LOG("Bytes read less than 0");
+                MEDIA_ERR_LOG("Bytes read failed. error code %{public}d", bytesRead);
                 break;
-            }
-            if (bytesRead > 0) {
+            } else if (bytesRead > 0) {
                 fwrite(buffer, size, bytesRead, pFile);
-                numBuffersToRecord--;
-                MEDIA_INFO_LOG("Number of buffers to record: %{public}d", numBuffersToRecord);
-                if ((numBuffersToRecord == AudioTestConstants::PAUSE_BUFFER_POSITION)
-                    && (audioRecorder->Stop())) {
-                    MEDIA_INFO_LOG("Audio record stopped for 2 seconds");
+                numBuffersToCapture--;
+                if ((numBuffersToCapture == AudioTestConstants::PAUSE_BUFFER_POSITION)
+                    && (audioCapturer->Stop())) {
+                    MEDIA_INFO_LOG("Audio capture stopped for 2 seconds");
                     sleep(AudioTestConstants::PAUSE_READ_TIME_SECONDS);
-                    MEDIA_INFO_LOG("Audio record resume");
-                    if (!audioRecorder->Start()) {
+                    MEDIA_INFO_LOG("Audio capture resume");
+                    if (!audioCapturer->Start()) {
                         MEDIA_ERR_LOG("resume stream failed");
-                        audioRecorder->Release();
+                        audioCapturer->Release();
                         return false;
                     }
                 }
@@ -149,49 +143,49 @@ public:
         return true;
     }
 
-    bool TestRecord(int argc, char *argv[]) const
+    bool TestRecording(int argc, char *argv[]) const
     {
         MEDIA_INFO_LOG("TestCapture start ");
 
-        unique_ptr<AudioRecorder> audioRecorder = AudioRecorder::Create(AudioStreamType::STREAM_MUSIC);
+        unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(AudioStreamType::STREAM_MUSIC);
 
         CheckSupportedParams();
 
-        AudioRecorderParams recorderParams;
-        recorderParams.audioSampleFormat = SAMPLE_S16LE;
-        recorderParams.samplingRate =  static_cast<AudioSamplingRate>(atoi(argv[AudioTestConstants::SECOND_ARG_IDX]));
-        recorderParams.audioChannel = AudioChannel::STEREO;
-        recorderParams.audioEncoding = ENCODING_PCM;
-        if (!InitRecord(audioRecorder, recorderParams)) {
-            MEDIA_ERR_LOG("Initialize record failed");
+        AudioCapturerParams capturerParams;
+        capturerParams.audioSampleFormat = SAMPLE_S16LE;
+        capturerParams.samplingRate =  static_cast<AudioSamplingRate>(atoi(argv[AudioTestConstants::SECOND_ARG_IDX]));
+        capturerParams.audioChannel = AudioChannel::STEREO;
+        capturerParams.audioEncoding = ENCODING_PCM;
+        if (!InitCapture(audioCapturer, capturerParams)) {
+            MEDIA_ERR_LOG("Initialize capturer failed");
             return false;
         }
 
         bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
         MEDIA_INFO_LOG("Is blocking read: %{public}s", isBlocking ? "true" : "false");
         FILE *pFile = fopen(argv[AudioTestConstants::SECOND_ARG_IDX - 1], "wb");
-        if (!StartRecord(audioRecorder, isBlocking, pFile)) {
-            MEDIA_ERR_LOG("Start record failed");
+        if (!StartCapture(audioCapturer, isBlocking, pFile)) {
+            MEDIA_ERR_LOG("Start capturer failed");
             return false;
         }
 
         Timestamp timestamp;
-        if (audioRecorder->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
+        if (audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
             MEDIA_INFO_LOG("Timestamp seconds: %{public}ld", timestamp.time.tv_sec);
             MEDIA_INFO_LOG("Timestamp nanoseconds: %{public}ld", timestamp.time.tv_nsec);
         }
 
         fflush(pFile);
-        if (!audioRecorder->Flush()) {
-            MEDIA_ERR_LOG("AudioRecorderTest: flush failed");
+        if (!audioCapturer->Flush()) {
+            MEDIA_ERR_LOG("AudioCapturerTest: flush failed");
         }
 
-        if (!audioRecorder->Stop()) {
-            MEDIA_ERR_LOG("AudioRecorderTest: Stop failed");
+        if (!audioCapturer->Stop()) {
+            MEDIA_ERR_LOG("AudioCapturerTest: Stop failed");
         }
 
-        if (!audioRecorder->Release()) {
-            MEDIA_ERR_LOG("AudioRecorderTest: Release failed");
+        if (!audioCapturer->Release()) {
+            MEDIA_ERR_LOG("AudioCapturerTest: Release failed");
         }
         fclose(pFile);
         MEDIA_INFO_LOG("TestCapture end");
@@ -214,8 +208,8 @@ int main(int argc, char *argv[])
     MEDIA_INFO_LOG("argv[2]=%{public}s", argv[AudioTestConstants::SECOND_ARG_IDX]);
     MEDIA_INFO_LOG("argv[3]=%{public}s", argv[AudioTestConstants::THIRD_ARG_IDX]);
 
-    AudioRecorderTest testObj;
-    bool ret = testObj.TestRecord(argc, argv);
+    AudioCapturerTest testObj;
+    bool ret = testObj.TestRecording(argc, argv);
 
     return ret;
 }

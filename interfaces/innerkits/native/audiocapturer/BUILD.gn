@@ -15,16 +15,14 @@ import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
-group("audio_recorder_test_packages") {
-  deps = [
-    ":audio_recorder_test",
-  ]
+group("audio_capturer_test_packages") {
+  deps = [ ":audio_capturer_test" ]
 }
 
-config("audio_recorder_config") {
+config("audio_capturer_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorecorder/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiostream/include",
@@ -39,23 +37,16 @@ config("audio_recorder_config") {
     "-Wall",
     "-Werror",
   ]
-
 }
 
-ohos_shared_library("audio_recorder") {
+ohos_shared_library("audio_capturer") {
   install_enable = true
 
-  configs = [
-    ":audio_recorder_config",
-  ]
+  configs = [ ":audio_capturer_config" ]
 
-  sources = [
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorecorder/src/audio_recorder.cpp",
-  ]
+  sources = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer.cpp" ]
 
-  deps = [
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
- ]
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client" ]
 
   public_configs = [ ":audio_external_library_config" ]
 
@@ -64,28 +55,19 @@ ohos_shared_library("audio_recorder") {
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include" ]
 }
 
-ohos_executable("audio_recorder_test") {
-
+ohos_executable("audio_capturer_test") {
   install_enable = true
 
-  sources = [
-    "//foundation/multimedia/audio_standard/services/test/audio_recorder_test.cpp",
-  ]
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_capturer_test.cpp" ]
 
-  configs = [
-    ":audio_recorder_config",
-  ]
+  configs = [ ":audio_capturer_config" ]
 
-  deps = [
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder:audio_recorder",
-  ]
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer" ]
 
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"

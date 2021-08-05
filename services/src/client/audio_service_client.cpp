@@ -22,7 +22,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
-AudioRecorderCallbacks::~AudioRecorderCallbacks() = default;
+AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 
 const uint64_t LATENCY_IN_MSEC = 200UL;
 
@@ -202,7 +202,7 @@ AudioServiceClient::AudioServiceClient()
     clientInfo.clear();
 
     mAudioRendererCallbacks = NULL;
-    mAudioRecorderCallbacks = NULL;
+    mAudioCapturerCallbacks = NULL;
     internalReadBuffer = NULL;
     mainLoop = NULL;
     paStream = NULL;
@@ -258,7 +258,7 @@ void AudioServiceClient::ResetPAAudioClient()
     clientInfo.clear();
 
     mAudioRendererCallbacks = NULL;
-    mAudioRecorderCallbacks = NULL;
+    mAudioCapturerCallbacks = NULL;
     internalReadBuffer      = NULL;
 
     mainLoop = NULL;
@@ -1077,10 +1077,10 @@ void AudioServiceClient::RegisterAudioRendererCallbacks(const AudioRendererCallb
     mAudioRendererCallbacks = (AudioRendererCallbacks *) &cb;
 }
 
-void AudioServiceClient::RegisterAudioRecorderCallbacks(const AudioRecorderCallbacks &cb)
+void AudioServiceClient::RegisterAudioCapturerCallbacks(const AudioCapturerCallbacks &cb)
 {
     MEDIA_INFO_LOG("Registering audio record callbacks");
-    mAudioRecorderCallbacks = (AudioRecorderCallbacks *) &cb;
+    mAudioCapturerCallbacks = (AudioCapturerCallbacks *) &cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

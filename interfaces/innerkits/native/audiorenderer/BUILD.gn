@@ -17,7 +17,7 @@ pulseaudio_dir = "//third_party/pulseaudio"
 
 config("audio_renderer_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorecorder/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
@@ -33,7 +33,6 @@ config("audio_renderer_config") {
     "-Wall",
     "-Werror",
   ]
-
 }
 
 ohos_shared_library("audio_renderer") {
@@ -52,7 +51,6 @@ ohos_shared_library("audio_renderer") {
 }
 
 ohos_executable("audio_renderer_test") {
-
   install_enable = true
 
   sources = [ "//foundation/multimedia/audio_standard/services/test/audio_renderer_test.cpp" ]

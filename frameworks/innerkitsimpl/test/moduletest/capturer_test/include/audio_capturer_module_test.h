@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "audio_recorder.h"
+#include "audio_capturer.h"
 #include "gtest/gtest.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRecorderModuleTest : public testing::Test {
+class AudioCapturerModuleTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -28,8 +28,8 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-    // Init Recorder
-    static int32_t InitializeRecorder(std::unique_ptr<AudioRecorder> &audioRecorder);
+    // Init Capturer
+    static int32_t InitializeCapturer(std::unique_ptr<AudioCapturer> &audioCapturer);
 };
 } // namespace AudioStandard
 } // namespace OHOS
