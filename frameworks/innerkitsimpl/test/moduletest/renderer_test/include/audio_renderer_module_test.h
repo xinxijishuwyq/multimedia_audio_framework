@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 
+#include "audio_renderer.h"
 #include "gtest/gtest.h"
 
+namespace OHOS {
+namespace AudioStandard {
 class AudioRendererModuleTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
@@ -25,4 +28,8 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+    // Init Renderer
+    static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
 };
+} // namespace AudioStandard
+} // namespace OHOS

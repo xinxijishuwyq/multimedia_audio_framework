@@ -15,26 +15,20 @@ import("//build/test.gni")
 
 module_output_path = "audio_standard/audio_renderer"
 
-group("moduletest") {
-    testonly = true
-
-    deps = [
-        ":audio_renderer_module_test",
-    ]
-}
-
 ohos_moduletest("audio_renderer_module_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
   ]
 
-  sources = [
-    "src/audio_renderer_module_test.cpp",
+  cflags = [
+    "-Wall",
+    "-Werror",
   ]
 
-  deps = [
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer",
-  ]
+  sources = [ "src/audio_renderer_module_test.cpp" ]
+
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer" ]
 }
