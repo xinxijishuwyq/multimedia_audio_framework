@@ -65,9 +65,9 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const = 0;
 };
 
-class AudioRecorderCallbacks {
+class AudioCapturerCallbacks {
 public:
-    virtual ~AudioRecorderCallbacks();
+    virtual ~AudioCapturerCallbacks();
     virtual void OnSourceDeviceUpdatedCb() const = 0;
     // Need to check required state changes to update applications
     virtual void OnStreamStateChangeCb() const = 0;
@@ -264,7 +264,7 @@ public:
     * @param cb indicates pointer for registered callbacks
     * @return none
     */
-    void RegisterAudioRecorderCallbacks(const AudioRecorderCallbacks &cb);
+    void RegisterAudioCapturerCallbacks(const AudioCapturerCallbacks &cb);
 
 private:
     pa_threaded_mainloop *mainLoop;
@@ -287,7 +287,7 @@ private:
     // To be set while using audio stream
     // functionality for callbacks
     AudioRendererCallbacks* mAudioRendererCallbacks;
-    AudioRecorderCallbacks* mAudioRecorderCallbacks;
+    AudioCapturerCallbacks* mAudioCapturerCallbacks;
 
     std::map<uint32_t, SinkDeviceInfo*> sinkDevices;
     std::map<uint32_t, SourceDeviceInfo*> sourceDevices;

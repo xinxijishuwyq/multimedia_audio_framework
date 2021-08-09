@@ -208,7 +208,7 @@ struct AudioStreamParams {
     uint8_t channels;
 };
 
-// Supported audio parameters for both renderer and recorder
+// Supported audio parameters for both renderer and capturer
 const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
     SAMPLE_S16LE,

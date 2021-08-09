@@ -13,29 +13,29 @@
  * limitations under the License.
  */
 
-#include "audio_recorder.h"
+#include "audio_capturer.h"
 #include "audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRecorderPrivate : public AudioRecorder {
+class AudioCapturerPrivate : public AudioCapturer {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
-    int32_t SetParams(const AudioRecorderParams params) const override;
-    int32_t GetParams(AudioRecorderParams &params) const override;
+    int32_t SetParams(const AudioCapturerParams params) const override;
+    int32_t GetParams(AudioCapturerParams &params) const override;
     bool Start() const override;
     int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override;
-    RecorderState GetStatus() const override;
+    CapturerState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Stop() const override;
     bool Flush() const override;
     bool Release() const override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
 
-    std::unique_ptr<AudioStream> audioRecorder;
+    std::unique_ptr<AudioStream> audioCapturer;
 
-    explicit AudioRecorderPrivate(AudioStreamType audioStreamType);
-    virtual ~AudioRecorderPrivate();
+    explicit AudioCapturerPrivate(AudioStreamType audioStreamType);
+    virtual ~AudioCapturerPrivate();
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

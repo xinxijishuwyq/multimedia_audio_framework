@@ -16,7 +16,7 @@ group("audio_module_test") {
 
   deps = [
     "moduletest/audiopolicy:audio_policy_module_test",
-    "moduletest/recorder_test:audio_recorder_module_test",
+    "moduletest/capturer_test:audio_capturer_module_test",
     "moduletest/renderer_test:audio_renderer_module_test",
   ]
 }

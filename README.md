@@ -95,54 +95,54 @@ You can use APIs provided in this repository to convert audio data into audible 
 8. Call audioRenderer->**Drain**() to drain the playback stream.
 
 9. Call audioRenderer->**Stop()** function to Stop rendering.
-10. After the playback task is complete, call the audioRenderer->**Release**() function on the AudioRenderer instance to release the resources.
+10. After the playback task is complete, call the audioRenderer->**Release**() function on the AudioRenderer instance to release the stream resources.
 
 Provided the basic playback usecase above. Please refer [**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiorenderer/include/audio_renderer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiocommon/include/audio_info.h) for more APIs.
 
 
 ### Audio Recording<a name="audio-recording"></a>
-You can use the APIs provided in this repository for your application to record voices using input devices, convert the voices into audio data, and manage recording tasks. The following steps describe how to use AudioReorder to develop the audio recording function:
+You can use the APIs provided in this repository for your application to record voices using input devices, convert the voices into audio data, and manage recording tasks. The following steps describe how to use AudioCapturer to develop the audio recording function:
 
-1. Use **Create** API with required stream type to get **AudioRecorder** instance.
+1. Use **Create** API with required stream type to get **AudioCapturer** instance.
     ```
     AudioStreamType streamType = STREAM_MUSIC;
-    std::unique_ptr<AudioRecorder> audioRecorder = AudioRecorder::Create(streamType);
+    std::unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(streamType);
     ```
 2. (Optional) Static APIs **GetSupportedFormats**(), **GetSupportedChannels**(), **GetSupportedEncodingTypes**(), **GetSupportedSamplingRates()** can be used to get the supported values of the params.
 3. To Prepare the device, call **SetParams** on the instance.
     ```
-    AudioRecorderParams recorderParams;
-    recorderParams.sampleFormat = SAMPLE_S16LE;
-    recorderParams.sampleRate = SAMPLE_RATE_44100;
-    recorderParams.channelCount = STEREO;
-    recorderParams.encodingType = ENCODING_PCM;
+    AudioCapturerParams capturerParams;
+    capturerParams.sampleFormat = SAMPLE_S16LE;
+    capturerParams.sampleRate = SAMPLE_RATE_44100;
+    capturerParams.channelCount = STEREO;
+    capturerParams.encodingType = ENCODING_PCM;
 
-    audioRecorder->SetParams(recorderParams);
-    ```
-4. (Optional) use audioRecorder->**GetParams**(recorderParams) to validate SetParams()
-5. Call audioRenderer->**Start**() function on the AudioRecorder instance to start the recording task.
+    audioCapturer->SetParams(capturerParams);
+    ```h
+4. (Optional) use audioCapturer->**GetParams**(capturerParams) to validate SetParams()
+5. Call audioRenderer->**Start**() function on the AudioCapturer instance to start the recording task.
 6. Get the buffer length to be read, using **GetBufferSize** API. 
     ```
-    audioRecorder->GetBufferSize(bufferLen);
+    audioCapturer->GetBufferSize(bufferLen);
     ```
-7. Read the recorded audio data and convert it to a byte stream. Call the read function repeatedly to read data untill you want to stop recording
+7. Read the captured audio data and convert it to a byte stream. Call the read function repeatedly to read data untill you want to stop recording
     ```
-    bytesRead = audioRecorder->Read(*buffer, bufferLen, isBlocking); // set isBlocking = true/false for blocking/non-blocking read
-    while (numBuffersToRecord) {
-        bytesRead = audioRecorder->Read(*buffer, bufferLen, isBlockingRead);
+    bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlocking); // set isBlocking = true/false for blocking/non-blocking read
+    while (numBuffersToCapture) {
+        bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
         if (bytesRead < 0) {
             break;
         } else if (bytesRead > 0) {
             fwrite(buffer, size, bytesRead, recFile); // example shows writes the recored data into a file
-            numBuffersToRecord--;
+            numBuffersToCapture--;
         }
     }
     ```
-8. (Optional) Call audioRecorder->**Flush**() to flush the record buffer of this stream.
-9. Call the audioRecorder->**Stop**() function on the AudioRecorder instance to stop the recording.
-10. After the recording task is complete, call the audioRecorder->**Release**() function on the AudioRecorder instance to release resources.
+8. (Optional) Call audioCapturer->**Flush**() to flush the capture buffer of this stream.
+9. Call the audioCapturer->**Stop**() function on the AudioCapturer instance to stop the recording.
+10. After the recording task is complete, call the audioCapturer->**Release**() function on the AudioCapturer instance to release the stream resources.
 
-Provided the basic recording usecase above. Please refer [**audio_recorder.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiorecorder/include/audio_recorder.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiocommon/include/audio_info.h) for more APIs.
+Provided the basic recording usecase above. Please refer [**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiocapturer/include/audio_capturer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/innerkits/native/audiocommon/include/audio_info.h) for more APIs.
 
 ### Audio Management<a name="audio-management"></a>
 

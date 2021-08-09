@@ -13,68 +13,116 @@
  * limitations under the License.
  */
 
+#include <vector>
+
+#include "audio_errors.h"
 #include "audio_capturer.h"
-#include "audio_capturer_impl.h"
+#include "audio_capturer_private.h"
+#include "audio_stream.h"
 
 namespace OHOS {
-namespace Audio {
-AudioCapturer::AudioCapturer() : impl_(new(std::nothrow) AudioCapturerImpl())
+namespace AudioStandard {
+AudioCapturer::~AudioCapturer() = default;
+AudioCapturerPrivate::~AudioCapturerPrivate() = default;
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
 {
+    return std::make_unique<AudioCapturerPrivate>(audioStreamType);
 }
 
-AudioCapturer::~AudioCapturer()
+AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType)
 {
+    audioCapturer = std::make_unique<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
 }
 
-bool AudioCapturer::GetMinFrameCount(int32_t sampleRate, int32_t channelCount,
-                                     AudioCodecFormat audioFormat, size_t &frameCount)
+int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 {
-    return AudioCapturerImpl::GetMinFrameCount(sampleRate, channelCount, audioFormat, frameCount);
+    return audioCapturer->GetFrameCount(frameCount);
 }
 
-uint64_t AudioCapturer::GetFrameCount()
+int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params) const
 {
-    return impl_->GetFrameCount();
+    AudioStreamParams audioStreamParams;
+    audioStreamParams.format = params.audioSampleFormat;
+    audioStreamParams.samplingRate = params.samplingRate;
+    audioStreamParams.channels = params.audioChannel;
+    audioStreamParams.encoding = params.audioEncoding;
+
+    return audioCapturer->SetAudioStreamInfo(audioStreamParams);
 }
 
-State AudioCapturer::GetStatus()
+int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
 {
-    return impl_->GetStatus();
+    AudioStreamParams audioStreamParams;
+    int32_t result = audioCapturer->GetAudioStreamInfo(audioStreamParams);
+    if (SUCCESS == result) {
+        params.audioSampleFormat = static_cast<AudioSampleFormat>(audioStreamParams.format);
+        params.samplingRate =  static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        params.audioChannel = static_cast<AudioChannel>(audioStreamParams.channels);
+        params.audioEncoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+    }
+
+    return result;
 }
 
-bool AudioCapturer::GetAudioTime(Timestamp &timestamp, Timestamp::Timebase base)
+bool AudioCapturerPrivate::Start() const
 {
-    return impl_->GetTimestamp(timestamp, base);
+    return audioCapturer->StartAudioStream();
 }
 
-int32_t AudioCapturer::SetCapturerInfo(const AudioCapturerInfo info)
+int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
 {
-    return impl_->SetCapturerInfo(info);
+    return audioCapturer->Read(buffer, userSize, isBlockingRead);
 }
 
-int32_t AudioCapturer::GetCapturerInfo(AudioCapturerInfo &info)
+CapturerState AudioCapturerPrivate::GetStatus() const
 {
-    return impl_->GetCapturerInfo(info);
+    return (CapturerState)audioCapturer->GetState();
 }
 
-bool AudioCapturer::Start()
+bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
-    return impl_->Record();
+    return audioCapturer->GetAudioTime(timestamp, base);
 }
 
-bool AudioCapturer::Stop()
+bool AudioCapturerPrivate::Stop() const
 {
-    return impl_->Stop();
+    return audioCapturer->StopAudioStream();
 }
 
-bool AudioCapturer::Release()
+bool AudioCapturerPrivate::Flush() const
 {
-    return impl_->Release();
+    return audioCapturer->FlushAudioStream();
 }
 
-int32_t AudioCapturer::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
+bool AudioCapturerPrivate::Release() const
 {
-    return impl_->Read(buffer, userSize, isBlockingRead);
+    return audioCapturer->ReleaseAudioStream();
 }
-}  // namespace Audio
+
+int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
+{
+    return audioCapturer->GetBufferSize(bufferSize);
+}
+
+std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()
+{
+    return AUDIO_SUPPORTED_FORMATS;
+}
+
+std::vector<AudioChannel> AudioCapturer::GetSupportedChannels()
+{
+    return AUDIO_SUPPORTED_CHANNELS;
+}
+
+std::vector<AudioEncodingType> AudioCapturer::GetSupportedEncodingTypes()
+{
+    return AUDIO_SUPPORTED_ENCODING_TYPES;
+}
+
+std::vector<AudioSamplingRate> AudioCapturer::GetSupportedSamplingRates()
+{
+    return AUDIO_SUPPORTED_SAMPLING_RATES;
+}
+}  // namespace AudioStandard
 }  // namespace OHOS

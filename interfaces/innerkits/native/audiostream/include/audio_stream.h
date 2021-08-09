@@ -79,7 +79,7 @@ public:
     bool DrainAudioStream();
     size_t Write(uint8_t *buffer, size_t buffer_size);
 
-    // Recorder related APIs
+    // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead);
 private:
     AudioStreamType eStreamType_;

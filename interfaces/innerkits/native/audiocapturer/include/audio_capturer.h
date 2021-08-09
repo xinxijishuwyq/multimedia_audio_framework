@@ -13,182 +13,102 @@
  * limitations under the License.
  */
 
-/**
- * @addtogroup MultiMedia_AudioCapturer
- * @{
- *
- * @brief Declares APIs in the <b>AudioCapturer</b> class for audio capture.
- *
- *
- * @since 1.0
- * @version 1.0
- */
-
-/**
- * @file audio_capturer.h
- *
- * @brief Provides the <b>AudioCapturer</b> class to implement operations related to audio capture.
- *
- *
- * @since 1.0
- * @version 1.0
- */
-
 #ifndef AUDIO_CAPTURER_H
 #define AUDIO_CAPTURER_H
 
-#include <cstddef>
-#include <cstdint>
-#include <time.h>
 #include <memory>
 
-#include "media_errors.h"
-#include "media_info.h"
+#include "audio_info.h"
+#include "timestamp.h"
 
 namespace OHOS {
-namespace Audio {
+namespace AudioStandard {
 /**
- * @brief Defines information about audio capture parameters, including the input source, audio codec format,sampling
- * rate (Hz), number of audio channels, bit rate, stream type and bit width.
- *
- * @since 1.0
- * @version 1.0
+ * @brief Defines information about audio capturer parameters
  */
-struct AudioCapturerInfo {
+struct AudioCapturerParams {
     /** Audio source type */
     AudioSourceType inputSource = AUDIO_MIC;
     /** Audio codec format */
-    AudioCodecFormat audioFormat = AUDIO_DEFAULT;
+    AudioEncodingType audioEncoding = ENCODING_PCM;
     /** Sampling rate */
-    int32_t sampleRate = 0;
+    AudioSamplingRate samplingRate = SAMPLE_RATE_44100;
     /** Number of audio channels */
-    int32_t channelCount = 0;
-    /** Bit rate */
-    int32_t bitRate = 0;
+    AudioChannel audioChannel = MONO;
     /** Audio stream type */
-    AudioStreamType streamType = TYPE_MEDIA;
-    /** Bit width */
-    AudioBitWidth bitWidth = BIT_WIDTH_16;
+    AudioStreamType streamType = STREAM_MEDIA;
+    /** audioSampleFormat */
+    AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
 };
 
 /**
- * @brief Represents timestamp information, including the frame position information and high-resolution time source.
- *
- * @since 1.0
- * @version 1.0
+ * @brief Enumerates the capturing states of the current device.
  */
-class Timestamp {
-public:
-    Timestamp() : framePosition(0)
-    {
-        time.tv_sec = 0;
-        time.tv_nsec = 0;
-    }
-    virtual ~Timestamp() = default;
-    uint32_t framePosition;
-    struct timespec time;
-
-    /**
-     * @brief Enumerates the time base of this <b>Timestamp</b>. Different timing methods are supported.
-     *
-     */
-    enum class Timebase : int32_t {
-        /** Monotonically increasing time, excluding the system sleep time */
-        MONOTONIC = 0,
-        /** Monotonically increasing time, including the system sleep time */
-        BOOTTIME = 1
-    };
-};
-
-/**
- * @brief Enumerates the recording states of the current device.
- *
- * @since 1.0
- * @version 1.0
- */
-enum State : uint32_t {
-    /** Prepared */
-    PREPPARED,
-    /** Recording */
-    RECORDING,
-    /** Stopped */
-    STOPPED,
-    /** Released */
-    RELEASED
+enum CapturerState {
+    /** Create new capturer instance */
+    CAPTURER_NEW,
+    /** Capturer Prepared state */
+    CAPTURER_PREPARED,
+    /** Capturer Running state */
+    CAPTURER_RUNNING,
+    /** Capturer Stopped state */
+    CAPTURER_STOPPED,
+    /** Capturer Released state */
+    CAPTURER_RELEASED,
+    /** Capturer INVALID state */
+    CAPTURER_INVALID
 };
 
 /**
  * @brief Provides functions for applications to implement audio capturing.
- *
- * @since 1.0
- * @version 1.0
  */
 class AudioCapturer {
 public:
-    AudioCapturer();
-    virtual ~AudioCapturer();
-
     /**
-     * @brief Obtains the minimum number of frames required in a specified condition, in bytes per sample.
-     *
-     * @param sampleRate Indicates the audio sampling rate, in Hz.
-     * @param channelCount Indicates the number of audio recording channels.
-     * @param audioFormat Indicates the audio data format.
-     * @param frameCount Indicates the minimum number of frames, in bytes per sample.
-     * @return Returns <b>true</b> if the minimum number of frames is successfully obtained; returns <b>false</b>
-     * otherwise.
-     * @since 1.0
-     * @version 1.0
-     */
-    static bool GetMinFrameCount(int32_t sampleRate, int32_t channelCount, AudioCodecFormat audioFormat,
-                                size_t &frameCount);
+     * @brief creater capturer instance.
+    */
+    static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
     /**
      * @brief Obtains the number of frames required in the current condition, in bytes per sample.
      *
-     * @return Returns the number of frames (in bytes per sample) if the operation is successful; returns <b>-1</b>
-     * if an exception occurs.
-     * @since 1.0
-     * @version 1.0
+     * @param frameCount Indicates the pointer in which framecount will be written
+     * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
      */
-    uint64_t GetFrameCount();
+    virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
 
     /**
      * @brief Sets audio capture parameters.
      *
-     * @param info Indicates information about audio capture parameters to set. For details, see
-     * {@link AudioCapturerInfo}.
+     * @param params Indicates information about audio capture parameters to set. For details, see
+     * {@link AudioCapturerParams}.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
-     * in {@link media_errors.h} otherwise.
-     * @since 1.0
-     * @version 1.0
+     * in {@link audio_errors.h} otherwise.
      */
-    int32_t SetCapturerInfo(const AudioCapturerInfo info);
+    virtual int32_t SetParams(const AudioCapturerParams params) const = 0;
 
     /**
-     * @brief Obtains audio capture parameters.
+     * @brief Obtains audio capturer parameters.
      *
-     * This function can be called after {@link SetCapturerInfo} is successful.
+     * This function can be called after {@link SetParams} is successful.
      *
-     * @param info Indicates information about audio capture parameters. For details, see {@link AudioCapturerInfo}.
+     * @param params Indicates information about audio capturer parameters.For details,see
+     * {@link AudioCapturerParams}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
-     * defined in {@link media_errors.h} otherwise.
-     * @since 1.0
-     * @version 1.0
+     * defined in {@link audio_errors.h} otherwise.
      */
-    int32_t GetCapturerInfo(AudioCapturerInfo &info);
+    virtual int32_t GetParams(AudioCapturerParams &params) const = 0;
 
     /**
-     * @brief Starts audio recording.
+     * @brief Starts audio capturing.
      *
-     * @return Returns <b>true</b> if the recording is successfully started; returns <b>false</b> otherwise.
-     * @since 1.0
-     * @version 1.0
+     * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
      */
-    bool Start();
+    virtual bool Start() const = 0;
 
     /**
-     * @brief Reads audio data.
+     * @brief capture audio data.
      *
      * @param buffer Indicates the pointer to the buffer into which the audio data is to be written.
      * @param userSize Indicates the size of the buffer into which the audio data is to be written, in bytes.
@@ -199,55 +119,87 @@ public:
      * <b>userSize</b>. If the reading fails, one of the following error codes is returned.
      * <b>ERR_INVALID_PARAM</b>: The input parameter is incorrect.
      * <b>ERR_ILLEGAL_STATE</b>: The <b>AudioCapturer</b> instance is not initialized.
-     * <b>ERR_SOURCE_NOT_SET</b>: The state of hardware device instance is abnormal.
-     * @since 1.0
-     * @version 1.0
+     * <b>ERR_INVALID_READ</b>: The read size < 0.
      */
-    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead);
+    virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const = 0;
 
     /**
      * @brief Obtains the audio capture state.
      *
-     * @return Returns the audio capture state defined in {@link State}.
-     * @since 1.0
-     * @version 1.0
+     * @return Returns the audio capture state defined in {@link CapturerState}.
      */
-    State GetStatus();
+    virtual CapturerState GetStatus() const = 0;
 
     /**
-     * @brief Obtains the timestamp.
+     * @brief Obtains the Timestamp.
      *
      * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
-     * @param base Indicates the time base, which can be {@link Timestamp.Timebase#BOOTTIME} or
-     * {@link Timestamp.Timebase#MONOTONIC}.
+     * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
+     * {@link Timestamp.Timestampbase#MONOTONIC}.
      * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
-     * @since 1.0
-     * @version 1.0
      */
-    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timebase base);
+    virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     /**
-     * @brief Stops audio recording.
+     * @brief Stops audio capturing.
      *
-     * @return Returns <b>true</b> if the recording is successfully stopped; returns <b>false</b> otherwise.
-     * @since 1.0
-     * @version 1.0
+     * @return Returns <b>true</b> if the capturing is successfully stopped; returns <b>false</b> otherwise.
      */
-    bool Stop();
+    virtual bool Stop() const = 0;
+    /**
+     * @brief flush capture stream.
+     *
+     * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
+     */
+    virtual bool Flush() const = 0;
 
     /**
      * @brief Releases a local <b>AudioCapturer</b> object.
      *
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
-     * @since 1.0
-     * @version 1.0
      */
-    bool Release();
+    virtual bool Release() const = 0;
 
-private:
-    class AudioCapturerImpl;
-    std::unique_ptr<AudioCapturerImpl> impl_;
+    /**
+     * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can
+     *        accept other read sizes as well.
+     *
+     * @param bufferSize Indicates a buffersize pointer value that wil be written.
+     * @return Returns {@link SUCCESS} if bufferSize is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
+
+    /**
+     * @brief Obtains the capturer supported formats.
+     *
+     * @return vector with capturer supported formats.
+     */
+    static std::vector<AudioSampleFormat> GetSupportedFormats();
+
+    /**
+     * @brief Obtains the capturer supported channels.
+     *
+     * @return vector with capturer supported channels.
+     */
+    static std::vector<AudioChannel> GetSupportedChannels();
+
+    /**
+     * @brief Obtains the capturer supported encoding types.
+     *
+     * @return vector with capturer supported encoding types.
+     */
+    static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
+
+    /**
+     * @brief Obtains the capturer supported SupportedSamplingRates.
+     *
+     * @return vector with capturer supported SupportedSamplingRates.
+     */
+    static std::vector<AudioSamplingRate> GetSupportedSamplingRates();
+
+    virtual ~AudioCapturer();
 };
-}  // namespace Audio
+}  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_CAPTURER_H

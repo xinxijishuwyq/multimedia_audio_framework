@@ -25,7 +25,7 @@ constexpr uint8_t DEFAULT_FORMAT = SAMPLE_S16LE;
 constexpr uint8_t DEFAULT_CHANNELS = 2;
 } // namespace
 
-class RecordTest : public AudioRecorderCallbacks {
+class RecordTest : public AudioCapturerCallbacks {
 public:
     void OnSourceDeviceUpdatedCb() const
     {
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     if (client->Initialize(AUDIO_SERVICE_CLIENT_RECORD) < 0)
         return -1;
 
-    client->RegisterAudioRecorderCallbacks(customCb);
+    client->RegisterAudioCapturerCallbacks(customCb);
 
     MEDIA_INFO_LOG("Creating Stream");
     if (client->CreateStream(audioParams, STREAM_MUSIC) < 0) {
@@ -90,13 +90,13 @@ int main(int argc, char* argv[])
     FILE *pFile = fopen(argv[1], "wb");
 
     size_t size = 1;
-    size_t numBuffersToRecord = 1024;
+    size_t numBuffersToCapture = 1024;
     uint64_t timeStamp;
     stream.buffer = buffer;
     stream.bufferLen = bufferLen;
     int32_t bytesRead = 0;
 
-    while (numBuffersToRecord) {
+    while (numBuffersToCapture) {
         bytesRead = client->ReadStream(stream, false);
         if (bytesRead < 0) {
             break;
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
             fwrite(stream.buffer, size, bytesRead, pFile);
             if (client->GetCurrentTimeStamp(timeStamp) >= 0)
                 MEDIA_DEBUG_LOG("current timestamp: %{public}llu", timeStamp);
-            numBuffersToRecord--;
+            numBuffersToCapture--;
         }
     }
 

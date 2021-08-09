@@ -14,11 +14,10 @@
 import("//build/ohos.gni")
 
 group("audio_packages") {
-    public_deps = [
-         "interfaces/innerkits/native/audiocapturer:audio_capturer",
-         "interfaces/innerkits/native/audiorenderer:audio_renderer",
-         "interfaces/innerkits/native/audiorecorder:audio_recorder",
-         "services:audio_service",
-         "interfaces/innerkits/native/audiomanager:audio_client",
+  public_deps = [
+    "interfaces/innerkits/native/audiocapturer:audio_capturer",
+    "interfaces/innerkits/native/audiomanager:audio_client",
+    "interfaces/innerkits/native/audiorenderer:audio_renderer",
+    "services:audio_service",
   ]
 }

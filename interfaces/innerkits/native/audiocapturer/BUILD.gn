@@ -13,44 +13,62 @@
 
 import("//build/ohos.gni")
 
-ohos_shared_library("audio_capturer") {
-  install_enable = true
-  sources = [
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer_impl.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_encoder.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_source.cpp",
-  ]
-  cflags = [ "-fPIC" ]
-  cflags += [ "-Wall" ]
-  cflags_cc = cflags
+pulseaudio_dir = "//third_party/pulseaudio"
+
+group("audio_capturer_test_packages") {
+  deps = [ ":audio_capturer_test" ]
+}
+
+config("audio_capturer_config") {
   include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
-    "//foundation/multimedia/media_standard/interfaces/innerkits/native/media/include",
-    "//utils/native/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//drivers/peripheral/codec/interfaces/include",
-    "//third_party/bounds_checking_function/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiostream/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/services/include",
+    "//foundation/multimedia/audio_standard/services/include/client",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
   ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+ohos_shared_library("audio_capturer") {
+  install_enable = true
+
+  configs = [ ":audio_capturer_config" ]
+
+  sources = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer.cpp" ]
+
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client" ]
+
   public_configs = [ ":audio_external_library_config" ]
-  ldflags = [
-    "-lcodec",
-    "-laudio_hw",
-  ]
-  ldflags += [
-    "-L../../device/hisilicon/hardware/media/hal/codec/hi3516dv300/llvm/ext/libs",
-    "-L../../device/hisilicon/hardware/media/hal/audio/hi3516dv300/llvm/ext/libs",
-  ]
-  deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//third_party/bounds_checking_function:libsec_static",
-  ]
+
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"
 }
 
 config("audio_external_library_config") {
   include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include" ]
+}
+
+ohos_executable("audio_capturer_test") {
+  install_enable = true
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_capturer_test.cpp" ]
+
+  configs = [ ":audio_capturer_config" ]
+
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
 }

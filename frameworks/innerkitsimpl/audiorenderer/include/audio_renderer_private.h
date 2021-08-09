@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_RECORDER_PRIVATE_H
-#define AUDIO_RECORDER_PRIVATE_H
+#ifndef AUDIO_RENDERER_PRIVATE_H
+#define AUDIO_RENDERER_PRIVATE_H
 
 #include "audio_renderer.h"
 #include "audio_stream.h"
@@ -45,4 +45,4 @@ public:
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_RECORDER_PRIVATE_H
+#endif // AUDIO_RENDERER_PRIVATE_H

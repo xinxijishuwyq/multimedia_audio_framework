@@ -183,7 +183,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
             ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
             break;
         case AUDIO_MODE_RECORD:
-            MEDIA_DEBUG_LOG("AudioStream: Initialize recorder");
+            MEDIA_DEBUG_LOG("AudioStream: Initialize recording");
             ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
             break;
         default:
