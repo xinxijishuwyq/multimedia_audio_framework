@@ -62,6 +62,8 @@ public:
     int32_t GetBufferSize(size_t &bufferSize);
     int32_t GetFrameCount(uint32_t &frameCount);
     int32_t GetLatency(uint64_t &latency);
+    int32_t SetVolume(float volume);
+    float GetVolume();
 
     std::vector<AudioSampleFormat> GetSupportedFormats();
     std::vector<AudioChannel> GetSupportedChannels();

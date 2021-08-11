@@ -178,7 +178,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     return MapVolumeFromHDI(volumeFromHdi);
 }
 
-float AudioSystemManager::MapVolumeToHDI(int32_t volume) const
+float AudioSystemManager::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;
     float roundValue = (int)(value * CONST_FACTOR);
@@ -186,7 +186,7 @@ float AudioSystemManager::MapVolumeToHDI(int32_t volume) const
     return (float)roundValue / CONST_FACTOR;
 }
 
-int32_t AudioSystemManager::MapVolumeFromHDI(float volume) const
+int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
 {
     float value = (float)volume * MAX_VOLUME_LEVEL;
     return nearbyint(value);

@@ -120,6 +120,16 @@ int32_t AudioRendererPrivate::GetBufferSize(size_t &bufferSize) const
     return audioRenderer->GetBufferSize(bufferSize);
 }
 
+int32_t AudioRendererPrivate::SetVolume(float volume) const
+{
+    return audioRenderer->SetVolume(volume);
+}
+
+float AudioRendererPrivate::GetVolume() const
+{
+    return audioRenderer->GetVolume();
+}
+
 std::vector<AudioSampleFormat> AudioRenderer::GetSupportedFormats()
 {
     return AUDIO_SUPPORTED_FORMATS;

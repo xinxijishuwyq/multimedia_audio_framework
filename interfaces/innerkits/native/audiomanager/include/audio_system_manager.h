@@ -144,6 +144,8 @@ enum AudioVolumeType {
         STREAM_ACCESSIBILITY = 10
     };
     static AudioSystemManager* GetInstance();
+    static float MapVolumeToHDI(int32_t volume);
+    static int32_t MapVolumeFromHDI(float volume);
     int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
     int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
     int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const;
@@ -164,8 +166,6 @@ private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
     void init();
-    float MapVolumeToHDI(int32_t volume) const;
-    int32_t MapVolumeFromHDI(float volume) const;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;

@@ -786,15 +786,17 @@ void PulseAudioPolicyManager::GetSinkInputInfoVolumeCb(pa_context *c, const pa_s
     }
 
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
-    if (streamtype == NULL) {
+    const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
+    if ((streamtype == NULL) || (streamVolume == NULL)) {
         MEDIA_ERR_LOG("[PolicyManager] Invalid StreamType.");
         return;
     }
 
     std::string streamType(streamtype);
+    float volumeFactor = std::atof(streamVolume);
 
     AudioStreamType streamID = thiz->GetStreamIDByType(streamType);
-    float vol = thiz->mVolumeMap[streamID];
+    float vol = thiz->mVolumeMap[streamID] * volumeFactor;
 
     if (thiz->mRingerMode != RINGER_MODE_NORMAL) {
         if (!streamType.compare("ring")) {
