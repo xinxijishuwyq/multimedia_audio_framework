@@ -32,6 +32,8 @@ enum AudioMode {
  * @version 1.0
  */
 enum State {
+    /** INVALID */
+    INVALID = -1,
     /** New */
     NEW,
     /** Prepared */
@@ -42,8 +44,6 @@ enum State {
     STOPPED,
     /** Released */
     RELEASED,
-    /** INVALID */
-    INVALID,
     /** Paused */
     PAUSED
 };

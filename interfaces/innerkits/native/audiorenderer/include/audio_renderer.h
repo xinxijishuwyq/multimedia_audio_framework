@@ -42,6 +42,8 @@ struct AudioRendererParams {
  * @brief Enumerates the rendering states of the current device.
  */
 enum RendererState {
+    /** INVALID state */
+    RENDERER_INVALID = -1,
     /** Create New Renderer instance */
     RENDERER_NEW,
     /** Reneder Prepared state */
@@ -52,8 +54,6 @@ enum RendererState {
     RENDERER_STOPPED,
     /** Renderer Released state */
     RENDERER_RELEASED,
-    /** INVALID state */
-    RENDERER_INVALID,
     /** Renderer Paused state */
     RENDERER_PAUSED
 };
