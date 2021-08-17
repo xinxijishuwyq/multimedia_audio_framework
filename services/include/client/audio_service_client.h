@@ -26,6 +26,8 @@
 #include <audio_info.h>
 #include <audio_error.h>
 
+#include "audio_system_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 enum ASClientType {
@@ -266,6 +268,22 @@ public:
     */
     void RegisterAudioCapturerCallbacks(const AudioCapturerCallbacks &cb);
 
+    /**
+     * @brief Set the track volume
+     *
+     * @param volume The volume to be set for the current track.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetStreamVolume(float volume);
+
+    /**
+     * @brief Obtains the current track volume
+     *
+     * @return Returns current track volume
+     */
+    float GetStreamVolume();
+
 private:
     pa_threaded_mainloop *mainLoop;
     pa_mainloop_api *api;
@@ -283,6 +301,10 @@ private:
     bool isMainLoopStarted;
     bool isContextConnected;
     bool isStreamConnected;
+
+    float mVolumeFactor;
+    AudioStreamType mStreamType;
+    AudioSystemManager *mAudioSystemMgr;
 
     // To be set while using audio stream
     // functionality for callbacks
@@ -329,6 +351,9 @@ private:
     static pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
     static AudioStreamParams ConvertFromPAAudioParams(pa_sample_spec paSampleSpec);
 
+    static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
+    static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
+
     // Resets PA audio client and free up resources if any with this API
     void ResetPAAudioClient();
 
@@ -339,6 +364,8 @@ private:
     static void PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
+
+    static void GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
 };
 } // namespace AudioStandard
 } // namespace OHOS

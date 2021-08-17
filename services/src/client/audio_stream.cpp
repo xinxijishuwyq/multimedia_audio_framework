@@ -374,5 +374,15 @@ bool AudioStream::ReleaseAudioStream()
 
     return true;
 }
+
+int32_t AudioStream::SetVolume(float volume)
+{
+    return SetStreamVolume(volume);
+}
+
+float AudioStream::GetVolume()
+{
+    return GetStreamVolume();
+}
 }
 }

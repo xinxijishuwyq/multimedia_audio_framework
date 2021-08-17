@@ -37,6 +37,8 @@ public:
     bool Flush() const override;
     bool Release() const override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
+    int32_t SetVolume(float volume) const override;
+    float GetVolume() const override;
 
     std::unique_ptr<AudioStream> audioRenderer;
 

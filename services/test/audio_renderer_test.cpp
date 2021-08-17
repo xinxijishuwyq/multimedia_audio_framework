@@ -30,6 +30,7 @@ namespace AudioTestConstants {
     constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
     constexpr int32_t STOP_RENDER_TIME_SECONDS = 1;
+    constexpr float TRACK_VOLUME = 0.2f;
 }
 
 class AudioRendererTest {
@@ -82,6 +83,10 @@ public:
             return false;
         }
         MEDIA_INFO_LOG("AudioRendererTest: Playback started");
+
+        if (audioRenderer->SetVolume(AudioTestConstants::TRACK_VOLUME) == AudioTestConstants::SUCCESS) {
+            MEDIA_INFO_LOG("AudioRendererTest: volume set to: %{public}f", audioRenderer->GetVolume());
+        }
 
         MEDIA_INFO_LOG("AudioRendererTest: Get Audio parameters:");
         AudioRendererParams paRendererParams;
@@ -144,6 +149,10 @@ public:
                 pauseTested = true;
                 sleep(AudioTestConstants::PAUSE_RENDER_TIME_SECONDS);
                 MEDIA_INFO_LOG("Audio render resume");
+                if (audioRenderer->SetVolume(1.0) == AudioTestConstants::SUCCESS) {
+                    MEDIA_INFO_LOG("AudioRendererTest: after resume volume set to: %{public}f",
+                                   audioRenderer->GetVolume());
+                }
                 if (!audioRenderer->Flush()) {
                     MEDIA_ERR_LOG("AudioRendererTest: flush failed");
                     break;

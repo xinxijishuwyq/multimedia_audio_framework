@@ -194,6 +194,22 @@ public:
      */
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
 
+    /**
+     * @brief Set the track volume
+     *
+     * @param volume The volume to be set for the current track.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetVolume(float volume) const = 0;
+
+    /**
+     * @brief Obtains the current track volume
+     *
+     * @return Returns current track volume
+     */
+    virtual float GetVolume() const = 0;
+
         /**
      * @brief Obtains the foramts supported by renderer.
      *
