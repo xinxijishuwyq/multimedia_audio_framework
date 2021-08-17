@@ -303,6 +303,12 @@ bool AudioStream::PauseAudioStream()
 
 bool AudioStream::StopAudioStream()
 {
+    if (state_ == PAUSED) {
+        state_ = STOPPED;
+        MEDIA_INFO_LOG("StopAudioStream SUCCESS");
+        return true;
+    }
+
     if (state_ != RUNNING) {
         MEDIA_ERR_LOG("StopAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
