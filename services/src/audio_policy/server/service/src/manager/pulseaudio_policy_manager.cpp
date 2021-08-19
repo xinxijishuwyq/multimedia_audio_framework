@@ -321,7 +321,7 @@ AudioIOHandle PulseAudioPolicyManager::OpenAudioPort(std::shared_ptr<AudioPortIn
     if (operation == NULL) {
         MEDIA_ERR_LOG("[PolicyManager] pa_context_load_module returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
-        return reinterpret_cast<AudioIOHandle>(ERR_INVALID_HANDLE);
+        return PA_INVALID_INDEX;
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
@@ -331,7 +331,7 @@ AudioIOHandle PulseAudioPolicyManager::OpenAudioPort(std::shared_ptr<AudioPortIn
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    AudioIOHandle ioHandle = reinterpret_cast<void*>(userData->idx);
+    AudioIOHandle ioHandle = userData->idx;
     return ioHandle;
 }
 
@@ -339,7 +339,7 @@ int32_t PulseAudioPolicyManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
     pa_threaded_mainloop_lock(mMainLoop);
 
-    pa_operation* operation = pa_context_unload_module(mContext, reinterpret_cast<uint32_t>(ioHandle), NULL, NULL);
+    pa_operation* operation = pa_context_unload_module(mContext, ioHandle, NULL, NULL);
     if (operation == NULL) {
         MEDIA_ERR_LOG("[PolicyManager] pa_context_unload_module returned nullptr!");
         pa_threaded_mainloop_unlock(mMainLoop);
