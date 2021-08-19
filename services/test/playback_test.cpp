@@ -100,7 +100,7 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
             stream.bufferLen = bytesToWrite - bytesWritten;
             bytesWritten += client->WriteStream(stream, writeError);
             if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                MEDIA_DEBUG_LOG("current timestamp: %{public}llu", timeStamp);
+                MEDIA_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
         }
     }
 
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     }
 
     size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
-    MEDIA_INFO_LOG("Header Read in bytes %{public}d", bytesRead);
+    MEDIA_INFO_LOG("Header Read in bytes %{public}zu", bytesRead);
     AudioStreamParams audioParams;
     audioParams.format = DEFAULT_FORMAT;
     audioParams.samplingRate = wavHeader.SamplesPerSec;

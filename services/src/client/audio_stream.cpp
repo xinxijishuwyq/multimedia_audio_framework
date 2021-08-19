@@ -51,7 +51,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
 {
     uint64_t paTimeStamp;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
-        MEDIA_DEBUG_LOG("AudioStream: GetAudioTime in microseconds: %{public}lld", paTimeStamp);
+        MEDIA_DEBUG_LOG("AudioStream: GetAudioTime in microseconds: %{public}" PRIu64, paTimeStamp);
         timestamp.time.tv_sec = static_cast<time_t>(paTimeStamp / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
             = static_cast<time_t>((paTimeStamp - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
@@ -213,7 +213,7 @@ bool AudioStream::StartAudioStream()
     }
     int32_t ret = StartStream();
     if (ret != SUCCESS) {
-        MEDIA_ERR_LOG("StartStream Start failed:0x%{public}x", ret);
+        MEDIA_ERR_LOG("StartStream Start failed:%{public}d", ret);
         return false;
     }
 
@@ -241,7 +241,7 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
     int32_t readLen = ReadStream(stream, isBlockingRead);
     isReadInProgress_ = false;
     if (readLen < 0) {
-        MEDIA_ERR_LOG("ReadStream fail,ret:0x%{public}x", readLen);
+        MEDIA_ERR_LOG("ReadStream fail,ret:%{public}d", readLen);
         return ERR_INVALID_READ;
     }
 
@@ -272,7 +272,7 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
         return ERR_WRITE_FAILED;
     }
     if (bytesWritten < 0) {
-        MEDIA_ERR_LOG("WriteStream fail,bytesWritten:0x%{public}x", bytesWritten);
+        MEDIA_ERR_LOG("WriteStream fail,bytesWritten:%{public}zu", bytesWritten);
         return ERR_INVALID_WRITE;
     }
 
@@ -292,7 +292,7 @@ bool AudioStream::PauseAudioStream()
 
     int32_t ret = PauseStream();
     if (ret != SUCCESS) {
-        MEDIA_DEBUG_LOG("StreamPause fail,ret:0x%{public}x", ret);
+        MEDIA_DEBUG_LOG("StreamPause fail,ret:%{public}d", ret);
         state_ = oldState;
         return false;
     }
@@ -320,7 +320,7 @@ bool AudioStream::StopAudioStream()
 
     int32_t ret = StopStream();
     if (ret != SUCCESS) {
-        MEDIA_DEBUG_LOG("StreamStop fail,ret:0x%{public}x", ret);
+        MEDIA_DEBUG_LOG("StreamStop fail,ret:%{public}d", ret);
         state_ = oldState;
         return false;
     }
@@ -338,7 +338,7 @@ bool AudioStream::FlushAudioStream()
 
     int32_t ret = FlushStream();
     if (ret != SUCCESS) {
-        MEDIA_DEBUG_LOG("Flush stream fail,ret:0x%{public}x", ret);
+        MEDIA_DEBUG_LOG("Flush stream fail,ret:%{public}d", ret);
         return false;
     }
 
@@ -355,7 +355,7 @@ bool AudioStream::DrainAudioStream()
 
     int32_t ret = DrainStream();
     if (ret != SUCCESS) {
-        MEDIA_DEBUG_LOG("Drain stream fail,ret:0x%{public}x", ret);
+        MEDIA_DEBUG_LOG("Drain stream fail,ret:%{public}d", ret);
         return false;
     }
 

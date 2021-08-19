@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
         if (bytesRead > 0) {
             fwrite(stream.buffer, size, bytesRead, pFile);
             if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                MEDIA_DEBUG_LOG("current timestamp: %{public}llu", timeStamp);
+                MEDIA_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
             numBuffersToCapture--;
         }
     }

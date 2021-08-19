@@ -1066,14 +1066,14 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 
         // Total latency will be sum of audio write cache latency + PA latency
         latency = paLatency + cacheLatency;
-        MEDIA_INFO_LOG("total latency: %{public}llu, pa latency: %{public}llu, cache latency: %{public}llu", latency, paLatency, cacheLatency);
+        MEDIA_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         // Get audio read cache latency
         cacheLatency = pa_bytes_to_usec(internalRdBufLen, &sampleSpec);
 
         // Total latency will be sum of audio read cache latency + PA latency
         latency = paLatency + cacheLatency;
-        MEDIA_INFO_LOG("total latency: %{public}llu, pa latency: %{public}llu", latency, paLatency);
+        MEDIA_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
     }
 
     return retVal;

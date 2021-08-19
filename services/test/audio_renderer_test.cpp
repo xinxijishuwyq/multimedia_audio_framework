@@ -130,10 +130,9 @@ public:
         while (!feof(wavFile)) {
             bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
             bytesWritten = 0;
-            MEDIA_INFO_LOG("AudioRendererTest: Bytes to write: %{public}d", bytesToWrite);
+            MEDIA_INFO_LOG("AudioRendererTest: Bytes to write: %{public}zu", bytesToWrite);
 
             uint64_t currFilePos = ftell(wavFile);
-            MEDIA_INFO_LOG("AudioRendererTest: Current file position: %{public}llu", currFilePos);
             if (!stopTested && (currFilePos > AudioTestConstants::STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
                 MEDIA_INFO_LOG("Audio render stopping for 1 second");
                 stopTested = true;
@@ -167,12 +166,11 @@ public:
                 MEDIA_ERR_LOG("AudioRendererTest: GetLatency failed");
                 break;
             }
-            MEDIA_INFO_LOG("AudioRendererTest: Latency: %{public}llu", latency);
 
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
                 bytesWritten += audioRenderer->Write(buffer + bytesWritten,
                                                      bytesToWrite - bytesWritten);
-                MEDIA_INFO_LOG("AudioRendererTest: Bytes written: %{public}d", bytesWritten);
+                MEDIA_INFO_LOG("AudioRendererTest: Bytes written: %{public}zu", bytesWritten);
                 if (bytesWritten < 0) {
                     break;
                 }
@@ -206,7 +204,7 @@ public:
             return false;
         }
         size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
-        MEDIA_INFO_LOG("AudioRendererTest: Header Read in bytes %{public}d", bytesRead);
+        MEDIA_INFO_LOG("AudioRendererTest: Header Read in bytes %{public}zu", bytesRead);
 
         AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
         if (argc > AudioTestConstants::ARGS_COUNT_TWO)

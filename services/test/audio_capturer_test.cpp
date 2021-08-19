@@ -120,7 +120,7 @@ public:
                 }
             }
             if (bytesRead < 0) {
-                MEDIA_ERR_LOG("Bytes read failed. error code %{public}d", bytesRead);
+                MEDIA_ERR_LOG("Bytes read failed. error code %{public}zu", bytesRead);
                 break;
             } else if (bytesRead > 0) {
                 fwrite(buffer, size, bytesRead, pFile);

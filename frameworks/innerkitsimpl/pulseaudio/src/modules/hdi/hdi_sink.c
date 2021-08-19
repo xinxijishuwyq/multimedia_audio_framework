@@ -42,7 +42,7 @@
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
 struct Userdata {
-    size_t buffer_size;
+    uint32_t buffer_size;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;
@@ -80,23 +80,23 @@ static ssize_t RenderWrite(pa_memchunk *pchunk)
 
         ret = AudioRendererRenderFrame((char *) p + index, (uint64_t)length, &writeLen);
         if (writeLen > length) {
-            pa_log_error("Error writeLen > actual bytes. Length: %u, Written: %llu bytes, %d ret",
+            pa_log_error("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
         }
         if (writeLen == 0) {
-            pa_log_error("Failed to render Length: %u, Written: %llu bytes, %d ret",
+            pa_log_error("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
         } else {
-            pa_log_info("Success: outputting to audio renderer Length: %u, Written: %llu bytes, %d ret",
+            pa_log_info("Success: outputting to audio renderer Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                         length, writeLen, ret);
             count += writeLen;
             index += writeLen;
             length -= writeLen;
-            pa_log_info("Remaining bytes Length: %u", length);
+            pa_log_info("Remaining bytes Length: %zu", length);
             if (length <= 0) {
                 break;
             }
