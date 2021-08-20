@@ -238,7 +238,7 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_64000,
     SAMPLE_RATE_96000
 };
-typedef void* AudioIOHandle;
+typedef uint32_t AudioIOHandle;
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
