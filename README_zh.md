@@ -5,11 +5,15 @@
 
 -   [目录](#section179mcpsimp)
 -   [使用说明](#section112738505318)
+    -   [音频播放](#section1147510562812)
+    -   [音频录制](#section295162052813)
+    -   [音频管理](#section645572311287)
+
 -   [相关仓](#section340mcpsimp)
 
 ## 简介<a name="section119mcpsimp"></a>
 
-音频组件支持音频业务的开发，提供音量管理。
+音频组件用于实现音频相关的功能，包括音频播放，录制，音量管理和设备管理。
 
 **图 1**  音频组件架构图<a name="fig483116248288"></a>  
 
@@ -58,38 +62,112 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 ## 使用说明<a name="section112738505318"></a>
 
-1.  获取音频控制器。
+### 音频播放<a name="section1147510562812"></a>
+
+可以使用此仓库内提供的接口将音频数据转换为音频模拟信号，使用输出设备播放音频信号，以及管理音频播放任务。以下步骤描述了如何使用AudioRenderer开发音频播放功能：
+
+1.  使用Create接口和所需流类型来获取AudioRenderer实例。
 
     ```
-    const audioManager = audio.getAudioManager();
+    AudioStreamType streamType = STREAM_MUSIC; // 流类型示例
+    std::unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
     ```
 
-2.  获取媒体流的音量。
+2.  （可选）静态API GetSupportedFormats\(\), GetSupportedChannels\(\), GetSupportedEncodingTypes\(\), GetSupportedSamplingRates\(\) 可用于获取支持的参数。
+3.  准备设备，调用实例的SetParams。
 
     ```
-    audioManager.getVolume(audio.AudioVolumeType.MEDIA, (err, value) => {
-       if (err) {
-    	   console.error(`failed to get volume ${err.message}`);
-    	   return;
-       }
-       console.log(`Media getVolume successful callback`);
-    });
+    AudioRendererParams rendererParams; 
+    rendererParams.sampleFormat = SAMPLE_S16LE; 
+    rendererParams.sampleRate = SAMPLE_RATE_44100; rendererParams.channelCount = STEREO；
+    rendererParams.encodingType = ENCODING_PCM;
+     
+    audioRenderer->SetParams(rendererParams);
     ```
 
-3.  改变媒体流的音量。
+4.  （可选）使用audioRenderer-\>GetParams（rendererParams）来验证SetParams。
+5.  AudioRenderer 实例调用audioRenderer-\>Start\(\) 函数来启动播放任务。
+6.  使用GetBufferSize接口获取要写入的缓冲区长度。
 
     ```
-    audioManager.setVolume(audio.AudioVolumeType.MEDIA, 30, (err)=>{
-       if (err) {
-    	   console.error(`failed to set volume ${err.message}`);
-    	   return;
-       }
-       console.log(`Media setVolume successful callback`);
-    })
+    audioRenderer->GetBufferSize(bufferLen);
     ```
 
+7.  从源（例如音频文件）读取要播放的音频数据并将其传输到字节流中。重复调用Write函数写入渲染数据。
+
+    ```
+    bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+    while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
+        bytesWritten += audioRenderer->Write(buffer + bytesWritten, bytesToWrite - bytesWritten);
+        if (bytesWritten < 0)
+            break;
+    }
+    ```
+
+8.  调用audioRenderer-\>Drain\(\)来清空播放流。
+9.  调用audioRenderer-\>Stop\(\)来停止输出。
+10. 播放任务完成后，调用AudioRenderer实例的audioRenderer-\>Release\(\)函数来释放资源。
+
+提供上述基本音频播放使用范例。更多接口说明请参考audio\_renderer.h 和audio\_info.h。
+
+### 音频录制<a name="section295162052813"></a>
+
+可以使用此仓库内提供的接口，让应用程序可以完成使用输入设备进行声音录制，将语音转换为音频数据，并管理录制的任务。以下步骤描述了如何使用AudioReorder开发音频录制功能：
+
+1.  使用Create接口和所需流类型来获取AudioRecorder实例。
+
+    ```
+    AudioStreamType streamType = STREAM_MUSIC; 
+    std::unique_ptr<AudioRecorder> audioRecorder = AudioRecorder::Create(streamType);
+    ```
+
+2.  （可选）静态API GetSupportedFormats\(\), GetSupportedChannels\(\), GetSupportedEncodingTypes\(\), GetSupportedSamplingRates\(\) 可用于获取支持的参数。
+3.  准备设备，调用实例的SetParams。
+
+    ```
+    AudioRecorderParams recorderParams; 
+    recorderParams.sampleFormat = SAMPLE_S16LE; 
+    recorderParams.sampleRate = SAMPLE_RATE_44100; recorderParams.channelCount = STEREO；
+    recorderParams.encodingType = ENCODING_PCM;
+     
+    audioRecorder->SetParams(recorderParams);
+    ```
+
+4.  （可选）使用 audioRecorder-\>GetParams\(recorderParams\) 来验证 SetParams\(\)。
+5.  AudioRecorder 实例调用 audioRenderer-\>Start\(\) 函数来启动录音任务。
+6.  使用GetBufferSize接口获取要写入的缓冲区长度。
+
+    ```
+    audioRecorder->GetBufferSize(bufferLen);
+    ```
+
+7.  读取录制的音频数据并将其转换为字节流。重复调用read函数读取数据直到主动停止。
+
+    ```
+    // set isBlocking = true/false for blocking/non-blocking read
+    bytesRead = audioRecorder->Read(*buffer, bufferLen, isBlocking);
+    while (numBuffersToRecord) {
+        bytesRead = audioRecorder->Read(*buffer, bufferLen, isBlockingRead);
+        if (bytesRead < 0) {
+            break;
+        } else if (bytesRead > 0) {
+            fwrite(buffer, size, bytesRead, recFile); // example shows writes the recored data into a file
+            numBuffersToRecord--;
+        }
+    }
+    ```
+
+8.  （可选）调用audioRecorder-\>Flush\(\) 来清空录音流缓冲区。
+9.  AudioRecorder 实例调用 audioRecorder-\>Stop\(\) 函数停止录音。
+10. 录音任务完成后，调用AudioRecorder 实例的audioRecorder-\>Release\(\) 函数释放资源。
+
+提供上述基本音频录制使用范例。更多API请参考audio\_recorder.h和audio\_info.h。
+
+### 音频管理<a name="section645572311287"></a>
+
+JS应用可以使用音频管理器提供的API来控制音量和设备。有关音频音量和设备管理的JS用法，请参考音频管理JS接口说明。
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
-媒体子系统仓：multimedia\_audio\_standard
+[multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_standard)
 
