@@ -100,6 +100,8 @@ int32_t PulseAudioPolicyManager::SetStreamVolume(AudioStreamType streamType, flo
         return ERROR;
     }
 
+    pa_threaded_mainloop_lock(mMainLoop);
+
     // Incase if KvStore didnot connect during  bootup
     if (mAudioPolicyKvStore == nullptr) {
         bool isFirstBoot = false;
@@ -108,8 +110,6 @@ int32_t PulseAudioPolicyManager::SetStreamVolume(AudioStreamType streamType, flo
 
     mVolumeMap[streamType] = volume;
     WriteVolumeToKvStore(streamType, volume);
-
-    pa_threaded_mainloop_lock(mMainLoop);
 
     pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
         PulseAudioPolicyManager::GetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
@@ -120,9 +120,7 @@ int32_t PulseAudioPolicyManager::SetStreamVolume(AudioStreamType streamType, flo
     }
     userData.release();
 
-    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mMainLoop);
-    }
+    pa_threaded_mainloop_accept(mMainLoop);
 
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
@@ -775,7 +773,7 @@ void PulseAudioPolicyManager::GetSinkInputInfoVolumeCb(pa_context *c, const pa_s
     }
 
     if (eol) {
-        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
         delete userData;
         return;
     }
