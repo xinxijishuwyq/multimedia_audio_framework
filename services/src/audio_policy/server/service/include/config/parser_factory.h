@@ -36,6 +36,7 @@ public:
 private:
     ParserFactory(ParserFactory&) = delete;
     ParserFactory() {}
+    ~ParserFactory() {}
 };
 } // namespace AudioStandard
 } // namespace OHOS

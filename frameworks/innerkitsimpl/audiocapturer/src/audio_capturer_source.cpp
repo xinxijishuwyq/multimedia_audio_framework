@@ -27,9 +27,9 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/audio_capture.pcm";
 #endif // CAPTURE_DUMP
 
 AudioCapturerSource::AudioCapturerSource()
-    : capturerInited_(false), started_(false), paused_(false),
-      leftVolume_(MAX_VOLUME_LEVEL), rightVolume_(MAX_VOLUME_LEVEL),
-      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
+    : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
+      rightVolume_(MAX_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr),
+      handle_(nullptr)
 {
     attr_ = {};
 #ifdef CAPTURE_DUMP
@@ -128,6 +128,10 @@ int32_t AudioCapturerSource::InitAudioManager()
     }
 
     getAudioManager = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    if (getAudioManager == nullptr) {
+        return ERR_INVALID_HANDLE;
+    }
+
     audioManager_ = getAudioManager();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;

@@ -614,6 +614,7 @@ static void CommonCallbackRoutine(napi_env env, AudioManagerAsyncContext* &async
     napi_delete_async_work(env, asyncContext->work);
 
     delete asyncContext;
+    asyncContext = nullptr;
 }
 
 static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data)

@@ -869,7 +869,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Write_002, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -901,7 +901,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Write_003, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -935,7 +935,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Write_004, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -971,7 +971,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Write_005, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1010,7 +1010,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Write_006, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1050,7 +1050,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Write_007, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1088,7 +1088,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_GetAudioTime_001, TestSize.Level1
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1227,7 +1227,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Drain_001, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1356,7 +1356,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Stop_001, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1483,7 +1483,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_Release_001, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
@@ -1740,7 +1740,7 @@ HWTEST(AudioRendererModuleTest, Audio_Renderer_GetLatency_001, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
-    EXPECT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, wavFile);
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);

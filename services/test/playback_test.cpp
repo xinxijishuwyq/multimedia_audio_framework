@@ -79,8 +79,8 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
     size_t bytesWritten = 0;
     size_t minBytes = 4;
     int32_t writeError;
-    uint64_t timeStamp;
-    size_t bufferLen;
+    uint64_t timeStamp = 0;
+    size_t bufferLen = 0;
     StreamBuffer stream;
 
     if (client->GetMinimumBufferSize(bufferLen) < 0) {
@@ -91,6 +91,11 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
     MEDIA_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
 
     buffer = (uint8_t *) malloc(n * bufferLen);
+    if (buffer == nullptr) {
+        MEDIA_ERR_LOG("Failed to allocate buffer");
+        return -1;
+    }
+
     while (!feof(wavFile)) {
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
         bytesWritten = 0;
@@ -113,9 +118,16 @@ int main(int argc, char* argv[])
 {
     wav_hdr wavHeader;
     size_t headerSize = sizeof(wav_hdr);
-    FILE* wavFile = fopen(argv[1], "rb");
+    char *inputPath = argv[1];
+    char path[PATH_MAX + 1] = {0x00};
+    if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
+        MEDIA_ERR_LOG("Invalid path");
+        return -1;
+    }
+    MEDIA_INFO_LOG("path = %{public}s", path);
+    FILE* wavFile = fopen(path, "rb");
     if (wavFile == nullptr) {
-        fprintf(stderr, "Unable to open wave file");
+        MEDIA_ERR_LOG("Unable to open wave file");
         return -1;
     }
 
@@ -134,6 +146,7 @@ int main(int argc, char* argv[])
     std::unique_ptr client = std::make_unique<AudioServiceClient>();
     if (InitPlayback(client, audioParams) < 0) {
         MEDIA_INFO_LOG("Initialize playback failed");
+        fclose(wavFile);
         return -1;
     }
 
@@ -142,6 +155,7 @@ int main(int argc, char* argv[])
 
     if (StartPlayback(client, wavFile) < 0) {
         MEDIA_INFO_LOG("Start playback failed");
+        fclose(wavFile);
         return -1;
     }
 

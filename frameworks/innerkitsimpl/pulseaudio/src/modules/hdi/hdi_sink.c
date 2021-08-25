@@ -205,7 +205,8 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     size_t nbytes;
 
     pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct Userdata *)s->userdata;
+    pa_assert_se(u);
 
     u->block_usec = pa_sink_get_requested_latency_within_thread(s);
 
@@ -251,7 +252,8 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     struct Userdata *u = NULL;
 
     pa_assert(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct Userdata *)s->userdata;
+    pa_assert_se(u);
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
         if (PA_SINK_IS_OPENED(newState)) {
@@ -292,6 +294,7 @@ static int32_t PrepareDevice(const pa_sample_spec *ss)
     int32_t ret;
 
     sample_attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    sample_attrs.sampleFmt = AUDIO_FORMAT_PCM_16_BIT;
     sample_attrs.sampleRate = ss->rate;
     sample_attrs.channel = ss->channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
@@ -425,10 +428,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     return u->sink;
 fail:
     pa_xfree(threadName);
-
-    if (u) {
-        UserdataFree(u);
-    }
+    UserdataFree(u);
 
     return NULL;
 }
@@ -467,7 +467,8 @@ void PaHdiSinkFree(pa_sink *s)
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct Userdata *)s->userdata;
+    pa_assert_se(u);
 
     UserdataFree(u);
 }
