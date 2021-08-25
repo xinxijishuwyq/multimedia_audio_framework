@@ -49,7 +49,7 @@ State AudioStream::GetState()
 
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    uint64_t paTimeStamp;
+    uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
         MEDIA_DEBUG_LOG("AudioStream: GetAudioTime in microseconds: %{public}" PRIu64, paTimeStamp);
         timestamp.time.tv_sec = static_cast<time_t>(paTimeStamp / TIME_CONVERSION_US_S);

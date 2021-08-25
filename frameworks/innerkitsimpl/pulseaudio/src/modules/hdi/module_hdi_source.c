@@ -86,7 +86,8 @@ int pa__get_n_used(pa_module *m)
     pa_source *source = NULL;
 
     pa_assert(m);
-    pa_assert_se(source = m->userdata);
+    source = (pa_source *)m->userdata;
+    pa_assert_se(source);
 
     return pa_source_linked_by(source);
 }

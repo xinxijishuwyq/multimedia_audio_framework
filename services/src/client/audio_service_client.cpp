@@ -52,6 +52,7 @@ AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec pa
 
     audioParams.channels = paSampleSpec.channels;
     audioParams.samplingRate = paSampleSpec.rate;
+    audioParams.encoding = ENCODING_PCM;
 
     switch (paSampleSpec.format) {
         case PA_SAMPLE_U8:
@@ -204,6 +205,8 @@ AudioServiceClient::AudioServiceClient()
     mVolumeFactor = 1.0f;
     mStreamType = STREAM_MUSIC;
     mAudioSystemMgr = NULL;
+
+    eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
     mAudioRendererCallbacks = NULL;
     mAudioCapturerCallbacks = NULL;
@@ -417,7 +420,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 
     if (result < 0) {
         error = pa_context_errno(context);
-        MEDIA_ERR_LOG("error in connection to stream");
+        MEDIA_ERR_LOG("connection to stream error: %{public}d", error);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
@@ -431,7 +434,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         if (!PA_STREAM_IS_GOOD(state)) {
             error = pa_context_errno(context);
             pa_threaded_mainloop_unlock(mainLoop);
-            MEDIA_ERR_LOG("error in connection to stream");
+            MEDIA_ERR_LOG("connection to stream error: %{public}d", error);
             ResetPAAudioClient();
             return AUDIO_CLIENT_CREATE_STREAM_ERR;
         }
@@ -544,7 +547,7 @@ int32_t AudioServiceClient::StartStream()
     if (state != PA_STREAM_READY) {
         error = pa_context_errno(context);
         pa_threaded_mainloop_unlock(mainLoop);
-        MEDIA_ERR_LOG("Stream Start Failed");
+        MEDIA_ERR_LOG("Stream Start Failed, error: %{public}d", error);
         ResetPAAudioClient();
         return AUDIO_CLIENT_START_STREAM_ERR;
     }
@@ -617,12 +620,17 @@ int32_t AudioServiceClient::FlushStream()
     if (state != PA_STREAM_READY) {
         error = pa_context_errno(context);
         pa_threaded_mainloop_unlock(mainLoop);
-        MEDIA_ERR_LOG("Stream Flush Failed");
+        MEDIA_ERR_LOG("Stream Flush Failed, error: %{public}d", error);
         return AUDIO_CLIENT_ERR;
     }
 
     streamCmdStatus = 0;
     operation = pa_stream_flush(paStream, PAStreamCmdSuccessCb, (void *) this);
+    if (operation == NULL) {
+        MEDIA_ERR_LOG("Stream Flush Operation Failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -855,7 +863,10 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
 int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize)
 {
     size_t l = (internalRdBufLen < length) ? internalRdBufLen : length;
-    memcpy_s(buffer, length, (const uint8_t*) internalReadBuffer + internalRdBufIndex, l);
+    if (memcpy_s(buffer, length, (const uint8_t*) internalReadBuffer + internalRdBufIndex, l)) {
+        MEDIA_ERR_LOG("Update read buffer failed");
+        return AUDIO_CLIENT_READ_STREAM_ERR;
+    }
 
     length -= l;
     internalRdBufIndex += l;
@@ -1175,8 +1186,13 @@ void AudioServiceClient::GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_i
     int32_t systemVolumeInt
         = thiz->mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(thiz->mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-
     float vol = systemVolume * thiz->mVolumeFactor;
+
+    AudioRingerMode ringerMode = thiz->mAudioSystemMgr->GetRingerMode();
+    if ((thiz->mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
+        vol = MIN_STREAM_VOLUME_LEVEL;
+    }
+
     int32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, NULL, NULL));

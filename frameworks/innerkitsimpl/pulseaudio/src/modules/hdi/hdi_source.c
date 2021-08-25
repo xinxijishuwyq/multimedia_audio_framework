@@ -119,7 +119,8 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
 static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_state, pa_suspend_cause_t new_suspend_cause) {
     struct userdata *u = NULL;
     pa_assert(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct userdata *)s->userdata;
+    pa_assert_se(u);
     if (s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) {
         if (PA_SOURCE_IS_OPENED(new_state))
             u->timestamp = pa_rtclock_now();
@@ -407,18 +408,20 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char*driver) {
 fail:
     pa_xfree(thread_name);
 
-    if (u->IsCapturerInit)
-        pa_capturer_exit();
-
-    if (u)
+    if (u) {
+        if (u->IsCapturerInit) {
+            pa_capturer_exit();
+        }
         userdata_free(u);
+    }
 
     return NULL;
 }
 
 void pa_hdi_source_free(pa_source *s) {
-    struct userdata *u;
+    struct userdata *u = NULL;
     pa_source_assert_ref(s);
-    pa_assert_se(u = s->userdata);
+    u = (struct userdata *)s->userdata;
+    pa_assert_se(u);
     userdata_free(u);
 }

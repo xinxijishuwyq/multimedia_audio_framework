@@ -47,6 +47,7 @@ enum NodeName {
 enum PortType {
     TYPE_AUDIO_PORT,
     TYPE_AUDIO_PORT_PIN,
+    TYPE_AUDIO_PORT_INVALID
 };
 
 class PortInfo {
@@ -60,7 +61,8 @@ public:
     char* fileName;
 
     PortInfo()
-        : name (nullptr),
+        : type(TYPE_AUDIO_PORT_INVALID),
+          name (nullptr),
           role (nullptr),
           rate (nullptr),
           channels (nullptr),

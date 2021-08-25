@@ -120,6 +120,11 @@ public:
         uint8_t* buffer = nullptr;
         int32_t n = 2;
         buffer = (uint8_t *) malloc(n * bufferLen);
+        if (buffer == nullptr) {
+            MEDIA_ERR_LOG("AudioRendererTest: Failed to allocate buffer");
+            return false;
+        }
+
         size_t bytesToWrite = 0;
         size_t bytesWritten = 0;
         size_t minBytes = 4;
@@ -198,7 +203,14 @@ public:
         int numBase = 10;
         wav_hdr wavHeader;
         size_t headerSize = sizeof(wav_hdr);
-        FILE* wavFile = fopen(argv[1], "rb");
+        char *inputPath = argv[1];
+        char path[PATH_MAX + 1] = {0x00};
+        if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
+            MEDIA_ERR_LOG("Invalid path");
+            return false;
+        }
+        MEDIA_INFO_LOG("AudioRendererTest: path = %{public}s", path);
+        FILE* wavFile = fopen(path, "rb");
         if (wavFile == nullptr) {
             MEDIA_INFO_LOG("AudioRendererTest: Unable to open wave file");
             return false;
@@ -220,11 +232,13 @@ public:
         rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
         if (!InitRender(audioRenderer, rendererParams)) {
             MEDIA_ERR_LOG("AudioRendererTest: Init render failed");
+            fclose(wavFile);
             return false;
         }
 
         if (!StartRender(audioRenderer, wavFile)) {
             MEDIA_ERR_LOG("AudioRendererTest: Start render failed");
+            fclose(wavFile);
             return false;
         }
 
