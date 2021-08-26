@@ -16,7 +16,7 @@
 #ifndef AUDIO_CAPTURER_SOURCE_H
 #define AUDIO_CAPTURER_SOURCE_H
 
-#include "audio_manager.h"
+#include "audio_proxy_manager.h"
 
 #include <cstdio>
 
@@ -71,7 +71,7 @@ private:
     float leftVolume_;
     float rightVolume_;
 
-    struct AudioManager *audioManager_;
+    struct AudioProxyManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioCapture *audioCapture_;
 

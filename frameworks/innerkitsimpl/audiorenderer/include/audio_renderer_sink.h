@@ -16,7 +16,7 @@
 #ifndef AUDIO_RENDERER_SINK_H
 #define AUDIO_RENDERER_SINK_H
 
-#include "audio_manager.h"
+#include "audio_proxy_manager.h"
 
 #include <cstdio>
 
@@ -54,7 +54,7 @@ private:
     bool paused_;
     float leftVolume_;
     float rightVolume_;
-    struct AudioManager *audioManager_;
+    struct AudioProxyManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     void *handle_;

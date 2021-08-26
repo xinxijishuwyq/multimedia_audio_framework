@@ -109,14 +109,17 @@ int32_t InitAttrs(struct AudioSampleAttributes &attrs)
 static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *adapterNameCase,
     enum AudioPortDirection portFlag, struct AudioPort *renderPort, int32_t size)
 {
+    if (descs == nullptr || adapterNameCase == nullptr || renderPort == nullptr) {
+        return ERROR;
+    }
+
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr) {
-            MEDIA_ERR_LOG("SwitchAdapter Fail AudioAdapterDescriptor desc NULL");
-            return ERR_INVALID_INDEX;  // note: return invalid index not invalid handle
+            continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase)) {
-            for (uint32_t port = 0; ((desc != NULL) && (port < desc->portNum)); port++) {
+            for (uint32_t port = 0; ((desc != nullptr) && (port < desc->portNum)); port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     *renderPort = desc->ports[port];
@@ -132,8 +135,9 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *a
 
 int32_t AudioRendererSink::InitAudioManager()
 {
-    char resolvedPath[100] = "/system/lib/libhdi_audio.z.so";
-    struct AudioManager *(*getAudioManager)() = nullptr;
+    MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
+    char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
+    struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
     if (handle_ == nullptr) {
@@ -141,7 +145,7 @@ int32_t AudioRendererSink::InitAudioManager()
         return ERR_INVALID_HANDLE;
     }
 
-    getAudioManager = (struct AudioManager* (*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     if (getAudioManager == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -195,10 +199,11 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-    int32_t size = -1;
+    int32_t size = 0;
+    int32_t ret;
     struct AudioAdapterDescriptor *descs = nullptr;
-    audioManager_->GetAllAdapters(audioManager_, &descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr) {
+    ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret < 0) {
         MEDIA_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
