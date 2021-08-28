@@ -83,8 +83,7 @@ int pa__get_n_used(pa_module *m)
     pa_sink *sink = NULL;
 
     pa_assert(m);
-    sink = (pa_sink *)m->userdata;
-    pa_assert_se(sink);
+    pa_assert_se(sink = m->userdata);
 
     return pa_sink_linked_by(sink);
 }

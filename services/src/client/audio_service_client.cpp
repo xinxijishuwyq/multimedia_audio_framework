@@ -218,6 +218,7 @@ AudioServiceClient::AudioServiceClient()
 
     internalRdBufIndex = 0;
     internalRdBufLen = 0;
+    streamCmdStatus = 0;
     underFlowCount = 0;
 
     acache.readIndex = 0;
@@ -314,6 +315,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     if (pa_context_connect(context, NULL, PA_CONTEXT_NOFAIL, NULL) < 0) {
         error = pa_context_errno(context);
+        MEDIA_ERR_LOG("context connect error: %{public}d", error);
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
@@ -337,7 +339,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
             error = pa_context_errno(context);
-            // log the error
+            MEDIA_ERR_LOG("context bad state error: %{public}d", error);
             pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioClient();
             return AUDIO_CLIENT_INIT_ERR;
@@ -830,7 +832,6 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     size_t length = acache.totalCacheSize;
 
     error = PaWriteStream(buffer, length);
-
     if (!error && (length >= 0) && !acache.isFull) {
         uint8_t *cacheBuffer = acache.buffer.get();
         uint32_t offset = acache.readIndex;
@@ -1077,7 +1078,8 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 
         // Total latency will be sum of audio write cache latency + PA latency
         latency = paLatency + cacheLatency;
-        MEDIA_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
+        MEDIA_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
+            PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         // Get audio read cache latency
         cacheLatency = pa_bytes_to_usec(internalRdBufLen, &sampleSpec);

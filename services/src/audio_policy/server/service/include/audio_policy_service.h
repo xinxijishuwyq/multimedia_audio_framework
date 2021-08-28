@@ -30,10 +30,11 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyService : public IPortObserver {
 public:
-    static constexpr char HDI_SINK[] = "hdi_output";
-    static constexpr char HDI_SOURCE[] = "hdi_input";
-    static constexpr char BLUEZ_SINK[] = "fifo_output";
-    static constexpr char BLUEZ_SOURCE[] = "fifo_input";
+    const std::string HDI_SINK = "hdi_output";
+    const std::string HDI_SOURCE = "hdi_input";
+    const std::string BLUEZ_SINK = "fifo_output";
+    const std::string BLUEZ_SOURCE = "fifo_input";
+    const std::string PORT_NONE = "none";
 
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -101,6 +102,7 @@ private:
     std::unordered_map<std::string, AudioIOHandle> mIOHandles;
     std::list<DeviceType> mActiveOutputDevices;
     std::list<DeviceType> mActiveInputDevices;
+    std::string GetPortName(DeviceType deviceType);
 };
 } // namespace AudioStandard
 } // namespace OHOS

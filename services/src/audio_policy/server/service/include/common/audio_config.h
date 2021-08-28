@@ -20,14 +20,8 @@
 
 #include "audio_info.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#ifdef __cplusplus
-}
-#endif
 
 namespace OHOS {
 namespace AudioStandard {

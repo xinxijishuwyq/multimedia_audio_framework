@@ -102,8 +102,7 @@ public:
             return false;
         }
 
-        uint8_t* buffer = nullptr;
-        buffer = (uint8_t *) malloc(bufferLen);
+        uint8_t* buffer = (uint8_t *) malloc(bufferLen);
         if (buffer == nullptr) {
             MEDIA_ERR_LOG("AudioCapturerTest: Failed to allocate buffer");
             return false;
@@ -111,11 +110,10 @@ public:
 
         size_t size = 1;
         size_t numBuffersToCapture = 1024;
-        int32_t len = 0;
         while (numBuffersToCapture) {
             size_t bytesRead = 0;
             while (bytesRead < bufferLen) {
-                len = audioCapturer->Read(*(buffer + bytesRead), bufferLen - bytesRead, isBlocking);
+                int32_t len = audioCapturer->Read(*(buffer + bytesRead), bufferLen - bytesRead, isBlocking);
                 if (len >= 0) {
                     bytesRead += len;
                 } else {
@@ -133,7 +131,6 @@ public:
                     && (audioCapturer->Stop())) {
                     MEDIA_INFO_LOG("Audio capture stopped for 2 seconds");
                     sleep(AudioTestConstants::PAUSE_READ_TIME_SECONDS);
-                    MEDIA_INFO_LOG("Audio capture resume");
                     if (!audioCapturer->Start()) {
                         MEDIA_ERR_LOG("resume stream failed");
                         audioCapturer->Release();

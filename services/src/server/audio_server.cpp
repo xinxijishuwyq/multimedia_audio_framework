@@ -77,7 +77,6 @@ void AudioServer::OnStart()
 void AudioServer::OnStop()
 {
     MEDIA_DEBUG_LOG("AudioService OnStop");
-
 }
 
 void AudioServer::SetAudioParameter(const std::string key, const std::string value)
