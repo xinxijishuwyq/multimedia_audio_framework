@@ -205,8 +205,7 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     size_t nbytes;
 
     pa_sink_assert_ref(s);
-    u = (struct Userdata *)s->userdata;
-    pa_assert_se(u);
+    pa_assert_se(u = s->userdata);
 
     u->block_usec = pa_sink_get_requested_latency_within_thread(s);
 
@@ -252,8 +251,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     struct Userdata *u = NULL;
 
     pa_assert(s);
-    u = (struct Userdata *)s->userdata;
-    pa_assert_se(u);
+    pa_assert_se(u = s->userdata);
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
         if (PA_SINK_IS_OPENED(newState)) {
@@ -467,8 +465,7 @@ void PaHdiSinkFree(pa_sink *s)
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);
-    u = (struct Userdata *)s->userdata;
-    pa_assert_se(u);
+    pa_assert_se(u = s->userdata);
 
     UserdataFree(u);
 }

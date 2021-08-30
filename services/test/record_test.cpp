@@ -43,43 +43,48 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const{}
 };
 
-int main(int argc, char* argv[])
+static bool InitClient(std::unique_ptr<AudioServiceClient> &client, uint32_t samplingRate)
 {
-    int32_t rateArgIndex = 2;
-
     AudioStreamParams audioParams;
     audioParams.format = DEFAULT_FORMAT;
-    audioParams.samplingRate = atoi(argv[rateArgIndex]);
+    audioParams.samplingRate = samplingRate;
     audioParams.channels = DEFAULT_CHANNELS;
-    StreamBuffer stream;
-
-    RecordTest customCb;
-
-    std::unique_ptr client = std::make_unique<AudioServiceClient>();
-    if (client == nullptr) {
-        MEDIA_ERR_LOG("Create AudioServiceClient instance failed");
-        return -1;
-    }
 
     MEDIA_INFO_LOG("Initializing of AudioServiceClient");
     if (client->Initialize(AUDIO_SERVICE_CLIENT_RECORD) < 0)
-        return -1;
+        return false;
 
+    RecordTest customCb;
     client->RegisterAudioCapturerCallbacks(customCb);
 
     MEDIA_INFO_LOG("Creating Stream");
     if (client->CreateStream(audioParams, STREAM_MUSIC) < 0) {
         client->ReleaseStream();
-        return -1;
+        return false;
     }
 
     MEDIA_INFO_LOG("Starting Stream");
     if (client->StartStream() < 0)
+        return false;
+
+    return true;
+}
+
+int main(int argc, char* argv[])
+{
+    std::unique_ptr client = std::make_unique<AudioServiceClient>();
+    if (client == nullptr) {
         return -1;
+    }
+
+    int32_t rateArgIndex = 2;
+    if (!InitClient(client, atoi(argv[rateArgIndex]))) {
+        MEDIA_ERR_LOG("Initialize client failed");
+        return -1;
+    }
 
     size_t bufferLen;
     if (client->GetMinimumBufferSize(bufferLen) < 0) {
-        MEDIA_ERR_LOG(" GetMinimumBufferSize failed");
         return -1;
     }
 
@@ -97,6 +102,7 @@ int main(int argc, char* argv[])
     size_t size = 1;
     size_t numBuffersToCapture = 1024;
     uint64_t timeStamp;
+    StreamBuffer stream;
     stream.buffer = buffer;
     stream.bufferLen = bufferLen;
     int32_t bytesRead = 0;

@@ -67,6 +67,29 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return mAudioPolicyManager.IsStreamActive(streamType);
 }
 
+std::string AudioPolicyService::GetPortName(DeviceType deviceType)
+{
+    std::string portName = PORT_NONE;
+    switch (deviceType) {
+        case BLUETOOTH_A2DP:
+            portName = BLUEZ_SINK;
+            break;
+        case SPEAKER:
+            portName = HDI_SINK;
+            break;
+        case MIC:
+            portName = HDI_SOURCE;
+            break;
+        case BLUETOOTH_SCO:
+            portName = BLUEZ_SOURCE;
+            break;
+        default:
+            portName = PORT_NONE;
+            break;
+    }
+    return portName;
+}
+
 int32_t AudioPolicyService::SetDeviceActive(DeviceType deviceType, bool active)
 {
     MEDIA_DEBUG_LOG("SetDeviceActive - Policy Service: deviceType %d", deviceType);
@@ -76,7 +99,7 @@ int32_t AudioPolicyService::SetDeviceActive(DeviceType deviceType, bool active)
 
     bool updateActiveDevices = true;
     AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
-    list<DeviceType>& activeDevices = GetActiveDevicesList(deviceType);
+    list<DeviceType> &activeDevices = GetActiveDevicesList(deviceType);
 
     if (!active) {
         if (activeDevices.size() <= 1) {
@@ -96,22 +119,11 @@ int32_t AudioPolicyService::SetDeviceActive(DeviceType deviceType, bool active)
     }
 
     int32_t result = 0;
-    switch (deviceType) {
-        case BLUETOOTH_A2DP:
-            result = mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, BLUEZ_SINK, active);
-            break;
-        case SPEAKER:
-            result = mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, HDI_SINK, active);
-            break;
-        case MIC:
-            result = mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, HDI_SOURCE, active);
-            break;
-        case BLUETOOTH_SCO:
-            result = mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, BLUEZ_SOURCE, active);
-            break;
-        default:
-            result = ERR_DEVICE_NOT_SUPPORTED;
-            break;
+    std::string portName = GetPortName(deviceType);
+    if (portName.compare(PORT_NONE)) {
+        result = mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, portName, active);
+    } else {
+        result = ERR_DEVICE_NOT_SUPPORTED;
     }
 
     if (!result) {

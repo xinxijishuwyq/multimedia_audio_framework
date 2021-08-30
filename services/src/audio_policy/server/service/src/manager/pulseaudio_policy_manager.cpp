@@ -297,13 +297,13 @@ AudioIOHandle PulseAudioPolicyManager::OpenAudioPort(std::shared_ptr<AudioPortIn
         if (audioPortInfo->fileName != nullptr) {
             if (access(audioPortInfo->fileName, F_OK) == 0) {
                 int32_t ret = std::remove(audioPortInfo->fileName);
-                if(ret) {
+                if (ret) {
                     MEDIA_ERR_LOG("[PolicyManager] Error Removing file: %{public}s Failed! ret val: %{public}d",
                                   audioPortInfo->fileName, ret);
                 }
             } else {
                 MEDIA_DEBUG_LOG("[PolicyManager] File: %{public}s does not exist!", audioPortInfo->fileName);
-           }
+            }
         } else {
             MEDIA_ERR_LOG("[PolicyManager] Error audioPortInfo->fileName is null!");
         }
@@ -496,7 +496,7 @@ bool PulseAudioPolicyManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     // open and initialize kvstore instance.
     if (mAudioPolicyKvStore == nullptr) {
         manager.GetSingleKvStore(
-        options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
+            options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
             if (status == Status::STORE_NOT_FOUND) {
                 MEDIA_ERR_LOG("[PolicyManager] InitAudioPolicyKvStore: STORE_NOT_FOUND!");
                 return;
@@ -511,7 +511,7 @@ bool PulseAudioPolicyManager::InitAudioPolicyKvStore(bool& isFirstBoot)
         options.createIfMissing = true;
         // [create and] open and initialize kvstore instance.
         manager.GetSingleKvStore(
-         options, appId, storeId,[&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
+            options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
             if (status != Status::SUCCESS) {
                 MEDIA_ERR_LOG("[PolicyManager] Create AudioPolicyKvStore Failed!");
                 return;
@@ -632,10 +632,10 @@ void PulseAudioPolicyManager::WriteVolumeToKvStore(AudioStreamType streamType, f
     Status status = mAudioPolicyKvStore->Put(key, value);
     if (status == Status::SUCCESS) {
         MEDIA_INFO_LOG("[PolicyManager] volume %{public}f for %{public}s updated in kvStore", volume,
-                    GetStreamNameByStreamType(streamType).c_str());
+                       GetStreamNameByStreamType(streamType).c_str());
     } else {
         MEDIA_ERR_LOG("[PolicyManager] volume %{public}f for %{public}s failed to update in kvStore!", volume,
-                    GetStreamNameByStreamType(streamType).c_str());
+                      GetStreamNameByStreamType(streamType).c_str());
     }
 
     return;
@@ -919,7 +919,7 @@ void PulseAudioPolicyManager::GetSinkInputInfoMuteStatusCb(pa_context *c, const 
 }
 
 void PulseAudioPolicyManager::GetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
-                                                          void *userdata)
+                                                           void *userdata)
 {
     UserData* userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioPolicyManager* thiz = userData->thiz;

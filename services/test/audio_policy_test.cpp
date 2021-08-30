@@ -65,33 +65,32 @@ static void PrintUsage(void)
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }
 
-static void SetStreamVolume(const AudioSystemManager *audioSystemMgr, int streamType)
+static void HandleVolume(const AudioSystemManager *audioSystemMgr, int streamType, char option)
 {
-    float volume = strtof(optarg, nullptr);
-    cout << "Set Volume : " << volume << endl;
-    int32_t result = audioSystemMgr->SetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType), volume);
-    cout << "Set Volume Result: " << result << endl;
+    if (option == 'v') {
+        float volume = audioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
+        cout << "Get Volume : " << volume << endl;
+    } else {
+        float volume = strtof(optarg, nullptr);
+        cout << "Set Volume : " << volume << endl;
+        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
+                                                   volume);
+        cout << "Set Volume Result: " << result << endl;
+    }
 }
 
-static void GetStreamVolume(const AudioSystemManager *audioSystemMgr, int streamType)
+static void HandleMute(const AudioSystemManager *audioSystemMgr, int streamType, char option)
 {
-    float volume = audioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
-    cout << "Get Volume : " << volume << endl;
-}
-
-static void SetStreamMute(const AudioSystemManager *audioSystemMgr, int streamType)
-{
-    int mute = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
-    cout << "Set Mute : " << mute << endl;
-    int32_t result = audioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
-        (mute) ? true : false);
-    cout << "Set Mute Result: " << result << endl;
-}
-
-static void IsStreamMute(const AudioSystemManager *audioSystemMgr, int streamType)
-{
-    bool muteStatus = audioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
-    cout << "Get Mute : " << muteStatus << endl;
+    if (option == 'm') {
+        bool muteStatus = audioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
+        cout << "Get Mute : " << muteStatus << endl;
+    } else {
+        int mute = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
+        cout << "Set Mute : " << mute << endl;
+        int32_t result = audioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
+            (mute) ? true : false);
+        cout << "Set Mute Result: " << result << endl;
+    }
 }
 
 static void SetStreamType(int &streamType)
@@ -131,17 +130,16 @@ static void IsDeviceActive(const AudioSystemManager *audioSystemMgr)
     cout << "GetDevice Active : " << devActiveStatus << endl;
 }
 
-static void SetRingerMode(const AudioSystemManager *audioSystemMgr)
+static void HandleRingerMode(const AudioSystemManager *audioSystemMgr, char option)
 {
-    int ringMode = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
-    cout << "Set Ringer Mode : " << ringMode << endl;
-    audioSystemMgr->SetRingerMode(static_cast<AudioRingerMode>(ringMode));
-}
-
-static void GetRingerMode(const AudioSystemManager *audioSystemMgr)
-{
-    int ringMode = static_cast<int32_t>(audioSystemMgr->GetRingerMode());
-    cout << "Get Ringer Mode : " << ringMode << endl;
+    if (option == 'r') {
+        int ringMode = static_cast<int32_t>(audioSystemMgr->GetRingerMode());
+        cout << "Get Ringer Mode : " << ringMode << endl;
+    } else {
+        int ringMode = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
+        cout << "Set Ringer Mode : " << ringMode << endl;
+        audioSystemMgr->SetRingerMode(static_cast<AudioRingerMode>(ringMode));
+    }
 }
 
 static void NoValueError()
@@ -175,16 +173,12 @@ int main(int argc, char* argv[])
     while ((opt = getopt(argc, argv, ":V:S:D:M:R:d:s:vmr")) != -1) {
         switch (opt) {
             case 'V':
-                SetStreamVolume(audioSystemMgr, streamType);
-                break;
             case 'v':
-                GetStreamVolume(audioSystemMgr, streamType);
+                HandleVolume(audioSystemMgr, streamType, opt);
                 break;
             case 'M':
-                SetStreamMute(audioSystemMgr, streamType);
-                break;
             case 'm':
-                IsStreamMute(audioSystemMgr, streamType);
+                HandleMute(audioSystemMgr, streamType, opt);
                 break;
             case 'S':
                 SetStreamType(streamType);
@@ -199,10 +193,8 @@ int main(int argc, char* argv[])
                 IsDeviceActive(audioSystemMgr);
                 break;
             case 'R':
-                SetRingerMode(audioSystemMgr);
-                break;
             case 'r':
-                GetRingerMode(audioSystemMgr);
+                HandleRingerMode(audioSystemMgr, opt);
                 break;
             case ':':
                 NoValueError();

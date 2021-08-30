@@ -101,25 +101,73 @@ public:
         return true;
     }
 
-    bool StartRender(const unique_ptr<AudioRenderer> &audioRenderer, FILE* wavFile) const
+    bool TestPauseStop(const unique_ptr<AudioRenderer> &audioRenderer, bool &pauseTested, bool &stopTested,
+                       FILE *wavFile) const
     {
-        size_t bufferLen;
+        uint64_t currFilePos = ftell(wavFile);
+        if (!stopTested && (currFilePos > AudioTestConstants::STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
+            stopTested = true;
+            sleep(AudioTestConstants::STOP_RENDER_TIME_SECONDS);
+            MEDIA_INFO_LOG("Audio render resume");
+            if (!audioRenderer->Start()) {
+                MEDIA_ERR_LOG("resume stream failed");
+                return false;
+            }
+        } else if (!pauseTested && (currFilePos > AudioTestConstants::PAUSE_BUFFER_POSITION)
+                   && audioRenderer->Pause()) {
+            pauseTested = true;
+            sleep(AudioTestConstants::PAUSE_RENDER_TIME_SECONDS);
+            MEDIA_INFO_LOG("Audio render resume");
+            if (audioRenderer->SetVolume(1.0) == AudioTestConstants::SUCCESS) {
+                MEDIA_INFO_LOG("AudioRendererTest: after resume volume set to: %{public}f",
+                               audioRenderer->GetVolume());
+            }
+            if (!audioRenderer->Flush()) {
+                MEDIA_ERR_LOG("AudioRendererTest: flush failed");
+                return false;
+            }
+            if (!audioRenderer->Start()) {
+                MEDIA_ERR_LOG("resume stream failed");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void PrintTimeStamp(const unique_ptr<AudioRenderer> &audioRenderer) const
+    {
+        Timestamp timeStamp;
+        if (audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC)) {
+            MEDIA_INFO_LOG("AudioRendererTest: Timestamp seconds: %{public}ld", timeStamp.time.tv_sec);
+            MEDIA_INFO_LOG("AudioRendererTest: Timestamp nanoseconds: %{public}ld", timeStamp.time.tv_nsec);
+        }
+    }
+
+    bool GetBufferLen(const unique_ptr<AudioRenderer> &audioRenderer, size_t &bufferLen) const
+    {
         if (audioRenderer->GetBufferSize(bufferLen)) {
-            MEDIA_ERR_LOG("AudioRendererTest:  GetMinimumBufferSize failed");
             return false;
         }
         MEDIA_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
 
         uint32_t frameCount;
         if (audioRenderer->GetFrameCount(frameCount)) {
-            MEDIA_ERR_LOG("AudioRendererTest:  GetMinimumFrameCount failed");
             return false;
         }
         MEDIA_INFO_LOG("AudioRendererTest: Frame count: %{public}d", frameCount);
+        return true;
+    }
 
-        uint8_t* buffer = nullptr;
+    bool StartRender(const unique_ptr<AudioRenderer> &audioRenderer, FILE* wavFile) const
+    {
+        size_t bufferLen = 0;
+        if (!GetBufferLen(audioRenderer, bufferLen)) {
+            return false;
+        }
+
         int32_t n = 2;
-        buffer = (uint8_t *) malloc(n * bufferLen);
+        uint8_t *buffer = (uint8_t *) malloc(n * bufferLen);
         if (buffer == nullptr) {
             MEDIA_ERR_LOG("AudioRendererTest: Failed to allocate buffer");
             return false;
@@ -137,34 +185,8 @@ public:
             bytesWritten = 0;
             MEDIA_INFO_LOG("AudioRendererTest: Bytes to write: %{public}zu", bytesToWrite);
 
-            uint64_t currFilePos = ftell(wavFile);
-            if (!stopTested && (currFilePos > AudioTestConstants::STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
-                MEDIA_INFO_LOG("Audio render stopping for 1 second");
-                stopTested = true;
-                sleep(AudioTestConstants::STOP_RENDER_TIME_SECONDS);
-                MEDIA_INFO_LOG("Audio render resume");
-                if (!audioRenderer->Start()) {
-                    MEDIA_ERR_LOG("resume stream failed");
-                    break;
-                }
-            } else if (!pauseTested && (currFilePos > AudioTestConstants::PAUSE_BUFFER_POSITION)
-                       && audioRenderer->Pause()) {
-                MEDIA_INFO_LOG("Audio render pausing for 1 second");
-                pauseTested = true;
-                sleep(AudioTestConstants::PAUSE_RENDER_TIME_SECONDS);
-                MEDIA_INFO_LOG("Audio render resume");
-                if (audioRenderer->SetVolume(1.0) == AudioTestConstants::SUCCESS) {
-                    MEDIA_INFO_LOG("AudioRendererTest: after resume volume set to: %{public}f",
-                                   audioRenderer->GetVolume());
-                }
-                if (!audioRenderer->Flush()) {
-                    MEDIA_ERR_LOG("AudioRendererTest: flush failed");
-                    break;
-                }
-                if (!audioRenderer->Start()) {
-                    MEDIA_ERR_LOG("resume stream failed");
-                    break;
-                }
+            if (!TestPauseStop(audioRenderer, pauseTested, stopTested, wavFile)) {
+                break;
             }
 
             if (audioRenderer->GetLatency(latency)) {
@@ -182,15 +204,12 @@ public:
             }
         }
 
+        PrintTimeStamp(audioRenderer);
+
         if (!audioRenderer->Drain()) {
             MEDIA_ERR_LOG("AudioRendererTest: Drain failed");
         }
 
-        Timestamp timeStamp;
-        if (audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC)) {
-            MEDIA_INFO_LOG("AudioRendererTest: Timestamp seconds: %{public}ld", timeStamp.time.tv_sec);
-            MEDIA_INFO_LOG("AudioRendererTest: Timestamp nanoseconds: %{public}ld", timeStamp.time.tv_nsec);
-        }
         free(buffer);
 
         return true;
