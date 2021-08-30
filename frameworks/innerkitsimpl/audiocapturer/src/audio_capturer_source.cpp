@@ -95,14 +95,17 @@ int32_t InitAttrsCapture(struct AudioSampleAttributes &attrs)
 int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *adapterNameCase,
     enum AudioPortDirection portFlag, struct AudioPort *capturePort, const int32_t size)
 {
+    if (descs == nullptr || adapterNameCase == nullptr || capturePort == nullptr) {
+        return ERROR;
+    }
+
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr) {
-            MEDIA_ERR_LOG("SwitchAdapter Fail AudioAdapterDescriptor desc NULL");
-            return ERR_INVALID_INDEX;  // note: return invalid index not invalid handle
+            continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase)) {
-            for (uint32_t port = 0; ((desc != NULL) && (port < desc->portNum)); port++) {
+            for (uint32_t port = 0; ((desc != nullptr) && (port < desc->portNum)); port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     *capturePort = desc->ports[port];
@@ -118,8 +121,9 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *a
 
 int32_t AudioCapturerSource::InitAudioManager()
 {
-    char resolvedPath[100] = "/system/lib/libhdi_audio.z.so";
-    struct AudioManager *(*getAudioManager)() = nullptr;
+    MEDIA_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
+    char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
+    struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
     if (handle_ == nullptr) {
@@ -127,7 +131,7 @@ int32_t AudioCapturerSource::InitAudioManager()
         return ERR_INVALID_HANDLE;
     }
 
-    getAudioManager = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     if (getAudioManager == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -194,7 +198,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     }
 
     // Get qualified sound card and port
-    char adapterNameCase[PATH_LEN] = "internal";
+    char adapterNameCase[PATH_LEN] = "usb";
     index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, &capturePort, size);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Fail");

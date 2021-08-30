@@ -16,9 +16,7 @@ import("//drivers/adapter/uhdf2/uhdf.gni")
 
 ohos_shared_library("audio_capturer_source") {
   install_enable = true
-  sources = [
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer_source.cpp",
-  ]
+  sources = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
@@ -30,13 +28,12 @@ ohos_shared_library("audio_capturer_source") {
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
+    "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
     "//third_party/bounds_checking_function/include",
   ]
   public_configs = [ ":audio_external_library_config" ]
 
   deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//third_party/bounds_checking_function:libsec_static",
     "$hdf_uhdf_path/config:libhdf_hcs",
     "$hdf_uhdf_path/hcs:hdf_default.hcb",
     "$hdf_uhdf_path/hdi:libhdi",
@@ -46,6 +43,8 @@ ohos_shared_library("audio_capturer_source") {
     "$hdf_uhdf_path/manager:hdf_devmgr",
     "$hdf_uhdf_path/manager:hdf_devmgr.rc",
     "$hdf_uhdf_path/osal:libhdf_utils",
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//third_party/bounds_checking_function:libsec_static",
   ]
 
   part_name = "multimedia_audio_standard"
@@ -53,5 +52,5 @@ ohos_shared_library("audio_capturer_source") {
 }
 
 config("audio_external_library_config") {
-  include_dirs = ["//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include"]
+  include_dirs = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include" ]
 }
