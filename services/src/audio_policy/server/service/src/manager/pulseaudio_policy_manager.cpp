@@ -666,15 +666,20 @@ void PulseAudioPolicyManager::HandleSinkInputEvent(pa_context *c, pa_subscriptio
     userData->thiz = this;
 
     if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW) {
+        pa_threaded_mainloop_lock(mMainLoop);
         pa_operation* operation = pa_context_get_sink_input_info(c, idx,
             PulseAudioPolicyManager::GetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
         if (operation == NULL) {
             MEDIA_ERR_LOG("[PolicyManager] pa_context_get_sink_input_info_list returned nullptr");
+            pa_threaded_mainloop_unlock(mMainLoop);
             return;
         }
         userData.release();
 
+        pa_threaded_mainloop_accept(mMainLoop);
+
         pa_operation_unref(operation);
+        pa_threaded_mainloop_unlock(mMainLoop);
     }
 
     return;
