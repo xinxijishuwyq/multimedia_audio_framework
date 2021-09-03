@@ -92,7 +92,7 @@ std::string AudioPolicyService::GetPortName(DeviceType deviceType)
 
 int32_t AudioPolicyService::SetDeviceActive(DeviceType deviceType, bool active)
 {
-    MEDIA_DEBUG_LOG("SetDeviceActive - Policy Service: deviceType %d", deviceType);
+    MEDIA_DEBUG_LOG("[Policy Service] deviceType %{public}d, activate?: %{public}d", deviceType, active);
 
     if (deviceType == DEVICE_TYPE_NONE)
         return ERR_DEVICE_NOT_SUPPORTED;
@@ -107,10 +107,12 @@ int32_t AudioPolicyService::SetDeviceActive(DeviceType deviceType, bool active)
             return ERROR;
         }
 
-        for (list<DeviceType>::const_iterator iter = activeDevices.begin();
-            iter != activeDevices.end(); ++iter) {
+        list<DeviceType>::const_iterator iter = activeDevices.begin();
+        while (iter != activeDevices.end()) {
             if (*iter == deviceType) {
-                activeDevices.erase(iter);
+                iter = activeDevices.erase(iter);
+            } else {
+                ++iter;
             }
         }
 
@@ -126,21 +128,24 @@ int32_t AudioPolicyService::SetDeviceActive(DeviceType deviceType, bool active)
         result = ERR_DEVICE_NOT_SUPPORTED;
     }
 
-    if (!result) {
-        if (updateActiveDevices) {
-            for (list<DeviceType>::const_iterator iter = activeDevices.begin();
-                iter != activeDevices.end(); ++iter) {
-                if (*iter == deviceType) {
-                    activeDevices.erase(iter);
-                }
-            }
-            activeDevices.push_front(deviceType);
-        }
-        return SUCCESS;
-    } else {
+    if (result) {
         MEDIA_ERR_LOG("SetDeviceActive - Policy Service: returned:%{public}d", result);
         return ERROR;
     }
+
+    if (updateActiveDevices) {
+        list<DeviceType>::const_iterator iter = activeDevices.begin();
+        while (iter != activeDevices.end()) {
+            if (*iter == deviceType) {
+                iter = activeDevices.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+        activeDevices.push_front(deviceType);
+    }
+
+    return SUCCESS;
 }
 
 bool AudioPolicyService::IsDeviceActive(DeviceType deviceType) const
