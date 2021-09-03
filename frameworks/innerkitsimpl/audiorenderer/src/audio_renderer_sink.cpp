@@ -266,16 +266,32 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
 
 int32_t AudioRendererSink::Start(void)
 {
-    if (!started_ && audioRender_ != nullptr) {
-        audioRender_->control.Start((AudioHandle)audioRender_);
-        started_ = true;
+    int32_t ret;
+
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::Start failed audioRender_ null");
+        return ERR_INVALID_HANDLE;
     }
+
+    if (!started_) {
+        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+        if (!ret) {
+            started_ = true;
+            return SUCCESS;
+        } else {
+            MEDIA_ERR_LOG("AudioRendererSink::Start failed!");
+            return ERR_NOT_STARTED;
+        }
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioRendererSink::SetVolume(float left, float right)
 {
+    int32_t ret;
     float volume;
+
     if (audioRender_ == nullptr) {
         MEDIA_ERR_LOG("AudioRendererSink::SetVolume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -290,8 +306,13 @@ int32_t AudioRendererSink::SetVolume(float left, float right)
     } else {
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
-    audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
-    return SUCCESS;
+
+    ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    if (ret) {
+        MEDIA_ERR_LOG("AudioRendererSink::Set volume failed!");
+    }
+
+    return ret;
 }
 
 int32_t AudioRendererSink::GetVolume(float &left, float &right)
@@ -325,43 +346,115 @@ int32_t AudioRendererSink::GetLatency(uint32_t *latency)
 
 int32_t AudioRendererSink::Stop(void)
 {
-    if (started_ && audioRender_ != nullptr) {
-        audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret;
+
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::Stop failed audioRender_ null");
+        return ERR_INVALID_HANDLE;
     }
-    started_ = false;
+
+    if (started_) {
+        ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        if (!ret) {
+            started_ = false;
+            return SUCCESS;
+        } else {
+            MEDIA_ERR_LOG("AudioRendererSink::Stop failed!");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioRendererSink::Pause(void)
 {
-    if (started_ && audioRender_ != nullptr) {
-        audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret;
+
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::Pause failed audioRender_ null");
+        return ERR_INVALID_HANDLE;
     }
-    paused_ = true;
+
+    if (!started_) {
+        MEDIA_ERR_LOG("AudioRendererSink::Pause invalid state!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (!paused_) {
+        ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+        if (!ret) {
+            paused_ = true;
+            return SUCCESS;
+        } else {
+            MEDIA_ERR_LOG("AudioRendererSink::Pause failed!");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioRendererSink::Resume(void)
 {
-    audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
-    paused_ = false;
+    int32_t ret;
+
+    if (audioRender_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererSink::Resume failed audioRender_ null");
+        return ERR_INVALID_HANDLE;
+    }
+
+    if (!started_) {
+        MEDIA_ERR_LOG("AudioRendererSink::Resume invalid state!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (paused_) {
+        ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+        if (!ret) {
+            paused_ = false;
+            return SUCCESS;
+        } else {
+            MEDIA_ERR_LOG("AudioRendererSink::Resume failed!");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioRendererSink::Reset(void)
 {
+    int32_t ret;
+
     if (started_ && audioRender_ != nullptr) {
-        audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        if (!ret) {
+            return SUCCESS;
+        } else {
+            MEDIA_ERR_LOG("AudioRendererSink::Reset failed!");
+            return ERR_OPERATION_FAILED;
+        }
     }
-    return SUCCESS;
+
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t AudioRendererSink::Flush(void)
 {
+    int32_t ret;
+
     if (started_ && audioRender_ != nullptr) {
-        audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        if (!ret) {
+            return SUCCESS;
+        } else {
+            MEDIA_ERR_LOG("AudioRendererSink::Flush failed!");
+            return ERR_OPERATION_FAILED;
+        }
     }
-    return SUCCESS;
+
+    return ERR_OPERATION_FAILED;
 }
 } // namespace AudioStandard
 } // namespace OHOS
