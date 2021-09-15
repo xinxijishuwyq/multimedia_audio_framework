@@ -104,11 +104,11 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     std::string name, bool active)
 {
     switch (deviceType) {
-        case InternalDeviceType::SPEAKER:
-        case InternalDeviceType::BLUETOOTH_SCO: {
+        case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
-        case InternalDeviceType::MIC: {
+        case InternalDeviceType::DEVICE_TYPE_MIC: {
             return mAudioServiceAdapter->SetDefaultSource(name);
         }
         default:

@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-using InternalDeviceType = AudioDeviceDescriptor::DeviceType;
+using InternalDeviceType = DeviceType;
 
 class AudioPolicyManager {
 public:

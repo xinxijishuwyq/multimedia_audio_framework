@@ -54,8 +54,8 @@ int AudioManagerStub::OnRemoteRequest(
         case GET_DEVICES: {
             MEDIA_DEBUG_LOG("GET_DEVICES AudioManagerStub");
             int deviceFlag = data.ReadInt32();
-            AudioDeviceDescriptor::DeviceFlag deviceFlagConfig =
-                   static_cast<AudioDeviceDescriptor::DeviceFlag>(deviceFlag);
+            DeviceFlag deviceFlagConfig =
+                   static_cast<DeviceFlag>(deviceFlag);
             std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
             int32_t size = devices.size();
             MEDIA_DEBUG_LOG("GET_DEVICES size= %{public}d", size);

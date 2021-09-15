@@ -240,7 +240,7 @@ bool AudioSystemManager::IsMicrophoneMute() const
     return g_sProxy->IsMicrophoneMute();
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag)
+std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
     const
 {
     return g_sProxy->GetDevices(deviceFlag);
@@ -275,8 +275,8 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &in)
     if (audioDeviceDescriptor == nullptr) {
         return nullptr;
     }
-    audioDeviceDescriptor->deviceType_ = static_cast<AudioDeviceDescriptor::DeviceType>(in.ReadInt32());
-    audioDeviceDescriptor->deviceRole_ = static_cast<AudioDeviceDescriptor::DeviceRole>(in.ReadInt32());
+    audioDeviceDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());
+    audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(in.ReadInt32());
     return audioDeviceDescriptor;
 }
 } // namespace AudioStandard

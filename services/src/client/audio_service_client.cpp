@@ -17,6 +17,8 @@
 #include "media_log.h"
 #include "securec.h"
 
+#include "unistd.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -84,19 +86,19 @@ pa_sample_spec AudioServiceClient::ConvertToPAAudioParams(AudioStreamParams audi
 
     switch ((AudioSampleFormat)audioParams.format) {
         case SAMPLE_U8:
-            paSampleSpec.format = (pa_sample_format_t) PA_SAMPLE_U8;
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_U8;
             break;
         case SAMPLE_S16LE:
-            paSampleSpec.format = (pa_sample_format_t) PA_SAMPLE_S16LE;
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S16LE;
             break;
         case SAMPLE_S24LE:
-            paSampleSpec.format = (pa_sample_format_t) PA_SAMPLE_S24LE;
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S24LE;
             break;
         case SAMPLE_S32LE:
-            paSampleSpec.format = (pa_sample_format_t) PA_SAMPLE_S32LE;
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S32LE;
             break;
         default:
-            paSampleSpec.format = (pa_sample_format_t) PA_SAMPLE_INVALID;
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_INVALID;
             break;
     }
 
@@ -119,7 +121,7 @@ static size_t AlignToAudioFrameSize(size_t l, const pa_sample_spec &ss)
 void AudioServiceClient::PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *) asClient->mainLoop;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
 
     asClient->streamCmdStatus = success;
     pa_threaded_mainloop_signal(mainLoop, 0);
@@ -127,7 +129,7 @@ void AudioServiceClient::PAStreamCmdSuccessCb(pa_stream *stream, int32_t success
 
 void AudioServiceClient::PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata)
 {
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *) userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
@@ -139,7 +141,7 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 
 void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata)
 {
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *) userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     MEDIA_INFO_LOG("Inside latency update callback");
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -147,7 +149,7 @@ void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userda
 void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 {
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *) asClient->mainLoop;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
 
     if (asClient->mAudioRendererCallbacks)
         asClient->mAudioRendererCallbacks->OnStreamStateChangeCb();
@@ -170,7 +172,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 
 void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 {
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *) userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
 
     MEDIA_INFO_LOG("Current Context State: %d", pa_context_get_state(context));
 
@@ -290,10 +292,34 @@ AudioServiceClient::~AudioServiceClient()
     ResetPAAudioClient();
 }
 
+void AudioServiceClient::SetEnv()
+{
+    int ret = 0;
+    const char *env_home_pa = getenv("HOME");
+    if (!env_home_pa) {
+        ret = setenv("HOME", PA_HOME_DIR, 1);
+        MEDIA_INFO_LOG("set env HOME: %{public}d", ret);
+    }
+
+    const char *env_runtime_pa = getenv("PULSE_RUNTIME_PATH");
+    if (!env_runtime_pa) {
+        ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
+        MEDIA_INFO_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
+    }
+
+    const char *env_state_pa = getenv("PULSE_STATE_PATH");
+    if (!env_state_pa) {
+        ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
+        MEDIA_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
+    }
+}
+
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 {
     int error = PA_ERR_INTERNAL;
     eAudioClientType = eClientType;
+
+    SetEnv();
 
     mainLoop = pa_threaded_mainloop_new();
     if (mainLoop == NULL)
@@ -315,7 +341,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     if (pa_context_connect(context, NULL, PA_CONTEXT_NOFAIL, NULL) < 0) {
         error = pa_context_errno(context);
-        MEDIA_ERR_LOG("context connect error: %{public}d", error);
+        MEDIA_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
@@ -339,7 +365,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
             error = pa_context_errno(context);
-            MEDIA_ERR_LOG("context bad state error: %{public}d", error);
+            MEDIA_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioClient();
             return AUDIO_CLIENT_INIT_ERR;
@@ -508,11 +534,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     }
 
     pa_proplist_free(propList);
-    pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *) this);
+    pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
     pa_stream_set_write_callback(paStream, PAStreamRequestCb, mainLoop);
     pa_stream_set_read_callback(paStream, PAStreamRequestCb, mainLoop);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
-    pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *) this);
+    pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
 
     pa_threaded_mainloop_unlock(mainLoop);
 
@@ -555,7 +581,7 @@ int32_t AudioServiceClient::StartStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_cork(paStream, 0, PAStreamCmdSuccessCb, (void *) this);
+    operation = pa_stream_cork(paStream, 0, PAStreamCmdSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -593,7 +619,7 @@ int32_t AudioServiceClient::StopStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_cork(paStream, 1, PAStreamCmdSuccessCb, (void *) this);
+    operation = pa_stream_cork(paStream, 1, PAStreamCmdSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -627,7 +653,7 @@ int32_t AudioServiceClient::FlushStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_flush(paStream, PAStreamCmdSuccessCb, (void *) this);
+    operation = pa_stream_flush(paStream, PAStreamCmdSuccessCb, (void *)this);
     if (operation == NULL) {
         MEDIA_ERR_LOG("Stream Flush Operation Failed");
         pa_threaded_mainloop_unlock(mainLoop);
@@ -681,7 +707,7 @@ int32_t AudioServiceClient::DrainStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_drain(paStream, PAStreamCmdSuccessCb, (void *) this);
+    operation = pa_stream_drain(paStream, PAStreamCmdSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -864,7 +890,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
 int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize)
 {
     size_t l = (internalRdBufLen < length) ? internalRdBufLen : length;
-    if (memcpy_s(buffer, length, (const uint8_t*) internalReadBuffer + internalRdBufIndex, l)) {
+    if (memcpy_s(buffer, length, (const uint8_t*)internalReadBuffer + internalRdBufIndex, l)) {
         MEDIA_ERR_LOG("Update read buffer failed");
         return AUDIO_CLIENT_READ_STREAM_ERR;
     }
@@ -954,11 +980,11 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        minBufferSize = (size_t) MINIMUM_BUFFER_SIZE;
+        minBufferSize = (size_t)MINIMUM_BUFFER_SIZE;
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        minBufferSize = (size_t) bufferAttr->fragsize;
+        minBufferSize = (size_t)bufferAttr->fragsize;
     }
 
     MEDIA_INFO_LOG("buffer size: %zu", minBufferSize);
@@ -978,11 +1004,11 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        minBufferSize = (size_t) MINIMUM_BUFFER_SIZE;
+        minBufferSize = (size_t)MINIMUM_BUFFER_SIZE;
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        minBufferSize = (size_t) bufferAttr->fragsize;
+        minBufferSize = (size_t)bufferAttr->fragsize;
     }
 
     uint32_t bytesPerSample = pa_frame_size(&sampleSpec);
@@ -1095,13 +1121,13 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 void AudioServiceClient::RegisterAudioRendererCallbacks(const AudioRendererCallbacks &cb)
 {
     MEDIA_INFO_LOG("Registering audio render callbacks");
-    mAudioRendererCallbacks = (AudioRendererCallbacks *) &cb;
+    mAudioRendererCallbacks = (AudioRendererCallbacks *)&cb;
 }
 
 void AudioServiceClient::RegisterAudioCapturerCallbacks(const AudioCapturerCallbacks &cb)
 {
     MEDIA_INFO_LOG("Registering audio record callbacks");
-    mAudioCapturerCallbacks = (AudioCapturerCallbacks *) &cb;
+    mAudioCapturerCallbacks = (AudioCapturerCallbacks *)&cb;
 }
 
 int32_t AudioServiceClient::SetStreamVolume(float volume)

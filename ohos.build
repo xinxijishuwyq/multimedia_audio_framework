@@ -72,9 +72,14 @@
           "header": {
           "header_files": [
               "audio_manager_napi.h",
-              "audio_device_descriptor_napi.h"
+              "audio_device_descriptor_napi.h",
+              "audio_capturer_napi.h",
+              "audio_parameters_napi.h"
           ],
-            "header_base": "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include"
+            "header_base": [
+              "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
+              "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_capturer/include"
+            ]
           }
         }
       ],
