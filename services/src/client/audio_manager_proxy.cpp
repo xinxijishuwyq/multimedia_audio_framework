@@ -87,7 +87,7 @@ bool AudioManagerProxy::IsMicrophoneMute()
     return isMute;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag)
+std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)
 {
     MessageParcel data;
     MessageParcel reply;

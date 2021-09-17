@@ -139,7 +139,7 @@ bool AudioServer::IsMicrophoneMute()
     return isMute;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag)
+std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)
 {
     MEDIA_DEBUG_LOG("GetDevices server");
     audioDeviceDescriptor_.clear();
@@ -148,20 +148,20 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(AudioDeviceDesc
         MEDIA_ERR_LOG("new AudioDeviceDescriptor fail");
         return audioDeviceDescriptor_;
     }
-    if (AudioDeviceDescriptor::DeviceFlag::INPUT_DEVICES_FLAG == deviceFlag) {
-        audioDescriptor->deviceType_ = AudioDeviceDescriptor::DeviceType::MIC;
-        audioDescriptor->deviceRole_ = AudioDeviceDescriptor::DeviceRole::INPUT_DEVICE;
-    } else if (AudioDeviceDescriptor::DeviceFlag::OUTPUT_DEVICES_FLAG == deviceFlag) {
-        audioDescriptor->deviceType_ = AudioDeviceDescriptor::DeviceType::SPEAKER;
-        audioDescriptor->deviceRole_ = AudioDeviceDescriptor::DeviceRole::OUTPUT_DEVICE;
-    } else if (AudioDeviceDescriptor::DeviceFlag::ALL_DEVICES_FLAG == deviceFlag) {
+    if (DeviceFlag::INPUT_DEVICES_FLAG == deviceFlag) {
+        audioDescriptor->deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+        audioDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    } else if (DeviceFlag::OUTPUT_DEVICES_FLAG == deviceFlag) {
+        audioDescriptor->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+        audioDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    } else if (DeviceFlag::ALL_DEVICES_FLAG == deviceFlag) {
         sptr<AudioDeviceDescriptor> audioDescriptor_inputDevice = new(std::nothrow) AudioDeviceDescriptor();
         sptr<AudioDeviceDescriptor> audioDescriptor_outputDevice = new(std::nothrow) AudioDeviceDescriptor();
-        audioDescriptor_inputDevice->deviceType_ = AudioDeviceDescriptor::DeviceType::MIC;
-        audioDescriptor_inputDevice->deviceRole_ = AudioDeviceDescriptor::DeviceRole::INPUT_DEVICE;
+        audioDescriptor_inputDevice->deviceType_ = DeviceType::DEVICE_TYPE_MIC;
+        audioDescriptor_inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
         audioDeviceDescriptor_.push_back(audioDescriptor_inputDevice);
-        audioDescriptor_outputDevice->deviceType_ = AudioDeviceDescriptor::DeviceType::SPEAKER;
-        audioDescriptor_outputDevice->deviceRole_ = AudioDeviceDescriptor::DeviceRole::OUTPUT_DEVICE;
+        audioDescriptor_outputDevice->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+        audioDescriptor_outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
         audioDeviceDescriptor_.push_back(audioDescriptor_outputDevice);
         return audioDeviceDescriptor_;
     }

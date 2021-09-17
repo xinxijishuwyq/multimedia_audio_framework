@@ -86,10 +86,10 @@ private:
     std::list<InternalDeviceType>& GetActiveDevicesList(InternalDeviceType deviceType)
     {
         switch (deviceType) {
-            case InternalDeviceType::SPEAKER:
-            case InternalDeviceType::BLUETOOTH_SCO:
+            case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+            case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
                 return mActiveOutputDevices;
-            case InternalDeviceType::MIC:
+            case InternalDeviceType::DEVICE_TYPE_MIC:
                 return mActiveInputDevices;
             default:
                 return mActiveOutputDevices; // Default case return Output device

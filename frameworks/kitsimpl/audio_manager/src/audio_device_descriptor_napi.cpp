@@ -136,7 +136,7 @@ napi_value AudioDeviceDescriptorNapi::GetDeviceRole(napi_env env, napi_callback_
     AudioDeviceDescriptorNapi* deviceDescriptor = nullptr;
     size_t argc = 0;
     napi_value thisVar = nullptr;
-    AudioDeviceDescriptor::DeviceRole deviceRole;
+    DeviceRole deviceRole;
     napi_value jsResult = nullptr;
 
     napi_get_cb_info(env, info, &argc, nullptr, &thisVar, nullptr);
@@ -158,7 +158,7 @@ napi_value AudioDeviceDescriptorNapi::GetDeviceType(napi_env env, napi_callback_
     napi_status status;
     size_t argc = 0;
     napi_value thisVar = nullptr;
-    AudioDeviceDescriptor::DeviceType deviceType;
+    DeviceType deviceType;
     napi_value jsResult = nullptr;
     AudioDeviceDescriptorNapi* deviceDescriptor = nullptr;
 

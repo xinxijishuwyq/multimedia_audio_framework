@@ -39,7 +39,7 @@ public:
     int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag) override;
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     static void* paDaemonThread(void* arg);
     void SetAudioParameter(const std::string key, const std::string value) override;
     const std::string GetAudioParameter(const std::string key) override;

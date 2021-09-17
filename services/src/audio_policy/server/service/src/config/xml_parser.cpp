@@ -230,9 +230,9 @@ void XMLParser::ParseAudioPortPins(xmlNode* node)
 InternalDeviceType XMLParser::GetDeviceType(xmlChar *device)
 {
     if (!xmlStrcmp(device, reinterpret_cast<const xmlChar*>("Speaker")))
-        return InternalDeviceType::SPEAKER;
+        return InternalDeviceType::DEVICE_TYPE_SPEAKER;
     if (!xmlStrcmp(device, reinterpret_cast<const xmlChar*>("Built-In Mic")))
-        return InternalDeviceType::MIC;
+        return InternalDeviceType::DEVICE_TYPE_MIC;
 
     return InternalDeviceType::DEVICE_TYPE_NONE;
 }

@@ -33,7 +33,9 @@ public:
 
     enum AudioVolumeType {
         RINGTONE = 2,
-        MEDIA = 3
+        MEDIA = 3,
+        VOICE_CALL = 4,
+        VOICE_ASSISTANT = 5
     };
 
     enum AudioRingMode {

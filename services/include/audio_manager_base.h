@@ -60,7 +60,7 @@ public:
      *
      * @return Returns the array of audio device descriptor.
      */
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(AudioDeviceDescriptor::DeviceFlag deviceFlag) = 0;
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 
     /**
      * Set Audio Parameter.

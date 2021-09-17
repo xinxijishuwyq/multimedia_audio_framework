@@ -31,6 +31,13 @@ declare namespace audio {
   function getAudioManager(): AudioManager;
 
   /**
+   * Obtains an AudioCapturer instance.
+   * @devices
+   * @sysCap SystemCapability.Multimedia.Audio
+   */
+  function createAudioCapturer(volumeType: AudioVolumeType): AudioCapturer;
+
+  /**
    * Enumerates audio stream types.
    * @devices
    * @sysCap SystemCapability.Multimedia.Audio
@@ -44,6 +51,14 @@ declare namespace audio {
      * Audio streams for media purpose
      */
     MEDIA = 3,
+    /**
+     * Audio streams for voice calls
+     */
+    VOICE_CALL = 4,
+    /**
+     * Audio stream for voice assistant
+     */
+    VOICE_ASSISTANT = 5,
   }
 
   /**
@@ -148,6 +163,71 @@ declare namespace audio {
      * Normal mode
      */
     RINGER_MODE_NORMAL,
+  }
+
+  /**
+   * Enumerates the sample format.
+   */
+  enum AudioSampleFormat {
+    SAMPLE_U8 = 1,
+    SAMPLE_S16LE = 2,
+    SAMPLE_S24LE = 3,
+    SAMPLE_S32LE = 4,
+    INVALID_WIDTH = -1
+  };
+
+  /**
+   * Enumerates the audio channel.
+   */
+  enum AudioChannel {
+    MONO = 1,
+    STEREO
+  };
+
+  /**
+   * Enumerates the audio sampling rate.
+   */
+  enum AudioSamplingRate {
+    SAMPLE_RATE_8000 = 8000,
+    SAMPLE_RATE_11025 = 11025,
+    SAMPLE_RATE_12000 = 12000,
+    SAMPLE_RATE_16000 = 16000,
+    SAMPLE_RATE_22050 = 22050,
+    SAMPLE_RATE_24000 = 24000,
+    SAMPLE_RATE_32000 = 32000,
+    SAMPLE_RATE_44100 = 44100,
+    SAMPLE_RATE_48000 = 48000,
+    SAMPLE_RATE_64000 = 64000,
+    SAMPLE_RATE_96000 = 96000
+  };
+
+  /**
+   * Enumerates the audio encoding type.
+   */
+  enum AudioEncodingType {
+    ENCODING_PCM = 0,
+    ENCODING_INVALID
+  };
+
+  /**
+   * Enumerates the audio content type.
+   */
+  enum ContentType {
+    CONTENT_TYPE_UNKNOWN = 0,
+    CONTENT_TYPE_SPEECH = 1,
+    CONTENT_TYPE_MUSIC = 2,
+    CONTENT_TYPE_MOVIE = 3,
+    CONTENT_TYPE_SONIFICATION = 4,
+  }
+
+  /**
+   * Enumerates the stream usage.
+   */
+  enum StreamUsage {
+    STREAM_USAGE_UNKNOWN = 0,
+    STREAM_USAGE_MEDIA = 1,
+    STREAM_USAGE_VOICE_COMMUNICATION = 2,
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
   }
 
   /**
@@ -366,6 +446,119 @@ declare namespace audio {
      * @devices
      */
     readonly deviceType: DeviceType;
+  }
+
+  /**
+   * Provides functions for applications to manage audio capturing.
+   * @devices
+   * @sysCap SystemCapability.Multimedia.Audio
+   */
+  interface AudioCapturer {
+    /**
+     * Sets audio capture parameters.
+     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will be set by default.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setParams(params: AudioParameters): void;
+
+    /**
+     * Obtains audio capture parameters.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getParams(): AudioParameters;
+
+    /**
+     * Starts audio capturing.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    start(): boolean;
+
+    /**
+     * Capture audio data.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    read(size: number, isBlockingRead: boolean): ArrayBuffer;
+
+    /**
+     * Obtains the current timestamp.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getAudioTime(): number;
+
+    /**
+     * Stops audio capturing.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    stop(): boolean;
+
+    /**
+     * Releases a capture resources.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    release(): boolean;
+
+    /**
+     * Obtains a reasonable minimum buffer size for capturer, however, the capturer can
+     * accept other read sizes as well.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getBufferSize(): number;
+  }
+
+  /**
+   * Structure for audio parameters
+   * @devices
+   * @sysCap SystemCapability.Multimedia.Audio
+   */
+  interface AudioParameters {
+    /**
+     * Audio sample format
+     * @devices
+     */
+    format: AudioSampleFormat;
+    /**
+     * Audio channels
+     * @devices
+     */
+    channels: AudioChannel;
+    /**
+     * Audio sampling rate
+     * @devices
+     */
+    samplingRate: AudioSamplingRate;
+    /**
+     * Audio encoding type
+     * @devices
+     */
+    encoding: AudioEncodingType;
+    /**
+     * Audio content type
+     * @devices
+     */
+    contentType: ContentType;
+    /**
+     * Audio stream usage
+     * @devices
+     */
+    usage: StreamUsage;
+    /**
+     * Audio device role
+     * @devices
+     */
+    deviceRole: DeviceRole;
+    /**
+     * Audio device type
+     * @devices
+     */
+    deviceType: DeviceType;
   }
 
   /**

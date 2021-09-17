@@ -138,14 +138,14 @@ const PolicyParam AUDIO_PARAMS[] = {
 
 const PolicyParam DEVICES_PARAMS[] = {
     {
-        .deviceType = AudioDeviceDescriptor::MIC,
-        .deviceFlag = AudioDeviceDescriptor::DeviceFlag::INPUT_DEVICES_FLAG,
-        .deviceRole = AudioDeviceDescriptor::DeviceRole::INPUT_DEVICE
+        .deviceType = DEVICE_TYPE_MIC,
+        .deviceFlag = INPUT_DEVICES_FLAG,
+        .deviceRole = INPUT_DEVICE
     },
     {
-        .deviceType = AudioDeviceDescriptor::SPEAKER,
-        .deviceFlag = AudioDeviceDescriptor::DeviceFlag::OUTPUT_DEVICES_FLAG,
-        .deviceRole = AudioDeviceDescriptor::DeviceRole::OUTPUT_DEVICE
+        .deviceType = DEVICE_TYPE_SPEAKER,
+        .deviceFlag = OUTPUT_DEVICES_FLAG,
+        .deviceRole = OUTPUT_DEVICE
     }
 };
 } // namespace
@@ -448,9 +448,9 @@ class AudioPolicyGetDevicesTest : public AudioPolicyTest {};
 HWTEST_P(AudioPolicyGetDevicesTest, GetDevices, TestSize.Level1)
 {
     PolicyParam params = GetParam();
-    AudioDeviceDescriptor::DeviceFlag deviceFlag = params.deviceFlag;
-    AudioDeviceDescriptor::DeviceType deviceType = params.deviceType;
-    AudioDeviceDescriptor::DeviceRole deviceRole = params.deviceRole;
+    DeviceFlag deviceFlag = params.deviceFlag;
+    DeviceType deviceType = params.deviceType;
+    DeviceRole deviceRole = params.deviceRole;
     vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
         = AudioSystemManager::GetInstance()->GetDevices(deviceFlag);
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];

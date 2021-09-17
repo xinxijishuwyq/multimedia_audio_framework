@@ -24,6 +24,87 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum DeviceFlag {
+    /**
+     * Device flag none.
+     */
+    DEVICE_FLAG_NONE = -1,
+    /**
+     * Indicates all output audio devices.
+     */
+    OUTPUT_DEVICES_FLAG = 1,
+    /**
+     * Indicates all input audio devices.
+     */
+    INPUT_DEVICES_FLAG = 2,
+    /**
+     * Indicates all audio devices.
+     */
+    ALL_DEVICES_FLAG = 3,
+    /**
+     * Device flag max count.
+     */
+    DEVICE_FLAG_MAX
+};
+
+enum DeviceRole {
+    /**
+     * Device role none.
+     */
+    DEVICE_ROLE_NONE = -1,
+    /**
+     * Input device role.
+     */
+    INPUT_DEVICE = 1,
+    /**
+     * Output device role.
+     */
+    OUTPUT_DEVICE = 2,
+    /**
+     * Device role max count.
+     */
+    DEVICE_ROLE_MAX
+};
+
+enum DeviceType {
+    /**
+     * Indicates device type none.
+     */
+    DEVICE_TYPE_NONE = -1,
+    /**
+     * Indicates invalid device
+     */
+    DEVICE_TYPE_INVALID = 0,
+    /**
+     * Indicates earpiece
+     */
+    DEVICE_TYPE_EARPIECE = 1,
+    /**
+     * Indicates a speaker built in a device.
+     */
+    DEVICE_TYPE_SPEAKER = 2,
+    /**
+     * Indicates a headset, which is the combination of a pair of headphones and a microphone.
+     */
+    DEVICE_TYPE_WIRED_HEADSET = 3,
+    /**
+     * Indicates a Bluetooth device used for telephony.
+     */
+    DEVICE_TYPE_BLUETOOTH_SCO = 7,
+    /**
+     * Indicates a Bluetooth device supporting the Advanced Audio Distribution Profile (A2DP).
+     */
+    DEVICE_TYPE_BLUETOOTH_A2DP = 8,
+    /**
+     * Indicates a microphone built in a device.
+     */
+    DEVICE_TYPE_MIC = 15,
+    /**
+     * Indicates device type max count.
+     */
+    DEVICE_TYPE_MAX
+};
+
 enum ActiveDeviceType {
     ACTIVE_DEVICE_TYPE_NONE = -1,
     SPEAKER = 2,
@@ -37,53 +118,57 @@ enum AudioStreamType {
      */
     STREAM_DEFAULT = -1,
     /**
-     * Indicates audio streams media.
-     */
-    STREAM_MEDIA = 0,
-    /**
-     * Indicates audio streams of voices in calls.
-     */
-    STREAM_VOICE_CALL = 1,
-    /**
      * Indicates audio streams for system sounds.
      */
-    STREAM_SYSTEM = 2,
-    /**
-     * Indicates audio streams for ringtones.
-     */
-    STREAM_RING = 3,
+    STREAM_SYSTEM = 0,
     /**
      * Indicates audio streams for music playback.
      */
-    STREAM_MUSIC = 4,
+    STREAM_MUSIC = 1,
+    /**
+     * Indicates audio streams for ringtones.
+     */
+    STREAM_RING = 2,
+    /**
+     * Indicates audio streams media.
+     */
+    STREAM_MEDIA = 3,
+    /**
+     * Indicates audio streams of voices in calls.
+     */
+    STREAM_VOICE_CALL = 4,
+    /**
+     * Indicates Audio streams for voice assistant
+     */
+    VOICE_ASSISTANT = 5,
     /**
      * Indicates audio streams for alarms.
      */
-    STREAM_ALARM = 5,
+    STREAM_ALARM = 6,
     /**
      * Indicates audio streams for notifications.
      */
-    STREAM_NOTIFICATION = 6,
+    STREAM_NOTIFICATION = 7,
     /**
      * Indicates audio streams for voice calls routed through a connected Bluetooth device.
      */
-    STREAM_BLUETOOTH_SCO = 7,
+    STREAM_BLUETOOTH_SCO = 8,
     /**
      * Indicates audio streams for enforced audible.
      */
-    STREAM_ENFORCED_AUDIBLE = 8,
+    STREAM_ENFORCED_AUDIBLE = 9,
     /**
      * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
      */
-    STREAM_DTMF = 9,
+    STREAM_DTMF = 10,
     /**
      * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
      */
-    STREAM_TTS =  10,
+    STREAM_TTS =  11,
     /**
      * Indicates audio streams used for prompts in terms of accessibility.
      */
-    STREAM_ACCESSIBILITY = 11
+    STREAM_ACCESSIBILITY = 12
 };
 
 enum AudioEncodingType {
@@ -169,6 +254,38 @@ struct AudioStreamParams {
     uint8_t encoding;
     uint8_t format;
     uint8_t channels;
+};
+
+/**
+* Enumerates the audio content type.
+*/
+enum ContentType {
+    CONTENT_TYPE_UNKNOWN = 0,
+    CONTENT_TYPE_SPEECH = 1,
+    CONTENT_TYPE_MUSIC = 2,
+    CONTENT_TYPE_MOVIE = 3,
+    CONTENT_TYPE_SONIFICATION = 4,
+};
+
+/**
+* Enumerates the stream usage.
+*/
+enum StreamUsage {
+    STREAM_USAGE_UNKNOWN = 0,
+    STREAM_USAGE_MEDIA = 1,
+    STREAM_USAGE_VOICE_COMMUNICATION = 2,
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
+};
+
+struct AudioParameters {
+    AudioSampleFormat format;
+    AudioChannel channels;
+    AudioSamplingRate samplingRate;
+    AudioEncodingType encoding;
+    ContentType contentType;
+    StreamUsage usage;
+    DeviceRole deviceRole;
+    DeviceType deviceType;
 };
 
 // Supported audio parameters for both renderer and capturer

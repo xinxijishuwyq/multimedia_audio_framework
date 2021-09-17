@@ -81,6 +81,10 @@ public:
 
 class AudioServiceClient {
 public:
+    static constexpr char PA_RUNTIME_DIR[] = "/data/data/.pulse_dir/runtime";
+    static constexpr char PA_STATE_DIR[] = "/data/data/.pulse_dir/state";
+    static constexpr char PA_HOME_DIR[] = "/data/data/.pulse_dir/state";
+
     AudioServiceClient();
     virtual ~AudioServiceClient();
 
@@ -356,6 +360,8 @@ private:
 
     // Resets PA audio client and free up resources if any with this API
     void ResetPAAudioClient();
+    // For setting some environment variables required while running from hap
+    void SetEnv();
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);

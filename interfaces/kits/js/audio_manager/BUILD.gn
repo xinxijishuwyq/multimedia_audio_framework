@@ -16,42 +16,41 @@ import("//build/ohos/ace/ace.gni")
 
 js_declaration("audio_js") {
   part_name = "multimedia_audio_standard"
-  sources = [
-    "./@ohos.multimedia.audio.d.ts",
-  ]
+  sources = [ "./@ohos.multimedia.audio.d.ts" ]
 }
 
 ohos_copy("audio_declaration") {
-  sources = [
-    "./@ohos.multimedia.audio.d.ts",
-  ]
+  sources = [ "./@ohos.multimedia.audio.d.ts" ]
   outputs = [ target_out_dir + "/$target_name/" ]
   module_source_dir = target_out_dir + "/$target_name"
   module_install_name = ""
 }
 
 ohos_shared_library("audio") {
-    include_dirs = [
-        "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
-    ]
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
+    "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_capturer/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
+  ]
 
-    sources = [
-       "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_napi.cpp",
-       "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_device_descriptor_napi.cpp"
-    ]
+  sources = [
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_capturer/src/audio_capturer_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_capturer/src/audio_parameters_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_device_descriptor_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_napi.cpp",
+  ]
 
-    deps = [
-        "//foundation/ace/napi:ace_napi",
-        "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
-        "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-        "//utils/native/base:utils"
-    ]
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/ace/napi:ace_napi",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
+    "//utils/native/base:utils",
+  ]
 
-    external_deps = [
-        "hiviewdfx_hilog_native:libhilog",
-    ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-    relative_install_dir = "module/multimedia"
-    part_name = "multimedia_audio_standard"
-    subsystem_name = "multimedia"
+  relative_install_dir = "module/multimedia"
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
 }
