@@ -19,10 +19,10 @@
 
 #include <dlfcn.h>
 
-typedef void*  lt_dlhandle;
+typedef void  *lt_dlhandle;
 
 const char *lt_dlerror(void);
-const char* lt_dlgetsearchpath();
+const char *lt_dlgetsearchpath();
 int lt_dlclose(lt_dlhandle handle);
 lt_dlhandle lt_dlopenext(const char *filename);
-void* lt_dlsym(lt_dlhandle handle, const char *symbol);
+void *lt_dlsym(lt_dlhandle handle, const char *symbol);

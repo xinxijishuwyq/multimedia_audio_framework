@@ -35,7 +35,7 @@ REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 #ifdef PA
 constexpr int PA_ARG_COUNT = 1;
 
-void* AudioServer::paDaemonThread(void* arg)
+void *AudioServer::paDaemonThread(void *arg)
 {
     /* Load the mandatory pulseaudio modules at start */
     char *argv[] = {

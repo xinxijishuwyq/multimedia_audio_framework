@@ -29,24 +29,30 @@ AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint64_t LATENCY_IN_MSEC = 200UL;
 
 #define CHECK_AND_RETURN_IFINVALID(expr) \
+do {                                     \
     if (!(expr)) {                       \
         return AUDIO_CLIENT_ERR;         \
-    }
+    }                                    \
+} while (false)
 
 #define CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, error) \
+do {                                                                    \
     if (!context || !paStream || !mainLoop                              \
-            || !PA_CONTEXT_IS_GOOD(pa_context_get_state(context))       \
-            || !PA_STREAM_IS_GOOD(pa_stream_get_state(paStream))) {     \
-                return error;                                           \
-    }
+        || !PA_CONTEXT_IS_GOOD(pa_context_get_state(context))           \
+        || !PA_STREAM_IS_GOOD(pa_stream_get_state(paStream))) {         \
+        return error;                                                   \
+    }                                                                   \
+} while (false)
 
 #define CHECK_PA_STATUS_FOR_WRITE(mainLoop, context, paStream, pError, retVal) \
+do {                                                                           \
     if (!context || !paStream || !mainLoop                                     \
-            || !PA_CONTEXT_IS_GOOD(pa_context_get_state(context))              \
-            || !PA_STREAM_IS_GOOD(pa_stream_get_state(paStream))) {            \
-                pError = pa_context_errno(context);                            \
-                return retVal;                                                 \
-    }
+        || !PA_CONTEXT_IS_GOOD(pa_context_get_state(context))                  \
+        || !PA_STREAM_IS_GOOD(pa_stream_get_state(paStream))) {                \
+            pError = pa_context_errno(context);                                \
+        return retVal;                                                         \
+    }                                                                          \
+} while (false)
 
 AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec paSampleSpec)
 {
@@ -142,7 +148,6 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
-    MEDIA_INFO_LOG("Inside latency update callback");
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
@@ -906,7 +911,7 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
         internalRdBufLen = 0;
         internalRdBufIndex = 0;
         if (retVal < 0) {
-            MEDIA_ERR_LOG("pa_stream_drop failed, retVal: %d", retVal);
+            MEDIA_ERR_LOG("pa_stream_drop failed, retVal: %{public}d", retVal);
             return AUDIO_CLIENT_READ_STREAM_ERR;
         }
     }
@@ -927,7 +932,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
         while (!internalReadBuffer) {
             int retVal = pa_stream_peek(paStream, &internalReadBuffer, &internalRdBufLen);
             if (retVal < 0) {
-                MEDIA_ERR_LOG("pa_stream_peek failed, retVal: %d", retVal);
+                MEDIA_ERR_LOG("pa_stream_peek failed, retVal: %{public}d", retVal);
                 pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
             }
@@ -942,7 +947,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
             } else if (!internalReadBuffer) {
                 retVal = pa_stream_drop(paStream);
                 if (retVal < 0) {
-                    MEDIA_ERR_LOG("pa_stream_drop failed, retVal: %d", retVal);
+                    MEDIA_ERR_LOG("pa_stream_drop failed, retVal: %{public}d", retVal);
                     pa_threaded_mainloop_unlock(mainLoop);
                     return AUDIO_CLIENT_READ_STREAM_ERR;
                 }
@@ -1191,7 +1196,7 @@ void AudioServiceClient::GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_i
     AudioServiceClient *thiz = reinterpret_cast<AudioServiceClient *>(userdata);
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("Failed to get sink input information: %s", pa_strerror(pa_context_errno(c)));
+        MEDIA_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -1225,7 +1230,7 @@ void AudioServiceClient::GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_i
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, NULL, NULL));
 
-    MEDIA_INFO_LOG("Applied volume : %{public}f for stream : %{public}s, volumeInt%{public}d",
+    MEDIA_INFO_LOG("Applied volume : %{public}f for stream : %{public}s, pa volume: %{public}d",
         vol, i->name, volume);
 
     return;
