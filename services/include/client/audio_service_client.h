@@ -210,7 +210,7 @@ public:
     * @param audioParams will be filled up with stream audio parameters
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetAudioStreamParams(AudioStreamParams& audioParams);
+    int32_t GetAudioStreamParams(AudioStreamParams &audioParams);
 
     /**
     * Provides the minimum buffer size required for this audio stream
@@ -298,7 +298,7 @@ private:
     std::mutex mtx;
 
     AudioCache acache;
-    const void* internalReadBuffer;
+    const void *internalReadBuffer;
     size_t internalRdBufLen;
     size_t internalRdBufIndex;
     int32_t streamCmdStatus;

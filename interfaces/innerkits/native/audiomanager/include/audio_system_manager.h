@@ -34,7 +34,7 @@ public:
     AudioDeviceDescriptor();
     virtual ~AudioDeviceDescriptor();
     bool Marshalling(Parcel &parcel) const override;
-    static AudioDeviceDescriptor* Unmarshalling(Parcel &parcel);
+    static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 };
 
 /**
@@ -102,7 +102,8 @@ public:
          */
         STREAM_ACCESSIBILITY = 12
     };
-    static AudioSystemManager* GetInstance();
+
+    static AudioSystemManager *GetInstance();
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);
     int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;

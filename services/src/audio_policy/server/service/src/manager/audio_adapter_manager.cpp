@@ -22,31 +22,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class PolicyCallbackImpl : public AudioServiceAdapterCallback {
-public:
-    explicit PolicyCallbackImpl(AudioAdapterManager *audioAdapterManager)
-    {
-        audioAdapterManager_ = audioAdapterManager;
-    }
-
-    float OnGetVolumeCb(std::string streamType)
-    {
-        if (audioAdapterManager_->mRingerMode != RINGER_MODE_NORMAL) {
-            if (!streamType.compare("ring")) {
-                return AudioAdapterManager::MIN_VOLUME;
-            }
-        }
-        AudioStreamType streamID = audioAdapterManager_->GetStreamIDByType(streamType);
-        return audioAdapterManager_->mVolumeMap[streamID];
-    }
-private:
-    AudioAdapterManager *audioAdapterManager_;
-};
-
 bool AudioAdapterManager::Init()
 {
-    PolicyCallbackImpl *policyCallbackImpl = new PolicyCallbackImpl(this);
-    mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(policyCallbackImpl);
+    std::unique_ptr<AudioAdapterManager> audioAdapterManager(this);
+    std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
+    mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
     bool result = mAudioServiceAdapter->Connect();
     if (!result) {
         MEDIA_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
@@ -100,6 +80,7 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
     bool result = mAudioServiceAdapter->IsStreamActive(streamType);
     return result;
 }
+
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
@@ -136,7 +117,7 @@ AudioRingerMode AudioAdapterManager::GetRingerMode()
     return mRingerMode;
 }
 
-AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPortInfo> audioPortInfo)
+AudioIOHandle AudioAdapterManager::OpenAudioPort(std::unique_ptr<AudioPortInfo> &audioPortInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioPortInfo);
     MEDIA_INFO_LOG("[AudioAdapterManager] load-module %{public}s %{public}s", audioPortInfo->name, moduleArgs.c_str());
@@ -161,7 +142,7 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 }
 
 // Private Members
-std::string AudioAdapterManager::GetModuleArgs(std::shared_ptr<AudioPortInfo> audioPortInfo)
+std::string AudioAdapterManager::GetModuleArgs(std::unique_ptr<AudioPortInfo> &audioPortInfo)
 {
     std::string args;
 

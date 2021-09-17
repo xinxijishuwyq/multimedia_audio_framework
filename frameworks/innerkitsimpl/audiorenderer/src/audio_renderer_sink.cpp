@@ -55,7 +55,7 @@ AudioRendererSink::~AudioRendererSink()
     DeInit();
 }
 
-AudioRendererSink* AudioRendererSink::GetInstance()
+AudioRendererSink *AudioRendererSink::GetInstance()
 {
     static AudioRendererSink audioRenderer_;
 
@@ -119,7 +119,7 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *a
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase)) {
-            for (uint32_t port = 0; ((desc != nullptr) && (port < desc->portNum)); port++) {
+            for (uint32_t port = 0; port < desc->portNum; port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     *renderPort = desc->ports[port];
@@ -465,7 +465,7 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-AudioRendererSink* g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
+AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
 
 int32_t AudioRendererSinkInit(AudioSinkAttr *attr)
 {
