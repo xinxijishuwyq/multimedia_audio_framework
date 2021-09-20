@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_capturer_napi.h"
+#include "audio_renderer_napi.h"
 #include "audio_manager_napi.h"
 #include "audio_parameters_napi.h"
 #include "hilog/log.h"
@@ -26,42 +26,40 @@ using OHOS::HiviewDFX::HiLogLabel;
 
 namespace OHOS {
 namespace AudioStandard {
-napi_ref AudioCapturerNapi::sConstructor_ = nullptr;
-std::unique_ptr<AudioParameters> AudioCapturerNapi::sAudioParameters_ = nullptr;
+napi_ref AudioRendererNapi::sConstructor_ = nullptr;
+std::unique_ptr<AudioParameters> AudioRendererNapi::sAudioParameters_ = nullptr;
 
 namespace {
     const int ARGS_ONE = 1;
-    const int ARGS_TWO = 2;
 
     const int PARAM0 = 0;
-    const int PARAM1 = 1;
 
     const int ERROR = -1;
     const int SUCCESS = 0;
 
-    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioCapturerNapi"};
+    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioRendererNapi"};
 }
 
-AudioCapturerNapi::AudioCapturerNapi()
-    : audioCapturer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA),
-      deviceRole_(INPUT_DEVICE), deviceType_(DEVICE_TYPE_MIC), env_(nullptr), wrapper_(nullptr) {}
+AudioRendererNapi::AudioRendererNapi()
+    : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA),
+      deviceRole_(OUTPUT_DEVICE), deviceType_(DEVICE_TYPE_SPEAKER), env_(nullptr), wrapper_(nullptr) {}
 
-AudioCapturerNapi::~AudioCapturerNapi()
+AudioRendererNapi::~AudioRendererNapi()
 {
     if (wrapper_ != nullptr) {
         napi_delete_reference(env_, wrapper_);
     }
 }
 
-void AudioCapturerNapi::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
+void AudioRendererNapi::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
 {
     if (nativeObject != nullptr) {
-        auto obj = static_cast<AudioCapturerNapi *>(nativeObject);
+        auto obj = static_cast<AudioRendererNapi *>(nativeObject);
         delete obj;
     }
 }
 
-napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
+napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
 {
     napi_status status;
     napi_value constructor;
@@ -69,31 +67,32 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
     const int32_t refCount = 1;
     napi_get_undefined(env, &result);
 
-    napi_property_descriptor audio_capturer_properties[] = {
+    napi_property_descriptor audio_renderer_properties[] = {
         DECLARE_NAPI_FUNCTION("setParams", SetParams),
         DECLARE_NAPI_FUNCTION("getParams", GetParams),
         DECLARE_NAPI_FUNCTION("start", Start),
-        DECLARE_NAPI_FUNCTION("read", Read),
+        DECLARE_NAPI_FUNCTION("write", Write),
         DECLARE_NAPI_FUNCTION("getAudioTime", GetAudioTime),
+        DECLARE_NAPI_FUNCTION("pause", Pause),
         DECLARE_NAPI_FUNCTION("stop", Stop),
         DECLARE_NAPI_FUNCTION("release", Release),
         DECLARE_NAPI_FUNCTION("getBufferSize", GetBufferSize)
     };
 
     napi_property_descriptor static_prop[] = {
-        DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturer", CreateAudioCapturer)
+        DECLARE_NAPI_STATIC_FUNCTION("createAudioRenderer", CreateAudioRenderer)
     };
 
-    status = napi_define_class(env, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
-        sizeof(audio_capturer_properties) / sizeof(audio_capturer_properties[PARAM0]),
-        audio_capturer_properties, &constructor);
+    status = napi_define_class(env, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
+        sizeof(audio_renderer_properties) / sizeof(audio_renderer_properties[PARAM0]),
+        audio_renderer_properties, &constructor);
     if (status != napi_ok) {
         return result;
     }
 
     status = napi_create_reference(env, constructor, refCount, &sConstructor_);
     if (status == napi_ok) {
-        status = napi_set_named_property(env, exports, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), constructor);
+        status = napi_set_named_property(env, exports, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), constructor);
         if (status == napi_ok) {
             status = napi_define_properties(env, exports,
                                             sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
@@ -103,7 +102,7 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
         }
     }
 
-    HiLog::Error(LABEL, "Failure in AudioCapturerNapi::Init()");
+    HiLog::Error(LABEL, "Failure in AudioRendererNapi::Init()");
 
     return result;
 }
@@ -135,7 +134,7 @@ static int32_t GetAudioStreamType(napi_env env, napi_value value)
     return streamType;
 }
 
-napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value jsThis = nullptr;
@@ -150,15 +149,15 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     }
 
     int32_t streamType = GetAudioStreamType(env, args[0]);
-    HiLog::Info(LABEL, "AudioCapturerNapi: Audio stream type: %{public}d", streamType);
+    HiLog::Info(LABEL, "AudioRendererNapi: Audio stream type: %{public}d", streamType);
     if (streamType != AudioStreamType::STREAM_DEFAULT) {
-        unique_ptr<AudioCapturerNapi> obj = make_unique<AudioCapturerNapi>();
+        unique_ptr<AudioRendererNapi> obj = make_unique<AudioRendererNapi>();
         if (obj != nullptr) {
             obj->env_ = env;
-            obj->audioCapturer_
-                = AudioCapturer::Create(static_cast<AudioStreamType>(streamType));
+            obj->audioRenderer_
+                = AudioRenderer::Create(static_cast<AudioStreamType>(streamType));
             status = napi_wrap(env, jsThis, static_cast<void*>(obj.get()),
-                               AudioCapturerNapi::Destructor, nullptr, &(obj->wrapper_));
+                               AudioRendererNapi::Destructor, nullptr, &(obj->wrapper_));
             if (status == napi_ok) {
                 obj.release();
                 return jsThis;
@@ -166,12 +165,12 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
         }
     }
 
-    HiLog::Error(LABEL, "Failed in AudioCapturerNapi::Construct()!");
+    HiLog::Error(LABEL, "Failed in AudioRendererNapi::Construct()!");
 
     return result;
 }
 
-napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::CreateAudioRenderer(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -193,13 +192,13 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
         }
     }
 
-    HiLog::Error(LABEL, "Create audio capturer failed");
+    HiLog::Error(LABEL, "Create audio renderer failed");
     napi_get_undefined(env, &result);
 
     return result;
 }
 
-int32_t AudioCapturerNapi::SetAudioParameters(napi_env env, napi_value arg)
+int32_t AudioRendererNapi::SetAudioParameters(napi_env env, napi_value arg)
 {
     int32_t format;
     int32_t channels;
@@ -207,8 +206,8 @@ int32_t AudioCapturerNapi::SetAudioParameters(napi_env env, napi_value arg)
     int32_t encoding;
     int32_t contentType = static_cast<int32_t>(CONTENT_TYPE_MUSIC);
     int32_t usage = static_cast<int32_t>(STREAM_USAGE_MEDIA);
-    int32_t deviceRole = static_cast<int32_t>(INPUT_DEVICE);
-    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_MIC);
+    int32_t deviceRole = static_cast<int32_t>(OUTPUT_DEVICE);
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
 
     napi_value property;
 
@@ -277,7 +276,7 @@ int32_t AudioCapturerNapi::SetAudioParameters(napi_env env, napi_value arg)
     return SUCCESS;
 }
 
-napi_value AudioCapturerNapi::SetParams(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::SetParams(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -292,9 +291,9 @@ napi_value AudioCapturerNapi::SetParams(napi_env env, napi_callback_info info)
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
         HiLog::Error(LABEL, "Set params failed!");
         return result;
     }
@@ -306,26 +305,25 @@ napi_value AudioCapturerNapi::SetParams(napi_env env, napi_callback_info info)
         return result;
     }
 
-    int32_t ret = capturerNapi->SetAudioParameters(env, argv[PARAM0]);
+    int32_t ret = rendererNapi->SetAudioParameters(env, argv[PARAM0]);
     if (ret == SUCCESS) {
-        AudioCapturerParams capturerParams;
-        capturerParams.audioSampleFormat = sAudioParameters_->format;
-        capturerParams.samplingRate =  sAudioParameters_->samplingRate;
-        capturerParams.audioChannel = sAudioParameters_->channels;
-        capturerParams.audioEncoding = sAudioParameters_->encoding;
-        capturerNapi->contentType_ = sAudioParameters_->contentType;
-        capturerNapi->streamUsage_ = sAudioParameters_->usage;
-        capturerNapi->deviceRole_ = sAudioParameters_->deviceRole;
-        capturerNapi->deviceType_ = sAudioParameters_->deviceType;
-        capturerNapi->audioCapturer_->SetParams(capturerParams);
-
+        AudioRendererParams rendererParams;
+        rendererParams.sampleFormat = sAudioParameters_->format;
+        rendererParams.sampleRate =  sAudioParameters_->samplingRate;
+        rendererParams.channelCount = sAudioParameters_->channels;
+        rendererParams.encodingType = sAudioParameters_->encoding;
+        rendererNapi->contentType_ = sAudioParameters_->contentType;
+        rendererNapi->streamUsage_ = sAudioParameters_->usage;
+        rendererNapi->deviceRole_ = sAudioParameters_->deviceRole;
+        rendererNapi->deviceType_ = sAudioParameters_->deviceType;
+        rendererNapi->audioRenderer_->SetParams(rendererParams);
         HiLog::Info(LABEL, "Set params success");
     }
 
     return result;
 }
 
-napi_value AudioCapturerNapi::GetParams(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::GetParams(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -339,24 +337,24 @@ napi_value AudioCapturerNapi::GetParams(napi_env env, napi_callback_info info)
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer get params failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer get params failed!");
         return result;
     }
 
-    AudioCapturerParams capturerParams;
-    if (capturerNapi->audioCapturer_->GetParams(capturerParams) == 0) {
+    AudioRendererParams rendererParams;
+    if (rendererNapi->audioRenderer_->GetParams(rendererParams) == 0) {
         unique_ptr<AudioParameters> audioParams = make_unique<AudioParameters>();
-        audioParams->format = capturerParams.audioSampleFormat;
-        audioParams->samplingRate = capturerParams.samplingRate;
-        audioParams->channels = capturerParams.audioChannel;
-        audioParams->encoding = capturerParams.audioEncoding;
-        audioParams->contentType = capturerNapi->contentType_;
-        audioParams->usage = capturerNapi->streamUsage_;
-        audioParams->deviceRole = capturerNapi->deviceRole_;
-        audioParams->deviceType = capturerNapi->deviceType_;
+        audioParams->format = rendererParams.sampleFormat;
+        audioParams->samplingRate = rendererParams.sampleRate;
+        audioParams->channels = rendererParams.channelCount;
+        audioParams->encoding = rendererParams.encodingType;
+        audioParams->contentType = rendererNapi->contentType_;
+        audioParams->usage = rendererNapi->streamUsage_;
+        audioParams->deviceRole = rendererNapi->deviceRole_;
+        audioParams->deviceType = rendererNapi->deviceType_;
 
         result = AudioParametersNapi::CreateAudioParametersWrapper(env, audioParams);
     }
@@ -364,7 +362,7 @@ napi_value AudioCapturerNapi::GetParams(napi_env env, napi_callback_info info)
     return result;
 }
 
-napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::Start(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -378,95 +376,86 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer start failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer start failed!");
         return result;
     }
 
-    bool isStarted = capturerNapi->audioCapturer_->Start();
+    bool isStarted = rendererNapi->audioRenderer_->Start();
     napi_get_boolean(env, isStarted, &result);
 
     return result;
 }
 
-napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::Write(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
     napi_value jsThis = nullptr;
-    size_t argc = ARGS_TWO;
-    napi_value argv[ARGS_TWO] = {0};
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {0};
     napi_get_undefined(env, &result);
 
     status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    if ((status != napi_ok) || (jsThis == nullptr) || (argc != ARGS_TWO)) {
-        HiLog::Error(LABEL, "Read invalid arguments");
+    if ((status != napi_ok) || (jsThis == nullptr) || (argc != ARGS_ONE)) {
+        HiLog::Error(LABEL, "Write invalid arguments");
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer read failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer write failed!");
         return result;
     }
 
-    uint32_t userSize = 0;
-    bool isBlocking = false;
+    size_t bufferLen = 0;
+    void *data = nullptr;
 
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
 
-        if ((i == PARAM0) && (valueType == napi_number)) {
-            napi_get_value_uint32(env, argv[i], &userSize);
-            if (userSize <= 0) {
+        if ((i == PARAM0) && (valueType == napi_object)) {
+            status = napi_get_arraybuffer_info(env, argv[i], &data, &bufferLen);
+            if ((status != napi_ok) || (data == nullptr)) {
                 return result;
             }
-        } else if ((i == PARAM1) && (valueType == napi_boolean)) {
-            napi_get_value_bool(env, argv[i], &isBlocking);
         } else {
-            HiLog::Error(LABEL, "Capturer read invalid param!");
+            HiLog::Error(LABEL, "Renderer write invalid param!");
             return result;
         }
     }
 
-    uint8_t *buffer = (uint8_t *)malloc(userSize);
-    if (!buffer) {
-        HiLog::Error(LABEL, "Capturer read buffer allocation failed");
+    auto buffer = std::make_unique<uint8_t[]>(bufferLen);
+    if (buffer == nullptr) {
+        HiLog::Error(LABEL, "Renderer write buffer allocation failed");
         return result;
     }
 
-    size_t bytesRead = 0;
-    while (bytesRead < userSize) {
-        int32_t len = capturerNapi->audioCapturer_->Read(*(buffer + bytesRead), userSize - bytesRead, isBlocking);
-        if (len >= 0) {
-            bytesRead += len;
-        } else {
-            bytesRead = len;
+    if (memcpy_s(buffer.get(), bufferLen, data, bufferLen)) {
+        HiLog::Info(LABEL, "Renderer mem copy failed");
+        return result;
+    }
+
+    size_t bytesWritten = 0;
+    size_t minBytes = 4;
+    while ((bytesWritten < bufferLen) && ((bufferLen - bytesWritten) > minBytes)) {
+        bytesWritten += rendererNapi->audioRenderer_->Write(buffer.get() + bytesWritten, bufferLen - bytesWritten);
+        HiLog::Error(LABEL, "Bytes written: %{public}zu", bytesWritten);
+        if (bytesWritten < 0) {
             break;
         }
     }
 
-    if (bytesRead > 0) {
-        uint8_t *native = nullptr;
-        napi_value arrayBuffer = nullptr;
-        napi_create_arraybuffer(env, bytesRead, reinterpret_cast<void **>(&native), &arrayBuffer);
-        if (!memcpy_s(native, bytesRead, buffer, bytesRead)) {
-            free(buffer);
-            HiLog::Info(LABEL, "Capturer read success");
-            return arrayBuffer;
-        }
-    }
-
-    free(buffer);
+    napi_create_int32(env, bytesWritten, &result);
 
     return result;
 }
 
-napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::GetAudioTime(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -480,15 +469,15 @@ napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer release failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer release failed!");
         return result;
     }
 
     Timestamp timestamp;
-    if (capturerNapi->audioCapturer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
+    if (rendererNapi->audioRenderer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
         const uint64_t secToNanosecond = 1000000000;
         uint64_t time = timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond;
         napi_create_int64(env, time, &result);
@@ -497,7 +486,7 @@ napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info
     return result;
 }
 
-napi_value AudioCapturerNapi::Stop(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::Pause(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -511,20 +500,47 @@ napi_value AudioCapturerNapi::Stop(napi_env env, napi_callback_info info)
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer stop failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer pause failed!");
         return result;
     }
 
-    bool isStopped = capturerNapi->audioCapturer_->Stop();
+    bool isStopped = rendererNapi->audioRenderer_->Pause();
     napi_get_boolean(env, isStopped, &result);
 
     return result;
 }
 
-napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::Stop(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    napi_value jsThis = nullptr;
+    napi_get_undefined(env, &result);
+
+    size_t argCount = 0;
+    status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
+    if (status != napi_ok || jsThis == nullptr) {
+        HiLog::Error(LABEL, "Stop invalid arguments");
+        return result;
+    }
+
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer stop failed!");
+        return result;
+    }
+
+    bool isStopped = rendererNapi->audioRenderer_->Stop();
+    napi_get_boolean(env, isStopped, &result);
+
+    return result;
+}
+
+napi_value AudioRendererNapi::Release(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -538,20 +554,20 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer release failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer release failed!");
         return result;
     }
 
-    bool isReleased = capturerNapi->audioCapturer_->Release();
+    bool isReleased = rendererNapi->audioRenderer_->Release();
     napi_get_boolean(env, isReleased, &result);
 
     return result;
 }
 
-napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info info)
+napi_value AudioRendererNapi::GetBufferSize(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -565,17 +581,17 @@ napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info inf
         return result;
     }
 
-    AudioCapturerNapi *capturerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    if (status != napi_ok || (capturerNapi == nullptr)) {
-        HiLog::Error(LABEL, "Capturer release failed!");
+    AudioRendererNapi *rendererNapi = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
+    if (status != napi_ok || (rendererNapi == nullptr)) {
+        HiLog::Error(LABEL, "Renderer release failed!");
         return result;
     }
 
     size_t bufferSize;
-    int32_t ret = capturerNapi->audioCapturer_->GetBufferSize(bufferSize);
+    int32_t ret = rendererNapi->audioRenderer_->GetBufferSize(bufferSize);
     if (ret == SUCCESS) {
-        HiLog::Info(LABEL, "Capturer get buffer success");
+        HiLog::Info(LABEL, "Renderer get buffer success");
         napi_create_int32(env, bufferSize, &result);
     }
 
