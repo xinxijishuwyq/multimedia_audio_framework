@@ -243,34 +243,53 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     appId.appId = "policymanager";
     StoreId storeId;
     storeId.storeId = "audiopolicy";
+    Status status = Status::SUCCESS;
 
     // open and initialize kvstore instance.
     if (mAudioPolicyKvStore == nullptr) {
-        manager.GetSingleKvStore(
-            options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
-            if (status == Status::STORE_NOT_FOUND) {
-                MEDIA_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: STORE_NOT_FOUND!");
-                return;
+        uint32_t retries = 0;
+
+        do {
+            manager.GetSingleKvStore(
+                options, appId, storeId, [&](Status paramStatus, std::unique_ptr<SingleKvStore> singleKvStore) {
+                status = paramStatus;
+
+                if (status == Status::SUCCESS) {
+                    mAudioPolicyKvStore = std::move(singleKvStore);
+                } else if (status == Status::STORE_NOT_FOUND) {
+                    MEDIA_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: STORE_NOT_FOUND!");
+                    return;
+                } else {
+                    MEDIA_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: Kvstore Connect failed! Retrying.");
+                    return;
+                }
+            });
+
+            if ((status == Status::SUCCESS) || (status == Status::STORE_NOT_FOUND)) {
+                break;
             } else {
-                mAudioPolicyKvStore = std::move(singleKvStore);
+                retries++;
+                usleep(KVSTORE_CONNECT_RETRY_DELAY_TIME);
             }
-        });
+        } while (retries <= KVSTORE_CONNECT_RETRY_COUNT);
     }
 
     if (mAudioPolicyKvStore == nullptr) {
-        MEDIA_INFO_LOG("[AudioAdapterManager] First Boot: Create AudioPolicyKvStore");
-        options.createIfMissing = true;
-        // [create and] open and initialize kvstore instance.
-        manager.GetSingleKvStore(
-            options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
-            if (status != Status::SUCCESS) {
-                MEDIA_ERR_LOG("[AudioAdapterManager] Create AudioPolicyKvStore Failed!");
-                return;
-            }
+        if (status == Status::STORE_NOT_FOUND) {
+            MEDIA_INFO_LOG("[AudioAdapterManager] First Boot: Create AudioPolicyKvStore");
+            options.createIfMissing = true;
+            // [create and] open and initialize kvstore instance.
+            manager.GetSingleKvStore(
+                options, appId, storeId, [&](Status status, std::unique_ptr<SingleKvStore> singleKvStore) {
+                if (status != Status::SUCCESS) {
+                    MEDIA_ERR_LOG("[AudioAdapterManager] Create AudioPolicyKvStore Failed!");
+                    return;
+                }
 
-            mAudioPolicyKvStore = std::move(singleKvStore);
-            isFirstBoot = true;
-        });
+                mAudioPolicyKvStore = std::move(singleKvStore);
+                isFirstBoot = true;
+            });
+        }
     }
 
     if (mAudioPolicyKvStore == nullptr) {
