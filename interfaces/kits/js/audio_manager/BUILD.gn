@@ -30,6 +30,7 @@ ohos_shared_library("audio") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_capturer/include",
+    "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_renderer/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
   ]
 
@@ -38,6 +39,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_capturer/src/audio_parameters_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_device_descriptor_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_renderer/src/audio_renderer_napi.cpp",
   ]
 
   deps = [
@@ -45,6 +47,7 @@ ohos_shared_library("audio") {
     "//foundation/ace/napi:ace_napi",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer",
     "//utils/native/base:utils",
   ]
 

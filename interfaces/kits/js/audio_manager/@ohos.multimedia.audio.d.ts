@@ -38,6 +38,13 @@ declare namespace audio {
   function createAudioCapturer(volumeType: AudioVolumeType): AudioCapturer;
 
   /**
+   * Obtains an AudioRenderer instance.
+   * @devices
+   * @sysCap SystemCapability.Multimedia.Audio
+   */
+  function createAudioRenderer(volumeType: AudioVolumeType): AudioRenderer;
+
+  /**
    * Enumerates audio stream types.
    * @devices
    * @sysCap SystemCapability.Multimedia.Audio
@@ -446,6 +453,78 @@ declare namespace audio {
      * @devices
      */
     readonly deviceType: DeviceType;
+  }
+
+  /**
+   * Provides functions for applications for audio playback.
+   * @devices
+   * @sysCap SystemCapability.Multimedia.Audio
+   */
+  interface AudioRenderer {
+    /**
+     * Sets audio render parameters.
+     * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will be set by default.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setParams(params: AudioParameters): void;
+
+    /**
+     * Obtains audio render parameters.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getParams(): AudioParameters;
+
+    /**
+     * Starts audio rendering.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    start(): boolean;
+
+    /**
+     * Render audio data.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    write(buffer: ArrayBuffer): number;
+
+    /**
+     * Obtains the current timestamp.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getAudioTime(): number;
+
+    /**
+     * Pauses audio rendering.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    pause(): boolean;
+
+    /**
+     * Stops audio rendering.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    stop(): boolean;
+
+    /**
+     * Releases resources.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    release(): boolean;
+
+    /**
+     * Obtains a reasonable minimum buffer size for renderer, however, the renderer can
+     * accept other read sizes as well.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getBufferSize(): number;
   }
 
   /**

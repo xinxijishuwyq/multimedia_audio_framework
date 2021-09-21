@@ -17,6 +17,7 @@
 #include "audio_device_descriptor_napi.h"
 #include "audio_manager_napi.h"
 #include "audio_parameters_napi.h"
+#include "audio_renderer_napi.h"
 #include "hilog/log.h"
 
 using namespace std;
@@ -1671,6 +1672,7 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioManagerNapi::Init(env, exports);
     AudioDeviceDescriptorNapi::Init(env, exports);
     AudioCapturerNapi::Init(env, exports);
+    AudioRendererNapi::Init(env, exports);
     AudioParametersNapi::Init(env, exports);
 
     return exports;
