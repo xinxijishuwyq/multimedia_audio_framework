@@ -34,6 +34,8 @@ public:
     static constexpr char HDI_SOURCE[] = "libmodule-hdi-source.z.so";
     static constexpr char PIPE_SINK[] = "libmodule-pipe-sink.z.so";
     static constexpr char PIPE_SOURCE[] = "libmodule-pipe-source.z.so";
+    static constexpr uint32_t KVSTORE_CONNECT_RETRY_COUNT = 5;
+    static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
     static constexpr float MAX_VOLUME = 1.0f;
     static constexpr float MIN_VOLUME = 0.0f;
 
