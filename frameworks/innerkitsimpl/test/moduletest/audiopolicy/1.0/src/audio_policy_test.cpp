@@ -23,7 +23,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace V1_0 {
-void AudioPolicyTest::SetUpTestCase(void) 
+void AudioPolicyTest::SetUpTestCase(void)
 {
     ASSERT_NE(nullptr, AudioSystemManager::GetInstance());
 }

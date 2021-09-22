@@ -181,7 +181,6 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     return SUCCESS;
 }
 
-
 int32_t PulseAudioServiceAdapterImpl::SetDefaultSource(string name)
 {
     pa_threaded_mainloop_lock(mMainLoop);
@@ -364,18 +363,21 @@ string PulseAudioServiceAdapterImpl::GetNameByStreamType(AudioStreamType streamT
 
 AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamType)
 {
-    AudioStreamType stream = STREAM_MUSIC;
+    AudioStreamType stream;
 
-    if (!streamType.compare(string("music")))
+    if (!streamType.compare(string("music"))) {
         stream = STREAM_MUSIC;
-    else if (!streamType.compare(string("ring")))
+    } else if (!streamType.compare(string("ring"))) {
         stream = STREAM_RING;
-    else if (!streamType.compare(string("system")))
+    } else if (!streamType.compare(string("system"))) {
         stream = STREAM_SYSTEM;
-    else if (!streamType.compare(string("notification")))
+    } else if (!streamType.compare(string("notification"))) {
         stream = STREAM_NOTIFICATION;
-    else if (!streamType.compare(string("alarm")))
+    } else if (!streamType.compare(string("alarm"))) {
         stream = STREAM_ALARM;
+    } else {
+        stream = STREAM_MUSIC;
+    }
 
     return stream;
 }

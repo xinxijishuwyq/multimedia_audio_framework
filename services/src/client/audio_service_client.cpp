@@ -921,7 +921,7 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
 
 int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 {
-    uint8_t* buffer = stream.buffer;
+    uint8_t *buffer = stream.buffer;
     size_t length = stream.bufferLen;
     size_t readSize = 0;
 
@@ -977,7 +977,7 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
 {
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
 
-    const pa_buffer_attr* bufferAttr = pa_stream_get_buffer_attr(paStream);
+    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
 
     if (bufferAttr == NULL) {
         MEDIA_ERR_LOG("pa_stream_get_buffer_attr returned NULL");
@@ -1001,7 +1001,7 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
     size_t minBufferSize = 0;
 
-    const pa_buffer_attr* bufferAttr = pa_stream_get_buffer_attr(paStream);
+    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
 
     if (bufferAttr == NULL) {
         MEDIA_ERR_LOG("pa_stream_get_buffer_attr returned NULL");
@@ -1045,7 +1045,7 @@ uint8_t AudioServiceClient::GetSampleSize()
 int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
 {
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
-    const pa_sample_spec* paSampleSpec = pa_stream_get_sample_spec(paStream);
+    const pa_sample_spec *paSampleSpec = pa_stream_get_sample_spec(paStream);
 
     audioParams = ConvertFromPAAudioParams(*paSampleSpec);
     return AUDIO_CLIENT_SUCCESS;

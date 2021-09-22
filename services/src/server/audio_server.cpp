@@ -111,7 +111,7 @@ int32_t AudioServer::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
-    AudioCapturerSource* audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
     if (audioCapturerSourceInstance->capturerInited_ == false) {
             MEDIA_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
@@ -124,7 +124,7 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 
 bool AudioServer::IsMicrophoneMute()
 {
-    AudioCapturerSource* audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 
     if (audioCapturerSourceInstance->capturerInited_ == false) {
@@ -148,6 +148,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag devi
         MEDIA_ERR_LOG("new AudioDeviceDescriptor fail");
         return audioDeviceDescriptor_;
     }
+
     if (DeviceFlag::INPUT_DEVICES_FLAG == deviceFlag) {
         audioDescriptor->deviceType_ = DeviceType::DEVICE_TYPE_MIC;
         audioDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
@@ -165,6 +166,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag devi
         audioDeviceDescriptor_.push_back(audioDescriptor_outputDevice);
         return audioDeviceDescriptor_;
     }
+
     audioDeviceDescriptor_.push_back(audioDescriptor);
     return audioDeviceDescriptor_;
 }

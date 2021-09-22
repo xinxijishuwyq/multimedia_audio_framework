@@ -312,8 +312,8 @@ private:
 
     // To be set while using audio stream
     // functionality for callbacks
-    AudioRendererCallbacks* mAudioRendererCallbacks;
-    AudioCapturerCallbacks* mAudioCapturerCallbacks;
+    AudioRendererCallbacks *mAudioRendererCallbacks;
+    AudioCapturerCallbacks *mAudioCapturerCallbacks;
 
     std::map<uint32_t, SinkDeviceInfo*> sinkDevices;
     std::map<uint32_t, SourceDeviceInfo*> sourceDevices;

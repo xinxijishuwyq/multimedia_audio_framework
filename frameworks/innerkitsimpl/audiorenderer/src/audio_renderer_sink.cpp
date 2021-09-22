@@ -31,8 +31,8 @@ const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
 const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t INT_32_MAX = 0x7fffffff;
-#define PCM_8_BIT 8
-#define PCM_16_BIT 16
+const uint32_t PCM_8_BIT = 8;
+const uint32_t PCM_16_BIT = 16;
 }
 
 #ifdef DUMPFILE
