@@ -15,8 +15,8 @@
 
 #include "config.h"
 #include <dlfcn.h>
-#include "ltdl.h"
 #include <pulsecore/core-util.h>
+#include "ltdl.h"
 
 #define SYSTEM_LIB_PATH "/system/lib/"
 

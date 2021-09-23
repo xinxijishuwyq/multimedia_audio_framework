@@ -38,8 +38,9 @@ bool XMLParser::Parse()
         return false;
     }
 
-    if (!ParseInternal(*root))
+    if (!ParseInternal(*root)) {
         return false;
+    }
 
     return true;
 }
@@ -49,6 +50,7 @@ void XMLParser::Destroy()
     if (mDoc != NULL) {
         xmlFreeDoc(mDoc);
     }
+
     return;
 }
 
@@ -85,22 +87,23 @@ bool XMLParser::ParseInternal(xmlNode &node)
 
 NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
 {
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("BuiltInDevices")))
+    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("BuiltInDevices"))) {
         return BUILT_IN_DEVICES;
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("DefaultOutputDevice")))
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("DefaultOutputDevice"))) {
         return DEFAULT_OUTPUT_DEVICE;
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("DefaultInputDevice")))
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("DefaultInputDevice"))) {
         return DEFAULT_INPUT_DEVICE;
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPorts")))
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPorts"))) {
         return AUDIO_PORTS;
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPort")))
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPort"))) {
         return AUDIO_PORT;
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPins")))
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPins"))) {
         return AUDIO_PORT_PINS;
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPin")))
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPin"))) {
         return AUDIO_PORT_PIN;
-
-    return UNKNOWN;
+    } else {
+        return UNKNOWN;
+    }
 }
 
 void XMLParser::ParseBuiltInDevices(xmlNode &node)
@@ -130,7 +133,6 @@ void XMLParser::ParseDefaultOutputDevice(xmlNode &node)
     }
     return;
 }
-
 
 void XMLParser::ParseDefaultInputDevice(xmlNode &node)
 {
