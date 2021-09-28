@@ -26,6 +26,7 @@ typedef struct {
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
+    uint32_t bufferSize;
 } AudioSourceAttr;
 
 int32_t AudioCapturerSourceInit(AudioSourceAttr *attr);

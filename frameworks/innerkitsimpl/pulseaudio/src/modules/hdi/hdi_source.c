@@ -292,6 +292,11 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, pa_sample_spec
     struct userdata *u) {
     pa_source_new_data data;
 
+    if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
+        MEDIA_INFO_LOG("Failed to parse buffer_size argument.");
+        u->buffer_size = DEFAULT_BUFFER_SIZE;
+    }
+
     pa_source_new_data_init(&data);
     data.driver = __FILE__;
     data.module = m;
@@ -322,11 +327,6 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, pa_sample_spec
 
     pa_source_set_asyncmsgq(u->source, u->thread_mq.inq);
     pa_source_set_rtpoll(u->source, u->rtpoll);
-
-    if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
-        MEDIA_INFO_LOG("Failed to parse buffer_size argument.");
-        return -1;
-    }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->source->sample_spec);
     pa_source_set_latency_range(u->source, 0, u->block_usec);
@@ -370,12 +370,15 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver) {
     u->attrs.sampleRate = ss.rate;
     MEDIA_INFO_LOG("AudioDeviceCreateCapture format: %{public}d, channel: %{public}d, sampleRate: %{public}d",
                    u->attrs.format, u->attrs.channel, u->attrs.sampleRate);
-    ret = pa_capturer_init(u);
+
+    ret = pa_set_source_properties(m, ma, &ss, &map, u);
     if (ret != 0) {
         goto fail;
     }
 
-    ret = pa_set_source_properties(m, ma, &ss, &map, u);
+    u->attrs.bufferSize = u->buffer_size;
+
+    ret = pa_capturer_init(u);
     if (ret != 0) {
         goto fail;
     }
