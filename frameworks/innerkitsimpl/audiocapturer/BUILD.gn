@@ -34,15 +34,10 @@ ohos_shared_library("audio_capturer_source") {
   public_configs = [ ":audio_external_library_config" ]
 
   deps = [
-    "$hdf_uhdf_path/config:libhdf_hcs",
-    "$hdf_uhdf_path/hcs:hdf_default.hcb",
     "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:hdf_devhost",
     "$hdf_uhdf_path/host:libhdf_host",
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/manager:hdf_devmgr",
-    "$hdf_uhdf_path/manager:hdf_devmgr.rc",
-    "$hdf_uhdf_path/osal:libhdf_utils",
+    "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/bounds_checking_function:libsec_static",
   ]
