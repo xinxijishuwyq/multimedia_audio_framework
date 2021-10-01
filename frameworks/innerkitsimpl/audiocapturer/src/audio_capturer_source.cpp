@@ -161,6 +161,7 @@ int32_t AudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     param.sampleRate = attr_.sampleRate;
     param.format = attr_.format;
     param.channelCount = attr_.channel;
+    param.silenceThreshold = attr_.bufferSize;
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
