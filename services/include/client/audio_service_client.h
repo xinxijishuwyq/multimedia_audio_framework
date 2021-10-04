@@ -295,7 +295,8 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
-    std::mutex mtx;
+    std::mutex writeMutex;
+    std::mutex ctrlMutex;
 
     AudioCache acache;
     const void *internalReadBuffer;
@@ -309,6 +310,11 @@ private:
     float mVolumeFactor;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
+
+    pa_cvolume cvolume;
+    uint32_t streamIndex;
+    uint32_t volumeChannels;
+    bool streamInfoUpdated;
 
     // To be set while using audio stream
     // functionality for callbacks
@@ -371,7 +377,8 @@ private:
     static void PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
 
-    static void GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void SetPaVolume(const AudioServiceClient &client);
 };
 } // namespace AudioStandard
 } // namespace OHOS

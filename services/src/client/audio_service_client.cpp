@@ -213,6 +213,10 @@ AudioServiceClient::AudioServiceClient()
     mStreamType = STREAM_MUSIC;
     mAudioSystemMgr = NULL;
 
+    streamIndex = 0;
+    volumeChannels = STEREO;
+    streamInfoUpdated = false;
+
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
     mAudioRendererCallbacks = NULL;
@@ -841,7 +845,7 @@ size_t AudioServiceClient::WriteToAudioCache(const StreamBuffer &stream)
 
 size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)
 {
-    lock_guard<mutex> lock(mtx);
+    lock_guard<mutex> lock(writeMutex);
     int error = 0;
     size_t cachedLen = WriteToAudioCache(stream);
 
@@ -1139,6 +1143,7 @@ void AudioServiceClient::RegisterAudioCapturerCallbacks(const AudioCapturerCallb
 
 int32_t AudioServiceClient::SetStreamVolume(float volume)
 {
+    lock_guard<mutex> lock(ctrlMutex);
     MEDIA_INFO_LOG("SetVolume volume: %{public}f", volume);
 
     if (context == NULL) {
@@ -1152,34 +1157,44 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
 
+    pa_threaded_mainloop_lock(mainLoop);
+
     mVolumeFactor = volume;
     pa_proplist *propList = pa_proplist_new();
     if (propList == NULL) {
         MEDIA_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList, NULL, NULL);
-    while (pa_operation_get_state(updatePropOperation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mainLoop);
-    }
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
 
-    pa_threaded_mainloop_lock(mainLoop);
-    uint32_t idx = pa_stream_get_index(paStream);
-    pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoVolumeCb,
-        reinterpret_cast<void *>(this));
-    if (operation == NULL) {
-        MEDIA_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+    if (mAudioSystemMgr == NULL) {
+        MEDIA_ERR_LOG("System manager instance is null");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
-    pa_threaded_mainloop_accept(mainLoop);
+    if (!streamInfoUpdated) {
+        uint32_t idx = pa_stream_get_index(paStream);
+        pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+            reinterpret_cast<void *>(this));
+        if (operation == NULL) {
+            MEDIA_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
 
-    pa_operation_unref(operation);
+        pa_threaded_mainloop_accept(mainLoop);
+
+        pa_operation_unref(operation);
+    } else {
+        SetPaVolume(*this);
+    }
+
     pa_threaded_mainloop_unlock(mainLoop);
 
     return AUDIO_CLIENT_SUCCESS;
@@ -1190,7 +1205,7 @@ float AudioServiceClient::GetStreamVolume()
     return mVolumeFactor;
 }
 
-void AudioServiceClient::GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
+void AudioServiceClient::GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
 {
     MEDIA_INFO_LOG("GetSinkInputInfoVolumeCb in");
     AudioServiceClient *thiz = reinterpret_cast<AudioServiceClient *>(userdata);
@@ -1210,30 +1225,34 @@ void AudioServiceClient::GetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_i
         return;
     }
 
-    if (thiz->mAudioSystemMgr == NULL) {
-        MEDIA_ERR_LOG("System manager instance is null");
-        return;
-    }
+    thiz->cvolume = i->volume;
+    thiz->streamIndex = i->index;
+    thiz->volumeChannels = i->channel_map.channels;
+    thiz->streamInfoUpdated = true;
 
-    pa_cvolume cv = i->volume;
+    SetPaVolume(*thiz);
+
+    return;
+}
+
+void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
+{
+    pa_cvolume cv = client.cvolume;
     int32_t systemVolumeInt
-        = thiz->mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(thiz->mStreamType));
+        = client.mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * thiz->mVolumeFactor;
+    float vol = systemVolume * client.mVolumeFactor;
 
-    AudioRingerMode ringerMode = thiz->mAudioSystemMgr->GetRingerMode();
-    if ((thiz->mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
+    AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
+    if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
         vol = MIN_STREAM_VOLUME_LEVEL;
     }
 
     int32_t volume = pa_sw_volume_from_linear(vol);
-    pa_cvolume_set(&cv, i->channel_map.channels, volume);
-    pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, NULL, NULL));
+    pa_cvolume_set(&cv, client.volumeChannels, volume);
+    pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, NULL, NULL));
 
-    MEDIA_INFO_LOG("Applied volume : %{public}f for stream : %{public}s, pa volume: %{public}d",
-        vol, i->name, volume);
-
-    return;
+    MEDIA_INFO_LOG("Applied volume : %{public}f, pa volume: %{public}d", vol, volume);
 }
 } // namespace AudioStandard
 } // namespace OHOS
