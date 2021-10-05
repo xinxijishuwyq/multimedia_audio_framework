@@ -16,15 +16,20 @@
 #ifndef AUDIO_SERVICE_CLIENT_H
 #define AUDIO_SERVICE_CLIENT_H
 
-#include <map>
-#include <iostream>
+#include <algorithm>
 #include <cstring>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <stdlib.h>
+#include <thread>
 #include <unistd.h>
 #include <pulse/pulseaudio.h>
 #include <pulse/thread-mainloop.h>
-#include <audio_info.h>
 #include <audio_error.h>
+#include <audio_info.h>
+#include <audio_timer.h>
 
 #include "audio_system_manager.h"
 
@@ -79,7 +84,7 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const = 0;
 };
 
-class AudioServiceClient {
+class AudioServiceClient : public AudioTimer {
 public:
     static constexpr char PA_RUNTIME_DIR[] = "/data/data/.pulse_dir/runtime";
     static constexpr char PA_STATE_DIR[] = "/data/data/.pulse_dir/state";
@@ -287,6 +292,9 @@ public:
      * @return Returns current track volume
      */
     float GetStreamVolume();
+
+    // Audio timer callback
+    virtual void OnTimeOut();
 
 private:
     pa_threaded_mainloop *mainLoop;

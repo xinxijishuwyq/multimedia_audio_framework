@@ -27,6 +27,7 @@ AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 
 const uint64_t LATENCY_IN_MSEC = 200UL;
+const uint32_t READ_TIMEOUT_IN_SEC = 5;
 
 #define CHECK_AND_RETURN_IFINVALID(expr) \
 do {                                     \
@@ -923,6 +924,14 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
     return 0;
 }
 
+void AudioServiceClient::OnTimeOut()
+{
+    MEDIA_ERR_LOG("Inside read timeout callback");
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_threaded_mainloop_signal(mainLoop, 0);
+    pa_threaded_mainloop_unlock(mainLoop);
+}
+
 int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 {
     uint8_t *buffer = stream.buffer;
@@ -942,9 +951,16 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
             }
 
             if (internalRdBufLen <= 0) {
-                if (isBlocking)
+                if (isBlocking) {
+                    StartTimer(READ_TIMEOUT_IN_SEC);
                     pa_threaded_mainloop_wait(mainLoop);
-                else {
+                    StopTimer();
+                    if (IsTimeOut()) {
+                        MEDIA_ERR_LOG("Read timeout");
+                        pa_threaded_mainloop_unlock(mainLoop);
+                        return AUDIO_CLIENT_READ_STREAM_ERR;
+                    }
+                } else {
                     pa_threaded_mainloop_unlock(mainLoop);
                     return readSize;
                 }
