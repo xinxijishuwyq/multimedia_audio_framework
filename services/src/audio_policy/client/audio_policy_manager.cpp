@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_policy_proxy.h"
 #include "iservice_registry.h"
@@ -22,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static sptr<IAudioPolicy> g_sProxy = nullptr;
+
 void AudioPolicyManager::Init()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -86,6 +88,42 @@ int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool 
 bool AudioPolicyManager::IsDeviceActive(InternalDeviceType deviceType)
 {
     return g_sProxy->IsDeviceActive(deviceType);
+}
+
+int32_t AudioPolicyManager::SetAudioManagerCallback(const AudioStreamType streamType,
+                                                    const std::shared_ptr<AudioManagerCallback> &callback)
+{
+    callback_ = callback; // used by client to trigger callback like onerror
+
+    listenerStub_ = new(std::nothrow) AudioPolicyManagerListenerStub();
+    if (listenerStub_ == nullptr || g_sProxy == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: object null");
+        return ERROR;
+    }
+    listenerStub_->SetCallback(callback);
+
+    sptr<IRemoteObject> object = listenerStub_->AsObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
+        return ERROR;
+    }
+
+    return g_sProxy->SetAudioManagerCallback(streamType, object);
+}
+
+int32_t AudioPolicyManager::UnsetAudioManagerCallback(const AudioStreamType streamType)
+{
+    return g_sProxy->UnsetAudioManagerCallback(streamType);
+}
+
+int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    return g_sProxy->ActivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    return g_sProxy->DeactivateAudioInterrupt(audioInterrupt);
 }
 } // namespace AudioStandard
 } // namespace OHOS

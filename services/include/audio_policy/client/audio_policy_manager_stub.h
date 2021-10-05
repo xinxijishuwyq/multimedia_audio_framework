@@ -36,6 +36,11 @@ private:
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
+    void DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
+    void ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt);
 };
 } // AudioStandard
 } // namespace OHOS

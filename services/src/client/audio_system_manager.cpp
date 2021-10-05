@@ -35,6 +35,9 @@ AudioSystemManager::AudioSystemManager()
 
 AudioSystemManager::~AudioSystemManager()
 {
+    // Deactivate to be called after unset in destructor
+    UnsetAudioManagerCallback(cbStreamType_);
+    DeactivateAudioInterrupt(audioInterrupt_);
     MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
 }
 
@@ -111,6 +114,7 @@ bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volu
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_ASSISTANT:
             break;
         default:
             MEDIA_ERR_LOG("IsStreamActive volumeType=%{public}d not supported", volumeType);
@@ -142,6 +146,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_ASSISTANT:
             break;
         default:
             MEDIA_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
@@ -159,6 +164,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_ASSISTANT:
             break;
         default:
             MEDIA_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
@@ -201,6 +207,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_ASSISTANT:
             break;
         default:
             MEDIA_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
@@ -219,6 +226,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_ASSISTANT:
             break;
         default:
             MEDIA_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
@@ -228,6 +236,36 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+}
+
+int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+                                                    const std::shared_ptr<AudioManagerCallback> &callback)
+{
+    callback_ = callback;
+    cbStreamType_ = streamType;
+
+    return AudioPolicyManager::GetInstance().SetAudioManagerCallback(static_cast<AudioStreamType>(streamType),
+                                                                     callback);
+}
+
+int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
+{
+    return AudioPolicyManager::GetInstance().UnsetAudioManagerCallback(static_cast<AudioStreamType>(streamType));
+}
+
+int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt_.streamUsage = audioInterrupt.streamUsage;
+    audioInterrupt_.contentType = audioInterrupt.contentType;
+    audioInterrupt_.streamType = audioInterrupt.streamType;
+    audioInterrupt_.sessionID = audioInterrupt.sessionID;
+
+    return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+{
+    return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
 }
 
 int32_t AudioSystemManager::SetMicrophoneMute(bool isMute) const

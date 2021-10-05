@@ -22,7 +22,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
 
   include_dirs = [
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audioadapter/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/pulseaudio/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioadapter/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
@@ -47,5 +46,5 @@ ohos_shared_library("pulse_audio_service_adapter") {
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include" ]
 }

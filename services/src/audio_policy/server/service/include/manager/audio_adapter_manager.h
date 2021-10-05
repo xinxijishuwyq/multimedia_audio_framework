@@ -88,6 +88,7 @@ private:
     {
         mVolumeMap[STREAM_MUSIC] = MAX_VOLUME;
         mVolumeMap[STREAM_RING] = MAX_VOLUME;
+        mVolumeMap[STREAM_VOICE_ASSISTANT] = MAX_VOLUME;
     }
 
     bool ConnectToPulseAudio(void);

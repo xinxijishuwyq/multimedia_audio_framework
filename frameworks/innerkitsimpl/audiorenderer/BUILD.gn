@@ -25,7 +25,7 @@ ohos_shared_library("audio_renderer_sink") {
 
   include_dirs = [
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/media_standard/interfaces/innerkits/native/media/include",
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
@@ -51,5 +51,5 @@ ohos_shared_library("audio_renderer_sink") {
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include" ]
 }

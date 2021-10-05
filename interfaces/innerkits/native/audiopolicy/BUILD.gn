@@ -18,7 +18,6 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
     "//foundation/distributedschedule/safwk/services/safwk/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiopolicy/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager/include",
@@ -30,7 +29,6 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_standard/services/include/audio_policy/common",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/server",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/client",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/multimedia/image/mock/native/include/foundation/multimedia/image/mock/native/include",
     "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy/include",
@@ -41,8 +39,8 @@ config("audio_policy_public_config") {
   ]
 
   cflags = [
-        "-Wall",
-        "-Werror",
+    "-Wall",
+    "-Werror",
   ]
 
   if (target_cpu == "arm") {
@@ -53,23 +51,20 @@ config("audio_policy_public_config") {
 ohos_shared_library("audio_policy_client") {
   install_enable = true
   sources = [
-    "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_manager.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_manager_listener_stub.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_proxy.cpp",
   ]
 
-  public_configs = [
-    ":audio_policy_public_config",
-  ]
+  public_configs = [ ":audio_policy_public_config" ]
 
-  deps = [
-   "//utils/native/base:utils",
-  ]
+  deps = [ "//utils/native/base:utils" ]
 
   external_deps = [
-    "ipc:ipc_core",
-    "samgr_L2:samgr_proxy",
-    "safwk:system_ability_fwk",
     "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr_L2:samgr_proxy",
   ]
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_standard"
@@ -80,14 +75,12 @@ ohos_executable("audio_policy_test") {
 
   sources = [ "//foundation/multimedia/audio_standard/services/test/audio_policy_test.cpp" ]
 
-    configs = [
-        ":audio_policy_public_config",
-    ]
+  configs = [ ":audio_policy_public_config" ]
 
-    deps = [
-        "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
-        "//third_party/bounds_checking_function:libsec_static",
-    ]
+  deps = [
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
+    "//third_party/bounds_checking_function:libsec_static",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 

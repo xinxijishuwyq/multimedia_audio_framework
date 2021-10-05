@@ -140,7 +140,7 @@ enum AudioStreamType {
     /**
      * Indicates Audio streams for voice assistant
      */
-    VOICE_ASSISTANT = 5,
+    STREAM_VOICE_ASSISTANT = 5,
     /**
      * Indicates audio streams for alarms.
      */
@@ -275,6 +275,40 @@ enum StreamUsage {
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
+    STREAM_USAGE_VOICE_ASSISTANT = 4,
+};
+
+enum InterruptType {
+    INTERRUPT_TYPE_BEGIN = 1,
+    INTERRUPT_TYPE_END = 2,
+};
+
+enum InterruptHint {
+    INTERRUPT_HINT_NONE = 0,
+    INTERRUPT_HINT_RESUME,
+    INTERRUPT_HINT_PAUSE,
+    INTERRUPT_HINT_STOP,
+    INTERRUPT_HINT_DUCK,
+    INTERRUPT_HINT_UNDUCK
+};
+
+enum InterruptActionType {
+    TYPE_ACTIVATED = 1,
+    TYPE_INTERRUPTED = 2,
+    TYPE_DEACTIVATED = 3
+};
+
+struct InterruptAction {
+    InterruptActionType actionType;
+    InterruptType interruptType;
+    InterruptHint interruptHint;
+};
+
+struct AudioInterrupt {
+    StreamUsage streamUsage;
+    ContentType contentType;
+    AudioStreamType streamType;
+    int32_t sessionID;
 };
 
 struct AudioParameters {

@@ -37,6 +37,18 @@ public:
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 };
 
+class AudioManagerCallback {
+public:
+    virtual ~AudioManagerCallback() = default;
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptAction Indicates the InterruptAction information needed by client.
+     * For details, refer InterruptAction enum in audio_info.h
+     */
+    virtual void OnInterrupt(const InterruptAction &interruptAction) = 0;
+};
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
@@ -72,7 +84,7 @@ public:
         /**
          * Indicates Audio streams for voice assistant
          */
-        VOICE_ASSISTANT = 5,
+        STREAM_VOICE_ASSISTANT = 5,
         /**
          * Indicates audio streams for alarms.
          */
@@ -122,6 +134,11 @@ public:
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
     bool SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
+    int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+                                    const std::shared_ptr<AudioManagerCallback> &callback);
+    int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -129,6 +146,9 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
+    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
+    AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
+    AudioSystemManager::AudioVolumeType cbStreamType_ = AudioSystemManager::AudioVolumeType::STREAM_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

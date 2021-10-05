@@ -17,6 +17,7 @@
 #define AUDIO_MNGR_NAPI_H_
 
 #include <iostream>
+#include <map>
 #include <vector>
 #include "audio_system_manager.h"
 #include "napi/native_api.h"
@@ -67,7 +68,10 @@ private:
     static napi_value GetAudioParameter(napi_env env, napi_callback_info info);
     static napi_value SetMicrophoneMute(napi_env env, napi_callback_info info);
     static napi_value IsMicrophoneMute(napi_env env, napi_callback_info info);
-
+    static napi_value ActivateAudioInterrupt(napi_env env, napi_callback_info info);
+    static napi_value DeactivateAudioInterrupt(napi_env env, napi_callback_info info);
+    static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value Off(napi_env env, napi_callback_info info);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioVolumeTypeObject(napi_env env);
     static napi_value CreateDeviceFlagObject(napi_env env);
@@ -75,6 +79,9 @@ private:
     static napi_value CreateDeviceTypeObject(napi_env env);
     static napi_value CreateActiveDeviceTypeObject(napi_env env);
     static napi_value CreateAudioRingModeObject(napi_env env);
+    static napi_value CreateInterruptActionTypeObject(napi_env env);
+    static napi_value CreateInterruptHintObject(napi_env env);
+    static napi_value CreateInterruptTypeObject(napi_env env);
 
     static napi_ref sConstructor_;
     static napi_ref audioVolumeTypeRef_;
@@ -83,10 +90,34 @@ private:
     static napi_ref deviceTypeRef_;
     static napi_ref activeDeviceTypeRef_;
     static napi_ref audioRingModeRef_;
+    static napi_ref interruptActionType_;
+    static napi_ref interruptHint_;
+    static napi_ref interruptType_;
 
     AudioSystemManager *audioMngr_;
+    std::shared_ptr<AudioManagerCallback> callbackNapi_ = nullptr;
     napi_env env_;
     napi_ref wrapper_;
+};
+
+static const std::map<std::string, InterruptType> interruptTypeMap = {
+    {"INTERRUPT_TYPE_BEGIN", INTERRUPT_TYPE_BEGIN},
+    {"INTERRUPT_TYPE_END", INTERRUPT_TYPE_END}
+};
+
+static const std::map<std::string, InterruptHint> interruptHintMap = {
+    {"INTERRUPT_HINT_NONE", INTERRUPT_HINT_NONE},
+    {"INTERRUPT_HINT_PAUSE", INTERRUPT_HINT_PAUSE},
+    {"INTERRUPT_HINT_RESUME", INTERRUPT_HINT_RESUME},
+    {"INTERRUPT_HINT_STOP", INTERRUPT_HINT_STOP},
+    {"INTERRUPT_HINT_DUCK", INTERRUPT_HINT_DUCK},
+    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK}
+};
+
+static const std::map<std::string, InterruptActionType> interruptActionTypeMap = {
+    {"TYPE_ACTIVATED", TYPE_ACTIVATED},
+    {"TYPE_INTERRUPTED", TYPE_INTERRUPTED},
+    {"TYPE_DEACTIVATED", TYPE_DEACTIVATED}
 };
 } // namespace AudioStandard
 } // namespace OHOS

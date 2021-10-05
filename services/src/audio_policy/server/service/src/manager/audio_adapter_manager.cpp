@@ -206,6 +206,8 @@ std::string AudioAdapterManager::GetStreamNameByStreamType(AudioStreamType strea
             return "alarm";
         case STREAM_DTMF:
             return "dtmf";
+        case STREAM_VOICE_ASSISTANT:
+            return "voice_assistant";
         default:
             return "";
     }
@@ -225,6 +227,8 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
         stream = STREAM_NOTIFICATION;
     else if (!streamType.compare(std::string("alarm")))
         stream = STREAM_ALARM;
+    else if (!streamType.compare(std::string("voice_assistant")))
+        stream = STREAM_VOICE_ASSISTANT;
 
     return stream;
 }
@@ -305,6 +309,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     if (isFirstBoot == true) {
         WriteVolumeToKvStore(STREAM_MUSIC, MAX_VOLUME);
         WriteVolumeToKvStore(STREAM_RING, MAX_VOLUME);
+        WriteVolumeToKvStore(STREAM_VOICE_ASSISTANT, MAX_VOLUME);
         MEDIA_INFO_LOG("[AudioAdapterManager] Wrote default stream volumes to KvStore");
     } else {
         LoadVolumeMap();
@@ -340,6 +345,9 @@ bool AudioAdapterManager::LoadVolumeFromKvStore(AudioStreamType streamType)
         case STREAM_RING:
             key = "ring";
             break;
+        case STREAM_VOICE_ASSISTANT:
+            key = "voice_assistant";
+            break;
         default:
             return false;
     }
@@ -368,6 +376,9 @@ bool AudioAdapterManager::LoadVolumeMap(void)
 
     if (!LoadVolumeFromKvStore(STREAM_RING))
         MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Ring from kvStore!");
+
+    if (!LoadVolumeFromKvStore(STREAM_VOICE_ASSISTANT))
+        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_assistant from kvStore!");
 
     return true;
 }

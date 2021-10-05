@@ -26,7 +26,6 @@ group("audio_client_test_packages") {
 
 config("audio_client_public_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiopolicy/include",

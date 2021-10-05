@@ -43,8 +43,17 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
     AudioRingerMode GetRingerMode() override;
+
+    int32_t SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioManagerCallback(const AudioStreamType streamType) override;
+
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
+
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
+    void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
 };
 } // namespace AudioStandard
 } // namespace OHOS

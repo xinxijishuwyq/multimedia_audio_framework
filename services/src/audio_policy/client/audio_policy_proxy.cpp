@@ -24,6 +24,14 @@ AudioPolicyProxy::AudioPolicyProxy(const sptr<IRemoteObject> &impl)
 {
 }
 
+void AudioPolicyProxy::WriteAudioInteruptParams(MessageParcel &data, const AudioInterrupt &audioInterrupt)
+{
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.streamType));
+    data.WriteInt32(audioInterrupt.sessionID);
+}
+
 int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
 {
     MessageParcel data;
@@ -159,6 +167,76 @@ bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
         return false;
     }
     return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: SetAudioManagerCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(streamType));
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: set callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetAudioManagerCallback(const AudioStreamType streamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    data.WriteInt32(static_cast<int32_t>(streamType));
+    int error = Remote()->SendRequest(UNSET_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: unset callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    WriteAudioInteruptParams(data, audioInterrupt);
+    int error = Remote()->SendRequest(ACTIVATE_INTERRUPT, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: activate interrupt failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    WriteAudioInteruptParams(data, audioInterrupt);
+    int error = Remote()->SendRequest(DEACTIVATE_INTERRUPT, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: deactivate interrupt failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

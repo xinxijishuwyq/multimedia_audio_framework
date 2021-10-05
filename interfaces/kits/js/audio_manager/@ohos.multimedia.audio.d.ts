@@ -181,7 +181,7 @@ declare namespace audio {
     SAMPLE_S24LE = 3,
     SAMPLE_S32LE = 4,
     INVALID_WIDTH = -1
-  };
+  }
 
   /**
    * Enumerates the audio channel.
@@ -189,7 +189,7 @@ declare namespace audio {
   enum AudioChannel {
     MONO = 1,
     STEREO
-  };
+  }
 
   /**
    * Enumerates the audio sampling rate.
@@ -206,7 +206,7 @@ declare namespace audio {
     SAMPLE_RATE_48000 = 48000,
     SAMPLE_RATE_64000 = 64000,
     SAMPLE_RATE_96000 = 96000
-  };
+  }
 
   /**
    * Enumerates the audio encoding type.
@@ -214,7 +214,7 @@ declare namespace audio {
   enum AudioEncodingType {
     ENCODING_PCM = 0,
     ENCODING_INVALID
-  };
+  }
 
   /**
    * Enumerates the audio content type.
@@ -235,6 +235,26 @@ declare namespace audio {
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
+  }
+
+  enum InterruptType {
+    INTERRUPT_TYPE_BEGIN = 1,
+    INTERRUPT_TYPE_END = 2,
+  }
+
+  enum InterruptHint {
+    INTERRUPT_HINT_NONE = 0,
+    INTERRUPT_HINT_RESUME,
+    INTERRUPT_HINT_PAUSE,
+    INTERRUPT_HINT_STOP,
+    INTERRUPT_HINT_DUCK,
+    INTERRUPT_HINT_UNDUCK
+  }
+
+  enum InterruptActionType {
+    TYPE_ACTIVATED = 1,
+    TYPE_INTERRUPTED = 2,
+    TYPE_DEACTIVATED = 3
   }
 
   /**
@@ -435,6 +455,30 @@ declare namespace audio {
      * @devices
      */
     isDeviceActive(deviceType: ActiveDeviceType): Promise<boolean>;
+    /**
+     * Activates Audio interrupt
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @devices
+     */
+    activateAudioInterrupt(interrupt: AudioInterrupt): boolean;
+    /**
+    * Deactivates Audio interrupt
+    * @sysCap SystemCapability.Multimedia.Audio
+    * @devices
+    */
+    deactivateAudioInterrupt(interrupt: AudioInterrupt): boolean;
+    /**
+    * Monitors audio interrupt
+    * @sysCap SystemCapability.Multimedia.Audio
+    * @devices
+    */
+    on(type: 'interrupt', volumeType: AudioVolumeType, callback: Callback<InterruptAction>): void;
+    /**
+     * Stops listening for audio interrupt
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @devices
+     */
+    off(type: 'interrupt', volumeType: AudioVolumeType): void;
   }
 
   /**
@@ -455,6 +499,15 @@ declare namespace audio {
     readonly deviceType: DeviceType;
   }
 
+  interface InterruptAction {
+    actionType: InterruptActionType;
+    interruptType: InterruptType;
+    interruptHint: InterruptHint;
+  }
+
+  interface AudioInterrupt {
+    streamType: AudioVolumeType;
+  }
   /**
    * Provides functions for applications for audio playback.
    * @devices
