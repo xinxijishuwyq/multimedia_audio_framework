@@ -33,6 +33,28 @@ public:
 
     static napi_value Init(napi_env env, napi_value exports);
 private:
+    struct AudioRendererAsyncContext {
+        napi_env env;
+        napi_async_work work;
+        napi_deferred deferred;
+        napi_ref callbackRef = nullptr;
+        int32_t status;
+        int32_t intValue;
+        bool isTrue;
+        uint64_t time;
+        size_t bufferLen;
+        void *data;
+        AudioSampleFormat sampleFormat;
+        AudioSamplingRate samplingRate;
+        AudioChannel channelCount;
+        AudioEncodingType encodingType;
+        ContentType contentType;
+        StreamUsage usage;
+        DeviceRole deviceRole;
+        DeviceType deviceType;
+        AudioRendererNapi *objectInfo;
+    };
+
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
@@ -45,6 +67,14 @@ private:
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+
+    static void CommonCallbackRoutine(napi_env env, AudioRendererAsyncContext* &asyncContext,
+                                      const napi_value &valueParam);
+    static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioParamsAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
     static napi_ref sConstructor_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;

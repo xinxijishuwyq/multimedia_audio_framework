@@ -33,6 +33,30 @@ public:
 
     static napi_value Init(napi_env env, napi_value exports);
 private:
+    struct AudioCapturerAsyncContext {
+        napi_env env;
+        napi_async_work work;
+        napi_deferred deferred;
+        napi_ref callbackRef = nullptr;
+        uint64_t time;
+        int32_t status;
+        int32_t intValue;
+        uint32_t userSize;
+        uint8_t *buffer = nullptr;
+        size_t bytesRead;
+        bool isBlocking;
+        bool isTrue;
+        AudioSampleFormat audioSampleFormat;
+        AudioSamplingRate samplingRate;
+        AudioChannel audioChannel;
+        AudioEncodingType audioEncoding;
+        ContentType contentType;
+        StreamUsage usage;
+        DeviceRole deviceRole;
+        DeviceType deviceType;
+        AudioCapturerNapi *objectInfo;
+    };
+
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturer(napi_env env, napi_callback_info info);
@@ -44,6 +68,16 @@ private:
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+
+    static void CommonCallbackRoutine(napi_env env, AudioCapturerAsyncContext* &asyncContext,
+                                      const napi_value &valueParam);
+    static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioParamsAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void ReadAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static napi_status CreateReadAsyncWork(const AudioCapturerAsyncContext &asyncContext);
 
     static napi_ref sConstructor_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
