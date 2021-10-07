@@ -356,6 +356,8 @@ string PulseAudioServiceAdapterImpl::GetNameByStreamType(AudioStreamType streamT
             return "alarm";
         case STREAM_DTMF:
             return "dtmf";
+        case STREAM_VOICE_ASSISTANT:
+            return "voice_assistant";
         default:
             return "";
     }
@@ -375,6 +377,8 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
         stream = STREAM_NOTIFICATION;
     } else if (!streamType.compare(string("alarm"))) {
         stream = STREAM_ALARM;
+    } else if (!streamType.compare(string("voice_assistant"))) {
+        stream = STREAM_VOICE_ASSISTANT;
     } else {
         stream = STREAM_MUSIC;
     }

@@ -45,6 +45,14 @@ public:
     virtual int32_t SetRingerMode(AudioRingerMode ringMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
+
+    virtual int32_t SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioManagerCallback(const AudioStreamType streamType) = 0;
+
+    virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
+
+    virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

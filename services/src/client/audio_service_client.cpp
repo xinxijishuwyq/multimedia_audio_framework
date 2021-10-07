@@ -391,6 +391,9 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
 {
     std::string name;
     switch (audioType) {
+        case STREAM_VOICE_ASSISTANT:
+            name = "voice_assistant";
+            break;
         case STREAM_VOICE_CALL:
             name = "voice_call";
             break;

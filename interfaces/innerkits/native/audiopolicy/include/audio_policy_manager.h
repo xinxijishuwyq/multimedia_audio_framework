@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include "audio_info.h"
+#include "audio_policy_manager_listener_stub.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -49,6 +50,15 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
     AudioRingerMode GetRingerMode();
+
+    int32_t SetAudioManagerCallback(const AudioStreamType streamType,
+                                    const std::shared_ptr<AudioManagerCallback> &callback);
+
+    int32_t UnsetAudioManagerCallback(const AudioStreamType streamType);
+
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
 private:
     AudioPolicyManager()
     {
@@ -57,6 +67,8 @@ private:
     ~AudioPolicyManager() {}
 
     void Init();
+    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
+    sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
 };
 } // namespce AudioStandard
 } // namespace OHOS

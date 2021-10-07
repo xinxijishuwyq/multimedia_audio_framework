@@ -21,6 +21,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
+void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    audioInterrupt.contentType = static_cast<ContentType>(data.ReadInt32());
+    audioInterrupt.streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    audioInterrupt.sessionID = data.ReadInt32();
+}
+
 void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
@@ -95,6 +103,41 @@ void AudioPolicyManagerStub::IsDeviceActiveInternal(MessageParcel &data, Message
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::SetCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
+        return;
+    }
+    int32_t result = SetAudioManagerCallback(streamType, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    int32_t result = UnsetAudioManagerCallback(streamType);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioInterrupt audioInterrupt = {};
+    ReadAudioInterruptParams(data, audioInterrupt);
+    int32_t result = ActivateAudioInterrupt(audioInterrupt);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioInterrupt audioInterrupt = {};
+    ReadAudioInterruptParams(data, audioInterrupt);
+    int32_t result = DeactivateAudioInterrupt(audioInterrupt);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -133,6 +176,22 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case IS_DEVICE_ACTIVE:
             IsDeviceActiveInternal(data, reply);
+            break;
+
+        case SET_CALLBACK:
+            SetCallbackInternal(data, reply);
+            break;
+
+        case UNSET_CALLBACK:
+            UnsetCallbackInternal(data, reply);
+            break;
+
+        case ACTIVATE_INTERRUPT:
+            ActivateInterruptInternal(data, reply);
+            break;
+
+        case DEACTIVATE_INTERRUPT:
+            DeactivateInterruptInternal(data, reply);
             break;
 
         default:

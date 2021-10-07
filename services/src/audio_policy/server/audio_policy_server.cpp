@@ -15,7 +15,10 @@
 
 #include <memory>
 
+#include "audio_errors.h"
+#include "audio_policy_manager_listener_proxy.h"
 #include "audio_policy_server.h"
+#include "i_standard_audio_policy_manager_listener.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
@@ -95,6 +98,123 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
 AudioRingerMode AudioPolicyServer::GetRingerMode()
 {
     return mPolicyService.GetRingerMode();
+}
+
+int32_t AudioPolicyServer::SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    MEDIA_ERR_LOG("AudioPolicyServer::SetAudioManagerCallback mutex lock obtained");
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+
+    sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: listener obj cast failed");
+
+    std::shared_ptr<AudioManagerCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    policyListenerCbsMap_[streamType] = callback;
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::UnsetAudioManagerCallback(const AudioStreamType streamType)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    MEDIA_ERR_LOG("AudioPolicyServer:: mutex lock obtained by UnsetAudioManagerCallback");
+    if (policyListenerCbsMap_.find(streamType) != policyListenerCbsMap_.end()) {
+        policyListenerCbsMap_.erase(streamType);
+        MEDIA_ERR_LOG("AudioPolicyServer: UnsetAudioManagerCallback for streamType %{public}d done", streamType);
+        return SUCCESS;
+    } else {
+        MEDIA_ERR_LOG("AudioPolicyServer: Cb does not exit for streamType %{public}d cannot unregister", streamType);
+        return ERR_INVALID_OPERATION;
+    }
+}
+
+int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt");
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamUsage: %{public}d", audioInterrupt.streamUsage);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.contentType: %{public}d", audioInterrupt.contentType);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}d", audioInterrupt.sessionID);
+
+    InterruptAction activated {TYPE_ACTIVATED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_NONE};
+    InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_PAUSE};
+    bool isPriorityStreamActive(false);
+
+    if (curActiveInterruptsMap_.find(STREAM_VOICE_ASSISTANT) != curActiveInterruptsMap_.end()) {
+        isPriorityStreamActive = true;
+    }
+
+    if (isPriorityStreamActive) {
+        MEDIA_DEBUG_LOG("Priority Stream: %{public}d is active, Cannot activate stream %{public}d",
+                        STREAM_VOICE_ASSISTANT, audioInterrupt.streamType);
+        return ERR_INVALID_OPERATION;
+    }
+    curActiveInterruptsMap_[audioInterrupt.streamType] = audioInterrupt;
+
+    for (auto it = policyListenerCbsMap_.begin(); it != policyListenerCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioManagerCallback> policyListenerCb = it->second;
+        if (policyListenerCb == nullptr) {
+            MEDIA_ERR_LOG("policyListenerCbsMap_: nullptr for streamType : %{public}d", it->first);
+            continue;
+        }
+
+        MEDIA_DEBUG_LOG("policyListenerCbsMap_ :streamType =  %{public}d", it->first);
+        MEDIA_DEBUG_LOG("audioInterrupt.streamType = %{public}d", audioInterrupt.streamType);
+        if (it->first == audioInterrupt.streamType) {
+            policyListenerCb->OnInterrupt(activated);
+        } else {
+            policyListenerCb->OnInterrupt(interrupted);
+        }
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt");
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamUsage: %{public}d", audioInterrupt.streamUsage);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.contentType: %{public}d", audioInterrupt.contentType);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
+    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}d", audioInterrupt.sessionID);
+
+    InterruptAction deActivated {TYPE_DEACTIVATED, INTERRUPT_TYPE_END, INTERRUPT_HINT_NONE};
+    InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_END, INTERRUPT_HINT_RESUME};
+
+    if (curActiveInterruptsMap_.find(audioInterrupt.streamType) == curActiveInterruptsMap_.end()) {
+        MEDIA_DEBUG_LOG("AudioPolicyServer: Stream : %{public}d is not active. Cannot deactivate",
+                        audioInterrupt.streamType);
+        return ERR_INVALID_OPERATION;
+    }
+
+    if (auto count = curActiveInterruptsMap_.erase(audioInterrupt.streamType)) {
+        MEDIA_DEBUG_LOG("AudioPolicyServer: erase curActiveInterruptsMap_:streamType =  %{public}d success",
+                        audioInterrupt.streamType);
+    }
+
+    for (auto it = policyListenerCbsMap_.begin(); it != policyListenerCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioManagerCallback> policyListenerCb = it->second;
+        if (policyListenerCb == nullptr) {
+            MEDIA_ERR_LOG("AudioPolicyServer: policyListenerCbsMap_: nullptr for streamType : %{public}d", it->first);
+            continue;
+        }
+
+        MEDIA_DEBUG_LOG("policyListenerCbsMap_ :streamType =  %{public}d", it->first);
+        MEDIA_DEBUG_LOG("audioInterrupt.streamType = %{public}d", audioInterrupt.streamType);
+        if (it->first == audioInterrupt.streamType) {
+            policyListenerCb->OnInterrupt(deActivated);
+        } else {
+            policyListenerCb->OnInterrupt(interrupted);
+        }
+    }
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

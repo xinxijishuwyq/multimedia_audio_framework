@@ -13,29 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_TYPES_H
-#define ST_AUDIO_POLICY_TYPES_H
+#ifndef I_STANDARD_AUDIO_POLICY_MANAGER_LISTENER_H
+#define I_STANDARD_AUDIO_POLICY_MANAGER_LISTENER_H
 
-#include <audio_info.h>
+#include "ipc_types.h"
+#include "iremote_broker.h"
+#include "iremote_proxy.h"
+#include "iremote_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum AudioPolicyCommand {
-    SET_STREAM_VOLUME,
-    GET_STREAM_VOLUME,
-    SET_STREAM_MUTE,
-    GET_STREAM_MUTE,
-    IS_STREAM_ACTIVE,
-    SET_DEVICE_ACTIVE,
-    IS_DEVICE_ACTIVE,
-    SET_RINGER_MODE,
-    GET_RINGER_MODE,
-    SET_CALLBACK,
-    UNSET_CALLBACK,
-    ACTIVATE_INTERRUPT,
-    DEACTIVATE_INTERRUPT
+class IStandardAudioPolicyManagerListener : public IRemoteBroker {
+public:
+    virtual ~IStandardAudioPolicyManagerListener() = default;
+    virtual void OnInterrupt(const InterruptAction &interruptAction) = 0;
+
+    enum AudioPolicyManagerListenerMsg {
+        ON_ERROR = 0,
+        ON_INTERRUPT,
+    };
+    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioManagerListener");
 };
 } // namespace AudioStandard
 } // namespace OHOS
-
-#endif // ST_AUDIO_POLICY_TYPES_H
+#endif // I_STANDARD_AUDIO_POLICY_MANAGER_LISTENER_H

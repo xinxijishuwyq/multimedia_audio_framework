@@ -32,7 +32,7 @@ config("audio_service_config") {
   include_dirs = [
     "include",
     "include/server",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//drivers/peripheral/audio/interfaces/include",
@@ -96,7 +96,6 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
     "//foundation/distributedschedule/safwk/services/safwk/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioadapter/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiopolicy/include",
@@ -109,7 +108,6 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_standard/services/include/audio_policy/common",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/server",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/client",
-    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/common/include",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
@@ -137,6 +135,7 @@ config("audio_policy_public_config") {
 ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_stub.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_server.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service.cpp",

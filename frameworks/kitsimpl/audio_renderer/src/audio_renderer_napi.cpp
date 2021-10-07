@@ -119,8 +119,10 @@ static int32_t GetAudioStreamType(napi_env env, napi_value value)
                 streamType = AudioStreamType::STREAM_RING;
                 break;
             case AudioManagerNapi::MEDIA:
-            case AudioManagerNapi::VOICE_ASSISTANT:
                 streamType = AudioStreamType::STREAM_MUSIC;
+                break;
+            case AudioManagerNapi::VOICE_ASSISTANT:
+                streamType = AudioStreamType::STREAM_VOICE_ASSISTANT;
                 break;
             case AudioManagerNapi::VOICE_CALL:
                 streamType = AudioStreamType::STREAM_VOICE_CALL;

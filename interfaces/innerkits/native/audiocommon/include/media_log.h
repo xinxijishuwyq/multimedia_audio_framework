@@ -25,8 +25,6 @@
 #define LOG_DOMAIN 0xD002B00
 #define LOG_TAG "MultiMedia"
 
-#define __FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
-
 #ifndef OHOS_DEBUG
 #define DECORATOR_HILOG(op, fmt, args...) \
     do {                                  \
@@ -50,5 +48,37 @@
 #define MEDIA_INIT_FAIL (-2)
 #define MEDIA_ERR (-3)
 #define MEDIA_PERMISSION_DENIED (-4)
+
+#define CHECK_AND_RETURN_RET_LOG(cond, ret, fmt, ...)  \
+    do {                                               \
+        if (!(cond)) {                                 \
+            MEDIA_ERR_LOG(fmt, ##__VA_ARGS__);            \
+            return ret;                                \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_RETURN(cond)                      \
+    do {                                            \
+        if (!(cond)) {                                \
+            MEDIA_ERR_LOG("%{public}s, check failed!", #cond); \
+            return;                                 \
+        }                                           \
+    } while (0)
+
+#define CHECK_AND_RETURN_LOG(cond, fmt, ...)           \
+    do {                                               \
+        if (!(cond)) {                                 \
+            MEDIA_ERR_LOG(fmt, ##__VA_ARGS__);            \
+            return;                                    \
+        }                                              \
+    } while (0)
+
+#define CHECK_AND_BREAK_LOG(cond, fmt, ...)            \
+    do {                                               \
+        if (!(cond)) {                                 \
+            MEDIA_ERR_LOG(fmt, ##__VA_ARGS__);            \
+            break;                                     \
+        }                                              \
+    } while (0)
 
 #endif // OHOS_MEDIA_LOG_H
