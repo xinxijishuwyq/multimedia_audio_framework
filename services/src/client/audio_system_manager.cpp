@@ -241,6 +241,10 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                                     const std::shared_ptr<AudioManagerCallback> &callback)
 {
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
     callback_ = callback;
     cbStreamType_ = streamType;
 

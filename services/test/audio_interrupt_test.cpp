@@ -233,7 +233,7 @@ int32_t AudioInterruptTest::TestPlayback(const AudioStreamType &streamType)
 
     retMngr = audioSystemMgr_->UnsetAudioManagerCallback(
         static_cast<AudioSystemManager::AudioVolumeType>(streamType));
-    MEDIA_DEBUG_LOG("SetAudioManagerCallback result : %{public}d", retMngr);
+    MEDIA_DEBUG_LOG("UnsetAudioManagerCallback result : %{public}d", retMngr);
 
     MEDIA_INFO_LOG("AudioInterruptTest: TestPlayback end");
 

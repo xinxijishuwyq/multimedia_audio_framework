@@ -60,6 +60,8 @@ void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptAction &interrup
     std::shared_ptr<AudioManagerCallback> cb = callback_.lock();
     if (cb != nullptr) {
         cb->OnInterrupt(interruptAction);
+    } else {
+        MEDIA_ERR_LOG("AudioPolicyManagerListenerStub: callback_ is nullptr");
     }
 }
 

@@ -93,6 +93,11 @@ bool AudioPolicyManager::IsDeviceActive(InternalDeviceType deviceType)
 int32_t AudioPolicyManager::SetAudioManagerCallback(const AudioStreamType streamType,
                                                     const std::shared_ptr<AudioManagerCallback> &callback)
 {
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
     callback_ = callback; // used by client to trigger callback like onerror
 
     listenerStub_ = new(std::nothrow) AudioPolicyManagerListenerStub();
