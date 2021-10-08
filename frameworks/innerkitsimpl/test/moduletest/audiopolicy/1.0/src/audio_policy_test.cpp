@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "audio_errors.h"
 #include "audio_policy_test.h"
 #include "audio_system_manager.h"
 
@@ -470,6 +471,268 @@ INSTANTIATE_TEST_CASE_P(
     GetDevices,
     AudioPolicyGetDevicesTest,
     ValuesIn(DEVICES_PARAMS));
+
+void AudioManagerModuleTest::SetUpTestCase(void) {}
+void AudioManagerModuleTest::TearDownTestCase(void) {}
+void AudioManagerModuleTest::SetUp(void) {}
+void AudioManagerModuleTest::TearDown(void) {}
+
+class AudioInterruptModuleTest : public AudioManagerCallback {
+    void OnInterrupt(const InterruptAction &interruptAction) override {}
+};
+
+/**
+* @tc.name  : Test SetAudioManagerCallback API with legal input.
+* @tc.number: Audio_Manager_SetAudioManagerCallback_001
+* @tc.desc  : Test SetAudioManagerCallback interface with STREAM_MUSIC. Returns 0, if registration is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_SetAudioManagerCallback_001, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test SetAudioManagerCallback API with legal input.
+* @tc.number: Audio_Manager_SetAudioManagerCallback_002
+* @tc.desc  : Test interface with STREAM_VOICE_ASSISTANT. Returns 0, if registration is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_SetAudioManagerCallback_002, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test SetAudioManagerCallback API with illegal input.
+* @tc.number: Audio_Manager_SetAudioManagerCallback_003
+* @tc.desc  : Test interface with callback = nullptr. Returns error code, if the callback is nullptr.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_SetAudioManagerCallback_003, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = nullptr;
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
+
+/**
+* @tc.name  : Test UnsetAudioManagerCallback API with legal input.
+* @tc.number: Audio_Manager_UnsetAudioManagerCallback_001
+* @tc.desc  : Test UnsetAudioManagerCallback interface with STREAM_MUSIC. Returns 0, if deregister is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_UnsetAudioManagerCallback_001, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test UnsetAudioManagerCallback API with legal input.
+* @tc.number: Audio_Manager_UnsetAudioManagerCallback_002
+* @tc.desc  : Test interface with STREAM_VOICE_ASSISTANT. Returns 0, if deregister is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_UnsetAudioManagerCallback_002, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test UnsetAudioManagerCallback API with illegal input.
+* @tc.number: Audio_Manager_UnsetAudioManagerCallback_003
+* @tc.desc  : Test interface without registering callback. Returns error code, if the callback not registered.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_UnsetAudioManagerCallback_003, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+
+    int32_t ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+}
+
+/**
+* @tc.name  : Test ActivateAudioInterrupt API with legal input.
+* @tc.number: Audio_Manager_ActivateAudioInterrupt_001
+* @tc.desc  : Test interface with STREAM_MUSIC.  Returns 0, if activation is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_ActivateAudioInterrupt_001, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+    AudioInterrupt audioInterrupt {STREAM_USAGE_MEDIA, CONTENT_TYPE_MUSIC, STREAM_MUSIC, 1000};
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test ActivateAudioInterrupt API with legal input.
+* @tc.number: Audio_Manager_ActivateAudioInterrupt_002
+* @tc.desc  : Test interface with STREAM_VOICE_ASSISTANT. Returns 0, if activation is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_ActivateAudioInterrupt_002, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+    AudioInterrupt audioInterrupt {STREAM_USAGE_VOICE_ASSISTANT, CONTENT_TYPE_SPEECH, STREAM_VOICE_ASSISTANT, 1001};
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test ActivateAudioInterrupt API with illegal input.
+* @tc.number: Audio_Manager_ActivateAudioInterrupt_003
+* @tc.desc  : Test interface without registering calback. Returns error code,
+*              if the callback was not registered before interrupt activation request.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_ActivateAudioInterrupt_003, TestSize.Level1)
+{
+    AudioInterrupt audioInterrupt {STREAM_USAGE_MEDIA, CONTENT_TYPE_MUSIC, STREAM_MUSIC, 1000};
+
+    int32_t ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+}
+
+/**
+* @tc.name  : Test ActivateAudioInterrupt API with illegal input.
+* @tc.number: Audio_Manager_ActivateAudioInterrupt_004
+* @tc.desc  : Test interface when priority stream is active. Returns error code,
+*             request rejected if priority stream is active.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_ActivateAudioInterrupt_004, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+    AudioInterrupt audioInterrupt {STREAM_USAGE_VOICE_ASSISTANT, CONTENT_TYPE_SPEECH, STREAM_VOICE_ASSISTANT, 1001};
+
+    AudioSystemManager::AudioVolumeType streamType1 = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+    AudioInterrupt audioInterrupt1 {STREAM_USAGE_MEDIA, CONTENT_TYPE_MUSIC, STREAM_MUSIC, 1000};
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB1 = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB1);
+    ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType1, audioManagerCB1);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt1);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test DeactivateAudioInterrupt API with legal input.
+* @tc.number: Audio_Manager_DeactivateAudioInterrupt_001
+* @tc.desc  : Test interface with STREAM_MUSIC. Returns 0, if Deactivation is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_DeactivateAudioInterrupt_001, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+    AudioInterrupt audioInterrupt {STREAM_USAGE_MEDIA, CONTENT_TYPE_MUSIC, STREAM_MUSIC, 1000};
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test DeactivateAudioInterrupt API with legal input.
+* @tc.number: Audio_Manager_DeactivateAudioInterrupt_002
+* @tc.desc  : Test interface with STREAM_VOICE_ASSISTANT. Returns 0, if Deactivation is successful.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_DeactivateAudioInterrupt_002, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+    AudioInterrupt audioInterrupt {STREAM_USAGE_VOICE_ASSISTANT, CONTENT_TYPE_SPEECH, STREAM_VOICE_ASSISTANT, 1001};
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test DeactivateAudioInterrupt API with legal input.
+* @tc.number: Audio_Manager_DeactivateAudioInterrupt_003
+* @tc.desc  : Test interface without activating interrupt. Returns error code, if stream is not active.
+*/
+HWTEST(AudioManagerModuleTest, Audio_Manager_DeactivateAudioInterrupt_003, TestSize.Level1)
+{
+    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_VOICE_ASSISTANT;
+    AudioInterrupt audioInterrupt {STREAM_USAGE_VOICE_ASSISTANT, CONTENT_TYPE_SPEECH, STREAM_VOICE_ASSISTANT, 1001};
+
+    std::shared_ptr<AudioManagerCallback> audioManagerCB = std::make_shared<AudioInterruptModuleTest>();
+    ASSERT_NE(nullptr, audioManagerCB);
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioManagerCallback(streamType, audioManagerCB);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerCallback(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+}
+} // V1_0
+} // AudioStandard
+} // OHOS

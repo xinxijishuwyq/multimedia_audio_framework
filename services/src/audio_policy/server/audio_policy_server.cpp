@@ -103,7 +103,6 @@ AudioRingerMode AudioPolicyServer::GetRingerMode()
 int32_t AudioPolicyServer::SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_ERR_LOG("AudioPolicyServer::SetAudioManagerCallback mutex lock obtained");
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
 
@@ -121,7 +120,7 @@ int32_t AudioPolicyServer::SetAudioManagerCallback(const AudioStreamType streamT
 int32_t AudioPolicyServer::UnsetAudioManagerCallback(const AudioStreamType streamType)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_ERR_LOG("AudioPolicyServer:: mutex lock obtained by UnsetAudioManagerCallback");
+
     if (policyListenerCbsMap_.find(streamType) != policyListenerCbsMap_.end()) {
         policyListenerCbsMap_.erase(streamType);
         MEDIA_ERR_LOG("AudioPolicyServer: UnsetAudioManagerCallback for streamType %{public}d done", streamType);
@@ -141,10 +140,12 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
     MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}d", audioInterrupt.sessionID);
 
-    InterruptAction activated {TYPE_ACTIVATED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_NONE};
-    InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_PAUSE};
-    bool isPriorityStreamActive(false);
+    if (policyListenerCbsMap_.find(audioInterrupt.streamType) == policyListenerCbsMap_.end()) {
+        MEDIA_ERR_LOG("AudioPolicyServer: callback not registered for stream: %{public}d", audioInterrupt.streamType);
+        return ERR_INVALID_OPERATION;
+    }
 
+    bool isPriorityStreamActive(false);
     if (curActiveInterruptsMap_.find(STREAM_VOICE_ASSISTANT) != curActiveInterruptsMap_.end()) {
         isPriorityStreamActive = true;
     }
@@ -156,6 +157,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     }
     curActiveInterruptsMap_[audioInterrupt.streamType] = audioInterrupt;
 
+    InterruptAction activated {TYPE_ACTIVATED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_NONE};
+    InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_BEGIN, INTERRUPT_HINT_PAUSE};
     for (auto it = policyListenerCbsMap_.begin(); it != policyListenerCbsMap_.end(); ++it) {
         std::shared_ptr<AudioManagerCallback> policyListenerCb = it->second;
         if (policyListenerCb == nullptr) {
@@ -184,9 +187,6 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
     MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}d", audioInterrupt.sessionID);
 
-    InterruptAction deActivated {TYPE_DEACTIVATED, INTERRUPT_TYPE_END, INTERRUPT_HINT_NONE};
-    InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_END, INTERRUPT_HINT_RESUME};
-
     if (curActiveInterruptsMap_.find(audioInterrupt.streamType) == curActiveInterruptsMap_.end()) {
         MEDIA_DEBUG_LOG("AudioPolicyServer: Stream : %{public}d is not active. Cannot deactivate",
                         audioInterrupt.streamType);
@@ -198,6 +198,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
                         audioInterrupt.streamType);
     }
 
+    InterruptAction deActivated {TYPE_DEACTIVATED, INTERRUPT_TYPE_END, INTERRUPT_HINT_NONE};
+    InterruptAction interrupted {TYPE_INTERRUPTED, INTERRUPT_TYPE_END, INTERRUPT_HINT_RESUME};
     for (auto it = policyListenerCbsMap_.begin(); it != policyListenerCbsMap_.end(); ++it) {
         std::shared_ptr<AudioManagerCallback> policyListenerCb = it->second;
         if (policyListenerCb == nullptr) {

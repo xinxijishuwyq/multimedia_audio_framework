@@ -16,11 +16,9 @@ import("//build/test.gni")
 module_output_path = "audio_standard/audio_policy"
 
 group("moduletest") {
-    testonly = true
+  testonly = true
 
-    deps = [
-        ":audio_policy_module_test",
-    ]
+  deps = [ ":audio_policy_module_test" ]
 }
 
 ohos_moduletest("audio_policy_module_test") {
@@ -28,15 +26,14 @@ ohos_moduletest("audio_policy_module_test") {
   include_dirs = [
     "./1.0/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
   ]
 
-  sources = [
-    "1.0/src/audio_policy_test.cpp",
-  ]
+  sources = [ "1.0/src/audio_policy_test.cpp" ]
 
   deps = [
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
-     "//utils/native/base:utils",
+    "//utils/native/base:utils",
   ]
 }
