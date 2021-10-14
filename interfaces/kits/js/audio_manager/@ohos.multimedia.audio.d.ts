@@ -584,6 +584,19 @@ declare namespace audio {
     getAudioTime(): Promise<number>;
 
     /**
+     * Drain renderer buffer. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    drain(callback: AsyncCallback<boolean>): void;
+    /**
+     * Drain renderer buffer. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    drain(): Promise<boolean>;
+
+    /**
      * Pauses audio rendering. This method uses an asynchronous callback to return the execution result.
      * @devices
      * @sysCap SystemCapability.Multimedia.Audio
