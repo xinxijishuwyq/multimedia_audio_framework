@@ -26,7 +26,7 @@ using OHOS::HiviewDFX::HiLogLabel;
 
 namespace OHOS {
 namespace AudioStandard {
-napi_ref AudioCapturerNapi::sConstructor_ = nullptr;
+static __thread napi_ref capturerConstructor_ = nullptr;
 std::unique_ptr<AudioParameters> AudioCapturerNapi::sAudioParameters_ = nullptr;
 
 namespace {
@@ -100,7 +100,7 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
         return result;
     }
 
-    status = napi_create_reference(env, constructor, refCount, &sConstructor_);
+    status = napi_create_reference(env, constructor, refCount, &capturerConstructor_);
     if (status == napi_ok) {
         status = napi_set_named_property(env, exports, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), constructor);
         if (status == napi_ok) {
@@ -196,7 +196,7 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
         return nullptr;
     }
 
-    status = napi_get_reference_value(env, sConstructor_, &constructor);
+    status = napi_get_reference_value(env, capturerConstructor_, &constructor);
     if (status == napi_ok) {
         status = napi_new_instance(env, constructor, argCount, args, &result);
         if (status == napi_ok) {

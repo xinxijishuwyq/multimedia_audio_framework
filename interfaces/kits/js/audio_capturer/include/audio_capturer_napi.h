@@ -79,7 +79,6 @@ private:
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static napi_status CreateReadAsyncWork(const AudioCapturerAsyncContext &asyncContext);
 
-    static napi_ref sConstructor_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     int32_t SetAudioParameters(napi_env env, napi_value arg);
