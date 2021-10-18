@@ -15,8 +15,8 @@
 #ifndef AUDIO_RENDERER_MODULE_TEST_H
 #define AUDIO_RENDERER_MODULE_TEST_H
 
-#include "audio_renderer.h"
 #include "gtest/gtest.h"
+#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {

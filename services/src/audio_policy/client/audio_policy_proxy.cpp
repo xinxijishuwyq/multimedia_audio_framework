@@ -14,8 +14,8 @@
  */
 
 #include "audio_policy_manager.h"
-#include "audio_policy_proxy.h"
 #include "media_log.h"
+#include "audio_policy_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {

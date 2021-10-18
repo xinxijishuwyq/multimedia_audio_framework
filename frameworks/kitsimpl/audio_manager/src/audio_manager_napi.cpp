@@ -17,12 +17,11 @@
 #include "audio_device_descriptor_napi.h"
 #include "audio_errors.h"
 #include "audio_manager_callback_napi.h"
-#include "audio_manager_napi.h"
 #include "audio_parameters_napi.h"
 #include "audio_renderer_napi.h"
 #include "hilog/log.h"
 #include "media_log.h"
-
+#include "audio_manager_napi.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -1792,7 +1791,7 @@ napi_value JsObjectToInt(const napi_env& env, const napi_value& object, std::str
     NAPI_CALL(env, napi_has_named_property(env, object, fieldStr.c_str(), &hasProperty));
     if (hasProperty) {
         napi_value field;
-        napi_valuetype valueType;
+        napi_valuetype valueType = napi_undefined;
 
         napi_get_named_property(env, object, fieldStr.c_str(), &field);
         NAPI_CALL(env, napi_typeof(env, field, &valueType));
@@ -1834,7 +1833,7 @@ napi_value AudioManagerNapi::ActivateAudioInterrupt(napi_env env, napi_callback_
     GET_PARAMS(env, info, ARGS_ONE);
     NAPI_ASSERT(env, argc == ARGS_ONE, "Wrong number of arguments");
 
-    napi_valuetype valueType;
+    napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[0], &valueType);
     NAPI_ASSERT(env, valueType == napi_object, "Wrong argument type. Object expected.");
 
@@ -1858,7 +1857,7 @@ napi_value AudioManagerNapi::DeactivateAudioInterrupt(napi_env env, napi_callbac
     GET_PARAMS(env, info, ARGS_ONE);
     NAPI_ASSERT(env, argc == ARGS_ONE, "Wrong number of arguments");
 
-    napi_valuetype valueType;
+    napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[0], &valueType);
     NAPI_ASSERT(env, valueType == napi_object, "Wrong argument type. Object expected.");
 

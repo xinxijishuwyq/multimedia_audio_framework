@@ -40,10 +40,10 @@ public:
         MEDIA_INFO_LOG("My custom callback OnStreamStateChangeCb");
     }
 
-    virtual void OnStreamBufferUnderFlowCb() const{}
-    virtual void OnStreamBufferOverFlowCb() const{}
-    virtual void OnErrorCb(AudioServiceErrorCodes error) const{}
-    virtual void OnEventCb(AudioServiceEventTypes error) const{}
+    virtual void OnStreamBufferUnderFlowCb() const {}
+    virtual void OnStreamBufferOverFlowCb() const {}
+    virtual void OnErrorCb(AudioServiceErrorCodes error) const {}
+    virtual void OnEventCb(AudioServiceEventTypes error) const {}
 };
 
 static int32_t InitPlayback(std::unique_ptr<AudioServiceClient> &client, AudioStreamParams &audioParams)

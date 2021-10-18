@@ -15,8 +15,8 @@
 #ifndef AUDIO_CAPTURER_MODULE_TEST_H
 #define AUDIO_CAPTURER_MODULE_TEST_H
 
-#include "audio_capturer.h"
 #include "gtest/gtest.h"
+#include "audio_capturer.h"
 
 namespace OHOS {
 namespace AudioStandard {

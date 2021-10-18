@@ -15,9 +15,9 @@
 
 #include <uv.h>
 
-#include "audio_manager_callback_napi.h"
 #include "audio_errors.h"
 #include "media_log.h"
+#include "audio_manager_callback_napi.h"
 
 namespace {
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
@@ -55,7 +55,7 @@ void AudioManagerCallbackNapi::SaveCallbackReference(const std::string &callback
 
 static void SetValueInt32(const napi_env& env, const std::string& fieldStr, const int intValue, napi_value& result)
 {
-    napi_value value;
+    napi_value value = nullptr;
     napi_create_int32(env, intValue, &value);
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }

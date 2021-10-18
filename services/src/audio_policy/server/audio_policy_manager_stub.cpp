@@ -14,10 +14,10 @@
  */
 
 #include "audio_errors.h"
-#include "audio_policy_manager_stub.h"
 #include "audio_policy_server.h"
 #include "audio_policy_types.h"
 #include "media_log.h"
+#include "audio_policy_manager_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {

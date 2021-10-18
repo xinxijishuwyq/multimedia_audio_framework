@@ -13,12 +13,10 @@
  * limitations under the License.
  */
 
-#include <vector>
-
 #include "audio_errors.h"
-#include "audio_renderer.h"
 #include "audio_renderer_private.h"
 #include "audio_stream.h"
+#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {

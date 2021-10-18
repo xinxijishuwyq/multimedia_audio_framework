@@ -20,8 +20,6 @@
 #ifndef LTDL_H
 #define LTDL_H
 
-#include <dlfcn.h>
-
 typedef void  *lt_dlhandle;
 
 const char *lt_dlerror(void);
