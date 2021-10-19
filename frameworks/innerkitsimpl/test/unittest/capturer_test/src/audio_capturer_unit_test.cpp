@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_capturer_module_test.h"
+#include "audio_capturer_unit_test.h"
 
 #include "audio_capturer.h"
 #include "audio_errors.h"
@@ -31,12 +31,12 @@ namespace {
     const int32_t VALUE_ZERO = 0;
 } // namespace
 
-void AudioCapturerModuleTest::SetUpTestCase(void) {}
-void AudioCapturerModuleTest::TearDownTestCase(void) {}
-void AudioCapturerModuleTest::SetUp(void) {}
-void AudioCapturerModuleTest::TearDown(void) {}
+void AudioCapturerUnitTest::SetUpTestCase(void) {}
+void AudioCapturerUnitTest::TearDownTestCase(void) {}
+void AudioCapturerUnitTest::SetUp(void) {}
+void AudioCapturerUnitTest::TearDown(void) {}
 
-int32_t AudioCapturerModuleTest::InitializeCapturer(unique_ptr<AudioCapturer> &audioCapturer)
+int32_t AudioCapturerUnitTest::InitializeCapturer(unique_ptr<AudioCapturer> &audioCapturer)
 {
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
@@ -52,7 +52,7 @@ int32_t AudioCapturerModuleTest::InitializeCapturer(unique_ptr<AudioCapturer> &a
 * @tc.number: Audio_Capturer_GetSupportedFormats_001
 * @tc.desc  : Test GetSupportedFormats interface. Returns supported Formats on success.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedFormats_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedFormats_001, TestSize.Level0)
 {
     vector<AudioSampleFormat> supportedFormatList = AudioCapturer::GetSupportedFormats();
     EXPECT_EQ(AUDIO_SUPPORTED_FORMATS.size(), supportedFormatList.size());
@@ -63,7 +63,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedFormats_001, TestSize
 * @tc.number: Audio_Capturer_GetSupportedChannels_001
 * @tc.desc  : Test GetSupportedChannels interface. Returns supported Channels on success.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedChannels_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedChannels_001, TestSize.Level0)
 {
     vector<AudioChannel> supportedChannelList = AudioCapturer::GetSupportedChannels();
     EXPECT_EQ(AUDIO_SUPPORTED_CHANNELS.size(), supportedChannelList.size());
@@ -74,7 +74,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedChannels_001, TestSiz
 * @tc.number: Audio_Capturer_GetSupportedEncodingTypes_001
 * @tc.desc  : Test GetSupportedEncodingTypes interface. Returns supported Encoding types on success.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedEncodingTypes_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedEncodingTypes_001, TestSize.Level0)
 {
     vector<AudioEncodingType> supportedEncodingTypes
                                         = AudioCapturer::GetSupportedEncodingTypes();
@@ -86,7 +86,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedEncodingTypes_001, Te
 * @tc.number: Audio_Capturer_GetSupportedSamplingRates_001
 * @tc.desc  : Test GetSupportedSamplingRates interface. Returns supported Sampling rates on success.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedSamplingRates_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedSamplingRates_001, TestSize.Level0)
 {
     vector<AudioSamplingRate> supportedSamplingRates = AudioCapturer::GetSupportedSamplingRates();
     EXPECT_EQ(AUDIO_SUPPORTED_SAMPLING_RATES.size(), supportedSamplingRates.size());
@@ -97,7 +97,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetSupportedSamplingRates_001, Te
 * @tc.number: Audio_Capturer_Create_001
 * @tc.desc  : Test Create interface with STREAM_MUSIC. Returns audioCapturer instance, if create is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_001, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     EXPECT_NE(nullptr, audioCapturer);
@@ -108,7 +108,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_Create_002
 * @tc.desc  : Test Create interface with STREAM_RING. Returns audioCapturer instance, if create is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_002, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_RING);
     EXPECT_NE(nullptr, audioCapturer);
@@ -120,7 +120,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_002, TestSize.Level1)
 * @tc.desc  : Test Create interface with STREAM_VOICE_CALL. Returns audioCapturer instance if create is successful.
 *             Note: instance will be created but functional support for STREAM_VOICE_CALL not available yet.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_003, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_VOICE_CALL);
     EXPECT_NE(nullptr, audioCapturer);
@@ -132,7 +132,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_003, TestSize.Level1)
 * @tc.desc  : Test Create interface with STREAM_SYSTEM. Returns audioCapturer instance, if create is successful.
 *             Note: instance will be created but functional support for STREAM_SYSTEM not available yet.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_004, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_SYSTEM);
     EXPECT_NE(nullptr, audioCapturer);
@@ -144,7 +144,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_004, TestSize.Level1)
 * @tc.desc  : Test Create interface with STREAM_BLUETOOTH_SCO. Returns audioCapturer instance, if create is successful.
 *             Note: instance will be created but functional support for STREAM_BLUETOOTH_SCO not available yet
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_005, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_BLUETOOTH_SCO);
     EXPECT_NE(nullptr, audioCapturer);
@@ -156,7 +156,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_005, TestSize.Level1)
 * @tc.desc  : Test Create interface with STREAM_ALARM. Returns audioCapturer instance, if create is successful.
 *             Note: instance will be created but functional support for STREAM_ALARM not available yet.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_006, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_006, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_ALARM);
     EXPECT_NE(nullptr, audioCapturer);
@@ -168,7 +168,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_006, TestSize.Level1)
 * @tc.desc  : Test Create interface with STREAM_NOTIFICATION. Returns audioCapturer instance, if create is successful.
 *             Note: instance will be created but functional support for STREAM_NOTIFICATION not available yet.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_007, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_007, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_NOTIFICATION);
     EXPECT_NE(nullptr, audioCapturer);
@@ -183,7 +183,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Create_007, TestSize.Level1)
 *             capturerParams.audioChannel = STEREO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_001, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -208,7 +208,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_001, TestSize.Level1)
 *             capturerParams.audioChannel = MONO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -233,7 +233,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_002, TestSize.Level1)
 *             capturerParams.audioChannel = STEREO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_003, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -258,7 +258,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_003, TestSize.Level1)
 *             capturerParams.audioChannel = MONO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_004, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -283,7 +283,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_004, TestSize.Level1)
 *             capturerParams.audioChannel = MONO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_005, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -307,7 +307,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_005, TestSize.Level1)
 *             capturerParams.audioChannel = MONO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_006, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_006, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -331,7 +331,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_006, TestSize.Level1)
 *             capturerParams.audioChannel = STEREO;
 *             capturerParams.audioEncoding = ENCODING_PCM;
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_007, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_007, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -352,7 +352,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_SetParams_007, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetParams_001
 * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_001, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
@@ -382,7 +382,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetParams_002
 * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS} if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_002, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
@@ -411,7 +411,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_002, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetParams_003
 * @tc.desc  : Test GetParams interface. Returns error code, if the capturer state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
@@ -433,13 +433,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetParams_004
 * @tc.desc  : Test GetParams interface. Returns error code, if the capturer state is CAPTURER_RELEASED.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isReleased = audioCapturer->Release();
@@ -455,13 +455,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetParams_005
 * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -482,13 +482,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetParams_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetBufferSize_001
 * @tc.desc  : Test GetBufferSize interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_001, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     size_t bufferLen;
@@ -503,7 +503,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_001, TestSize.Level
 * @tc.number: Audio_Capturer_GetBufferSize_002
 * @tc.desc  : Test GetBufferSize interface. Returns error code, if the capturer state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_002, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
@@ -519,13 +519,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_002, TestSize.Level
 * @tc.number: Audio_Capturer_GetBufferSize_003
 * @tc.desc  : Test GetBufferSize interface. Returns error code, if the capturer state is CAPTURER_RELEASED.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isReleased = audioCapturer->Release();
@@ -541,13 +541,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_003, TestSize.Level
 * @tc.number: Audio_Capturer_GetBufferSize_004
 * @tc.desc  : Test GetBufferSize interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -568,13 +568,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_004, TestSize.Level
 * @tc.number: Audio_Capturer_GetBufferSize_005
 * @tc.desc  : test GetBufferSize interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -592,13 +592,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetBufferSize_005, TestSize.Level
 * @tc.number: Audio_Capturer_GetFrameCount_001
 * @tc.desc  : test GetFrameCount interface, Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_001, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     uint32_t frameCount;
@@ -613,7 +613,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_001, TestSize.Level
 * @tc.number: Audio_Capturer_GetFrameCount_002
 * @tc.desc  : Test GetFrameCount interface. Returns error code, if the capturer state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_002, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
@@ -629,13 +629,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_002, TestSize.Level
 * @tc.number: Audio_Capturer_GetFrameCount_003
 * @tc.desc  : Test GetFrameCount interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -653,13 +653,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_003, TestSize.Level
 * @tc.number: Audio_Capturer_GetFrameCount_004
 * @tc.desc  : Test GetFrameCount interface. Returns 0 {SUCCESS}, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -680,13 +680,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_004, TestSize.Level
 * @tc.number: Audio_Capturer_GetFrameCount_005
 * @tc.desc  : Test GetFrameCount interface.  Returns error code, if the state is CAPTURER_RELEASED.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isReleased = audioCapturer->Release();
@@ -702,13 +702,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetFrameCount_005, TestSize.Level
 * @tc.number: Audio_Capturer_Start_001
 * @tc.desc  : Test Start interface. Returns true if start is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_001, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -722,7 +722,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_Start_002
 * @tc.desc  : Test Start interface. Returns false, if the capturer state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -736,13 +736,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_002, TestSize.Level1)
 * @tc.number: Audio_Capturer_Start_003
 * @tc.desc  : Test Start interface. Returns false, if the capturer state is CAPTURER_RELEASED.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isReleased = audioCapturer->Release();
@@ -759,13 +759,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_Start_004
 * @tc.desc  : Test Start interface. Returns true, if the start is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -785,13 +785,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_Start_005
 * @tc.desc  : Test Start interface. Returns false, if the capturer state is CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -808,14 +808,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Start_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_001
 * @tc.desc  : Test Read interface. Returns number of bytes read, if the read is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_001, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -857,14 +857,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_002
 * @tc.desc  : Test Read interface. Returns number of bytes read, if the read is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_002, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = false;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -908,7 +908,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_002, TestSize.Level1)
 * @tc.desc  : Test Read interface. Returns error code, if the capturer state is CAPTURER_NEW.
 *           : bufferLen is invalid here, firstly bufferLen is validated in Read. So it returns ERR_INVALID_PARAM.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
@@ -940,14 +940,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_004
 * @tc.desc  : Test Read interface. Returns error code, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_004, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     size_t bufferLen;
@@ -972,14 +972,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_005
 * @tc.desc  : Test Read interface. Returns error code, if the bufferLength <= 0.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_005, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1005,14 +1005,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_006
 * @tc.desc  : Test Read interface. Returns error code, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_006, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_006, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1041,14 +1041,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_006, TestSize.Level1)
 * @tc.number: Audio_Capturer_Read_007
 * @tc.desc  : Test Read interface. Returns error code, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_007, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_007, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1075,14 +1075,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Read_007, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetAudioTime_001
 * @tc.desc  : Test GetAudioTime interface. Returns true, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_001, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1115,7 +1115,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_001, TestSize.Level1
 * @tc.number: Audio_Capturer_GetAudioTime_002
 * @tc.desc  : Test GetAudioTime interface. Returns false, if the capturer state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1130,13 +1130,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_002, TestSize.Level1
 * @tc.number: Audio_Capturer_GetAudioTime_003
 * @tc.desc  : test GetAudioTime interface. Returns true, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1154,13 +1154,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_003, TestSize.Level1
 * @tc.number: Audio_Capturer_GetAudioTime_004
 * @tc.desc  : Test GetAudioTime interface.  Returns true, if the getting is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1181,13 +1181,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_004, TestSize.Level1
 * @tc.number: Audio_Capturer_GetAudioTime_005
 * @tc.desc  : Test GetAudioTime interface. Returns false, if the capturer state is CAPTURER_RELEASED
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1209,14 +1209,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1
 * @tc.number: Audio_Capturer_Flush_001
 * @tc.desc  : Test Flush interface. Returns true, if the flush is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_001, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1246,7 +1246,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_Flush_002
 * @tc.desc  : Test Flush interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1262,13 +1262,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_002, TestSize.Level1)
 * @tc.number: Audio_Capturer_Flush_003
 * @tc.desc  : Test Flush interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isFlushed = audioCapturer->Flush();
@@ -1282,13 +1282,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_Flush_004
 * @tc.desc  : Test Flush interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1308,13 +1308,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_Flush_005
 * @tc.desc  : Test Flush interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1334,14 +1334,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Flush_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_Stop_001
 * @tc.desc  : Test Stop interface. Returns true, if the stop is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_001, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1372,7 +1372,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_Stop_002
 * @tc.desc  : Test Stop interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1386,13 +1386,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_002, TestSize.Level1)
 * @tc.number: Audio_Capturer_Stop_003
 * @tc.desc  : Test Stop interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStopped = audioCapturer->Stop();
@@ -1406,13 +1406,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_Stop_004
 * @tc.desc  : Test Stop interface. Returns false, if the capturer state is not CAPTURER_RUNNING.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1430,13 +1430,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_Stop_005
 * @tc.desc  : Test Stop interface. Returns true , if the stop is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1457,14 +1457,14 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Stop_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_Release_001
 * @tc.desc  : Test Release interface. Returns true, if the release is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_001, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1494,7 +1494,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_Release_002
 * @tc.desc  : Test Release interface, Returns false, if the state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
@@ -1508,13 +1508,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_002, TestSize.Level1)
 * @tc.number: Audio_Capturer_Release_003
 * @tc.desc  : Test Release interface. Returns false, if the state is already CAPTURER_RELEASED.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_003, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isReleased = audioCapturer->Release();
@@ -1529,13 +1529,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_Release_004
 * @tc.desc  : Test Release interface. Returns true, if the release is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_004, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1550,13 +1550,13 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_Release_005
 * @tc.desc  : Test Release interface. Returns true, if the release is successful.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_005, TestSize.Level1)
 {
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1574,7 +1574,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_Release_005, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetStatus_001
 * @tc.desc  : Test GetStatus interface. Returns correct state on success.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_001, TestSize.Level1)
 {
     int32_t ret = -1;
     CapturerState state = CAPTURER_INVALID;
@@ -1614,7 +1614,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_001, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetStatus_002
 * @tc.desc  : Test GetStatus interface. Not changes to CAPTURER_RUNNING, if the current state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
 {
     CapturerState state = CAPTURER_INVALID;
 
@@ -1632,7 +1632,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
 * @tc.name  : Test GetStatus API, call Stop without Start
 * @tc.desc  : Test GetStatus interface. Not changes to CAPTURER_STOPPED, if the current state is CAPTURER_PREPARED.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_003, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_003, TestSize.Level1)
 {
     int32_t ret = -1;
     CapturerState state = CAPTURER_INVALID;
@@ -1640,7 +1640,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_003, TestSize.Level1)
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStopped = audioCapturer->Stop();
@@ -1657,7 +1657,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_003, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetStatus_004
 * @tc.desc  : Test GetStatus interface.  Returns correct state on success.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_004, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_004, TestSize.Level1)
 {
     int32_t ret = -1;
     CapturerState state = CAPTURER_INVALID;
@@ -1665,7 +1665,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_004, TestSize.Level1)
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    ret = AudioCapturerModuleTest::InitializeCapturer(audioCapturer);
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioCapturer->Start();
@@ -1691,7 +1691,7 @@ HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_004, TestSize.Level1)
 * @tc.number: Audio_Capturer_GetStatus_005
 * @tc.desc  : Test GetStatus interface. Not changes to CAPTURER_RELEASED, if the current state is CAPTURER_NEW.
 */
-HWTEST(AudioCapturerModuleTest, Audio_Capturer_GetStatus_005, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_005, TestSize.Level1)
 {
     CapturerState state = CAPTURER_INVALID;
 

@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_CAPTURER_MODULE_TEST_H
-#define AUDIO_CAPTURER_MODULE_TEST_H
+#ifndef AUDIO_RENDERER_UNIT_TEST_H
+#define AUDIO_RENDERER_UNIT_TEST_H
 
-#include "audio_capturer.h"
 #include "gtest/gtest.h"
+#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioCapturerModuleTest : public testing::Test {
+class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -30,10 +30,10 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-    // Init Capturer
-    static int32_t InitializeCapturer(std::unique_ptr<AudioCapturer> &audioCapturer);
+    // Init Renderer
+    static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_CAPTURER_MODULE_TEST_H
+#endif // AUDIO_RENDERER_UNIT_TEST_H
