@@ -16,9 +16,9 @@
 #include <cstring>
 #include <dlfcn.h>
 
-#include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "media_log.h"
+#include "audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -82,10 +82,11 @@ private:
     {
         while (true) {
             std::unique_lock<std::mutex> lck(timerMutex);
-            timerCtrl.wait(lck, [this] {return CheckTimerStarted();});
+            timerCtrl.wait(lck, [this] { return CheckTimerStarted(); });
             isTimedOut = false;
             if (exitLoop) break;
-            if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration), [this] {return CheckTimerStopped();})) {
+            if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration),
+                [this] { return CheckTimerStopped(); })) {
                 isTimedOut = true;
                 isTimerStarted = false;
                 OnTimeOut();

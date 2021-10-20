@@ -14,8 +14,8 @@
  */
 
 #include "audio_errors.h"
-#include "audio_policy_service.h"
 #include "media_log.h"
+#include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

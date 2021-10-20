@@ -14,9 +14,9 @@
  */
 
 #include "audio_errors.h"
-#include "audio_policy_manager_listener_stub.h"
 #include "audio_system_manager.h"
 #include "media_log.h"
+#include "audio_policy_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -18,9 +18,9 @@
 
 #include <unistd.h>
 
-#include "pulse_audio_service_adapter_impl.h"
 #include "audio_errors.h"
 #include "media_log.h"
+#include "pulse_audio_service_adapter_impl.h"
 
 using namespace std;
 

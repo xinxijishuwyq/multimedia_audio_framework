@@ -70,7 +70,8 @@ struct userdata {
 static int pa_capturer_init(struct userdata *u);
 static void pa_capturer_exit(void);
 
-static void userdata_free(struct userdata *u) {
+static void userdata_free(struct userdata *u)
+{
     pa_assert(u);
     if (u->source)
         pa_source_unlink(u->source);
@@ -93,7 +94,8 @@ static void userdata_free(struct userdata *u) {
     pa_xfree(u);
 }
 
-static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk) {
+static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
+{
     struct userdata *u = PA_SOURCE(o)->userdata;
 
     switch (code) {
@@ -112,7 +114,8 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
 
 /* Called from the IO thread. */
 static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_state,
-    pa_suspend_cause_t new_suspend_cause) {
+    pa_suspend_cause_t new_suspend_cause)
+{
     struct userdata *u = NULL;
     pa_assert(s);
     pa_assert_se(u = s->userdata);
@@ -149,7 +152,8 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_
     return 0;
 }
 
-static int get_capturer_frame_from_hdi(pa_memchunk *chunk, struct userdata *u) {
+static int get_capturer_frame_from_hdi(pa_memchunk *chunk, struct userdata *u)
+{
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
     void *p = NULL;
@@ -189,7 +193,8 @@ static int get_capturer_frame_from_hdi(pa_memchunk *chunk, struct userdata *u) {
     return 0;
 }
 
-static void thread_func(void *userdata) {
+static void thread_func(void *userdata)
+{
     struct userdata *u = userdata;
     bool timer_elapsed = false;
 
@@ -247,7 +252,8 @@ static void thread_func(void *userdata) {
     }
 }
 
-static int pa_capturer_init(struct userdata *u) {
+static int pa_capturer_init(struct userdata *u)
+{
     int ret;
 
     ret = AudioCapturerSourceInit(&u->attrs);
@@ -289,7 +295,8 @@ static void pa_capturer_exit(void) {
 }
 
 static int pa_set_source_properties(pa_module *m, pa_modargs *ma, pa_sample_spec *ss, pa_channel_map *map,
-    struct userdata *u) {
+    struct userdata *u)
+{
     pa_source_new_data data;
 
     if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
@@ -335,7 +342,8 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, pa_sample_spec
     return 0;
 }
 
-pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver) {
+pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
+{
     struct userdata *u = NULL;
     pa_sample_spec ss;
     char *thread_name = NULL;
@@ -407,7 +415,8 @@ fail:
     return NULL;
 }
 
-void pa_hdi_source_free(pa_source *s) {
+void pa_hdi_source_free(pa_source *s)
+{
     struct userdata *u = NULL;
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);

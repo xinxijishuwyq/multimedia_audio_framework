@@ -17,11 +17,11 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager_listener_proxy.h"
-#include "audio_policy_server.h"
 #include "i_standard_audio_policy_manager_listener.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
+#include "audio_policy_server.h"
 
 namespace OHOS {
 namespace AudioStandard {

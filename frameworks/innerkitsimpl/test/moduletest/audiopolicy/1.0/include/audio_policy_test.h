@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
+#ifndef AUDIO_POLICY_TEST_H
+#define AUDIO_POLICY_TEST_H
+
 #include <audio_system_manager.h>
 #include <gtest/gtest.h>
-#include <memory>
-#include <tuple>
 #include <media_log.h>
 
 namespace OHOS {
@@ -69,3 +70,4 @@ public:
 }
 }
 }
+#endif  // AUDIO_POLICY_TEST_H

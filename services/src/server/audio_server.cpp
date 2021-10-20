@@ -14,10 +14,10 @@
  */
 
 #include "audio_capturer_source.h"
-#include "audio_server.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
+#include "audio_server.h"
 
 #define PA
 #ifdef PA

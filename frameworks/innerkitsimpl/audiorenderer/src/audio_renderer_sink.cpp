@@ -18,8 +18,8 @@
 #include <unistd.h>
 
 #include "audio_errors.h"
-#include "audio_renderer_sink.h"
 #include "media_log.h"
+#include "audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
