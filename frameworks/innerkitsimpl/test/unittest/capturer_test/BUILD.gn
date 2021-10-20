@@ -13,9 +13,9 @@
 
 import("//build/test.gni")
 
-module_output_path = "audio_standard/audio_renderer"
+module_output_path = "audio_standard/audio_capturer"
 
-ohos_moduletest("audio_renderer_module_test") {
+ohos_unittest("audio_capturer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
@@ -28,7 +28,7 @@ ohos_moduletest("audio_renderer_module_test") {
     "-Werror",
   ]
 
-  sources = [ "src/audio_renderer_module_test.cpp" ]
+  sources = [ "src/audio_capturer_unit_test.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer" ]
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer" ]
 }

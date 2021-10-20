@@ -87,6 +87,7 @@
         }
       ],
       "test_list": [
+        "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/test:audio_unit_test",
         "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/test:audio_module_test"
       ]
     }

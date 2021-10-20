@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_CAPTURER_MODULE_TEST_H
-#define AUDIO_CAPTURER_MODULE_TEST_H
+#ifndef AUDIO_CAPTURER_UNIT_TEST_H
+#define AUDIO_CAPTURER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_capturer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioCapturerModuleTest : public testing::Test {
+class AudioCapturerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -36,4 +36,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_CAPTURER_MODULE_TEST_H
+#endif // AUDIO_CAPTURER_UNIT_TEST_H

@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_RENDERER_MODULE_TEST_H
-#define AUDIO_RENDERER_MODULE_TEST_H
+#ifndef AUDIO_RENDERER_UNIT_TEST_H
+#define AUDIO_RENDERER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRendererModuleTest : public testing::Test {
+class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -36,4 +36,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_RENDERER_MODULE_TEST_H
+#endif // AUDIO_RENDERER_UNIT_TEST_H
