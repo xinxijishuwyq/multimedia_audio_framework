@@ -303,7 +303,7 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
-    std::mutex writeMutex;
+    std::mutex dataMutex;
     std::mutex ctrlMutex;
 
     AudioCache acache;
@@ -311,6 +311,8 @@ private:
     size_t internalRdBufLen;
     size_t internalRdBufIndex;
     int32_t streamCmdStatus;
+    int32_t streamDrainStatus;
+    int32_t streamFlushStatus;
     bool isMainLoopStarted;
     bool isContextConnected;
     bool isStreamConnected;
@@ -383,6 +385,8 @@ private:
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);

@@ -15,6 +15,8 @@
 
 #include "audio_capturer_unit_test.h"
 
+#include <thread>
+
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -27,8 +29,12 @@ namespace AudioStandard {
 namespace {
     const string AUDIO_CAPTURE_FILE1 = "/data/audiocapturetest_blocking.pcm";
     const string AUDIO_CAPTURE_FILE2 = "/data/audiocapturetest_nonblocking.pcm";
+    const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
+    const string AUDIO_FLUSH_STABILITY_TEST_FILE = "/data/audiocapture_flush_stability_test.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_ZERO = 0;
+    const int32_t VALUE_HUNDRED = 100;
+    const int32_t VALUE_THOUSAND = 1000;
 } // namespace
 
 void AudioCapturerUnitTest::SetUpTestCase(void) {}
@@ -45,6 +51,38 @@ int32_t AudioCapturerUnitTest::InitializeCapturer(unique_ptr<AudioCapturer> &aud
     capturerParams.audioEncoding = ENCODING_PCM;
 
     return audioCapturer->SetParams(capturerParams);
+}
+
+void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    auto buffer = std::make_unique<uint8_t[]>(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+    FILE *capFile = fopen(filePath.c_str(), "wb");
+    ASSERT_NE(nullptr, capFile);
+
+    size_t size = 1;
+    int32_t bytesRead = 0;
+    int32_t numBuffersToCapture = READ_BUFFERS_COUNT;
+
+    while (numBuffersToCapture) {
+        bytesRead = audioCapturer->Read(*(buffer.get()), bufferLen, isBlockingRead);
+        if (bytesRead < 0) {
+            break;
+        } else if (bytesRead > 0) {
+            fwrite(buffer.get(), size, bytesRead, capFile);
+            numBuffersToCapture--;
+        }
+    }
+
+    audioCapturer->Flush();
+
+    fclose(capFile);
 }
 
 /**
@@ -348,6 +386,35 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_007, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test SetParams API stability.
+* @tc.number: Audio_Capturer_SetParams_Stability_001
+* @tc.desc  : Test SetParams interface stability.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_16000;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    for (int i = 0; i < VALUE_HUNDRED; i++) {
+        ret = audioCapturer->SetParams(capturerParams);
+        EXPECT_EQ(SUCCESS, ret);
+
+        AudioCapturerParams getCapturerParams;
+        ret = audioCapturer->GetParams(getCapturerParams);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+
+    audioCapturer->Release();
+}
+
+/**
 * @tc.name  : Test GetParams API via legal input.
 * @tc.number: Audio_Capturer_GetParams_001
 * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS}, if the getting is successful.
@@ -473,6 +540,35 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_005, TestSize.Level1)
     AudioCapturerParams getCapturerParams;
     ret = audioCapturer->GetParams(getCapturerParams);
     EXPECT_EQ(SUCCESS, ret);
+
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test GetParams API stability.
+* @tc.number: Audio_Capturer_GetParams_Stability_001
+* @tc.desc  : Test GetParams interface stability.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = MONO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        AudioCapturerParams getCapturerParams;
+        ret = audioCapturer->GetParams(getCapturerParams);
+        EXPECT_EQ(SUCCESS, ret);
+    }
 
     audioCapturer->Release();
 }
@@ -1205,6 +1301,40 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test GetAudioTime API stability.
+* @tc.number: Audio_Capturer_GetAudioTime_Stability_001
+* @tc.desc  : Test GetAudioTime interface stability.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread captureThread(StartCaptureThread, audioCapturer.get(), AUDIO_TIME_STABILITY_TEST_FILE);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        Timestamp timeStamp;
+        bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+        EXPECT_EQ(true, getAudioTime);
+    }
+
+    captureThread.join();
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
 * @tc.name  : Test Flush API.
 * @tc.number: Audio_Capturer_Flush_001
 * @tc.desc  : Test Flush interface. Returns true, if the flush is successful.
@@ -1327,6 +1457,39 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_005, TestSize.Level1)
     EXPECT_EQ(false, isFlushed);
 
     audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Flush API stability.
+* @tc.number: Audio_Capturer_Flush_Stability_001
+* @tc.desc  : Test Flush interface stability.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = AudioCapturerUnitTest::InitializeCapturer(audioCapturer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread captureThread(StartCaptureThread, audioCapturer.get(), AUDIO_FLUSH_STABILITY_TEST_FILE);
+
+    for (int i = 0; i < VALUE_HUNDRED; i++) {
+        bool isFlushed = audioCapturer->Flush();
+        EXPECT_EQ(true, isFlushed);
+    }
+
+    captureThread.join();
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
 }
 
 /**

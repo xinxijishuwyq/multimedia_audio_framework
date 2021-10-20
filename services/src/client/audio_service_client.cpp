@@ -134,6 +134,24 @@ void AudioServiceClient::PAStreamCmdSuccessCb(pa_stream *stream, int32_t success
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+void AudioServiceClient::PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
+
+    asClient->streamDrainStatus = success;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
+void AudioServiceClient::PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
+
+    asClient->streamFlushStatus = success;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
 void AudioServiceClient::PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
@@ -231,6 +249,8 @@ AudioServiceClient::AudioServiceClient()
     internalRdBufIndex = 0;
     internalRdBufLen = 0;
     streamCmdStatus = 0;
+    streamDrainStatus = 0;
+    streamFlushStatus = 0;
     underFlowCount = 0;
 
     acache.readIndex = 0;
@@ -655,6 +675,7 @@ int32_t AudioServiceClient::FlushStream()
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
     pa_operation *operation = NULL;
 
+    lock_guard<mutex> lock(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_stream_state_t state = pa_stream_get_state(paStream);
@@ -665,8 +686,8 @@ int32_t AudioServiceClient::FlushStream()
         return AUDIO_CLIENT_ERR;
     }
 
-    streamCmdStatus = 0;
-    operation = pa_stream_flush(paStream, PAStreamCmdSuccessCb, (void *)this);
+    streamFlushStatus = 0;
+    operation = pa_stream_flush(paStream, PAStreamFlushSuccessCb, (void *)this);
     if (operation == NULL) {
         MEDIA_ERR_LOG("Stream Flush Operation Failed");
         pa_threaded_mainloop_unlock(mainLoop);
@@ -679,7 +700,7 @@ int32_t AudioServiceClient::FlushStream()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainLoop);
 
-    if (!streamCmdStatus) {
+    if (!streamFlushStatus) {
         MEDIA_ERR_LOG("Stream Flush Failed");
         return AUDIO_CLIENT_ERR;
     } else {
@@ -700,6 +721,8 @@ int32_t AudioServiceClient::DrainStream()
         return AUDIO_CLIENT_ERR;
     }
 
+    lock_guard<mutex> lock(dataMutex);
+
     error = DrainAudioCache();
     if (error != AUDIO_CLIENT_SUCCESS) {
         MEDIA_ERR_LOG("Audio cache drain failed");
@@ -719,8 +742,8 @@ int32_t AudioServiceClient::DrainStream()
         return AUDIO_CLIENT_ERR;
     }
 
-    streamCmdStatus = 0;
-    operation = pa_stream_drain(paStream, PAStreamCmdSuccessCb, (void *)this);
+    streamDrainStatus = 0;
+    operation = pa_stream_drain(paStream, PAStreamDrainSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -728,7 +751,7 @@ int32_t AudioServiceClient::DrainStream()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainLoop);
 
-    if (!streamCmdStatus) {
+    if (!streamDrainStatus) {
         MEDIA_ERR_LOG("Stream Drain Failed");
         return AUDIO_CLIENT_ERR;
     } else {
@@ -849,7 +872,7 @@ size_t AudioServiceClient::WriteToAudioCache(const StreamBuffer &stream)
 
 size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)
 {
-    lock_guard<mutex> lock(writeMutex);
+    lock_guard<mutex> lock(dataMutex);
     int error = 0;
     size_t cachedLen = WriteToAudioCache(stream);
 
@@ -943,6 +966,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
 
+    lock_guard<mutex> lock(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
     while (length > 0) {
         while (!internalReadBuffer) {

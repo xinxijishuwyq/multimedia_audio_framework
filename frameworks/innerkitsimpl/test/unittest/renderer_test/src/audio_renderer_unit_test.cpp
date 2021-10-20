@@ -15,6 +15,8 @@
 
 #include "audio_renderer_unit_test.h"
 
+#include <thread>
+
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
@@ -27,6 +29,8 @@ namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     const int32_t VALUE_ZERO = 0;
+    const int32_t VALUE_HUNDRED = 100;
+    const int32_t VALUE_THOUSAND = 1000;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
@@ -47,6 +51,44 @@ int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &aud
     rendererParams.encodingType = ENCODING_PCM;
 
     return audioRenderer->SetParams(rendererParams);
+}
+
+void StartRenderThread(AudioRenderer *audioRenderer)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    auto buffer = std::make_unique<uint8_t[]>(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4;
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer.get(), 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer.get() + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+
+    fclose(wavFile);
 }
 
 /**
@@ -350,6 +392,35 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_007, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test SetParams API stability.
+* @tc.number: Audio_Renderer_SetParams_Stability_001
+* @tc.desc  : Test SetParams interface stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererParams rendererParams;
+    rendererParams.sampleFormat = SAMPLE_S16LE;
+    rendererParams.sampleRate = SAMPLE_RATE_44100;
+    rendererParams.channelCount = STEREO;
+    rendererParams.encodingType = ENCODING_PCM;
+
+    for (int i = 0; i < VALUE_HUNDRED; i++) {
+        ret = audioRenderer->SetParams(rendererParams);
+        EXPECT_EQ(SUCCESS, ret);
+
+        AudioRendererParams getRendererParams;
+        ret = audioRenderer->GetParams(getRendererParams);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+
+    audioRenderer->Release();
+}
+
+/**
 * @tc.name  : Test GetParams API via legal input.
 * @tc.number: Audio_Renderer_GetParams_001
 * @tc.desc  : Test GetParams interface. Returns 0 {SUCCESS}, if the getting is successful.
@@ -475,6 +546,35 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
     EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetParams API stability.
+* @tc.number: Audio_Renderer_GetParams_Stability_001
+* @tc.desc  : Test GetParams interface stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererParams rendererParams;
+    rendererParams.sampleFormat = SAMPLE_S16LE;
+    rendererParams.sampleRate = SAMPLE_RATE_44100;
+    rendererParams.channelCount = STEREO;
+    rendererParams.encodingType = ENCODING_PCM;
+
+    ret = audioRenderer->SetParams(rendererParams);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        AudioRendererParams getRendererParams;
+        ret = audioRenderer->GetParams(getRendererParams);
+        EXPECT_EQ(SUCCESS, ret);
+    }
 
     audioRenderer->Release();
 }
@@ -763,6 +863,39 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_003, TestSize.Level1)
 
     ret = audioRenderer->SetVolume(1.5);
     EXPECT_NE(SUCCESS, ret);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test SetVolume
+* @tc.number: Audio_Renderer_SetVolume_Stability_001
+* @tc.desc  : Test SetVolume interface stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread renderThread(StartRenderThread, audioRenderer.get());
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        audioRenderer->SetVolume(0.1);
+        audioRenderer->SetVolume(1.0);
+    }
+
+    renderThread.join();
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
@@ -1432,6 +1565,40 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_005, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test GetAudioTime API stability.
+* @tc.number: Audio_Renderer_GetAudioTime_Stability_001
+* @tc.desc  : Test GetAudioTime interface stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread renderThread(StartRenderThread, audioRenderer.get());
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        Timestamp timeStamp;
+        bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+        EXPECT_EQ(true, getAudioTime);
+    }
+
+    renderThread.join();
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
 * @tc.name  : Test Drain API.
 * @tc.number: Audio_Renderer_Drain_001
 * @tc.desc  : Test Drain interface. Returns true, if the flush is successful.
@@ -1558,6 +1725,39 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_005, TestSize.Level1)
     EXPECT_EQ(false, isDrained);
 
     audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Drain API stability.
+* @tc.number: Audio_Renderer_Drain_Stability_001
+* @tc.desc  : Test Drain interface stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread renderThread(StartRenderThread, audioRenderer.get());
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        bool isDrained = audioRenderer->Drain();
+        EXPECT_EQ(true, isDrained);
+    }
+
+    renderThread.join();
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
 }
 
 /**
@@ -1727,6 +1927,39 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_006, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test Flush API stability.
+* @tc.number: Audio_Renderer_Flush_Stability_001
+* @tc.desc  : Test Flush interface stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread renderThread(StartRenderThread, audioRenderer.get());
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        bool isFlushed = audioRenderer->Flush();
+        EXPECT_EQ(true, isFlushed);
+    }
+
+    renderThread.join();
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
 * @tc.name  : Test Pause API.
 * @tc.number: Audio_Renderer_Pause_001
 * @tc.desc  : Test Pause interface. Returns true, if the pause is successful.
@@ -1848,6 +2081,67 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_005, TestSize.Level1)
 
     isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
+}
+
+/**
+* @tc.name  : Test Pause and resume
+* @tc.number: Audio_Renderer_Pause_Stability_001
+* @tc.desc  : Test Pause interface for stability.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4;
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        EXPECT_EQ(true, audioRenderer->Pause());
+        EXPECT_EQ(true, audioRenderer->Start());
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+
+    free(buffer);
+    fclose(wavFile);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
 }
 
 /**
