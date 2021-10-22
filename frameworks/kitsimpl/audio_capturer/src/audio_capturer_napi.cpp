@@ -43,12 +43,12 @@ namespace {
 
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioCapturerNapi"};
 
-    #define GET_PARAMS(env, info, num) \
-        size_t argc = num;             \
-        napi_value argv[num] = {0};    \
-        napi_value thisVar = nullptr;  \
-        void *data;                    \
-        napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
+#define GET_PARAMS(env, info, num) \
+    size_t argc = num;             \
+    napi_value argv[num] = {0};    \
+    napi_value thisVar = nullptr;  \
+    void *data;                    \
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
 }
 
 AudioCapturerNapi::AudioCapturerNapi()
