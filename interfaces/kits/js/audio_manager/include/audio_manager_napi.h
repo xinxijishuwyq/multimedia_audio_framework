@@ -83,7 +83,6 @@ private:
     static napi_value CreateInterruptHintObject(napi_env env);
     static napi_value CreateInterruptTypeObject(napi_env env);
 
-    static napi_ref sConstructor_;
     static napi_ref audioVolumeTypeRef_;
     static napi_ref deviceFlagRef_;
     static napi_ref deviceRoleRef_;

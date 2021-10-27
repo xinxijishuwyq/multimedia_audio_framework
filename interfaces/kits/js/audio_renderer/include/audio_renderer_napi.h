@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_NAPI_H_
 
 #include <iostream>
+#include <queue>
 
 #include "audio_renderer.h"
 #include "napi/native_api.h"
@@ -76,6 +77,10 @@ private:
     static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void WriteAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void PauseAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void StartAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void StopAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
@@ -88,6 +93,10 @@ private:
     DeviceType deviceType_;
     napi_env env_;
     napi_ref wrapper_;
+    std::queue<napi_async_work> writeRequestQ_;
+    std::atomic<bool> scheduleFromApiCall_;
+    std::atomic<bool> doNotScheduleWrite_;
+    std::atomic<bool> isDrainWriteQInProgress_;
 };
 }
 }

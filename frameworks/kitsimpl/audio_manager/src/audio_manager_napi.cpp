@@ -29,7 +29,7 @@ using OHOS::HiviewDFX::HiLogLabel;
 
 namespace OHOS {
 namespace AudioStandard {
-napi_ref AudioManagerNapi::sConstructor_ = nullptr;
+static __thread napi_ref managerConstructor_ = nullptr;
 napi_ref AudioManagerNapi::audioVolumeTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceFlagRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceRoleRef_ = nullptr;
@@ -593,7 +593,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         sizeof(audio_svc_mngr_properties) / sizeof(audio_svc_mngr_properties[PARAM0]),
         audio_svc_mngr_properties, &constructor);
     if (status == napi_ok) {
-        status = napi_create_reference(env, constructor, refCount, &sConstructor_);
+        status = napi_create_reference(env, constructor, refCount, &managerConstructor_);
         if (status == napi_ok) {
             status = napi_set_named_property(env, exports, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), constructor);
             if (status == napi_ok) {
@@ -645,7 +645,7 @@ napi_value AudioManagerNapi::CreateAudioManagerWrapper(napi_env env)
     napi_value result = nullptr;
     napi_value constructor;
 
-    status = napi_get_reference_value(env, sConstructor_, &constructor);
+    status = napi_get_reference_value(env, managerConstructor_, &constructor);
     if (status == napi_ok) {
         status = napi_new_instance(env, constructor, 0, nullptr, &result);
         if (status == napi_ok) {
