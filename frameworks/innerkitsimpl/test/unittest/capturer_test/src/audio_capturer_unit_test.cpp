@@ -27,12 +27,14 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+#ifdef HDI_FAILURE
     const string AUDIO_CAPTURE_FILE1 = "/data/audiocapturetest_blocking.pcm";
     const string AUDIO_CAPTURE_FILE2 = "/data/audiocapturetest_nonblocking.pcm";
     const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
     const string AUDIO_FLUSH_STABILITY_TEST_FILE = "/data/audiocapture_flush_stability_test.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_ZERO = 0;
+#endif
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
 } // namespace
@@ -53,6 +55,7 @@ int32_t AudioCapturerUnitTest::InitializeCapturer(unique_ptr<AudioCapturer> &aud
     return audioCapturer->SetParams(capturerParams);
 }
 
+#ifdef HDI_FAILURE
 void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
 {
     int32_t ret = -1;
@@ -84,6 +87,7 @@ void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
 
     fclose(capFile);
 }
+#endif
 
 /**
 * @tc.name  : Test GetSupportedFormats API
@@ -899,6 +903,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_005, TestSize.Level1)
     audioCapturer->Release();
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Read API via isBlockingRead = true.
 * @tc.number: Audio_Capturer_Read_001
@@ -1205,6 +1210,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_001, TestSize.Level1)
 
     free(buffer);
 }
+#endif
 
 /**
 * @tc.name  : Test GetAudioTime API via illegal state, CAPTURER_NEW: GetAudioTime without initializing the capturer.
@@ -1300,6 +1306,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1)
     EXPECT_EQ(false, getAudioTime);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test GetAudioTime API stability.
 * @tc.number: Audio_Capturer_GetAudioTime_Stability_001
@@ -1370,6 +1377,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_001, TestSize.Level1)
 
     free(buffer);
 }
+#endif
 
 /**
 * @tc.name  : Test Flush API via illegal state, CAPTURER_NEW: Without initializing the capturer.
@@ -1459,6 +1467,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Flush_005, TestSize.Level1)
     audioCapturer->Release();
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Flush API stability.
 * @tc.number: Audio_Capturer_Flush_Stability_001
@@ -1529,6 +1538,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_001, TestSize.Level1)
 
     free(buffer);
 }
+#endif
 
 /**
 * @tc.name  : Test Stop API via illegal state, CAPTURER_NEW: call Stop without Initializing the capturer.
@@ -1615,6 +1625,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_005, TestSize.Level1)
     EXPECT_EQ(true, isStopped);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Release API.
 * @tc.number: Audio_Capturer_Release_001
@@ -1651,6 +1662,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_001, TestSize.Level1)
 
     free(buffer);
 }
+#endif
 
 /**
 * @tc.name  : Test Release API via illegal state, CAPTURER_NEW: Call Release without initializing the capturer.
