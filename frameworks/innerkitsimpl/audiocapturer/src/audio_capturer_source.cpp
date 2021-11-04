@@ -201,7 +201,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     }
 
     // Get qualified sound card and port
-    char adapterNameCase[PATH_LEN] = "usb";
+    char adapterNameCase[PATH_LEN] = "internal";
     index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, &capturePort, size);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Fail");
