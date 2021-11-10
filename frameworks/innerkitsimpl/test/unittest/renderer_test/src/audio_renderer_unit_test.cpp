@@ -28,13 +28,17 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
+#ifdef HDI_FAILURE
     const int32_t VALUE_ZERO = 0;
+#endif
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     // Writing only 500 buffers of data for test
+#ifdef HDI_FAILURE
     const int32_t WRITE_BUFFERS_COUNT = 500;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
+#endif
 } // namespace
 
 void AudioRendererUnitTest::SetUpTestCase(void) {}
@@ -53,6 +57,7 @@ int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &aud
     return audioRenderer->SetParams(rendererParams);
 }
 
+#ifdef HDI_FAILURE
 void StartRenderThread(AudioRenderer *audioRenderer)
 {
     int32_t ret = -1;
@@ -90,6 +95,7 @@ void StartRenderThread(AudioRenderer *audioRenderer)
 
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test GetSupportedFormats API
@@ -868,6 +874,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_003, TestSize.Level1)
     EXPECT_EQ(true, isReleased);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test SetVolume
 * @tc.number: Audio_Renderer_SetVolume_Stability_001
@@ -900,6 +907,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_Stability_001, TestSize.L
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
 }
+#endif
 
 /**
 * @tc.name  : Test GetVolume
@@ -1079,6 +1087,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Start_005, TestSize.Level1)
     audioRenderer->Release();
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Write API.
 * @tc.number: Audio_Renderer_Write_001
@@ -1469,6 +1478,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_001, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test GetAudioTime API via illegal state, RENDERER_NEW: GetAudioTime without initializing the renderer.
@@ -1564,6 +1574,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_005, TestSize.Level1)
     EXPECT_EQ(false, getAudioTime);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test GetAudioTime API stability.
 * @tc.number: Audio_Renderer_GetAudioTime_Stability_001
@@ -1638,6 +1649,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_001, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test Drain API via illegal state, RENDERER_NEW: Without initializing the renderer.
@@ -1727,6 +1739,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Drain_005, TestSize.Level1)
     audioRenderer->Release();
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Drain API stability.
 * @tc.number: Audio_Renderer_Drain_Stability_001
@@ -1841,6 +1854,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_002, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test Flush API via illegal state, RENDERER_NEW: Without initializing the renderer.
@@ -1926,6 +1940,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Flush_006, TestSize.Level1)
     EXPECT_EQ(false, isFlushed);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Flush API stability.
 * @tc.number: Audio_Renderer_Flush_Stability_001
@@ -2000,6 +2015,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_001, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test Pause API via illegal state, RENDERER_NEW: call Pause without Initializing the renderer.
@@ -2083,6 +2099,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_005, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Pause and resume
 * @tc.number: Audio_Renderer_Pause_Stability_001
@@ -2185,6 +2202,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Stop_001, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test Stop API via illegal state, RENDERER_NEW: call Stop without Initializing the renderer.
@@ -2271,6 +2289,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Stop_005, TestSize.Level1)
     EXPECT_EQ(true, isStopped);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test Release API.
 * @tc.number: Audio_Renderer_Release_001
@@ -2311,6 +2330,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_001, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test Release API via illegal state, RENDERER_NEW: Call Release without initializing the renderer.
@@ -2528,6 +2548,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_005, TestSize.Level1)
     EXPECT_EQ(RENDERER_NEW, state);
 }
 
+#ifdef HDI_FAILURE
 /**
 * @tc.name  : Test GetLatency API.
 * @tc.number: Audio_Renderer_GetLatency_001
@@ -2584,6 +2605,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_001, TestSize.Level1)
     free(buffer);
     fclose(wavFile);
 }
+#endif
 
 /**
 * @tc.name  : Test GetLatency API via illegal state, RENDERER_NEW: without initializing the renderer
