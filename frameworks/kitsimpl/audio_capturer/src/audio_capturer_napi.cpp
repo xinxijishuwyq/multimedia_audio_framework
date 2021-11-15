@@ -664,14 +664,14 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
                 context->status = ERROR;
                 uint32_t userSize = context->userSize;
-                uint8_t *buffer = (uint8_t *)malloc(userSize);
+                auto buffer = std::make_unique<uint8_t[]>(userSize);
                 if (!buffer) {
                     return;
                 }
 
                 size_t bytesRead = 0;
                 while (bytesRead < context->userSize) {
-                    int32_t len = context->objectInfo->audioCapturer_->Read(*(buffer + bytesRead),
+                    int32_t len = context->objectInfo->audioCapturer_->Read(*(buffer.get() + bytesRead),
                                                                             userSize - bytesRead,
                                                                             context->isBlocking);
                     if (len >= 0) {
@@ -684,7 +684,8 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
 
                 if (bytesRead > 0) {
                     context->bytesRead = bytesRead;
-                    context->buffer = buffer;
+                    context->buffer = buffer.get();
+                    buffer.release();
                     context->status = SUCCESS;
                 }
             },
