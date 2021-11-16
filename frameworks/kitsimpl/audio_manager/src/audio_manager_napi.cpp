@@ -1780,7 +1780,7 @@ napi_value AudioManagerNapi::GetDevices(napi_env env, napi_callback_info info)
 
 napi_value UndefinedNapiValue(const napi_env& env)
 {
-    napi_value result;
+    napi_value result = nullptr;
     napi_get_undefined(env, &result);
     return result;
 }
