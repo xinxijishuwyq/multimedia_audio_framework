@@ -36,6 +36,8 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
 
+#include <securec.h>
+
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
 #define DEFAULT_BUFFER_SIZE 8192
@@ -56,12 +58,14 @@ struct Userdata {
     pa_sample_spec ss;
     pa_channel_map map;
     bool isHDISinkInitialized;
+    size_t renderLength;
+    char renderBuffer[DEFAULT_BUFFER_SIZE];
 };
 
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(const pa_sample_spec *ss);
 
-static ssize_t RenderWrite(pa_memchunk *pchunk)
+static ssize_t RenderWrite(pa_memchunk *pchunk, struct Userdata *u)
 {
     size_t index, length;
     ssize_t count = 0;
@@ -75,33 +79,60 @@ static ssize_t RenderWrite(pa_memchunk *pchunk)
     p = pa_memblock_acquire(pchunk->memblock);
     pa_assert(p);
 
+    size_t copySize = (length > (DEFAULT_BUFFER_SIZE - u->renderLength)) ? (DEFAULT_BUFFER_SIZE - u->renderLength)
+                                                                         : length;
+    if (u->renderLength < DEFAULT_BUFFER_SIZE) {
+        char *dest = &u->renderBuffer[0];
+        if (memcpy_s(dest + u->renderLength, copySize, (char *)p + index, copySize)) {
+            pa_memblock_release(pchunk->memblock);
+            return 0;
+        }
+        u->renderLength += copySize;
+        length -= copySize;
+        index += copySize;
+    }
+
+    if (u->renderLength != DEFAULT_BUFFER_SIZE) {
+        pa_memblock_release(pchunk->memblock);
+        return 0;
+    }
+
     while (true) {
         uint64_t writeLen = 0;
 
-        ret = AudioRendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
-        if (writeLen > length) {
+        ret = AudioRendererRenderFrame((char *)&u->renderBuffer, (uint64_t)u->renderLength, &writeLen);
+        if (writeLen > u->renderLength) {
             pa_log_error("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                         length, writeLen, ret);
+                         u->renderLength, writeLen, ret);
             count = -1 - count;
             break;
         }
         if (writeLen == 0) {
             pa_log_error("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                         length, writeLen, ret);
+                         u->renderLength, writeLen, ret);
             count = -1 - count;
             break;
         } else {
             pa_log_info("Success: outputting to audio renderer Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                        length, writeLen, ret);
+                        u->renderLength, writeLen, ret);
             count += writeLen;
-            index += writeLen;
-            length -= writeLen;
-            pa_log_info("Remaining bytes Length: %zu", length);
-            if (length <= 0) {
+            u->renderLength -= writeLen;
+
+            pa_log_info("Remaining bytes Length: %zu", u->renderLength);
+            if (u->renderLength <= 0) {
                 break;
             }
         }
     }
+
+    if (length) {
+        copySize = length;
+        char *dest = &u->renderBuffer[0];
+        if (!memcpy_s(dest, copySize, (char *)p + index, copySize)) {
+            u->renderLength = copySize;
+        }
+    }
+
     pa_memblock_release(pchunk->memblock);
 
     return count;
@@ -123,12 +154,12 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
         pa_assert(chunk.length > 0);
 
-        if ((written = RenderWrite(&chunk)) < 0)
+        if ((written = RenderWrite(&chunk, u)) < 0)
             written = -1 - written;
 
         pa_memblock_unref(chunk.memblock);
 
-        u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
+        u->timestamp += pa_bytes_to_usec(written, &u->sink->sample_spec);
 
         dropped = chunk.length - written;
 
@@ -142,7 +173,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
         u->bytes_dropped += dropped;
 
-        consumed += chunk.length;
+        consumed += written;
 
         if (consumed >= u->sink->thread_info.max_request)
             break;
@@ -404,6 +435,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     u->bytes_dropped = 0;
     u->buffer_size = DEFAULT_BUFFER_SIZE;
+    u->renderLength = 0;
     if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
         pa_log("Failed to parse buffer_size argument.");
         goto fail;
