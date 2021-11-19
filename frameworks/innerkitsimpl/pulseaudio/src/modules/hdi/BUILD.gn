@@ -30,6 +30,7 @@ config("hdi_config") {
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
+    "//utils/native/base/include",
   ]
 
   cflags = [
