@@ -15,6 +15,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_proxy.h"
+#include "audio_server_death_recipient.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
@@ -23,6 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static sptr<IAudioPolicy> g_sProxy = nullptr;
+bool AudioPolicyManager::serverConnected = false;
 
 void AudioPolicyManager::Init()
 {
@@ -41,8 +43,34 @@ void AudioPolicyManager::Init()
     if (g_sProxy == nullptr) {
         MEDIA_DEBUG_LOG("AudioPolicyManager::init g_sProxy is NULL.");
     } else {
+        serverConnected = true;
         MEDIA_DEBUG_LOG("AudioPolicyManager::init g_sProxy is assigned.");
     }
+
+    RegisterAudioPolicyServerDeathRecipient();
+}
+
+void AudioPolicyManager::RegisterAudioPolicyServerDeathRecipient()
+{
+    MEDIA_INFO_LOG("Register audio policy server death recipient");
+    pid_t pid = 0;
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+    if (deathRecipient_ != nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
+        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied, this,
+                                               std::placeholders::_1));
+        bool result = object->AddDeathRecipient(deathRecipient_);
+        if (!result) {
+            MEDIA_ERR_LOG("failed to add deathRecipient");
+        }
+    }
+}
+
+void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
+{
+    MEDIA_INFO_LOG("Audio policy server died: reestablish connection");
+    serverConnected = false;
 }
 
 int32_t AudioPolicyManager::SetStreamVolume(AudioStreamType streamType, float volume)

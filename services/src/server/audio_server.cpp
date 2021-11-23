@@ -45,8 +45,7 @@ void *AudioServer::paDaemonThread(void *arg)
     MEDIA_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
     MEDIA_INFO_LOG("Exiting ohos_pa_main\n");
-
-    return nullptr;
+    exit(-1);
 }
 #endif
 

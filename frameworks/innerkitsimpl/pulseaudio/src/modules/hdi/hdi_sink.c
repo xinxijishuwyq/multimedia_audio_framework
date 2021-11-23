@@ -36,8 +36,6 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
 
-#include <securec.h>
-
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
 #define DEFAULT_BUFFER_SIZE 8192
@@ -58,14 +56,12 @@ struct Userdata {
     pa_sample_spec ss;
     pa_channel_map map;
     bool isHDISinkInitialized;
-    size_t renderLength;
-    char renderBuffer[DEFAULT_BUFFER_SIZE];
 };
 
 static void UserdataFree(struct Userdata *u);
 static int32_t PrepareDevice(const pa_sample_spec *ss);
 
-static ssize_t RenderWrite(pa_memchunk *pchunk, struct Userdata *u)
+static ssize_t RenderWrite(pa_memchunk *pchunk)
 {
     size_t index, length;
     ssize_t count = 0;
@@ -79,60 +75,33 @@ static ssize_t RenderWrite(pa_memchunk *pchunk, struct Userdata *u)
     p = pa_memblock_acquire(pchunk->memblock);
     pa_assert(p);
 
-    size_t copySize = (length > (DEFAULT_BUFFER_SIZE - u->renderLength)) ? (DEFAULT_BUFFER_SIZE - u->renderLength)
-                                                                         : length;
-    if (u->renderLength < DEFAULT_BUFFER_SIZE) {
-        char *dest = &u->renderBuffer[0];
-        if (memcpy_s(dest + u->renderLength, copySize, (char *)p + index, copySize)) {
-            pa_memblock_release(pchunk->memblock);
-            return 0;
-        }
-        u->renderLength += copySize;
-        length -= copySize;
-        index += copySize;
-    }
-
-    if (u->renderLength != DEFAULT_BUFFER_SIZE) {
-        pa_memblock_release(pchunk->memblock);
-        return 0;
-    }
-
     while (true) {
         uint64_t writeLen = 0;
 
-        ret = AudioRendererRenderFrame((char *)&u->renderBuffer, (uint64_t)u->renderLength, &writeLen);
-        if (writeLen > u->renderLength) {
+        ret = AudioRendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
+        if (writeLen > length) {
             pa_log_error("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                         u->renderLength, writeLen, ret);
+                         length, writeLen, ret);
             count = -1 - count;
             break;
         }
         if (writeLen == 0) {
             pa_log_error("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                         u->renderLength, writeLen, ret);
+                         length, writeLen, ret);
             count = -1 - count;
             break;
         } else {
             pa_log_info("Success: outputting to audio renderer Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                        u->renderLength, writeLen, ret);
+                        length, writeLen, ret);
             count += writeLen;
-            u->renderLength -= writeLen;
-
-            pa_log_info("Remaining bytes Length: %zu", u->renderLength);
-            if (u->renderLength <= 0) {
+            index += writeLen;
+            length -= writeLen;
+            pa_log_info("Remaining bytes Length: %zu", length);
+            if (length <= 0) {
                 break;
             }
         }
     }
-
-    if (length) {
-        copySize = length;
-        char *dest = &u->renderBuffer[0];
-        if (!memcpy_s(dest, copySize, (char *)p + index, copySize)) {
-            u->renderLength = copySize;
-        }
-    }
-
     pa_memblock_release(pchunk->memblock);
 
     return count;
@@ -150,12 +119,14 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
         ssize_t written = 0;
         pa_memchunk chunk;
 
-        pa_sink_render(u->sink, u->sink->thread_info.max_request, &chunk);
+        pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
 
         pa_assert(chunk.length > 0);
 
-        if ((written = RenderWrite(&chunk, u)) < 0)
-            written = -1 - written;
+        if ((written = RenderWrite(&chunk)) < 0) {
+            pa_memblock_unref(chunk.memblock);
+            break;
+        }
 
         pa_memblock_unref(chunk.memblock);
 
@@ -230,23 +201,6 @@ finish:
     pa_log_debug("Thread (use timing) shutting down");
 }
 
-static void SinkUpdateRequestedLatencyCb(pa_sink *s)
-{
-    struct Userdata *u = NULL;
-    size_t nbytes;
-
-    pa_sink_assert_ref(s);
-    pa_assert_se(u = s->userdata);
-
-    u->block_usec = pa_sink_get_requested_latency_within_thread(s);
-
-    if (u->block_usec == (pa_usec_t) - 1)
-        u->block_usec = s->thread_info.max_latency;
-
-    nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
-    pa_sink_set_max_request_within_thread(s, nbytes);
-}
-
 // Called from IO context
 static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                           pa_memchunk *chunk)
@@ -291,6 +245,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
                 pa_log("Reinitializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
                 if (PrepareDevice(&u->ss) < 0) {
                     pa_log_error("HDI renderer reinitialization failed");
+                    pa_core_exit(u->core, true, 0);
                 } else {
                     u->isHDISinkInitialized = true;
                     pa_log("Successfully reinitialized HDI renderer");
@@ -427,7 +382,6 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     u->sink->parent.process_msg = SinkProcessMsg;
     u->sink->set_state_in_io_thread = SinkSetStateInIoThreadCb;
-    u->sink->update_requested_latency = SinkUpdateRequestedLatencyCb;
     u->sink->userdata = u;
 
     pa_sink_set_asyncmsgq(u->sink, u->thread_mq.inq);
@@ -435,14 +389,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     u->bytes_dropped = 0;
     u->buffer_size = DEFAULT_BUFFER_SIZE;
-    u->renderLength = 0;
     if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
         pa_log("Failed to parse buffer_size argument.");
         goto fail;
     }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
-    pa_sink_set_latency_range(u->sink, 0, u->block_usec);
+    pa_sink_set_fixed_latency(u->sink, u->block_usec);
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
     threadName = pa_sprintf_malloc("hdi-sink-playback");

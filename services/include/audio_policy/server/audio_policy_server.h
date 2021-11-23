@@ -69,6 +69,9 @@ private:
     std::mutex mutex_;
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioManagerCallback>> policyListenerCbsMap_;
     std::unordered_map<AudioStreamType, AudioInterrupt> curActiveInterruptsMap_;
+
+    void RegisterAudioServerDeathRecipient();
+    void AudioServerDied(pid_t pid);
 };
 } // namespace AudioStandard
 } // namespace OHOS
