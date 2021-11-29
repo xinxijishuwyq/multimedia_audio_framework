@@ -17,6 +17,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager_listener_proxy.h"
+#include "audio_server_death_recipient.h"
 #include "i_standard_audio_policy_manager_listener.h"
 #include "iservice_registry.h"
 #include "media_log.h"
@@ -46,6 +47,7 @@ void AudioPolicyServer::OnStart()
     }
 
     mPolicyService.Init();
+    RegisterAudioServerDeathRecipient();
     return;
 }
 
@@ -53,6 +55,28 @@ void AudioPolicyServer::OnStop()
 {
     mPolicyService.Deinit();
     return;
+}
+
+void AudioPolicyServer::RegisterAudioServerDeathRecipient()
+{
+    MEDIA_INFO_LOG("Register audio server death recipient");
+    pid_t pid = 0;
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+    if (deathRecipient_ != nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
+        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
+        bool result = object->AddDeathRecipient(deathRecipient_);
+        if (!result) {
+            MEDIA_ERR_LOG("failed to add deathRecipient");
+        }
+    }
+}
+
+void AudioPolicyServer::AudioServerDied(pid_t pid)
+{
+    MEDIA_INFO_LOG("Audio server died: restart policy server");
+    exit(-1);
 }
 
 int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume)

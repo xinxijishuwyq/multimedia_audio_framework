@@ -30,6 +30,10 @@ public:
     static AudioPolicyManager& GetInstance()
     {
         static AudioPolicyManager policyManager;
+        if (!serverConnected) {
+            policyManager.Init();
+        }
+
         return policyManager;
     }
 
@@ -69,6 +73,10 @@ private:
     void Init();
     std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
+
+    static bool serverConnected;
+    void RegisterAudioPolicyServerDeathRecipient();
+    void AudioPolicyServerDied(pid_t pid);
 };
 } // namespce AudioStandard
 } // namespace OHOS

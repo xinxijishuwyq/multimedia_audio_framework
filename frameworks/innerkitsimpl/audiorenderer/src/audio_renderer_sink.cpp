@@ -203,7 +203,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     int32_t ret;
     struct AudioAdapterDescriptor *descs = nullptr;
     ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret < 0) {
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
         MEDIA_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
