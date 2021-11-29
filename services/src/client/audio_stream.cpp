@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "audio_stream.h"
 #include <vector>
+#include <cinttypes>
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "media_log.h"
@@ -63,7 +63,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
         timestamp.time.tv_sec += (timestamp.time.tv_nsec / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec = (timestamp.time.tv_nsec % TIME_CONVERSION_NS_S);
 
-        MEDIA_DEBUG_LOG("AudioStream: GetAudioTime timestamp sec:nsec %{public}ld:%{public}ld",
+        MEDIA_DEBUG_LOG("AudioStream: GetAudioTime timestamp sec:nsec %{public}" PRId64 ":%{public}ld",
                         timestamp.time.tv_sec, timestamp.time.tv_nsec);
         return true;
     }
