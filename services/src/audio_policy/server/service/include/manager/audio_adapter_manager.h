@@ -107,7 +107,7 @@ private:
     std::unique_ptr<AudioServiceAdapter> mAudioServiceAdapter;
     std::unordered_map<AudioStreamType, float> mVolumeMap;
     AudioRingerMode mRingerMode;
-    std::unique_ptr<SingleKvStore> mAudioPolicyKvStore;
+    std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
     friend class PolicyCallbackImpl;
 };
 
