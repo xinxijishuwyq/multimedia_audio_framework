@@ -1986,6 +1986,7 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioCapturerNapi::Init(env, exports);
     AudioRendererNapi::Init(env, exports);
     AudioParametersNapi::Init(env, exports);
+    AudioSoundManagerNapi::Init(env, exports);
 
     return exports;
 }

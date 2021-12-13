@@ -28,11 +28,15 @@ ohos_copy("audio_declaration") {
 
 ohos_shared_library("audio") {
   include_dirs = [
+    "//foundation/aafwk/standard/frameworks/kits/ability/native/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_renderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkits/audiosoundmanager/include",
+    "//foundation/multimedia/audio_standard/interfaces/kits/js/ringtone_manager/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager/include",
     "//third_party/libuv/include",
   ]
 
@@ -43,18 +47,29 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_callback_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_renderer/src/audio_renderer_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/ringtone_manager/src/audio_sound_manager_napi.cpp",
   ]
 
   deps = [
+    "//base/global/resmgr_standard/frameworks/resmgr:global_resmgr",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
     "//foundation/ace/napi:ace_napi",
+    "//foundation/distributedschedule/dmsfwk/interfaces/innerkits/uri:zuri",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager:audio_sound_manager",
     "//utils/native/base:utils",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "aafwk_standard:ability_manager",
+    "appexecfwk_standard:appexecfwk_base",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "multimedia_audio_standard:audio_sound_manager",
+  ]
 
   relative_install_dir = "module/multimedia"
   part_name = "multimedia_audio_standard"
