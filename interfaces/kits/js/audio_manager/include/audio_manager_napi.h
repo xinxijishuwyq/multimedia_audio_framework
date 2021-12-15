@@ -20,6 +20,7 @@
 #include <map>
 #include <vector>
 #include "audio_system_manager.h"
+#include "audio_sound_manager_napi.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 

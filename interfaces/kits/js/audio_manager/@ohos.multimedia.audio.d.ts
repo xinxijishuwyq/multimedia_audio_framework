@@ -14,6 +14,8 @@
 */
 import {ErrorCallback, AsyncCallback, Callback} from './basic';
 import {VideoPlayer, AudioPlayer} from './@ohos.multimedia.media'
+import Context from './@ohos.ability'
+
 /**
  * @name audio
  * @since 6
@@ -822,6 +824,41 @@ declare namespace audio {
    * @sysCap SystemCapability.Multimedia.Audio
    */
   type AudioDeviceDescriptors = Array<Readonly<AudioDeviceDescriptor>>;
+
+  enum RingtoneType {
+    /** Default type */
+    RINGTONE_TYPE_DEFAULT = 0,
+    /** Multi-sim type */
+    RINGTONE_TYPE_MULTISIM
+}
+
+function getSystemSoundManager(): SystemSoundManager;
+
+interface SystemSoundManager {
+   /**
+    * Sets the ringtone
+    * @param context Indicates the Context object on OHOS
+    * @param uri Indicates which URI to be set for the tone type
+    * @param type Indicates the type of the tone
+    * @param callback Callback object to be passed along with request
+    * @since 1.0
+    * @version 1.0
+    */
+   setSystemRingtoneUri(context: Context, uri: string, type: RingtoneType, callback: AsyncCallback<void>): void;
+   setSystemRingtoneUri(context: Context, uri: string, type: RingtoneType): Promise<void>;
+
+   /**
+    * Gets the ringtone URI
+    * @param context Indicates the Context object on OHOS
+    * @param type Indicates the type of the tone
+    * @param callback Callback object to be passed along with request
+    * @return Returns URI of the ringtone
+    * @since 1.0
+    * @version 1.0
+    */
+   getSystemRingtoneUri(context: Context, type: RingtoneType, callback: AsyncCallback<string>): void;
+   getSystemRingtoneUri(context: Context, type: RingtoneType): Promise<string>;
+}
 }
 
 export default audio;

@@ -84,6 +84,16 @@
               "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_renderer/include"
             ]
           }
+        },
+        {
+          "type": "none",
+          "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager:audio_sound_manager",
+          "header": {
+          "header_files": [
+              "iaudio_sound_manager.h"
+          ],
+            "header_base": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager/include"
+          }
         }
       ],
       "test_list": [
