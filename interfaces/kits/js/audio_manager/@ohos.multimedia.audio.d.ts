@@ -182,7 +182,7 @@ declare namespace audio {
     SAMPLE_S16LE = 2,
     SAMPLE_S24LE = 3,
     SAMPLE_S32LE = 4,
-    INVALID_WIDTH = -1
+    INVALID_WIDTH = -1,
   }
 
   /**
@@ -190,7 +190,7 @@ declare namespace audio {
    */
   enum AudioChannel {
     MONO = 1,
-    STEREO
+    STEREO,
   }
 
   /**
@@ -215,7 +215,7 @@ declare namespace audio {
    */
   enum AudioEncodingType {
     ENCODING_PCM = 0,
-    ENCODING_INVALID
+    ENCODING_INVALID,
   }
 
   /**
@@ -250,13 +250,46 @@ declare namespace audio {
     INTERRUPT_HINT_PAUSE,
     INTERRUPT_HINT_STOP,
     INTERRUPT_HINT_DUCK,
-    INTERRUPT_HINT_UNDUCK
+    INTERRUPT_HINT_UNDUCK,
   }
 
   enum InterruptActionType {
     TYPE_ACTIVATED = 1,
     TYPE_INTERRUPTED = 2,
     TYPE_DEACTIVATED = 3
+  }
+
+  enum DeviceChangeType {
+    CONNECT = 0,
+    DISCONNECT = 1,
+  }
+  /**
+   * Enumerates audio scenes.
+   * @since 8
+  */
+  enum AudioScene {
+    /**
+     * Default audio scene
+     * @since 8
+     */
+    AUDIO_SCENE_DEFAULT,
+    /**
+     * Ringing audio scene
+     * Only available for system api.
+     * @since 8
+     */
+    AUDIO_SCENE_RINGING,
+    /**
+     * Phone call audio scene
+     * Only available for system api.
+     * @since 8
+     */
+    AUDIO_SCENE_PHONE_CALL,
+    /**
+     * Voice chat audio scene
+     * @since 8
+     */
+    AUDIO_SCENE_PHONE_CHAT,
   }
 
   /**
@@ -458,6 +491,31 @@ declare namespace audio {
      */
     isDeviceActive(deviceType: ActiveDeviceType): Promise<boolean>;
     /**
+     * Sets the audio scene mode to change audio strategy.
+     * This method uses an asynchronous callback to return the execution result.
+   * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setAudioScene(scene: AudioScene, callback: AsyncCallback<void> ): void;
+    /**
+     * Sets the audio scene mode to change audio strategy. This method uses a promise to return the execution result.
+   * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setAudioScene(scene: AudioScene): Promise<void>;
+    /**
+     * Obtains the system audio scene mode. This method uses an asynchronous callback to return the execution result.
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @devices
+     */
+    getAudioScene(callback: AsyncCallback<AudioScene> ): void;
+     /**
+      * Obtains the system audio scene mode. This method uses a promise to return the execution result.
+      * @devices
+      * @sysCap SystemCapability.Multimedia.Audio
+      */
+    getAudioScene(): Promise<AudioScene>;
+     /**
      * Activates Audio interrupt
      * @sysCap SystemCapability.Multimedia.Audio
      * @devices
@@ -481,6 +539,12 @@ declare namespace audio {
      * @devices
      */
     off(type: 'interrupt', volumeType: AudioVolumeType): void;
+    /**
+    * Monitors device changes
+    * @sysCap SystemCapability.Multimedia.Audio
+    * @devices
+    */
+    on(type: 'deviceChange', callback: Callback<DeviceChangeAction>): void;
   }
 
   /**
@@ -509,6 +573,11 @@ declare namespace audio {
 
   interface AudioInterrupt {
     streamType: AudioVolumeType;
+  }
+
+  interface DeviceChangeAction {
+    type: DeviceChangeType;
+    deviceDescriptors: AudioDeviceDescriptors;
   }
   /**
    * Provides functions for applications for audio playback.

@@ -17,10 +17,12 @@
 
 #include "audio_errors.h"
 #include "media_log.h"
+#include "audio_device_descriptor_napi.h"
 #include "audio_manager_callback_napi.h"
 
 namespace {
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+    const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
 }
 
 namespace OHOS {
@@ -48,6 +50,8 @@ void AudioManagerCallbackNapi::SaveCallbackReference(const std::string &callback
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == INTERRUPT_CALLBACK_NAME) {
         interruptCallback_ = cb;
+    } else if (callbackName == DEVICE_CHANGE_CALLBACK_NAME) {
+        deviceChangeCallback_ = cb;
     } else {
         MEDIA_ERR_LOG("AudioManagerCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
     }
@@ -63,11 +67,30 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
 static void NativeInterruptActionToJsObj(const napi_env& env, napi_value& jsObj,
     const InterruptAction& interruptAction)
 {
-        napi_create_object(env, &jsObj);
+    napi_create_object(env, &jsObj);
 
-        SetValueInt32(env, "actionType", static_cast<int32_t>(interruptAction.actionType), jsObj);
-        SetValueInt32(env, "interruptType", static_cast<int32_t>(interruptAction.interruptType), jsObj);
-        SetValueInt32(env, "interruptHint", static_cast<int32_t>(interruptAction.interruptHint), jsObj);
+    SetValueInt32(env, "actionType", static_cast<int32_t>(interruptAction.actionType), jsObj);
+    SetValueInt32(env, "interruptType", static_cast<int32_t>(interruptAction.interruptType), jsObj);
+    SetValueInt32(env, "interruptHint", static_cast<int32_t>(interruptAction.interruptHint), jsObj);
+}
+
+static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsObj,
+    const DeviceChangeAction &deviceChangeAction)
+{
+    napi_create_object(env, &jsObj);
+
+    SetValueInt32(env, "type", static_cast<int32_t>(deviceChangeAction.type), jsObj);
+
+    napi_value ddWrapper = nullptr;
+    napi_value jsArray;
+    int32_t size = deviceChangeAction.deviceDescriptors.size();
+    napi_create_array_with_length(env, size, &jsArray);
+    for (int i = 0; i < size; i += 1) {
+        AudioDeviceDescriptor *curDeviceDescriptor = deviceChangeAction.deviceDescriptors[i];
+        ddWrapper = AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(env, curDeviceDescriptor);
+        napi_set_element(env, jsArray, i, ddWrapper);
+    }
+    napi_set_named_property(env, jsObj, "deviceDescriptors", jsArray);
 }
 
 void AudioManagerCallbackNapi::OnInterrupt(const InterruptAction &interruptAction)
@@ -85,6 +108,30 @@ void AudioManagerCallbackNapi::OnInterrupt(const InterruptAction &interruptActio
     cb->callbackName = INTERRUPT_CALLBACK_NAME;
     cb->interruptAction = interruptAction;
     return OnJsCallbackInterrupt(cb);
+}
+
+void AudioManagerCallbackNapi::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: OnDeviceChange is called");
+    MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: DeviceChangeType: %{public}d", deviceChangeAction.type);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors = deviceChangeAction.deviceDescriptors;
+    for (auto it = deviceDescriptors.begin(); it != deviceDescriptors.end(); it++) {
+        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = *it;
+        if (audioDeviceDescriptor != nullptr) {
+            MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: OnDeviceChange deviceType %{public}d",
+                            audioDeviceDescriptor->deviceType_);
+            MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: OnDeviceChange deviceRole %{public}d",
+                            audioDeviceDescriptor->deviceRole_);
+        }
+    }
+
+    std::unique_ptr<AudioManagerJsCallback> cb = std::make_unique<AudioManagerJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+    cb->callback = interruptCallback_;
+    cb->callbackName = DEVICE_CHANGE_CALLBACK_NAME;
+    cb->deviceChangeAction = deviceChangeAction;
+    return OnJsCallbackDeviceChange(cb);
 }
 
 void AudioManagerCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioManagerJsCallback> &jsCb)
@@ -120,6 +167,58 @@ void AudioManagerCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioManage
             // Call back function
             napi_value args[1] = { nullptr };
             NativeInterruptActionToJsObj(env, args[0], event->interruptAction);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
+                "%{public}s fail to create Interrupt callback", request.c_str());
+
+            const size_t argCount = 1;
+            napi_value result = nullptr;
+            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
+        } while (0);
+        delete event;
+        delete work;
+    });
+    if (ret != 0) {
+        MEDIA_ERR_LOG("Failed to execute libuv work queue");
+        delete work;
+    } else {
+        jsCb.release();
+    }
+}
+
+void AudioManagerCallbackNapi::OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb)
+{
+    uv_loop_s *loop = nullptr;
+    napi_get_uv_event_loop(env_, &loop);
+    if (loop == nullptr) {
+        return;
+    }
+
+    uv_work_t *work = new(std::nothrow) uv_work_t;
+    if (work == nullptr) {
+        MEDIA_ERR_LOG("AudioManagerCallbackNapi: OnJsCallbackDeviceChange: No memory");
+        return;
+    }
+    work->data = reinterpret_cast<void *>(jsCb.get());
+
+    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
+        // Js Thread
+        AudioManagerJsCallback *event = reinterpret_cast<AudioManagerJsCallback *>(work->data);
+        std::string request = event->callbackName;
+        napi_env env = event->callback->env_;
+        napi_ref callback = event->callback->cb_;
+        MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        do {
+            CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
+
+            napi_value jsCallback = nullptr;
+            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+                request.c_str());
+
+            // Call back function
+            napi_value args[1] = { nullptr };
+            NativeDeviceChangeActionToJsObj(env, args[0], event->deviceChangeAction);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
                 "%{public}s fail to create Interrupt callback", request.c_str());
 

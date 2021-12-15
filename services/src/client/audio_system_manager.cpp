@@ -252,6 +252,19 @@ int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::Au
                                                                      callback);
 }
 
+int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+    deviceChangeCallback_ = callback;
+
+    MEDIA_ERR_LOG("AudioSystemManager: SetDeviceChangeCallback set deviceChangeCallback_ ok");
+
+    return SUCCESS;
+}
+
 int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
 {
     return AudioPolicyManager::GetInstance().UnsetAudioManagerCallback(static_cast<AudioStreamType>(streamType));
@@ -286,6 +299,19 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
     const
 {
     return g_sProxy->GetDevices(deviceFlag);
+}
+
+int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
+{
+    audioScene_ = scene;
+    MEDIA_DEBUG_LOG("SetAudioScene audioScene_=%{public}d done", audioScene_);
+    return SUCCESS;
+}
+
+AudioScene AudioSystemManager::GetAudioScene() const
+{
+    MEDIA_DEBUG_LOG("GetAudioScene audioScene_=%{public}d done", audioScene_);
+    return audioScene_;
 }
 
 /**

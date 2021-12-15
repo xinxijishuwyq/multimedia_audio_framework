@@ -37,6 +37,11 @@ public:
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 };
 
+struct DeviceChangeAction {
+    DeviceChangeType type;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+};
+
 class AudioManagerCallback {
 public:
     virtual ~AudioManagerCallback() = default;
@@ -44,10 +49,23 @@ public:
      * Called when an interrupt is received.
      *
      * @param interruptAction Indicates the InterruptAction information needed by client.
-     * For details, refer InterruptAction enum in audio_info.h
+     * For details, refer InterruptAction struct in audio_info.h
      */
     virtual void OnInterrupt(const InterruptAction &interruptAction) = 0;
 };
+
+class AudioManagerDeviceChangeCallback {
+public:
+    virtual ~AudioManagerDeviceChangeCallback() = default;
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param deviceChangeAction Indicates the DeviceChangeAction information needed by client.
+     * For details, refer DeviceChangeAction struct
+     */
+    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -134,8 +152,11 @@ public:
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
     bool SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
+    int32_t SetAudioScene(const AudioScene &scene);
+    AudioScene GetAudioScene() const;
     int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
+    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
     int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
@@ -147,8 +168,10 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
     std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
+    std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
     AudioSystemManager::AudioVolumeType cbStreamType_ = AudioSystemManager::AudioVolumeType::STREAM_DEFAULT;
+    AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

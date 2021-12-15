@@ -322,6 +322,32 @@ struct AudioParameters {
     DeviceType deviceType;
 };
 
+enum DeviceChangeType {
+    CONNECT = 0,
+    DISCONNECT = 1,
+};
+
+enum AudioScene {
+    /**
+     * Default audio scene
+     */
+    AUDIO_SCENE_DEFAULT,
+    /**
+     * Ringing audio scene
+     * Only available for system api.
+     */
+    AUDIO_SCENE_RINGING,
+    /**
+     * Phone call audio scene
+     * Only available for system api.
+     */
+    AUDIO_SCENE_PHONE_CALL,
+    /**
+     * Voice chat audio scene
+     */
+    AUDIO_SCENE_PHONE_CHAT,
+};
+
 // Supported audio parameters for both renderer and capturer
 const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,

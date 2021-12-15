@@ -63,6 +63,8 @@ private:
     static napi_value IsStreamActive(napi_env env, napi_callback_info info);
     static napi_value SetRingerMode(napi_env env, napi_callback_info info);
     static napi_value GetRingerMode(napi_env env, napi_callback_info info);
+    static napi_value SetAudioScene(napi_env env, napi_callback_info info);
+    static napi_value GetAudioScene(napi_env env, napi_callback_info info);
     static napi_value SetDeviceActive(napi_env env, napi_callback_info info);
     static napi_value IsDeviceActive(napi_env env, napi_callback_info info);
     static napi_value SetAudioParameter(napi_env env, napi_callback_info info);
@@ -83,6 +85,8 @@ private:
     static napi_value CreateInterruptActionTypeObject(napi_env env);
     static napi_value CreateInterruptHintObject(napi_env env);
     static napi_value CreateInterruptTypeObject(napi_env env);
+    static napi_value CreateDeviceChangeTypeObject(napi_env env);
+    static napi_value CreateAudioSceneObject(napi_env env);
 
     static napi_ref audioVolumeTypeRef_;
     static napi_ref deviceFlagRef_;
@@ -93,9 +97,12 @@ private:
     static napi_ref interruptActionType_;
     static napi_ref interruptHint_;
     static napi_ref interruptType_;
+    static napi_ref deviceChangeType_;
+    static napi_ref audioScene_;
 
     AudioSystemManager *audioMngr_;
     std::shared_ptr<AudioManagerCallback> callbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     napi_env env_;
     napi_ref wrapper_;
 };
@@ -118,6 +125,18 @@ static const std::map<std::string, InterruptActionType> interruptActionTypeMap =
     {"TYPE_ACTIVATED", TYPE_ACTIVATED},
     {"TYPE_INTERRUPTED", TYPE_INTERRUPTED},
     {"TYPE_DEACTIVATED", TYPE_DEACTIVATED}
+};
+
+static const std::map<std::string, DeviceChangeType> deviceChangeTypeMap = {
+    {"CONNECT", CONNECT},
+    {"DISCONNECT", DISCONNECT}
+};
+
+static const std::map<std::string, AudioScene> audioSceneMap = {
+    {"AUDIO_SCENE_DEFAULT", AUDIO_SCENE_DEFAULT},
+    {"AUDIO_SCENE_RINGING", AUDIO_SCENE_RINGING},
+    {"AUDIO_SCENE_PHONE_CALL", AUDIO_SCENE_PHONE_CALL},
+    {"AUDIO_SCENE_PHONE_CHAT", AUDIO_SCENE_PHONE_CHAT}
 };
 } // namespace AudioStandard
 } // namespace OHOS

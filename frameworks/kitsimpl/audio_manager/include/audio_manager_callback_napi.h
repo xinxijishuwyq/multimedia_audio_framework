@@ -38,25 +38,29 @@ struct AutoRef {
     napi_ref cb_;
 };
 
-class AudioManagerCallbackNapi : public AudioManagerCallback {
+class AudioManagerCallbackNapi : public AudioManagerCallback, public AudioManagerDeviceChangeCallback {
 public:
     explicit AudioManagerCallbackNapi(napi_env env);
     virtual ~AudioManagerCallbackNapi();
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
     void OnInterrupt(const InterruptAction &interruptAction) override;
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
 
 private:
     struct AudioManagerJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         InterruptAction interruptAction;
+        DeviceChangeAction deviceChangeAction;
     };
 
     void OnJsCallbackInterrupt(std::unique_ptr<AudioManagerJsCallback> &jsCb);
+    void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
+    std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
