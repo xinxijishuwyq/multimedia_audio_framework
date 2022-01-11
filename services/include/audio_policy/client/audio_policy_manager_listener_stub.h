@@ -16,7 +16,9 @@
 #ifndef AUDIO_POLICY_MANAGER_LISTENER_STUB_H
 #define AUDIO_POLICY_MANAGER_LISTENER_STUB_H
 
-#include "audio_system_manager.h"
+#include <thread>
+
+#include "audio_interrupt_callback.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {
@@ -29,12 +31,13 @@ public:
     // IStandardAudioManagerListener override
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
-    void OnInterrupt(const InterruptAction &interruptAction) override;
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
     // AudioManagerListenerStub
-    void SetCallback(const std::weak_ptr<AudioManagerCallback> &callback);
+    void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
 private:
-    std::weak_ptr<AudioManagerCallback> callback_;
-    void ReadInterruptActionParams(MessageParcel &data, InterruptAction &interruptAction);
+    std::weak_ptr<AudioInterruptCallback> callback_;
+    void ReadInterruptEventParams(MessageParcel &data, InterruptEvent &interruptEvent);
+    std::vector<std::unique_ptr<std::thread>> interruptThreads_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

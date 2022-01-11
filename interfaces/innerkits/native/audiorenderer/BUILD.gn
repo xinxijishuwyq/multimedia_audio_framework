@@ -26,6 +26,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
     "//foundation/multimedia/audio_standard/services/test",
+    "//utils/native/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -43,9 +44,15 @@ ohos_shared_library("audio_renderer") {
 
   sources = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/src/audio_renderer.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client" ]
+  deps = [
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiopolicy:audio_policy_client",
+    "//utils/native/base:utils",
+  ]
 
   public_configs = [ ":audio_external_library_config" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"
@@ -77,6 +84,21 @@ ohos_executable("audio_interrupt_test") {
     ":audio_renderer",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
   ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("interrupt_multi_renderer_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/interrupt_multi_renderer_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [ ":audio_renderer" ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 

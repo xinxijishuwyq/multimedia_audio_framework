@@ -16,7 +16,7 @@
 #ifndef AUDIO_RENDERER_H
 #define AUDIO_RENDERER_H
 
-#include<memory>
+#include <memory>
 
 #include "audio_info.h"
 #include "timestamp.h"
@@ -58,6 +58,19 @@ enum RendererState {
     RENDERER_PAUSED
 };
 
+class AudioRendererCallback {
+public:
+    virtual ~AudioRendererCallback() = default;
+
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptEvent Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_info.h
+     */
+    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  */
@@ -88,7 +101,7 @@ public:
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t SetParams(const AudioRendererParams params) const = 0;
+    virtual int32_t SetParams(const AudioRendererParams params) = 0;
 
     /**
      * @brief Obtains audio renderer parameters.
@@ -107,7 +120,7 @@ public:
      *
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      */
-    virtual bool Start() const = 0;
+    virtual bool Start() = 0;
 
     /**
      * @brief Writes audio data.
@@ -195,6 +208,24 @@ public:
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
 
     /**
+     * @brief Set audio renderer descriptors
+     *
+     * @param audioRendererDesc Audio renderer descriptor
+     * @return Returns {@link SUCCESS} if attribute is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) const = 0;
+
+    /**
+     * @brief Update the stream type
+     *
+     * @param audioStreamType Audio stream type
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetStreamType(AudioStreamType audioStreamType) const = 0;
+
+    /**
      * @brief Set the track volume
      *
      * @param volume The volume to be set for the current track.
@@ -210,8 +241,33 @@ public:
      */
     virtual float GetVolume() const = 0;
 
-        /**
-     * @brief Obtains the foramts supported by renderer.
+    /**
+     * @brief Set the render rate
+     *
+     * @param renderRate The rate at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRenderRate(AudioRendererRate renderRate) const = 0;
+
+    /**
+     * @brief Obtains the current render rate
+     *
+     * @return Returns current render rate
+     */
+    virtual AudioRendererRate GetRenderRate() const = 0;
+
+    /**
+     * @brief Registers the renderer callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+
+    virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
+
+    /**
+     * @brief Obtains the formats supported by renderer.
      *
      * @return Returns vector with supported formats.
      */

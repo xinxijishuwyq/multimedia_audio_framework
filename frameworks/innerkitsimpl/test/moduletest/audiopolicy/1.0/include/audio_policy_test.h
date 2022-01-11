@@ -40,6 +40,12 @@ struct PolicyParam {
     string value;
 };
 
+class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
+public:
+    AudioRingerMode ringerMode_;
+    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+};
+
 class AudioPolicyTest : public TestWithParam<PolicyParam> {
 public:
     AudioPolicyTest() {}
@@ -54,18 +60,6 @@ public:
     void SetUp(void) override;
     // TearDown: Called after each test cases
     void TearDown(void) override;
-};
-
-class AudioManagerModuleTest : public testing::Test {
-public:
-    // SetUpTestCase: Called before all test cases
-    static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
-    void SetUp(void);
-    // TearDown: Called after each test cases
-    void TearDown(void);
 };
 }
 }

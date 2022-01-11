@@ -16,7 +16,7 @@
 #ifndef AUDIO_POLICY_MANAGER_LISTENER_PROXY_H
 #define AUDIO_POLICY_MANAGER_LISTENER_PROXY_H
 
-#include "audio_system_manager.h"
+#include "audio_interrupt_callback.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {
@@ -26,19 +26,19 @@ public:
     explicit AudioPolicyManagerListenerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyManagerListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
-    void OnInterrupt(const InterruptAction &interruptAction) override;
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;
-    void WriteInterruptActionParams(MessageParcel &data, const InterruptAction &interruptAction);
+    void WriteInterruptEventParams(MessageParcel &data, const InterruptEvent &interruptEvent);
 };
 
-class AudioPolicyManagerListenerCallback : public AudioManagerCallback {
+class AudioPolicyManagerListenerCallback : public AudioInterruptCallback {
 public:
     AudioPolicyManagerListenerCallback(const sptr<IStandardAudioPolicyManagerListener> &listener);
     virtual ~AudioPolicyManagerListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerCallback);
-    void OnInterrupt(const InterruptAction &interruptAction) override;
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
 private:
     sptr<IStandardAudioPolicyManagerListener> listener_ = nullptr;
 };

@@ -20,6 +20,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioRendererCallbackTest : public AudioRendererCallback {
+public:
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+};
+
 class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

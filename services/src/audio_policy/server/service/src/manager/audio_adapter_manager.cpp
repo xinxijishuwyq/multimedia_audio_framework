@@ -18,6 +18,7 @@
 
 #include "audio_errors.h"
 #include "media_log.h"
+
 #include "audio_adapter_manager.h"
 
 namespace OHOS {
@@ -43,6 +44,17 @@ bool AudioAdapterManager::Init()
 void AudioAdapterManager::Deinit(void)
 {
     return  mAudioServiceAdapter->Disconnect();
+}
+
+int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callback)
+{
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("[AudioAdapterManager] SetAudioSessionCallback callback == nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    sessionCallback_ = callback;
+    return SUCCESS;
 }
 
 int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float volume)
@@ -151,7 +163,11 @@ std::string AudioAdapterManager::GetModuleArgs(std::unique_ptr<AudioPortInfo> &a
             args = "rate=";
             args.append(audioPortInfo->rate);
         }
-
+        if (audioPortInfo->format != nullptr) {
+            args.append(" format=");
+            args.append(audioPortInfo->format);
+            MEDIA_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
+        }
         if (audioPortInfo->channels != nullptr) {
             args.append(" channels=");
             args.append(audioPortInfo->channels);
@@ -206,6 +222,8 @@ std::string AudioAdapterManager::GetStreamNameByStreamType(AudioStreamType strea
             return "alarm";
         case STREAM_DTMF:
             return "dtmf";
+        case STREAM_VOICE_CALL:
+            return "voice_call";
         case STREAM_VOICE_ASSISTANT:
             return "voice_assistant";
         default:
@@ -221,6 +239,8 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
         stream = STREAM_MUSIC;
     else if (!streamType.compare(std::string("ring")))
         stream = STREAM_RING;
+    else if (!streamType.compare(std::string("voice_call")))
+        stream = STREAM_VOICE_CALL;
     else if (!streamType.compare(std::string("system")))
         stream = STREAM_SYSTEM;
     else if (!streamType.compare(std::string("notification")))
@@ -296,6 +316,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     if (isFirstBoot == true) {
         WriteVolumeToKvStore(STREAM_MUSIC, MAX_VOLUME);
         WriteVolumeToKvStore(STREAM_RING, MAX_VOLUME);
+        WriteVolumeToKvStore(STREAM_VOICE_CALL, MAX_VOLUME);
         WriteVolumeToKvStore(STREAM_VOICE_ASSISTANT, MAX_VOLUME);
         MEDIA_INFO_LOG("[AudioAdapterManager] Wrote default stream volumes to KvStore");
     } else {
@@ -332,6 +353,9 @@ bool AudioAdapterManager::LoadVolumeFromKvStore(AudioStreamType streamType)
         case STREAM_RING:
             key = "ring";
             break;
+        case STREAM_VOICE_CALL:
+            key = "voice_call";
+            break;
         case STREAM_VOICE_ASSISTANT:
             key = "voice_assistant";
             break;
@@ -363,6 +387,9 @@ bool AudioAdapterManager::LoadVolumeMap(void)
 
     if (!LoadVolumeFromKvStore(STREAM_RING))
         MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Ring from kvStore!");
+
+    if (!LoadVolumeFromKvStore(STREAM_VOICE_CALL))
+        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_call from kvStore!");
 
     if (!LoadVolumeFromKvStore(STREAM_VOICE_ASSISTANT))
         MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_assistant from kvStore!");

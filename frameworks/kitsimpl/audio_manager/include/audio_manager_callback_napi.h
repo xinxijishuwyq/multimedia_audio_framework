@@ -16,6 +16,7 @@
 #ifndef AUDIO_MANAGER_CALLBACK_NAPI_H_
 #define AUDIO_MANAGER_CALLBACK_NAPI_H_
 
+#include "audio_common_napi.h"
 #include "audio_manager_napi.h"
 #include "audio_system_manager.h"
 #include "napi/native_api.h"
@@ -23,43 +24,24 @@
 
 namespace OHOS {
 namespace AudioStandard {
-struct AutoRef {
-    AutoRef(napi_env env, napi_ref cb)
-        : env_(env), cb_(cb)
-    {
-    }
-    ~AutoRef()
-    {
-        if (env_ != nullptr && cb_ != nullptr) {
-            (void)napi_delete_reference(env_, cb_);
-        }
-    }
-    napi_env env_;
-    napi_ref cb_;
-};
-
-class AudioManagerCallbackNapi : public AudioManagerCallback, public AudioManagerDeviceChangeCallback {
+class AudioManagerCallbackNapi : public AudioManagerDeviceChangeCallback {
 public:
     explicit AudioManagerCallbackNapi(napi_env env);
     virtual ~AudioManagerCallbackNapi();
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
-    void OnInterrupt(const InterruptAction &interruptAction) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
 
 private:
     struct AudioManagerJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
-        InterruptAction interruptAction;
         DeviceChangeAction deviceChangeAction;
     };
 
-    void OnJsCallbackInterrupt(std::unique_ptr<AudioManagerJsCallback> &jsCb);
     void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
 };
 }  // namespace AudioStandard

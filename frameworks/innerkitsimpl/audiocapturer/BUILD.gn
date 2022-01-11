@@ -19,6 +19,9 @@ ohos_shared_library("audio_capturer_source") {
   sources = [ "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/src/audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  if (device_name == "baltimore") {
+    cflags += [ "-DDEVICE_BALTIMORE" ]
+  }
   cflags_cc = cflags
 
   include_dirs = [

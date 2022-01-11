@@ -26,7 +26,7 @@ void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, Audio
     audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     audioInterrupt.contentType = static_cast<ContentType>(data.ReadInt32());
     audioInterrupt.streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    audioInterrupt.sessionID = data.ReadInt32();
+    audioInterrupt.sessionID = data.ReadUint32();
 }
 
 void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -103,22 +103,41 @@ void AudioPolicyManagerStub::IsDeviceActiveInternal(MessageParcel &data, Message
     reply.WriteBool(result);
 }
 
-void AudioPolicyManagerStub::SetCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
         return;
     }
-    int32_t result = SetAudioManagerCallback(streamType, object);
+    int32_t result = SetRingerModeCallback(clientId, object);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    int32_t result = UnsetAudioManagerCallback(streamType);
+    int32_t clientId = data.ReadInt32();
+    int32_t result = UnsetRingerModeCallback(clientId);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionID = data.ReadUint32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        return;
+    }
+    int32_t result = SetAudioInterruptCallback(sessionID, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionID = data.ReadUint32();
+    int32_t result = UnsetAudioInterruptCallback(sessionID);
     reply.WriteInt32(result);
 }
 
@@ -136,6 +155,23 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
     ReadAudioInterruptParams(data, audioInterrupt);
     int32_t result = DeactivateAudioInterrupt(audioInterrupt);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &reply)
+{
+    AudioStreamType streamInFocus = GetStreamInFocus();
+    reply.WriteInt32(static_cast<int32_t>(streamInFocus));
+}
+
+void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
+        return;
+    }
+    int ret = SetVolumeKeyEventCallback(remoteObject);
+    reply.WriteInt32(ret);
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
@@ -178,12 +214,20 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             IsDeviceActiveInternal(data, reply);
             break;
 
+        case SET_RINGERMODE_CALLBACK:
+            SetRingerModeCallbackInternal(data, reply);
+            break;
+
+        case UNSET_RINGERMODE_CALLBACK:
+            UnsetRingerModeCallbackInternal(data, reply);
+            break;
+
         case SET_CALLBACK:
-            SetCallbackInternal(data, reply);
+            SetInterruptCallbackInternal(data, reply);
             break;
 
         case UNSET_CALLBACK:
-            UnsetCallbackInternal(data, reply);
+            UnsetInterruptCallbackInternal(data, reply);
             break;
 
         case ACTIVATE_INTERRUPT:
@@ -192,6 +236,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case DEACTIVATE_INTERRUPT:
             DeactivateInterruptInternal(data, reply);
+            break;
+
+        case SET_VOLUME_KEY_EVENT_CALLBACK:
+            SetVolumeKeyEventCallbackInternal(data, reply);
+            break;
+
+        case GET_STREAM_IN_FOCUS:
+            GetStreamInFocusInternal(reply);
             break;
 
         default:

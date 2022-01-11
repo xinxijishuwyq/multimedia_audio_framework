@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_NAPI_H_
 
 #include <iostream>
+#include <map>
 #include <queue>
 
 #include "audio_renderer.h"
@@ -26,6 +27,12 @@
 namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_RENDERER_NAPI_CLASS_NAME = "AudioRenderer";
+
+static const std::map<std::string, AudioRendererRate> rendererRateMap = {
+    {"RENDER_RATE_NORMAL", RENDER_RATE_NORMAL},
+    {"RENDER_RATE_DOUBLE", RENDER_RATE_DOUBLE},
+    {"RENDER_RATE_HALF", RENDER_RATE_HALF}
+};
 
 class AudioRendererNapi {
 public:
@@ -41,6 +48,7 @@ private:
         napi_ref callbackRef = nullptr;
         int32_t status;
         int32_t intValue;
+        int32_t audioRendererRate;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -61,6 +69,8 @@ private:
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SetParams(napi_env env, napi_callback_info info);
     static napi_value GetParams(napi_env env, napi_callback_info info);
+    static napi_value SetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value GetRenderRate(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Write(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
@@ -69,6 +79,8 @@ private:
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+    static napi_value GetState(napi_env env, napi_callback_info info);
+    static napi_value On(napi_env env, napi_callback_info info);
 
     static void CommonCallbackRoutine(napi_env env, AudioRendererAsyncContext* &asyncContext,
                                       const napi_value &valueParam);
@@ -82,6 +94,18 @@ private:
     static void StartAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void StopAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
+    static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
+    static napi_value CreateAudioRendererRateObject(napi_env env);
+    static napi_value CreateInterruptEventTypeObject(napi_env env);
+    static napi_value CreateInterruptForceTypeObject(napi_env env);
+    static napi_value CreateInterruptHintTypeObject(napi_env env);
+    static napi_value CreateAudioStateObject(napi_env env);
+
+    static napi_ref audioRendererRate_;
+    static napi_ref interruptEventType_;
+    static napi_ref interruptForceType_;
+    static napi_ref interruptHintType_;
+    static napi_ref audioState_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     int32_t SetAudioParameters(napi_env env, napi_value arg);
@@ -97,6 +121,36 @@ private:
     std::atomic<bool> scheduleFromApiCall_;
     std::atomic<bool> doNotScheduleWrite_;
     std::atomic<bool> isDrainWriteQInProgress_;
+    std::shared_ptr<AudioRendererCallback> callbackNapi_ = nullptr;
+};
+
+static const std::map<std::string, InterruptType> interruptEventTypeMap = {
+    {"INTERRUPT_TYPE_BEGIN", INTERRUPT_TYPE_BEGIN},
+    {"INTERRUPT_TYPE_END", INTERRUPT_TYPE_END}
+};
+
+static const std::map<std::string, InterruptForceType> interruptForceTypeMap = {
+    {"INTERRUPT_FORCE", INTERRUPT_FORCE},
+    {"INTERRUPT_SHARE", INTERRUPT_SHARE},
+};
+
+static const std::map<std::string, InterruptHint> interruptHintTypeMap = {
+    {"INTERRUPT_HINT_NONE", INTERRUPT_HINT_NONE},
+    {"INTERRUPT_HINT_PAUSE", INTERRUPT_HINT_PAUSE},
+    {"INTERRUPT_HINT_RESUME", INTERRUPT_HINT_RESUME},
+    {"INTERRUPT_HINT_STOP", INTERRUPT_HINT_STOP},
+    {"INTERRUPT_HINT_DUCK", INTERRUPT_HINT_DUCK},
+    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK}
+};
+
+static const std::map<std::string, RendererState> audioStateMap = {
+    {"STATE_INVALID", RENDERER_INVALID},
+    {"STATE_NEW", RENDERER_NEW},
+    {"STATE_PREPARED", RENDERER_PREPARED},
+    {"STATE_RUNNING", RENDERER_RUNNING},
+    {"STATE_STOPPED", RENDERER_STOPPED},
+    {"STATE_RELEASED", RENDERER_RELEASED},
+    {"STATE_PAUSED", RENDERER_PAUSED}
 };
 }
 }

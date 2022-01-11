@@ -118,35 +118,70 @@ bool AudioPolicyManager::IsDeviceActive(InternalDeviceType deviceType)
     return g_sProxy->IsDeviceActive(deviceType);
 }
 
-int32_t AudioPolicyManager::SetAudioManagerCallback(const AudioStreamType streamType,
-                                                    const std::shared_ptr<AudioManagerCallback> &callback)
+int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
+                                                  const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        MEDIA_ERR_LOG("AudioPolicyManager: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
-    callback_ = callback; // used by client to trigger callback like onerror
+    ringerModelistenerStub_ = new(std::nothrow) AudioRingerModeUpdateListenerStub();
+    if (ringerModelistenerStub_ == nullptr || g_sProxy == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: object null");
+        return ERROR;
+    }
+    ringerModelistenerStub_->SetCallback(callback);
 
+    sptr<IRemoteObject> object = ringerModelistenerStub_->AsObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
+        return ERROR;
+    }
+
+    return g_sProxy->SetRingerModeCallback(clientId, object);
+}
+
+int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
+{
+    return g_sProxy->UnsetRingerModeCallback(clientId);
+}
+
+int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
+                                                      const std::shared_ptr<AudioInterruptCallback> &callback)
+{
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+#ifdef LISTENER_STUB_MUTEX
+    // Need to lock member variable listenerStub_ as SetAudioInterruptCallback
+    // can be called from different threads in multi renderer usage
+    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+#endif // LISTENER_STUB_MUTEX
     listenerStub_ = new(std::nothrow) AudioPolicyManagerListenerStub();
     if (listenerStub_ == nullptr || g_sProxy == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManager: object null");
         return ERROR;
     }
-    listenerStub_->SetCallback(callback);
+    listenerStub_->SetInterruptCallback(callback);
 
     sptr<IRemoteObject> object = listenerStub_->AsObject();
     if (object == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
         return ERROR;
     }
+#ifdef LISTENER_STUB_MUTEX
+    lock.unlock(); // unlock once it is converted into IRemoteObject
+#endif // LISTENER_STUB_MUTEX
 
-    return g_sProxy->SetAudioManagerCallback(streamType, object);
+    return g_sProxy->SetAudioInterruptCallback(sessionID, object);
 }
 
-int32_t AudioPolicyManager::UnsetAudioManagerCallback(const AudioStreamType streamType)
+int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t sessionID)
 {
-    return g_sProxy->UnsetAudioManagerCallback(streamType);
+    return g_sProxy->UnsetAudioInterruptCallback(sessionID);
 }
 
 int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
@@ -157,6 +192,35 @@ int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioIn
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     return g_sProxy->DeactivateAudioInterrupt(audioInterrupt);
+}
+
+AudioStreamType AudioPolicyManager::GetStreamInFocus()
+{
+    return g_sProxy->GetStreamInFocus();
+}
+
+int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
+{
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioSystemManager volume back is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    volumeKeyEventCallback_ = callback;
+
+    volumeKeyEventListenerStub_ = new(std::nothrow) AudioVolumeKeyEventCallbackStub();
+    if (volumeKeyEventListenerStub_ == nullptr || g_sProxy == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: object null");
+        return ERROR;
+    }
+    volumeKeyEventListenerStub_->SetOnVolumeKeyEventCallback(callback);
+
+    sptr<IRemoteObject> object = volumeKeyEventListenerStub_->AsObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: volumeKeyEventListenerStub_->AsObject is nullptr..");
+        return ERROR;
+    }
+    return g_sProxy->SetVolumeKeyEventCallback(object);
 }
 } // namespace AudioStandard
 } // namespace OHOS

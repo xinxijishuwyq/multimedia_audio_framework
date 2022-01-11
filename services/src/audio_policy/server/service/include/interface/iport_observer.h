@@ -27,6 +27,7 @@ public:
     virtual void OnAudioPortPinAvailable(std::unique_ptr<AudioPortPinInfo> portInfo) = 0;
     virtual void OnDefaultOutputPortPin(InternalDeviceType device) = 0;
     virtual void OnDefaultInputPortPin(InternalDeviceType device) = 0;
+    virtual void OnAudioInterruptEnable(bool enable) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

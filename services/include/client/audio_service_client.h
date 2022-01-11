@@ -113,6 +113,13 @@ public:
     int32_t CreateStream(AudioStreamParams audioParams, AudioStreamType audioType);
 
     /**
+     * @brief Obtains session ID .
+     *
+     * @return Returns unique session ID for the created session
+    */
+    int32_t GetSessionID(uint32_t &sessionID);
+
+    /**
     * Starts the stream created using CreateStream
     *
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
@@ -148,6 +155,14 @@ public:
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
     int32_t PauseStream();
+
+    /**
+    * Update the stream type
+    *
+    * @param audioStreamType Audio stream type
+    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
+    */
+    int32_t SetStreamType(AudioStreamType audioStreamType);
 
     /**
     * Sets the volume of the stream associated with session ID
@@ -293,6 +308,22 @@ public:
      */
     float GetStreamVolume();
 
+    /**
+     * @brief Set the render rate
+     *
+     * @param renderRate The rate at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetStreamRenderRate(AudioRendererRate renderRate);
+
+    /**
+     * @brief Obtains the current render rate
+     *
+     * @return Returns current render rate
+     */
+    AudioRendererRate GetStreamRenderRate();
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -325,6 +356,8 @@ private:
     uint32_t streamIndex;
     uint32_t volumeChannels;
     bool streamInfoUpdated;
+
+    AudioRendererRate renderRate;
 
     // To be set while using audio stream
     // functionality for callbacks

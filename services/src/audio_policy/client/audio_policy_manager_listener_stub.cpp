@@ -14,7 +14,6 @@
  */
 
 #include "audio_errors.h"
-#include "audio_system_manager.h"
 #include "media_log.h"
 #include "audio_policy_manager_listener_stub.h"
 
@@ -27,14 +26,21 @@ AudioPolicyManagerListenerStub::AudioPolicyManagerListenerStub()
 
 AudioPolicyManagerListenerStub::~AudioPolicyManagerListenerStub()
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerLiternerStub Instance destroy");
+    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerStub Instance start");
+    for (auto &thread : interruptThreads_) {
+        if (thread && thread->joinable()) {
+            thread->join();
+        }
+    }
+    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerStub Instance complete");
 }
 
-void AudioPolicyManagerListenerStub::ReadInterruptActionParams(MessageParcel &data, InterruptAction &interruptAction)
+void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &data, InterruptEvent &interruptEvent)
 {
-    interruptAction.actionType = static_cast<InterruptActionType>(data.ReadInt32());
-    interruptAction.interruptType = static_cast<InterruptType>(data.ReadInt32());
-    interruptAction.interruptHint = static_cast<InterruptHint>(data.ReadInt32());
+    interruptEvent.eventType = static_cast<InterruptType>(data.ReadInt32());
+    interruptEvent.forceType = static_cast<InterruptForceType>(data.ReadInt32());
+    interruptEvent.hintType = static_cast<InterruptHint>(data.ReadInt32());
+    interruptEvent.duckVolume = data.ReadFloat();
 }
 
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
@@ -42,10 +48,11 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
 {
     switch (code) {
         case ON_INTERRUPT: {
-            InterruptAction interruptAction = {};
-            ReadInterruptActionParams(data, interruptAction);
+            InterruptEvent interruptEvent = {};
+            ReadInterruptEventParams(data, interruptEvent);
             // To be modified by enqueuing the interrupt action scheduler
-            OnInterrupt(interruptAction);
+            interruptThreads_.emplace_back(
+                std::make_unique<std::thread>(&AudioPolicyManagerListenerStub::OnInterrupt, this, interruptEvent));
             return MEDIA_OK;
         }
         default: {
@@ -55,17 +62,18 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
     }
 }
 
-void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptAction &interruptAction)
+void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptEvent &interruptEvent)
 {
-    std::shared_ptr<AudioManagerCallback> cb = callback_.lock();
+    MEDIA_DEBUG_LOG("AudioPolicyManagerLiternerStub OnInterrupt start");
+    std::shared_ptr<AudioInterruptCallback> cb = callback_.lock();
     if (cb != nullptr) {
-        cb->OnInterrupt(interruptAction);
+        cb->OnInterrupt(interruptEvent);
     } else {
         MEDIA_ERR_LOG("AudioPolicyManagerListenerStub: callback_ is nullptr");
     }
 }
 
-void AudioPolicyManagerListenerStub::SetCallback(const std::weak_ptr<AudioManagerCallback> &callback)
+void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
 }

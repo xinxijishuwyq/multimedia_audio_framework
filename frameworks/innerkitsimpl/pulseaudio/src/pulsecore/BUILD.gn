@@ -48,7 +48,7 @@ config("pulsecore_config") {
 
 ohos_source_set("pulsecore_sources") {
   sources = [
-    "$pulseaudio_build_path/src/pulsecore/ltdl-stub.c",
+    "$pulseaudio_build_path/src/pulsecore/ltdl_stub.c",
     "$pulseaudio_dir/src/pulsecore/asyncmsgq.c",
     "$pulseaudio_dir/src/pulsecore/asyncq.c",
     "$pulseaudio_dir/src/pulsecore/auth-cookie.c",

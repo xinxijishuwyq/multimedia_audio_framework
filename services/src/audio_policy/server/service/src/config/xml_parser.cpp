@@ -15,6 +15,7 @@
 
 #include <cstdlib>
 #include "media_log.h"
+
 #include "xml_parser.h"
 
 namespace OHOS {
@@ -75,6 +76,9 @@ bool XMLParser::ParseInternal(xmlNode &node)
                 case AUDIO_PORT_PINS:
                     ParseAudioPortPins(*currNode);
                     break;
+                case AUDIO_INTERRUPT_ENABLE:
+                    ParseAudioInterrupt(*currNode);
+                    break;
                 default:
                     ParseInternal(*(currNode->children));
                     break;
@@ -101,6 +105,8 @@ NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
         return AUDIO_PORT_PINS;
     } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPin"))) {
         return AUDIO_PORT_PIN;
+    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioInterruptEnable"))) {
+        return AUDIO_INTERRUPT_ENABLE;
     } else {
         return UNKNOWN;
     }
@@ -147,6 +153,18 @@ void XMLParser::ParseDefaultInputDevice(xmlNode &node)
     return;
 }
 
+void XMLParser::ParseAudioInterrupt(xmlNode &node)
+{
+    xmlNode *child = node.children;
+    xmlChar *enableFlag = xmlNodeGetContent(child);
+
+    if (!xmlStrcmp(enableFlag, reinterpret_cast<const xmlChar*>("true"))) {
+        mPortObserver.OnAudioInterruptEnable(true);
+    } else {
+        mPortObserver.OnAudioInterruptEnable(false);
+    }
+}
+
 void XMLParser::ParseAudioPorts(xmlNode &node)
 {
     xmlNode *child = node.xmlChildrenNode;
@@ -174,16 +192,24 @@ void XMLParser::ParseAudioPorts(xmlNode &node)
                     reinterpret_cast<xmlChar*>(const_cast<char*>("channels"))));
             }
 
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("buffer_size")))) {
-                portInfo->buffer_size = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("buffer_size"))));
-            }
-
             if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("rate")))) {
                 portInfo->rate = reinterpret_cast<char*>(xmlGetProp(
                     child,
                     reinterpret_cast<xmlChar*>(const_cast<char*>("rate"))));
+                MEDIA_INFO_LOG("xml parser rate: %{public}s", portInfo->rate);
+            }
+
+            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("format")))) {
+                portInfo->format = reinterpret_cast<char*>(xmlGetProp(
+                    child,
+                    reinterpret_cast<xmlChar*>(const_cast<char*>("format"))));
+                MEDIA_INFO_LOG("xml parser format: %{public}s", portInfo->format);
+            }
+
+            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("buffer_size")))) {
+                portInfo->buffer_size = reinterpret_cast<char*>(xmlGetProp(
+                    child,
+                    reinterpret_cast<xmlChar*>(const_cast<char*>("buffer_size"))));
             }
 
             if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("file")))) {

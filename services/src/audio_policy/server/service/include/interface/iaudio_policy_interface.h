@@ -20,6 +20,7 @@
 #include "audio_info.h"
 #include "audio_policy_manager.h"
 #include "audio_policy_types.h"
+#include "audio_session_callback.h"
 
 #include <memory>
 #include <string>
@@ -52,6 +53,8 @@ public:
     virtual int32_t SetRingerMode(AudioRingerMode ringerMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
+
+    virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

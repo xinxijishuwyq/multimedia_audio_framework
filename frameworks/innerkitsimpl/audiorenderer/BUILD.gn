@@ -21,6 +21,9 @@ ohos_shared_library("audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
+  if (device_name == "baltimore") {
+    cflags += [ "-DDEVICE_BALTIMORE" ]
+  }
   cflags_cc = cflags
 
   include_dirs = [

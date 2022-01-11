@@ -14,8 +14,7 @@
 */
 import {ErrorCallback, AsyncCallback, Callback} from './basic';
 import {VideoPlayer, AudioPlayer} from './@ohos.multimedia.media'
-import Context from './@ohos.ability'
-
+import Context from './@ohos.ability';
 /**
  * @name audio
  * @since 6
@@ -47,12 +46,58 @@ declare namespace audio {
   function createAudioRenderer(volumeType: AudioVolumeType): AudioRenderer;
 
   /**
+   * Enumerates the rendering states of the current device.
+   * @since 8
+   */
+  enum AudioState {
+    /**
+     * Invalid state.
+     * @since 8
+     */
+    STATE_INVALID = -1,
+    /**
+     * Create New instance state.
+     * @since 8
+     */
+    STATE_NEW,
+    /**
+     * Prepared state.
+     * @since 8
+     */
+    STATE_PREPARED,
+    /**
+     * Running state.
+     * @since 8
+     */
+    STATE_RUNNING,
+    /**
+     * Stopped state.
+     * @since 8
+     */
+    STATE_STOPPED,
+    /**
+     * Released state.
+     * @since 8
+     */
+    STATE_RELEASED,
+    /**
+     * Paused state.
+     * @since 8
+     */
+    STATE_PAUSED
+  }
+
+  /**
    * Enumerates audio stream types.
    * @devices
    * @sysCap SystemCapability.Multimedia.Audio
    */
   enum AudioVolumeType {
-	/**
+    /**
+     * Audio streams for voice calls
+     */
+    VOICE_CALL = 0,
+/**
      * Audio streams for ring tones
      */
     RINGTONE = 2,
@@ -60,10 +105,6 @@ declare namespace audio {
      * Audio streams for media purpose
      */
     MEDIA = 3,
-    /**
-     * Audio streams for voice calls
-     */
-    VOICE_CALL = 4,
     /**
      * Audio stream for voice assistant
      */
@@ -182,7 +223,7 @@ declare namespace audio {
     SAMPLE_S16LE = 2,
     SAMPLE_S24LE = 3,
     SAMPLE_S32LE = 4,
-    INVALID_WIDTH = -1,
+    INVALID_WIDTH = -1
   }
 
   /**
@@ -190,7 +231,7 @@ declare namespace audio {
    */
   enum AudioChannel {
     MONO = 1,
-    STEREO,
+    STEREO
   }
 
   /**
@@ -215,7 +256,7 @@ declare namespace audio {
    */
   enum AudioEncodingType {
     ENCODING_PCM = 0,
-    ENCODING_INVALID,
+    ENCODING_INVALID
   }
 
   /**
@@ -227,6 +268,7 @@ declare namespace audio {
     CONTENT_TYPE_MUSIC = 2,
     CONTENT_TYPE_MOVIE = 3,
     CONTENT_TYPE_SONIFICATION = 4,
+    CONTENT_TYPE_RINGTONE = 5,
   }
 
   /**
@@ -239,30 +281,124 @@ declare namespace audio {
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
   }
 
-  enum InterruptType {
-    INTERRUPT_TYPE_BEGIN = 1,
-    INTERRUPT_TYPE_END = 2,
+  /**
+   * Interface for audio renderer info
+   */
+  interface AudioRendererInfo {
+    /**
+     * Audio content type
+     */
+    content: ContentType;
+    /**
+     * Audio stream usage
+     */
+    usage: StreamUsage;
+    /**
+     * Audio renderer flags
+     */
+    rendererFlags: number;
   }
 
+
+  /**
+   * Enumerates the audio render rate.
+   */
+  enum AudioRendererRate {
+    RENDER_RATE_NORMAL = 0,
+    RENDER_RATE_DOUBLE = 1,
+    RENDER_RATE_HALF = 2,
+  }
+
+  /**
+   * Enumerates audio interruption event types.
+   * @devices phone, tablet, tv, wearable, car
+   * @since 7
+   * @SysCap SystemCapability.Multimedia.Audio
+   */
+  enum InterruptType {
+    /**
+     * An audio interruption event starts.
+     */
+    INTERRUPT_TYPE_BEGIN = 1,
+
+    /**
+     * An audio interruption event ends.
+     */
+    INTERRUPT_TYPE_END = 2
+  }
+
+  /**
+   * Enumerates the types of hints for audio interruption.
+   * @devices phone, tablet, tv, wearable, car
+   * @since 7
+   * @SysCap SystemCapability.Multimedia.Audio
+   */
   enum InterruptHint {
     INTERRUPT_HINT_NONE = 0,
-    INTERRUPT_HINT_RESUME,
-    INTERRUPT_HINT_PAUSE,
-    INTERRUPT_HINT_STOP,
-    INTERRUPT_HINT_DUCK,
-    INTERRUPT_HINT_UNDUCK,
+    /**
+     * Audio resumed.
+     */
+    INTERRUPT_HINT_RESUME = 1,
+
+    /**
+     * Audio paused.
+     */
+    INTERRUPT_HINT_PAUSE = 2,
+
+    /**
+     * Audio stopped.
+     */
+    INTERRUPT_HINT_STOP = 3,
+
+    /**
+     * Audio ducking. (In ducking, the audio volume is reduced, but not silenced.)
+     */
+    INTERRUPT_HINT_DUCK = 4,
+
+    /**
+     * Audio unducking.
+     */
+    INTERRUPT_HINT_UNDUCK = 5,
   }
 
-  enum InterruptActionType {
-    TYPE_ACTIVATED = 1,
-    TYPE_INTERRUPTED = 2,
-    TYPE_DEACTIVATED = 3
+  /**
+   * Interrupt force type.
+   * @since 8
+   */
+  enum InterruptForceType {
+    /**
+     * Force type, system change audio state.
+     */
+    INTERRUPT_FORCE = 0,
+    /**
+     * Share type, application change audio state.
+     */
+    INTERRUPT_SHARE
+  }
+
+  interface InterruptEvent {
+    /**
+     * Interrupt event type, begin or end
+     */
+    eventType: InterruptType;
+
+    /**
+     * Interrupt force type, force or share
+     */
+    forceType: InterruptForceType;
+
+    /**
+     * Interrupt hint type. In force type, the audio state already changed,
+     * but in share mode, only provide a hint for application to decide.
+     */
+    hintType: InterruptHint;
   }
 
   enum DeviceChangeType {
     CONNECT = 0,
     DISCONNECT = 1,
   }
+
   /**
    * Enumerates audio scenes.
    * @since 8
@@ -491,6 +627,20 @@ declare namespace audio {
      */
     isDeviceActive(deviceType: ActiveDeviceType): Promise<boolean>;
     /**
+     * Subscribes volume change event callback, only for system
+     * @return VolumeEvent callback.
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @since 8
+     * @devices
+     */
+    on(type: 'volumeChange', callback: Callback<VolumeEvent>): void;
+    /**
+     * Monitors ringer mode change
+     * @sysCap SystemCapability.Multimedia.Audio
+     * @devices
+     */
+    on(type: 'ringerModeChange', callback: Callback<AudioRingMode>): void;
+    /**
      * Sets the audio scene mode to change audio strategy.
      * This method uses an asynchronous callback to return the execution result.
    * @devices
@@ -515,30 +665,6 @@ declare namespace audio {
       * @sysCap SystemCapability.Multimedia.Audio
       */
     getAudioScene(): Promise<AudioScene>;
-     /**
-     * Activates Audio interrupt
-     * @sysCap SystemCapability.Multimedia.Audio
-     * @devices
-     */
-    activateAudioInterrupt(interrupt: AudioInterrupt): boolean;
-    /**
-    * Deactivates Audio interrupt
-    * @sysCap SystemCapability.Multimedia.Audio
-    * @devices
-    */
-    deactivateAudioInterrupt(interrupt: AudioInterrupt): boolean;
-    /**
-    * Monitors audio interrupt
-    * @sysCap SystemCapability.Multimedia.Audio
-    * @devices
-    */
-    on(type: 'interrupt', volumeType: AudioVolumeType, callback: Callback<InterruptAction>): void;
-    /**
-     * Stops listening for audio interrupt
-     * @sysCap SystemCapability.Multimedia.Audio
-     * @devices
-     */
-    off(type: 'interrupt', volumeType: AudioVolumeType): void;
     /**
     * Monitors device changes
     * @sysCap SystemCapability.Multimedia.Audio
@@ -565,26 +691,45 @@ declare namespace audio {
     readonly deviceType: DeviceType;
   }
 
-  interface InterruptAction {
-    actionType: InterruptActionType;
-    interruptType: InterruptType;
-    interruptHint: InterruptHint;
-  }
-
-  interface AudioInterrupt {
-    streamType: AudioVolumeType;
+    /**
+     * Audio volume event
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+  interface VolumeEvent {
+    /**
+     * volumeType of current stream
+     * @devices
+     */
+    volumeType: AudioVolumeType;
+    /**
+     * volume level
+     * @devices
+     */
+    volume: number;
+    /**
+     * updateUi show volume change in Ui
+     * @devices
+     */
+    updateUi: boolean;
   }
 
   interface DeviceChangeAction {
     type: DeviceChangeType;
     deviceDescriptors: AudioDeviceDescriptors;
   }
+
   /**
    * Provides functions for applications for audio playback.
    * @devices
    * @sysCap SystemCapability.Multimedia.Audio
    */
   interface AudioRenderer {
+    /**
+     * Gets audio state.
+     * @since 8
+     */
+    readonly state: AudioState;
     /**
      * Sets audio render parameters.
      * If set parameters is not called explicitly, then 16Khz sampling rate, mono channel and PCM_S16_LE format will
@@ -720,6 +865,40 @@ declare namespace audio {
      * @sysCap SystemCapability.Multimedia.Audio
      */
     getBufferSize(): Promise<number>;
+
+    /**
+     * Set the render rate. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setRenderRate(rate: AudioRendererRate, callback: AsyncCallback<number>): void;
+    /**
+     * Set the render rate. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    setRenderRate(rate: AudioRendererRate): Promise<number>;
+
+    /**
+     * Obtains the current render rate. This method uses an asynchronous callback to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getRenderRate(callback: AsyncCallback<AudioRendererRate>): void;
+    /**
+     * Obtains the current render rate. This method uses a promise to return the execution result.
+     * @devices
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    getRenderRate(): Promise<AudioRendererRate>;
+    /**
+     * Subscribes mark reach event callback.
+     * @param type Event type.
+     * @param frame Mark reach frame count.
+     * @return Mark reach event callback.
+     * @since 8
+     */
+    on(type: "interrupt", callback: Callback<InterruptEvent>): void;
   }
 
   /**
@@ -895,39 +1074,146 @@ declare namespace audio {
   type AudioDeviceDescriptors = Array<Readonly<AudioDeviceDescriptor>>;
 
   enum RingtoneType {
-    /** Default type */
+    /**Default type */
     RINGTONE_TYPE_DEFAULT = 0,
-    /** Multi-sim type */
+    /**Multi-sim type */
     RINGTONE_TYPE_MULTISIM
+  }
+  interface RingtoneOptions {
+    volume: number;
+    loop: boolean;
+  }
+  interface RingtonePlayer {
+    /**
+     * Gets render state of ringtone.
+     * @sysCap SystemCapability.Multimedia.Audio
+     */
+    readonly state: AudioState;
+
+    /**
+     * Gets the title of ringtone.
+     * @since 1.0
+     */
+    getTitle(callback: AsyncCallback<string>): void;
+    getTitle(): Promise<string>;
+
+    /**
+     * Gets audio renderer info.
+     * @return AudioRendererInfo value
+     * @since 1.0
+     */
+    getAudioRendererInfo(callback: AsyncCallback<AudioRendererInfo>): void;
+    getAudioRendererInfo(): Promise<AudioRendererInfo>;
+
+    /**
+     * Sets ringtone parameters.
+     * @param option Set RingtoneOption for ringtone like volume & loop
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    configure(option: RingtoneOptions, callback: AsyncCallback<void>): void;
+    configure(option: RingtoneOptions): Promise<void>;
+    /**
+     * Starts playing ringtone.
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    start(callback: AsyncCallback<void>): void;
+    start(): Promise<void>;
+    /**
+     * Stops playing ringtone.
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    stop(callback: AsyncCallback<void>): void;
+    stop(): Promise<void>;
+    /**
+     * Release ringtone player resource.
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    release(callback: AsyncCallback<void>): void;
+    release(): Promise<void>;
+  }
+  function getSystemSoundManager(): SystemSoundManager;
+  interface SystemSoundManager {
+    /**
+     * Sets the ringtone uri.
+     * @param context Indicates the Context object on OHOS
+     * @param uri Indicated which uri to be set for the tone type
+     * @param type Indicats the type of the tone
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    setSystemRingtoneUri(context: Context, uri: string, type: RingtoneType, callback: AsyncCallback<void>): void;
+    setSystemRingtoneUri(context: Context, uri: string, type: RingtoneType): Promise<void>;
+    /**
+     * Sets the ringtone uri.
+     * @param context Indicates the Context object on OHOS
+     * @param type Indicats the type of the tone
+     * @param callback Callback object to be passed along with request
+     * @return Returns uri of the ringtone
+     * @since 1.0
+     * @version 1.0
+     */
+    getSystemRingtoneUri(context: Context, type: RingtoneType, callback: AsyncCallback<string>): void;
+    getSystemRingtoneUri(context: Context, type: RingtoneType): Promise<string>;
+    /**
+     * Gets the ringtone player.
+     * @param context Indicates the Context object on OHOS
+     * @param type Indicats the type of the tone
+     * @param callback Callback object to be passed along with request
+     * @return Returns ringtone player object
+     * @since 1.0
+     * @version 1.0
+     */
+    getSystemRingtonePlayer(context: Context, type: RingtoneType, callback: AsyncCallback<RingtonePlayer>): void;
+    getSystemRingtonePlayer(context: Context, type: RingtoneType): Promise<RingtonePlayer>;
+    /**
+     * Sets the notification uri.
+     * @param context Indicates the Context object on OHOS
+     * @param uri Indicats the uri of the notification
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    setSystemNotificationUri(context: Context, uri: string, callback: AsyncCallback<void>): void;
+    setSystemNotificationUri(context: Context, uri: string): Promise<void>;
+    /**
+     * Gets the notification uri.
+     * @param context Indicates the Context object on OHOS
+     * @param callback Callback object to be passed along with request
+     * @return Returns the uri of the notification
+     * @since 1.0
+     * @version 1.0
+     */
+    getSystemNotificationUri(context: Context, callback: AsyncCallback<string>): void;
+    getSystemNotificationUri(context: Context): Promise<string>;
+    /**
+     * Sets the alarm uri.
+     * @param context Indicates the Context object on OHOS
+     * @param uri Indicats the uri of the alarm
+     * @param callback Callback object to be passed along with request
+     * @since 1.0
+     * @version 1.0
+     */
+    setSystemAlarmUri(context: Context, uri: string, callback: AsyncCallback<void>): void;
+    setSystemAlarmUri(context: Context, uri: string): Promise<void>;
+    /**
+     * Gets the alarm uri.
+     * @param context Indicates the Context object on OHOS
+     * @param callback Callback object to be passed along with request
+     * @return Returns the uri of the alarm
+     * @since 1.0
+     * @version 1.0
+     */
+    getSystemAlarmUri(context: Context, callback: AsyncCallback<string>): void;
+    getSystemAlarmUri(context: Context): Promise<string>;
+  }
 }
-
-function getSystemSoundManager(): SystemSoundManager;
-
-interface SystemSoundManager {
-   /**
-    * Sets the ringtone
-    * @param context Indicates the Context object on OHOS
-    * @param uri Indicates which URI to be set for the tone type
-    * @param type Indicates the type of the tone
-    * @param callback Callback object to be passed along with request
-    * @since 1.0
-    * @version 1.0
-    */
-   setSystemRingtoneUri(context: Context, uri: string, type: RingtoneType, callback: AsyncCallback<void>): void;
-   setSystemRingtoneUri(context: Context, uri: string, type: RingtoneType): Promise<void>;
-
-   /**
-    * Gets the ringtone URI
-    * @param context Indicates the Context object on OHOS
-    * @param type Indicates the type of the tone
-    * @param callback Callback object to be passed along with request
-    * @return Returns URI of the ringtone
-    * @since 1.0
-    * @version 1.0
-    */
-   getSystemRingtoneUri(context: Context, type: RingtoneType, callback: AsyncCallback<string>): void;
-   getSystemRingtoneUri(context: Context, type: RingtoneType): Promise<string>;
-}
-}
-
 export default audio;

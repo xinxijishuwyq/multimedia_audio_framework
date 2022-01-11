@@ -37,6 +37,8 @@ namespace {
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
 } // namespace
 
+void AudioRendererCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent) {}
+
 void AudioRendererUnitTest::SetUpTestCase(void) {}
 void AudioRendererUnitTest::TearDownTestCase(void) {}
 void AudioRendererUnitTest::SetUp(void) {}
@@ -2679,6 +2681,194 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
     uint64_t latency;
     ret = audioRenderer->GetLatency(latency);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+* @tc.name  : Test SetRendererCallback with null pointer.
+* @tc.number: Audio_Renderer_SetRendererCallback_001
+* @tc.desc  : Test SetRendererCallback interface. Returns error code, if null pointer is set.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRendererCallback(nullptr);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetRendererCallback with valid callback pointer.
+* @tc.number: Audio_Renderer_SetRendererCallback_002
+* @tc.desc  : Test SetRendererCallback interface. Returns success, if valid callback is set.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->SetRendererCallback(nullptr);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test start for 2 streams with both stream types as STREAM_MUSIC.
+* @tc.number: Audio_Renderer_SetRendererCallback_003
+* @tc.desc  : Test interrupt interfaces. Allow concurrent streams if stream types are both STREAM_MUSIC.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer1);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer1->Start();
+    EXPECT_EQ(true, isStarted);
+
+    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer2);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    isStarted = audioRenderer2->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isReleased = audioRenderer1->Release();
+    EXPECT_EQ(true, isReleased);
+
+    isReleased = audioRenderer2->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test start for 2 streams with both stream types as STREAM_VOICE_CALL.
+* @tc.number: Audio_Renderer_SetRendererCallback_004
+* @tc.desc  : Test interrupt interfaces. Do not allow concurrent streams if stream types are both STREAM_VOICE_CALL.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_VOICE_CALL);
+    ASSERT_NE(nullptr, audioRenderer1);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer1->Start();
+    EXPECT_EQ(true, isStarted);
+
+    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_VOICE_CALL);
+    ASSERT_NE(nullptr, audioRenderer2);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    isStarted = audioRenderer2->Start();
+    EXPECT_EQ(false, isStarted);
+
+    bool isReleased = audioRenderer1->Release();
+    EXPECT_EQ(true, isReleased);
+
+    isReleased = audioRenderer2->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test start for 2 streams with both stream types as STREAM_RING.
+* @tc.number: Audio_Renderer_SetRendererCallback_005
+* @tc.desc  : Test interrupt interfaces. Do not allow concurrent streams if stream types are both STREAM_RING.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_005, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_RING);
+    ASSERT_NE(nullptr, audioRenderer1);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer1->Start();
+    EXPECT_EQ(true, isStarted);
+
+    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_RING);
+    ASSERT_NE(nullptr, audioRenderer2);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    isStarted = audioRenderer2->Start();
+    EXPECT_EQ(false, isStarted);
+
+    bool isReleased = audioRenderer1->Release();
+    EXPECT_EQ(true, isReleased);
+
+    isReleased = audioRenderer2->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test start of STREAM_VOICE_CALL and STREAM_RING.
+* @tc.number: Audio_Renderer_SetRendererCallback_006
+* @tc.desc  : Test interrupt interfaces. Do not allow STREAM_RING to start if STREAM_VOICE_CALL already running.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_006, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_VOICE_CALL);
+    ASSERT_NE(nullptr, audioRenderer1);
+
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer1->Start();
+    EXPECT_EQ(true, isStarted);
+
+    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_RING);
+    ASSERT_NE(nullptr, audioRenderer2);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    isStarted = audioRenderer2->Start();
+    EXPECT_EQ(false, isStarted);
+
+    bool isReleased = audioRenderer1->Release();
+    EXPECT_EQ(true, isReleased);
+
+    isReleased = audioRenderer2->Release();
+    EXPECT_EQ(true, isReleased);
 }
 } // namespace AudioStandard
 } // namespace OHOS

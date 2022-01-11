@@ -30,21 +30,22 @@ AudioPolicyManagerListenerProxy::~AudioPolicyManagerListenerProxy()
     MEDIA_DEBUG_LOG("~AudioPolicyManagerListenerProxy: Instance destroy");
 }
 
-void AudioPolicyManagerListenerProxy::WriteInterruptActionParams(MessageParcel &data,
-                                                                 const InterruptAction &interruptAction)
+void AudioPolicyManagerListenerProxy::WriteInterruptEventParams(MessageParcel &data,
+                                                                const InterruptEvent &interruptEvent)
 {
-    data.WriteInt32(static_cast<int32_t>(interruptAction.actionType));
-    data.WriteInt32(static_cast<int32_t>(interruptAction.interruptType));
-    data.WriteInt32(static_cast<int32_t>(interruptAction.interruptHint));
+    data.WriteInt32(static_cast<int32_t>(interruptEvent.eventType));
+    data.WriteInt32(static_cast<int32_t>(interruptEvent.forceType));
+    data.WriteInt32(static_cast<int32_t>(interruptEvent.hintType));
+    data.WriteFloat(interruptEvent.duckVolume);
 }
 
-void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptAction &interruptAction)
+void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    WriteInterruptActionParams(data, interruptAction);
+    WriteInterruptEventParams(data, interruptEvent);
     int error = Remote()->SendRequest(ON_INTERRUPT, data, reply, option);
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("OnInterrupt failed, error: %{public}d", error);
@@ -62,10 +63,10 @@ AudioPolicyManagerListenerCallback::~AudioPolicyManagerListenerCallback()
     MEDIA_DEBUG_LOG("AudioPolicyManagerListenerCallback: Instance destory");
 }
 
-void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptAction &interruptAction)
+void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     if (listener_ != nullptr) {
-        listener_->OnInterrupt(interruptAction);
+        listener_->OnInterrupt(interruptEvent);
     }
 }
 } // namespace AudioStandard

@@ -13,32 +13,42 @@
  * limitations under the License.
  */
 
+#include "audio_manager_napi.h"
+
 #include "audio_capturer_napi.h"
 #include "audio_device_descriptor_napi.h"
 #include "audio_errors.h"
-#include "audio_manager_callback_napi.h"
 #include "audio_parameters_napi.h"
+#include "audio_renderer_info_napi.h"
 #include "audio_renderer_napi.h"
+#include "audio_ringermode_callback_napi.h"
+#include "audio_manager_callback_napi.h"
+#include "audio_volume_key_event_napi.h"
+
 #include "hilog/log.h"
 #include "media_log.h"
-#include "audio_manager_napi.h"
+#include "ringtone_options_napi.h"
+#include "ringtone_player_napi.h"
+#include "system_sound_manager_napi.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
 using OHOS::HiviewDFX::HiLogLabel;
 
+namespace {
+    const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
+    const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
+}
+
 namespace OHOS {
 namespace AudioStandard {
-static __thread napi_ref managerConstructor_ = nullptr;
+static __thread napi_ref g_managerConstructor = nullptr;
 napi_ref AudioManagerNapi::audioVolumeTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceFlagRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceRoleRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::activeDeviceTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::audioRingModeRef_ = nullptr;
-napi_ref AudioManagerNapi::interruptActionType_ = nullptr;
-napi_ref AudioManagerNapi::interruptHint_ = nullptr;
-napi_ref AudioManagerNapi::interruptType_ = nullptr;
 napi_ref AudioManagerNapi::deviceChangeType_ = nullptr;
 napi_ref AudioManagerNapi::audioScene_ = nullptr;
 
@@ -112,6 +122,9 @@ static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volu
         case AudioManagerNapi::MEDIA:
             result = AudioSystemManager::STREAM_MUSIC;
             break;
+        case AudioManagerNapi::VOICE_CALL:
+            result = AudioSystemManager::STREAM_VOICE_CALL;
+            break;
         case AudioManagerNapi::VOICE_ASSISTANT:
             result = AudioSystemManager::STREAM_VOICE_ASSISTANT;
             break;
@@ -181,99 +194,6 @@ napi_status AudioManagerNapi::AddNamedProperty(napi_env env, napi_value object, 
     }
 
     return status;
-}
-
-napi_value AudioManagerNapi::CreateInterruptTypeObject(napi_env env)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-    int32_t refCount = 1;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: interruptTypeMap) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop in CreateInterruptTypeObject!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, refCount, &interruptType_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateInterruptTypeObject is Failed!");
-    napi_get_undefined(env, &result);
-
-    return result;
-}
-
-napi_value AudioManagerNapi::CreateInterruptActionTypeObject(napi_env env)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-    int32_t refCount = 1;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: interruptActionTypeMap) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop in CreateInterruptTypeObject!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, refCount, &interruptActionType_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateInterruptActionTypeObject is Failed!");
-    napi_get_undefined(env, &result);
-
-    return result;
-}
-
-napi_value AudioManagerNapi::CreateInterruptHintObject(napi_env env)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-    int32_t refCount = 1;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: interruptHintMap) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop in CreateInterruptTypeObject!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, refCount, &interruptHint_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateInterruptHintObject is Failed!");
-    napi_get_undefined(env, &result);
-
-    return result;
 }
 
 napi_value AudioManagerNapi::CreateDeviceChangeTypeObject(napi_env env)
@@ -347,7 +267,7 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioManagerNapi::RINGTONE; i <= AudioManagerNapi::VOICE_ASSISTANT; i++) {
+        for (int i = AudioManagerNapi::VOLUMETYPE_DEFAULT + 1; i < AudioManagerNapi::VOLUMETYPE_MAX; i++) {
             switch (i) {
                 case AudioManagerNapi::RINGTONE:
                     propName = "RINGTONE";
@@ -637,10 +557,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
         DECLARE_NAPI_FUNCTION("setAudioScene", SetAudioScene),
         DECLARE_NAPI_FUNCTION("getAudioScene", GetAudioScene),
-        DECLARE_NAPI_FUNCTION("activateAudioInterrupt", ActivateAudioInterrupt),
-        DECLARE_NAPI_FUNCTION("deactivateAudioInterrupt", DeactivateAudioInterrupt),
         DECLARE_NAPI_FUNCTION("on", On),
-        DECLARE_NAPI_FUNCTION("off", Off)
     };
 
     napi_property_descriptor static_prop[] = {
@@ -652,17 +569,14 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("ActiveDeviceType", CreateActiveDeviceTypeObject(env)),
         DECLARE_NAPI_PROPERTY("AudioRingMode", CreateAudioRingModeObject(env)),
         DECLARE_NAPI_PROPERTY("AudioScene", CreateAudioSceneObject(env)),
-        DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateDeviceChangeTypeObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptActionType", CreateInterruptActionTypeObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env))
+        DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateDeviceChangeTypeObject(env))
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
         sizeof(audio_svc_mngr_properties) / sizeof(audio_svc_mngr_properties[PARAM0]),
         audio_svc_mngr_properties, &constructor);
     if (status == napi_ok) {
-        status = napi_create_reference(env, constructor, refCount, &managerConstructor_);
+        status = napi_create_reference(env, constructor, refCount, &g_managerConstructor);
         if (status == napi_ok) {
             status = napi_set_named_property(env, exports, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), constructor);
             if (status == napi_ok) {
@@ -688,6 +602,7 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
     size_t argCount = 0;
+    int32_t ret = 0;
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
     if (status == napi_ok) {
@@ -695,16 +610,26 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
         if (managerNapi != nullptr) {
             managerNapi->env_ = env;
             managerNapi->audioMngr_ = AudioSystemManager::GetInstance();
+
             if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
                 managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
             }
-            int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(managerNapi->deviceChangeCallbackNapi_);
+            ret = managerNapi->audioMngr_->SetDeviceChangeCallback(managerNapi->deviceChangeCallbackNapi_);
             if (ret) {
                 MEDIA_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
                 return undefinedResult;
             } else {
                 MEDIA_DEBUG_LOG("AudioManagerNapi: SetDeviceChangeCallback Success");
             }
+
+            managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
+            ret = managerNapi->audioMngr_->RegisterVolumeKeyEventNapiCallback(managerNapi->volumeKeyEventCallbackNapi_);
+            if (ret) {
+                MEDIA_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventNapiCallback Failed");
+            } else {
+                MEDIA_DEBUG_LOG("AudioManagerNapi: RegisterVolumeKeyEventNapiCallback Success");
+            }
+            managerNapi->cachedClientId = getpid();
             status = napi_wrap(env, jsThis, static_cast<void*>(managerNapi.get()),
                                AudioManagerNapi::Destructor, nullptr, &(managerNapi->wrapper_));
             if (status == napi_ok) {
@@ -724,7 +649,7 @@ napi_value AudioManagerNapi::CreateAudioManagerWrapper(napi_env env)
     napi_value result = nullptr;
     napi_value constructor;
 
-    status = napi_get_reference_value(env, managerConstructor_, &constructor);
+    status = napi_get_reference_value(env, g_managerConstructor, &constructor);
     if (status == napi_ok) {
         status = napi_new_instance(env, constructor, 0, nullptr, &result);
         if (status == napi_ok) {
@@ -1980,172 +1905,7 @@ napi_value UndefinedNapiValue(const napi_env& env)
     return result;
 }
 
-napi_value JsObjectToInt(const napi_env& env, const napi_value& object, std::string fieldStr, int32_t& fieldRef)
-{
-    bool hasProperty = false;
-    NAPI_CALL(env, napi_has_named_property(env, object, fieldStr.c_str(), &hasProperty));
-    if (hasProperty) {
-        napi_value field;
-        napi_valuetype valueType = napi_undefined;
-
-        napi_get_named_property(env, object, fieldStr.c_str(), &field);
-        NAPI_CALL(env, napi_typeof(env, field, &valueType));
-        NAPI_ASSERT(env, valueType == napi_number, "Wrong argument type. Number expected.");
-        napi_get_value_int32(env, field, &fieldRef);
-    } else {
-        MEDIA_ERR_LOG("audio manager napi js to int no property: %{public}s", fieldStr.c_str());
-    }
-
-    return UndefinedNapiValue(env);
-}
-
-
-static void JsObjToAudioInterrupt(const napi_env& env, const napi_value& object, AudioInterrupt& audioInterrupt)
-{
-    int32_t propValue = -1;
-    int32_t musicSession = 1000;
-    int32_t voiceSession = 1001;
-
-    JsObjectToInt(env, object, "streamType", propValue);
-    audioInterrupt.streamType = static_cast<AudioStreamType>(GetNativeAudioVolumeType(propValue));
-    // For now assign fixed values, these are not used currently
-    if (audioInterrupt.streamType == STREAM_MUSIC) {
-        audioInterrupt.streamUsage = STREAM_USAGE_MEDIA;
-        audioInterrupt.contentType = CONTENT_TYPE_MUSIC;
-        audioInterrupt.sessionID = musicSession;
-    } else if (audioInterrupt.streamType == STREAM_VOICE_ASSISTANT) {
-        audioInterrupt.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
-        audioInterrupt.contentType = CONTENT_TYPE_SPEECH;
-        audioInterrupt.sessionID = voiceSession;
-    }
-}
-
-napi_value AudioManagerNapi::ActivateAudioInterrupt(napi_env env, napi_callback_info info)
-{
-    napi_status status;
-    napi_value result = nullptr;
-
-    GET_PARAMS(env, info, ARGS_ONE);
-    NAPI_ASSERT(env, argc == ARGS_ONE, "Wrong number of arguments");
-
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[0], &valueType);
-    NAPI_ASSERT(env, valueType == napi_object, "Wrong argument type. Object expected.");
-
-    AudioManagerNapi *managerNapi = nullptr;
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&managerNapi));
-    NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
-
-    AudioInterrupt audioInterrupt;
-    JsObjToAudioInterrupt(env, argv[0], audioInterrupt);
-
-    int32_t ret = managerNapi->audioMngr_->ActivateAudioInterrupt(audioInterrupt);
-    napi_get_boolean(env, ret == SUCCESS, &result);
-    return result;
-}
-
-napi_value AudioManagerNapi::DeactivateAudioInterrupt(napi_env env, napi_callback_info info)
-{
-    napi_status status;
-    napi_value result = nullptr;
-
-    GET_PARAMS(env, info, ARGS_ONE);
-    NAPI_ASSERT(env, argc == ARGS_ONE, "Wrong number of arguments");
-
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[0], &valueType);
-    NAPI_ASSERT(env, valueType == napi_object, "Wrong argument type. Object expected.");
-
-    AudioManagerNapi *managerNapi = nullptr;
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&managerNapi));
-    NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
-    NAPI_ASSERT(env, managerNapi->audioMngr_ != nullptr, "audio system manager instance is null.");
-
-    AudioInterrupt audioInterrupt;
-    JsObjToAudioInterrupt(env, argv[0], audioInterrupt);
-
-    int32_t ret = managerNapi->audioMngr_->DeactivateAudioInterrupt(audioInterrupt);
-    napi_get_boolean(env, ret == SUCCESS, &result);
-    return result;
-}
-
 napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
-{
-    napi_value undefinedResult = nullptr;
-    napi_get_undefined(env, &undefinedResult);
-
-    const size_t maxArgCount = 3;
-    size_t argCount = maxArgCount;
-    napi_value args[maxArgCount] = { nullptr, nullptr, nullptr };
-    napi_value jsThis = nullptr;
-    napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
-
-    if (argCount == maxArgCount - 1) { // onDeviceChange
-        if (status != napi_ok || jsThis == nullptr || args[PARAM0] == nullptr || args[PARAM1] == nullptr) {
-            HiLog::Error(LABEL, "On fail to napi_get_cb_info");
-            return undefinedResult;
-        }
-    } else { // onInterrupt
-        if (status != napi_ok || jsThis == nullptr || args[PARAM0] == nullptr || args[PARAM1] == nullptr ||
-            args[PARAM2] == nullptr) {
-            HiLog::Error(LABEL, "On fail to napi_get_cb_info");
-            return undefinedResult;
-        }
-    }
-
-    AudioManagerNapi *managerNapi = nullptr;
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
-    NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
-    NAPI_ASSERT(env, managerNapi->audioMngr_ != nullptr, "audio system manager instance is null.");
-
-    napi_valuetype valueType0 = napi_undefined;
-    napi_valuetype valueType1 = napi_undefined;
-    napi_valuetype valueType2 = napi_undefined;
-
-    if (argCount == maxArgCount - 1) { // onDeviceChange
-        if (napi_typeof(env, args[PARAM0], &valueType0) != napi_ok || valueType0 != napi_string ||
-            napi_typeof(env, args[PARAM1], &valueType1) != napi_ok || valueType1 != napi_function) {
-            return undefinedResult;
-        }
-    } else { // onInterrupt
-        if (napi_typeof(env, args[PARAM0], &valueType0) != napi_ok || valueType0 != napi_string ||
-            napi_typeof(env, args[PARAM1], &valueType1) != napi_ok || valueType1 != napi_number ||
-            napi_typeof(env, args[PARAM2], &valueType2) != napi_ok || valueType2 != napi_function) {
-            return undefinedResult;
-        }
-        int32_t streamType = -1;
-        status = napi_get_value_int32(env, args[1], &streamType);
-        if (status != napi_ok) {
-            return undefinedResult;
-        }
-
-        if (managerNapi->callbackNapi_ == nullptr) {
-            managerNapi->callbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
-        }
-        int32_t ret = managerNapi->audioMngr_->SetAudioManagerCallback(
-            GetNativeAudioVolumeType(streamType), managerNapi->callbackNapi_);
-        if (ret) {
-            MEDIA_ERR_LOG("AudioManagerNapi: SetAudioManagerCallback Failed");
-            return undefinedResult;
-        } else {
-            MEDIA_DEBUG_LOG("AudioManagerNapi: SetAudioManagerCallback Success");
-        }
-    }
-
-    std::string callbackName = GetStringArgument(env, args[0]);
-    MEDIA_DEBUG_LOG("AudioManagerNapi: callbackName: %{public}s", callbackName.c_str());
-    std::shared_ptr<AudioManagerCallbackNapi> cb =
-        std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->callbackNapi_);
-    if (argCount == maxArgCount - 1) { // onDeviceChange
-        cb->SaveCallbackReference(callbackName, args[PARAM1]);
-    } else { // onInterrupt
-        cb->SaveCallbackReference(callbackName, args[PARAM2]);
-    }
-
-    return undefinedResult;
-}
-
-napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
@@ -2168,27 +1928,37 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
     napi_valuetype valueType0 = napi_undefined;
     napi_valuetype valueType1 = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &valueType0) != napi_ok || valueType0 != napi_string ||
-        napi_typeof(env, args[PARAM1], &valueType1) != napi_ok || valueType1 != napi_number) {
-        MEDIA_ERR_LOG("AudioManagerNapi: Off: args type mismatch");
+        napi_typeof(env, args[PARAM1], &valueType1) != napi_ok || valueType1 != napi_function) {
         return undefinedResult;
     }
 
-    int32_t streamType = -1;
-    status = napi_get_value_int32(env, args[1], &streamType);
-    if (status != napi_ok) {
-        MEDIA_ERR_LOG("AudioManagerNapi: Off: get streamType value failed");
-        return undefinedResult;
-    }
+    std::string callbackName = GetStringArgument(env, args[0]);
+    MEDIA_DEBUG_LOG("AudioManagerNapi: callbackName: %{public}s", callbackName.c_str());
+    if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
+        if (managerNapi->ringerModecallbackNapi_ == nullptr) {
+            managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
+            int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
+                managerNapi->cachedClientId, managerNapi->ringerModecallbackNapi_);
+            if (ret) {
+                MEDIA_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
+                return undefinedResult;
+            } else {
+                MEDIA_DEBUG_LOG("AudioManagerNapi: SetRingerModeCallback Success");
+            }
+        }
 
-    int32_t ret = managerNapi->audioMngr_->UnsetAudioManagerCallback(GetNativeAudioVolumeType(streamType));
-    if (ret) {
-        MEDIA_ERR_LOG("AudioManagerNapi: UnsetAudioManagerCallback Failed");
-        return undefinedResult;
+        std::shared_ptr<AudioRingerModeCallbackNapi> cb =
+            std::static_pointer_cast<AudioRingerModeCallbackNapi>(managerNapi->ringerModecallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+    } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
+        std::shared_ptr<AudioVolumeKeyEventNapi> cb =
+            std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else {
-        HiLog::Error(LABEL, "UnsetAudioManagerCallback Success NAPI");
-        MEDIA_DEBUG_LOG("AudioManagerNapi: UnsetAudioManagerCallback Success");
+        std::shared_ptr<AudioManagerCallbackNapi> cb =
+        std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
+        cb->SaveCallbackReference(callbackName, args[PARAM1]);
     }
-    managerNapi->callbackNapi_ = nullptr;
 
     return undefinedResult;
 }
@@ -2200,7 +1970,10 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioCapturerNapi::Init(env, exports);
     AudioRendererNapi::Init(env, exports);
     AudioParametersNapi::Init(env, exports);
-    AudioSoundManagerNapi::Init(env, exports);
+    RingtonePlayerNapi::Init(env, exports);
+    SystemSoundManagerNapi::Init(env, exports);
+    RingtoneOptionsNapi::Init(env, exports);
+    AudioRendererInfoNapi::Init(env, exports);
 
     return exports;
 }

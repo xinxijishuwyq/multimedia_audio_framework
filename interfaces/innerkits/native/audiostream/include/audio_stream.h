@@ -56,14 +56,18 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
 
-    uint32_t GetAudioSessionID();
+    int32_t GetAudioSessionID(uint32_t &sessionID);
     State GetState();
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
     int32_t GetBufferSize(size_t &bufferSize);
     int32_t GetFrameCount(uint32_t &frameCount);
     int32_t GetLatency(uint64_t &latency);
+    AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
+    int32_t SetAudioStreamType(AudioStreamType audioStreamType);
     int32_t SetVolume(float volume);
     float GetVolume();
+    int32_t SetRenderRate(AudioRendererRate renderRate);
+    AudioRendererRate GetRenderRate();
 
     std::vector<AudioSampleFormat> GetSupportedFormats();
     std::vector<AudioChannel> GetSupportedChannels();
@@ -91,6 +95,15 @@ private:
     std::atomic<bool> isWriteInProgress_;
     uint64_t resetTimestamp_;
     struct timespec baseTimestamp_;
+
+    AudioStreamType streamTypeMap_[CONTENT_TYPE_RINGTONE + 1][STREAM_USAGE_VOICE_ASSISTANT + 1] = {
+        {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
+        {STREAM_MUSIC, STREAM_VOICE_ASSISTANT, STREAM_VOICE_CALL, STREAM_MUSIC, STREAM_VOICE_ASSISTANT},
+        {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_RING, STREAM_VOICE_ASSISTANT},
+        {STREAM_MEDIA, STREAM_MEDIA, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
+        {STREAM_NOTIFICATION, STREAM_NOTIFICATION, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
+        {STREAM_RING, STREAM_RING, STREAM_MUSIC, STREAM_RING, STREAM_MUSIC}
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

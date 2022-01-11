@@ -36,6 +36,8 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
 
+#include "media_log.h"
+
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
 #define DEFAULT_BUFFER_SIZE 8192
@@ -55,7 +57,7 @@ struct Userdata {
     pa_sink *sink;
     pa_sample_spec ss;
     pa_channel_map map;
-    bool isHDISinkInitialized;
+    bool isHDISinkStarted;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -80,23 +82,20 @@ static ssize_t RenderWrite(pa_memchunk *pchunk)
 
         ret = AudioRendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
         if (writeLen > length) {
-            pa_log_error("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+            MEDIA_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
         }
         if (writeLen == 0) {
-            pa_log_error("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+            MEDIA_ERR_LOG("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
         } else {
-            pa_log_info("Success: outputting to audio renderer Length: %zu, Written: %" PRIu64 " bytes, %d ret",
-                        length, writeLen, ret);
             count += writeLen;
             index += writeLen;
             length -= writeLen;
-            pa_log_info("Remaining bytes Length: %zu", length);
             if (length <= 0) {
                 break;
             }
@@ -118,7 +117,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     while (u->timestamp < now + u->block_usec) {
         ssize_t written = 0;
         pa_memchunk chunk;
-
+        // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
         pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
 
         pa_assert(chunk.length > 0);
@@ -135,12 +134,12 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
         dropped = chunk.length - written;
 
         if (u->bytes_dropped != 0 && dropped != chunk.length) {
-            pa_log_debug("HDI-sink continuously dropped %zu bytes", u->bytes_dropped);
+            MEDIA_INFO_LOG("HDI-sink continuously dropped %zu bytes", u->bytes_dropped);
             u->bytes_dropped = 0;
         }
 
         if (u->bytes_dropped == 0 && dropped != 0)
-            pa_log_debug("HDI-sink just dropped %zu bytes", dropped);
+            MEDIA_INFO_LOG("HDI-sink just dropped %zu bytes", dropped);
 
         u->bytes_dropped += dropped;
 
@@ -198,8 +197,27 @@ fail:
     pa_asyncmsgq_wait_for(u->thread_mq.inq, PA_MESSAGE_SHUTDOWN);
 
 finish:
-    pa_log_debug("Thread (use timing) shutting down");
+    MEDIA_INFO_LOG("Thread (use timing) shutting down");
 }
+
+#ifdef DEVICE_BALTIMORE
+static void SinkUpdateRequestedLatencyCb(pa_sink *s)
+{
+    struct Userdata *u = NULL;
+    size_t nbytes;
+
+    pa_sink_assert_ref(s);
+    pa_assert_se(u = s->userdata);
+
+    u->block_usec = pa_sink_get_requested_latency_within_thread(s);
+
+    if (u->block_usec == (pa_usec_t) - 1)
+        u->block_usec = s->thread_info.max_latency;
+
+    nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
+    pa_sink_set_max_request_within_thread(s, nbytes);
+}
+#endif
 
 // Called from IO context
 static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
@@ -239,66 +257,103 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     pa_assert_se(u = s->userdata);
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
-        if (PA_SINK_IS_OPENED(newState)) {
-            u->timestamp = pa_rtclock_now();
-            if (!u->isHDISinkInitialized) {
-                pa_log("Reinitializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
-                if (PrepareDevice(&u->ss) < 0) {
-                    pa_log_error("HDI renderer reinitialization failed");
-                    pa_core_exit(u->core, true, 0);
-                } else {
-                    u->isHDISinkInitialized = true;
-                    pa_log("Successfully reinitialized HDI renderer");
-                }
-            }
+        if (!PA_SINK_IS_OPENED(newState)) {
+            return 0;
+        }
+
+        u->timestamp = pa_rtclock_now();
+        if (u->isHDISinkStarted) {
+            return 0;
+        }
+
+        MEDIA_INFO_LOG("Restarting HDI rendering device with rate:%d,channels:%d", u->ss.rate, u->ss.channels);
+        if (AudioRendererSinkStart()) {
+            MEDIA_ERR_LOG("audiorenderer control start failed!");
+            AudioRendererSinkDeInit();
+            pa_core_exit(u->core, true, 0);
+        } else {
+            u->isHDISinkStarted = true;
+            MEDIA_INFO_LOG("Successfully restarted HDI renderer");
         }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
-        if (newState == PA_SINK_SUSPENDED) {
-            // Continuously dropping data (clear counter on entering suspended state.
-            if (u->bytes_dropped != 0) {
-                pa_log_debug("HDI-sink continuously dropping data - clear statistics (%zu -> 0 bytes dropped)",
-                             u->bytes_dropped);
-                u->bytes_dropped = 0;
-            }
-            if (u->isHDISinkInitialized) {
-                AudioRendererSinkStop();
-                AudioRendererSinkDeInit();
-                u->isHDISinkInitialized = false;
-                pa_log("Deinitialized HDI renderer");
-            }
+        if (newState != PA_SINK_SUSPENDED) {
+            return 0;
+        }
+        // Continuously dropping data (clear counter on entering suspended state.
+        if (u->bytes_dropped != 0) {
+            MEDIA_INFO_LOG("HDI-sink continuously dropping data - clear statistics (%zu -> 0 bytes dropped)",
+                           u->bytes_dropped);
+            u->bytes_dropped = 0;
+        }
+
+        if (u->isHDISinkStarted) {
+            AudioRendererSinkStop();
+            MEDIA_INFO_LOG("Stopped HDI renderer");
+            u->isHDISinkStarted = false;
         }
     }
 
     return 0;
 }
 
+static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
+{
+    enum AudioFormat hdiAudioFormat;
+    switch (format) {
+        case PA_SAMPLE_U8:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_8_BIT;
+            break;
+        case PA_SAMPLE_S16LE:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            break;
+        case PA_SAMPLE_S24LE:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_24_BIT;
+            break;
+        case PA_SAMPLE_S32LE:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_32_BIT;
+            break;
+        default:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            break;
+    }
+
+    return hdiAudioFormat;
+}
+
 static int32_t PrepareDevice(const pa_sample_spec *ss)
 {
     AudioSinkAttr sample_attrs;
     int32_t ret;
-
+#ifdef DEVICE_BALTIMORE
+    sample_attrs.format = AUDIO_FORMAT_PCM_32_BIT;
+#else
     sample_attrs.format = AUDIO_FORMAT_PCM_16_BIT;
-    sample_attrs.sampleFmt = AUDIO_FORMAT_PCM_16_BIT;
+#endif
+    enum AudioFormat format = ConvertToHDIAudioFormat(ss->format);
+    sample_attrs.format = format;
+    sample_attrs.sampleFmt = format;
+    MEDIA_ERR_LOG("audiorenderer format: %d", sample_attrs.format);
+
     sample_attrs.sampleRate = ss->rate;
     sample_attrs.channel = ss->channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
 
     ret = AudioRendererSinkInit(&sample_attrs);
     if (ret != 0) {
-        pa_log_error("audiorenderer Init failed!");
+        MEDIA_ERR_LOG("audiorenderer Init failed!");
         return -1;
     }
 
     ret = AudioRendererSinkStart();
     if (ret != 0) {
-        pa_log_error("audiorenderer control start failed!");
+        MEDIA_ERR_LOG("audiorenderer control start failed!");
         AudioRendererSinkDeInit();
         return -1;
     }
 
     ret = AudioRendererSinkSetVolume(MAX_SINK_VOLUME_LEVEL, MAX_SINK_VOLUME_LEVEL);
     if (ret != 0) {
-        pa_log_error("audiorenderer set volume failed!");
+        MEDIA_ERR_LOG("audiorenderer set volume failed!");
         AudioRendererSinkStop();
         AudioRendererSinkDeInit();
         return -1;
@@ -317,16 +372,16 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     u->ss = m->core->default_sample_spec;
     u->map = m->core->default_channel_map;
     if (pa_modargs_get_sample_spec_and_channel_map(ma, &u->ss, &u->map, PA_CHANNEL_MAP_DEFAULT) < 0) {
-        pa_log("Failed to parse sample specification and channel map");
+        MEDIA_ERR_LOG("Failed to parse sample specification and channel map");
         goto fail;
     }
 
-    pa_log("Initializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
+    MEDIA_INFO_LOG("Initializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
     if (PrepareDevice(&u->ss) < 0)
         goto fail;
 
-    u->isHDISinkInitialized = true;
-    pa_log("Initialization of HDI rendering device completed");
+    u->isHDISinkStarted = true;
+    MEDIA_INFO_LOG("Initialization of HDI rendering device completed");
     pa_sink_new_data_init(&data);
     data.driver = driver;
     data.module = m;
@@ -339,7 +394,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
                      DEFAULT_AUDIO_DEVICE_NAME);
 
     if (pa_modargs_get_proplist(ma, "sink_properties", data.proplist, PA_UPDATE_REPLACE) < 0) {
-        pa_log("Invalid properties");
+        MEDIA_ERR_LOG("Invalid properties");
         pa_sink_new_data_done(&data);
         goto fail;
     }
@@ -370,18 +425,21 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     u->rtpoll = pa_rtpoll_new();
 
     if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
-        pa_log("pa_thread_mq_init() failed.");
+        MEDIA_ERR_LOG("pa_thread_mq_init() failed.");
         goto fail;
     }
 
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {
-        pa_log("Failed to create sink object");
+        MEDIA_ERR_LOG("Failed to create sink object");
         goto fail;
     }
 
     u->sink->parent.process_msg = SinkProcessMsg;
     u->sink->set_state_in_io_thread = SinkSetStateInIoThreadCb;
+#ifdef DEVICE_BALTIMORE
+    u->sink->update_requested_latency = SinkUpdateRequestedLatencyCb;
+#endif
     u->sink->userdata = u;
 
     pa_sink_set_asyncmsgq(u->sink, u->thread_mq.inq);
@@ -390,17 +448,21 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     u->bytes_dropped = 0;
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
-        pa_log("Failed to parse buffer_size argument.");
+        MEDIA_ERR_LOG("Failed to parse buffer_size argument.");
         goto fail;
     }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
+#ifdef DEVICE_BALTIMORE
+    pa_sink_set_latency_range(u->sink, 0, u->block_usec);
+#else
     pa_sink_set_fixed_latency(u->sink, u->block_usec);
+#endif
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
     threadName = pa_sprintf_malloc("hdi-sink-playback");
     if (!(u->thread = pa_thread_new(threadName, ThreadFuncUseTiming, u))) {
-        pa_log("Failed to create thread.");
+        MEDIA_ERR_LOG("Failed to create thread.");
         goto fail;
     }
     pa_xfree(threadName);

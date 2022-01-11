@@ -29,14 +29,18 @@ ohos_copy("audio_declaration") {
 ohos_shared_library("audio") {
   include_dirs = [
     "//foundation/aafwk/standard/frameworks/kits/ability/native/include",
+    "//foundation/ace/napi/interfaces/kits",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_common/include",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/include",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_renderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_renderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/innerkits/audiosoundmanager/include",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/ringtone_manager/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkits/audiosoundmanager/include",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioringtone/include",
     "//third_party/libuv/include",
   ]
 
@@ -46,8 +50,14 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_device_descriptor_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_callback_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_manager_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_ringermode_callback_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_manager/src/audio_volume_key_event_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_renderer/src/audio_renderer_callback_napi.cpp",
     "//foundation/multimedia/audio_standard/frameworks/kitsimpl/audio_renderer/src/audio_renderer_napi.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/ringtone_manager/src/audio_sound_manager_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/ringtone_manager/src/audio_renderer_info_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/ringtone_manager/src/ringtone_options_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/ringtone_manager/src/ringtone_player_napi.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/kitsimpl/ringtone_manager/src/system_sound_manager_napi.cpp",
   ]
 
   deps = [
@@ -59,7 +69,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager:audio_sound_manager",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioringtone:audio_ringtone_client",
     "//utils/native/base:utils",
   ]
 
@@ -68,9 +78,7 @@ ohos_shared_library("audio") {
     "appexecfwk_standard:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "multimedia_audio_standard:audio_sound_manager",
   ]
-
   relative_install_dir = "module/multimedia"
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"

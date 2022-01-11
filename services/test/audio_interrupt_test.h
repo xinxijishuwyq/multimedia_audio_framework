@@ -23,27 +23,29 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioInterruptTest {
+class AudioInterruptTest : public AudioRendererCallback, public std::enable_shared_from_this<AudioInterruptTest> {
 public:
-    static AudioInterruptTest& GetInstance();
-    static void StartRender();
-    void WriteBuffer();
-    int32_t TestPlayback(const AudioStreamType &streamType);
+    std::shared_ptr<AudioInterruptTest> GetPtr()
+    {
+        return shared_from_this();
+    }
 
+    int32_t TestPlayback(const AudioStreamType &streamType);
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
     FILE *wavFile_ = nullptr;
-    bool isRenderPaused_ = false;
-    bool isRenderingCompleted_ = false;
-    std::thread renderThread_;
-    std::unique_ptr<AudioRenderer> audioRenderer_ = nullptr;
+
 private:
     bool InitRender() const;
+    bool StartRender();
     bool GetBufferLen(size_t &bufferLen) const;
+    void WriteBuffer();
 
-    AudioSystemManager *audioSystemMgr_ = nullptr;
-};
-
-class AudioInterruptCallbackTest : public AudioManagerCallback {
-    void OnInterrupt(const InterruptAction &interruptAction) override;
+    std::unique_ptr<AudioRenderer> audioRenderer_ = nullptr;
+    bool isRenderPaused_ = false;
+    bool isStopInProgress_ = false;
+    bool isRenderStopped_ = false;
+    bool isRenderingCompleted_ = false;
+    std::unique_ptr<std::thread> writeThread_ = nullptr;
 };
 } // AudioStandard
 } // OHOS

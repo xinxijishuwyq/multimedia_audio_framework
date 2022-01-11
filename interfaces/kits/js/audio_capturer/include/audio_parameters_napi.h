@@ -67,7 +67,8 @@ static const std::map<std::string, ContentType> contentTypeMap = {
     {"CONTENT_TYPE_SPEECH", CONTENT_TYPE_SPEECH},
     {"CONTENT_TYPE_MUSIC", CONTENT_TYPE_MUSIC},
     {"CONTENT_TYPE_MOVIE", CONTENT_TYPE_MOVIE},
-    {"CONTENT_TYPE_SONIFICATION", CONTENT_TYPE_SONIFICATION}
+    {"CONTENT_TYPE_SONIFICATION", CONTENT_TYPE_SONIFICATION},
+    {"CONTENT_TYPE_RINGTONE", CONTENT_TYPE_RINGTONE}
 };
 
 static const std::map<std::string, StreamUsage> streamUsageMap = {

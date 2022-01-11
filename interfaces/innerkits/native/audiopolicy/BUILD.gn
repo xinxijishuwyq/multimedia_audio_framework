@@ -54,6 +54,8 @@ ohos_shared_library("audio_policy_client") {
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_manager.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_manager_listener_stub.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_ringermode_update_listener_stub.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_volume_key_event_callback_stub.cpp",
   ]
 
   public_configs = [ ":audio_policy_public_config" ]

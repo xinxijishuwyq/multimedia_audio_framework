@@ -13,27 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_SOUND_MANAGER_H
-#define AUDIO_SOUND_MANAGER_H
+#ifndef ST_AUDIO_INTERRUPT_CALLBACK_H
+#define ST_AUDIO_INTERRUPT_CALLBACK_H
 
-#include "iaudio_sound_manager.h"
-#include "audio_errors.h"
-#include "media_log.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSoundManager : public IAudioSoundManager {
+class AudioInterruptCallback {
 public:
-    AudioSoundManager();
-    ~AudioSoundManager() = default;
-
-    std::string GetSystemRingtoneUri(const std::shared_ptr<AppExecFwk::Context> &context, RingtoneType type) override;
-    int SetSystemRingtoneUri(const std::shared_ptr<AppExecFwk::Context> &context, const std::string &uri,
-        RingtoneType type) override;
-
-private:
-    std::string uri_;
+    virtual ~AudioInterruptCallback() = default;
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptEvent Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_info.h
+     */
+    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
 };
-}  // namespace AudioStandard
-}  // namespace OHOS
-#endif  // AUDIO_SOUND_MANAGER_H
+} // namespce AudioStandard
+} // namespace OHOS
+
+#endif // ST_AUDIO_INTERRUPT_CALLBACK_H

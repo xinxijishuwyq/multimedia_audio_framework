@@ -16,6 +16,7 @@
 #ifndef ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_IMPL_H
 #define ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_IMPL_H
 
+#include <sstream>
 #include <unistd.h>
 
 #include "audio_errors.h"
@@ -26,7 +27,8 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-static unique_ptr<AudioServiceAdapterCallback> mAudioServiceAdapterCallback;
+static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
+std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
@@ -38,7 +40,7 @@ unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(unique_p
 
 PulseAudioServiceAdapterImpl::PulseAudioServiceAdapterImpl(unique_ptr<AudioServiceAdapterCallback> &cb)
 {
-    mAudioServiceAdapterCallback = move(cb);
+    g_audioServiceAdapterCallback = move(cb);
 }
 
 bool PulseAudioServiceAdapterImpl::Connect()
@@ -356,6 +358,8 @@ string PulseAudioServiceAdapterImpl::GetNameByStreamType(AudioStreamType streamT
             return "alarm";
         case STREAM_DTMF:
             return "dtmf";
+        case STREAM_VOICE_CALL:
+            return "voice_call";
         case STREAM_VOICE_ASSISTANT:
             return "voice_assistant";
         default:
@@ -377,7 +381,9 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
         stream = STREAM_NOTIFICATION;
     } else if (!streamType.compare(string("alarm"))) {
         stream = STREAM_ALARM;
-    } else if (!streamType.compare(string("voice_assistant"))) {
+    } else if (!streamType.compare(string("voice_call"))) {
+        stream = STREAM_VOICE_CALL;
+    }  else if (!streamType.compare(string("voice_assistant"))) {
         stream = STREAM_VOICE_ASSISTANT;
     } else {
         stream = STREAM_MUSIC;
@@ -540,15 +546,24 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
-    if ((streamtype == NULL) || (streamVolume == NULL)) {
-        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType.");
+    const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
+    if ((streamtype == NULL) || (streamVolume == NULL) || (sessionCStr == NULL)) {
+        MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType or streamVolume or SessionID");
         return;
     }
+
+    std::stringstream sessionStr;
+    uint32_t sessionID;
+    sessionStr << sessionCStr;
+    sessionStr >> sessionID;
+    MEDIA_INFO_LOG("PulseAudioServiceAdapterImpl: PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
+
+    sinkIndexSessionIDMap[i->index] = sessionID;
 
     string streamType(streamtype);
     float volumeFactor = atof(streamVolume);
     AudioStreamType streamID = thiz->GetIdByStreamType(streamType);
-    float volumeCb = mAudioServiceAdapterCallback->OnGetVolumeCb(streamtype);
+    float volumeCb = g_audioServiceAdapterCallback->OnGetVolumeCb(streamtype);
     float vol = volumeCb * volumeFactor;
 
     pa_cvolume cv = i->volume;
@@ -632,6 +647,10 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
                 pa_threaded_mainloop_accept(thiz->mMainLoop);
                 pa_operation_unref(operation);
                 pa_threaded_mainloop_unlock(thiz->mMainLoop);
+            } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
+                uint32_t sessionID = sinkIndexSessionIDMap[idx];
+                MEDIA_ERR_LOG("[PulseAudioServiceAdapterImpl] sessionID: %{public}d  removed", sessionID);
+                g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
             }
             break;
 
