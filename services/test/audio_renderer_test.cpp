@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include <vector>
-#include <cinttypes>
+
 #include "audio_renderer.h"
 #include "media_log.h"
 #include "pcm2wav.h"
@@ -135,15 +135,6 @@ public:
         return true;
     }
 
-    void PrintTimeStamp(const unique_ptr<AudioRenderer> &audioRenderer) const
-    {
-        Timestamp timeStamp;
-        if (audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC)) {
-            MEDIA_INFO_LOG("AudioRendererTest: Timestamp seconds: %{public}" PRId64, timeStamp.time.tv_sec);
-            MEDIA_INFO_LOG("AudioRendererTest: Timestamp nanoseconds: %{public}ld", timeStamp.time.tv_nsec);
-        }
-    }
-
     bool GetBufferLen(const unique_ptr<AudioRenderer> &audioRenderer, size_t &bufferLen) const
     {
         if (audioRenderer->GetBufferSize(bufferLen)) {
@@ -203,8 +194,6 @@ public:
                 }
             }
         }
-
-        PrintTimeStamp(audioRenderer);
 
         if (!audioRenderer->Drain()) {
             MEDIA_ERR_LOG("AudioRendererTest: Drain failed");
