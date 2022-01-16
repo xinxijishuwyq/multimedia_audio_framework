@@ -12,12 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_stream.h"
+
+#include <chrono>
+#include <thread>
 #include <vector>
 #include <cinttypes>
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "media_log.h"
+
+#include "audio_stream.h"
 
 using namespace std;
 
@@ -26,6 +30,8 @@ namespace AudioStandard {
 const unsigned long long TIME_CONVERSION_US_S = 1000000ULL; /* us to s */
 const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
+constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
+constexpr int32_t READ_WRITE_WAIT_TIME_IN_US = 500;
 
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStreamType_(eStreamType),
                                                                          eMode_(eMode),
@@ -47,6 +53,19 @@ AudioStream::~AudioStream()
 State AudioStream::GetState()
 {
     return state_;
+}
+
+int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
+{
+    if ((state_ == RELEASED) || (state_ == NEW)) {
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (GetSessionID(sessionID) != 0) {
+        return ERR_INVALID_INDEX;
+    }
+
+    return SUCCESS;
 }
 
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
@@ -276,6 +295,8 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
 
     if (state_ != RUNNING) {
         MEDIA_ERR_LOG("Write: Illegal  state:%{public}u", state_);
+        // To allow context switch for APIs running in different thread contexts
+        std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
         return ERR_ILLEGAL_STATE;
     }
 
@@ -307,6 +328,7 @@ bool AudioStream::PauseAudioStream()
     State oldState = state_;
     state_ = PAUSED; // Set it before stopping as Read/Write and Stop can be called from different threads
     while (isReadInProgress_ || isWriteInProgress_) {
+        std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
 
     int32_t ret = PauseStream();
@@ -322,6 +344,7 @@ bool AudioStream::PauseAudioStream()
 
 bool AudioStream::StopAudioStream()
 {
+    MEDIA_INFO_LOG("AudioStream: StopAudioStream begin");
     if (state_ == PAUSED) {
         state_ = STOPPED;
         MEDIA_INFO_LOG("StopAudioStream SUCCESS");
@@ -335,6 +358,7 @@ bool AudioStream::StopAudioStream()
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
     while (isReadInProgress_ || isWriteInProgress_) {
+        std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
 
     int32_t ret = StopStream();
@@ -395,9 +419,24 @@ bool AudioStream::ReleaseAudioStream()
 
     ReleaseStream();
     state_ = RELEASED;
-    MEDIA_INFO_LOG("Release Audio stream SUCCESS");
+    MEDIA_INFO_LOG("ReleaseAudiostream SUCCESS");
 
     return true;
+}
+
+AudioStreamType AudioStream::GetStreamType(ContentType contentType, StreamUsage streamUsage)
+{
+    AudioStreamType streamType = streamTypeMap_[contentType][streamUsage];
+    if (streamType == STREAM_MEDIA) {
+        streamType = STREAM_MUSIC;
+    }
+
+    return streamType;
+}
+
+int32_t AudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
+{
+    return SetStreamType(audioStreamType);
 }
 
 int32_t AudioStream::SetVolume(float volume)
@@ -409,5 +448,15 @@ float AudioStream::GetVolume()
 {
     return GetStreamVolume();
 }
+
+int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
+{
+    return SetStreamRenderRate(renderRate);
 }
+
+AudioRendererRate AudioStream::GetRenderRate()
+{
+    return GetStreamRenderRate();
 }
+} // namspace AudioStandard
+} // namespace OHOS

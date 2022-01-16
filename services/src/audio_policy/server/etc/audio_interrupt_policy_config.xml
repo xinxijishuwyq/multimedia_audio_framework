@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- Focus policies to fallback to, incase of unknown usecases */ -->
+<audio_focus_policy>
+    <stream_type value="STREAM_MUSIC">
+        <focus_table>
+            <deny>nil</deny>
+            <private>
+                <stream_type value="STREAM_MUSIC"  is_forced="true" action_type="STOP" action_on="existing"/>
+                <stream_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PAUSE" action_on="existing"/>
+                <stream_type value="STREAM_RING" is_forced="true" action_type="PAUSE" action_on="existing"/>
+            </private>
+        </focus_table>
+    </stream_type>
+    <stream_type value="STREAM_VOICE_CALL">
+        <focus_table>
+            <deny>
+                <stream_type value="STREAM_RING"/>
+                <stream_type value="STREAM_VOICE_CALL"/>
+            </deny>
+            <shared>
+                <stream_type value="STREAM_MUSIC" is_forced="true" action_type="DUCK" action_on="new"/>
+            </shared>
+            <private>nil</private>
+        </focus_table>
+    </stream_type>
+    <stream_type value="STREAM_RING">
+        <focus_table>
+            <deny>
+                <stream_type value="STREAM_RING"/>
+            </deny>
+            <shared>
+                <stream_type value="STREAM_MUSIC" is_forced="true" action_type="DUCK" action_on="new"/>
+            </shared>
+            <private>
+                <stream_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
+            </private>
+        </focus_table>
+    </stream_type>
+</audio_focus_policy>

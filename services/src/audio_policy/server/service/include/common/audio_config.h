@@ -35,6 +35,7 @@ enum NodeName {
     AUDIO_PORT,
     AUDIO_PORT_PINS,
     AUDIO_PORT_PIN,
+    AUDIO_INTERRUPT_ENABLE,
     UNKNOWN
 };
 
@@ -50,6 +51,7 @@ public:
     char *name;
     char *role;
     char *rate;
+    char *format;
     char *channels;
     char *buffer_size;
     char *fileName;
@@ -59,6 +61,7 @@ public:
           name (nullptr),
           role (nullptr),
           rate (nullptr),
+          format (nullptr),
           channels (nullptr),
           buffer_size (nullptr),
           fileName (nullptr)
@@ -73,6 +76,8 @@ public:
             xmlFree(reinterpret_cast<xmlChar*>(role));
         if (rate != nullptr)
             xmlFree(reinterpret_cast<xmlChar*>(rate));
+        if (format != nullptr)
+            xmlFree(reinterpret_cast<xmlChar*>(format));
         if (channels != nullptr)
             xmlFree(reinterpret_cast<xmlChar*>(channels));
         if (buffer_size != nullptr)

@@ -23,6 +23,7 @@
 #include "distributed_kv_data_manager.h"
 #include "iaudio_policy_interface.h"
 #include "types.h"
+#include "media_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,6 +71,8 @@ public:
 
     AudioRingerMode GetRingerMode(void);
 
+    int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+
     virtual ~AudioAdapterManager() {}
 
 private:
@@ -88,6 +91,7 @@ private:
     {
         mVolumeMap[STREAM_MUSIC] = MAX_VOLUME;
         mVolumeMap[STREAM_RING] = MAX_VOLUME;
+        mVolumeMap[STREAM_VOICE_CALL] = MAX_VOLUME;
         mVolumeMap[STREAM_VOICE_ASSISTANT] = MAX_VOLUME;
     }
 
@@ -108,6 +112,8 @@ private:
     std::unordered_map<AudioStreamType, float> mVolumeMap;
     AudioRingerMode mRingerMode;
     std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
+
+    AudioSessionCallback *sessionCallback_;
     friend class PolicyCallbackImpl;
 };
 
@@ -132,6 +138,17 @@ public:
         }
         AudioStreamType streamID = audioAdapterManager_->GetStreamIDByType(streamType);
         return audioAdapterManager_->mVolumeMap[streamID];
+    }
+
+    void OnSessionRemoved(const uint32_t sessionID)
+    {
+        MEDIA_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl OnSessionRemoved: Session ID %{public}d", sessionID);
+        if (audioAdapterManager_->sessionCallback_ == nullptr) {
+            MEDIA_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
+                            "not firing OnSessionRemoved");
+        } else {
+            audioAdapterManager_->sessionCallback_->OnSessionRemoved(sessionID);
+        }
     }
 private:
     std::unique_ptr<AudioAdapterManager> audioAdapterManager_;

@@ -15,10 +15,13 @@
 
 #include <cstring>
 #include <dlfcn.h>
+#include <string>
 
 #include "audio_errors.h"
 #include "media_log.h"
 #include "audio_capturer_source.h"
+
+using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -94,10 +97,10 @@ int32_t InitAttrsCapture(struct AudioSampleAttributes &attrs)
     return SUCCESS;
 }
 
-int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *adapterNameCase,
-    enum AudioPortDirection portFlag, struct AudioPort *capturePort, const int32_t size)
+int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, string adapterNameCase,
+    enum AudioPortDirection portFlag, struct AudioPort &capturePort, const int32_t size)
 {
-    if (descs == nullptr || adapterNameCase == nullptr || capturePort == nullptr) {
+    if (descs == nullptr) {
         return ERROR;
     }
 
@@ -106,11 +109,11 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *a
         if (desc == nullptr) {
             continue;
         }
-        if (!strcmp(desc->adapterName, adapterNameCase)) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
+        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
+            for (uint32_t port = 0; ((desc != nullptr) && (port < desc->portNum)); port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
-                    *capturePort = desc->ports[port];
+                    capturePort = desc->ports[port];
                     return index;
                 }
             }
@@ -124,7 +127,11 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, const char *a
 int32_t AudioCapturerSource::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
+#ifdef DEVICE_BALTIMORE
+    char resolvedPath[100] = "/system/lib/libaudio_hdi_common.z.so";
+#else
     char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
+#endif
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
@@ -195,14 +202,14 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
 
     ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
     // adapters is 0~3
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret < 0) {
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
         MEDIA_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
 
     // Get qualified sound card and port
-    char adapterNameCase[PATH_LEN] = "internal";
-    index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, &capturePort, size);
+    string adapterNameCase = "internal";
+    index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, capturePort, size);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;

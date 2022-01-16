@@ -16,6 +16,7 @@
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer_test_packages",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer_test",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_interrupt_test",
+        "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:interrupt_multi_renderer_test",
         "//foundation/multimedia/audio_standard/services:audio_policy_service_packages",
         "//foundation/multimedia/audio_standard/sa_profile:audio_policy_service_sa_profile",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiopolicy:audio_policy_test",
@@ -87,12 +88,13 @@
         },
         {
           "type": "none",
-          "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager:audio_sound_manager",
+          "name": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioringtone:audio_ringtone_client",
           "header": {
-          "header_files": [
-              "iaudio_sound_manager.h"
-          ],
-            "header_base": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosoundmanager/include"
+            "header_files": [
+                 "iringtone_player.h",
+                 "iringtone_sound_manager.h"
+            ],
+            "header_base": "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioringtone/include"
           }
         }
       ],

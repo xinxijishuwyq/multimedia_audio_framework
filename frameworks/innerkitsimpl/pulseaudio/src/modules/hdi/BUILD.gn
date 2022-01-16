@@ -51,6 +51,9 @@ ohos_shared_library("module-hdi-sink") {
   configs = [ ":hdi_config" ]
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_sink_z_so" ]
+  if (device_name == "baltimore") {
+    cflags += [ "-DDEVICE_BALTIMORE" ]
+  }
 
   ldflags = [
     "-Wl",
@@ -63,6 +66,8 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer:audio_renderer_sink",
   ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_standard"
@@ -77,6 +82,9 @@ ohos_shared_library("module-hdi-source") {
   configs = [ ":hdi_config" ]
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_source_z_so" ]
+  if (device_name == "baltimore") {
+    cflags += [ "-DDEVICE_BALTIMORE" ]
+  }
 
   deps = [
     "$pulseaudio_build_path/src:pulsecommon",

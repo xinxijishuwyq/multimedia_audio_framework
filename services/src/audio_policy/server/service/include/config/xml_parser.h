@@ -49,6 +49,7 @@ private:
     void ParseBuiltInDevices(xmlNode &node);
     void ParseDefaultOutputDevice(xmlNode &node);
     void ParseDefaultInputDevice(xmlNode &node);
+    void ParseAudioInterrupt(xmlNode &node);
     void ParseAudioPorts(xmlNode &node);
     void ParseAudioPortPins(xmlNode &node);
     InternalDeviceType GetDeviceType(xmlChar &device);

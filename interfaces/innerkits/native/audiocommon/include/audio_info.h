@@ -19,11 +19,17 @@
 #include <stdint.h>
 #endif // __MUSL__
 
+#include <cmath>
+#include <limits>
+#include <string>
 #include <vector>
 #include <unistd.h>
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t MAX_NUM_STREAMS = 3;
+constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -118,9 +124,9 @@ enum AudioStreamType {
      */
     STREAM_DEFAULT = -1,
     /**
-     * Indicates audio streams for system sounds.
+     * Indicates audio streams of voices in calls.
      */
-    STREAM_SYSTEM = 0,
+    STREAM_VOICE_CALL = 0,
     /**
      * Indicates audio streams for music playback.
      */
@@ -134,13 +140,13 @@ enum AudioStreamType {
      */
     STREAM_MEDIA = 3,
     /**
-     * Indicates audio streams of voices in calls.
-     */
-    STREAM_VOICE_CALL = 4,
-    /**
      * Indicates Audio streams for voice assistant
      */
-    STREAM_VOICE_ASSISTANT = 5,
+    STREAM_VOICE_ASSISTANT = 4,
+    /**
+     * Indicates audio streams for system sounds.
+     */
+    STREAM_SYSTEM = 5,
     /**
      * Indicates audio streams for alarms.
      */
@@ -265,6 +271,7 @@ enum ContentType {
     CONTENT_TYPE_MUSIC = 2,
     CONTENT_TYPE_MOVIE = 3,
     CONTENT_TYPE_SONIFICATION = 4,
+    CONTENT_TYPE_RINGTONE = 5
 };
 
 /**
@@ -276,6 +283,15 @@ enum StreamUsage {
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
     STREAM_USAGE_VOICE_ASSISTANT = 4,
+};
+
+/**
+* Enumerates the renderer playback speed.
+*/
+enum AudioRendererRate {
+    RENDER_RATE_NORMAL = 0,
+    RENDER_RATE_DOUBLE = 1,
+    RENDER_RATE_HALF = 2,
 };
 
 enum InterruptType {
@@ -292,23 +308,59 @@ enum InterruptHint {
     INTERRUPT_HINT_UNDUCK
 };
 
-enum InterruptActionType {
-    TYPE_ACTIVATED = 1,
-    TYPE_INTERRUPTED = 2,
-    TYPE_DEACTIVATED = 3
+enum InterruptForceType {
+    /**
+     * Force type, system change audio state.
+     */
+    INTERRUPT_FORCE = 0,
+    /**
+     * Share type, application change audio state.
+     */
+    INTERRUPT_SHARE
 };
 
-struct InterruptAction {
-    InterruptActionType actionType;
-    InterruptType interruptType;
-    InterruptHint interruptHint;
+enum ActionTarget {
+    CURRENT = 0,
+    INCOMING,
+    BOTH
+};
+
+struct InterruptEvent {
+    /**
+     * Interrupt event type, begin or end
+     */
+    InterruptType eventType;
+    /**
+     * Interrupt force type, force or share
+     */
+    InterruptForceType forceType;
+    /**
+     * Interrupt hint type. In force type, the audio state already changed,
+     * but in share mode, only provide a hint for application to decide.
+     */
+    InterruptHint hintType;
+
+    float duckVolume;
+};
+
+struct AudioFocusEntry {
+    InterruptForceType forceType;
+    InterruptHint hintType;
+    ActionTarget actionOn;
+    bool isReject;
 };
 
 struct AudioInterrupt {
     StreamUsage streamUsage;
     ContentType contentType;
     AudioStreamType streamType;
-    int32_t sessionID;
+    uint32_t sessionID;
+};
+
+struct VolumeEvent {
+    AudioStreamType volumeType;
+    int32_t volume;
+    bool updateUi;
 };
 
 struct AudioParameters {
@@ -320,6 +372,29 @@ struct AudioParameters {
     StreamUsage usage;
     DeviceRole deviceRole;
     DeviceType deviceType;
+};
+
+struct AudioStreamInfo {
+    AudioSamplingRate samplingRate;
+    AudioEncodingType encoding;
+    AudioSampleFormat format;
+    AudioChannel channels;
+};
+
+struct AudioRendererInfo {
+    ContentType contentType = CONTENT_TYPE_UNKNOWN;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t rendererFlags = 0;
+};
+
+struct AudioRendererDesc {
+    ContentType contentType = CONTENT_TYPE_UNKNOWN;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+};
+
+struct AudioRendererOptions {
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
 };
 
 enum DeviceChangeType {
@@ -380,6 +455,25 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
 };
 
 typedef uint32_t AudioIOHandle;
+
+static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)
+{
+    return (std::abs((x) - (y)) <= (std::numeric_limits<float>::epsilon()));
+}
+
+// Below APIs are added to handle compilation error in call manager
+// Once call manager adapt to new interrupt APIs, this will be rmeoved
+enum InterruptActionType {
+    TYPE_ACTIVATED = 1,
+    TYPE_INTERRUPTED = 2,
+    TYPE_DEACTIVATED = 3
+};
+
+struct InterruptAction {
+    InterruptActionType actionType;
+    InterruptType interruptType;
+    InterruptHint interruptHint;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

@@ -18,8 +18,12 @@
 
 #include <cstdint>
 #include "audio_info.h"
+#include "audio_interrupt_callback.h"
 #include "audio_policy_manager_listener_stub.h"
+#include "audio_ringermode_update_listener_stub.h"
 #include "audio_system_manager.h"
+#include "audio_volume_key_event_callback_stub.h"
+#include "i_audio_volume_key_event_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,14 +59,23 @@ public:
 
     AudioRingerMode GetRingerMode();
 
-    int32_t SetAudioManagerCallback(const AudioStreamType streamType,
-                                    const std::shared_ptr<AudioManagerCallback> &callback);
+    int32_t SetRingerModeCallback(const int32_t clientId,
+                                  const std::shared_ptr<AudioRingerModeCallback> &callback);
 
-    int32_t UnsetAudioManagerCallback(const AudioStreamType streamType);
+    int32_t UnsetRingerModeCallback(const int32_t clientId);
+
+    int32_t SetAudioInterruptCallback(const uint32_t sessionID,
+                                    const std::shared_ptr<AudioInterruptCallback> &callback);
+
+    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+
+    AudioStreamType GetStreamInFocus();
+
+    int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 private:
     AudioPolicyManager()
     {
@@ -71,9 +84,14 @@ private:
     ~AudioPolicyManager() {}
 
     void Init();
-    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
+#ifdef LISTENER_STUB_MUTEX
+    std::mutex listenerStubMutex_;
+#endif // LISTENER_STUB_MUTEX
 
+    std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback_ = nullptr;
+    sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
+    sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     static bool serverConnected;
     void RegisterAudioPolicyServerDeathRecipient();
     void AudioPolicyServerDied(pid_t pid);

@@ -74,6 +74,7 @@ ohos_shared_library("audio_service") {
 
 group("audio_policy_service_packages") {
   deps = [
+    ":audio_interrupt_policy_config",
     ":audio_policy.rc",
     ":audio_policy_config",
     ":audio_policy_service",
@@ -138,7 +139,10 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_stub.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_server.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_ringermode_update_listener_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_volume_key_event_callback_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/config/audio_focus_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/config/xml_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/manager/audio_adapter_manager.cpp",
   ]
@@ -149,6 +153,8 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audioadapter:pulse_audio_service_adapter",
+    "//foundation/multimodalinput/input/frameworks/proxy:libmmi-client",
+    "//foundation/multimodalinput/input/frameworks/util:libmmi-util",
     "//third_party/libxml2:xml2",
     "//utils/native/base:utils",
   ]
@@ -166,9 +172,19 @@ ohos_shared_library("audio_policy_service") {
 ohos_prebuilt_etc("audio_policy_config") {
   if (device_name == "rk3566" || device_name == "rk3568") {
     source = "$AUDIO_POLICY_SERVER_DIR/etc/rk3568/audio_policy_config.xml"
+  } else if (device_name == "baltimore") {
+    source = "$AUDIO_POLICY_SERVER_DIR/etc/baltimore/audio_policy_config.xml"
   } else {
     source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_policy_config.xml"
   }
+
+  subsystem_name = "multimedia"
+  module_install_dir = "etc/audio"
+  part_name = "multimedia_audio_standard"
+}
+
+ohos_prebuilt_etc("audio_interrupt_policy_config") {
+  source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_interrupt_policy_config.xml"
 
   subsystem_name = "multimedia"
   module_install_dir = "etc/audio"

@@ -29,7 +29,7 @@ void AudioPolicyProxy::WriteAudioInteruptParams(MessageParcel &data, const Audio
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.streamType));
-    data.WriteInt32(audioInterrupt.sessionID);
+    data.WriteUint32(audioInterrupt.sessionID);
 }
 
 int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
@@ -169,18 +169,56 @@ bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
     return reply.ReadBool();
 }
 
-int32_t AudioPolicyProxy::SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (object == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyProxy: SetAudioManagerCallback object is null");
+        MEDIA_ERR_LOG("AudioPolicyProxy: SetRingerModeCallback object is null");
         return ERR_NULL_OBJECT;
     }
 
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteInt32(clientId);
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_RINGERMODE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: set ringermode callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    data.WriteInt32(clientId);
+    int error = Remote()->SendRequest(UNSET_RINGERMODE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: unset ringermode callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: SetAudioInterruptCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteUint32(sessionID);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
@@ -191,13 +229,13 @@ int32_t AudioPolicyProxy::SetAudioManagerCallback(const AudioStreamType streamTy
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetAudioManagerCallback(const AudioStreamType streamType)
+int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteUint32(sessionID);
     int error = Remote()->SendRequest(UNSET_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("AudioPolicyProxy: unset callback failed, error: %{public}d", error);
@@ -234,6 +272,40 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("AudioPolicyProxy: deactivate interrupt failed, error: %{public}d", error);
         return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+AudioStreamType AudioPolicyProxy::GetStreamInFocus()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t error = Remote()->SendRequest(GET_STREAM_IN_FOCUS, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("get stream in focus failed, error: %d", error);
+    }
+    return static_cast<AudioStreamType>(reply.ReadInt32());
+}
+
+int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("VolumeKeyEventCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteRemoteObject(object);
+    int result = Remote()->SendRequest(SET_VOLUME_KEY_EVENT_CALLBACK, data, reply, option);
+    if (result != ERR_NONE) {
+        MEDIA_ERR_LOG("SetAudioVolumeKeyEventCallback failed, result: %{public}d", result);
+        return result;
     }
 
     return reply.ReadInt32();

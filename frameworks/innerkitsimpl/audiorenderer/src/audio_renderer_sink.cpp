@@ -15,17 +15,20 @@
 
 #include <cstring>
 #include <dlfcn.h>
+#include <string>
 #include <unistd.h>
 
 #include "audio_errors.h"
 #include "media_log.h"
 #include "audio_renderer_sink.h"
 
+using namespace std;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 3;
+const int32_t MAX_AUDIO_ADAPTER_NUM = 4;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -33,6 +36,8 @@ const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
+const uint32_t PCM_24_BIT = 24;
+const uint32_t PCM_32_BIT = 32;
 }
 
 #ifdef DUMPFILE
@@ -90,13 +95,18 @@ void AudioRendererSink::DeInit()
 int32_t InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
+#ifdef DEVICE_BALTIMORE
+    attrs.format = AUDIO_FORMAT_PCM_32_BIT;
+    attrs.frameSize = PCM_32_BIT * attrs.channelCount / PCM_8_BIT;
+#else
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
+#endif
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
-    attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
     attrs.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (attrs.frameSize);
@@ -106,10 +116,10 @@ int32_t InitAttrs(struct AudioSampleAttributes &attrs)
     return SUCCESS;
 }
 
-static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *adapterNameCase,
-    enum AudioPortDirection portFlag, struct AudioPort *renderPort, int32_t size)
+static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapterNameCase,
+    enum AudioPortDirection portFlag, struct AudioPort &renderPort, int32_t size)
 {
-    if (descs == nullptr || adapterNameCase == nullptr || renderPort == nullptr) {
+    if (descs == nullptr) {
         return ERROR;
     }
 
@@ -118,11 +128,11 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *a
         if (desc == nullptr) {
             continue;
         }
-        if (!strcmp(desc->adapterName, adapterNameCase)) {
+        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
             for (uint32_t port = 0; port < desc->portNum; port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
-                    *renderPort = desc->ports[port];
+                    renderPort = desc->ports[port];
                     return index;
                 }
             }
@@ -136,7 +146,11 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, const char *a
 int32_t AudioRendererSink::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
+#ifdef DEVICE_BALTIMORE
+    char resolvedPath[100] = "/system/lib/libaudio_hdi_common.z.so";
+#else
     char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
+#endif
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
@@ -158,20 +172,33 @@ int32_t AudioRendererSink::InitAudioManager()
     return 0;
 }
 
+uint32_t PcmFormatToBits(enum AudioFormat format)
+{
+    switch (format) {
+        case AUDIO_FORMAT_PCM_8_BIT:
+            return PCM_8_BIT;
+        case AUDIO_FORMAT_PCM_16_BIT:
+            return PCM_16_BIT;
+        case AUDIO_FORMAT_PCM_24_BIT:
+            return PCM_24_BIT;
+        case AUDIO_FORMAT_PCM_32_BIT:
+            return PCM_32_BIT;
+        default:
+            return PCM_24_BIT;
+    };
+}
+
 int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
-    // Initialization port information, can fill through mode and other parameters
-    int32_t ret = audioAdapter_->InitAllPorts(audioAdapter_);
-    if (ret != 0) {
-        MEDIA_ERR_LOG("InitAllPorts failed");
-        return ERR_NOT_STARTED;
-    }
-
+    int32_t ret;
     struct AudioSampleAttributes param;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-
+    param.format = attr_.format;
+    param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
+    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    MEDIA_ERR_LOG("AudioRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -183,15 +210,17 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
         return ERR_NOT_STARTED;
     }
 
-    rendererInited_ = true;
     return 0;
 }
 
 int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 {
     attr_ = attr;
-    struct AudioPort renderPort;
-    const char *adapterNameCase = "usb";  // Set sound card information
+#ifdef DEVICE_BALTIMORE
+    string adapterNameCase = "internal";  // Set sound card information
+#else
+    string adapterNameCase = "usb";  // Set sound card information
+#endif
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     if (InitAudioManager() != 0) {
@@ -209,7 +238,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     }
 
     // Get qualified sound card and port
-    int32_t index = SwitchAdapter(descs, adapterNameCase, port, &renderPort, size);
+    int32_t index = SwitchAdapter(descs, adapterNameCase, port, audioPort, size);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;
@@ -225,10 +254,14 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-    if (CreateRender(renderPort) != 0) {
-        MEDIA_ERR_LOG("Create render failed");
+    // Initialization port information, can fill through mode and other parameters
+    ret = audioAdapter_->InitAllPorts(audioAdapter_);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("InitAllPorts failed");
         return ERR_NOT_STARTED;
     }
+
+    rendererInited_ = true;
 
 #ifdef DUMPFILE
     pfd = fopen(g_audioOutTestFilePath, "wb+");
@@ -268,12 +301,12 @@ int32_t AudioRendererSink::Start(void)
 {
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Start failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
-
     if (!started_) {
+        if (CreateRender(audioPort) != 0) {
+            MEDIA_ERR_LOG("Create render failed");
+            return ERR_NOT_STARTED;
+        }
+
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
             started_ = true;
@@ -362,6 +395,11 @@ int32_t AudioRendererSink::Stop(void)
             MEDIA_ERR_LOG("AudioRendererSink::Stop failed!");
             return ERR_OPERATION_FAILED;
         }
+
+        if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
+            audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
+        }
+        audioRender_ = nullptr;
     }
 
     return SUCCESS;

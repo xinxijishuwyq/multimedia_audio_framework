@@ -13,14 +13,17 @@
  * limitations under the License.
  */
 
-#include "iservice_registry.h"
-#include "media_log.h"
-#include "system_ability_definition.h"
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
 #include "audio_stream.h"
-#include "audio_system_manager.h"
 #include "audio_policy_manager.h"
+#include "audio_volume_key_event_callback_stub.h"
+
+#include "iservice_registry.h"
+#include "media_log.h"
+#include "system_ability_definition.h"
+
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,9 +38,9 @@ AudioSystemManager::AudioSystemManager()
 
 AudioSystemManager::~AudioSystemManager()
 {
-    // Deactivate to be called after unset in destructor
-    UnsetAudioManagerCallback(cbStreamType_);
-    DeactivateAudioInterrupt(audioInterrupt_);
+    if (cbClientId_ != -1) {
+        UnsetRingerModeCallback(cbClientId_);
+    }
     MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
 }
 
@@ -114,6 +117,7 @@ bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volu
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
@@ -146,6 +150,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
@@ -164,6 +169,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
@@ -207,6 +213,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
@@ -226,6 +233,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
@@ -236,20 +244,6 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
-}
-
-int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
-                                                    const std::shared_ptr<AudioManagerCallback> &callback)
-{
-    if (callback == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
-        return ERR_INVALID_PARAM;
-    }
-    callback_ = callback;
-    cbStreamType_ = streamType;
-
-    return AudioPolicyManager::GetInstance().SetAudioManagerCallback(static_cast<AudioStreamType>(streamType),
-                                                                     callback);
 }
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
@@ -265,24 +259,22 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioM
     return SUCCESS;
 }
 
-int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
+int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
+                                                  const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
-    return AudioPolicyManager::GetInstance().UnsetAudioManagerCallback(static_cast<AudioStreamType>(streamType));
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    cbClientId_ = clientId;
+
+    return AudioPolicyManager::GetInstance().SetRingerModeCallback(clientId, callback);
 }
 
-int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioSystemManager::UnsetRingerModeCallback(const int32_t clientId) const
 {
-    audioInterrupt_.streamUsage = audioInterrupt.streamUsage;
-    audioInterrupt_.contentType = audioInterrupt.contentType;
-    audioInterrupt_.streamType = audioInterrupt.streamType;
-    audioInterrupt_.sessionID = audioInterrupt.sessionID;
-
-    return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
-}
-
-int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
-{
-    return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
+    return AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId);
 }
 
 int32_t AudioSystemManager::SetMicrophoneMute(bool isMute) const
@@ -336,16 +328,49 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
     return parcel.WriteInt32(deviceType_) && parcel.WriteInt32(deviceRole_);
 }
 
-AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &in)
+sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
 {
     MEDIA_DEBUG_LOG("AudioDeviceDescriptor::Unmarshalling called");
-    AudioDeviceDescriptor *audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
     if (audioDeviceDescriptor == nullptr) {
         return nullptr;
     }
     audioDeviceDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());
     audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(in.ReadInt32());
     return audioDeviceDescriptor;
+}
+
+int32_t AudioSystemManager::RegisterVolumeKeyEventNapiCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager RegisterVolumeKeyEventNapiCallback");
+    return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(callback);
+}
+
+// Below stub implemention is added to handle compilation error in call manager
+// Once call manager adapt to new interrupt implementation, this will be rmeoved
+int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+                                                    const std::shared_ptr<AudioManagerCallback> &callback)
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager SetAudioManagerCallback stub implementation");
+    return SUCCESS;
+}
+
+int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager UnsetAudioManagerCallback stub implementation");
+    return SUCCESS;
+}
+
+int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager ActivateAudioInterrupt stub implementation");
+    return SUCCESS;
+}
+
+int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager DeactivateAudioInterrupt stub implementation");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

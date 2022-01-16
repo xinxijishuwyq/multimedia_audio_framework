@@ -14,7 +14,9 @@
  */
 
 #include "audio_errors.h"
+#include "audio_focus_parser.h"
 #include "media_log.h"
+
 #include "audio_policy_service.h"
 
 namespace OHOS {
@@ -32,6 +34,15 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
+    std::unique_ptr<AudioFocusParser> audioFocusParser;
+    audioFocusParser = make_unique<AudioFocusParser>();
+    std::string AUDIO_FOCUS_CONFIG_FILE = "/etc/audio/audio_interrupt_policy_config.xml";
+
+    if (!audioFocusParser->LoadConfig(focusTable_[0][0])) {
+        MEDIA_ERR_LOG("Audio Config Load Configuration failed");
+        return false;
+    }
+
     return true;
 }
 
@@ -40,6 +51,11 @@ void AudioPolicyService::Deinit(void)
     mAudioPolicyManager.CloseAudioPort(mIOHandles[HDI_SINK]);
     mAudioPolicyManager.CloseAudioPort(mIOHandles[HDI_SOURCE]);
     return;
+}
+
+int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callback)
+{
+    return mAudioPolicyManager.SetAudioSessionCallback(callback);
 }
 
 int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume) const
@@ -207,6 +223,16 @@ void AudioPolicyService::OnDefaultInputPortPin(InternalDeviceType deviceType)
     mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, HDI_SOURCE, true);
     mActiveInputDevices.push_front(deviceType);
     return;
+}
+
+bool AudioPolicyService::IsAudioInterruptEnabled() const
+{
+    return interruptEnabled_;
+}
+
+void AudioPolicyService::OnAudioInterruptEnable(bool enable)
+{
+    interruptEnabled_ = enable;
 }
 
 // private methods

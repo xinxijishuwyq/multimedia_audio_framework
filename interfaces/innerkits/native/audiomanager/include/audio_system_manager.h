@@ -34,7 +34,7 @@ public:
     AudioDeviceDescriptor();
     virtual ~AudioDeviceDescriptor();
     bool Marshalling(Parcel &parcel) const override;
-    static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
+    static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
 };
 
 struct DeviceChangeAction {
@@ -42,6 +42,8 @@ struct DeviceChangeAction {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
 };
 
+// AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
+// Once call manager adapt to new interrupt APIs, this will be rmeoved
 class AudioManagerCallback {
 public:
     virtual ~AudioManagerCallback() = default;
@@ -66,6 +68,30 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
 };
 
+class VolumeKeyEventCallback {
+public:
+    virtual ~VolumeKeyEventCallback() = default;
+    /**
+     * @brief VolumeKeyEventCallback will be executed when hard volume key is pressed up/down
+     *
+     * @param streamType the stream type for which volume must be updated.
+     * @param volumeLevel the volume level to be updated.
+     * @param isUpdateUi whether to update volume level in UI.
+    **/
+    virtual void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) = 0;
+};
+
+class AudioRingerModeCallback {
+public:
+    virtual ~AudioRingerModeCallback() = default;
+    /**
+     * Called when ringer mode is updated.
+     *
+     * @param ringerMode Indicates the updated ringer mode value.
+     * For details, refer RingerMode enum in audio_info.h
+     */
+    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
+};
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -80,9 +106,9 @@ public:
          */
         STREAM_DEFAULT = -1,
         /**
-         * Indicates audio streams for system sounds.
+         * Indicates audio streams of voices in calls.
          */
-        STREAM_SYSTEM = 0,
+        STREAM_VOICE_CALL = 0,
         /**
          * Indicates audio streams for music playback.
          */
@@ -96,13 +122,13 @@ public:
          */
         STREAM_MEDIA = 3,
         /**
-         * Indicates audio streams of voices in calls.
-         */
-        STREAM_VOICE_CALL = 4,
-        /**
          * Indicates Audio streams for voice assistant
          */
-        STREAM_VOICE_ASSISTANT = 5,
+        STREAM_VOICE_ASSISTANT = 4,
+        /**
+         * Indicates audio streams for system sounds.
+         */
+        STREAM_SYSTEM = 5,
         /**
          * Indicates audio streams for alarms.
          */
@@ -154,9 +180,16 @@ public:
     AudioRingerMode GetRingerMode() const;
     int32_t SetAudioScene(const AudioScene &scene);
     AudioScene GetAudioScene() const;
+    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
+    int32_t SetRingerModeCallback(const int32_t clientId,
+                                  const std::shared_ptr<AudioRingerModeCallback> &callback);
+    int32_t UnsetRingerModeCallback(const int32_t clientId) const;
+    int32_t RegisterVolumeKeyEventNapiCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+
+    // Below APIs are added to handle compilation error in call manager
+    // Once call manager adapt to new interrupt APIs, this will be rmeoved
     int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
-    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
     int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
@@ -167,10 +200,8 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
-    std::shared_ptr<AudioManagerCallback> callback_ = nullptr;
+    int32_t cbClientId_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
-    AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
-    AudioSystemManager::AudioVolumeType cbStreamType_ = AudioSystemManager::AudioVolumeType::STREAM_DEFAULT;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 };
 } // namespace AudioStandard

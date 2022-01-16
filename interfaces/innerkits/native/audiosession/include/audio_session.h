@@ -31,8 +31,6 @@ struct AudioDevDescriptor {
 
 class AudioSession : public AudioServiceClient {
 public:
-    uint32_t GetSessionID();
-
     AudioDevDescriptor *GetActiveAudioSinkDevice(uint32_t sessionID);
     AudioDevDescriptor *GetActiveAudioSourceDevice(uint32_t sessionID);
 

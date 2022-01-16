@@ -16,8 +16,10 @@
 #ifndef I_AUDIO_POLICY_BASE_H
 #define I_AUDIO_POLICY_BASE_H
 
-#include "audio_policy_types.h"
+#include "audio_interrupt_callback.h"
 #include "audio_policy_manager.h"
+#include "audio_policy_types.h"
+#include "i_audio_volume_key_event_callback.h"
 #include "ipc_types.h"
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
@@ -46,13 +48,21 @@ public:
 
     virtual AudioRingerMode GetRingerMode() = 0;
 
-    virtual int32_t SetAudioManagerCallback(const AudioStreamType streamType, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetAudioManagerCallback(const AudioStreamType streamType) = 0;
+    virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
+
+    virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) = 0;
 
     virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
+
+    virtual AudioStreamType GetStreamInFocus() = 0;
+
+    virtual int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

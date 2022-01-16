@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <string>
 #include <vector>
 #include <cinttypes>
 #include "audio_capturer.h"
@@ -142,7 +143,7 @@ public:
         return true;
     }
 
-    bool TestRecording(int argc, char *argv[]) const
+    bool TestRecording(int32_t samplingRate, bool isBlocking, string filePath) const
     {
         MEDIA_INFO_LOG("TestCapture start ");
 
@@ -152,7 +153,7 @@ public:
 
         AudioCapturerParams capturerParams;
         capturerParams.audioSampleFormat = SAMPLE_S16LE;
-        capturerParams.samplingRate =  static_cast<AudioSamplingRate>(atoi(argv[AudioTestConstants::SECOND_ARG_IDX]));
+        capturerParams.samplingRate =  static_cast<AudioSamplingRate>(samplingRate);
         capturerParams.audioChannel = AudioChannel::STEREO;
         capturerParams.audioEncoding = ENCODING_PCM;
         if (!InitCapture(audioCapturer, capturerParams)) {
@@ -160,9 +161,8 @@ public:
             return false;
         }
 
-        bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
         MEDIA_INFO_LOG("Is blocking read: %{public}s", isBlocking ? "true" : "false");
-        FILE *pFile = fopen(argv[AudioTestConstants::SECOND_ARG_IDX - 1], "wb");
+        FILE *pFile = fopen(filePath.c_str(), "wb");
         if (pFile == nullptr) {
             MEDIA_INFO_LOG("AudioCapturerTest: Unable to open file");
             return false;
@@ -213,8 +213,12 @@ int main(int argc, char *argv[])
     MEDIA_INFO_LOG("argv[2]=%{public}s", argv[AudioTestConstants::SECOND_ARG_IDX]);
     MEDIA_INFO_LOG("argv[3]=%{public}s", argv[AudioTestConstants::THIRD_ARG_IDX]);
 
+    int32_t samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
+    bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
+    string filePath = argv[AudioTestConstants::SECOND_ARG_IDX - 1];
+
     AudioCapturerTest testObj;
-    bool ret = testObj.TestRecording(argc, argv);
+    bool ret = testObj.TestRecording(samplingRate, isBlocking, filePath);
 
     return ret;
 }

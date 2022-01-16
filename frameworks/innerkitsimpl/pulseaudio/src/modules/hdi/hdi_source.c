@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
+#include <audio_manager.h>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
-#include <signal.h>
 
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
@@ -36,9 +36,9 @@
 #include <pulsecore/thread.h>
 #include <pulsecore/thread-mq.h>
 
-#include <audio_manager.h>
-#include <audio_capturer_source_intf.h>
+#include <signal.h>
 
+#include "audio_capturer_source_intf.h"
 #include "media_log.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
@@ -53,7 +53,7 @@
 #define AUDIO_POINT_NUM  1024
 #define AUDIO_FRAME_NUM_IN_BUF 30
 
-struct userdata {
+struct Userdata {
     pa_core *core;
     pa_module *module;
     pa_source *source;
@@ -67,10 +67,10 @@ struct userdata {
     bool IsCapturerInit;
 };
 
-static int pa_capturer_init(struct userdata *u);
+static int pa_capturer_init(struct Userdata *u);
 static void pa_capturer_exit(void);
 
-static void userdata_free(struct userdata *u)
+static void userdata_free(struct Userdata *u)
 {
     pa_assert(u);
     if (u->source)
@@ -96,7 +96,7 @@ static void userdata_free(struct userdata *u)
 
 static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
-    struct userdata *u = PA_SOURCE(o)->userdata;
+    struct Userdata *u = PA_SOURCE(o)->userdata;
 
     switch (code) {
         case PA_SOURCE_MESSAGE_GET_LATENCY: {
@@ -113,17 +113,17 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
 }
 
 /* Called from the IO thread. */
-static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_state,
-    pa_suspend_cause_t new_suspend_cause)
+static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newState,
+    pa_suspend_cause_t newSuspendCause)
 {
-    struct userdata *u = NULL;
+    struct Userdata *u = NULL;
     pa_assert(s);
     pa_assert_se(u = s->userdata);
 
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
-        PA_SOURCE_IS_OPENED(new_state)) {
+        PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
-        if (new_state == PA_SOURCE_RUNNING && !u->IsCapturerInit) {
+        if (newState == PA_SOURCE_RUNNING && !u->IsCapturerInit) {
             if (pa_capturer_init(u)) {
                 MEDIA_ERR_LOG("HDI capturer reinitialization failed");
                 return -PA_ERR_IO;
@@ -132,13 +132,13 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_
             MEDIA_DEBUG_LOG("Successfully reinitialized HDI renderer");
         }
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
-        if (new_state == PA_SOURCE_SUSPENDED) {
+        if (newState == PA_SOURCE_SUSPENDED) {
             if (u->IsCapturerInit) {
                 pa_capturer_exit();
                 u->IsCapturerInit = false;
                 MEDIA_DEBUG_LOG("Deinitialized HDI capturer");
             }
-        } else if (new_state == PA_SOURCE_RUNNING && !u->IsCapturerInit) {
+        } else if (newState == PA_SOURCE_RUNNING && !u->IsCapturerInit) {
             MEDIA_DEBUG_LOG("Idle to Running reinitializing HDI capturing device");
             if (pa_capturer_init(u)) {
                 MEDIA_ERR_LOG("Idle to Running HDI capturer reinitialization failed");
@@ -152,7 +152,7 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t new_
     return 0;
 }
 
-static int get_capturer_frame_from_hdi(pa_memchunk *chunk, struct userdata *u)
+static int get_capturer_frame_from_hdi(pa_memchunk *chunk, const struct Userdata *u)
 {
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
@@ -195,7 +195,7 @@ static int get_capturer_frame_from_hdi(pa_memchunk *chunk, struct userdata *u)
 
 static void thread_func(void *userdata)
 {
-    struct userdata *u = userdata;
+    struct Userdata *u = userdata;
     bool timer_elapsed = false;
 
     pa_assert(u);
@@ -252,7 +252,7 @@ static void thread_func(void *userdata)
     }
 }
 
-static int pa_capturer_init(struct userdata *u)
+static int pa_capturer_init(struct Userdata *u)
 {
     int ret;
 
@@ -262,6 +262,7 @@ static int pa_capturer_init(struct userdata *u)
         return ret;
     }
 
+#ifndef DEVICE_BALTIMORE
     ret = AudioCapturerSourceSetVolume(DEFAULT_LEFT_VOLUME, DEFAULT_RIGHT_VOLUME);
     if (ret != 0) {
         MEDIA_ERR_LOG("audio capturer set volume failed!");
@@ -274,6 +275,7 @@ static int pa_capturer_init(struct userdata *u)
         MEDIA_ERR_LOG("audio capturer set muteState: %d failed!", muteState);
         goto fail;
     }
+#endif // DEVICE_BALTIMORE
 
     ret = AudioCapturerSourceStart();
     if (ret != 0) {
@@ -289,13 +291,14 @@ fail:
     return ret;
 }
 
-static void pa_capturer_exit(void) {
+static void pa_capturer_exit(void)
+{
     AudioCapturerSourceStop();
     AudioCapturerSourceDeInit();
 }
 
-static int pa_set_source_properties(pa_module *m, pa_modargs *ma, pa_sample_spec *ss, pa_channel_map *map,
-    struct userdata *u)
+static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sample_spec *ss, const pa_channel_map *map,
+    struct Userdata *u)
 {
     pa_source_new_data data;
 
@@ -344,7 +347,7 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, pa_sample_spec
 
 pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 {
-    struct userdata *u = NULL;
+    struct Userdata *u = NULL;
     pa_sample_spec ss;
     char *thread_name = NULL;
     pa_channel_map map;
@@ -362,7 +365,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    u = pa_xnew0(struct userdata, 1);
+    u = pa_xnew0(struct Userdata, 1);
     u->core = m->core;
     u->module = m;
     u->rtpoll = pa_rtpoll_new();
@@ -417,7 +420,7 @@ fail:
 
 void pa_hdi_source_free(pa_source *s)
 {
-    struct userdata *u = NULL;
+    struct Userdata *u = NULL;
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
     userdata_free(u);

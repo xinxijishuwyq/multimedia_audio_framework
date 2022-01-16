@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-#include "audio_errors.h"
-#include "audio_capturer_private.h"
-#include "audio_stream.h"
 #include "audio_capturer.h"
+
+#include "audio_capturer_private.h"
+#include "audio_errors.h"
+#include "audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
