@@ -30,6 +30,8 @@ public:
     int32_t GetLatency(uint64_t &latency) const override;
     int32_t SetParams(const AudioRendererParams params) override;
     int32_t GetParams(AudioRendererParams &params) const override;
+    int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const override;
+    int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
     bool Start() override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     RendererState GetStatus() const override;
@@ -49,9 +51,11 @@ public:
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override;
 
     std::shared_ptr<AudioStream> audioStream_;
+    AudioRendererInfo rendererInfo_ = {};
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType);
     ~AudioRendererPrivate();
+
 private:
     std::shared_ptr<AudioRendererCallback> callback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

@@ -85,6 +85,14 @@ public:
     */
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType);
     /**
+     * @brief creater renderer instance.
+     *
+     * @param audioStreamType The audio streamtype to be created.
+     * refer AudioStreamType in audio_info.h.
+     * @return Returns unique pointer to the AudioRenderer object
+    */
+    static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
+    /**
      * @brief Obtains the number of frames required in the current condition, in bytes per sample.
      *
      * @param frameCount Indicates the reference variable in which framecount will be written
@@ -114,6 +122,30 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetParams(AudioRendererParams &params) const = 0;
+
+    /**
+     * @brief Obtains audio renderer information.
+     *
+     * This function can be called after {@link Create} is successful.
+     *
+     * @param rendererInfo Indicates information about audio renderer. For details, see
+     * {@link AudioRendererInfo}.
+     * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const = 0;
+
+    /**
+     * @brief Obtains renderer stream information.
+     *
+     * This function can be called after {@link Create} is successful.
+     *
+     * @param streamInfo Indicates information about audio renderer. For details, see
+     * {@link AudioStreamInfo}.
+     * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const = 0;
 
     /**
      * @brief Starts audio rendering.

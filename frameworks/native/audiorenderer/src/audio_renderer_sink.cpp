@@ -620,7 +620,6 @@ int32_t AudioRendererSinkGetLatency(uint32_t *latency)
     ret = g_audioRendrSinkInstance->GetLatency(latency);
     return ret;
 }
-
 #ifdef __cplusplus
 }
 #endif

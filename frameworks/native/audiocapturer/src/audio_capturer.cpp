@@ -29,6 +29,30 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
     return std::make_unique<AudioCapturerPrivate>(audioStreamType);
 }
 
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions)
+{
+    AudioStreamType audioStreamType = STREAM_MUSIC;
+    auto sourceType = capturerOptions.capturerInfo.sourceType;
+
+    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
+        audioStreamType = STREAM_VOICE_CALL;
+    }
+
+    AudioCapturerParams params;
+    params.audioSampleFormat = capturerOptions.streamInfo.format;
+    params.samplingRate = capturerOptions.streamInfo.samplingRate;
+    params.audioChannel = capturerOptions.streamInfo.channels;
+    params.audioEncoding = capturerOptions.streamInfo.encoding;
+
+    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType);
+    capturer->SetParams(params);
+
+    capturer->capturerInfo_.sourceType = sourceType;
+    capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
+
+    return capturer;
+}
+
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType)
 {
     audioCapturer = std::make_unique<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
@@ -59,6 +83,27 @@ int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
         params.samplingRate =  static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         params.audioChannel = static_cast<AudioChannel>(audioStreamParams.channels);
         params.audioEncoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+    }
+
+    return result;
+}
+
+int32_t AudioCapturerPrivate::GetCapturerInfo(AudioCapturerInfo &capturerInfo) const
+{
+    capturerInfo = capturerInfo_;
+
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
+{
+    AudioStreamParams audioStreamParams;
+    int32_t result = audioCapturer->GetAudioStreamInfo(audioStreamParams);
+    if (SUCCESS == result) {
+        streamInfo.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
+        streamInfo.samplingRate =  static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
+        streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     }
 
     return result;

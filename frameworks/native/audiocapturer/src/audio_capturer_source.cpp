@@ -557,7 +557,6 @@ int32_t AudioCapturerSourceSetMute(bool isMute)
 
     return ret;
 }
-
 #ifdef __cplusplus
 }
 #endif
