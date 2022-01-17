@@ -110,7 +110,7 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, string adapte
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; ((desc != nullptr) && (port < desc->portNum)); port++) {
+            for (uint32_t port = 0; port < desc->portNum; port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     capturePort = desc->ports[port];
@@ -127,11 +127,7 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, string adapte
 int32_t AudioCapturerSource::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
-#ifdef DEVICE_BALTIMORE
-    char resolvedPath[100] = "/system/lib/libaudio_hdi_common.z.so";
-#else
-    char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
-#endif
+    char resolvedPath[100] = "/system/lib/libhdi_audio_client.z.so";
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);

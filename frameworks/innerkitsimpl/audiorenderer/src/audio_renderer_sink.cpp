@@ -146,11 +146,7 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
 int32_t AudioRendererSink::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
-#ifdef DEVICE_BALTIMORE
-    char resolvedPath[100] = "/system/lib/libaudio_hdi_common.z.so";
-#else
-    char resolvedPath[100] = "/system/lib/libaudio_hdi_proxy_server.z.so";
-#endif
+    char resolvedPath[100] = "/system/lib/libhdi_audio_client.z.so";
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
