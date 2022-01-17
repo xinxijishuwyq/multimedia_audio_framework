@@ -16,7 +16,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
-#include <cinttypes>
+
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "media_log.h"
@@ -72,7 +72,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
 {
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
-        MEDIA_DEBUG_LOG("AudioStream: GetAudioTime in microseconds: %{public}" PRIu64, paTimeStamp);
         timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
             = static_cast<time_t>(((paTimeStamp - resetTimestamp_) - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
@@ -82,8 +81,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
         timestamp.time.tv_sec += (timestamp.time.tv_nsec / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec = (timestamp.time.tv_nsec % TIME_CONVERSION_NS_S);
 
-        MEDIA_DEBUG_LOG("AudioStream: GetAudioTime timestamp sec:nsec %{public}" PRId64 ":%{public}ld",
-                        timestamp.time.tv_sec, timestamp.time.tv_nsec);
         return true;
     }
     return false;

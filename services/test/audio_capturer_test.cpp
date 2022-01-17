@@ -15,7 +15,7 @@
 
 #include <string>
 #include <vector>
-#include <cinttypes>
+
 #include "audio_capturer.h"
 #include "media_log.h"
 
@@ -172,12 +172,6 @@ public:
             MEDIA_ERR_LOG("Start capturer failed");
             fclose(pFile);
             return false;
-        }
-
-        Timestamp timestamp;
-        if (audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
-            MEDIA_INFO_LOG("Timestamp seconds: %{public}" PRId64, timestamp.time.tv_sec);
-            MEDIA_INFO_LOG("Timestamp nanoseconds: %{public}ld", timestamp.time.tv_nsec);
         }
 
         fflush(pFile);
