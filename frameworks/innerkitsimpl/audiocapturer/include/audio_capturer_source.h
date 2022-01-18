@@ -16,9 +16,11 @@
 #ifndef AUDIO_CAPTURER_SOURCE_H
 #define AUDIO_CAPTURER_SOURCE_H
 
+#include "audio_info.h"
 #include "audio_proxy_manager.h"
 
 #include <cstdio>
+#include <list>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +59,7 @@ public:
     int32_t GetVolume(float &left, float &right);
     int32_t SetMute(bool isMute);
     int32_t GetMute(bool &isMute);
+    int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene);
 
     static AudioCapturerSource *GetInstance(void);
     bool capturerInited_;

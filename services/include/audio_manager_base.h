@@ -56,6 +56,15 @@ public:
     virtual bool IsMicrophoneMute() = 0;
 
     /**
+     * Sets Audio modes.
+     *
+     * @param audioScene Audio scene type.
+     * @param activeDeviceList List of active device types.
+     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene) = 0;
+
+    /**
      * Obtains device array.
      *
      * @return Returns the array of audio device descriptor.
@@ -86,7 +95,8 @@ public:
         GET_AUDIO_PARAMETER = 3,
         SET_AUDIO_PARAMETER = 4,
         SET_MICROPHONE_MUTE = 5,
-        IS_MICROPHONE_MUTE = 6
+        IS_MICROPHONE_MUTE = 6,
+        SET_AUDIO_SCENE = 7
     };
 
 public:

@@ -341,6 +341,37 @@ int32_t AudioCapturerSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
+int32_t AudioCapturerSource::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+{
+    MEDIA_INFO_LOG("AudioCapturerSource::SetAudioScene in");
+#ifdef HDI_AUDIO_SCENE_SUPPORTED
+    if (audioCapture_ == nullptr) {
+        MEDIA_ERR_LOG("AudioCapturerSource::SetAudioScene failed audioCapture_ handle is null!");
+        return ERR_INVALID_HANDLE;
+    }
+
+    struct AudioSceneDescriptor scene;
+    scene.scene.id = 0;
+    scene.desc.pins = PIN_IN_MIC;
+    if (audioCapture_->scene.SelectScene == NULL) {
+        MEDIA_ERR_LOG("AudioCapturerSource: Select scene NULL");
+        return ERR_OPERATION_FAILED;
+    }
+
+    int32_t ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
+    if (ret < 0) {
+        MEDIA_ERR_LOG("AudioCapturerSource: Select scene FAILED");
+        return ERR_OPERATION_FAILED;
+    }
+
+    MEDIA_INFO_LOG("AudioCapturerSource::Select audio scene SUCCESS: %{public}d", audioScene);
+    return SUCCESS;
+#else
+    MEDIA_INFO_LOG("AudioCapturerSource::Select audio scene is SUCCESS: %{public}d", audioScene);
+    return SUCCESS;
+#endif
+}
+
 int32_t AudioCapturerSource::Stop(void)
 {
     int32_t ret;

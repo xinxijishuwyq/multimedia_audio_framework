@@ -17,6 +17,8 @@
 #include "audio_system_manager.h"
 #include "media_log.h"
 
+using namespace std;
+
 namespace OHOS {
 namespace AudioStandard {
 int AudioManagerStub::OnRemoteRequest(
@@ -94,6 +96,19 @@ int AudioManagerStub::OnRemoteRequest(
             MEDIA_DEBUG_LOG("IS_MICROPHONE_MUTE AudioManagerStub");
             bool isMute = IsMicrophoneMute();
             reply.WriteBool(isMute);
+            return MEDIA_OK;
+        }
+        case SET_AUDIO_SCENE: {
+            MEDIA_DEBUG_LOG("SET_AUDIO_SCENE AudioManagerStub");
+            int size = data.ReadInt32();
+            list<DeviceType> activeDeviceList;
+            for (int32_t i = 0; i < size; i++) {
+                activeDeviceList.push_back(static_cast<DeviceType>(data.ReadInt32()));
+            }
+
+            AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
+            int32_t result = SetAudioScene(activeDeviceList, audioScene);
+            reply.WriteInt32(result);
             return MEDIA_OK;
         }
         default: {

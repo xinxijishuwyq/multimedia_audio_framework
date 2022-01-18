@@ -15,6 +15,7 @@
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client_test_packages",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer_test_packages",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_renderer_test",
+        "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_voip_test",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:audio_interrupt_test",
         "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer:interrupt_multi_renderer_test",
         "//foundation/multimedia/audio_standard/services:audio_policy_service_packages",

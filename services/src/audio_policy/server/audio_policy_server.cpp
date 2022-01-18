@@ -210,6 +210,16 @@ AudioRingerMode AudioPolicyServer::GetRingerMode()
     return mPolicyService.GetRingerMode();
 }
 
+int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
+{
+    return mPolicyService.SetAudioScene(audioScene);
+}
+
+AudioScene AudioPolicyServer::GetAudioScene()
+{
+    return mPolicyService.GetAudioScene();
+}
+
 int32_t AudioPolicyServer::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(ringerModeMutex_);

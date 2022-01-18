@@ -60,6 +60,10 @@ public:
 
     AudioRingerMode GetRingerMode() override;
 
+    int32_t SetAudioScene(AudioScene audioScene) override;
+
+    AudioScene GetAudioScene() override;
+
     int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;

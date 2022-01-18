@@ -17,6 +17,8 @@
 #include "audio_system_manager.h"
 #include "media_log.h"
 
+using namespace std;
+
 namespace OHOS {
 namespace AudioStandard {
 AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
@@ -86,6 +88,30 @@ bool AudioManagerProxy::IsMicrophoneMute()
 
     bool isMute = reply.ReadBool();
     return isMute;
+}
+
+int32_t AudioManagerProxy::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t size = activeDeviceList.size();
+    data.WriteInt32(size);
+    for (auto i = activeDeviceList.begin(); i != activeDeviceList.end(); ++i) {
+        data.WriteInt32(static_cast<int32_t>(*i));
+    }
+
+    data.WriteInt32(static_cast<int32_t>(audioScene));
+
+    int32_t error = Remote()->SendRequest(SET_AUDIO_SCENE, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("SetAudioScene failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)

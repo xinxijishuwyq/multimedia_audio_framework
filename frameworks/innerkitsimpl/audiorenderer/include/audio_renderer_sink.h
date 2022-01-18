@@ -16,9 +16,11 @@
 #ifndef AUDIO_RENDERER_SINK_H
 #define AUDIO_RENDERER_SINK_H
 
+#include "audio_info.h"
 #include "audio_proxy_manager.h"
 
 #include <cstdio>
+#include <list>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +46,7 @@ public:
     int32_t SetVolume(float left, float right);
     int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
+    int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene);
     static AudioRendererSink *GetInstance(void);
     bool rendererInited_;
 private:

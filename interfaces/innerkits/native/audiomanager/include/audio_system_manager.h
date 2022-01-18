@@ -202,7 +202,6 @@ private:
     static constexpr int32_t CONST_FACTOR = 100;
     int32_t cbClientId_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
-    AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

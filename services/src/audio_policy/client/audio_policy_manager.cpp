@@ -88,6 +88,16 @@ AudioRingerMode AudioPolicyManager::GetRingerMode()
     return g_sProxy->GetRingerMode();
 }
 
+int32_t AudioPolicyManager::SetAudioScene(AudioScene scene)
+{
+    return g_sProxy->SetAudioScene(scene);
+}
+
+AudioScene AudioPolicyManager::GetAudioScene()
+{
+    return g_sProxy->GetAudioScene();
+}
+
 float AudioPolicyManager::GetStreamVolume(AudioStreamType streamType)
 {
     return g_sProxy->GetStreamVolume(streamType);

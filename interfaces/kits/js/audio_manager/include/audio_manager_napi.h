@@ -110,7 +110,7 @@ static const std::map<std::string, AudioScene> audioSceneMap = {
     {"AUDIO_SCENE_DEFAULT", AUDIO_SCENE_DEFAULT},
     {"AUDIO_SCENE_RINGING", AUDIO_SCENE_RINGING},
     {"AUDIO_SCENE_PHONE_CALL", AUDIO_SCENE_PHONE_CALL},
-    {"AUDIO_SCENE_PHONE_CHAT", AUDIO_SCENE_PHONE_CHAT}
+    {"AUDIO_SCENE_VOICE_CHAT", AUDIO_SCENE_PHONE_CHAT}
 };
 } // namespace AudioStandard
 } // namespace OHOS
