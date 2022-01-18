@@ -41,22 +41,71 @@ RingtoneSoundManager::~RingtoneSoundManager()
 int32_t RingtoneSoundManager::SetSystemRingtoneUri(const shared_ptr<Context> &context, const string &uri,
     RingtoneType type)
 {
-    int32_t result = 0;
     MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(type >= RINGTONE_TYPE_DEFAULT && type <= RINGTONE_TYPE_MULTISIM,
                              ERR_INVALID_PARAM, "invalid type");
-
-    CreateDataAbilityHelper(context);
 
     ValuesBucket valuesBucket;
     valuesBucket.PutString(MEDIA_DATA_DB_RINGTONE_URI, uri);
     valuesBucket.PutInt(MEDIA_DATA_DB_RINGTONE_TYPE, type);
 
-    string abilityUri = MEDIALIB_DB_URI;
-    Uri setRingtoneUri(abilityUri + "/" + MEDIA_KVSTOREOPRN + "/" + MEDIA_KVSTOREOPRN_SET_URI);
+    return SetUri(context, valuesBucket, kvstoreOperation[SET_URI_INDEX][RINGTONE_INDEX]);
+}
 
-    CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, ERR_INVALID_PARAM, "Helper is null, failed to update uri");
-    result = abilityHelper_->Insert(setRingtoneUri, valuesBucket);
+int32_t RingtoneSoundManager::SetSystemNotificationUri(const shared_ptr<Context> &context, const string &uri)
+{
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+
+    ValuesBucket valuesBucket;
+    valuesBucket.PutString(MEDIA_DATA_DB_NOTIFICATION_URI, uri);
+
+    return SetUri(context, valuesBucket, kvstoreOperation[SET_URI_INDEX][NOTIFICATION_INDEX]);
+}
+
+int32_t RingtoneSoundManager::SetSystemAlarmUri(const shared_ptr<Context> &context, const string &uri)
+{
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+
+    ValuesBucket valuesBucket;
+    valuesBucket.PutString(MEDIA_DATA_DB_ALARM_URI, uri);
+
+    return SetUri(context, valuesBucket, kvstoreOperation[SET_URI_INDEX][ALARM_INDEX]);
+}
+
+string RingtoneSoundManager::GetSystemRingtoneUri(const shared_ptr<Context> &context, RingtoneType type)
+{
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    CHECK_AND_RETURN_RET_LOG(type >= RINGTONE_TYPE_DEFAULT && type <= RINGTONE_TYPE_MULTISIM, "", "invalid type");
+
+    return FetchUri(context, kvstoreOperation[GET_URI_INDEX][RINGTONE_INDEX] + "/" + to_string(type));
+}
+
+string RingtoneSoundManager::GetSystemNotificationUri(const shared_ptr<Context> &context)
+{
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+
+    return FetchUri(context, kvstoreOperation[GET_URI_INDEX][NOTIFICATION_INDEX]);
+}
+
+string RingtoneSoundManager::GetSystemAlarmUri(const shared_ptr<Context> &context)
+{
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+
+    return FetchUri(context, kvstoreOperation[GET_URI_INDEX][ALARM_INDEX]);
+}
+
+int32_t RingtoneSoundManager::SetUri(const shared_ptr<Context> &context, const ValuesBucket &valueBucket,
+    const std::string &operation)
+{
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s, operation is %{public}s", __func__, operation.c_str());
+
+    CreateDataAbilityHelper(context);
+    CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, ERR_INVALID_PARAM, "Helper is null, failed to set uri");
+
+    Uri uri(MEDIALIB_DB_URI + "/" + MEDIA_KVSTOREOPRN + "/" + operation);
+
+    int32_t result = 0;
+    result = abilityHelper_->Insert(uri, valueBucket);
     if (result != SUCCESS) {
         MEDIA_ERR_LOG("RingtoneSoundManager::insert ringtone uri failed");
     }
@@ -64,48 +113,16 @@ int32_t RingtoneSoundManager::SetSystemRingtoneUri(const shared_ptr<Context> &co
     return result;
 }
 
-string RingtoneSoundManager::GetSystemRingtoneUri(const shared_ptr<Context> &context, RingtoneType type)
+string RingtoneSoundManager::FetchUri(const shared_ptr<Context> &context, const std::string &operation)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
-    string ringtoneUri = "";
-    CHECK_AND_RETURN_RET_LOG(type >= RINGTONE_TYPE_DEFAULT && type <= RINGTONE_TYPE_MULTISIM, "", "invalid type");
+    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s, operation is %{public}s", __func__, operation.c_str());
 
     CreateDataAbilityHelper(context);
-
-    string abilityUri = MEDIALIB_DB_URI;
-    Uri getRingtoneUri(abilityUri + "/"
-                       + MEDIA_KVSTOREOPRN + "/"
-                       + MEDIA_KVSTOREOPRN_GET_URI + "/"
-                       + to_string(type));
-
     CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, "", "Helper is null, failed to retrieve uri");
-    ringtoneUri = abilityHelper_->GetType(getRingtoneUri);
 
-    return ringtoneUri;
-}
+    Uri uri(MEDIALIB_DB_URI + "/" + MEDIA_KVSTOREOPRN + "/" + operation);
 
-int32_t RingtoneSoundManager::SetSystemNotificationUri(const shared_ptr<Context> &context, const string &uri)
-{
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RingtoneSoundManager::SetSystemAlarmUri(const shared_ptr<Context> &context, const string &uri)
-{
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
-    return ERR_NOT_SUPPORTED;
-}
-
-string RingtoneSoundManager::GetSystemNotificationUri(const shared_ptr<Context> &context)
-{
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
-    return "";
-}
-
-string RingtoneSoundManager::GetSystemAlarmUri(const shared_ptr<Context> &context)
-{
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
-    return "";
+    return abilityHelper_->GetType(uri);
 }
 
 void RingtoneSoundManager::CreateDataAbilityHelper(const shared_ptr<Context> &context)
