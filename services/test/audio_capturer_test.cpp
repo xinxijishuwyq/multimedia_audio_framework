@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@
 #include "media_log.h"
 
 using namespace std;
+using namespace std::chrono;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
@@ -27,7 +29,7 @@ namespace AudioTestConstants {
     constexpr int32_t SECOND_ARG_IDX = 2;
     constexpr int32_t THIRD_ARG_IDX = 3;
     constexpr int32_t PAUSE_BUFFER_POSITION = 128;
-    constexpr int32_t PAUSE_READ_TIME_SECONDS = 10;
+    constexpr int32_t PAUSE_READ_TIME_SECONDS = 2;
     constexpr int32_t SUCCESS = 0;
 }
 
@@ -102,13 +104,18 @@ public:
             MEDIA_ERR_LOG("AudioCapturerTest: Failed to allocate buffer");
             return false;
         }
-
+        MEDIA_INFO_LOG("AudioPerf Capturer First Frame Read, BUFFER_LEN = %{public}zu", bufferLen);
         size_t size = 1;
         size_t numBuffersToCapture = 256;
         while (numBuffersToCapture) {
             size_t bytesRead = 0;
             while (bytesRead < bufferLen) {
+                auto start = high_resolution_clock::now();
                 int32_t len = audioCapturer->Read(*(buffer.get() + bytesRead), bufferLen - bytesRead, isBlocking);
+                auto stop = high_resolution_clock::now();
+                auto duration = duration_cast<microseconds>(stop - start);
+                MEDIA_INFO_LOG("AudioPerf Capturer Read in microseconds TimeTaken =%{public}lld",
+                    (long long)duration.count());
                 if (len >= 0) {
                     bytesRead += len;
                 } else {
@@ -137,6 +144,7 @@ public:
                     audioCapturer->Release();
                     break;
                 }
+                MEDIA_INFO_LOG("AudioPerf Capturer Read after stop and start");
             }
         }
 

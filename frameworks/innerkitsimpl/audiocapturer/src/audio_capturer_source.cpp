@@ -151,13 +151,7 @@ int32_t AudioCapturerSource::InitAudioManager()
 
 int32_t AudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
 {
-    // Initialization port information, can fill through mode and other parameters
-    int32_t ret = audioAdapter_->InitAllPorts(audioAdapter_);
-    if (ret != 0) {
-        MEDIA_ERR_LOG("InitAllPorts failed");
-        return ERR_DEVICE_INIT;
-    }
-
+    int32_t ret;
     struct AudioSampleAttributes param;
     // User needs to set
     InitAttrsCapture(param);
@@ -177,8 +171,6 @@ int32_t AudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
         return ERR_NOT_STARTED;
     }
 
-    capturerInited_ = true;
-
     return 0;
 }
 
@@ -189,7 +181,6 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     int32_t index;
     int32_t size = 0;
     struct AudioAdapterDescriptor *descs = nullptr;
-    struct AudioPort capturePort;
 
     if (InitAudioManager() != 0) {
         MEDIA_ERR_LOG("Init audio manager Fail");
@@ -205,7 +196,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
 
     // Get qualified sound card and port
     string adapterNameCase = "internal";
-    index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, capturePort, size);
+    index = SwitchAdapterCapture(descs, adapterNameCase, PORT_IN, audioPort, size);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;
@@ -221,10 +212,15 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-    if (CreateCapture(capturePort) != 0) {
-        MEDIA_ERR_LOG("Create capture failed");
-        return ERR_NOT_STARTED;
+    // Inittialization port information, can fill through mode and other paramters
+    ret = audioAdapter_->InitAllPorts(audioAdapter_);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("InitAllPorts failed");
+        return ERR_DEVICE_INIT;
     }
+
+    capturerInited_ = true;
+
 #ifdef CAPTURE_DUMP
     pfd = fopen(g_audioOutTestFilePath, "wb+");
     if (pfd == nullptr) {
@@ -262,7 +258,11 @@ int32_t AudioCapturerSource::CaptureFrame(char *frame, uint64_t requestBytes, ui
 int32_t AudioCapturerSource::Start(void)
 {
     int32_t ret;
-    if (!started_ && audioCapture_ != nullptr) {
+    if (!started_) {
+        if (CreateCapture(audioPort) != 0) {
+            MEDIA_ERR_LOG("Create capture failed");
+            return ERR_NOT_STARTED;
+        }
         ret = audioCapture_->control.Start((AudioHandle)audioCapture_);
         if (ret < 0) {
             return ERR_NOT_STARTED;
@@ -350,6 +350,11 @@ int32_t AudioCapturerSource::Stop(void)
             MEDIA_ERR_LOG("Stop capture Failed");
             return ERR_OPERATION_FAILED;
         }
+
+        if ((audioCapture_ != nullptr) && (audioAdapter_ != nullptr)) {
+            audioAdapter_->DestroyCapture(audioAdapter_, audioCapture_);
+        }
+        audioCapture_ = nullptr;
     }
     started_ = false;
 

@@ -64,7 +64,7 @@ struct Userdata {
     pa_usec_t block_usec;
     pa_usec_t timestamp;
     AudioSourceAttr attrs;
-    bool IsCapturerInit;
+    bool IsCapturerStarted;
 };
 
 static int pa_capturer_init(struct Userdata *u);
@@ -123,29 +123,29 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newS
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
-        if (newState == PA_SOURCE_RUNNING && !u->IsCapturerInit) {
-            if (pa_capturer_init(u)) {
-                MEDIA_ERR_LOG("HDI capturer reinitialization failed");
+        if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
+            if (AudioCapturerSourceStart()) {
+                MEDIA_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
-            u->IsCapturerInit = true;
-            MEDIA_DEBUG_LOG("Successfully reinitialized HDI renderer");
+            u->IsCapturerStarted = true;
+            MEDIA_DEBUG_LOG("Successfully started HDI capturer");
         }
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
         if (newState == PA_SOURCE_SUSPENDED) {
-            if (u->IsCapturerInit) {
-                pa_capturer_exit();
-                u->IsCapturerInit = false;
-                MEDIA_DEBUG_LOG("Deinitialized HDI capturer");
+            if (u->IsCapturerStarted) {
+                AudioCapturerSourceStop();
+                u->IsCapturerStarted = false;
+                MEDIA_DEBUG_LOG("Stopped HDI capturer");
             }
-        } else if (newState == PA_SOURCE_RUNNING && !u->IsCapturerInit) {
-            MEDIA_DEBUG_LOG("Idle to Running reinitializing HDI capturing device");
-            if (pa_capturer_init(u)) {
-                MEDIA_ERR_LOG("Idle to Running HDI capturer reinitialization failed");
+        } else if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
+            MEDIA_DEBUG_LOG("Idle to Running starting HDI capturing device");
+            if (AudioCapturerSourceStart()) {
+                MEDIA_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
             }
-            u->IsCapturerInit = true;
-            MEDIA_DEBUG_LOG("Idle to RunningsSuccessfully reinitialized HDI renderer");
+            u->IsCapturerStarted = true;
+            MEDIA_DEBUG_LOG("Idle to Running: Successfully reinitialized HDI renderer");
         }
     }
 
@@ -210,7 +210,7 @@ static void thread_func(void *userdata)
     while (true) {
         int ret = 0;
 
-        if (PA_SOURCE_IS_RUNNING(u->source->thread_info.state) && u->IsCapturerInit) {
+        if (PA_SOURCE_IS_RUNNING(u->source->thread_info.state) && u->IsCapturerStarted) {
             pa_memchunk chunk;
             pa_usec_t now;
 
@@ -283,7 +283,7 @@ static int pa_capturer_init(struct Userdata *u)
         goto fail;
     }
 
-    u->IsCapturerInit = true;
+    u->IsCapturerStarted = true;
     return ret;
 
 fail:
@@ -409,7 +409,7 @@ fail:
     pa_xfree(thread_name);
 
     if (u) {
-        if (u->IsCapturerInit) {
+        if (u->IsCapturerStarted) {
             pa_capturer_exit();
         }
         userdata_free(u);
