@@ -76,6 +76,7 @@ private:
     struct AudioProxyManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioCapture *audioCapture_;
+    struct AudioPort audioPort;
 
     void *handle_;
 
