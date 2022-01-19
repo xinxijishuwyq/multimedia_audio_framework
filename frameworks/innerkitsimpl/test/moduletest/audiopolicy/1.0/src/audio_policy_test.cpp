@@ -162,6 +162,15 @@ const PolicyParam DEVICES_PARAMS[] = {
         .deviceRole = OUTPUT_DEVICE
     }
 };
+
+const PolicyParam AUDIO_SCENE_PARAMS[] = {
+    {
+        .audioScene = AUDIO_SCENE_DEFAULT
+    },
+    {
+        .audioScene = AUDIO_SCENE_PHONE_CHAT
+    }
+};
 } // namespace
 
 /*
@@ -507,6 +516,53 @@ INSTANTIATE_TEST_CASE_P(
     GetDevices,
     AudioPolicyGetDevicesTest,
     ValuesIn(DEVICES_PARAMS));
+
+/*
+ * Check set audio scene
+ *
+ */
+class AudioPolicySetAudioSceneTest : public AudioPolicyTest {};
+
+HWTEST_P(AudioPolicySetAudioSceneTest, SetAudioScene, TestSize.Level1)
+{
+    PolicyParam params = GetParam();
+    AudioScene scene = params.audioScene;
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioScene(scene);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    SetAudioScene,
+    AudioPolicySetAudioSceneTest,
+    ValuesIn(AUDIO_SCENE_PARAMS));
+
+/*
+ * Check get audio scene
+ *
+ */
+class AudioPolicyGetAudioSceneTest : public AudioPolicyTest {};
+
+HWTEST_P(AudioPolicyGetAudioSceneTest, GetAudioScene, TestSize.Level1)
+{
+    PolicyParam params = GetParam();
+    AudioScene scene = params.audioScene;
+    EXPECT_EQ(AudioSystemManager::GetInstance()->GetAudioScene(), AUDIO_SCENE_DEFAULT);
+
+    int32_t ret = AudioSystemManager::GetInstance()->SetAudioScene(scene);
+    EXPECT_EQ(SUCCESS, ret);
+
+    EXPECT_EQ(AudioSystemManager::GetInstance()->GetAudioScene(), scene);
+
+    ret = AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    GetAudioScene,
+    AudioPolicyGetAudioSceneTest,
+    ValuesIn(AUDIO_SCENE_PARAMS));
 } // V1_0
 } // AudioStandard
 } // OHOS

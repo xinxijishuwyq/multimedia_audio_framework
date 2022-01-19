@@ -34,6 +34,7 @@ struct PolicyParam {
     DeviceType deviceType;
     DeviceFlag deviceFlag;
     DeviceRole deviceRole;
+    AudioScene audioScene;
     bool active;
     bool mute;
     string key;

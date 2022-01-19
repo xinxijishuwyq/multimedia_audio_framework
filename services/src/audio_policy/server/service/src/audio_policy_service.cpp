@@ -234,6 +234,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
 AudioScene AudioPolicyService::GetAudioScene() const
 {
+    MEDIA_INFO_LOG("GetAudioScene return value: %{public}d", mAudioScene);
     return mAudioScene;
 }
 
