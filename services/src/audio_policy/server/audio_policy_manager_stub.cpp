@@ -53,6 +53,19 @@ void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &reply)
     reply.WriteInt32(static_cast<int>(rMode));
 }
 
+void AudioPolicyManagerStub::SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
+    int32_t result = SetAudioScene(audioScene);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
+{
+    AudioScene audioScene = GetAudioScene();
+    reply.WriteInt32(static_cast<int>(audioScene));
+}
+
 void AudioPolicyManagerStub::GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
@@ -188,6 +201,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_RINGER_MODE:
             GetRingerModeInternal(reply);
+            break;
+
+        case SET_AUDIO_SCENE:
+            SetAudioSceneInternal(data, reply);
+            break;
+
+        case GET_AUDIO_SCENE:
+            GetAudioSceneInternal(reply);
             break;
 
         case GET_STREAM_VOLUME:

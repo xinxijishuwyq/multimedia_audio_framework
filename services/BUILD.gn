@@ -31,6 +31,7 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
   ]
@@ -52,6 +53,7 @@ ohos_shared_library("audio_service") {
 
   deps = [
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer:audio_capturer_source",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer:audio_renderer_sink",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/pulseaudio/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiomanager:audio_client",
     "//utils/native/base:utils",
@@ -134,6 +136,7 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_ringermode_update_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_volume_key_event_callback_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/config/audio_focus_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/config/xml_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/manager/audio_adapter_manager.cpp",

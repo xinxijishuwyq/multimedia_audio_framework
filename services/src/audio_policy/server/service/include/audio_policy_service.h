@@ -69,6 +69,10 @@ public:
     }
     AudioRingerMode GetRingerMode() const;
 
+    int32_t SetAudioScene(AudioScene audioScene);
+
+    AudioScene GetAudioScene() const;
+
     // Parser callbacks
     void OnAudioPortAvailable(std::unique_ptr<AudioPortInfo> portInfo);
 
@@ -112,6 +116,7 @@ private:
     std::list<InternalDeviceType> mActiveInputDevices;
     std::string GetPortName(InternalDeviceType deviceType);
     bool interruptEnabled_ = true;
+    AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
     AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];
 };
 } // namespace AudioStandard

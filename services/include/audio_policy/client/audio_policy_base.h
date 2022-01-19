@@ -48,6 +48,10 @@ public:
 
     virtual AudioRingerMode GetRingerMode() = 0;
 
+    virtual int32_t SetAudioScene(AudioScene scene) = 0;
+
+    virtual AudioScene GetAudioScene() = 0;
+
     virtual int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;

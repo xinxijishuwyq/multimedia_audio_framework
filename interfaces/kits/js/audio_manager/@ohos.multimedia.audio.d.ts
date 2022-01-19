@@ -425,7 +425,7 @@ declare namespace audio {
      * Voice chat audio scene
      * @since 8
      */
-    AUDIO_SCENE_PHONE_CHAT,
+    AUDIO_SCENE_VOICE_CHAT
   }
 
   /**

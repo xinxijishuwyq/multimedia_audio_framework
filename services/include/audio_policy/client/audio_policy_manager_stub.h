@@ -30,6 +30,8 @@ private:
     void SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
     void GetRingerModeInternal(MessageParcel &data);
+    void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioSceneInternal(MessageParcel &data);
     void GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);

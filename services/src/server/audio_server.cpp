@@ -14,6 +14,8 @@
  */
 
 #include "audio_capturer_source.h"
+#include "audio_errors.h"
+#include "audio_renderer_sink.h"
 #include "iservice_registry.h"
 #include "media_log.h"
 #include "system_ability_definition.h"
@@ -25,6 +27,8 @@ extern "C" {
     extern int ohos_pa_main(int argc, char *argv[]);
 }
 #endif
+
+using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -136,6 +140,26 @@ bool AudioServer::IsMicrophoneMute()
     }
 
     return isMute;
+}
+
+int32_t AudioServer::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+{
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (audioCapturerSourceInstance->capturerInited_ == false) {
+        MEDIA_WARNING_LOG("Capturer is not initialized.");
+    } else {
+        audioCapturerSourceInstance->SetAudioScene(activeDeviceList, audioScene);
+    }
+
+    if (audioRendererSinkInstance->rendererInited_ == false) {
+        MEDIA_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioScene(activeDeviceList, audioScene);
+    }
+
+    return SUCCESS;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)

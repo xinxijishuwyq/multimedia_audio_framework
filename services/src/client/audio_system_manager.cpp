@@ -82,6 +82,17 @@ AudioRingerMode AudioSystemManager::GetRingerMode() const
     return (AudioPolicyManager::GetInstance().GetRingerMode());
 }
 
+int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
+{
+    MEDIA_DEBUG_LOG("SetAudioScene audioScene_=%{public}d done", scene);
+    return AudioPolicyManager::GetInstance().SetAudioScene(scene);
+}
+
+AudioScene AudioSystemManager::GetAudioScene() const
+{
+    return AudioPolicyManager::GetInstance().GetAudioScene();
+}
+
 int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool flag) const
 {
     switch (deviceType) {
@@ -291,19 +302,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
     const
 {
     return g_sProxy->GetDevices(deviceFlag);
-}
-
-int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
-{
-    audioScene_ = scene;
-    MEDIA_DEBUG_LOG("SetAudioScene audioScene_=%{public}d done", audioScene_);
-    return SUCCESS;
-}
-
-AudioScene AudioSystemManager::GetAudioScene() const
-{
-    MEDIA_DEBUG_LOG("GetAudioScene audioScene_=%{public}d done", audioScene_);
-    return audioScene_;
 }
 
 /**

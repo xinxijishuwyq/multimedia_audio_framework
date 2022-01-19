@@ -77,6 +77,35 @@ AudioRingerMode AudioPolicyProxy::GetRingerMode()
     return static_cast<AudioRingerMode>(reply.ReadInt32());
 }
 
+int32_t AudioPolicyProxy::SetAudioScene(AudioScene scene)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInt32(static_cast<int>(scene));
+
+    int32_t error = Remote()->SendRequest(SET_AUDIO_SCENE, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("set audio scene failed, error: %d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+AudioScene AudioPolicyProxy::GetAudioScene()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t error = Remote()->SendRequest(GET_AUDIO_SCENE, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("get audio scene failed, error: %d", error);
+    }
+    return static_cast<AudioScene>(reply.ReadInt32());
+}
+
 float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
 {
     MessageParcel data;

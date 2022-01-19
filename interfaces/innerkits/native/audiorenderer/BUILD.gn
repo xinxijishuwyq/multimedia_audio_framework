@@ -73,6 +73,46 @@ ohos_executable("audio_renderer_test") {
   subsystem_name = "multimedia"
 }
 
+ohos_executable("audio_voip_test") {
+  install_enable = false
+
+  sources = [
+    "//foundation/multimedia/audio_standard/services/test/audio_voip_test.cpp",
+  ]
+
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiostream/include",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/services/include",
+    "//foundation/multimedia/audio_standard/services/include/client",
+    "//utils/native/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [
+    ":audio_renderer",
+    "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audiocapturer:audio_capturer",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
 ohos_executable("audio_interrupt_test") {
   install_enable = false
 
