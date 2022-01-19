@@ -28,15 +28,15 @@ ohos_shared_library("audio_ringtone_client") {
 
   deps = [
     "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
+    "//foundation/aafwk/standard/frameworks/kits/appkit:appkit_native",
     "//foundation/aafwk/standard/interfaces/innerkits/want:want",
-    "//foundation/appexecfwk/standard/kits:appkit_native",
     "//foundation/distributedschedule/dmsfwk/interfaces/innerkits/uri:zuri",
     "//foundation/graphic/standard/frameworks/surface:surface",
     "//foundation/multimedia/media_standard/interfaces/innerkits/native/media:media_client",
   ]
 
   external_deps = [
-    "aafwk_standard:ability_manager",
+    "ability_runtime:ability_manager",
     "appexecfwk_standard:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
     "native_appdatamgr:native_dataability",
