@@ -262,21 +262,6 @@ static int pa_capturer_init(struct Userdata *u)
         return ret;
     }
 
-#ifndef DEVICE_BALTIMORE
-    ret = AudioCapturerSourceSetVolume(DEFAULT_LEFT_VOLUME, DEFAULT_RIGHT_VOLUME);
-    if (ret != 0) {
-        MEDIA_ERR_LOG("audio capturer set volume failed!");
-        goto fail;
-    }
-
-    bool muteState = AudioCapturerSourceIsMuteRequired();
-    ret = AudioCapturerSourceSetMute(muteState);
-    if (ret != 0) {
-        MEDIA_ERR_LOG("audio capturer set muteState: %d failed!", muteState);
-        goto fail;
-    }
-#endif // DEVICE_BALTIMORE
-
     ret = AudioCapturerSourceStart();
     if (ret != 0) {
         MEDIA_ERR_LOG("Audio capturer start failed!");
