@@ -165,11 +165,9 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
         return ERR_INVALID_PARAM;
     }
 
-#ifdef LISTENER_STUB_MUTEX
     // Need to lock member variable listenerStub_ as SetAudioInterruptCallback
     // can be called from different threads in multi renderer usage
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
-#endif // LISTENER_STUB_MUTEX
     listenerStub_ = new(std::nothrow) AudioPolicyManagerListenerStub();
     if (listenerStub_ == nullptr || g_sProxy == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManager: object null");
@@ -182,9 +180,7 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
         MEDIA_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
         return ERROR;
     }
-#ifdef LISTENER_STUB_MUTEX
     lock.unlock(); // unlock once it is converted into IRemoteObject
-#endif // LISTENER_STUB_MUTEX
 
     return g_sProxy->SetAudioInterruptCallback(sessionID, object);
 }

@@ -89,9 +89,7 @@ private:
 
     void Init();
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
-#ifdef LISTENER_STUB_MUTEX
     std::mutex listenerStubMutex_;
-#endif // LISTENER_STUB_MUTEX
 
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback_ = nullptr;
     sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;

@@ -75,8 +75,14 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
     audioInterrupt_.sessionID = sessionID_;
 
-    audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackImpl>(audioStream_, callback_, audioInterrupt_);
-    MEDIA_INFO_LOG("AudioRendererPrivate::SetParams SetAudioInterruptCallback");
+    if (audioInterruptCallback_ == nullptr) {
+        audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackImpl>(audioStream_, audioInterrupt_);
+        if (audioInterruptCallback_ == nullptr) {
+            MEDIA_ERR_LOG("AudioRendererPrivate::Failed to allocate memory for audioInterruptCallback_");
+            return ERROR;
+        }
+    }
+
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
 
@@ -97,8 +103,8 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
 int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback)
 {
     RendererState state = GetStatus();
-    if (state != RENDERER_NEW) {
-        MEDIA_DEBUG_LOG("AudioRendererPrivate::SetRendererCallback State is not NEW, do it before state is PREPARED");
+    if (state != RENDERER_PREPARED) {
+        MEDIA_DEBUG_LOG("AudioRendererPrivate::SetRendererCallback State is not PREPARED to register callback");
         return ERR_ILLEGAL_STATE;
     }
     if (callback == nullptr) {
@@ -107,6 +113,11 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
     }
 
     callback_ = callback;
+
+    std::shared_ptr<AudioInterruptCallbackImpl> cbInterrupt =
+        std::static_pointer_cast<AudioInterruptCallbackImpl>(audioInterruptCallback_);
+    cbInterrupt->SaveCallback(callback);
+
     return SUCCESS;
 }
 
@@ -226,8 +237,8 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
 }
 
 AudioInterruptCallbackImpl::AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
-    const std::weak_ptr<AudioRendererCallback> &callback, const AudioInterrupt &audioInterrupt)
-    : audioStream_(audioStream), callback_(callback), audioInterrupt_(audioInterrupt)
+    const AudioInterrupt &audioInterrupt)
+    : audioStream_(audioStream), audioInterrupt_(audioInterrupt)
 {
     MEDIA_INFO_LOG("AudioInterruptCallbackImpl constructor");
 }
@@ -237,6 +248,10 @@ AudioInterruptCallbackImpl::~AudioInterruptCallbackImpl()
     MEDIA_DEBUG_LOG("AudioInterruptCallbackImpl: instance destroy");
 }
 
+void AudioInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
+{
+    callback_ = callback;
+}
 
 void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {

@@ -63,10 +63,11 @@ private:
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {
 public:
     explicit AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
-        const std::weak_ptr<AudioRendererCallback> &callback, const AudioInterrupt &audioInterrupt);
+        const AudioInterrupt &audioInterrupt);
     virtual ~AudioInterruptCallbackImpl();
 
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEvent &interruptEvent);

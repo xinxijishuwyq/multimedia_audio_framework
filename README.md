@@ -66,7 +66,19 @@ You can use APIs provided in this repository to convert audio data into audible 
     AudioStreamType streamType = STREAM_MUSIC; // example stream type
     std::unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
     ```
-2. (Optional) Inorder to listen to Audio Interrupt events, it would be required to Register to **RendererCallbacks** using audioRenderer->**SetRendererCallback**
+2. (Optional) Static APIs **GetSupportedFormats**(), **GetSupportedChannels**(), **GetSupportedEncodingTypes**(), **GetSupportedSamplingRates**() can be used to get the supported values of the params.
+3. To Prepare the device, call **SetParams** on the instance.
+    ```
+    AudioRendererParams rendererParams;
+    rendererParams.sampleFormat = SAMPLE_S16LE;
+    rendererParams.sampleRate = SAMPLE_RATE_44100;
+    rendererParams.channelCount = STEREO;
+    rendererParams.encodingType = ENCODING_PCM;
+
+    audioRenderer->SetParams(rendererParams);
+    ```
+4. (Optional) use audioRenderer->**GetParams**(rendererParams) to validate SetParams
+5. Inorder to listen to Audio Interrupt events, it would be required to Register to **RendererCallbacks** using audioRenderer->**SetRendererCallback**
     ```
     class AudioRendererCallbackImpl : public AudioRendererCallback {
         void OnInterrupt(const InterruptEvent &interruptEvent) override
@@ -102,18 +114,6 @@ You can use APIs provided in this repository to convert audio data into audible 
 
    This will have information on the audio interrupt forced action taken by the Audio framework and also the action hints to be handled by the application. Refer to **audio_renderer.h** and **audio_info.h** for more details.
 
-3. (Optional) Static APIs **GetSupportedFormats**(), **GetSupportedChannels**(), **GetSupportedEncodingTypes**(), **GetSupportedSamplingRates**() can be used to get the supported values of the params.
-4. To Prepare the device, call **SetParams** on the instance.
-    ```
-    AudioRendererParams rendererParams;
-    rendererParams.sampleFormat = SAMPLE_S16LE;
-    rendererParams.sampleRate = SAMPLE_RATE_44100;
-    rendererParams.channelCount = STEREO;
-    rendererParams.encodingType = ENCODING_PCM;
-
-    audioRenderer->SetParams(rendererParams);
-    ```
-5. (Optional) use audioRenderer->**GetParams**(rendererParams) to validate SetParams
 6. Call audioRenderer->**Start**() function on the AudioRenderer instance to start the playback task.
 7. Get the buffer length to be written, using **GetBufferSize** API.
     ```

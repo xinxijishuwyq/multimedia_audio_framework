@@ -189,19 +189,17 @@ bool AudioInterruptTest::InitRender() const
 int32_t AudioInterruptTest::TestPlayback(const AudioStreamType &streamType)
 {
     MEDIA_INFO_LOG("AudioInterruptTest: TestPlayback start ");
-
     audioRenderer_ = AudioRenderer::Create(streamType);
+    if (!InitRender()) {
+        fclose(wavFile_);
+        return -1;
+    }
 
     std::shared_ptr<AudioRendererCallback> audioRendererCB = GetPtr();
     int32_t ret = audioRenderer_->SetRendererCallback(audioRendererCB);
     MEDIA_DEBUG_LOG("AudioInterruptTest: SetRendererCallback result : %{public}d", ret);
     if (ret) {
         MEDIA_ERR_LOG("AudioInterruptTest: SetRendererCallback failed : %{public}d", ret);
-        fclose(wavFile_);
-        return -1;
-    }
-
-    if (!InitRender()) {
         fclose(wavFile_);
         return -1;
     }
