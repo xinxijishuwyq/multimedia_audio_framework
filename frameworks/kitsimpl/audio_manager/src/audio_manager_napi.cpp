@@ -1064,8 +1064,12 @@ napi_value AudioManagerNapi::SetAudioScene(napi_env env, napi_callback_info info
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
-                context->status =
-                    context->objectInfo->audioMngr_->SetAudioScene(static_cast<AudioScene>(context->scene));
+                if ((context->scene < AUDIO_SCENE_DEFAULT) || (context->scene > AUDIO_SCENE_PHONE_CHAT)) {
+                    context->status = ERROR;
+                } else {
+                    context->status =
+                        context->objectInfo->audioMngr_->SetAudioScene(static_cast<AudioScene>(context->scene));
+                }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
