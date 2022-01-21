@@ -16,11 +16,11 @@
 <info>
     <process>audio_policy</process>
     <loadlibs>
-        <libpath>/system/lib/libaudio_policy_service.z.so</libpath>
+        <libpath>libaudio_policy_service.z.so</libpath>
     </loadlibs>
     <systemability>
        <name>3009</name>
-       <libpath>/system/lib/libaudio_policy_service.z.so</libpath>
+       <libpath>libaudio_policy_service.z.so</libpath>
        <run-on-create>true</run-on-create>
        <distributed>false</distributed>
        <dump-level>1</dump-level>

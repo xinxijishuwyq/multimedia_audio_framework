@@ -127,7 +127,11 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, string adapte
 int32_t AudioCapturerSource::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
+#ifdef __aarch64__
+    char resolvedPath[100] = "/system/lib64/libhdi_audio_client.z.so";
+#else
     char resolvedPath[100] = "/system/lib/libhdi_audio_client.z.so";
+#endif
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
