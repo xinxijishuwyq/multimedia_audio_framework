@@ -36,17 +36,29 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t SIM_COUNT = 2;
+const int32_t OPERATION_TYPE = 2;
+const int32_t URI_TYPE = 3;
+const int32_t SET_URI_INDEX = 0;
+const int32_t GET_URI_INDEX = 1;
+const int32_t RINGTONE_INDEX = 0;
+const int32_t NOTIFICATION_INDEX = 1;
+const int32_t ALARM_INDEX = 2;
 const float HIGH_VOL = 1.0f;
 const float LOW_VOL = 0.0f;
 const std::string MEDIALIB_DB_URI = "dataability:///com.ohos.medialibrary.MediaLibraryDataAbility";
 const std::string MEDIA_DATA_DB_TITLE = "title";
 const std::string MEDIA_DATA_DB_FILE_PATH = "path";
-const std::string MEDIA_DATA_DB_RINGTONE_URI = "ringtone_uri";
-const std::string MEDIA_DATA_DB_RINGTONE_TYPE = "ringtone_type";
 const std::string MEDIA_KVSTOREOPRN = "kvstore_operation";
-const std::string MEDIA_KVSTOREOPRN_SET_URI = "set_ringtone_uri";
-const std::string MEDIA_KVSTOREOPRN_GET_URI = "get_ringtone_uri";
+const std::string MEDIA_DATA_DB_RINGTONE_TYPE = "ringtone_type";
+const std::string MEDIA_DATA_DB_ALARM_URI = "alarm_uri";
+const std::string MEDIA_DATA_DB_RINGTONE_URI = "ringtone_uri";
+const std::string MEDIA_DATA_DB_NOTIFICATION_URI = "notification_uri";
 constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "RingtoneSoundManager"};
+
+std::string kvstoreOperation[OPERATION_TYPE][URI_TYPE] = {
+    {"set_ringtone_uri", "set_notification_uri", "set_alarm_uri"},
+    {"get_ringtone_uri", "get_notification_uri", "get_alarm_uri"},
+};
 }
 
 class RingtoneSoundManager : public IRingtoneSoundManager {
@@ -67,6 +79,10 @@ public:
 
 private:
     void CreateDataAbilityHelper(const std::shared_ptr<AppExecFwk::Context> &ctx);
+    std::string FetchUri(const std::shared_ptr<AppExecFwk::Context> &context, const std::string &operation);
+    int32_t SetUri(const std::shared_ptr<AppExecFwk::Context> &context, const NativeRdb::ValuesBucket &valueBucket,
+        const std::string &operation);
+
     std::array<std::string, SIM_COUNT> ringtoneUri_ = {};
     std::array<std::shared_ptr<IRingtonePlayer>, SIM_COUNT> ringtonePlayer_ = {nullptr};
     std::shared_ptr<AppExecFwk::DataAbilityHelper> abilityHelper_ = nullptr;

@@ -277,51 +277,54 @@ napi_value SystemSoundManagerNapi::SetSystemRingtoneUri(napi_env env, napi_callb
     NAPI_ASSERT(env, (argc == ARGS_THREE || argc == ARGS_FOUR), "requires 4 parameters maximum");
     std::unique_ptr<SystemSoundManagerAsyncContext> asyncContext = std::make_unique<SystemSoundManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM1; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM1 && valueType == napi_string) {
-                napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
-                asyncContext->uri = std::string(buffer);
-            } else if (i == PARAM2 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->ringtoneType);
-            } else if (i == PARAM3 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                if ((i == PARAM1) && (valueType == napi_null)) {
-                    HiLog::Error(LABEL, "string value type is null");
-                    continue;
-                }
-                NAPI_ASSERT(env, false, "type mismatch");
-            }
-        }
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        HiLog::Error(LABEL, "Failed to unwrap object");
+        return result;
+    }
 
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        }
-
-        napi_create_string_utf8(env, "SetSystemRingtoneUri", NAPI_AUTO_LENGTH, &resource);
-        status = napi_create_async_work(env, nullptr, resource,
-            [](napi_env env, void* data) {
-                SystemSoundManagerAsyncContext *context = static_cast<SystemSoundManagerAsyncContext *>(data);
-                if (context->uri.empty()) {
-                    context->status = ERROR;
-                } else {
-                    context->status = context->objectInfo->sysSoundMgrClient_->SetSystemRingtoneUri(
-                        context->objectInfo->abilityContext_, context->uri,
-                        static_cast<RingtoneType>(context->ringtoneType));
-                }
-            },
-            SetSysRngUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            HiLog::Error(LABEL, "Failed to get create async work");
-            napi_get_undefined(env, &result);
+    for (size_t i = PARAM1; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM1 && valueType == napi_string) {
+            napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
+            asyncContext->uri = std::string(buffer);
+        } else if (i == PARAM2 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->ringtoneType);
+        } else if (i == PARAM3 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
         } else {
-            napi_queue_async_work(env, asyncContext->work);
-            asyncContext.release();
+            if ((i == PARAM1) && (valueType == napi_null)) {
+                HiLog::Error(LABEL, "string value type is null");
+                continue;
+            }
+            NAPI_ASSERT(env, false, "type mismatch");
         }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    }
+
+    napi_create_string_utf8(env, "SetSystemRingtoneUri", NAPI_AUTO_LENGTH, &resource);
+    status = napi_create_async_work(env, nullptr, resource,
+        [](napi_env env, void* data) {
+            SystemSoundManagerAsyncContext *context = static_cast<SystemSoundManagerAsyncContext *>(data);
+            if (context->uri.empty()) {
+                context->status = ERROR;
+            } else {
+                context->status = context->objectInfo->sysSoundMgrClient_->SetSystemRingtoneUri(
+                    context->objectInfo->abilityContext_, context->uri,
+                    static_cast<RingtoneType>(context->ringtoneType));
+            }
+        },
+        SetSysRngUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        HiLog::Error(LABEL, "Failed to get create async work");
+        napi_get_undefined(env, &result);
+    } else {
+        napi_queue_async_work(env, asyncContext->work);
+        asyncContext.release();
     }
 
     return result;
@@ -590,41 +593,51 @@ napi_value SystemSoundManagerNapi::SetSystemNotificationUri(napi_env env, napi_c
     std::unique_ptr<SystemSoundManagerAsyncContext> asyncContext
         = std::make_unique<SystemSoundManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM1; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM1 && valueType == napi_string) {
-                napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
-                asyncContext->uri = std::string(buffer);
-            } else if (i == PARAM2 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                NAPI_ASSERT(env, false, "type mismatch");
-            }
-        }
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        HiLog::Error(LABEL, "Failed to unwrap object");
+        return result;
+    }
 
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        }
-
-        napi_create_string_utf8(env, "SetSystemNotificationUri", NAPI_AUTO_LENGTH, &resource);
-        status = napi_create_async_work(env, nullptr, resource,
-            [](napi_env env, void* data) {
-                SystemSoundManagerAsyncContext *context
-                    = static_cast<SystemSoundManagerAsyncContext *>(data);
-                context->status
-                    = context->objectInfo->sysSoundMgrClient_->SetSystemNotificationUri(nullptr, context->uri);
-            },
-            SetSysNotUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            HiLog::Error(LABEL, "Failed to get create async work");
-            napi_get_undefined(env, &result);
+    for (size_t i = PARAM1; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM1 && valueType == napi_string) {
+            napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
+            asyncContext->uri = std::string(buffer);
+        } else if (i == PARAM2 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
         } else {
-            napi_queue_async_work(env, asyncContext->work);
-            asyncContext.release();
+            if ((i == PARAM1) && (valueType == napi_null)) {
+                HiLog::Error(LABEL, "string value type is null");
+                continue;
+            }
+            NAPI_ASSERT(env, false, "type mismatch");
         }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    }
+
+    napi_create_string_utf8(env, "SetSystemNotificationUri", NAPI_AUTO_LENGTH, &resource);
+    status = napi_create_async_work(env, nullptr, resource,
+        [](napi_env env, void* data) {
+            SystemSoundManagerAsyncContext *context = static_cast<SystemSoundManagerAsyncContext *>(data);
+            if (context->uri.empty()) {
+                context->status = ERROR;
+            } else {
+                context->status = context->objectInfo->sysSoundMgrClient_->SetSystemNotificationUri(
+                    context->objectInfo->abilityContext_, context->uri);
+            }
+        },
+        SetSysNotUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        HiLog::Error(LABEL, "Failed to get create async work");
+        napi_get_undefined(env, &result);
+    } else {
+        napi_queue_async_work(env, asyncContext->work);
+        asyncContext.release();
     }
 
     return result;
@@ -691,6 +704,8 @@ napi_value SystemSoundManagerNapi::GetSystemNotificationUri(napi_env env, napi_c
             napi_typeof(env, argv[PARAM1], &valueType);
             if (valueType == napi_function) {
                 napi_create_reference(env, argv[PARAM1], refCount, &asyncContext->callbackRef);
+            } else {
+                NAPI_ASSERT(env, false, "type mismatch");
             }
         } else {
             napi_create_promise(env, &asyncContext->deferred, &result);
@@ -702,7 +717,7 @@ napi_value SystemSoundManagerNapi::GetSystemNotificationUri(napi_env env, napi_c
                 SystemSoundManagerAsyncContext *context
                     = static_cast<SystemSoundManagerAsyncContext *>(data);
                 context->uri = context->objectInfo->sysSoundMgrClient_->GetSystemNotificationUri(
-                    nullptr);
+                    context->objectInfo->abilityContext_);
                 context->status = SUCCESS;
             },
             GetSysNotUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -774,41 +789,51 @@ napi_value SystemSoundManagerNapi::SetSystemAlarmUri(napi_env env, napi_callback
     std::unique_ptr<SystemSoundManagerAsyncContext> asyncContext
         = std::make_unique<SystemSoundManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM1; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM1 && valueType == napi_string) {
-                napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
-                asyncContext->uri = std::string(buffer);
-            } else if (i == PARAM2 && valueType == napi_function) {
-                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                break;
-            } else {
-                NAPI_ASSERT(env, false, "type mismatch");
-            }
-        }
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        HiLog::Error(LABEL, "Failed to unwrap object");
+        return result;
+    }
 
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        }
-
-        napi_create_string_utf8(env, "SetSystemAlarmUri", NAPI_AUTO_LENGTH, &resource);
-        status = napi_create_async_work(env, nullptr, resource,
-            [](napi_env env, void* data) {
-                SystemSoundManagerAsyncContext *context
-                    = static_cast<SystemSoundManagerAsyncContext *>(data);
-                context->status = context->objectInfo->sysSoundMgrClient_->SetSystemAlarmUri(nullptr,
-                                                                                             context->uri);
-            },
-            SetSysAlarmUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            HiLog::Error(LABEL, "Failed to get create async work");
-            napi_get_undefined(env, &result);
+    for (size_t i = PARAM1; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM1 && valueType == napi_string) {
+            napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
+            asyncContext->uri = std::string(buffer);
+        } else if (i == PARAM2 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
         } else {
-            napi_queue_async_work(env, asyncContext->work);
-            asyncContext.release();
+            if ((i == PARAM1) && (valueType == napi_null)) {
+                HiLog::Error(LABEL, "string value type is null");
+                continue;
+            }
+            NAPI_ASSERT(env, false, "type mismatch");
         }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    }
+
+    napi_create_string_utf8(env, "SetSystemAlarmUri", NAPI_AUTO_LENGTH, &resource);
+    status = napi_create_async_work(env, nullptr, resource,
+        [](napi_env env, void* data) {
+            SystemSoundManagerAsyncContext *context = static_cast<SystemSoundManagerAsyncContext *>(data);
+            if (context->uri.empty()) {
+                context->status = ERROR;
+            } else {
+                context->status = context->objectInfo->sysSoundMgrClient_->SetSystemAlarmUri(
+                    context->objectInfo->abilityContext_, context->uri);
+            }
+        },
+        SetSysAlarmUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        HiLog::Error(LABEL, "Failed to get create async work");
+        napi_get_undefined(env, &result);
+    } else {
+        napi_queue_async_work(env, asyncContext->work);
+        asyncContext.release();
     }
 
     return result;
@@ -875,6 +900,8 @@ napi_value SystemSoundManagerNapi::GetSystemAlarmUri(napi_env env, napi_callback
             napi_typeof(env, argv[PARAM1], &valueType);
             if (valueType == napi_function) {
                 napi_create_reference(env, argv[PARAM1], refCount, &asyncContext->callbackRef);
+            } else {
+                NAPI_ASSERT(env, false, "type mismatch");
             }
         } else {
             napi_create_promise(env, &asyncContext->deferred, &result);
@@ -885,7 +912,8 @@ napi_value SystemSoundManagerNapi::GetSystemAlarmUri(napi_env env, napi_callback
             [](napi_env env, void* data) {
                 SystemSoundManagerAsyncContext *context
                     = static_cast<SystemSoundManagerAsyncContext *>(data);
-                context->uri = context->objectInfo->sysSoundMgrClient_->GetSystemAlarmUri(nullptr);
+                context->uri = context->objectInfo->sysSoundMgrClient_->GetSystemAlarmUri(
+                    context->objectInfo->abilityContext_);
                 context->status = SUCCESS;
             },
             GetSysAlarmUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);

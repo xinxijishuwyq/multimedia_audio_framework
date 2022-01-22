@@ -17,6 +17,8 @@ ohos_shared_library("audio_ringtone_client") {
   install_enable = true
   sources = [ "//foundation/multimedia/audio_standard/services/src/client/audio_ringtone_manager.cpp" ]
 
+  public_configs = [ ":ringtone_external_library_config" ]
+
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioringtone/include",
     "//foundation/multimedia/audio_standard/frameworks/innerkitsimpl/ringtoneplayer/include",
@@ -50,4 +52,8 @@ ohos_shared_library("audio_ringtone_client") {
 
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_standard"
+}
+
+config("ringtone_external_library_config") {
+  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/innerkits/native/audioringtone/include" ]
 }
