@@ -16,11 +16,11 @@
 <info>
     <process>pulseaudio</process>
     <loadlibs>
-        <libpath>/system/lib/libaudio_service.z.so</libpath>
+        <libpath>libaudio_service.z.so</libpath>
     </loadlibs>
     <systemability>
        <name>3001</name>
-       <libpath>/system/lib/libaudio_service.z.so</libpath>
+       <libpath>libaudio_service.z.so</libpath>
        <run-on-create>true</run-on-create>
        <distributed>false</distributed>
        <dump-level>1</dump-level>
