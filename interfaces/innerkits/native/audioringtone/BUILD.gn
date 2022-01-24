@@ -39,7 +39,7 @@ ohos_shared_library("audio_ringtone_client") {
 
   external_deps = [
     "ability_runtime:ability_manager",
-    "appexecfwk_standard:appexecfwk_base",
+    "bundle_framework:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
     "native_appdatamgr:native_dataability",
     "native_appdatamgr:native_rdb",
