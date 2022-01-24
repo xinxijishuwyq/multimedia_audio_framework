@@ -16,7 +16,7 @@
 #include "audio_ringtone_manager.h"
 
 using namespace std;
-using namespace OHOS::AppExecFwk;
+using namespace OHOS::AbilityRuntime;
 using namespace OHOS::NativeRdb;
 using namespace OHOS::Media;
 
@@ -102,7 +102,7 @@ int32_t RingtoneSoundManager::SetUri(const shared_ptr<Context> &context, const V
     CreateDataAbilityHelper(context);
     CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, ERR_INVALID_PARAM, "Helper is null, failed to set uri");
 
-    Uri uri(MEDIALIB_DB_URI + "/" + MEDIA_KVSTOREOPRN + "/" + operation);
+    Uri uri(Media::MEDIALIBRARY_DATA_URI + "/" + MEDIA_KVSTOREOPRN + "/" + operation);
 
     int32_t result = 0;
     result = abilityHelper_->Insert(uri, valueBucket);
@@ -120,7 +120,7 @@ string RingtoneSoundManager::FetchUri(const shared_ptr<Context> &context, const 
     CreateDataAbilityHelper(context);
     CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, "", "Helper is null, failed to retrieve uri");
 
-    Uri uri(MEDIALIB_DB_URI + "/" + MEDIA_KVSTOREOPRN + "/" + operation);
+    Uri uri(Media::MEDIALIBRARY_DATA_URI + "/" + MEDIA_KVSTOREOPRN + "/" + operation);
 
     return abilityHelper_->GetType(uri);
 }
@@ -128,10 +128,10 @@ string RingtoneSoundManager::FetchUri(const shared_ptr<Context> &context, const 
 void RingtoneSoundManager::CreateDataAbilityHelper(const shared_ptr<Context> &context)
 {
     if (abilityHelper_ == nullptr) {
-        auto contextUri = make_unique<Uri>(MEDIALIB_DB_URI);
+        auto contextUri = make_unique<Uri>(Media::MEDIALIBRARY_DATA_URI);
         CHECK_AND_RETURN_LOG(contextUri != nullptr, "failed to create context uri");
 
-        abilityHelper_ = DataAbilityHelper::Creator(context, move(contextUri));
+        abilityHelper_ = AppExecFwk::DataAbilityHelper::Creator(context, move(contextUri));
         CHECK_AND_RETURN_LOG(abilityHelper_ != nullptr, "Unable to create data ability helper");
     }
 }
@@ -337,13 +337,13 @@ std::string RingtonePlayer::GetTitle()
     MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(context_ != nullptr, "", "context cannot be null");
 
-    auto contextUri = make_unique<Uri>(MEDIALIB_DB_URI);
-    CHECK_AND_RETURN_RET_LOG(contextUri != nullptr, "", "failed to create context uri");
+    auto ctxUri = make_unique<Uri>(Media::MEDIALIBRARY_DATA_URI);
+    CHECK_AND_RETURN_RET_LOG(ctxUri != nullptr, "", "failed to create context uri");
 
-    shared_ptr<DataAbilityHelper> helper = DataAbilityHelper::Creator(context_, move(contextUri));
+    shared_ptr<AppExecFwk::DataAbilityHelper> helper = AppExecFwk::DataAbilityHelper::Creator(context_, move(ctxUri));
     CHECK_AND_RETURN_RET_LOG(helper != nullptr, "", "Unable to create data ability helper");
 
-    Uri mediaLibUri(MEDIALIB_DB_URI);
+    Uri mediaLibUri(Media::MEDIALIBRARY_DATA_URI);
 
     vector<string> columns = {};
     columns.push_back(MEDIA_DATA_DB_TITLE);

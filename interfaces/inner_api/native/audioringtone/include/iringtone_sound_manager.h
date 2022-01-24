@@ -21,7 +21,7 @@
 #include <string>
 
 #include "iringtone_player.h"
-#include "context.h"
+#include "foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context/context.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,19 +43,19 @@ public:
      * @since 1.0
      * @version 1.0
      */
-    virtual std::shared_ptr<IRingtonePlayer> GetRingtonePlayer(const std::shared_ptr<AppExecFwk::Context> &context,
+    virtual std::shared_ptr<IRingtonePlayer> GetRingtonePlayer(const std::shared_ptr<AbilityRuntime::Context> &context,
         RingtoneType type) = 0;
 
     /**
      * @brief API used for setting the system ringtone uri
      *
-     * @param context Indicates the Context object on OHOS.
+     * @param ctx Indicates the Context object on OHOS.
      * @param uri Indicates which uri to be set for the tone type
      * @return Returns IRingtonePlayer
      * @since 1.0
      * @version 1.0
      */
-    virtual int32_t SetSystemRingtoneUri(const std::shared_ptr<AppExecFwk::Context> &context, const std::string &uri,
+    virtual int32_t SetSystemRingtoneUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, const std::string &uri,
         RingtoneType type) = 0;
 
     /**
@@ -66,7 +66,7 @@ public:
      * @since 1.0
      * @version 1.0
      */
-    virtual std::string GetSystemRingtoneUri(const std::shared_ptr<AppExecFwk::Context> &context,
+    virtual std::string GetSystemRingtoneUri(const std::shared_ptr<AbilityRuntime::Context> &context,
         RingtoneType type) = 0;
 
     /**
@@ -77,7 +77,7 @@ public:
      * @since 1.0
      * @version 1.0
      */
-    virtual std::string GetSystemNotificationUri(const std::shared_ptr<AppExecFwk::Context> &context)= 0;
+    virtual std::string GetSystemNotificationUri(const std::shared_ptr<AbilityRuntime::Context> &context)= 0;
 
     /**
      * @brief Returns the current system uri
@@ -87,7 +87,7 @@ public:
      * @since 1.0
      * @version 1.0
      */
-    virtual std::string GetSystemAlarmUri(const std::shared_ptr<AppExecFwk::Context> &context) = 0;
+    virtual std::string GetSystemAlarmUri(const std::shared_ptr<AbilityRuntime::Context> &context) = 0;
 
     /**
      * @brief API used for setting the notification uri
@@ -97,19 +97,19 @@ public:
      * @since 1.0
      * @version 1.0
      */
-    virtual int32_t SetSystemNotificationUri(const std::shared_ptr<AppExecFwk::Context> &context,
+    virtual int32_t SetSystemNotificationUri(const std::shared_ptr<AbilityRuntime::Context> &context,
         const std::string &uri) = 0;
 
     /**
      * @brief API used for setting the Alarm uri
      *
-     * @param context Indicates the Context object on OHOS.
+     * @param ctx Indicates the Context object on OHOS.
      * @param uri indicates which uri to be set for alarm
      * @return Returns IRingtonePlayer
      * @since 1.0
      * @version 1.0
      */
-    virtual int32_t SetSystemAlarmUri(const std::shared_ptr<AppExecFwk::Context> &context, const std::string &uri) = 0;
+    virtual int32_t SetSystemAlarmUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, const std::string &uri) = 0;
 };
 
 class __attribute__((visibility("default"))) RingtoneFactory {
