@@ -102,8 +102,8 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
                 int32_t retBytes = audioRenderer->Write(buffer.get() + bytesWritten,
                                                         bytesToWrite - bytesWritten);
-                MEDIA_INFO_LOG("InterruptMultiRendererTest: Bytes written: %{public}zu", bytesWritten);
                 if (retBytes < 0) {
+                    MEDIA_ERR_LOG("InterruptMultiRendererTest: Error occured in writing buffer: %{public}d", retBytes);
                     if (audioRenderer->GetStatus() == RENDERER_PAUSED) {
                         cb->isRendererPaused_ = true;
                         int32_t seekPos = bytesWritten - bytesToWrite;
@@ -122,8 +122,9 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
         }
 
         if (feof(wavFile) || cb->isRendererStopped_) {
-            if (feof(wavFile))
+            if (feof(wavFile)) {
                 MEDIA_INFO_LOG("InterruptMultiRendererTest: EOF reached. Complete rendering ");
+            }
             if (audioRenderer->GetStatus() == RENDERER_RUNNING) {
                 audioRenderer->Stop();
             }
@@ -194,50 +195,66 @@ int32_t InterruptMultiRendererTest::TestPlayback(int argc, char *argv[]) const
     FILE *wavFile1 = nullptr;
     FILE *wavFile2 = nullptr;
 
-    if (!ValidateFile(file1Path, path1))
+    if (!ValidateFile(file1Path, path1)) {
         wavFile1 = fopen(path1, "rb");
-    if (!ValidateFile(file2Path, path2))
-        wavFile2 = fopen(path2, "rb");
+        if (wavFile1 == nullptr) {
+            return -1;
+        }
+    }
 
-    if (wavFile1 == nullptr || wavFile2 == nullptr) {
-        return -1;
+    if (!ValidateFile(file2Path, path2)) {
+        wavFile2 = fopen(path2, "rb");
+        if (wavFile2 == nullptr) {
+            fclose(wavFile1);
+            return -1;
+        }
     }
 
     AudioStreamType streamType1 = STREAM_MUSIC;
     AudioStreamType streamType2 = STREAM_VOICE_CALL;
-    if (argc > MIN_NO_OF_ARGS)
+    if (argc > MIN_NO_OF_ARGS) {
         streamType1 = static_cast<AudioStreamType>(strtol(argv[ARG_INDEX_3], NULL, NUM_BASE));
-    if (argc > MIN_NO_OF_ARGS + 1)
+    }
+    if (argc > MIN_NO_OF_ARGS + 1) {
         streamType2 = static_cast<AudioStreamType>(strtol(argv[ARG_INDEX_4], NULL, NUM_BASE));
+    }
 
     unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(streamType1);
     unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(streamType2);
 
-    shared_ptr<AudioRendererCallbackTestImpl> cb1 = make_shared<AudioRendererCallbackTestImpl>();
-    if (!audioRenderer1->SetRendererCallback(cb1))
-        InitRender(audioRenderer1, wavFile1);
+    shared_ptr<AudioRendererCallback> cb1 = make_shared<AudioRendererCallbackTestImpl>();
+    if (InitRender(audioRenderer1, wavFile1)) {
+        audioRenderer1->SetRendererCallback(cb1);
+    }
 
-    shared_ptr<AudioRendererCallbackTestImpl> cb2 = make_shared<AudioRendererCallbackTestImpl>();
-    if (!audioRenderer2->SetRendererCallback(cb2))
-        InitRender(audioRenderer2, wavFile2);
+    shared_ptr<AudioRendererCallback> cb2 = make_shared<AudioRendererCallbackTestImpl>();
+    if (InitRender(audioRenderer2, wavFile2)) {
+        audioRenderer2->SetRendererCallback(cb2);
+    }
 
+    std::shared_ptr<AudioRendererCallbackTestImpl> cb1Impl =
+        std::static_pointer_cast<AudioRendererCallbackTestImpl>(cb1);
     unique_ptr<thread> writeThread1 = nullptr;
     if (audioRenderer1->GetStatus() == RENDERER_PREPARED && StartRender(audioRenderer1)) {
-        writeThread1 =
-            make_unique<thread>(&InterruptMultiRendererTest::WriteBuffer, this, audioRenderer1.get(), wavFile1, cb1);
+        writeThread1 = make_unique<thread>(&InterruptMultiRendererTest::WriteBuffer, this,
+                                           audioRenderer1.get(), wavFile1, cb1Impl);
         this_thread::sleep_for(chrono::seconds(FIVE_SEC));
     }
 
+    std::shared_ptr<AudioRendererCallbackTestImpl> cb2Impl =
+        std::static_pointer_cast<AudioRendererCallbackTestImpl>(cb2);
     unique_ptr<thread> writeThread2 = nullptr;
     if (audioRenderer2->GetStatus() == RENDERER_PREPARED && StartRender(audioRenderer2)) {
-        writeThread2 =
-            make_unique<thread>(&InterruptMultiRendererTest::WriteBuffer, this, audioRenderer2.get(), wavFile2, cb2);
+        writeThread2 = make_unique<thread>(&InterruptMultiRendererTest::WriteBuffer, this,
+                                           audioRenderer2.get(), wavFile2, cb2Impl);
     }
 
-    if (writeThread1 && writeThread1->joinable())
+    if (writeThread1 && writeThread1->joinable()) {
         writeThread1->join();
-    if (writeThread2 && writeThread2->joinable())
+    }
+    if (writeThread2 && writeThread2->joinable()) {
         writeThread2->join();
+    }
     fclose(wavFile1);
     fclose(wavFile2);
 
