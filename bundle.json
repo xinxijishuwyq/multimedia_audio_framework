@@ -1,0 +1,135 @@
+{
+    "name": "@ohos/multimedia_audio_standard",
+    "description": "Audio standard provides managers and provides the audio resources to application for play/record audio",
+    "version": "3.1",
+    "license": "Apache License 2.0",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "foundation/multimedia/audio_standard"
+    },
+    "dirs": {},
+    "scripts": {},
+    "component": {
+        "name": "audio_standard",
+        "subsystem": "multimedia",
+        "syscap": [],
+        "features": [],
+        "adapted_system_type": [
+            "audio_standard"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+          "components": [
+              "ability_manager",
+              "appexecfwk_base",
+              "ace_napi",
+              "ipc_core",
+              "libhilog",
+              "native_dataability",
+              "native_rdb",
+              "samgr_proxy",
+              "system_ability_fwk"
+            ],
+            "third_party": [
+              "libsnd",
+              "pulseaudio"
+            ]
+        },
+        "build": {
+          "sub_component": [
+            "//foundation/multimedia/audio_standard/services:audio_service",
+            "//foundation/multimedia/audio_standard/services:pulseaudio.rc",
+            "//foundation/multimedia/audio_standard/sa_profile:audio_service_sa_profile",
+            "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager:audio",
+            "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager:audio_js",
+            "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio:pulseaudio_packages",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client_test_packages",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer_test_packages",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer_test",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_voip_test",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_interrupt_test",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:interrupt_multi_renderer_test",
+            "//foundation/multimedia/audio_standard/services:audio_policy_service_packages",
+            "//foundation/multimedia/audio_standard/sa_profile:audio_policy_service_sa_profile",
+            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiopolicy:audio_policy_test",
+            "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:audio_capturer_source",
+            "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_sink",
+            "//foundation/multimedia/audio_standard/frameworks/native/audioadapter:pulse_audio_service_adapter"
+          ],
+          "inner_kits": [
+            {
+              "header": {
+                "header_base": [
+                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
+                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
+                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
+                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include"
+                ],
+                "header_files": [
+                  "audio_system_manager.h",
+                  "audio_session.h",
+                  "audio_stream.h",
+                  "audio_info.h"
+                ]
+              },
+              "name": "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client"
+            },
+            {
+              "header": {
+                "header_base": [
+                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer/include",
+                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include"
+                 ],
+                "header_files": [
+                  "audio_capturer.h",
+                  "audio_info.h"
+                ]
+              },
+              "name": "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer"
+            },
+            {
+              "header": {
+                "header_base": "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
+                "header_files": [
+                  "audio_renderer.h",
+                  "audio_info.h"
+                ]
+              },
+              "name": "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer"
+            },
+            {
+              "header": {
+                "header_base": [
+                     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
+                     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_capturer/include",
+                     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_renderer/include"
+                ],
+                "header_files": [
+                  "audio_manager_napi.h",
+                  "audio_device_descriptor_napi.h",
+                  "audio_capturer_napi.h",
+                  "audio_renderer_napi.h",
+                  "audio_parameters_napi.h"
+                ]
+              },
+              "name": "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager:audio"
+            },
+            {
+              "header": {
+                "header_base": "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audioringtone/include",
+                "header_files": [
+                  "iringtone_player.h",
+                  "iringtone_sound_manager.h"
+                ]
+              },
+              "name": "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audioringtone:audio_ringtone_client"
+            }
+          ],
+          "test": [
+            "//foundation/multimedia/audio_standard/test:audio_unit_test",
+            "//foundation/multimedia/audio_standard/test:audio_module_test"
+          ]
+        }
+    }
+}
