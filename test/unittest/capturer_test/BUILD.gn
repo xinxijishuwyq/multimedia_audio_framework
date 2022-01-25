@@ -11,13 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
+import("//build/test.gni")
 
-group("audio_packages") {
-  public_deps = [
-    "interfaces/inner_api/native/audiocapturer:audio_capturer",
-    "interfaces/inner_api/native/audiomanager:audio_client",
-    "interfaces/inner_api/native/audiorenderer:audio_renderer",
-    "services:audio_service",
+module_output_path = "audio_standard/audio_capturer"
+
+ohos_unittest("audio_capturer_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/common/include",
   ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  sources = [ "src/audio_capturer_unit_test.cpp" ]
+
+  deps = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
 }
