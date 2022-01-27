@@ -526,5 +526,40 @@ std::vector<AudioEncodingType> AudioRenderer::GetSupportedEncodingTypes()
 {
     return AUDIO_SUPPORTED_ENCODING_TYPES;
 }
+
+int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode) const
+{
+    return audioStream_->SetRenderMode(renderMode);
+}
+
+AudioRenderMode AudioRendererPrivate::GetRenderMode() const
+{
+    return audioStream_->GetRenderMode();
+}
+
+int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
+{
+    return audioStream_->GetBufferDesc(bufDesc);
+}
+
+int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
+{
+    return audioStream_->Enqueue(bufDesc);
+}
+
+int32_t AudioRendererPrivate::Clear() const
+{
+    return audioStream_->Clear();
+}
+
+int32_t AudioRendererPrivate::GetBufQueueState(BufferQueueState &bufState) const
+{
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
+{
+    return audioStream_->SetRendererWriteCallback(callback);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

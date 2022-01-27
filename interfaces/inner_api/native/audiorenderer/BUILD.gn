@@ -73,6 +73,21 @@ ohos_executable("audio_renderer_test") {
   subsystem_name = "multimedia"
 }
 
+ohos_executable("audio_render_mode_callback_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_render_mode_callback_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  deps = [ ":audio_renderer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
 ohos_executable("audio_voip_test") {
   install_enable = false
 

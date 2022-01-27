@@ -15,11 +15,14 @@
 #ifndef AUDIO_STREAM_H
 #define AUDIO_STREAM_H
 
+#include "audio_renderer.h"
 #include "audio_session.h"
 #include "timestamp.h"
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t MAX_NUM_BUFFERS = 3;
+
 enum AudioMode {
     AUDIO_MODE_PLAYBACK,
     AUDIO_MODE_RECORD
@@ -46,6 +49,12 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate);
     AudioRendererRate GetRenderRate();
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback);
+    int32_t SetRenderMode(AudioRenderMode renderMode);
+    AudioRenderMode GetRenderMode();
+    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback);
+    int32_t GetBufferDesc(BufferDesc &bufDesc);
+    int32_t Enqueue(const BufferDesc &bufDesc);
+    int32_t Clear();
 
     std::vector<AudioSampleFormat> GetSupportedFormats();
     std::vector<AudioChannel> GetSupportedChannels();
@@ -73,6 +82,13 @@ private:
     std::atomic<bool> isWriteInProgress_;
     uint64_t resetTimestamp_;
     struct timespec baseTimestamp_;
+    AudioRenderMode renderMode_;
+    std::queue<BufferDesc> freeBufferQ_;
+    std::queue<BufferDesc> filledBufferQ_;
+    std::array<std::unique_ptr<uint8_t[]>, MAX_NUM_BUFFERS> bufferPool_ = {};
+    std::unique_ptr<std::thread> writeThread_ = nullptr;
+    bool isReadyToWrite_;
+    void WriteBuffers();
 
     static constexpr AudioStreamType streamTypeMap_[CONTENT_TYPE_RINGTONE + 1][STREAM_USAGE_VOICE_ASSISTANT + 1] = {
         {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},

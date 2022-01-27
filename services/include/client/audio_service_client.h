@@ -17,11 +17,13 @@
 #define AUDIO_SERVICE_CLIENT_H
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <stdlib.h>
 #include <thread>
 #include <unistd.h>
@@ -229,6 +231,17 @@ public:
     size_t WriteStream(const StreamBuffer &stream, int32_t &pError);
 
     /**
+    * Writes audio data of the stream created using CreateStream to active sink device
+    Used when render mode is RENDER_MODE_CALLBACK
+    *
+    * @param buffer contains audio data to write
+    * @param bufferSize indicates the size of audio data in bytes to write from the buffer
+    * @param pError indicates pointer to error which will be filled in case of internal errors
+    * @return returns size of audio data written in bytes.
+    */
+    size_t WriteStreamInCb(const StreamBuffer &stream, int32_t &pError);
+
+    /**
     * Reads audio data of the stream created using CreateStream from active source device
     *
     * @param StreamBuffer including buffer to be filled with audio data
@@ -431,7 +444,40 @@ public:
      */
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec);
 
+    /**
+     * @brief Saves StreamCallback
+     *
+     * @param callback callback reference to be saved.
+     * @return none.
+     */
+
     void SaveStreamCallback(const std::weak_ptr<AudioStreamCallback> &callback);
+
+    /**
+     * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
+     * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
+     *
+     * * @param renderMode The mode of render.
+     * @return  Returns {@link SUCCESS} if render mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAudioRenderMode(AudioRenderMode renderMode);
+
+    /**
+     * @brief Obtains the render mode.
+     *
+     * @return  Returns current render mode.
+     */
+    AudioRenderMode GetAudioRenderMode();
+
+    /**
+     * @brief Registers the renderer write callback listener.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback);
 
     // Audio timer callback
     virtual void OnTimeOut();
@@ -468,6 +514,8 @@ private:
     bool streamInfoUpdated;
 
     AudioRendererRate renderRate;
+    AudioRenderMode renderMode_;
+    std::weak_ptr<AudioRendererWriteCallback> writeCallback_;
 
     int32_t mFrameSize = 0;
     bool mMarkReached = false;
@@ -555,9 +603,11 @@ private:
     static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
+    static void PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
