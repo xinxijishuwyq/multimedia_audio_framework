@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <csignal>
 #include <memory>
 #include <vector>
 
@@ -29,6 +30,7 @@
 #include "key_option.h"
 
 #include "media_log.h"
+#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
@@ -121,7 +123,7 @@ void AudioPolicyServer::OnStop()
 void AudioPolicyServer::RegisterAudioServerDeathRecipient()
 {
     MEDIA_INFO_LOG("Register audio server death recipient");
-    pid_t pid = 0;
+    pid_t pid = IPCSkeleton::GetCallingPid();
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -137,7 +139,8 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
 void AudioPolicyServer::AudioServerDied(pid_t pid)
 {
     MEDIA_INFO_LOG("Audio server died: restart policy server");
-    exit(-1);
+    MEDIA_INFO_LOG("AudioPolicyServer: Kill pid:%{public}d", pid);
+    kill(pid, SIGKILL);
 }
 
 int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume)
