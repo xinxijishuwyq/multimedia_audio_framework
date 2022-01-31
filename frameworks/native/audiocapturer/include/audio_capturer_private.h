@@ -26,6 +26,8 @@ public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t SetParams(const AudioCapturerParams params) const override;
     int32_t GetParams(AudioCapturerParams &params) const override;
+    int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
+    int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
     bool Start() const override;
     int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override;
     CapturerState GetStatus() const override;
@@ -36,6 +38,7 @@ public:
     int32_t GetBufferSize(size_t &bufferSize) const override;
 
     std::unique_ptr<AudioStream> audioCapturer;
+    AudioCapturerInfo capturerInfo_ = {};
 
     explicit AudioCapturerPrivate(AudioStreamType audioStreamType);
     virtual ~AudioCapturerPrivate();

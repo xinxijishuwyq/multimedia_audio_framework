@@ -25,7 +25,6 @@ namespace AudioStandard {
 napi_ref AudioParametersNapi::sConstructor_ = nullptr;
 unique_ptr<AudioParameters> AudioParametersNapi::sAudioParameters_ = nullptr;
 
-napi_ref AudioParametersNapi::sampleFormat_ = nullptr;
 napi_ref AudioParametersNapi::audioChannel_ = nullptr;
 napi_ref AudioParametersNapi::samplingRate_ = nullptr;
 napi_ref AudioParametersNapi::encodingType_ = nullptr;
@@ -33,6 +32,7 @@ napi_ref AudioParametersNapi::contentType_ = nullptr;
 napi_ref AudioParametersNapi::streamUsage_ = nullptr;
 napi_ref AudioParametersNapi::deviceRole_ = nullptr;
 napi_ref AudioParametersNapi::deviceType_ = nullptr;
+napi_ref AudioParametersNapi::sourceType_ = nullptr;
 
 namespace {
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioParametersNapi"};
@@ -70,36 +70,6 @@ napi_status AudioParametersNapi::AddNamedProperty(napi_env env, napi_value objec
     }
 
     return status;
-}
-
-napi_value AudioParametersNapi::CreateAudioSampleFormatObject(napi_env env)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: sampleFormatMap) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &sampleFormat_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateAudioSampleFormatObject is Failed!");
-    napi_get_undefined(env, &result);
-
-    return result;
 }
 
 napi_value AudioParametersNapi::CreateAudioChannelObject(napi_env env)
@@ -312,6 +282,36 @@ napi_value AudioParametersNapi::CreateDeviceTypeObject(napi_env env)
     return result;
 }
 
+napi_value AudioParametersNapi::CreateSourceTypeObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: sourceTypeMap) {
+            propName = iter.first;
+            status = AddNamedProperty(env, result, propName, iter.second);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to add named prop! in CreateSourceTypeObject");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &sourceType_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateSourceTypeObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
 napi_value AudioParametersNapi::Init(napi_env env, napi_value exports)
 {
     HiLog::Info(LABEL, "AudioParametersNapi::Init()");
@@ -332,14 +332,14 @@ napi_value AudioParametersNapi::Init(napi_env env, napi_value exports)
     };
 
     napi_property_descriptor static_prop[] = {
-        DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateAudioSampleFormatObject(env)),
         DECLARE_NAPI_PROPERTY("AudioChannel", CreateAudioChannelObject(env)),
         DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateSamplingRateObject(env)),
         DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEncodingTypeObject(env)),
         DECLARE_NAPI_PROPERTY("ContentType", CreateContentTypeObject(env)),
         DECLARE_NAPI_PROPERTY("StreamUsage", CreateStreamUsageObject(env)),
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateDeviceRoleObject(env)),
-        DECLARE_NAPI_PROPERTY("DeviceType", CreateDeviceTypeObject(env))
+        DECLARE_NAPI_PROPERTY("DeviceType", CreateDeviceTypeObject(env)),
+        DECLARE_NAPI_PROPERTY("SourceType", CreateSourceTypeObject(env))
     };
 
     status = napi_define_class(env, AUDIO_PARAMETERS_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -390,30 +390,6 @@ napi_value AudioParametersNapi::Construct(napi_env env, napi_callback_info info)
     napi_get_undefined(env, &jsThis);
 
     return jsThis;
-}
-
-napi_value AudioParametersNapi::CreateAudioParametersWrapper(napi_env env, unique_ptr<AudioParameters> &audioParameters)
-{
-    napi_status status;
-    napi_value result = nullptr;
-    napi_value constructor;
-
-    if (audioParameters != nullptr) {
-        status = napi_get_reference_value(env, sConstructor_, &constructor);
-        if (status == napi_ok) {
-            sAudioParameters_ = move(audioParameters);
-            status = napi_new_instance(env, constructor, 0, nullptr, &result);
-            sAudioParameters_.release();
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-        HiLog::Error(LABEL, "Failed in CreateAudioParametersWrapper, %{public}d", status);
-    }
-
-    napi_get_undefined(env, &result);
-
-    return result;
 }
 
 napi_value AudioParametersNapi::GetAudioSampleFormat(napi_env env, napi_callback_info info)

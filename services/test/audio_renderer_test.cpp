@@ -23,8 +23,9 @@ using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
 namespace AudioTestConstants {
+    constexpr int32_t ARGS_INDEX_THREE = 3;
     constexpr int32_t ARGS_INDEX_TWO = 2;
-    constexpr int32_t ARGS_COUNT_TWO = 2;
+    constexpr int32_t ARGS_COUNT_THREE = 3;
     constexpr int32_t SUCCESS = 0;
     constexpr int32_t STOP_BUFFER_POSITION = 700000;
     constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;
@@ -63,17 +64,8 @@ public:
         }
     }
 
-    bool InitRender(const unique_ptr<AudioRenderer> &audioRenderer, const AudioRendererParams &rendererParams) const
+    bool InitRender(const unique_ptr<AudioRenderer> &audioRenderer) const
     {
-        if (audioRenderer->SetParams(rendererParams) !=  AudioTestConstants::SUCCESS) {
-            MEDIA_ERR_LOG("AudioRendererTest: Set audio renderer parameters failed");
-            if (!audioRenderer->Release()) {
-                MEDIA_ERR_LOG("AudioRendererTest: Release failed");
-            }
-            return false;
-        }
-        MEDIA_INFO_LOG("AudioRendererTest: Playback renderer created");
-
         MEDIA_INFO_LOG("AudioRendererTest: Starting renderer");
         if (!audioRenderer->Start()) {
             MEDIA_ERR_LOG("AudioRendererTest: Start failed");
@@ -224,19 +216,28 @@ public:
         size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
         MEDIA_INFO_LOG("AudioRendererTest: Header Read in bytes %{public}zu", bytesRead);
 
-        AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-        if (argc > AudioTestConstants::ARGS_COUNT_TWO)
-            streamType = static_cast<AudioStreamType>(strtol(argv[AudioTestConstants::ARGS_INDEX_TWO], NULL, numBase));
-        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
+        ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
+        StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+
+        if (argc > AudioTestConstants::ARGS_COUNT_THREE) {
+            contentType = static_cast<ContentType>(strtol(argv[AudioTestConstants::ARGS_INDEX_TWO], NULL, numBase));
+            streamUsage = static_cast<StreamUsage>(strtol(argv[AudioTestConstants::ARGS_INDEX_THREE], NULL, numBase));
+        }
+
+        AudioRendererOptions rendererOptions = {};
+        rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+        rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
+        rendererOptions.streamInfo.format = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
+        rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
+        rendererOptions.rendererInfo.contentType = contentType;
+        rendererOptions.rendererInfo.streamUsage = streamUsage;
+        rendererOptions.rendererInfo.rendererFlags = 0;
+
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
 
         CheckSupportedParams();
 
-        AudioRendererParams rendererParams;
-        rendererParams.sampleFormat = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
-        rendererParams.sampleRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
-        rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
-        rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
-        if (!InitRender(audioRenderer, rendererParams)) {
+        if (!InitRender(audioRenderer)) {
             MEDIA_ERR_LOG("AudioRendererTest: Init render failed");
             fclose(wavFile);
             return false;
@@ -267,13 +268,15 @@ int main(int argc, char *argv[])
 {
     MEDIA_INFO_LOG("AudioRendererTest: Render test in");
 
-    if ((argv == nullptr) || (argc < AudioTestConstants::ARGS_INDEX_TWO)) {
+    if ((argv == nullptr) || (argc < AudioTestConstants::ARGS_COUNT_THREE)) {
         MEDIA_ERR_LOG("AudioRendererTest: argv is null");
         return 0;
     }
 
-    MEDIA_INFO_LOG("AudioRendererTest: argc=%d", argc);
-    MEDIA_INFO_LOG("AudioRendererTest: argv[1]=%{public}s", argv[1]);
+    MEDIA_INFO_LOG("AudioRendererTest: argc=%{public}d", argc);
+    MEDIA_INFO_LOG("file path argv[1]=%{public}s", argv[1]);
+    MEDIA_INFO_LOG("content type argv[2]=%{public}s", argv[AudioTestConstants::ARGS_INDEX_TWO]);
+    MEDIA_INFO_LOG("stream usage argv[3]=%{public}s", argv[AudioTestConstants::ARGS_INDEX_THREE]);
 
     AudioRendererTest testObj;
     bool ret = testObj.TestPlayback(argc, argv);

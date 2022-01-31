@@ -62,7 +62,7 @@ public:
     int32_t GetBufferSize(size_t &bufferSize);
     int32_t GetFrameCount(uint32_t &frameCount);
     int32_t GetLatency(uint64_t &latency);
-    AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
+    static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetAudioStreamType(AudioStreamType audioStreamType);
     int32_t SetVolume(float volume);
     float GetVolume();
@@ -96,7 +96,7 @@ private:
     uint64_t resetTimestamp_;
     struct timespec baseTimestamp_;
 
-    AudioStreamType streamTypeMap_[CONTENT_TYPE_RINGTONE + 1][STREAM_USAGE_VOICE_ASSISTANT + 1] = {
+    static constexpr AudioStreamType streamTypeMap_[CONTENT_TYPE_RINGTONE + 1][STREAM_USAGE_VOICE_ASSISTANT + 1] = {
         {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
         {STREAM_MUSIC, STREAM_VOICE_ASSISTANT, STREAM_VOICE_CALL, STREAM_MUSIC, STREAM_VOICE_ASSISTANT},
         {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_RING, STREAM_VOICE_ASSISTANT},

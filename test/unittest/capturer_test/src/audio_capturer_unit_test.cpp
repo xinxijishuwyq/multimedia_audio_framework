@@ -35,6 +35,7 @@ namespace {
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
+    const int32_t CAPTURER_FLAG = 0;
 } // namespace
 
 void AudioCapturerUnitTest::SetUpTestCase(void) {}
@@ -209,6 +210,26 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_006, TestSize.Level0)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_007, TestSize.Level0)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_NOTIFICATION);
+    EXPECT_NE(nullptr, audioCapturer);
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_008
+* @tc.desc  : Test Create interface with AudioCapturerOptions. Returns audioCapturer instance, if create is successful.
+*             Note: instance will be created but functional support for STREAM_NOTIFICATION not available yet.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_008, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(nullptr, audioCapturer);
 }
 
@@ -1866,6 +1887,58 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_005, TestSize.Level1)
     state = audioCapturer->GetStatus();
     EXPECT_NE(CAPTURER_RELEASED, state);
     EXPECT_EQ(CAPTURER_NEW, state);
+}
+
+/**
+* @tc.name  : Test GetCapturerInfo API after calling create
+* @tc.number: Audio_Capturer_GetCapturerInfo_001
+* @tc.desc  : Test GetCapturerInfo interface. Check whether capturer info returns proper data
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCapturerInfo_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerInfo capturerInfo;
+    audioCapturer->GetCapturerInfo(capturerInfo);
+
+    EXPECT_EQ(SourceType::SOURCE_TYPE_MIC, capturerInfo.sourceType);
+    EXPECT_EQ(CAPTURER_FLAG, capturerInfo.capturerFlags);
+}
+
+/**
+* @tc.name  : Test GetStreamInfo API after calling create
+* @tc.number: Audio_Capturer_GetStreamInfo_001
+* @tc.desc  : Test GetStreamInfo interface. Check whether stream related data is returned correctly
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioStreamInfo streamInfo;
+    audioCapturer->GetStreamInfo(streamInfo);
+
+    EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_96000, streamInfo.samplingRate);
+    EXPECT_EQ(AudioEncodingType::ENCODING_PCM, streamInfo.encoding);
+    EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo.format);
+    EXPECT_EQ(AudioChannel::MONO, streamInfo.channels);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -70,6 +70,11 @@ public:
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
     /**
+     * @brief creater capturer instance.
+    */
+    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &capturerOptions);
+
+    /**
      * @brief Obtains the number of frames required in the current condition, in bytes per sample.
      *
      * @param frameCount Indicates the pointer in which framecount will be written
@@ -99,6 +104,30 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetParams(AudioCapturerParams &params) const = 0;
+
+    /**
+     * @brief Obtains audio capturer information.
+     *
+     * This function can be called after {@link SetParams} is successful.
+     *
+     * @param capturerInfo Indicates information about audio capturer information.For details,see
+     * {@link AudioCapturerInfo}.
+     * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const = 0;
+
+    /**
+     * @brief Obtains audio stream information.
+     *
+     * This function can be called after {@link Create} is successful.
+     *
+     * @param streamInfo Indicates information about audio stream information.For details,see
+     * {@link AudioStreamInfo}.
+     * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const = 0;
 
     /**
      * @brief Starts audio capturing.

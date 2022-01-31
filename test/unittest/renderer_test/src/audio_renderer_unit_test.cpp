@@ -31,6 +31,7 @@ namespace {
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
+    const int32_t RENDERER_FLAG = 0;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
@@ -217,6 +218,27 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_006, TestSize.Level0)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_007, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_NOTIFICATION);
+    EXPECT_NE(nullptr, audioRenderer);
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Renderer_Create_008
+* @tc.desc  : Test Create interface with AudioRendererOptions. Returns audioRenderer instance, if create is successful.
+*             Note: instance will be created but functional support for STREAM_NOTIFICATION not available yet.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_008, TestSize.Level0)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
 }
 
@@ -2869,6 +2891,61 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_006, TestSize.L
 
     isReleased = audioRenderer2->Release();
     EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test GetRendererInfo API after calling create
+* @tc.number: Audio_Renderer_GetRendererInfo_001
+* @tc.desc  : Test GetRendererInfo interface. Check whether renderer info returns proper data
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+
+    EXPECT_EQ(ContentType::CONTENT_TYPE_MUSIC, rendererInfo.contentType);
+    EXPECT_EQ(StreamUsage::STREAM_USAGE_MEDIA, rendererInfo.streamUsage);
+    EXPECT_EQ(RENDERER_FLAG, rendererInfo.rendererFlags);
+}
+
+/**
+* @tc.name  : Test GetStreamInfo API after calling create
+* @tc.number: Audio_Renderer_GetStreamInfo_001
+* @tc.desc  : Test GetStreamInfo interface. Check whether stream related data is returned correctly
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStreamInfo_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    AudioStreamInfo streamInfo;
+    audioRenderer->GetStreamInfo(streamInfo);
+
+    EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_96000, streamInfo.samplingRate);
+    EXPECT_EQ(AudioEncodingType::ENCODING_PCM, streamInfo.encoding);
+    EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo.format);
+    EXPECT_EQ(AudioChannel::MONO, streamInfo.channels);
 }
 } // namespace AudioStandard
 } // namespace OHOS

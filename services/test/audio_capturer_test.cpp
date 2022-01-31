@@ -63,15 +63,8 @@ public:
         }
     }
 
-    bool InitCapture(const unique_ptr<AudioCapturer> &audioCapturer, const AudioCapturerParams &capturerParams) const
+    bool InitCapture(const unique_ptr<AudioCapturer> &audioCapturer) const
     {
-        if (audioCapturer->SetParams(capturerParams) != AudioTestConstants::SUCCESS) {
-            MEDIA_ERR_LOG("Set audio stream parameters failed");
-            audioCapturer->Release();
-            return false;
-        }
-        MEDIA_INFO_LOG("Capture stream created");
-
         MEDIA_INFO_LOG("Starting Stream");
         if (!audioCapturer->Start()) {
             MEDIA_ERR_LOG("Start stream failed");
@@ -154,17 +147,19 @@ public:
     bool TestRecording(int32_t samplingRate, bool isBlocking, string filePath) const
     {
         MEDIA_INFO_LOG("TestCapture start ");
+        AudioCapturerOptions capturerOptions;
+        capturerOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(samplingRate);
+        capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+        capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+        capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+        capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+        capturerOptions.capturerInfo.capturerFlags = 0;
 
-        unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(AudioStreamType::STREAM_MUSIC);
+        unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
 
         CheckSupportedParams();
 
-        AudioCapturerParams capturerParams;
-        capturerParams.audioSampleFormat = SAMPLE_S16LE;
-        capturerParams.samplingRate =  static_cast<AudioSamplingRate>(samplingRate);
-        capturerParams.audioChannel = AudioChannel::STEREO;
-        capturerParams.audioEncoding = ENCODING_PCM;
-        if (!InitCapture(audioCapturer, capturerParams)) {
+        if (!InitCapture(audioCapturer)) {
             MEDIA_ERR_LOG("Initialize capturer failed");
             return false;
         }

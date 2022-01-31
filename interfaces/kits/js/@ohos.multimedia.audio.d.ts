@@ -1247,7 +1247,7 @@ declare namespace audio {
       * @since 8
       */
      off(type: "markReach"): void;
- 
+
      /**
       * Subscribes period reach event callback.
       * @param type Event type.

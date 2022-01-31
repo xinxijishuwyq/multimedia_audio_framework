@@ -82,10 +82,6 @@ enum DeviceType {
      */
     DEVICE_TYPE_INVALID = 0,
     /**
-     * Indicates earpiece
-     */
-    DEVICE_TYPE_EARPIECE = 1,
-    /**
      * Indicates a speaker built in a device.
      */
     DEVICE_TYPE_SPEAKER = 2,
@@ -179,8 +175,9 @@ enum AudioStreamType {
 
 enum AudioEncodingType {
     ENCODING_PCM = 0,
+    ENCODING_MP3,
     ENCODING_AAC, // Currently not supported
-    ENCODING_INVALID
+    ENCODING_INVALID = -1
 };
 
 // Ringer Mode
@@ -202,7 +199,13 @@ enum AudioSampleFormat {
 // channel
 enum AudioChannel {
     MONO = 1,
-    STEREO
+    STEREO = 2,
+    CHANNEL_3 = 0x1 << 2,
+    CHANNEL_4 = 0x1 << 3,
+    CHANNEL_5 = 0x1 << 4,
+    CHANNEL_6 = 0x1 << 5,
+    CHANNEL_7 = 0x1 << 6,
+    CHANNEL_8 = 0x1 << 7
 };
 
 // sampling rate
@@ -282,7 +285,16 @@ enum StreamUsage {
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 3,
-    STREAM_USAGE_VOICE_ASSISTANT = 4,
+    STREAM_USAGE_VOICE_ASSISTANT = 4
+};
+
+/**
+* Enumerates the capturer source type
+*/
+enum SourceType {
+    SOURCE_TYPE_INVALID = -1,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_CALL
 };
 
 /**
@@ -387,6 +399,11 @@ struct AudioRendererInfo {
     int32_t rendererFlags = 0;
 };
 
+struct AudioCapturerInfo {
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t capturerFlags = 0;
+};
+
 struct AudioRendererDesc {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -421,6 +438,11 @@ enum AudioScene {
      * Voice chat audio scene
      */
     AUDIO_SCENE_PHONE_CHAT,
+};
+
+struct AudioCapturerOptions {
+    AudioStreamInfo streamInfo;
+    AudioCapturerInfo capturerInfo;
 };
 
 // Supported audio parameters for both renderer and capturer

@@ -17,6 +17,7 @@
 #define AUDIO_CAPTURER_NAPI_H_
 
 #include <iostream>
+#include <map>
 
 #include "audio_capturer.h"
 #include "napi/native_api.h"
@@ -30,6 +31,14 @@ class AudioCapturerNapi {
 public:
     AudioCapturerNapi();
     ~AudioCapturerNapi();
+
+    enum AudioSampleFormat {
+        SAMPLE_FORMAT_INVALID = -1,
+        SAMPLE_FORMAT_U8 = 0,
+        SAMPLE_FORMAT_S16LE = 1,
+        SAMPLE_FORMAT_S24LE = 2,
+        SAMPLE_FORMAT_S32LE = 3
+    };
 
     static napi_value Init(napi_env env, napi_value exports);
 private:
@@ -54,42 +63,70 @@ private:
         StreamUsage usage;
         DeviceRole deviceRole;
         DeviceType deviceType;
+        SourceType sourceType;
+        uint32_t capturerFlags;
         AudioCapturerNapi *objectInfo;
+        AudioCapturerOptions capturerOptions;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturer(napi_env env, napi_callback_info info);
-    static napi_value SetParams(napi_env env, napi_callback_info info);
-    static napi_value GetParams(napi_env env, napi_callback_info info);
+    static napi_value GetCapturerInfo(napi_env env, napi_callback_info info);
+    static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Read(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+    static napi_value GetState(napi_env env, napi_callback_info info);
+    static napi_value CreateCapturerStateObject(napi_env env);
+    static napi_value CreateAudioSampleFormatObject(napi_env env);
+    static napi_value CreateAudioCapturerWrapper(napi_env env, std::unique_ptr<AudioCapturerOptions> &captureOptions);
 
     static void CommonCallbackRoutine(napi_env env, AudioCapturerAsyncContext* &asyncContext,
                                       const napi_value &valueParam);
     static void SetFunctionAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AudioParamsAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioCapturerInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void ReadAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetCapturerAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static napi_status CreateReadAsyncWork(const AudioCapturerAsyncContext &asyncContext);
+    static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
+    static bool ParseCapturerOptions(napi_env env, napi_value root, AudioCapturerOptions *opts);
+    static bool ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *rendererInfo);
+    static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
-
-    int32_t SetAudioParameters(napi_env env, napi_value arg);
+    static std::unique_ptr<AudioCapturerOptions> sAudioCapturerOptions_;
+    static AudioCapturerOptions sCapturerOptions_;
+    static napi_ref capturerState_;
+    static napi_ref sampleFormat_;
 
     std::unique_ptr<AudioCapturer> audioCapturer_;
     ContentType contentType_;
     StreamUsage streamUsage_;
     DeviceRole deviceRole_;
     DeviceType deviceType_;
+    SourceType sourceType_;
+    uint32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
+};
+
+static const std::map<std::string, CapturerState> audioCapturerStateMap = {
+    {"STATE_INVALID", CAPTURER_INVALID},
+    {"STATE_NEW", CAPTURER_NEW},
+    {"STATE_PREPARED", CAPTURER_PREPARED},
+    {"STATE_RUNNING", CAPTURER_RUNNING},
+    {"STATE_STOPPED", CAPTURER_STOPPED},
+    {"STATE_RELEASED", CAPTURER_RELEASED}
 };
 }
 }
