@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 napi_ref AudioDeviceDescriptorNapi::sConstructor_ = nullptr;
 sptr<AudioDeviceDescriptor> AudioDeviceDescriptorNapi::sAudioDescriptor_ = nullptr;
+static std::mutex mutex_;
 
 namespace {
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioDeviceDescriptorNapi"};
@@ -111,6 +112,7 @@ napi_value AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(napi_en
     napi_value result = nullptr;
     napi_value constructor;
 
+    std::lock_guard<std::mutex> lock(mutex_);
     if (deviceDescriptor != nullptr) {
         status = napi_get_reference_value(env, sConstructor_, &constructor);
         if (status == napi_ok) {
