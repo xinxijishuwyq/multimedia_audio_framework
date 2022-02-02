@@ -46,8 +46,7 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 
 AudioRendererSink::AudioRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr),
-      handle_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
 {
     attr_ = {};
 #ifdef DUMPFILE
@@ -81,9 +80,6 @@ void AudioRendererSink::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-
-    dlclose(handle_);
-
 #ifdef DUMPFILE
     if (pfd) {
         fclose(pfd);
@@ -146,25 +142,8 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
 int32_t AudioRendererSink::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
-#ifdef __aarch64__
-    char resolvedPath[100] = "/system/lib64/libhdi_audio_client.z.so";
-#else
-    char resolvedPath[100] = "/system/lib/libhdi_audio_client.z.so";
-#endif
-    struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
-    handle_ = dlopen(resolvedPath, 1);
-    if (handle_ == nullptr) {
-        MEDIA_ERR_LOG("Open so Fail");
-        return ERR_INVALID_HANDLE;
-    }
-
-    getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
-    if (getAudioManager == nullptr) {
-        return ERR_INVALID_HANDLE;
-    }
-
-    audioManager_ = getAudioManager();
+    audioManager_ = GetAudioProxyManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }

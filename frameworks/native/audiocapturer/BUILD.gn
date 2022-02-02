@@ -45,6 +45,13 @@ ohos_shared_library("audio_capturer_source") {
     "//third_party/bounds_checking_function:libsec_static",
   ]
 
+  if (device_name == "baltimore") {
+    deps += [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
+  } else {
+    deps +=
+        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
+  }
+
   part_name = "multimedia_audio_standard"
   subsystem_name = "multimedia"
 }
