@@ -175,8 +175,6 @@ enum AudioStreamType {
 
 enum AudioEncodingType {
     ENCODING_PCM = 0,
-    ENCODING_MP3,
-    ENCODING_AAC, // Currently not supported
     ENCODING_INVALID = -1
 };
 
