@@ -72,9 +72,65 @@ int32_t AudioPolicyServiceProxy::SetAudioScene(list<DeviceType> &activeDeviceLis
     return result;
 }
 
+int32_t AudioPolicyServiceProxy::UpdateAudioRoute()
+{
+    MEDIA_DEBUG_LOG("[%{public}s]", __func__);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    data.WriteInt32(0);
+
+    auto error = Remote()->SendRequest(UPDATE_ROUTE_REQ, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("UpdateAudioRoute failed, error: %{public}d", error);
+        return false;
+    }
+
+    auto result = reply.ReadInt32();
+    MEDIA_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
+    return result;
+}
+
+int32_t AudioPolicyServiceProxy::ReleaseAudioRoute()
+{
+    MEDIA_DEBUG_LOG("[%{public}s]", __func__);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    data.WriteInt32(0);
+
+    auto error = Remote()->SendRequest(RELEASE_ROUTE_REQ, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("ReleaseAudioRoute failed, error: %{public}d", error);
+        return false;
+    }
+
+    auto result = reply.ReadInt32();
+    MEDIA_DEBUG_LOG("[RELEASE_ROUTE_REQ] result %{public}d", result);
+    return result;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(DeviceFlag deviceFlag)
 {
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInt32(static_cast<int32_t>(deviceFlag));
+
+    int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("Get devices failed, error: %d", error);
+        return deviceInfo;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
     return deviceInfo;
 }
 

@@ -162,36 +162,22 @@ int32_t AudioServer::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScen
     return SUCCESS;
 }
 
+int32_t AudioServer::UpdateAudioRoute()
+{
+    MEDIA_INFO_LOG("[%{public}s]", __func__);
+    return SUCCESS;
+}
+
+int32_t AudioServer::ReleaseAudioRoute()
+{
+    MEDIA_INFO_LOG("[%{public}s]", __func__);
+    return SUCCESS;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)
 {
-    MEDIA_DEBUG_LOG("GetDevices server");
-    audioDeviceDescriptor_.clear();
-    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-    if (audioDescriptor == nullptr) {
-        MEDIA_ERR_LOG("new AudioDeviceDescriptor fail");
-        return audioDeviceDescriptor_;
-    }
-
-    if (DeviceFlag::INPUT_DEVICES_FLAG == deviceFlag) {
-        audioDescriptor->deviceType_ = DeviceType::DEVICE_TYPE_MIC;
-        audioDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
-    } else if (DeviceFlag::OUTPUT_DEVICES_FLAG == deviceFlag) {
-        audioDescriptor->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-        audioDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    } else if (DeviceFlag::ALL_DEVICES_FLAG == deviceFlag) {
-        sptr<AudioDeviceDescriptor> audioDescriptor_inputDevice = new(std::nothrow) AudioDeviceDescriptor();
-        sptr<AudioDeviceDescriptor> audioDescriptor_outputDevice = new(std::nothrow) AudioDeviceDescriptor();
-        audioDescriptor_inputDevice->deviceType_ = DeviceType::DEVICE_TYPE_MIC;
-        audioDescriptor_inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
-        audioDeviceDescriptor_.push_back(audioDescriptor_inputDevice);
-        audioDescriptor_outputDevice->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-        audioDescriptor_outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-        audioDeviceDescriptor_.push_back(audioDescriptor_outputDevice);
-        return audioDeviceDescriptor_;
-    }
-
-    audioDeviceDescriptor_.push_back(audioDescriptor);
-    return audioDeviceDescriptor_;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptor = {};
+    return audioDeviceDescriptor;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -34,6 +34,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string key) override;
     void SetAudioParameter(const std::string key, const std::string value) override;
+    int32_t UpdateAudioRoute() override;
+    int32_t ReleaseAudioRoute() override;
 private:
     static inline BrokerDelegator<AudioPolicyServiceProxy> delegator_;
 };

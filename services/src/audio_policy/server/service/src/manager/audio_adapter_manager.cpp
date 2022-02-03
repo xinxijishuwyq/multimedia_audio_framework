@@ -129,22 +129,22 @@ AudioRingerMode AudioAdapterManager::GetRingerMode()
     return mRingerMode;
 }
 
-AudioIOHandle AudioAdapterManager::OpenAudioPort(std::unique_ptr<AudioPortInfo> &audioPortInfo)
+AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
-    std::string moduleArgs = GetModuleArgs(audioPortInfo);
-    MEDIA_INFO_LOG("[AudioAdapterManager] load-module %{public}s %{public}s", audioPortInfo->name, moduleArgs.c_str());
-    if (!strcmp(audioPortInfo->name, PIPE_SOURCE) || !strcmp(audioPortInfo->name, PIPE_SINK)) {
-        if (audioPortInfo->fileName != nullptr && access(audioPortInfo->fileName, F_OK) == 0) {
-            int32_t ret = std::remove(audioPortInfo->fileName);
+    std::string moduleArgs = GetModuleArgs(audioModuleInfo);
+    MEDIA_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
+    if (audioModuleInfo.lib == PIPE_SOURCE || audioModuleInfo.lib == PIPE_SINK) {
+        if (!audioModuleInfo.fileName.empty() && access(audioModuleInfo.fileName.c_str(), F_OK) == 0) {
+            int32_t ret = std::remove(audioModuleInfo.fileName.c_str());
             if (ret) {
                 MEDIA_ERR_LOG("[AudioAdapterManager] Error Removing file: %{public}s Failed! ret val: %{public}d",
-                    audioPortInfo->fileName, ret);
+                    audioModuleInfo.fileName.c_str(), ret);
             }
         } else {
-            MEDIA_ERR_LOG("[AudioAdapterManager] Error audioPortInfo->fileName is null! or file not exists");
+            MEDIA_ERR_LOG("[AudioAdapterManager] Error audioModuleInfo.fileName is null! or file not exists");
         }
     }
-    AudioIOHandle ioHandle = mAudioServiceAdapter->OpenAudioPort(audioPortInfo->name, moduleArgs.c_str());
+    AudioIOHandle ioHandle = mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
     return ioHandle;
 }
 
@@ -153,54 +153,56 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
     return mAudioServiceAdapter->CloseAudioPort(ioHandle);
 }
 
+void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+{
+    if (!audioModuleInfo.rate.empty()) {
+            args = "rate=";
+            args.append(audioModuleInfo.rate);
+        }
+
+    if (!audioModuleInfo.channels.empty()) {
+        args.append(" channels=");
+        args.append(audioModuleInfo.channels);
+    }
+
+    if (!audioModuleInfo.bufferSize.empty()) {
+        args.append(" buffer_size=");
+        args.append(audioModuleInfo.bufferSize);
+    }
+
+    if (!audioModuleInfo.format.empty()) {
+        args.append(" format=");
+        args.append(audioModuleInfo.format);
+        MEDIA_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
+    }
+}
+
 // Private Members
-std::string AudioAdapterManager::GetModuleArgs(std::unique_ptr<AudioPortInfo> &audioPortInfo)
+std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo)
 {
     std::string args;
 
-    if (!strcmp(audioPortInfo->name, HDI_SINK)) {
-        if (audioPortInfo->rate != nullptr) {
-            args = "rate=";
-            args.append(audioPortInfo->rate);
+    if (audioModuleInfo.lib == HDI_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.adapterName.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
         }
-        if (audioPortInfo->format != nullptr) {
-            args.append(" format=");
-            args.append(audioPortInfo->format);
-            MEDIA_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
+    } else if (audioModuleInfo.lib == HDI_SOURCE) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.adapterName.empty()) {
+            args.append(" source_name=");
+            args.append(audioModuleInfo.name);
         }
-        if (audioPortInfo->channels != nullptr) {
-            args.append(" channels=");
-            args.append(audioPortInfo->channels);
-        }
-
-        if (audioPortInfo->buffer_size != nullptr) {
-            args.append(" buffer_size=");
-            args.append(audioPortInfo->buffer_size);
-        }
-    } else if (!strcmp(audioPortInfo->name, HDI_SOURCE)) {
-        if (audioPortInfo->rate != nullptr) {
-            args = "rate=";
-            args.append(audioPortInfo->rate);
-        }
-
-        if (audioPortInfo->channels != nullptr) {
-            args.append(" channels=");
-            args.append(audioPortInfo->channels);
-        }
-
-        if (audioPortInfo->buffer_size != nullptr) {
-            args.append(" buffer_size=");
-            args.append(audioPortInfo->buffer_size);
-        }
-    } else if (!strcmp(audioPortInfo->name, PIPE_SINK)) {
-        if (audioPortInfo->fileName != nullptr) {
+    } else if (audioModuleInfo.lib == PIPE_SINK) {
+        if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
-            args.append(audioPortInfo->fileName);
+            args.append(audioModuleInfo.fileName);
         }
-    } else if (!strcmp(audioPortInfo->name, PIPE_SOURCE)) {
-        if (audioPortInfo->fileName != nullptr) {
+    } else if (audioModuleInfo.lib == PIPE_SOURCE) {
+        if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
-            args.append(audioPortInfo->fileName);
+            args.append(audioModuleInfo.fileName);
         }
     }
 

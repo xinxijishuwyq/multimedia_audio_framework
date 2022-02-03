@@ -52,6 +52,30 @@ void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &
     }
 }
 
+void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
+{
+    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerProxy: OnDeviceChange at listener proxy");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    auto devices = deviceChangeAction.deviceDescriptors;
+    auto size = deviceChangeAction.deviceDescriptors.size();
+
+    data.WriteInt32(deviceChangeAction.type);
+    data.WriteInt32(size);
+
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(data);
+    }
+
+    int error = Remote()->SendRequest(ON_DEVICE_CHANGED, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("OnDeviceChange failed, error: %{public}d", error);
+    }
+}
+
 AudioPolicyManagerListenerCallback::AudioPolicyManagerListenerCallback(
     const sptr<IStandardAudioPolicyManagerListener> &listener) : listener_(listener)
 {

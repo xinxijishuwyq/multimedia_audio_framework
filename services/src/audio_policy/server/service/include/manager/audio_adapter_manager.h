@@ -31,10 +31,10 @@ using namespace OHOS::DistributedKv;
 
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
-    static constexpr char HDI_SINK[] = "libmodule-hdi-sink.z.so";
-    static constexpr char HDI_SOURCE[] = "libmodule-hdi-source.z.so";
-    static constexpr char PIPE_SINK[] = "libmodule-pipe-sink.z.so";
-    static constexpr char PIPE_SOURCE[] = "libmodule-pipe-source.z.so";
+    static constexpr std::string_view HDI_SINK = "libmodule-hdi-sink.z.so";
+    static constexpr std::string_view HDI_SOURCE = "libmodule-hdi-source.z.so";
+    static constexpr std::string_view PIPE_SINK = "libmodule-pipe-sink.z.so";
+    static constexpr std::string_view PIPE_SOURCE = "libmodule-pipe-source.z.so";
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_COUNT = 5;
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
     static constexpr float MAX_VOLUME = 1.0f;
@@ -61,7 +61,7 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType);
 
-    AudioIOHandle OpenAudioPort(std::unique_ptr<AudioPortInfo> &audioPortInfo);
+    AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle);
 
@@ -96,7 +96,7 @@ private:
     }
 
     bool ConnectToPulseAudio(void);
-    std::string GetModuleArgs(std::unique_ptr<AudioPortInfo> &audioPortInfo);
+    std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo);
     std::string GetStreamNameByStreamType(AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
     bool InitAudioPolicyKvStore(bool& isFirstBoot);

@@ -44,11 +44,12 @@ public:
     static void *paDaemonThread(void *arg);
     void SetAudioParameter(const std::string key, const std::string value) override;
     const std::string GetAudioParameter(const std::string key) override;
+    int32_t UpdateAudioRoute() override;
+    int32_t ReleaseAudioRoute() override;
 private:
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptor_;
     static std::map<std::string, std::string> audioParameters;
     pthread_t m_paDaemonThread;
 };

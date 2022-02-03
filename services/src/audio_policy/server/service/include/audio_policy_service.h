@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_policy_manager_factory.h"
+#include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
@@ -28,14 +29,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyService : public IPortObserver {
+class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver {
 public:
-    const std::string HDI_SINK = "hdi_output";
-    const std::string HDI_SOURCE = "hdi_input";
-    const std::string BLUEZ_SINK = "fifo_output";
-    const std::string BLUEZ_SOURCE = "fifo_input";
-    const std::string PORT_NONE = "none";
-
     static AudioPolicyService& GetAudioPolicyService()
     {
         static AudioPolicyService audioPolicyService;
@@ -54,6 +49,8 @@ public:
     bool GetStreamMute(AudioStreamType streamType) const;
 
     bool IsStreamActive(AudioStreamType streamType) const;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
@@ -74,50 +71,69 @@ public:
     AudioScene GetAudioScene() const;
 
     // Parser callbacks
-    void OnAudioPortAvailable(std::unique_ptr<AudioPortInfo> portInfo);
+    void OnAudioPortAvailable(const AudioModuleInfo &moduleInfo);
 
-    void OnAudioPortPinAvailable(std::unique_ptr<AudioPortPinInfo> portInfo);
-
-    void OnDefaultOutputPortPin(InternalDeviceType device);
-
-    void OnDefaultInputPortPin(InternalDeviceType device);
+    void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
     void OnAudioInterruptEnable(bool enable);
 
+    void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData);
+
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
+
+    int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object);
 private:
 
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
           mConfigParser(ParserFactory::GetInstance().CreateParser(*this))
     {
+        mDeviceStatusListener = std::make_unique<DeviceStatusListener>(*this);
     }
 
     virtual ~AudioPolicyService() {}
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
-    std::list<InternalDeviceType>& GetActiveDevicesList(InternalDeviceType deviceType)
+    InternalDeviceType GetDeviceType(const std::string &deviceName);
+    void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
+
+    DeviceRole GetDeviceRole(DeviceType deviceType)
     {
         switch (deviceType) {
-            case InternalDeviceType::DEVICE_TYPE_SPEAKER:
-            case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-                return mActiveOutputDevices;
-            case InternalDeviceType::DEVICE_TYPE_MIC:
-                return mActiveInputDevices;
+            case DeviceType::DEVICE_TYPE_SPEAKER:
+            case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+            case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+            case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+                return DeviceRole::OUTPUT_DEVICE;
+            case DeviceType::DEVICE_TYPE_MIC:
+                return DeviceRole::INPUT_DEVICE;
             default:
-                return mActiveOutputDevices; // Default case return Output device
+                return DeviceRole::DEVICE_ROLE_NONE; // Default case return Output device
+        }
+    }
+
+    DeviceRole GetDeviceRole(const std::string &role)
+    {
+        if (role == ROLE_SINK) {
+            return DeviceRole::OUTPUT_DEVICE;
+        } else if (role == ROLE_SOURCE) {
+            return DeviceRole::INPUT_DEVICE;
+        } else {
+            return DeviceRole::DEVICE_ROLE_NONE;
         }
     }
 
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
+    std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
     std::unordered_map<std::string, AudioIOHandle> mIOHandles;
-    std::list<InternalDeviceType> mActiveOutputDevices;
-    std::list<InternalDeviceType> mActiveInputDevices;
+    std::vector<sptr<AudioDeviceDescriptor>> mActiveDevices;
+    std::list<sptr<IStandardAudioPolicyManagerListener>> deviceChangeCallbackList_;
     std::string GetPortName(InternalDeviceType deviceType);
     bool interruptEnabled_ = true;
     AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
     AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

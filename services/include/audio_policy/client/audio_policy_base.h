@@ -40,6 +40,8 @@ public:
 
     virtual bool IsStreamActive(AudioStreamType streamType) = 0;
 
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
+
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
@@ -55,6 +57,8 @@ public:
     virtual int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
+
+    virtual int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
 

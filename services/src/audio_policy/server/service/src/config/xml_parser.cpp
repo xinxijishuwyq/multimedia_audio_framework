@@ -61,20 +61,8 @@ bool XMLParser::ParseInternal(xmlNode &node)
     for (; currNode; currNode = currNode->next) {
         if (XML_ELEMENT_NODE == currNode->type) {
             switch (GetNodeNameAsInt(*currNode)) {
-                case BUILT_IN_DEVICES:
-                    ParseBuiltInDevices(*currNode);
-                    break;
-                case DEFAULT_OUTPUT_DEVICE:
-                    ParseDefaultOutputDevice(*currNode);
-                    break;
-                case DEFAULT_INPUT_DEVICE:
-                    ParseDefaultInputDevice(*currNode);
-                    break;
-                case AUDIO_PORTS:
-                    ParseAudioPorts(*currNode);
-                    break;
-                case AUDIO_PORT_PINS:
-                    ParseAudioPortPins(*currNode);
+                case DEVICE_CLASS:
+                    ParseDeviceClass(*currNode);
                     break;
                 case AUDIO_INTERRUPT_ENABLE:
                     ParseAudioInterrupt(*currNode);
@@ -86,71 +74,133 @@ bool XMLParser::ParseInternal(xmlNode &node)
         }
     }
 
+    MEDIA_ERR_LOG("%{public}s::xml parsing completed. size is [%{public}zu]", __func__, xmlParsedDataMap_.size());
+    mPortObserver.OnXmlParsingCompleted(xmlParsedDataMap_);
     return true;
+}
+
+void XMLParser::ParseDeviceClass(xmlNode &node)
+{
+    xmlNode *modulesNode = NULL;
+    modulesNode = node.xmlChildrenNode;
+
+    std::string className = ExtractPropertyValue("name", node);
+    if (className.empty()) {
+        MEDIA_ERR_LOG("No name provided for the device class %{public}s", node.name);
+        return;
+    }
+
+    deviceClassType_ = GetDeviceClassType(className);
+    xmlParsedDataMap_[deviceClassType_] = {};
+
+    while (modulesNode != NULL) {
+        if (modulesNode->type == XML_ELEMENT_NODE) {
+            ParseModules(*modulesNode);
+        }
+        modulesNode = modulesNode->next;
+    }
+}
+
+void XMLParser::ParseModules(xmlNode &node)
+{
+    xmlNode *moduleNode = NULL;
+    std::list<AudioModuleInfo> moduleList = {};
+    moduleNode = node.xmlChildrenNode;
+
+    while (moduleNode != NULL) {
+        if (moduleNode->type == XML_ELEMENT_NODE) {
+            AudioModuleInfo moduleInfo = {};
+            moduleInfo.name = ExtractPropertyValue("name", *moduleNode);
+            moduleInfo.lib = ExtractPropertyValue("lib", *moduleNode);
+            moduleInfo.role = ExtractPropertyValue("role", *moduleNode);
+            moduleInfo.rate = ExtractPropertyValue("rate", *moduleNode);
+            moduleInfo.format = ExtractPropertyValue("format", *moduleNode);
+            moduleInfo.channels = ExtractPropertyValue("channels", *moduleNode);
+            moduleInfo.bufferSize = ExtractPropertyValue("buffer_size", *moduleNode);
+            moduleInfo.fileName = ExtractPropertyValue("file", *moduleNode);
+            moduleInfo.ports = {};
+
+            ParsePorts(*moduleNode, moduleInfo);
+            moduleList.push_back(moduleInfo);
+        }
+        moduleNode = moduleNode->next;
+    }
+
+    xmlParsedDataMap_[deviceClassType_] = moduleList;
+}
+
+void XMLParser::ParsePorts(xmlNode &node, AudioModuleInfo &moduleInfo)
+{
+    xmlNode *portsNode = NULL;
+    portsNode = node.xmlChildrenNode;
+
+    while (portsNode != NULL) {
+        if (portsNode->type == XML_ELEMENT_NODE) {
+            ParsePort(*portsNode, moduleInfo);
+        }
+        portsNode = portsNode->next;
+    }
+}
+
+void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
+{
+    xmlNode *portNode = NULL;
+    std::list<AudioModuleInfo> portInfoList = {};
+    portNode = node.xmlChildrenNode;
+
+    while (portNode != NULL) {
+        if (portNode->type == XML_ELEMENT_NODE) {
+            moduleInfo.adapterName = ExtractPropertyValue("adapter_name", *portNode);
+            moduleInfo.id = ExtractPropertyValue("id", *portNode);
+
+            // if some parameter is not configured inside <Port>, take data from moduleinfo
+            std::string value = ExtractPropertyValue("rate", *portNode);
+            if (!value.empty()) {
+                moduleInfo.rate = value;
+            }
+
+            value = ExtractPropertyValue("format", *portNode);
+            if (!value.empty()) {
+                moduleInfo.format = value;
+            }
+
+            value = ExtractPropertyValue("channels", *portNode);
+            if (!value.empty()) {
+                moduleInfo.channels = value;
+            }
+
+            value = ExtractPropertyValue("buffer_size", *portNode);
+            if (!value.empty()) {
+                moduleInfo.bufferSize = value;
+            }
+
+            value = ExtractPropertyValue("file", *portNode);
+            if (!value.empty()) {
+                moduleInfo.fileName = value;
+            }
+
+            portInfoList.push_back(moduleInfo);
+
+            // Open the ports for internal devices
+            if (deviceClassType_ == ClassType::TYPE_PRIMARY) {
+                mPortObserver.OnAudioPortAvailable(moduleInfo);
+            }
+        }
+        portNode = portNode->next;
+    }
+
+    moduleInfo.ports.assign(portInfoList.begin(), portInfoList.end());
 }
 
 NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
 {
-    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("BuiltInDevices"))) {
-        return BUILT_IN_DEVICES;
-    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("DefaultOutputDevice"))) {
-        return DEFAULT_OUTPUT_DEVICE;
-    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("DefaultInputDevice"))) {
-        return DEFAULT_INPUT_DEVICE;
-    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPorts"))) {
-        return AUDIO_PORTS;
-    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPort"))) {
-        return AUDIO_PORT;
-    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPins"))) {
-        return AUDIO_PORT_PINS;
-    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioPortPin"))) {
-        return AUDIO_PORT_PIN;
+    if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("deviceclass"))) {
+        return DEVICE_CLASS;
     } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioInterruptEnable"))) {
         return AUDIO_INTERRUPT_ENABLE;
     } else {
         return UNKNOWN;
     }
-}
-
-void XMLParser::ParseBuiltInDevices(xmlNode &node)
-{
-    xmlNode *currNode = &node;
-    while (currNode) {
-        xmlNode *child = currNode->children;
-        xmlChar *device = xmlNodeGetContent(child);
-
-        if (device != NULL) {
-            MEDIA_DEBUG_LOG("Trigger Cb");
-        }
-
-        currNode = currNode->next;
-    }
-    return;
-}
-
-void XMLParser::ParseDefaultOutputDevice(xmlNode &node)
-{
-    xmlNode *child = node.children;
-    xmlChar *device = xmlNodeGetContent(child);
-
-    if (device != NULL) {
-        MEDIA_DEBUG_LOG("DefaultOutputDevice %{public}s", device);
-        mPortObserver.OnDefaultOutputPortPin(GetDeviceType(*device));
-    }
-    return;
-}
-
-void XMLParser::ParseDefaultInputDevice(xmlNode &node)
-{
-    xmlNode *child = node.children;
-    xmlChar *device = xmlNodeGetContent(child);
-
-    MEDIA_DEBUG_LOG("DefaultInputDevice");
-    if (device != NULL) {
-        MEDIA_DEBUG_LOG("DefaultInputDevice %{public}s", device);
-        mPortObserver.OnDefaultInputPortPin(GetDeviceType(*device));
-    }
-    return;
 }
 
 void XMLParser::ParseAudioInterrupt(xmlNode &node)
@@ -165,105 +215,33 @@ void XMLParser::ParseAudioInterrupt(xmlNode &node)
     }
 }
 
-void XMLParser::ParseAudioPorts(xmlNode &node)
+ClassType XMLParser::GetDeviceClassType(const std::string &deviceClass)
 {
-    xmlNode *child = node.xmlChildrenNode;
-
-    for (; child; child = child->next) {
-        if (!xmlStrcmp(child->name, reinterpret_cast<const xmlChar*>("AudioPort"))) {
-            std::unique_ptr<AudioPortInfo> portInfo = std::make_unique<AudioPortInfo>();
-            portInfo->type = TYPE_AUDIO_PORT;
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("role")))) {
-                portInfo->role = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("role"))));
-            }
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("name")))) {
-                portInfo->name = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            }
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("channels")))) {
-                portInfo->channels = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("channels"))));
-            }
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("rate")))) {
-                portInfo->rate = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("rate"))));
-                MEDIA_INFO_LOG("xml parser rate: %{public}s", portInfo->rate);
-            }
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("format")))) {
-                portInfo->format = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("format"))));
-                MEDIA_INFO_LOG("xml parser format: %{public}s", portInfo->format);
-            }
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("buffer_size")))) {
-                portInfo->buffer_size = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("buffer_size"))));
-            }
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("file")))) {
-                portInfo->fileName = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("file"))));
-            }
-
-            mPortObserver.OnAudioPortAvailable(std::move(portInfo));
-        }
-    }
-
-    return;
+    if (deviceClass == PRIMARY_DEVICE)
+        return ClassType::TYPE_PRIMARY;
+    else if (deviceClass == BLUETOOTH_DEVICE)
+        return ClassType::TYPE_A2DP;
+    else if (deviceClass == USB_DEVICE)
+        return ClassType::TYPE_USB;
+    else
+        return ClassType::TYPE_INVALID;
 }
 
-void XMLParser::ParseAudioPortPins(xmlNode &node)
+std::string XMLParser::ExtractPropertyValue(const std::string &propName, xmlNode &node)
 {
-    xmlNode *child = node.xmlChildrenNode;
+    std::string propValue = "";
+    xmlChar *tempValue = nullptr;
 
-    for (; child; child = child->next) {
-        if (!xmlStrcmp(child->name, reinterpret_cast<const xmlChar*>("AudioPortPin"))) {
-            std::unique_ptr<AudioPortPinInfo> portInfo = std::make_unique<AudioPortPinInfo>();
-            portInfo->type = TYPE_AUDIO_PORT_PIN;
-
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("role"))))
-                portInfo->role = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("role"))));
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("name"))))
-                portInfo->name = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            if (xmlHasProp(child, reinterpret_cast<xmlChar*>(const_cast<char*>("type"))))
-                portInfo->pinType = reinterpret_cast<char*>(xmlGetProp(
-                    child,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("type"))));
-
-            MEDIA_INFO_LOG("AudioPort:Role: %s, Name: %s, Type: %s", portInfo->role, portInfo->name, portInfo->pinType);
-
-            mPortObserver.OnAudioPortPinAvailable(std::move(portInfo));
-        }
+    if (xmlHasProp(&node, reinterpret_cast<const xmlChar*>(propName.c_str()))) {
+        tempValue = xmlGetProp(&node, reinterpret_cast<const xmlChar*>(propName.c_str()));
     }
 
-    return;
-}
+    if (tempValue != nullptr) {
+        propValue = reinterpret_cast<const char*>(tempValue);
+        xmlFree(tempValue);
+    }
 
-InternalDeviceType XMLParser::GetDeviceType(xmlChar &device)
-{
-    if (!xmlStrcmp(&device, reinterpret_cast<const xmlChar*>("Speaker")))
-        return InternalDeviceType::DEVICE_TYPE_SPEAKER;
-    if (!xmlStrcmp(&device, reinterpret_cast<const xmlChar*>("Built-In Mic")))
-        return InternalDeviceType::DEVICE_TYPE_MIC;
-
-    return InternalDeviceType::DEVICE_TYPE_NONE;
+    return propValue;
 }
 } // namespace AudioStandard
 } // namespace OHOS

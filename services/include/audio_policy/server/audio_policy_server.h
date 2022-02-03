@@ -52,6 +52,8 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) override;
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
@@ -67,6 +69,8 @@ public:
     int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
+
+    int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
 

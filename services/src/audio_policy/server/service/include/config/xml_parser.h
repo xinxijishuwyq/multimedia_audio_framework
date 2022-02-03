@@ -16,10 +16,12 @@
 #ifndef ST_XML_PARSER_H
 #define ST_XML_PARSER_H
 
+#include <list>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <unordered_map>
 
-#include "audio_config.h"
+#include "audio_module_info.h"
 #include "iport_observer.h"
 #include "parser.h"
 
@@ -44,18 +46,20 @@ public:
         Destroy();
     }
 private:
-    bool ParseInternal(xmlNode &node);
     NodeName GetNodeNameAsInt(xmlNode &node);
-    void ParseBuiltInDevices(xmlNode &node);
-    void ParseDefaultOutputDevice(xmlNode &node);
-    void ParseDefaultInputDevice(xmlNode &node);
+    bool ParseInternal(xmlNode &node);
+    void ParseDeviceClass(xmlNode &node);
+    void ParseModules(xmlNode &node);
+    void ParsePorts(xmlNode &node, AudioModuleInfo &moduleInfo);
+    void ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo);
     void ParseAudioInterrupt(xmlNode &node);
-    void ParseAudioPorts(xmlNode &node);
-    void ParseAudioPortPins(xmlNode &node);
-    InternalDeviceType GetDeviceType(xmlChar &device);
+    std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
+    ClassType GetDeviceClassType(const std::string &deviceClass);
 
     IPortObserver &mPortObserver;
     xmlDoc *mDoc;
+    ClassType deviceClassType_;
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

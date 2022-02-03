@@ -175,6 +175,29 @@ bool AudioPolicyProxy::IsStreamActive(AudioStreamType streamType)
     return reply.ReadBool();
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag deviceFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    data.WriteInt32(static_cast<int32_t>(deviceFlag));
+
+    int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("Get devices failed, error: %d", error);
+        return deviceInfo;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
+    return deviceInfo;
+}
+
 int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
     MessageParcel data;
@@ -238,6 +261,27 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
     int error = Remote()->SendRequest(UNSET_RINGERMODE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("AudioPolicyProxy: unset ringermode callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetDeviceChangeCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: SetDeviceChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_DEVICE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: SetDeviceChangeCallback failed, error: %{public}d", error);
         return error;
     }
 

@@ -118,6 +118,11 @@ bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
     return g_sProxy->IsStreamActive(streamType);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
+{
+    return g_sProxy->GetDevices(deviceFlag);
+}
+
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
     return g_sProxy->SetDeviceActive(deviceType, active);
@@ -155,6 +160,31 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
 int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
 {
     return g_sProxy->UnsetRingerModeCallback(clientId);
+}
+
+int32_t AudioPolicyManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
+{
+    MEDIA_ERR_LOG("Entered %{public}s", __func__);
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    if (deviceChangeCbStub == nullptr || g_sProxy == nullptr) {
+        MEDIA_ERR_LOG("SetDeviceChangeCallback: object null");
+        return ERROR;
+    }
+
+    deviceChangeCbStub->SetDeviceChangeCallback(callback);
+
+    sptr<IRemoteObject> object = deviceChangeCbStub->AsObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
+        return ERROR;
+    }
+
+    return g_sProxy->SetDeviceChangeCallback(object);
 }
 
 int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,

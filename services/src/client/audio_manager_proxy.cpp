@@ -116,22 +116,7 @@ int32_t AudioManagerProxy::SetAudioScene(list<DeviceType> &activeDeviceList, Aud
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    data.WriteInt32(static_cast<int32_t>(deviceFlag));
-
-    int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-    if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("Get devices failed, error: %d", error);
-        return deviceInfo;
-    }
-
-    int32_t size = reply.ReadInt32();
-    for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
-    }
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo = {};
     return deviceInfo;
 }
 
@@ -166,6 +151,16 @@ void AudioManagerProxy::SetAudioParameter(const std::string key, const std::stri
         MEDIA_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
     }
+}
+
+int32_t AudioManagerProxy::UpdateAudioRoute()
+{
+    return ERR_NONE;
+}
+
+int32_t AudioManagerProxy::ReleaseAudioRoute()
+{
+    return ERR_NONE;
 }
 } // namespace AudioStandard
 } // namespace OHOS

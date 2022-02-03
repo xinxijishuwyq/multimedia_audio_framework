@@ -32,6 +32,7 @@ public:
     DeviceType deviceType_;
     DeviceRole deviceRole_;
     AudioDeviceDescriptor();
+    AudioDeviceDescriptor(DeviceType type, DeviceRole role);
     virtual ~AudioDeviceDescriptor();
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
@@ -170,7 +171,7 @@ public:
     bool IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute) const;
     bool IsMicrophoneMute(void) const;
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) const;
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key) const;
     void SetAudioParameter(const std::string key, const std::string value) const;
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
