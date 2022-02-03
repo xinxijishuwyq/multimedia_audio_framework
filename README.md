@@ -12,7 +12,7 @@
 ## Introduction<a name="introduction"></a>
 The **audio\_standard** repository is used to implement audio-related features, including audio playback, recording, volume management and device management.
 
-**Figure  1**  Position in the subsystem architecture<a name="fig483116248288"></a>  
+**Figure  1**  Position in the subsystem architecture<a name="fig483116248288"></a>
 
 
 ![](figures/en-us_image_0000001152315135.png)
@@ -62,24 +62,24 @@ The structure of the repository directory is as follows:
 ## Usage Guidelines<a name="usage-guidelines"></a>
 ### Audio Playback<a name="audio-playback"></a>
 You can use APIs provided in this repository to convert audio data into audible analog signals, play the audio signals using output devices, and manage playback tasks. The following steps describe how to use  **AudioRenderer**  to develop the audio playback function:
-1. Use **Create** API with required stream type to get **AudioRenderer** instance.
+1. Use **Create** API with required renderer configuration to get **AudioRenderer** instance.
     ```
-    AudioStreamType streamType = STREAM_MUSIC; // example stream type
-    std::unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ```
 2. (Optional) Static APIs **GetSupportedFormats**(), **GetSupportedChannels**(), **GetSupportedEncodingTypes**(), **GetSupportedSamplingRates**() can be used to get the supported values of the params.
-3. To Prepare the device, call **SetParams** on the instance.
-    ```
-    AudioRendererParams rendererParams;
-    rendererParams.sampleFormat = SAMPLE_S16LE;
-    rendererParams.sampleRate = SAMPLE_RATE_44100;
-    rendererParams.channelCount = STEREO;
-    rendererParams.encodingType = ENCODING_PCM;
 
-    audioRenderer->SetParams(rendererParams);
-    ```
-4. (Optional) use audioRenderer->**GetParams**(rendererParams) to validate SetParams
-5. Inorder to listen to Audio Interrupt events, it would be required to Register to **RendererCallbacks** using audioRenderer->**SetRendererCallback**
+3. (Optional) use audioRenderer->**GetRendererInfo**(AudioRendererInfo &) and audioRenderer->**GetStreamInfo**(AudioStreamInfo &) to retrieve the current renderer configuration values.
+
+4. Inorder to listen to Audio Interrupt events, it would be required to Register to **RendererCallbacks** using audioRenderer->**SetRendererCallback**
     ```
     class AudioRendererCallbackImpl : public AudioRendererCallback {
         void OnInterrupt(const InterruptEvent &interruptEvent) override
@@ -161,25 +161,25 @@ Please refer [**audio_renderer.h**](https://gitee.com/openharmony/multimedia_aud
 ### Audio Recording<a name="audio-recording"></a>
 You can use the APIs provided in this repository for your application to record voices using input devices, convert the voices into audio data, and manage recording tasks. The following steps describe how to use **AudioCapturer** to develop the audio recording function:
 
-1. Use **Create** API with required stream type to get **AudioCapturer** instance.
+1. Use **Create** API with required capturer configuration to get **AudioCapturer** instance.
     ```
-    AudioStreamType streamType = STREAM_MUSIC;
-    std::unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(streamType);
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ```
 2. (Optional) Static APIs **GetSupportedFormats**(), **GetSupportedChannels**(), **GetSupportedEncodingTypes**(), **GetSupportedSamplingRates()** can be used to get the supported values of the params.
-3. To Prepare the device, call **SetParams** on the instance.
-    ```
-    AudioCapturerParams capturerParams;
-    capturerParams.sampleFormat = SAMPLE_S16LE;
-    capturerParams.sampleRate = SAMPLE_RATE_44100;
-    capturerParams.channelCount = STEREO;
-    capturerParams.encodingType = ENCODING_PCM;
 
-    audioCapturer->SetParams(capturerParams);
-    ```
-4. (Optional) use audioCapturer->**GetParams**(capturerParams) to validate SetParams()
+4. (Optional) use audioCapturer->**GetCapturerInfo**(AudioCapturerInfo &) and audioCapturer->**GetStreamInfo**(AudioStreamInfo &) to retrieve the current capturer configuration values.
+
 5. Call audioCapturer->**Start**() function on the AudioCapturer instance to start the recording task.
-6. Get the buffer length to be read, using **GetBufferSize** API. 
+
+6. Get the buffer length to be read, using **GetBufferSize** API.
     ```
     audioCapturer->GetBufferSize(bufferLen);
     ```

@@ -56,8 +56,7 @@ static const std::map<std::string, AudioSamplingRate> samplingRateMap = {
 
 static const std::map<std::string, AudioEncodingType> encodingTypeMap = {
     {"ENCODING_TYPE_INVALID", ENCODING_INVALID},
-    {"ENCODING_TYPE_RAW", ENCODING_PCM},
-    {"ENCODING_TYPE_MP3", ENCODING_MP3}
+    {"ENCODING_TYPE_RAW", ENCODING_PCM}
 };
 
 static const std::map<std::string, ContentType> contentTypeMap = {

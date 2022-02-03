@@ -306,12 +306,7 @@ declare namespace audio {
      * Raw pcm type.
      * @since 8
      */
-    ENCODING_TYPE_RAW = 0,
-    /**
-     * Mp3 encoding type.
-     * @since 8
-     */
-    ENCODING_TYPE_MP3 = 1,
+    ENCODING_TYPE_RAW = 0
   }
 
   /**
