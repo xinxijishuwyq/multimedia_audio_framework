@@ -80,7 +80,7 @@ int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
     int32_t result = audioCapturer->GetAudioStreamInfo(audioStreamParams);
     if (SUCCESS == result) {
         params.audioSampleFormat = static_cast<AudioSampleFormat>(audioStreamParams.format);
-        params.samplingRate =  static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        params.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         params.audioChannel = static_cast<AudioChannel>(audioStreamParams.channels);
         params.audioEncoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     }
@@ -101,7 +101,7 @@ int32_t AudioCapturerPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
     int32_t result = audioCapturer->GetAudioStreamInfo(audioStreamParams);
     if (SUCCESS == result) {
         streamInfo.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
-        streamInfo.samplingRate =  static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+        streamInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     }

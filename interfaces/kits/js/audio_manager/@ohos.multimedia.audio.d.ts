@@ -263,13 +263,7 @@ declare namespace audio {
    */
   enum AudioChannel {
     CHANNEL_1 = 0x1 << 0,
-    CHANNEL_2 = 0x1 << 1,
-    CHANNEL_3 = 0x1 << 2,
-    CHANNEL_4 = 0x1 << 3,
-    CHANNEL_5 = 0x1 << 4,
-    CHANNEL_6 = 0x1 << 5,
-    CHANNEL_7 = 0x1 << 6,
-    CHANNEL_8 = 0x1 << 7
+    CHANNEL_2 = 0x1 << 1
   }
 
   /**
@@ -306,12 +300,7 @@ declare namespace audio {
      * Raw pcm type.
      * @since 8
      */
-    ENCODING_TYPE_RAW = 0,
-    /**
-     * Mp3 encoding type.
-     * @since 8
-     */
-    ENCODING_TYPE_MP3 = 1,
+    ENCODING_TYPE_RAW = 0
   }
 
   /**
@@ -841,12 +830,14 @@ declare namespace audio {
      * @return VolumeEvent callback.
      * @since 8
      * @sysCap SystemCapability.Multimedia.Audio
+     * @systemapi
      */
     on(type: 'volumeChange', callback: Callback<VolumeEvent>): void;
     /**
      * Monitors ringer mode change
      * @since 8
      * @sysCap SystemCapability.Multimedia.Audio
+     * @systemapi
      */
     on(type: 'ringerModeChange', callback: Callback<AudioRingMode>): void;
     /**
@@ -913,6 +904,7 @@ declare namespace audio {
    * Audio volume event
    * @since 8
    * @sysCap SystemCapability.Multimedia.Audio
+   * @systemapi
    */
   interface VolumeEvent {
     /**
