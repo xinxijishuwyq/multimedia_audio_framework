@@ -26,9 +26,11 @@ namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 
-const uint64_t LATENCY_IN_MSEC = 200UL;
+const uint64_t LATENCY_IN_MSEC = 50UL;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
+const uint32_t MAX_LENGTH_FACTOR = 5;
+const uint32_t T_LENGTH_FACTOR = 4;
 
 #define CHECK_AND_RETURN_IFINVALID(expr) \
 do {                                     \
@@ -466,9 +468,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
-    bufferAttr.prebuf = static_cast<uint32_t>(-1);
-    bufferAttr.maxlength = static_cast<uint32_t>(-1);
-    bufferAttr.tlength = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
+    bufferAttr.maxlength = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC * MAX_LENGTH_FACTOR, &sampleSpec);
+    bufferAttr.tlength = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC * T_LENGTH_FACTOR, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK)
         result = pa_stream_connect_playback(paStream, NULL, &bufferAttr,
