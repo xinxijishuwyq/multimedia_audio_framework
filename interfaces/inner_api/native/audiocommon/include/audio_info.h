@@ -197,13 +197,7 @@ enum AudioSampleFormat {
 // channel
 enum AudioChannel {
     MONO = 1,
-    STEREO = 2,
-    CHANNEL_3 = 0x1 << 2,
-    CHANNEL_4 = 0x1 << 3,
-    CHANNEL_5 = 0x1 << 4,
-    CHANNEL_6 = 0x1 << 5,
-    CHANNEL_7 = 0x1 << 6,
-    CHANNEL_8 = 0x1 << 7
+    STEREO = 2
 };
 
 // sampling rate
