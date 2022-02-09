@@ -35,7 +35,8 @@ AudioPolicyManagerListenerStub::~AudioPolicyManagerListenerStub()
     MEDIA_DEBUG_LOG("AudioPolicyManagerListenerStub Instance complete");
 }
 
-void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &data, InterruptEvent &interruptEvent)
+void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &data,
+                                                              InterruptEventInternal &interruptEvent)
 {
     interruptEvent.eventType = static_cast<InterruptType>(data.ReadInt32());
     interruptEvent.forceType = static_cast<InterruptForceType>(data.ReadInt32());
@@ -48,7 +49,7 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
 {
     switch (code) {
         case ON_INTERRUPT: {
-            InterruptEvent interruptEvent = {};
+            InterruptEventInternal interruptEvent = {};
             ReadInterruptEventParams(data, interruptEvent);
             // To be modified by enqueuing the interrupt action scheduler
             interruptThreads_.emplace_back(
@@ -62,7 +63,7 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
     }
 }
 
-void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptEvent &interruptEvent)
+void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
     MEDIA_DEBUG_LOG("AudioPolicyManagerLiternerStub OnInterrupt start");
     std::shared_ptr<AudioInterruptCallback> cb = callback_.lock();

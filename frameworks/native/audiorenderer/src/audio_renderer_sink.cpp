@@ -349,7 +349,6 @@ int32_t AudioRendererSink::GetLatency(uint32_t *latency)
     uint32_t hdiLatency;
     if (audioRender_->GetLatency(audioRender_, &hdiLatency) == 0) {
         *latency = hdiLatency;
-        MEDIA_INFO_LOG("AudioRendererSink: Latency: %{public}u", *latency);
         return SUCCESS;
     } else {
         return ERR_OPERATION_FAILED;

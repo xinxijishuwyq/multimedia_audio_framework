@@ -19,9 +19,9 @@ config("audio_renderer_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
@@ -45,8 +45,8 @@ ohos_shared_library("audio_renderer") {
   sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/audio_renderer.cpp" ]
 
   deps = [
+    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiopolicy:audio_policy_client",
     "//utils/native/base:utils",
   ]
 
@@ -85,9 +85,9 @@ ohos_executable("audio_voip_test") {
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
     "//utils/native/base/include",

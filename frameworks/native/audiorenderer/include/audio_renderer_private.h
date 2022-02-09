@@ -70,13 +70,13 @@ public:
         const AudioInterrupt &audioInterrupt);
     virtual ~AudioInterruptCallbackImpl();
 
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    void HandleAndNotifyForcedEvent(const InterruptEvent &interruptEvent);
-    void NotifyForcePausedToResume(const InterruptEvent &interruptEvent);
-    bool HandleForceDucking(const InterruptEvent &interruptEvent);
+    void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
+    bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
     std::shared_ptr<AudioStream> audioStream_;
     std::weak_ptr<AudioRendererCallback> callback_;
     std::shared_ptr<AudioRendererCallback> cb;

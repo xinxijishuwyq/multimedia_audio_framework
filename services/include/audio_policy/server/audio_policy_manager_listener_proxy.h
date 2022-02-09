@@ -26,11 +26,11 @@ public:
     explicit AudioPolicyManagerListenerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyManagerListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;
-    void WriteInterruptEventParams(MessageParcel &data, const InterruptEvent &interruptEvent);
+    void WriteInterruptEventParams(MessageParcel &data, const InterruptEventInternal &interruptEvent);
 };
 
 class AudioPolicyManagerListenerCallback : public AudioInterruptCallback {
@@ -38,7 +38,7 @@ public:
     AudioPolicyManagerListenerCallback(const sptr<IStandardAudioPolicyManagerListener> &listener);
     virtual ~AudioPolicyManagerListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerCallback);
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
 private:
     sptr<IStandardAudioPolicyManagerListener> listener_ = nullptr;
 };

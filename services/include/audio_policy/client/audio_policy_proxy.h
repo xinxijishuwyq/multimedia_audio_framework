@@ -63,9 +63,12 @@ public:
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) override;
 
     AudioStreamType GetStreamInFocus() override;
+
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
+    void ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt);
 };
 } // namespace AudioStandard
 } // namespace OHOS

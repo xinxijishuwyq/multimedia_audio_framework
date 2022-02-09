@@ -45,7 +45,9 @@ private:
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &reply);
+    void GetSessionInfoInFocusInternal(MessageParcel &reply);
     void ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt);
+    void WriteAudioInteruptParams(MessageParcel &reply, const AudioInterrupt &audioInterrupt);
     void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // AudioStandard

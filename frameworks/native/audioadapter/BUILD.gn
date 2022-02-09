@@ -23,7 +23,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audioadapter/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",

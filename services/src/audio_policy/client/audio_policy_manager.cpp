@@ -205,6 +205,11 @@ AudioStreamType AudioPolicyManager::GetStreamInFocus()
     return g_sProxy->GetStreamInFocus();
 }
 
+int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
+{
+    return g_sProxy->GetSessionInfoInFocus(audioInterrupt);
+}
+
 int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     if (callback == nullptr) {

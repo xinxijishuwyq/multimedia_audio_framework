@@ -79,6 +79,8 @@ public:
 
     AudioStreamType GetStreamInFocus();
 
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt);
+
     int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 private:
     AudioPolicyManager()

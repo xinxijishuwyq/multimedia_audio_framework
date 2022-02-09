@@ -29,6 +29,14 @@ void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, Audio
     audioInterrupt.sessionID = data.ReadUint32();
 }
 
+void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, const AudioInterrupt &audioInterrupt)
+{
+    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
+    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
+    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.streamType));
+    reply.WriteUint32(audioInterrupt.sessionID);
+}
+
 void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
@@ -176,6 +184,15 @@ void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &reply)
     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
 }
 
+void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply)
+{
+    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+    AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, STREAM_DEFAULT, invalidSessionID};
+    int32_t ret = GetSessionInfoInFocus(audioInterrupt);
+    WriteAudioInteruptParams(reply, audioInterrupt);
+    reply.WriteInt32(ret);
+}
+
 void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
@@ -265,6 +282,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_STREAM_IN_FOCUS:
             GetStreamInFocusInternal(reply);
+            break;
+
+        case GET_SESSION_INFO_IN_FOCUS:
+            GetSessionInfoInFocusInternal(reply);
             break;
 
         default:
