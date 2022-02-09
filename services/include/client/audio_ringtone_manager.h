@@ -19,10 +19,11 @@
 #include <array>
 
 #include "iringtone_sound_manager.h"
+#include "media_data_ability_const.h"
 #include "media_log.h"
 #include "audio_errors.h"
 #include "player.h"
-#include "context.h"
+#include "foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context/context.h"
 #include "abs_shared_result_set.h"
 #include "data_ability_helper.h"
 #include "data_ability_predicates.h"
@@ -45,7 +46,6 @@ const int32_t NOTIFICATION_INDEX = 1;
 const int32_t ALARM_INDEX = 2;
 const float HIGH_VOL = 1.0f;
 const float LOW_VOL = 0.0f;
-const std::string MEDIALIB_DB_URI = "dataability:///com.ohos.medialibrary.MediaLibraryDataAbility";
 const std::string MEDIA_DATA_DB_TITLE = "title";
 const std::string MEDIA_DATA_DB_FILE_PATH = "path";
 const std::string MEDIA_KVSTOREOPRN = "kvstore_operation";
@@ -67,20 +67,21 @@ public:
     ~RingtoneSoundManager();
 
     // IRingtoneSoundManager override
-    std::shared_ptr<IRingtonePlayer> GetRingtonePlayer(const std::shared_ptr<AppExecFwk::Context> &ctx,
+    std::shared_ptr<IRingtonePlayer> GetRingtonePlayer(const std::shared_ptr<AbilityRuntime::Context> &ctx,
         RingtoneType type) override;
-    int32_t SetSystemNotificationUri(const std::shared_ptr<AppExecFwk::Context> &ctx, const std::string &uri) override;
-    int32_t SetSystemAlarmUri(const std::shared_ptr<AppExecFwk::Context> &ctx, const std::string &uri) override;
-    int32_t SetSystemRingtoneUri(const std::shared_ptr<AppExecFwk::Context> &ctx, const std::string &uri,
+    int32_t SetSystemNotificationUri(const std::shared_ptr<AbilityRuntime::Context> &ctx,
+        const std::string &uri) override;
+    int32_t SetSystemAlarmUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, const std::string &uri) override;
+    int32_t SetSystemRingtoneUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, const std::string &uri,
         RingtoneType type) override;
-    std::string GetSystemRingtoneUri(const std::shared_ptr<AppExecFwk::Context> &ctx, RingtoneType type) override;
-    std::string GetSystemNotificationUri(const std::shared_ptr<AppExecFwk::Context> &ctx) override;
-    std::string GetSystemAlarmUri(const std::shared_ptr<AppExecFwk::Context> &ctx) override;
+    std::string GetSystemRingtoneUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, RingtoneType type) override;
+    std::string GetSystemNotificationUri(const std::shared_ptr<AbilityRuntime::Context> &ctx) override;
+    std::string GetSystemAlarmUri(const std::shared_ptr<AbilityRuntime::Context> &ctx) override;
 
 private:
-    void CreateDataAbilityHelper(const std::shared_ptr<AppExecFwk::Context> &ctx);
-    std::string FetchUri(const std::shared_ptr<AppExecFwk::Context> &context, const std::string &operation);
-    int32_t SetUri(const std::shared_ptr<AppExecFwk::Context> &context, const NativeRdb::ValuesBucket &valueBucket,
+    void CreateDataAbilityHelper(const std::shared_ptr<AbilityRuntime::Context> &ctx);
+    std::string FetchUri(const std::shared_ptr<AbilityRuntime::Context> &context, const std::string &operation);
+    int32_t SetUri(const std::shared_ptr<AbilityRuntime::Context> &context, const NativeRdb::ValuesBucket &valueBucket,
         const std::string &operation);
 
     std::array<std::string, SIM_COUNT> ringtoneUri_ = {};
@@ -91,7 +92,8 @@ private:
 class RingtonePlayerCallback;
 class RingtonePlayer : public IRingtonePlayer {
 public:
-    RingtonePlayer(const std::shared_ptr<AppExecFwk::Context> &ctx, RingtoneSoundManager &audioMgr, RingtoneType type);
+    RingtonePlayer(const std::shared_ptr<AbilityRuntime::Context> &ctx, RingtoneSoundManager &audioMgr,
+        RingtoneType type);
     ~RingtonePlayer();
     void SetPlayerState(RingtoneState ringtoneState);
 
@@ -113,7 +115,7 @@ private:
     bool isStartQueued_ = false;
     std::string configuredUri_ = "";
     std::shared_ptr<Media::Player> player_ = nullptr;
-    std::shared_ptr<AppExecFwk::Context> context_;
+    std::shared_ptr<AbilityRuntime::Context> context_;
     std::shared_ptr<RingtonePlayerCallback> callback_ = nullptr;
     RingtoneSoundManager &audioRingtoneMgr_;
     RingtoneType type_ = RINGTONE_TYPE_DEFAULT;

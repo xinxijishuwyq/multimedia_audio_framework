@@ -20,6 +20,7 @@
 #include "ringtone_player_napi.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "napi_base_context.h"
 #include "ability.h"
 
 namespace OHOS {
@@ -51,6 +52,7 @@ private:
     static napi_value GetSystemAlarmUri(napi_env env, napi_callback_info info);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateRingtoneTypeObject(napi_env env);
+    static std::shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env, napi_value contextArg);
 
     static napi_ref ringtoneType_;
     static napi_ref sConstructor_;
@@ -58,7 +60,6 @@ private:
     napi_env env_;
     napi_ref wrapper_;
 
-    std::shared_ptr<AppExecFwk::Context> abilityContext_;
     std::shared_ptr<IRingtoneSoundManager> sysSoundMgrClient_ = nullptr;
 };
 
@@ -69,6 +70,7 @@ struct SystemSoundManagerAsyncContext {
     napi_ref callbackRef;
     bool status;
     SystemSoundManagerNapi *objectInfo;
+    std::shared_ptr<AbilityRuntime::Context> abilityContext_;
     std::string uri;
     std::shared_ptr<IRingtonePlayer> ringtonePlayer;
     int32_t ringtoneType;

@@ -46,7 +46,7 @@ napi_ref SystemSoundManagerNapi::sConstructor_ = nullptr;
 napi_ref SystemSoundManagerNapi::ringtoneType_ = nullptr;
 
 SystemSoundManagerNapi::SystemSoundManagerNapi()
-    : env_(nullptr), wrapper_(nullptr), abilityContext_(nullptr), sysSoundMgrClient_(nullptr) {}
+    : env_(nullptr), wrapper_(nullptr), sysSoundMgrClient_(nullptr) {}
 
 SystemSoundManagerNapi::~SystemSoundManagerNapi()
 {
@@ -137,23 +137,37 @@ napi_value SystemSoundManagerNapi::Init(napi_env env, napi_value exports)
     return nullptr;
 }
 
-static shared_ptr<AppExecFwk::Context> GetAbilityContext(napi_env env)
+shared_ptr<AbilityRuntime::Context> SystemSoundManagerNapi::GetAbilityContext(napi_env env, napi_value contextArg)
 {
-    napi_value global = nullptr;
-    NAPI_CALL(env, napi_get_global(env, &global));
+    HiLog::Error(LABEL, "GetAbilityContext");
+    bool stageMode = false;
 
-    napi_value abilityObj = nullptr;
-    NAPI_CALL(env, napi_get_named_property(env, global, "ability", &abilityObj));
+    napi_status status = AbilityRuntime::IsStageContext(env, contextArg, stageMode);
+    if (status == napi_ok && stageMode) {
+        HiLog::Info(LABEL, "Getting context with stage model");
+        auto context = AbilityRuntime::GetStageModeContext(env, contextArg);
+        if (context == nullptr) {
+            HiLog::Error(LABEL, "Failed to obtain ability in STAGE mode");
+            return nullptr;
+        }
 
-    AppExecFwk::Ability *ability = nullptr;
-    NAPI_CALL(env, napi_get_value_external(env, abilityObj, (void **)&ability));
+        return context;
+    } else {
+        HiLog::Info(LABEL, "Getting context with FA model");
+        auto ability = AbilityRuntime::GetCurrentAbility(env);
+        if (ability == nullptr) {
+            HiLog::Error(LABEL, "Failed to obtain ability in FA mode");
+            return nullptr;
+        }
 
-    shared_ptr<AppExecFwk::Context> abilityContext = ability->GetContext();
-    if (abilityContext == nullptr) {
-        HiLog::Error(LABEL, "Ability context is null");
+        auto faContext = ability->GetAbilityContext();
+        if (faContext == nullptr) {
+            HiLog::Error(LABEL, "GetAbilityContext returned null in FA model");
+            return nullptr;
+        }
+
+        return faContext;
     }
-
-    return abilityContext;
 }
 
 napi_value SystemSoundManagerNapi::Construct(napi_env env, napi_callback_info info)
@@ -171,12 +185,6 @@ napi_value SystemSoundManagerNapi::Construct(napi_env env, napi_callback_info in
             obj->sysSoundMgrClient_ = RingtoneFactory::CreateRingtoneManager();
             if (obj->sysSoundMgrClient_ == nullptr) {
                 HiLog::Error(LABEL, "Failed to create sysSoundMgrClient_ instance.");
-                return result;
-            }
-
-            obj->abilityContext_ = GetAbilityContext(env);
-            if (obj->abilityContext_ == nullptr) {
-                HiLog::Error(LABEL, "Failed to create abilityContext_ instance.");
                 return result;
             }
 
@@ -282,10 +290,12 @@ napi_value SystemSoundManagerNapi::SetSystemRingtoneUri(napi_env env, napi_callb
         return result;
     }
 
-    for (size_t i = PARAM1; i < argc; i++) {
+    for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
-        if (i == PARAM1 && valueType == napi_string) {
+        if (i == PARAM0) {
+            asyncContext->abilityContext_ = GetAbilityContext(env, argv[i]);
+        } else if (i == PARAM1 && valueType == napi_string) {
             napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
             asyncContext->uri = std::string(buffer);
         } else if (i == PARAM2 && valueType == napi_number) {
@@ -314,7 +324,7 @@ napi_value SystemSoundManagerNapi::SetSystemRingtoneUri(napi_env env, napi_callb
                 context->status = ERROR;
             } else {
                 context->status = context->objectInfo->sysSoundMgrClient_->SetSystemRingtoneUri(
-                    context->objectInfo->abilityContext_, context->uri,
+                    context->abilityContext_, context->uri,
                     static_cast<RingtoneType>(context->ringtoneType));
             }
         },
@@ -386,10 +396,12 @@ napi_value SystemSoundManagerNapi::GetSystemRingtoneUri(napi_env env, napi_callb
         = std::make_unique<SystemSoundManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM1; i < argc; i++) {
+        for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM1 && valueType == napi_number) {
+            if (i == PARAM0) {
+                asyncContext->abilityContext_ = GetAbilityContext(env, argv[i]);
+            } else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->ringtoneType);
             } else if (i == PARAM2 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
@@ -409,7 +421,7 @@ napi_value SystemSoundManagerNapi::GetSystemRingtoneUri(napi_env env, napi_callb
                 SystemSoundManagerAsyncContext *context
                     = static_cast<SystemSoundManagerAsyncContext *>(data);
                 context->uri = context->objectInfo->sysSoundMgrClient_->GetSystemRingtoneUri(
-                    context->objectInfo->abilityContext_, static_cast<RingtoneType>(context->ringtoneType));
+                    context->abilityContext_, static_cast<RingtoneType>(context->ringtoneType));
                 context->status = SUCCESS;
             },
             GetSysRngUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -491,10 +503,12 @@ napi_value SystemSoundManagerNapi::GetSystemRingtonePlayer(napi_env env, napi_ca
         = std::make_unique<SystemSoundManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM1; i < argc; i++) {
+        for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM1 && valueType == napi_number) {
+            if (i == PARAM0) {
+                asyncContext->abilityContext_ = GetAbilityContext(env, argv[i]);
+            } else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->ringtoneType);
             } else if (i == PARAM2 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
@@ -515,7 +529,7 @@ napi_value SystemSoundManagerNapi::GetSystemRingtonePlayer(napi_env env, napi_ca
                     = static_cast<SystemSoundManagerAsyncContext *>(data);
                 std::shared_ptr<IRingtonePlayer> ringtonePlayer
                     = context->objectInfo->sysSoundMgrClient_->
-                          GetRingtonePlayer(context->objectInfo->abilityContext_,
+                          GetRingtonePlayer(context->abilityContext_,
                                             static_cast<RingtoneType>(context->ringtoneType));
                 if (ringtonePlayer != nullptr) {
                     context->ringtonePlayer = ringtonePlayer;
@@ -598,10 +612,12 @@ napi_value SystemSoundManagerNapi::SetSystemNotificationUri(napi_env env, napi_c
         return result;
     }
 
-    for (size_t i = PARAM1; i < argc; i++) {
+    for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
-        if (i == PARAM1 && valueType == napi_string) {
+        if (i == PARAM0) {
+            asyncContext->abilityContext_ = GetAbilityContext(env, argv[i]);
+        } else if (i == PARAM1 && valueType == napi_string) {
             napi_get_value_string_utf8(env, argv[i], buffer, SIZE, &res);
             asyncContext->uri = std::string(buffer);
         } else if (i == PARAM2 && valueType == napi_function) {
@@ -628,7 +644,7 @@ napi_value SystemSoundManagerNapi::SetSystemNotificationUri(napi_env env, napi_c
                 context->status = ERROR;
             } else {
                 context->status = context->objectInfo->sysSoundMgrClient_->SetSystemNotificationUri(
-                    context->objectInfo->abilityContext_, context->uri);
+                    context->abilityContext_, context->uri);
             }
         },
         SetSysNotUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -700,6 +716,8 @@ napi_value SystemSoundManagerNapi::GetSystemNotificationUri(napi_env env, napi_c
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc == ARGS_TWO) {
+            asyncContext->abilityContext_ = GetAbilityContext(env, argv[PARAM0]);
+
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[PARAM1], &valueType);
             if (valueType == napi_function) {
@@ -717,7 +735,7 @@ napi_value SystemSoundManagerNapi::GetSystemNotificationUri(napi_env env, napi_c
                 SystemSoundManagerAsyncContext *context
                     = static_cast<SystemSoundManagerAsyncContext *>(data);
                 context->uri = context->objectInfo->sysSoundMgrClient_->GetSystemNotificationUri(
-                    context->objectInfo->abilityContext_);
+                    context->abilityContext_);
                 context->status = SUCCESS;
             },
             GetSysNotUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -824,7 +842,7 @@ napi_value SystemSoundManagerNapi::SetSystemAlarmUri(napi_env env, napi_callback
                 context->status = ERROR;
             } else {
                 context->status = context->objectInfo->sysSoundMgrClient_->SetSystemAlarmUri(
-                    context->objectInfo->abilityContext_, context->uri);
+                    context->abilityContext_, context->uri);
             }
         },
         SetSysAlarmUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -896,6 +914,8 @@ napi_value SystemSoundManagerNapi::GetSystemAlarmUri(napi_env env, napi_callback
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc == ARGS_TWO) {
+            asyncContext->abilityContext_ = GetAbilityContext(env, argv[PARAM0]);
+
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[PARAM1], &valueType);
             if (valueType == napi_function) {
@@ -913,7 +933,7 @@ napi_value SystemSoundManagerNapi::GetSystemAlarmUri(napi_env env, napi_callback
                 SystemSoundManagerAsyncContext *context
                     = static_cast<SystemSoundManagerAsyncContext *>(data);
                 context->uri = context->objectInfo->sysSoundMgrClient_->GetSystemAlarmUri(
-                    context->objectInfo->abilityContext_);
+                    context->abilityContext_);
                 context->status = SUCCESS;
             },
             GetSysAlarmUriAsyncCallbackComp, static_cast<void*>(asyncContext.get()), &asyncContext->work);
