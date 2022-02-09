@@ -81,8 +81,6 @@ private:
     struct AudioCapture *audioCapture_;
     struct AudioPort audioPort;
 
-    void *handle_;
-
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
 

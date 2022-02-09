@@ -33,8 +33,7 @@ bool AudioCapturerSource::micMuteState_ = false;
 
 AudioCapturerSource::AudioCapturerSource()
     : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
-      rightVolume_(MAX_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr),
-      handle_(nullptr)
+      rightVolume_(MAX_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
 {
     attr_ = {};
 #ifdef CAPTURE_DUMP
@@ -68,7 +67,6 @@ void AudioCapturerSource::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-    dlclose(handle_);
 #ifdef CAPTURE_DUMP
     if (pfd) {
         fclose(pfd);
@@ -127,25 +125,8 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, string adapte
 int32_t AudioCapturerSource::InitAudioManager()
 {
     MEDIA_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
-#ifdef __aarch64__
-    char resolvedPath[100] = "/system/lib64/libhdi_audio_client.z.so";
-#else
-    char resolvedPath[100] = "/system/lib/libhdi_audio_client.z.so";
-#endif
-    struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
-    handle_ = dlopen(resolvedPath, 1);
-    if (handle_ == nullptr) {
-        MEDIA_ERR_LOG("Open Capturer so Fail");
-        return ERR_INVALID_HANDLE;
-    }
-
-    getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
-    if (getAudioManager == nullptr) {
-        return ERR_INVALID_HANDLE;
-    }
-
-    audioManager_ = getAudioManager();
+    audioManager_ = GetAudioProxyManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
