@@ -39,6 +39,7 @@ enum AudioPolicyCommand {
     ACTIVATE_INTERRUPT,
     DEACTIVATE_INTERRUPT,
     GET_STREAM_IN_FOCUS,
+    GET_SESSION_INFO_IN_FOCUS,
     SET_VOLUME_KEY_EVENT_CALLBACK
 };
 } // namespace AudioStandard

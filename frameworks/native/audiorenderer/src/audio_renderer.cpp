@@ -279,6 +279,11 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
     return audioStream_->SetRenderRate(renderRate);
 }
 
+AudioRendererRate AudioRendererPrivate::GetRenderRate() const
+{
+    return audioStream_->GetRenderRate();
+}
+
 AudioInterruptCallbackImpl::AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
     const AudioInterrupt &audioInterrupt)
     : audioStream_(audioStream), audioInterrupt_(audioInterrupt)
@@ -309,7 +314,7 @@ void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEven
     }
 }
 
-bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEvent &interruptEvent)
+bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
     float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.streamType);
     float duckVolume = interruptEvent.duckVolume;
@@ -339,15 +344,15 @@ bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEvent &interr
     return true;
 }
 
-void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEvent &interruptEvent)
+void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
 {
     // Change InterruptForceType to Share, Since app will take care of resuming
     InterruptEvent interruptEventResume {interruptEvent.eventType, INTERRUPT_SHARE,
-                                         interruptEvent.hintType, 0.2f}; // last field 0.2f duck volume not used by app
+                                         interruptEvent.hintType};
     NotifyEvent(interruptEventResume);
 }
 
-void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent &interruptEvent)
+void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
     InterruptHint hintType = interruptEvent.hintType;
     MEDIA_DEBUG_LOG("AudioRendererPrivate ForceType: INTERRUPT_FORCE, Force handle the event and notify the app");
@@ -395,10 +400,11 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
             break;
     }
     // Notify valid forced event callbacks to app
-    NotifyEvent(interruptEvent);
+    InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
+    NotifyEvent(interruptEventForced);
 }
 
-void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEvent &interruptEvent)
+void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
     cb = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
@@ -406,22 +412,20 @@ void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEvent &interruptEven
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
         MEDIA_DEBUG_LOG("AudioRendererPrivate ForceType: INTERRUPT_SHARE. Let app handle the event");
-        NotifyEvent(interruptEvent);
+        InterruptEvent interruptEventShared {interruptEvent.eventType, interruptEvent.forceType,
+                                             interruptEvent.hintType};
+        NotifyEvent(interruptEventShared);
         return;
     }
 
     if (audioStream_ == nullptr) {
-        MEDIA_DEBUG_LOG("AudioRendererPrivate: stream is not alive. No need to take forced action. return");
+        MEDIA_DEBUG_LOG("AudioInterruptCallbackImpl::OnInterrupt stream is not alive. No need to take forced action");
         return;
     }
 
     HandleAndNotifyForcedEvent(interruptEvent);
 }
 
-AudioRendererRate AudioRendererPrivate::GetRenderRate() const
-{
-    return audioStream_->GetRenderRate();
-}
 
 std::vector<AudioSampleFormat> AudioRenderer::GetSupportedFormats()
 {

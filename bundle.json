@@ -52,7 +52,7 @@
             "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:interrupt_multi_renderer_test",
             "//foundation/multimedia/audio_standard/services:audio_policy_service_packages",
             "//foundation/multimedia/audio_standard/sa_profile:audio_policy_service_sa_profile",
-            "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiopolicy:audio_policy_test",
+            "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy:audio_policy_test",
             "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:audio_capturer_source",
             "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_sink",
             "//foundation/multimedia/audio_standard/frameworks/native/audioadapter:pulse_audio_service_adapter"
@@ -62,14 +62,10 @@
               "header": {
                 "header_base": [
                     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
-                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
-                    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
                     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include"
                 ],
                 "header_files": [
                   "audio_system_manager.h",
-                  "audio_session.h",
-                  "audio_stream.h",
                   "audio_info.h"
                 ]
               },

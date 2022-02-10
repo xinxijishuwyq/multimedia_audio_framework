@@ -343,7 +343,13 @@ struct InterruptEvent {
      * but in share mode, only provide a hint for application to decide.
      */
     InterruptHint hintType;
+};
 
+// Used internally only by AudioFramework
+struct InterruptEventInternal {
+    InterruptType eventType;
+    InterruptForceType forceType;
+    InterruptHint hintType;
     float duckVolume;
 };
 

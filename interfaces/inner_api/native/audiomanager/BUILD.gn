@@ -26,9 +26,11 @@ group("audio_client_test_packages") {
 
 config("audio_client_public_config") {
   include_dirs = [
+    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiopolicy/include",
     "//foundation/multimedia/audio_standard/services/include",
     "//foundation/multimedia/audio_standard/services/include/client",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/client",
@@ -36,8 +38,6 @@ config("audio_client_public_config") {
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
@@ -68,8 +68,8 @@ ohos_shared_library("audio_client") {
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio/src/pulse:pulse",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiopolicy:audio_policy_client",
     "//third_party/bounds_checking_function:libsec_static",
     "//utils/native/base:utils",
   ]

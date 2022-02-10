@@ -31,12 +31,12 @@ public:
     // IStandardAudioManagerListener override
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
 private:
     std::weak_ptr<AudioInterruptCallback> callback_;
-    void ReadInterruptEventParams(MessageParcel &data, InterruptEvent &interruptEvent);
+    void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
     std::vector<std::unique_ptr<std::thread>> interruptThreads_;
 };
 } // namespace AudioStandard

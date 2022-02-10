@@ -27,9 +27,9 @@ public:
      * Called when an interrupt is received.
      *
      * @param interruptEvent Indicates the InterruptEvent information needed by client.
-     * For details, refer InterruptEvent struct in audio_info.h
+     * For details, refer InterruptEventInternal struct in audio_info.h
      */
-    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
+    virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
 };
 } // namespce AudioStandard
 } // namespace OHOS

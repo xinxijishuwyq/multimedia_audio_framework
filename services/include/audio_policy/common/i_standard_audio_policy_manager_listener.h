@@ -26,7 +26,7 @@ namespace AudioStandard {
 class IStandardAudioPolicyManagerListener : public IRemoteBroker {
 public:
     virtual ~IStandardAudioPolicyManagerListener() = default;
-    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
+    virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
 
     enum AudioPolicyManagerListenerMsg {
         ON_ERROR = 0,

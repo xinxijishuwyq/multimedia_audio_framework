@@ -32,6 +32,14 @@ void AudioPolicyProxy::WriteAudioInteruptParams(MessageParcel &data, const Audio
     data.WriteUint32(audioInterrupt.sessionID);
 }
 
+void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt.streamUsage = static_cast<StreamUsage>(reply.ReadInt32());
+    audioInterrupt.contentType = static_cast<ContentType>(reply.ReadInt32());
+    audioInterrupt.streamType = static_cast<AudioStreamType>(reply.ReadInt32());
+    audioInterrupt.sessionID = reply.ReadUint32();
+}
+
 int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
 {
     MessageParcel data;
@@ -317,6 +325,21 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus()
         MEDIA_ERR_LOG("get stream in focus failed, error: %d", error);
     }
     return static_cast<AudioStreamType>(reply.ReadInt32());
+}
+
+int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t error = Remote()->SendRequest(GET_SESSION_INFO_IN_FOCUS, data, reply, option);
+    if (error != ERR_NONE) {
+        MEDIA_ERR_LOG("AudioPolicyProxy::GetSessionInfoInFocus failed, error: %d", error);
+    }
+    ReadAudioInterruptParams(reply, audioInterrupt);
+
+    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object)

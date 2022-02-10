@@ -66,6 +66,8 @@ public:
 
     virtual AudioStreamType GetStreamInFocus() = 0;
 
+    virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
+
     virtual int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
