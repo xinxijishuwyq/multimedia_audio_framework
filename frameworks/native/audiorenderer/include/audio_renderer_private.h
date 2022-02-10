@@ -63,8 +63,8 @@ public:
     ~AudioRendererPrivate();
 
 private:
-    std::shared_ptr<AudioRendererCallback> callback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
+    std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AudioInterrupt audioInterrupt_ =
         {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
     uint32_t sessionID_ = INVALID_SESSION_ID;
@@ -90,6 +90,16 @@ private:
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
     float instanceVolBeforeDucking_ = 0.2f;
+};
+
+class AudioStreamCallbackRenderer : public AudioStreamCallback {
+public:
+    virtual ~AudioStreamCallbackRenderer() = default;
+
+    void OnStateChange(const State state) override;
+    void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
+private:
+    std::weak_ptr<AudioRendererCallback> callback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

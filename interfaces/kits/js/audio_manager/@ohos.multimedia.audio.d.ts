@@ -1141,15 +1141,15 @@ declare namespace audio {
      */
     off(type: "periodReach"): void;
     /**
-     * Subscribes period reach event callback.
+     * Subscribes audio state change event callback.
      * @param type Event type.
-     * @param callback Callback used to listen for the audio state event
-     * @return Audio state
+     * @param callback Callback used to listen for the audio state change event.
+     * @return AudioState
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      * @initial
      */
-    on(type: "stateChanged", callback: Callback<AudioState>): void;
+    on(type: "stateChange", callback: Callback<AudioState>): void;
   }
 
   /**
@@ -1355,17 +1355,17 @@ declare namespace audio {
      * @initial
      */
     off(type: "periodReach"): void;
-
     /**
-     * Subscribes period reach event callback.
+     * Subscribes audio state change event callback.
      * @param type Event type.
-     * @param callback Callback used to listen for the audio state event
-     * @return Audio state
+     * @param callback Callback used to listen for the audio state change event.
+     * @return AudioState
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      * @initial
      */
-    on(type: "stateChanged", callback: Callback<AudioState>): void;
+    on(type: "stateChange", callback: Callback<AudioState>): void;
+
   }
 
   /**

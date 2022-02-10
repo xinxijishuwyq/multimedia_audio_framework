@@ -16,6 +16,7 @@
 #include "audio_manager_napi.h"
 
 #include "audio_capturer_napi.h"
+#include "audio_common_napi.h"
 #include "audio_device_descriptor_napi.h"
 #include "audio_errors.h"
 #include "audio_parameters_napi.h"
@@ -671,30 +672,6 @@ napi_value AudioManagerNapi::GetAudioManager(napi_env env, napi_callback_info in
     }
 
     return AudioManagerNapi::CreateAudioManagerWrapper(env);
-}
-
-// Function to read string argument from napi_value
-static string GetStringArgument(napi_env env, napi_value value)
-{
-    napi_status status;
-    string strValue = "";
-    size_t bufLength = 0;
-    char *buffer = nullptr;
-
-    status = napi_get_value_string_utf8(env, value, nullptr, 0, &bufLength);
-    if (status == napi_ok && bufLength > 0) {
-        buffer = (char *)malloc((bufLength + 1) * sizeof(char));
-        if (buffer != nullptr) {
-            status = napi_get_value_string_utf8(env, value, buffer, bufLength + 1, &bufLength);
-            if (status == napi_ok) {
-                strValue = buffer;
-            }
-            free(buffer);
-            buffer = nullptr;
-        }
-    }
-
-    return strValue;
 }
 
 static void CommonCallbackRoutine(napi_env env, AudioManagerAsyncContext* &asyncContext, const napi_value &valueParam)
@@ -1463,9 +1440,9 @@ napi_value AudioManagerNapi::SetAudioParameter(napi_env env, napi_callback_info 
             napi_typeof(env, argv[i], &valueType);
 
             if (i == PARAM0 && valueType == napi_string) {
-                asyncContext->key = GetStringArgument(env, argv[i]);
+                asyncContext->key = AudioCommonNapi::GetStringArgument(env, argv[i]);
             } else if (i == PARAM1 && valueType == napi_string) {
-                asyncContext->valueStr = GetStringArgument(env, argv[i]);
+                asyncContext->valueStr = AudioCommonNapi::GetStringArgument(env, argv[i]);
             } else if (i == PARAM2 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -1524,7 +1501,7 @@ napi_value AudioManagerNapi::GetAudioParameter(napi_env env, napi_callback_info 
             napi_typeof(env, argv[i], &valueType);
 
             if (i == PARAM0 && valueType == napi_string) {
-                asyncContext->key = GetStringArgument(env, argv[i]);
+                asyncContext->key = AudioCommonNapi::GetStringArgument(env, argv[i]);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -1934,8 +1911,8 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
 
-    std::string callbackName = GetStringArgument(env, args[0]);
-    MEDIA_INFO_LOG("AudioManagerNapi: callbackName: %{public}s", callbackName.c_str());
+    std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
+    MEDIA_DEBUG_LOG("AudioManagerNapi: callbackName: %{public}s", callbackName.c_str());
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (managerNapi->ringerModecallbackNapi_ == nullptr) {
             managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);

@@ -116,9 +116,9 @@ private:
     uint32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
-
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;
     std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
+    std::shared_ptr<AudioCapturerCallback> callbackNapi_ = nullptr;
 };
 }
 }

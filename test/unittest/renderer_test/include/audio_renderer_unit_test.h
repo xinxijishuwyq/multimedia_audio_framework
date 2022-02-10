@@ -23,6 +23,7 @@ namespace AudioStandard {
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnStateChange(const RendererState state) override {}
 };
 
 class AudioRendererUnitTest : public testing::Test {

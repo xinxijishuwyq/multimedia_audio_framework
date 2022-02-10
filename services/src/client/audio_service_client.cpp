@@ -128,11 +128,44 @@ static size_t AlignToAudioFrameSize(size_t l, const pa_sample_spec &ss)
     return (l / fs) * fs;
 }
 
-void AudioServiceClient::PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
+    AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
+    asClient->state_ = RUNNING;
+    std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(asClient->state_);
+    }
+    asClient->streamCmdStatus = success;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
+void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
+
+    asClient->state_ = STOPPED;
+    std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(asClient->state_);
+    }
+    asClient->streamCmdStatus = success;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
+void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
+
+    asClient->state_ = PAUSED;
+    std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(asClient->state_);
+    }
     asClient->streamCmdStatus = success;
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -275,6 +308,8 @@ AudioServiceClient::AudioServiceClient()
     acache.isFull = false;
     acache.totalCacheSize = 0;
     acache.buffer = NULL;
+
+    PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
 }
 
 void AudioServiceClient::ResetPAAudioClient()
@@ -345,6 +380,8 @@ void AudioServiceClient::ResetPAAudioClient()
     acache.writeIndex = 0;
     acache.isFull = false;
     acache.totalCacheSize = 0;
+
+    PAStreamCorkSuccessCb = NULL;
 }
 
 AudioServiceClient::~AudioServiceClient()
@@ -638,6 +675,12 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         }
     }
 
+    state_ = PREPARED;
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(state_);
+    }
+
     MEDIA_INFO_LOG("Created Stream");
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -674,7 +717,7 @@ int32_t AudioServiceClient::StartStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_cork(paStream, 0, PAStreamCmdSuccessCb, (void *)this);
+    operation = pa_stream_cork(paStream, 0, PAStreamStartSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -694,12 +737,42 @@ int32_t AudioServiceClient::StartStream()
 
 int32_t AudioServiceClient::PauseStream()
 {
-    return StopStream();
+    lock_guard<mutex> lock(ctrlMutex);
+    PAStreamCorkSuccessCb = PAStreamPauseSuccessCb;
+    int32_t ret = CorkStream();
+    if (ret) {
+        return ret;
+    }
+
+    if (!streamCmdStatus) {
+        MEDIA_ERR_LOG("Stream Pasue Failed");
+        return AUDIO_CLIENT_ERR;
+    } else {
+        MEDIA_INFO_LOG("Stream Pasued Successfully");
+        return AUDIO_CLIENT_SUCCESS;
+    }
 }
 
 int32_t AudioServiceClient::StopStream()
 {
     lock_guard<mutex> lock(ctrlMutex);
+    PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+    int32_t ret = CorkStream();
+    if (ret) {
+        return ret;
+    }
+
+    if (!streamCmdStatus) {
+        MEDIA_ERR_LOG("Stream Stop Failed");
+        return AUDIO_CLIENT_ERR;
+    } else {
+        MEDIA_INFO_LOG("Stream Stopped Successfully");
+        return AUDIO_CLIENT_SUCCESS;
+    }
+}
+
+int32_t AudioServiceClient::CorkStream()
+{
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
     pa_operation *operation = NULL;
 
@@ -713,7 +786,7 @@ int32_t AudioServiceClient::StopStream()
     }
 
     streamCmdStatus = 0;
-    operation = pa_stream_cork(paStream, 1, PAStreamCmdSuccessCb, (void *)this);
+    operation = pa_stream_cork(paStream, 1, PAStreamCorkSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -721,13 +794,7 @@ int32_t AudioServiceClient::StopStream()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainLoop);
 
-    if (!streamCmdStatus) {
-        MEDIA_ERR_LOG("Stream Stop Failed");
-        return AUDIO_CLIENT_ERR;
-    } else {
-        MEDIA_INFO_LOG("Stream Stopped Successfully");
-        return AUDIO_CLIENT_SUCCESS;
-    }
+    return AUDIO_CLIENT_SUCCESS;
 }
 
 int32_t AudioServiceClient::FlushStream()
@@ -1143,6 +1210,13 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 int32_t AudioServiceClient::ReleaseStream()
 {
     ResetPAAudioClient();
+    state_ = RELEASED;
+
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(state_);
+    }
+
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -1165,7 +1239,6 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
         minBufferSize = (size_t)bufferAttr->fragsize;
     }
 
-    MEDIA_INFO_LOG("buffer size: %zu", minBufferSize);
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -1557,6 +1630,20 @@ int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererR
 AudioRendererRate AudioServiceClient::GetStreamRenderRate()
 {
     return renderRate;
+}
+
+void AudioServiceClient::SaveStreamCallback(const std::weak_ptr<AudioStreamCallback> &callback)
+{
+    streamCallback_ = callback;
+
+    if (state_ != PREPARED) {
+        return;
+    }
+
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(state_);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

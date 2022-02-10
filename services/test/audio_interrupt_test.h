@@ -30,12 +30,13 @@ public:
         return shared_from_this();
     }
 
-    int32_t TestPlayback(const AudioStreamType &streamType);
+    int32_t TestPlayback();
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnStateChange(const RendererState state) override;
+    void saveStreamInfo(ContentType contentType, StreamUsage streamUsage);
     FILE *wavFile_ = nullptr;
-
 private:
-    bool InitRender() const;
+    bool InitRender();
     bool StartRender();
     bool GetBufferLen(size_t &bufferLen) const;
     void WriteBuffer();
@@ -46,6 +47,8 @@ private:
     bool isRenderStopped_ = false;
     bool isRenderingCompleted_ = false;
     std::unique_ptr<std::thread> writeThread_ = nullptr;
+    ContentType contentType_ = ContentType::CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage_ = StreamUsage::STREAM_USAGE_MEDIA;
 };
 } // AudioStandard
 } // OHOS

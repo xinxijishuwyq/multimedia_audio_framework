@@ -59,6 +59,18 @@ enum CapturerState {
     CAPTURER_RELEASED
 };
 
+class AudioCapturerCallback {
+public:
+    virtual ~AudioCapturerCallback() = default;
+    /**
+    * Called when renderer state is updated.
+     *
+     * @param state Indicates updated state of the capturer.
+     * For details, refer enum CapturerState.
+     */
+    virtual void OnStateChange(const CapturerState state) = 0;
+};
+
 class CapturerPositionCallback {
 public:
     virtual ~CapturerPositionCallback() = default;
@@ -99,15 +111,6 @@ public:
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &capturerOptions);
 
     /**
-     * @brief Obtains the number of frames required in the current condition, in bytes per sample.
-     *
-     * @param frameCount Indicates the pointer in which framecount will be written
-     * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
-
-    /**
      * @brief Sets audio capture parameters.
      *
      * @param params Indicates information about audio capture parameters to set. For details, see
@@ -116,6 +119,18 @@ public:
      * in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetParams(const AudioCapturerParams params) const = 0;
+
+    /**
+     * @brief Registers the capturer callback listener.
+     * (1)If old SetParams(const AudioCapturerParams params) API,
+     *    this API must be called immediately after SetParams.
+     * (2) Else if using Create(const AudioCapturerOptions &capturerOptions),
+     *    this API must be called immediately  after Create.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback) = 0;
 
     /**
      * @brief Obtains audio capturer parameters.
@@ -223,12 +238,21 @@ public:
      */
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
 
+    /* @brief Obtains the number of frames required in the current condition, in bytes per sample.
+     *
+     * @param frameCount Indicates the pointer in which framecount will be written
+     * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+
+    virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
     /**
      * @brief Registers the capturer position callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
+
     virtual int32_t SetCapturerPositionCallback(int64_t markPosition,
         const std::shared_ptr<CapturerPositionCallback> &callback) = 0;
 

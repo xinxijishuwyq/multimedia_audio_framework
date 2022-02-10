@@ -69,6 +69,14 @@ public:
      * For details, refer InterruptEvent struct in audio_info.h
      */
     virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
+
+    /**
+    * Called when renderer state is updated.
+     *
+     * @param state Indicates updated state of the renderer.
+     * For details, refer RendererState enum.
+     */
+    virtual void OnStateChange(const RendererState state) = 0;
 };
 
 class RendererPositionCallback {
@@ -108,6 +116,7 @@ public:
      * @return Returns unique pointer to the AudioRenderer object
     */
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType);
+
     /**
      * @brief creater renderer instance.
      *
@@ -116,14 +125,6 @@ public:
      * @return Returns unique pointer to the AudioRenderer object
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
-    /**
-     * @brief Obtains the number of frames required in the current condition, in bytes per sample.
-     *
-     * @param frameCount Indicates the reference variable in which framecount will be written
-     * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
 
     /**
      * @brief Sets audio renderer parameters.
@@ -134,6 +135,18 @@ public:
      * in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SetParams(const AudioRendererParams params) = 0;
+
+    /**
+     * @brief Registers the renderer callback listener.
+     * (1)If using old SetParams(const AudioCapturerParams params) API,
+     *    this API must be called immediatley after SetParams.
+     * (2) Else if using Create(const AudioRendererOptions &rendererOptions),
+     *    this API must be called immediatley after Create.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
 
     /**
      * @brief Obtains audio renderer parameters.
@@ -264,6 +277,15 @@ public:
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
 
     /**
+     * @brief Obtains the number of frames required in the current condition, in bytes per sample.
+     *
+     * @param frameCount Indicates the reference variable in which framecount will be written
+     * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
+
+    /**
      * @brief Set audio renderer descriptors
      *
      * @param audioRendererDesc Audio renderer descriptor
@@ -312,15 +334,6 @@ public:
      * @return Returns current render rate
      */
     virtual AudioRendererRate GetRenderRate() const = 0;
-
-    /**
-     * @brief Registers the renderer callback listener
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-
-    virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
 
     /**
      * @brief Registers the renderer position callback listener

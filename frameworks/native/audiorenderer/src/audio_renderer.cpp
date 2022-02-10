@@ -40,12 +40,12 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
 {
     ContentType contentType = rendererOptions.rendererInfo.contentType;
-    CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_SPEECH && contentType <= CONTENT_TYPE_RINGTONE, nullptr,
+    CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_RINGTONE, nullptr,
                              "Invalid content type");
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_MEDIA && streamUsage <= STREAM_USAGE_VOICE_ASSISTANT, nullptr,
-                             "Invalid stream usage");
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_VOICE_ASSISTANT,
+                             nullptr, "Invalid stream usage");
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
     auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType);
@@ -156,9 +156,11 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 
 int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback)
 {
+    // If the client is using the deprecated SetParams API. SetRendererCallback must be invoked, after SetParams.
+    // In general, callbacks can only be set after the renderer state is  PREPARED.
     RendererState state = GetStatus();
-    if (state != RENDERER_PREPARED) {
-        MEDIA_DEBUG_LOG("AudioRendererPrivate::SetRendererCallback State is not PREPARED to register callback");
+    if (state == RENDERER_NEW || state == RENDERER_RELEASED) {
+        MEDIA_DEBUG_LOG("AudioRendererPrivate::SetRendererCallback incorrect state:%{public}d to register cb", state);
         return ERR_ILLEGAL_STATE;
     }
     if (callback == nullptr) {
@@ -166,11 +168,27 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
         return ERR_INVALID_PARAM;
     }
 
-    callback_ = callback;
-
+    // Save reference for interrupt callback
+    if (audioInterruptCallback_ == nullptr) {
+        MEDIA_ERR_LOG("AudioRendererPrivate::SetRendererCallback audioInterruptCallback_ == nullptr");
+        return ERROR;
+    }
     std::shared_ptr<AudioInterruptCallbackImpl> cbInterrupt =
         std::static_pointer_cast<AudioInterruptCallbackImpl>(audioInterruptCallback_);
     cbInterrupt->SaveCallback(callback);
+
+    // Save and Set reference for stream callback. Order is important here.
+    if (audioStreamCallback_ == nullptr) {
+        audioStreamCallback_ = std::make_shared<AudioStreamCallbackRenderer>();
+        if (audioStreamCallback_ == nullptr) {
+            MEDIA_ERR_LOG("AudioRendererPrivate::Failed to allocate memory for audioStreamCallback_");
+            return ERROR;
+        }
+    }
+    std::shared_ptr<AudioStreamCallbackRenderer> cbStream =
+        std::static_pointer_cast<AudioStreamCallbackRenderer>(audioStreamCallback_);
+    cbStream->SaveCallback(callback);
+    (void)audioStream_->SetStreamCallback(audioStreamCallback_);
 
     return SUCCESS;
 }
@@ -463,6 +481,21 @@ void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &inter
     HandleAndNotifyForcedEvent(interruptEvent);
 }
 
+void AudioStreamCallbackRenderer::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
+{
+    callback_ = callback;
+}
+
+void AudioStreamCallbackRenderer::OnStateChange(const State state)
+{
+    std::shared_ptr<AudioRendererCallback> cb = callback_.lock();
+    if (cb == nullptr) {
+        MEDIA_ERR_LOG("AudioStreamCallbackRenderer::OnStateChange cb == nullptr.");
+        return;
+    }
+
+    cb->OnStateChange(static_cast<RendererState>(state));
+}
 
 std::vector<AudioSampleFormat> AudioRenderer::GetSupportedFormats()
 {

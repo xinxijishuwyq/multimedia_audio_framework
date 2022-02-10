@@ -33,6 +33,32 @@ namespace AudioTestConstants {
     constexpr int32_t SUCCESS = 0;
 }
 
+class AudioCapturerCallbackTestImpl : public AudioCapturerCallback {
+public:
+    void OnStateChange(const CapturerState state) override
+    {
+        MEDIA_DEBUG_LOG("AudioCapturerCallbackTestImpl:: OnStateChange");
+
+        switch (state) {
+            case CAPTURER_PREPARED:
+                MEDIA_DEBUG_LOG("AudioCapturerCallbackTestImpl: OnStateChange CAPTURER_PREPARED");
+                break;
+            case CAPTURER_RUNNING:
+                MEDIA_DEBUG_LOG("AudioCapturerCallbackTestImpl: OnStateChange CAPTURER_RUNNING");
+                break;
+            case CAPTURER_STOPPED:
+                MEDIA_DEBUG_LOG("AudioCapturerCallbackTestImpl: OnStateChange CAPTURER_STOPPED");
+                break;
+            case CAPTURER_RELEASED:
+                MEDIA_DEBUG_LOG("AudioCapturerCallbackTestImpl: OnStateChange CAPTURER_RELEASED");
+                break;
+            default:
+                MEDIA_ERR_LOG("AudioCapturerCallbackTestImpl: OnStateChange NOT A VALID state");
+                break;
+        }
+    }
+};
+
 class AudioCapturerTest {
 public:
     void CheckSupportedParams() const
@@ -156,6 +182,14 @@ public:
         capturerOptions.capturerInfo.capturerFlags = 0;
 
         unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+
+        int32_t ret = 0;
+        shared_ptr<AudioCapturerCallback> cb1 = make_shared<AudioCapturerCallbackTestImpl>();
+        ret = audioCapturer->SetCapturerCallback(cb1);
+        if (ret) {
+            MEDIA_ERR_LOG("AudioCapturerTest: SetCapturerCallback failed %{public}d", ret);
+            return false;
+        }
 
         CheckSupportedParams();
 

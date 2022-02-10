@@ -62,6 +62,41 @@ struct AudioCache {
     bool isFull;
 };
 
+/**
+ * @brief Enumerates the stream states of the current device.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum State {
+    /** INVALID */
+    INVALID = -1,
+    /** New */
+    NEW,
+    /** Prepared */
+    PREPARED,
+    /** Running */
+    RUNNING,
+    /** Stopped */
+    STOPPED,
+    /** Released */
+    RELEASED,
+    /** Paused */
+    PAUSED
+};
+
+class AudioStreamCallback {
+public:
+    virtual ~AudioStreamCallback() = default;
+    /**
+    * Called when stream state is updated.
+     *
+     * @param state Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_info.h
+     */
+    virtual void OnStateChange(const State state) = 0;
+};
+
 class AudioRendererCallbacks {
 public:
     virtual ~AudioRendererCallbacks();
@@ -388,6 +423,8 @@ public:
      */
     AudioRendererRate GetStreamRenderRate();
 
+    void SaveStreamCallback(const std::weak_ptr<AudioStreamCallback> &callback);
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -441,6 +478,10 @@ private:
     std::vector<std::unique_ptr<std::thread>> mPositionCBThreads;
     std::vector<std::unique_ptr<std::thread>> mPeriodPositionCBThreads;
 
+    std::weak_ptr<AudioStreamCallback> streamCallback_;
+    State state_;
+    pa_stream_success_cb_t PAStreamCorkSuccessCb;
+    
     // To be set while using audio stream
     // functionality for callbacks
     AudioRendererCallbacks *mAudioRendererCallbacks;
@@ -495,13 +536,16 @@ private:
     void ResetPAAudioClient();
     // For setting some environment variables required while running from hap
     void SetEnv();
+    int32_t CorkStream();
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata);
-    static void PAStreamCmdSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);

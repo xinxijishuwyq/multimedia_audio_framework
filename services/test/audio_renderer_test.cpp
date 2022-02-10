@@ -22,9 +22,10 @@ using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
-namespace AudioTestConstants {
+namespace {
     constexpr int32_t ARGS_INDEX_THREE = 3;
     constexpr int32_t ARGS_INDEX_TWO = 2;
+    constexpr int32_t ARGS_COUNT_TWO = 2;
     constexpr int32_t ARGS_COUNT_THREE = 3;
     constexpr int32_t SUCCESS = 0;
     constexpr int32_t STOP_BUFFER_POSITION = 700000;
@@ -33,6 +34,36 @@ namespace AudioTestConstants {
     constexpr int32_t STOP_RENDER_TIME_SECONDS = 1;
     constexpr float TRACK_VOLUME = 0.2f;
 }
+
+class AudioRendererCallbackTestImpl : public AudioRendererCallback {
+public:
+    void OnInterrupt(const InterruptEvent &interruptEvent) override {}
+    void OnStateChange(const RendererState state) override
+    {
+        MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl:: OnStateChange");
+
+        switch (state) {
+            case RENDERER_PREPARED:
+                MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PREPARED");
+                break;
+            case RENDERER_RUNNING:
+                MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RUNNING");
+                break;
+            case RENDERER_STOPPED:
+                MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_STOPPED");
+                break;
+            case RENDERER_PAUSED:
+                MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PAUSED");
+                break;
+            case RENDERER_RELEASED:
+                MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RELEASED");
+                break;
+            default:
+                MEDIA_ERR_LOG("AudioRendererCallbackTestImpl: OnStateChange NOT A VALID state");
+                break;
+        }
+    }
+};
 
 class AudioRendererTest {
 public:
@@ -64,6 +95,29 @@ public:
         }
     }
 
+    void GetRendererStreamInfo(const unique_ptr<AudioRenderer> &audioRenderer) const
+    {
+        MEDIA_INFO_LOG("AudioRendererTest: GetRendererInfo:");
+        AudioRendererInfo rendererInfo;
+        if (audioRenderer->GetRendererInfo(rendererInfo) ==  SUCCESS) {
+            MEDIA_INFO_LOG("AudioRendererTest: Get ContentType: %{public}d", rendererInfo.contentType);
+            MEDIA_INFO_LOG("AudioRendererTest: Get StreamUsage: %{public}d", rendererInfo.streamUsage);
+        } else {
+            MEDIA_ERR_LOG("AudioRendererTest: GetStreamInfo failed");
+        }
+
+        MEDIA_INFO_LOG("AudioRendererTest: GetStreamInfo:");
+        AudioStreamInfo streamInfo;
+        if (audioRenderer->GetStreamInfo(streamInfo) ==  SUCCESS) {
+            MEDIA_INFO_LOG("AudioRendererTest: Get AudioSamplingRate: %{public}d", streamInfo.samplingRate);
+            MEDIA_INFO_LOG("AudioRendererTest: Get AudioEncodingType: %{public}d", streamInfo.encoding);
+            MEDIA_INFO_LOG("AudioRendererTest: Get AudioSampleFormat: %{public}d", streamInfo.format);
+            MEDIA_INFO_LOG("AudioRendererTest: Get AudioChannel: %{public}d", streamInfo.channels);
+        } else {
+            MEDIA_ERR_LOG("AudioRendererTest: GetStreamInfo failed");
+        }
+    }
+
     bool InitRender(const unique_ptr<AudioRenderer> &audioRenderer) const
     {
         MEDIA_INFO_LOG("AudioRendererTest: Starting renderer");
@@ -76,18 +130,8 @@ public:
         }
         MEDIA_INFO_LOG("AudioRendererTest: Playback started");
 
-        if (audioRenderer->SetVolume(AudioTestConstants::TRACK_VOLUME) == AudioTestConstants::SUCCESS) {
+        if (audioRenderer->SetVolume(TRACK_VOLUME) == SUCCESS) {
             MEDIA_INFO_LOG("AudioRendererTest: volume set to: %{public}f", audioRenderer->GetVolume());
-        }
-
-        MEDIA_INFO_LOG("AudioRendererTest: Get Audio parameters:");
-        AudioRendererParams paRendererParams;
-        if (audioRenderer->GetParams(paRendererParams) ==  AudioTestConstants::SUCCESS) {
-            MEDIA_INFO_LOG("AudioRendererTest: Get Audio format: %{public}d", paRendererParams.sampleFormat);
-            MEDIA_INFO_LOG("AudioRendererTest: Get Audio sampling rate: %{public}d", paRendererParams.sampleRate);
-            MEDIA_INFO_LOG("AudioRendererTest: Get Audio channels: %{public}d", paRendererParams.channelCount);
-        } else {
-            MEDIA_ERR_LOG("AudioRendererTest: Get Audio parameters failed");
         }
 
         return true;
@@ -97,20 +141,20 @@ public:
                        FILE &wavFile) const
     {
         uint64_t currFilePos = ftell(&wavFile);
-        if (!stopTested && (currFilePos > AudioTestConstants::STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
+        if (!stopTested && (currFilePos > STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
             stopTested = true;
-            sleep(AudioTestConstants::STOP_RENDER_TIME_SECONDS);
+            sleep(STOP_RENDER_TIME_SECONDS);
             MEDIA_INFO_LOG("Audio render resume");
             if (!audioRenderer->Start()) {
                 MEDIA_ERR_LOG("resume stream failed");
                 return false;
             }
-        } else if (!pauseTested && (currFilePos > AudioTestConstants::PAUSE_BUFFER_POSITION)
+        } else if (!pauseTested && (currFilePos > PAUSE_BUFFER_POSITION)
                    && audioRenderer->Pause()) {
             pauseTested = true;
-            sleep(AudioTestConstants::PAUSE_RENDER_TIME_SECONDS);
+            sleep(PAUSE_RENDER_TIME_SECONDS);
             MEDIA_INFO_LOG("Audio render resume");
-            if (audioRenderer->SetVolume(1.0) == AudioTestConstants::SUCCESS) {
+            if (audioRenderer->SetVolume(1.0) == SUCCESS) {
                 MEDIA_INFO_LOG("AudioRendererTest: after resume volume set to: %{public}f",
                                audioRenderer->GetVolume());
             }
@@ -219,9 +263,9 @@ public:
         ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
         StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
 
-        if (argc > AudioTestConstants::ARGS_COUNT_THREE) {
-            contentType = static_cast<ContentType>(strtol(argv[AudioTestConstants::ARGS_INDEX_TWO], NULL, numBase));
-            streamUsage = static_cast<StreamUsage>(strtol(argv[AudioTestConstants::ARGS_INDEX_THREE], NULL, numBase));
+        if (argc > ARGS_COUNT_THREE) {
+            contentType = static_cast<ContentType>(strtol(argv[ARGS_INDEX_TWO], NULL, numBase));
+            streamUsage = static_cast<StreamUsage>(strtol(argv[ARGS_INDEX_THREE], NULL, numBase));
         }
 
         AudioRendererOptions rendererOptions = {};
@@ -234,6 +278,21 @@ public:
         rendererOptions.rendererInfo.rendererFlags = 0;
 
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+
+        if (audioRenderer == nullptr) {
+            MEDIA_ERR_LOG("AudioRendererTest: Create failed");
+            return false;
+        }
+
+        int32_t ret = 0;
+        shared_ptr<AudioRendererCallback> cb1 = make_shared<AudioRendererCallbackTestImpl>();
+        ret = audioRenderer->SetRendererCallback(cb1);
+        if (ret) {
+            MEDIA_ERR_LOG("AudioRendererTest: SetRendererCallback failed %{public}d", ret);
+            return false;
+        }
+
+        GetRendererStreamInfo(audioRenderer);
 
         CheckSupportedParams();
 
@@ -268,15 +327,18 @@ int main(int argc, char *argv[])
 {
     MEDIA_INFO_LOG("AudioRendererTest: Render test in");
 
-    if ((argv == nullptr) || (argc < AudioTestConstants::ARGS_COUNT_THREE)) {
+    if (argv == nullptr) {
         MEDIA_ERR_LOG("AudioRendererTest: argv is null");
+        return 0;
+    }
+
+    if (argc < ARGS_COUNT_TWO || argc == ARGS_COUNT_THREE) {
+        MEDIA_ERR_LOG("AudioRendererTest: incorrect argc. Enter either 2 or 4 args");
         return 0;
     }
 
     MEDIA_INFO_LOG("AudioRendererTest: argc=%{public}d", argc);
     MEDIA_INFO_LOG("file path argv[1]=%{public}s", argv[1]);
-    MEDIA_INFO_LOG("content type argv[2]=%{public}s", argv[AudioTestConstants::ARGS_INDEX_TWO]);
-    MEDIA_INFO_LOG("stream usage argv[3]=%{public}s", argv[AudioTestConstants::ARGS_INDEX_THREE]);
 
     AudioRendererTest testObj;
     bool ret = testObj.TestPlayback(argc, argv);

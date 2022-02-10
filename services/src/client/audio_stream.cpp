@@ -455,5 +455,17 @@ AudioRendererRate AudioStream::GetRenderRate()
 {
     return GetStreamRenderRate();
 }
+
+int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
+{
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioStream::SetStreamCallback failed. callback == nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    SaveStreamCallback(callback);
+
+    return SUCCESS;
+}
 } // namspace AudioStandard
 } // namespace OHOS
