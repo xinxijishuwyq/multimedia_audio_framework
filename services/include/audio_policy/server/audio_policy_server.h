@@ -26,6 +26,7 @@
 #include "i_audio_volume_key_event_callback.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
+#include "audio_service_dump.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -87,6 +88,8 @@ public:
     int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) override;
 
     void OnSessionRemoved(const uint32_t sessionID) override;
+
+    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 private:
     void PrintOwnersLists();
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
@@ -97,8 +100,9 @@ private:
     void ResumeUnduckPendingList(const AudioInterrupt &exitingInterrupt);
     int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi);
     void RegisterAudioServerDeathRecipient();
-    void AudioServerDied(pid_t pid);
-
+    void AudioServerDied(pid_t pid);    
+    void GetPolicyData(PolicyData &policyData);
+    
     static float GetVolumeFactor();
     static int32_t ConvertVolumeToInt(float volume);
 
@@ -111,7 +115,7 @@ private:
     std::list<AudioInterrupt> curActiveOwnersList_;
     std::list<AudioInterrupt> pendingOwnersList_;
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;    
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
