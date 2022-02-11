@@ -91,6 +91,7 @@ private:
     static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRendererWrapper(napi_env env, std::unique_ptr<AudioRendererOptions> &renderOptions);
 
     static bool ParseRendererOptions(napi_env env, napi_value root, AudioRendererOptions *opts);
@@ -144,6 +145,8 @@ private:
     std::atomic<bool> doNotScheduleWrite_;
     std::atomic<bool> isDrainWriteQInProgress_;
     std::shared_ptr<AudioRendererCallback> callbackNapi_ = nullptr;
+    std::shared_ptr<RendererPositionCallback> positionCBNapi_ = nullptr;
+    std::shared_ptr<RendererPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
 };
 
 static const std::map<std::string, InterruptType> interruptEventTypeMap = {
