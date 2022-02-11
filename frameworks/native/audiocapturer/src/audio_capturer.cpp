@@ -31,9 +31,12 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions)
 {
-    AudioStreamType audioStreamType = STREAM_MUSIC;
     auto sourceType = capturerOptions.capturerInfo.sourceType;
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_VOICE_CALL) {
+        return nullptr;
+    }
 
+    AudioStreamType audioStreamType = STREAM_MUSIC;
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
         audioStreamType = STREAM_VOICE_CALL;
     }
@@ -45,7 +48,14 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     params.audioEncoding = capturerOptions.streamInfo.encoding;
 
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType);
-    capturer->SetParams(params);
+    if (capturer == nullptr) {
+        return capturer;
+    }
+
+    if (capturer->SetParams(params) != SUCCESS) {
+        capturer = nullptr;
+        return nullptr;
+    }
 
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;

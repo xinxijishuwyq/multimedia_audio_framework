@@ -29,8 +29,6 @@ namespace AudioStandard {
 static __thread napi_ref g_capturerConstructor = nullptr;
 std::unique_ptr<AudioParameters> AudioCapturerNapi::sAudioParameters_ = nullptr;
 std::unique_ptr<AudioCapturerOptions> AudioCapturerNapi::sAudioCapturerOptions_ = nullptr;
-napi_ref AudioCapturerNapi::capturerState_ = nullptr;
-napi_ref AudioCapturerNapi::sampleFormat_ = nullptr;
 
 namespace {
     const int ARGS_ONE = 1;
@@ -147,9 +145,7 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
     };
 
     napi_property_descriptor static_prop[] = {
-        DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturer", CreateAudioCapturer),
-        DECLARE_NAPI_PROPERTY("AudioState", CreateCapturerStateObject(env)),
-        DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateAudioSampleFormatObject(env)),
+        DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturer", CreateAudioCapturer)
     };
 
     status = napi_define_class(env, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -172,55 +168,6 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
     }
 
     HiLog::Error(LABEL, "Failure in AudioCapturerNapi::Init()");
-
-    return result;
-}
-
-napi_value AudioCapturerNapi::CreateAudioSampleFormatObject(napi_env env)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    string propName;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (int i = AudioCapturerNapi::SAMPLE_FORMAT_INVALID; i <= AudioCapturerNapi::SAMPLE_FORMAT_S32LE; i++) {
-            switch (i) {
-                case AudioCapturerNapi::SAMPLE_FORMAT_INVALID:
-                    propName = "SAMPLE_FORMAT_INVALID";
-                    break;
-                case AudioCapturerNapi::SAMPLE_FORMAT_U8:
-                    propName = "SAMPLE_FORMAT_U8";
-                    break;
-                case AudioCapturerNapi::SAMPLE_FORMAT_S16LE:
-                    propName = "SAMPLE_FORMAT_S16LE";
-                    break;
-                case AudioCapturerNapi::SAMPLE_FORMAT_S24LE:
-                    propName = "SAMPLE_FORMAT_S24LE";
-                    break;
-                case AudioCapturerNapi::SAMPLE_FORMAT_S32LE:
-                    propName = "SAMPLE_FORMAT_S32LE";
-                    break;
-                default:
-                    HiLog::Error(LABEL, "CreateAudioSampleFormatObject: No prop with this value try next value!");
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &sampleFormat_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateAudioSampleFormatObject is Failed!");
-    napi_get_undefined(env, &result);
 
     return result;
 }
@@ -250,6 +197,7 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value result = nullptr;
+    napi_get_undefined(env, &result);
 
     GET_PARAMS(env, info, ARGS_TWO);
 
@@ -259,6 +207,10 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
         obj->sourceType_ = sAudioCapturerOptions_->capturerInfo.sourceType;
         obj->capturerFlags_ = sAudioCapturerOptions_->capturerInfo.capturerFlags;
         obj->audioCapturer_ = AudioCapturer::Create(*sAudioCapturerOptions_);
+        if (obj->audioCapturer_ == nullptr) {
+            HiLog::Error(LABEL, "Failed to create capturer object from native");
+            return result;
+        }
 
         status = napi_wrap(env, thisVar, static_cast<void*>(obj.get()),
                            AudioCapturerNapi::Destructor, nullptr, &(obj->wrapper_));
@@ -328,38 +280,6 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
             result = nullptr;
         }
     }
-
-    return result;
-}
-
-napi_value AudioCapturerNapi::CreateCapturerStateObject(napi_env env)
-{
-    HiLog::Info(LABEL, "%{public}s IN", __func__);
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-    int32_t refCount = 1;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: audioCapturerStateMap) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop in CreateCapturerStateObject!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, refCount, &capturerState_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateCapturerStateObject is Failed!");
-    napi_get_undefined(env, &result);
 
     return result;
 }

@@ -40,7 +40,6 @@ namespace OHOS {
 namespace AudioStandard {
 napi_ref RingtonePlayerNapi::sConstructor_ = nullptr;
 shared_ptr<IRingtonePlayer> RingtonePlayerNapi::sIRingtonePlayer_ = nullptr;
-napi_ref RingtonePlayerNapi::state_ = nullptr;
 
 RingtonePlayerNapi::RingtonePlayerNapi() : env_(nullptr), wrapper_(nullptr) {}
 
@@ -65,37 +64,6 @@ napi_status RingtonePlayerNapi::AddNamedProperty(napi_env env, napi_value object
     return status;
 }
 
-napi_value RingtonePlayerNapi::CreateAudioStateObject(napi_env env)
-{
-    napi_value result = nullptr;
-    napi_status status;
-    std::string propName;
-    int32_t refCount = 1;
-
-    status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter: ringtoneStateMap) {
-            propName = iter.first;
-            status = AddNamedProperty(env, result, propName, iter.second);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, refCount, &state_);
-            if (status == napi_ok) {
-                return result;
-            }
-        }
-    }
-    HiLog::Error(LABEL, "CreateAudioStateObject is Failed!");
-    napi_get_undefined(env, &result);
-
-    return result;
-}
-
 napi_value RingtonePlayerNapi::Init(napi_env env, napi_value exports)
 {
     napi_status status;
@@ -112,23 +80,14 @@ napi_value RingtonePlayerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_GETTER("state", GetAudioState)
     };
 
-    napi_property_descriptor static_prop[] = {
-        DECLARE_NAPI_PROPERTY("AudioState", CreateAudioStateObject(env))
-    };
-
     status = napi_define_class(env, RINGTONE_PLAYER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
                                RingtonePlayerNapiConstructor, nullptr, sizeof(ringtone_player_prop)
                                / sizeof(ringtone_player_prop[0]), ringtone_player_prop, &ctorObj);
     if (status == napi_ok) {
         if (napi_create_reference(env, ctorObj, refCount, &sConstructor_) == napi_ok) {
-            status = napi_set_named_property(env, exports,
-                RINGTONE_PLAYER_NAPI_CLASS_NAME.c_str(), ctorObj);
+            status = napi_set_named_property(env, exports, RINGTONE_PLAYER_NAPI_CLASS_NAME.c_str(), ctorObj);
             if (status == napi_ok) {
-                status = napi_define_properties(env, exports,
-                    sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
-                if (status == napi_ok) {
-                    return exports;
-                }
+                return exports;
             }
         }
     }

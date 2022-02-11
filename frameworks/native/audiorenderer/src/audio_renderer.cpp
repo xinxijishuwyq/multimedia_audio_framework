@@ -40,10 +40,16 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
 {
     ContentType contentType = rendererOptions.rendererInfo.contentType;
+    CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_SPEECH && contentType <= CONTENT_TYPE_RINGTONE, nullptr,
+                             "Invalid content type");
+
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_MEDIA && streamUsage <= STREAM_USAGE_VOICE_ASSISTANT, nullptr,
+                             "Invalid stream usage");
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
     auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
 
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
@@ -54,7 +60,12 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
     params.sampleRate = rendererOptions.streamInfo.samplingRate;
     params.channelCount = rendererOptions.streamInfo.channels;
     params.encodingType = rendererOptions.streamInfo.encoding;
-    audioRenderer->SetParams(params);
+
+    if (audioRenderer->SetParams(params) != SUCCESS) {
+        MEDIA_ERR_LOG("SetParams failed in renderer");
+        audioRenderer = nullptr;
+        return nullptr;
+    }
 
     return audioRenderer;
 }

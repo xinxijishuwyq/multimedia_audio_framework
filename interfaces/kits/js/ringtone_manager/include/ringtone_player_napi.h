@@ -27,15 +27,6 @@ namespace OHOS {
 namespace AudioStandard {
 static const std::string RINGTONE_PLAYER_NAPI_CLASS_NAME = "RingtonePlayer";
 
-static const std::map<std::string, RingtoneState> ringtoneStateMap = {
-    {"STATE_INVALID", STATE_INVALID},
-    {"STATE_NEW", STATE_NEW},
-    {"STATE_PREPARED", STATE_PREPARED},
-    {"STATE_RUNNING", STATE_RUNNING},
-    {"STATE_STOPPED", STATE_STOPPED},
-    {"STATE_RELEASED", STATE_RELEASED}
-};
-
 class RingtonePlayerNapi {
 public:
     static napi_value Init(napi_env env, napi_value exports);
@@ -55,9 +46,6 @@ private:
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetAudioState(napi_env env, napi_callback_info info);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
-    static napi_value CreateAudioStateObject(napi_env env);
-
-    static napi_ref state_;
 
     napi_env env_;
     napi_ref wrapper_;
