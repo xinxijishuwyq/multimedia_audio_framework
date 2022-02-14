@@ -17,6 +17,7 @@
 #define AUDIO_POLICY_MANAGER_LISTENER_PROXY_H
 
 #include "audio_interrupt_callback.h"
+#include "audio_system_manager.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {
@@ -27,6 +28,7 @@ public:
     virtual ~AudioPolicyManagerListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;

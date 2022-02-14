@@ -259,15 +259,13 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
+    MEDIA_ERR_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        MEDIA_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
-    deviceChangeCallback_ = callback;
 
-    MEDIA_ERR_LOG("AudioSystemManager: SetDeviceChangeCallback set deviceChangeCallback_ ok");
-
-    return SUCCESS;
+    return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(callback);
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
@@ -299,43 +297,8 @@ bool AudioSystemManager::IsMicrophoneMute() const
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
-    const
 {
-    return g_sProxy->GetDevices(deviceFlag);
-}
-
-/**
- * @brief The AudioDeviceDescriptor provides
- *         different sets of audio devices and their roles
- */
-AudioDeviceDescriptor::AudioDeviceDescriptor()
-{
-    MEDIA_DEBUG_LOG("AudioDeviceDescriptor constructor");
-    deviceType_ = DEVICE_TYPE_NONE;
-    deviceRole_ = DEVICE_ROLE_NONE;
-}
-
-AudioDeviceDescriptor::~AudioDeviceDescriptor()
-{
-    MEDIA_DEBUG_LOG("AudioDeviceDescriptor::~AudioDeviceDescriptor");
-}
-
-bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
-{
-    MEDIA_DEBUG_LOG("AudioDeviceDescriptor::Marshalling called");
-    return parcel.WriteInt32(deviceType_) && parcel.WriteInt32(deviceRole_);
-}
-
-sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
-{
-    MEDIA_DEBUG_LOG("AudioDeviceDescriptor::Unmarshalling called");
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-    if (audioDeviceDescriptor == nullptr) {
-        return nullptr;
-    }
-    audioDeviceDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());
-    audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(in.ReadInt32());
-    return audioDeviceDescriptor;
+    return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
 }
 
 int32_t AudioSystemManager::RegisterVolumeKeyEventNapiCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)

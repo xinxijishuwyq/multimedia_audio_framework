@@ -24,6 +24,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
+}
+
 class AudioManagerCallbackNapi : public AudioManagerDeviceChangeCallback {
 public:
     explicit AudioManagerCallbackNapi(napi_env env);

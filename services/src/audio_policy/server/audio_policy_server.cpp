@@ -174,6 +174,11 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
     return mPolicyService.GetStreamMute(streamType);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
+{
+    return mPolicyService.GetDevices(deviceFlag);
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return mPolicyService.IsStreamActive(streamType);
@@ -252,6 +257,13 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
         MEDIA_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
         return ERR_INVALID_OPERATION;
     }
+}
+
+int32_t AudioPolicyServer::SetDeviceChangeCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+
+    return mPolicyService.SetDeviceChangeCallback(object);
 }
 
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)

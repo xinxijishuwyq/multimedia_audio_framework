@@ -53,20 +53,6 @@ int AudioManagerStub::OnRemoteRequest(
             reply.WriteInt32(ret);
             return MEDIA_OK;
         }
-        case GET_DEVICES: {
-            MEDIA_DEBUG_LOG("GET_DEVICES AudioManagerStub");
-            int deviceFlag = data.ReadInt32();
-            DeviceFlag deviceFlagConfig =
-                   static_cast<DeviceFlag>(deviceFlag);
-            std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
-            int32_t size = devices.size();
-            MEDIA_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
-            reply.WriteInt32(size);
-            for (int i = 0; i < size; i++) {
-                devices[i]->Marshalling(reply);
-            }
-            return MEDIA_OK;
-        }
         case SET_AUDIO_PARAMETER: {
             MEDIA_DEBUG_LOG("SET_AUDIO_PARAMETER AudioManagerStub");
             const std::string key = data.ReadString();
@@ -109,6 +95,18 @@ int AudioManagerStub::OnRemoteRequest(
             AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
             int32_t result = SetAudioScene(activeDeviceList, audioScene);
             reply.WriteInt32(result);
+            return MEDIA_OK;
+        }
+        case UPDATE_ROUTE_REQ: {
+            MEDIA_DEBUG_LOG("UPDATE_ROUTE_REQ AudioManagerStub");
+            int32_t ret = UpdateAudioRoute();
+            reply.WriteInt32(ret);
+            return MEDIA_OK;
+        }
+        case RELEASE_ROUTE_REQ: {
+            MEDIA_DEBUG_LOG("RELEASE_ROUTE_REQ AudioManagerStub");
+            int32_t ret = ReleaseAudioRoute();
+            reply.WriteInt32(ret);
             return MEDIA_OK;
         }
         default: {

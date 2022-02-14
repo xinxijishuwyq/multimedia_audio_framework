@@ -20,10 +20,6 @@
 #include "audio_device_descriptor_napi.h"
 #include "audio_manager_callback_napi.h"
 
-namespace {
-    const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
-}
-
 namespace OHOS {
 namespace AudioStandard {
 AudioManagerCallbackNapi::AudioManagerCallbackNapi(napi_env env)
@@ -83,21 +79,12 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
 void AudioManagerCallbackNapi::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: OnDeviceChange is called");
-    MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: DeviceChangeType: %{public}d", deviceChangeAction.type);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors = deviceChangeAction.deviceDescriptors;
-    for (auto it = deviceDescriptors.begin(); it != deviceDescriptors.end(); it++) {
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = *it;
-        if (audioDeviceDescriptor != nullptr) {
-            MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: OnDeviceChange deviceType %{public}d",
-                            audioDeviceDescriptor->deviceType_);
-            MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: OnDeviceChange deviceRole %{public}d",
-                            audioDeviceDescriptor->deviceRole_);
-        }
-    }
+    MEDIA_DEBUG_LOG("OnDeviceChange: type[%{public}d]", deviceChangeAction.type);
+    CHECK_AND_RETURN_LOG(deviceChangeCallback_ != nullptr, "callback not registered by JS client");
 
     std::unique_ptr<AudioManagerJsCallback> cb = std::make_unique<AudioManagerJsCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+
     cb->callback = deviceChangeCallback_;
     cb->callbackName = DEVICE_CHANGE_CALLBACK_NAME;
     cb->deviceChangeAction = deviceChangeAction;

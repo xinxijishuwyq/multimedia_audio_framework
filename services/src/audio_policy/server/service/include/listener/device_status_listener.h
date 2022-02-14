@@ -13,38 +13,31 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_TYPES_H
-#define ST_AUDIO_POLICY_TYPES_H
+#ifndef ST_DEVICE_STATUS_LISTENER_H
+#define ST_DEVICE_STATUS_LISTENER_H
 
-#include <audio_info.h>
+#include <servmgr_hdi.h>
+
+#include "audio_module_info.h"
+#include "idevice_status_observer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum AudioPolicyCommand {
-    SET_STREAM_VOLUME,
-    GET_STREAM_VOLUME,
-    SET_STREAM_MUTE,
-    GET_STREAM_MUTE,
-    IS_STREAM_ACTIVE,
-    SET_DEVICE_ACTIVE,
-    IS_DEVICE_ACTIVE,
-    SET_RINGER_MODE,
-    GET_RINGER_MODE,
-    SET_AUDIO_SCENE,
-    GET_AUDIO_SCENE,
-    SET_RINGERMODE_CALLBACK,
-    UNSET_RINGERMODE_CALLBACK,
-    SET_CALLBACK,
-    UNSET_CALLBACK,
-    ACTIVATE_INTERRUPT,
-    DEACTIVATE_INTERRUPT,
-    GET_STREAM_IN_FOCUS,
-    GET_SESSION_INFO_IN_FOCUS,
-    SET_VOLUME_KEY_EVENT_CALLBACK,
-    GET_DEVICES,
-    SET_DEVICE_CHANGE_CALLBACK
+class DeviceStatusListener {
+public:
+    DeviceStatusListener(IDeviceStatusObserver &observer);
+    ~DeviceStatusListener();
+
+    int32_t RegisterDeviceStatusListener(void *privData);
+    int32_t UnRegisterDeviceStatusListener();
+
+    IDeviceStatusObserver &deviceObserver_;
+    void *privData_;
+private:
+    struct HDIServiceManager *hdiServiceManager_;
+    struct ServiceStatusListener *listener_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_AUDIO_POLICY_TYPES_H
+#endif // ST_DEVICE_STATUS_LISTENER_H

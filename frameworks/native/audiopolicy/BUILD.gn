@@ -51,6 +51,7 @@ config("audio_policy_public_config") {
 ohos_shared_library("audio_policy_client") {
   install_enable = true
   sources = [
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_device_descriptor.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_manager.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_manager_listener_stub.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_policy_proxy.cpp",

@@ -18,6 +18,7 @@
 
 #include <thread>
 
+#include "audio_system_manager.h"
 #include "audio_interrupt_callback.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
@@ -32,11 +33,16 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
+    void SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &callback);
 private:
-    std::weak_ptr<AudioInterruptCallback> callback_;
     void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
+    void ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange);
+
+    std::weak_ptr<AudioInterruptCallback> callback_;
+    std::weak_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_;
     std::vector<std::unique_ptr<std::thread>> interruptThreads_;
 };
 } // namespace AudioStandard

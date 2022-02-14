@@ -88,6 +88,20 @@ public:
      */
     virtual const std::string GetAudioParameter(const std::string key) = 0;
 
+    /**
+     * Update the audio route after device is detected and route is decided
+     *
+     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t UpdateAudioRoute() = 0;
+
+    /**
+     * Releases the audio route after device is disconnected
+     *
+     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t ReleaseAudioRoute() = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -96,7 +110,9 @@ public:
         SET_AUDIO_PARAMETER = 4,
         SET_MICROPHONE_MUTE = 5,
         IS_MICROPHONE_MUTE = 6,
-        SET_AUDIO_SCENE = 7
+        SET_AUDIO_SCENE = 7,
+        UPDATE_ROUTE_REQ,
+        RELEASE_ROUTE_REQ
     };
 
 public:

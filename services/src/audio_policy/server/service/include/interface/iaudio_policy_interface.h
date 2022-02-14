@@ -16,7 +16,7 @@
 #ifndef ST_AUDIO_POLICY_INTERFACE_H
 #define ST_AUDIO_POLICY_INTERFACE_H
 
-#include "audio_config.h"
+#include "audio_module_info.h"
 #include "audio_info.h"
 #include "audio_policy_manager.h"
 #include "audio_policy_types.h"
@@ -43,7 +43,7 @@ public:
 
     virtual bool IsStreamActive(AudioStreamType streamType) = 0;
 
-    virtual AudioIOHandle OpenAudioPort(std::unique_ptr<AudioPortInfo> &audioPortInfo) = 0;
+    virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
 
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle) = 0;
 

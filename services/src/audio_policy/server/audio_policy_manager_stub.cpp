@@ -106,6 +106,20 @@ void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, Message
     reply.WriteBool(isActive);
 }
 
+void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    MEDIA_DEBUG_LOG("GET_DEVICES AudioManagerStub");
+    int deviceFlag = data.ReadInt32();
+    DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
+    int32_t size = devices.size();
+    MEDIA_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
@@ -140,6 +154,17 @@ void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data
 {
     int32_t clientId = data.ReadInt32();
     int32_t result = UnsetRingerModeCallback(clientId);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        return;
+    }
+    int32_t result = SetDeviceChangeCallback(object);
     reply.WriteInt32(result);
 }
 
@@ -260,6 +285,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             UnsetRingerModeCallbackInternal(data, reply);
             break;
 
+        case SET_DEVICE_CHANGE_CALLBACK:
+            SetDeviceChangeCallbackInternal(data, reply);
+            break;
+
         case SET_CALLBACK:
             SetInterruptCallbackInternal(data, reply);
             break;
@@ -286,6 +315,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_SESSION_INFO_IN_FOCUS:
             GetSessionInfoInFocusInternal(reply);
+
+        case GET_DEVICES:
+            GetDevicesInternal(data, reply);
             break;
 
         default:

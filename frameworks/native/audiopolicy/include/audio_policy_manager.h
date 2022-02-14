@@ -51,6 +51,8 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
@@ -62,6 +64,8 @@ public:
     int32_t SetAudioScene(AudioScene scene);
 
     AudioScene GetAudioScene();
+
+    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
 
     int32_t SetRingerModeCallback(const int32_t clientId,
                                   const std::shared_ptr<AudioRingerModeCallback> &callback);

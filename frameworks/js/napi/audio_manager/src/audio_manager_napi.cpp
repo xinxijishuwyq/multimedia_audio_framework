@@ -1815,6 +1815,7 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
     napi_value ddWrapper = nullptr;
     napi_value retVal;
     int32_t size = asyncContext->deviceDescriptors.size();
+    HiLog::Info(LABEL, "number of devices = %{public}d", size);
 
     napi_create_array_with_length(env, size, &result[PARAM1]);
 
@@ -1934,7 +1935,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
     }
 
     std::string callbackName = GetStringArgument(env, args[0]);
-    MEDIA_DEBUG_LOG("AudioManagerNapi: callbackName: %{public}s", callbackName.c_str());
+    MEDIA_INFO_LOG("AudioManagerNapi: callbackName: %{public}s", callbackName.c_str());
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (managerNapi->ringerModecallbackNapi_ == nullptr) {
             managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
@@ -1944,7 +1945,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
                 MEDIA_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
                 return undefinedResult;
             } else {
-                MEDIA_DEBUG_LOG("AudioManagerNapi: SetRingerModeCallback Success");
+                MEDIA_INFO_LOG("AudioManagerNapi: SetRingerModeCallback Success");
             }
         }
 
@@ -1955,7 +1956,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =
             std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
-    } else {
+    } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         std::shared_ptr<AudioManagerCallbackNapi> cb =
         std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
