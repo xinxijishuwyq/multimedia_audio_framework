@@ -16,7 +16,7 @@
 <audioPolicyConfiguration version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
     <deviceclass name="primary">
         <modules>
-	    <module name="Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="48000"  buffer_size="4096">
+            <module name="Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="48000"  buffer_size="4096">
                 <Ports>
                     <Port adapter_name="internal" id="0" channels="2" rate="48000" buffer_size="4096"/>
                 </Ports>
@@ -26,7 +26,7 @@
                     <Port adapter_name="internal" id="0" channels="2" rate="44100" buffer_size="3584"/>
                 </Ports>
             </module>
-	    <module name="fifo_output" lib="libmodule-pipe-sink.z.so" role="sink" file="/data/data/.pulse_dir/pipe_sink.pcm">
+            <module name="fifo_output" lib="libmodule-pipe-sink.z.so" role="sink" file="/data/data/.pulse_dir/pipe_sink.pcm">
                 <Ports>
                     <Port adapter_name="internal" id="0"/>
                 </Ports>
