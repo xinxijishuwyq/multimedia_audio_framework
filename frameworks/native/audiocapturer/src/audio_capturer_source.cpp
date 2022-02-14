@@ -63,6 +63,9 @@ void AudioCapturerSource::DeInit()
     audioCapture_ = nullptr;
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
+        if (routeHandle_ != -1) {
+            audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
+        }
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
     }
     audioAdapter_ = nullptr;
@@ -204,6 +207,18 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         return ERR_DEVICE_INIT;
     }
 
+    if (CreateCapture(audioPort) != 0) {
+        MEDIA_ERR_LOG("Create capture failed");
+        return ERR_NOT_STARTED;
+    }
+
+#ifdef DEVICE_BALTIMORE
+    ret = OpenInput(DEVICE_TYPE_MIC);
+    if (ret < 0) {
+        MEDIA_ERR_LOG("AudioRendererSink: update route FAILED: %{public}d", ret);
+    }
+#endif
+
     capturerInited_ = true;
 
 #ifdef CAPTURE_DUMP
@@ -244,10 +259,6 @@ int32_t AudioCapturerSource::Start(void)
 {
     int32_t ret;
     if (!started_) {
-        if (CreateCapture(audioPort) != 0) {
-            MEDIA_ERR_LOG("Create capture failed");
-            return ERR_NOT_STARTED;
-        }
         ret = audioCapture_->control.Start((AudioHandle)audioCapture_);
         if (ret < 0) {
             return ERR_NOT_STARTED;
@@ -326,35 +337,124 @@ int32_t AudioCapturerSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
+#ifdef DEVICE_BALTIMORE
+static AudioCategory GetAudioCategory(AudioScene audioScene)
+{
+    AudioCategory audioCategory;
+    switch (audioScene) {
+        case AUDIO_SCENE_DEFAULT:
+            audioCategory = AUDIO_IN_MEDIA;
+            break;
+        case AUDIO_SCENE_RINGING:
+            audioCategory = AUDIO_IN_RINGTONE;
+            break;
+        case AUDIO_SCENE_PHONE_CALL:
+            audioCategory = AUDIO_IN_CALL;
+            break;
+        case AUDIO_SCENE_PHONE_CHAT:
+            audioCategory = AUDIO_IN_COMMUNICATION;
+            break;
+        default:
+            audioCategory = AUDIO_IN_MEDIA;
+            break;
+    }
+    MEDIA_DEBUG_LOG("AudioCapturerSource: Audio category returned is: %{public}d", audioCategory);
+
+    return audioCategory;
+}
+#endif
+
+static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
+{
+    int32_t ret = SUCCESS;
+
+    switch (inputDevice) {
+        case DEVICE_TYPE_MIC:
+            source.ext.device.type = PIN_IN_MIC;
+            source.ext.device.desc = "pin_in_mic";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            source.ext.device.type = PIN_IN_HS_MIC;
+            source.ext.device.desc = "pin_in_hs_mic";
+            break;
+        default:
+            ret = ERR_NOT_SUPPORTED;
+            break;
+    }
+
+    return ret;
+}
+
+int32_t AudioCapturerSource::OpenInput(DeviceType inputDevice)
+{
+    AudioRouteNode source = {};
+    AudioRouteNode sink = {};
+
+    int32_t ret = SetInputPortPin(inputDevice, source);
+    if (ret != SUCCESS) {
+        MEDIA_ERR_LOG("AudioCapturerSource: OpenOutput FAILED: %{public}d", ret);
+        return ret;
+    }
+
+    source.portId = audioPort.portId;
+    source.role = AUDIO_PORT_SOURCE_ROLE;
+    source.type = AUDIO_PORT_DEVICE_TYPE;
+    source.ext.device.moduleId = 0;
+
+    sink.portId = 0;
+    sink.role = AUDIO_PORT_SINK_ROLE;
+    sink.type = AUDIO_PORT_MIX_TYPE;
+    sink.ext.mix.moduleId = 0;
+    sink.ext.mix.streamId = 0;
+
+    AudioRoute route = {
+        .sourcesNum = 1,
+        .sources = &source,
+        .sinksNum = 1,
+        .sinks = &sink,
+    };
+
+    ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
+    MEDIA_DEBUG_LOG("AudioCapturerSource: UpdateAudioRoute returns: %{public}d", ret);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("AudioCapturerSource: UpdateAudioRoute failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSource::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
 {
     MEDIA_INFO_LOG("AudioCapturerSource::SetAudioScene in");
-#ifdef HDI_AUDIO_SCENE_SUPPORTED
     if (audioCapture_ == nullptr) {
         MEDIA_ERR_LOG("AudioCapturerSource::SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
+#ifdef DEVICE_BALTIMORE
+    int32_t ret = OpenInput(DEVICE_TYPE_MIC);
+    if (ret < 0) {
+        MEDIA_ERR_LOG("AudioCapturerSource: Update route FAILED: %{public}d", ret);
+    }
+
     struct AudioSceneDescriptor scene;
-    scene.scene.id = 0;
+    scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = PIN_IN_MIC;
     if (audioCapture_->scene.SelectScene == NULL) {
         MEDIA_ERR_LOG("AudioCapturerSource: Select scene NULL");
         return ERR_OPERATION_FAILED;
     }
 
-    int32_t ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
+    ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
     if (ret < 0) {
-        MEDIA_ERR_LOG("AudioCapturerSource: Select scene FAILED");
+        MEDIA_ERR_LOG("AudioCapturerSource: Select scene FAILED: %{public}d", ret);
         return ERR_OPERATION_FAILED;
     }
+#endif
 
     MEDIA_INFO_LOG("AudioCapturerSource::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
-#else
-    MEDIA_INFO_LOG("AudioCapturerSource::Select audio scene is SUCCESS: %{public}d", audioScene);
-    return SUCCESS;
-#endif
 }
 
 int32_t AudioCapturerSource::Stop(void)
@@ -366,11 +466,6 @@ int32_t AudioCapturerSource::Stop(void)
             MEDIA_ERR_LOG("Stop capture Failed");
             return ERR_OPERATION_FAILED;
         }
-
-        if ((audioCapture_ != nullptr) && (audioAdapter_ != nullptr)) {
-            audioAdapter_->DestroyCapture(audioAdapter_, audioCapture_);
-        }
-        audioCapture_ = nullptr;
     }
     started_ = false;
 

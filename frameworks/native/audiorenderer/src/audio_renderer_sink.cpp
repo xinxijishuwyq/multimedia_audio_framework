@@ -76,6 +76,9 @@ void AudioRendererSink::DeInit()
     audioRender_ = nullptr;
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
+        if (routeHandle_ != -1) {
+            audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
+        }
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
     }
     audioAdapter_ = nullptr;
@@ -240,6 +243,18 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
+    if (CreateRender(audioPort) != 0) {
+        MEDIA_ERR_LOG("Create render faied");
+        return ERR_NOT_STARTED;
+    }
+
+#ifdef DEVICE_BALTIMORE
+    ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+    if (ret < 0) {
+        MEDIA_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+    }
+#endif
+
     rendererInited_ = true;
 
 #ifdef DUMPFILE
@@ -281,11 +296,6 @@ int32_t AudioRendererSink::Start(void)
     int32_t ret;
 
     if (!started_) {
-        if (CreateRender(audioPort) != 0) {
-            MEDIA_ERR_LOG("Create render failed");
-            return ERR_NOT_STARTED;
-        }
-
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
             started_ = true;
@@ -355,35 +365,124 @@ int32_t AudioRendererSink::GetLatency(uint32_t *latency)
     }
 }
 
+#ifdef DEVICE_BALTIMORE
+static AudioCategory GetAudioCategory(AudioScene audioScene)
+{
+    AudioCategory audioCategory;
+    switch (audioScene) {
+        case AUDIO_SCENE_DEFAULT:
+            audioCategory = AUDIO_IN_MEDIA;
+            break;
+        case AUDIO_SCENE_RINGING:
+            audioCategory = AUDIO_IN_RINGTONE;
+            break;
+        case AUDIO_SCENE_PHONE_CALL:
+            audioCategory = AUDIO_IN_CALL;
+            break;
+        case AUDIO_SCENE_PHONE_CHAT:
+            audioCategory = AUDIO_IN_COMMUNICATION;
+            break;
+        default:
+            audioCategory = AUDIO_IN_MEDIA;
+            break;
+    }
+    MEDIA_DEBUG_LOG("AudioRendererSink: Audio category returned is: %{public}d", audioCategory);
+
+    return audioCategory;
+}
+#endif
+
+static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
+{
+    int32_t ret = SUCCESS;
+
+    switch (outputDevice) {
+        case DEVICE_TYPE_SPEAKER:
+            sink.ext.device.type = PIN_OUT_SPEAKER;
+            sink.ext.device.desc = "pin_out_speaker";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            sink.ext.device.type = PIN_OUT_HEADSET;
+            sink.ext.device.desc = "pin_out_headset";
+            break;
+        default:
+            ret = ERR_NOT_SUPPORTED;
+            break;
+    }
+
+    return ret;
+}
+
+int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
+{
+    AudioRouteNode source = {};
+    AudioRouteNode sink = {};
+
+    int32_t ret = SetOutputPortPin(outputDevice, sink);
+    if (ret != SUCCESS) {
+        MEDIA_ERR_LOG("AudioRendererSink: OpenOutput FAILED: %{public}d", ret);
+        return ret;
+    }
+
+    source.portId = 0;
+    source.role = AUDIO_PORT_SOURCE_ROLE;
+    source.type = AUDIO_PORT_MIX_TYPE;
+    source.ext.mix.moduleId = 0;
+    source.ext.mix.streamId = 0;
+
+    sink.portId = audioPort.portId;
+    sink.role = AUDIO_PORT_SINK_ROLE;
+    sink.type = AUDIO_PORT_DEVICE_TYPE;
+    sink.ext.device.moduleId = 0;
+
+    AudioRoute route = {
+        .sourcesNum = 1,
+        .sources = &source,
+        .sinksNum = 1,
+        .sinks = &sink,
+    };
+
+    ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
+    MEDIA_DEBUG_LOG("AudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
+    if (ret != 0) {
+        MEDIA_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioRendererSink::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
 {
     MEDIA_INFO_LOG("AudioRendererSink::SetAudioScene in");
-#ifdef HDI_AUDIO_SCENE_SUPPORTED
     if (audioRender_ == nullptr) {
         MEDIA_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
+#ifdef DEVICE_BALTIMORE
+    int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+    if (ret < 0) {
+        MEDIA_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+    }
+
     struct AudioSceneDescriptor scene;
-    scene.scene.id = 0;
+    scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = PIN_OUT_SPEAKER;
     if (audioRender_->scene.SelectScene == NULL) {
         MEDIA_ERR_LOG("AudioRendererSink: Select scene NULL");
         return ERR_OPERATION_FAILED;
     }
 
-    int32_t ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
+    ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
     if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Select scene FAILED");
+        MEDIA_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
         return ERR_OPERATION_FAILED;
     }
+#endif
 
     MEDIA_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
-#else
-    MEDIA_INFO_LOG("AudioRendererSink::Select audio scene is SUCCESS: %{public}d", audioScene);
-    return SUCCESS;
-#endif
 }
 
 int32_t AudioRendererSink::Stop(void)
@@ -404,11 +503,6 @@ int32_t AudioRendererSink::Stop(void)
             MEDIA_ERR_LOG("AudioRendererSink::Stop failed!");
             return ERR_OPERATION_FAILED;
         }
-
-        if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
-            audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
-        }
-        audioRender_ = nullptr;
     }
 
     return SUCCESS;
