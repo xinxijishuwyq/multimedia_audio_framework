@@ -100,7 +100,7 @@ private:
     void ResumeUnduckPendingList(const AudioInterrupt &exitingInterrupt);
     int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi);
     void RegisterAudioServerDeathRecipient();
-    void AudioServerDied(pid_t pid);    
+    void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
     
     static float GetVolumeFactor();
@@ -115,7 +115,7 @@ private:
     std::list<AudioInterrupt> curActiveOwnersList_;
     std::list<AudioInterrupt> pendingOwnersList_;
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;    
+    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;

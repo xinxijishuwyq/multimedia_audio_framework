@@ -22,8 +22,8 @@ namespace AudioStandard {
 AudioServiceDump::AudioServiceDump()
 {
     isMainLoopStarted = false;
-    isContextConnected = false;     
-    mainLoop = NULL;    
+    isContextConnected = false;
+    mainLoop = NULL;
     context  = NULL;
     api = NULL;
 }
@@ -59,14 +59,11 @@ void AudioServiceDump::ResetPAAudioDump()
 int32_t AudioServiceDump::Initialize()
 {
     int error = PA_ERR_INTERNAL;
-
     mainLoop = pa_threaded_mainloop_new();
-    
     if (mainLoop == NULL)
         return AUDIO_DUMP_INIT_ERR;
 
     api = pa_threaded_mainloop_get_api(mainLoop);
-    
     if (api == NULL) {
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
@@ -95,7 +92,7 @@ int32_t AudioServiceDump::Initialize()
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
-    }    
+    }
 
     isMainLoopStarted = true;
     while (true) {
@@ -112,17 +109,39 @@ int32_t AudioServiceDump::Initialize()
         }
 
         pa_threaded_mainloop_wait(mainLoop);
-    }     
+    }
 
     pa_threaded_mainloop_unlock(mainLoop);
     return AUDIO_DUMP_SUCCESS;
 }
 
 void AudioServiceDump::OnTimeOut()
-{    
+{
     pa_threaded_mainloop_lock(mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
     pa_threaded_mainloop_unlock(mainLoop);
+}
+
+bool AudioServiceDump::IsEndWith(const std::string &mainStr, const std::string &toMatch)
+{
+    if (mainStr.size() >= toMatch.size() &&
+        mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AudioServiceDump::IsValidModule(const std::string moduleName)
+{
+    if (moduleName.rfind("fifo", 0) == SUCCESS) {
+        return false; // Module starts with fifo, Not valid module
+    }
+
+    if (IsEndWith(moduleName, "monitor")) {
+        return false; // Module ends with monitor, Not valid module
+    }
+    return true;
 }
 
 bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
@@ -132,10 +151,10 @@ bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
         case STREAM_RING:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
-           return true;
-	default:
-	   return false;
-    } 
+            return true;
+        default:
+            return false;
+    }
 }
 
 const std::string AudioServiceDump::GetStreamName(AudioStreamType audioType)
@@ -172,9 +191,6 @@ const std::string AudioServiceDump::GetStreamName(AudioStreamType audioType)
         case STREAM_TTS:
             name = "TTS";
             break;
-        case STREAM_ACCESSIBILITY:
-            name = "ACCESSIBILITY";
-            break;
         default:
             name = "UNKNOWN";
     }
@@ -198,7 +214,7 @@ const std::string AudioServiceDump::GetStreamUsgaeName(StreamUsage streamUsage)
             break;
         case STREAM_USAGE_VOICE_ASSISTANT:
             usage = "VOICE_ASSISTANT";
-            break;        
+            break;
         default:
             usage = "STREAM_USAGE_UNKNOWN";
     }
@@ -235,237 +251,247 @@ const std::string AudioServiceDump::GetContentTypeName(ContentType contentType)
 }
 
 const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
-{    
+{
     string device;
     switch (deviceType) {
         case DEVICE_TYPE_SPEAKER:
-            device = "SPEAKER";            
-            break;        
-        case DEVICE_TYPE_WIRED_HEADSET: 
+            device = "SPEAKER";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
             device = "WIRED_HEADSET";
-            break;        
-        case DEVICE_TYPE_BLUETOOTH_SCO: 
+            break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
              device = "BLUETOOTH_SCO";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             device = "BLUETOOTH_A2DP";
-            break;         
+            break;
         case DEVICE_TYPE_MIC:
             device = "MIC";
-            break;         
+            break;
         case DEVICE_TYPE_NONE:
             device = "NONE";
-            break;         
+            break;
         case DEVICE_TYPE_INVALID:
             device = "INVALID";
             break;
         default:
-            device = "UNKNOWN";            
+            device = "UNKNOWN";
     }
 
     const string deviceTypeName = device;
     return deviceTypeName;
 }
 
-void AudioServiceDump::StreamDump(std::string &dumpString)
+void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
 {
-    char s[PA_SAMPLE_SPEC_SNPRINT_MAX]; 
+    char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
 
-    dumpString += "-- Audio Data Dump:\n\n";
+    dumpString += "Audio Data Dump:\n\n";
     dumpString += "Playback Streams\n";
 
-    AppendFormat(dumpString, "%d  Playback stream (s) available:\n",audioData_.streamData.sinkInputs.size());
+    AppendFormat(dumpString, "%d  Playback stream (s) available:\n\n", audioData_.streamData.sinkInputs.size());
     
-    for (auto it = audioData_.streamData.sinkInputs.begin(); it != audioData_.streamData.sinkInputs.end(); it++)
-    {
+    for (auto it = audioData_.streamData.sinkInputs.begin(); it != audioData_.streamData.sinkInputs.end(); it++) {
         InputOutputInfo sinkInputInfo = *it;
 
-        AppendFormat(dumpString,"Stream Id: %s\n",(sinkInputInfo.sessionId).c_str());
-        AppendFormat(dumpString,"Application Name: %s\n",((sinkInputInfo.applicationName).c_str()));
-        AppendFormat(dumpString,"Process Id: %s\n",(sinkInputInfo.processId).c_str());
-        AppendFormat(dumpString,"User Id: %d\n",sinkInputInfo.userId);           
+        AppendFormat(dumpString, "Stream Id: %s\n", (sinkInputInfo.sessionId).c_str());
+        AppendFormat(dumpString, "Application Name: %s\n", ((sinkInputInfo.applicationName).c_str()));
+        AppendFormat(dumpString, "Process Id: %s\n", (sinkInputInfo.processId).c_str());
+        AppendFormat(dumpString, "User Id: %d\n", sinkInputInfo.userId);
         
-        char *inputSampleSpec = pa_sample_spec_snprint(s,sizeof(s),&(sinkInputInfo.sampleSpec));
-        AppendFormat(dumpString,"Stream Configuration: %s\n",inputSampleSpec);              
-        dumpString += "Status :";
+        char *inputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sinkInputInfo.sampleSpec));
+        AppendFormat(dumpString, "Stream Configuration: %s\n", inputSampleSpec);
+        dumpString += "Status:";
         dumpString += (sinkInputInfo.corked) ? "STOPPED/PAUSED" : "RUNNING";
-        AppendFormat(dumpString,"\nStream Start Time: %s\n",(sinkInputInfo.sessionStartTime).c_str());  
-        dumpString += "\n";        
-    }    
+        AppendFormat(dumpString, "\nStream Start Time: %s\n", (sinkInputInfo.sessionStartTime).c_str());
+        dumpString += "\n";
+    }
+}
 
+void AudioServiceDump::RecordStreamDump(std::string &dumpString)
+{
+    char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
     dumpString += "Record Streams \n";
-    AppendFormat(dumpString,"%d  Record stream (s) available:\n",audioData_.streamData.sourceOutputs.size());
+    AppendFormat(dumpString, "%d  Record stream (s) available:\n\n", audioData_.streamData.sourceOutputs.size());
  
-    for (auto it = audioData_.streamData.sourceOutputs.begin(); it != audioData_.streamData.sourceOutputs.end(); it++)
-    {
+    for (auto it = audioData_.streamData.sourceOutputs.begin(); it != audioData_.streamData.sourceOutputs.end(); it++) {
         InputOutputInfo sourceOutputInfo = *it;
-        AppendFormat(dumpString,"Stream Id: %s\n",(sourceOutputInfo.sessionId).c_str());
-        AppendFormat(dumpString,"Application Name: %s\n",(sourceOutputInfo.applicationName).c_str());
-        AppendFormat(dumpString,"Process Id: %s\n",sourceOutputInfo.processId.c_str());
-        AppendFormat(dumpString,"User Id: %d\n",sourceOutputInfo.userId);          
+        AppendFormat(dumpString, "Stream Id: %s\n", (sourceOutputInfo.sessionId).c_str());
+        AppendFormat(dumpString, "Application Name: %s\n", (sourceOutputInfo.applicationName).c_str());
+        AppendFormat(dumpString, "Process Id: %s\n", sourceOutputInfo.processId.c_str());
+        AppendFormat(dumpString, "User Id: %d\n", sourceOutputInfo.userId);
         
-        char *outputSampleSpec = pa_sample_spec_snprint(s,sizeof(s),&(sourceOutputInfo.sampleSpec));
-        AppendFormat(dumpString,"Stream Configuration: %s\n",outputSampleSpec);        
+        char *outputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceOutputInfo.sampleSpec));
+        AppendFormat(dumpString, "Stream Configuration: %s\n", outputSampleSpec);
         dumpString += "Status:";
         dumpString += (sourceOutputInfo.corked) ? "STOPPED/PAUSED" : "RUNNING";
-        AppendFormat(dumpString,"\nStream Start Time: %s\n",(sourceOutputInfo.sessionStartTime).c_str());
-        dumpString += "\n";        
+        AppendFormat(dumpString, "\nStream Start Time: %s\n", (sourceOutputInfo.sessionStartTime).c_str());
+        dumpString += "\n";
     }
 }
 
 void AudioServiceDump::HDFModulesDump(std::string &dumpString)
-{    
-    char s[PA_SAMPLE_SPEC_SNPRINT_MAX];    
+{
+    char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
 
     dumpString += "\nHDF Input Modules\n";
-    AppendFormat(dumpString,"%d  HDF Input Modules (s) available:\n",audioData_.streamData.sinkDevices.size());
+    AppendFormat(dumpString, "%d  HDF Input Modules (s) available:\n\n", audioData_.streamData.sourceDevices.size());
     
-    for (auto it = audioData_.streamData.sinkDevices.begin(); it != audioData_.streamData.sinkDevices.end(); it++)
-    {
-        SinkSourceInfo sinkInfo = *it;
+    for (auto it = audioData_.streamData.sourceDevices.begin(); it != audioData_.streamData.sourceDevices.end(); it++) {
+        SinkSourceInfo sourceInfo = *it;
         
-        AppendFormat(dumpString,"Module Name: %s\n",(sinkInfo.name).c_str()); 
-        char *hdfInSampleSpec = pa_sample_spec_snprint(s,sizeof(s),&(sinkInfo.sampleSpec));
-        AppendFormat(dumpString,"Module Configuration: %s\n",hdfInSampleSpec);
-    }    
+        AppendFormat(dumpString, "Module Name: %s\n", (sourceInfo.name).c_str());
+        char *hdfOutSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceInfo.sampleSpec));
+        AppendFormat(dumpString, "Module Configuration: %s\n\n", hdfOutSampleSpec);
+    }
 
-    dumpString += "\nHDF Output Modules\n";
-    AppendFormat(dumpString,"%d  HDF Output Modules (s) available:\n",audioData_.streamData.sourceDevices.size());
+    dumpString += "HDF Output Modules\n";
+    AppendFormat(dumpString, "%d  HDF Output Modules (s) available:\n\n", audioData_.streamData.sinkDevices.size());
     
-    for (auto it = audioData_.streamData.sourceDevices.begin(); it != audioData_.streamData.sourceDevices.end(); it++)
-    {
-        SinkSourceInfo sourceInfo = *it;        
-        AppendFormat(dumpString,"Module Name: %s\n",(sourceInfo.name).c_str()); 
-        char *hdfOutSampleSpec = pa_sample_spec_snprint(s,sizeof(s),&(sourceInfo.sampleSpec));
-        AppendFormat(dumpString,"Module Configuration: %s\n",hdfOutSampleSpec);
+    for (auto it = audioData_.streamData.sinkDevices.begin(); it != audioData_.streamData.sinkDevices.end(); it++) {
+        SinkSourceInfo sinkInfo = *it;
+        AppendFormat(dumpString, "Module Name: %s\n", (sinkInfo.name).c_str());
+        char *hdfInSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sinkInfo.sampleSpec));
+        AppendFormat(dumpString, "Module Configuration: %s\n\n", hdfInSampleSpec);
     }
 }
 
 void AudioServiceDump::CallStatusDump(std::string &dumpString)
-{    
-    dumpString += "Audio Scene:";
+{
+    dumpString += "\nAudio Scene:";
     switch (audioData_.policyData.callStatus) {
-        case AUDIO_SCENE_DEFAULT: 
+        case AUDIO_SCENE_DEFAULT:
             dumpString += "DEFAULT";
-            break;        
-        case AUDIO_SCENE_RINGING: 
+            break;
+        case AUDIO_SCENE_RINGING:
             dumpString += "RINGING";
-            break;        
-        case AUDIO_SCENE_PHONE_CALL: 
+            break;
+        case AUDIO_SCENE_PHONE_CALL:
             dumpString += "PHONE_CALL";
-            break;        
-        case AUDIO_SCENE_PHONE_CHAT: 
+            break;
+        case AUDIO_SCENE_PHONE_CHAT:
             dumpString += "PHONE_CHAT";
-            break;         
+            break;
         default:
-            dumpString += "UNKNOWN";            
+            dumpString += "UNKNOWN";
     }
     dumpString += "\n";
 }
 
 void AudioServiceDump::RingerModeDump(std::string &dumpString)
-{       
-    dumpString += "Ringer Mode :";
+{
+    dumpString += "Ringer Mode:";
     switch (audioData_.policyData.ringerMode) {
-        case RINGER_MODE_NORMAL: 
+        case RINGER_MODE_NORMAL:
             dumpString += "NORMAL";
-            break;        
-        case RINGER_MODE_SILENT: 
+            break;
+        case RINGER_MODE_SILENT:
             dumpString += "SILENT";
-            break;        
-        case RINGER_MODE_VIBRATE: 
+            break;
+        case RINGER_MODE_VIBRATE:
             dumpString += "VIBRATE";
-            break;        
+            break;
         default:
-            dumpString += "UNKNOWN";            
+            dumpString += "UNKNOWN";
     }
     dumpString += "\n";
 }
 
 void AudioServiceDump::StreamVolumesDump (string &dumpString)
-{     
-    dumpString += "Stream: Volumes\n";   
-    for (auto it = audioData_.policyData.streamVolumes.cbegin(); it != audioData_.policyData.streamVolumes.cend(); ++it) {
-        AppendFormat(dumpString,"%s: %d\n",GetStreamName(it->first).c_str(),it->second);        
-    }    
-}    
+{
+    dumpString += "\nStream: Volumes\n";
+    for (auto it = audioData_.policyData.streamVolumes.cbegin(); it != audioData_.policyData.streamVolumes.cend();
+        ++it) {
+        AppendFormat(dumpString, "%s: %d\n", GetStreamName(it->first).c_str(), it->second);
+    }
+}
 
 void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
-{      
-    dumpString += "\nAudio In Focus:\n";
-    AppendFormat(dumpString,"Stream Id: %d\n",audioData_.policyData.audioFocusInfo.sessionID);
-    AppendFormat(dumpString,"Stream Usage: %s\n",GetStreamUsgaeName(audioData_.policyData.audioFocusInfo.streamUsage).c_str());
-    AppendFormat(dumpString,"Content Type: %s\n",GetContentTypeName(audioData_.policyData.audioFocusInfo.contentType).c_str());
-    AppendFormat(dumpString,"Stream Name: %s\n",GetStreamName(audioData_.policyData.audioFocusInfo.streamType).c_str());
+{
+    dumpString += "\nAudio In Focus Info:\n";
+    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+
+    if (audioData_.policyData.audioFocusInfo.sessionID == invalidSessionID) {
+        MEDIA_DEBUG_LOG("No streams in focus");
+        dumpString += "Not available\n";
+        return;
+    }
+
+    AppendFormat(dumpString, "Stream Id: %d\n", audioData_.policyData.audioFocusInfo.sessionID);
+    AppendFormat(dumpString, "Stream Usage: %s\n",
+        GetStreamUsgaeName(audioData_.policyData.audioFocusInfo.streamUsage).c_str());
+    AppendFormat(dumpString, "Content Type: %s\n",
+        GetContentTypeName(audioData_.policyData.audioFocusInfo.contentType).c_str());
+    AppendFormat(dumpString, "Stream Name: %s\n",
+        GetStreamName(audioData_.policyData.audioFocusInfo.streamType).c_str());
+
+	return;
 }
 
 void AudioServiceDump::DevicesInfoDump(string &dumpString)
 {
     dumpString += "\nInput Devices:\n";
-    AppendFormat(dumpString, "%d  Input Devices (s) available :\n",audioData_.policyData.inputDevices.size()); 
+    AppendFormat(dumpString, "%d  Input Devices (s) available :\n\n", audioData_.policyData.inputDevices.size());
 
-    for (auto it = audioData_.policyData.inputDevices.begin(); it != audioData_.policyData.inputDevices.end(); it++)
-    {
+    for (auto it = audioData_.policyData.inputDevices.begin(); it != audioData_.policyData.inputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
-        AppendFormat(dumpString,"%s\n",GetDeviceTypeName(devicesInfo.deviceType).c_str());        
-        dumpString += "\n";
- 
-    }   
+        AppendFormat(dumpString, "%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+    }
 
     dumpString += "\nOutput Devices:\n";
-    AppendFormat(dumpString, "%d  Output Devices (s) available :\n",audioData_.policyData.outputDevices.size());
+    AppendFormat(dumpString, "%d  Output Devices (s) available :\n\n", audioData_.policyData.outputDevices.size());
  
-    for (auto it = audioData_.policyData.outputDevices.begin(); it != audioData_.policyData.outputDevices.end(); it++)
-    {
+    for (auto it = audioData_.policyData.outputDevices.begin(); it != audioData_.policyData.outputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
-        AppendFormat(dumpString,"%s\n",GetDeviceTypeName(devicesInfo.deviceType).c_str());
-        dumpString += "\n";
+        AppendFormat(dumpString, "%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
     }
 }
 
 void AudioServiceDump::DataDump(string &dumpString)
-{    
-    StreamDump(dumpString);
+{
+    PlaybackStreamDump(dumpString);
+    RecordStreamDump(dumpString);
     HDFModulesDump(dumpString);
     DevicesInfoDump(dumpString);
     CallStatusDump(dumpString);
-    RingerModeDump(dumpString);     
+    RingerModeDump(dumpString);
     StreamVolumesDump(dumpString);
     AudioFocusInfoDump(dumpString);
 }
 
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
-{   
-    if (mainLoop == NULL || context == NULL)
-    {
+{
+    if (mainLoop == NULL || context == NULL) {
         MEDIA_ERR_LOG("Audio Service Not running");
         return;
-    }    
+    }
 
     pa_threaded_mainloop_lock(mainLoop);
     pa_operation *operation = NULL;
-    operation = pa_context_get_sink_info_list(context,AudioServiceDump::PASinkInfoCallback,(void *)(this));
+    operation = pa_context_get_sink_info_list(context, AudioServiceDump::PASinkInfoCallback, (void *)(this));
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
 
     pa_operation_unref(operation);
-    operation = pa_context_get_sink_input_info_list(context,AudioServiceDump::PASinkInputInfoCallback,(void *)this);
+    operation = pa_context_get_sink_input_info_list(context, AudioServiceDump::PASinkInputInfoCallback, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
 
     pa_operation_unref(operation);
-    operation = pa_context_get_source_info_list(context,AudioServiceDump::PASourceInfoCallback,(void *)this);
+    operation = pa_context_get_source_info_list(context, AudioServiceDump::PASourceInfoCallback, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
 
-    pa_operation_unref(operation);    
-    operation = pa_context_get_source_output_info_list(context,AudioServiceDump::PASourceOutputInfoCallback,(void *)this);
+    pa_operation_unref(operation);
+    operation = pa_context_get_source_output_info_list(context,
+        AudioServiceDump::PASourceOutputInfoCallback, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -474,7 +500,7 @@ void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mainLoop);
 
-    audioData_.policyData = policyData;    
+    audioData_.policyData = policyData;
     DataDump(dumpString);
 
     return;
@@ -498,14 +524,13 @@ void AudioServiceDump::PAContextStateCb(pa_context *context, void *userdata)
         default:
             break;
     }
-
     return;
 }
 
-void AudioServiceDump::PASinkInfoCallback(pa_context *c,const pa_sink_info *i, int eol, void *userdata)
-{    
+void AudioServiceDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
+{
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;   
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
     if (eol < 0) {
         MEDIA_ERR_LOG("Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
@@ -515,21 +540,21 @@ void AudioServiceDump::PASinkInfoCallback(pa_context *c,const pa_sink_info *i, i
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
         return;
-    }    
-
-    SinkSourceInfo sinkInfo;   
-
-    if (i->name != NULL)
-    {
-        string sinkName(i->name);
-        (sinkInfo.name).assign(sinkName);
     }
 
-    sinkInfo.sampleSpec = i->sample_spec;
-    asDump->audioData_.streamData.sinkDevices.push_back(sinkInfo);
+    SinkSourceInfo sinkInfo;
+
+    if (i->name != NULL) {
+        string sinkName(i->name);
+        if (IsValidModule(sinkName)) {
+            (sinkInfo.name).assign(sinkName);
+            sinkInfo.sampleSpec = i->sample_spec;
+            asDump->audioData_.streamData.sinkDevices.push_back(sinkInfo);
+        }
+    }
 }
 
-void AudioServiceDump::PASinkInputInfoCallback(pa_context *c,const pa_sink_input_info *i, int eol, void *userdata)
+void AudioServiceDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
@@ -542,62 +567,51 @@ void AudioServiceDump::PASinkInputInfoCallback(pa_context *c,const pa_sink_input
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
         return;
-    } 
+    }
 
     InputOutputInfo sinkInputInfo;
 
     sinkInputInfo.sampleSpec = i->sample_spec;
     sinkInputInfo.corked = i->corked;
 
-    if(i->proplist !=NULL)
-    {
-        const char *applicationname = pa_proplist_gets(i->proplist,"application.name");
-        const char *processid = pa_proplist_gets(i->proplist,"application.process.id");
-        const char *user = pa_proplist_gets(i->proplist,"application.process.user");
-        const char *sessionid = pa_proplist_gets(i->proplist,"stream.sessionID");
-        const char *sessionstarttime = pa_proplist_gets(i->proplist,"stream.startTime");       
+    if (i->proplist !=NULL) {
+        const char *applicationname = pa_proplist_gets(i->proplist, "application.name");
+        const char *processid = pa_proplist_gets(i->proplist, "application.process.id");
+        const char *user = pa_proplist_gets(i->proplist, "application.process.user");
+        const char *sessionid = pa_proplist_gets(i->proplist, "stream.sessionID");
+        const char *sessionstarttime = pa_proplist_gets(i->proplist, "stream.startTime");
 
-        if (applicationname != NULL)
-        {            
+        if (applicationname != NULL) {
             string applicationName(applicationname);
-            (sinkInputInfo.applicationName).assign(applicationName);         
-
+            (sinkInputInfo.applicationName).assign(applicationName);
         }
         
-        if (processid != NULL)
-        {
+        if (processid != NULL) {
             string processId(processid);
-            (sinkInputInfo.processId).assign(processId);            
+            (sinkInputInfo.processId).assign(processId);
         }
       
-        if (user != NULL)
-        {            
+        if (user != NULL) {
             struct passwd *p;
-            if ((p = getpwnam(user)) != NULL) 
-            {
+            if ((p = getpwnam(user)) != NULL) {
                 sinkInputInfo.userId = uint32_t(p->pw_uid);
             }
-        }     
+        }
 
-        if (sessionid != NULL)
-        {
-            MEDIA_INFO_LOG("AudioServiceDump::PASinkInputInfoCallback 1 %{public}s",sessionid);  
+        if (sessionid != NULL) {
             string sessionId(sessionid);
             (sinkInputInfo.sessionId).assign(sessionId);
-             MEDIA_INFO_LOG("AudioServiceDump::PASinkInputInfoCallback 2 %{public}s",(sinkInputInfo.sessionId).c_str());
-        }         
+        }
 
-        if (sessionstarttime != NULL)
-        {
+        if (sessionstarttime != NULL) {
             string sessionStartTime(sessionstarttime);
-            (sinkInputInfo.sessionStartTime).assign(sessionStartTime); 
-            
+            (sinkInputInfo.sessionStartTime).assign(sessionStartTime);
         }
     }
     asDump->audioData_.streamData.sinkInputs.push_back(sinkInputInfo);
 }
 
-void AudioServiceDump::PASourceInfoCallback(pa_context *c,const pa_source_info *i, int eol, void *userdata)
+void AudioServiceDump::PASourceInfoCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
@@ -610,20 +624,22 @@ void AudioServiceDump::PASourceInfoCallback(pa_context *c,const pa_source_info *
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
         return;
-    }    
+    }
 
     SinkSourceInfo sourceInfo;
 
-    if (i->name != NULL)
-    {
+    if (i->name != NULL) {
         string sourceName(i->name);
-        (sourceInfo.name).assign(sourceName);
+        if (IsValidModule(sourceName)) {
+            (sourceInfo.name).assign(sourceName);
+            sourceInfo.sampleSpec = i->sample_spec;
+            asDump->audioData_.streamData.sourceDevices.push_back(sourceInfo);
+        }
     }
-    sourceInfo.sampleSpec = i->sample_spec;    
-    asDump->audioData_.streamData.sourceDevices.push_back(sourceInfo); 
 }
 
-void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c,const pa_source_output_info *i, int eol, void *userdata)
+void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source_output_info *i, int eol,
+    void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
@@ -636,58 +652,47 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c,const pa_source_
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
         return;
-    }    
+    }
 
-    InputOutputInfo sourceOutputInfo;   
+    InputOutputInfo sourceOutputInfo;
     sourceOutputInfo.sampleSpec = i->sample_spec;
     sourceOutputInfo.corked = i->corked;
 
-    if(i->proplist !=NULL)
-    {
-        const char *applicationname = pa_proplist_gets(i->proplist,"application.name");
-        const char *processid = pa_proplist_gets(i->proplist,"application.process.id");
-        const char *user = pa_proplist_gets(i->proplist,"application.process.user");
-        const char *sessionid = pa_proplist_gets(i->proplist,"stream.sessionID");
-        const char *sessionstarttime = pa_proplist_gets(i->proplist,"stream.startTime");
+    if (i->proplist !=NULL) {
+        const char *applicationname = pa_proplist_gets(i->proplist, "application.name");
+        const char *processid = pa_proplist_gets(i->proplist, "application.process.id");
+        const char *user = pa_proplist_gets(i->proplist, "application.process.user");
+        const char *sessionid = pa_proplist_gets(i->proplist, "stream.sessionID");
+        const char *sessionstarttime = pa_proplist_gets(i->proplist, "stream.startTime");
         
-        if (applicationname != NULL)
-        {            
+        if (applicationname != NULL) {
             string applicationName(applicationname);
             (sourceOutputInfo.applicationName).assign(applicationName);
         }
         
-        if (processid != NULL)
-        {
+        if (processid != NULL) {
             string processId(processid);
-            (sourceOutputInfo.processId).assign(processId);            
-        }         
+            (sourceOutputInfo.processId).assign(processId);
+        }
 
-        if (user != NULL)
-        {             
+        if (user != NULL) {
             struct passwd *p;
-            if ((p = getpwnam(user)) != NULL) 
-            {
-                sourceOutputInfo.userId = uint32_t(p->pw_uid);                
+            if ((p = getpwnam(user)) != NULL) {
+                sourceOutputInfo.userId = uint32_t(p->pw_uid);
             }
-                  
         }
         
-        if (sessionid != NULL)
-        {           
+        if (sessionid != NULL) {
             string sessionId(sessionid);
-            (sourceOutputInfo.sessionId).assign(sessionId);          
-            
-        }        
+            (sourceOutputInfo.sessionId).assign(sessionId);
+        }
 
-        if (sessionstarttime != NULL)
-        {
+        if (sessionstarttime != NULL) {
             string sessionStartTime(sessionstarttime);
-            (sourceOutputInfo.sessionStartTime).assign(sessionStartTime); 
-            
+            (sourceOutputInfo.sessionStartTime).assign(sessionStartTime);
         }
     }
     asDump->audioData_.streamData.sourceOutputs.push_back(sourceOutputInfo);
 }
-
 } // namespace AudoStandard
 } // namespace OHOS

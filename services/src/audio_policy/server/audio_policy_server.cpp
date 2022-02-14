@@ -34,8 +34,8 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_policy_server.h"
 #include "audio_service_dump.h"
+#include "audio_policy_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,7 +127,7 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
     pid_t pid = IPCSkeleton::GetCallingPid();
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager(); 
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
         deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);
@@ -734,28 +734,49 @@ int32_t AudioPolicyServer::ConvertVolumeToInt(float volume)
 }
 
 void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
-{    
+{
     policyData.ringerMode = GetRingerMode();
     policyData.callStatus = GetAudioScene();
 
     // Get stream volumes
-    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= STREAM_ACCESSIBILITY; ++stream ) {
-	    AudioStreamType streamType = (AudioStreamType)stream;
+    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_TTS; stream++) {
+        AudioStreamType streamType = (AudioStreamType)stream;
 
-        if (AudioServiceDump::IsStreamSupported(streamType))
-	    {           
-            policyData.streamVolumes.insert({streamType,ConvertVolumeToInt(GetStreamVolume(streamType))});            
+        if (AudioServiceDump::IsStreamSupported(streamType)) {
+            int32_t volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+            policyData.streamVolumes.insert({ streamType, volume });
         }
-    }    
+    }
 
     // Get Audio Focus Information
     AudioInterrupt audioInterrupt;
-    if (GetSessionInfoInFocus(audioInterrupt) == SUCCESS)
-    {
+    if (GetSessionInfoInFocus(audioInterrupt) == SUCCESS) {
         policyData.audioFocusInfo = audioInterrupt;
     }
 
-    // Get Input & Output Devices    
+    // Get Input & Output Devices
+    
+    DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
+    
+    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
+        AudioDeviceDescriptor audioDeviceDescriptor = **it;
+        DevicesInfo deviceInfo;
+        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
+        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
+        policyData.inputDevices.push_back(deviceInfo);
+    }
+
+    deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
+    audioDeviceDescriptors = GetDevices(deviceFlag);
+    
+    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
+        AudioDeviceDescriptor audioDeviceDescriptor = **it;
+        DevicesInfo deviceInfo;
+        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
+        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
+        policyData.outputDevices.push_back(deviceInfo);
+    }
 }
 
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
@@ -764,18 +785,17 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
 
     std::string dumpString;
     PolicyData policyData;
-    AudioServiceDump dumpObj;  
-   
-    if(dumpObj.Initialize() != AUDIO_DUMP_SUCCESS) {
-      MEDIA_ERR_LOG("AudioPolicyServer:: Audio Service Dump Not initialised\n");
-      return AUDIO_DUMP_INIT_ERR;        
+    AudioServiceDump dumpObj;
+
+    if (dumpObj.Initialize() != AUDIO_DUMP_SUCCESS) {
+        MEDIA_ERR_LOG("AudioPolicyServer:: Audio Service Dump Not initialised\n");
+        return AUDIO_DUMP_INIT_ERR;
     }
 
     GetPolicyData(policyData);
     dumpObj.AudioDataDump(policyData, dumpString);
 
-    return write(fd,dumpString.c_str(),dumpString.size());
+    return write(fd, dumpString.c_str(), dumpString.size());
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

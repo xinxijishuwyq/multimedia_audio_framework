@@ -553,8 +553,8 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     mStreamType = audioType;
     const std::string streamName = GetStreamName(audioType);
 
-    auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());  
-    const std::string StreamStartTime = ctime(&timenow); 
+    auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());
+    const std::string StreamStartTime = ctime(&timenow);
 
     sampleSpec = ConvertToPAAudioParams(audioParams);
 
