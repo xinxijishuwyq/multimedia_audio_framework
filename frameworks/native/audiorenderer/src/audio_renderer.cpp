@@ -175,6 +175,32 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
     return SUCCESS;
 }
 
+int32_t AudioRendererPrivate::SetRendererPositionCallback(int64_t markPosition,
+    const std::shared_ptr<RendererPositionCallback> &callback)
+{
+    audioStream_->SetRendererPositionCallback(markPosition, callback);
+
+    return SUCCESS;
+}
+
+void AudioRendererPrivate::UnsetRendererPositionCallback()
+{
+    audioStream_->UnsetRendererPositionCallback();
+}
+
+int32_t AudioRendererPrivate::SetRendererPeriodPositionCallback(int64_t frameNumber,
+    const std::shared_ptr<RendererPeriodPositionCallback> &callback)
+{
+    audioStream_->SetRendererPeriodPositionCallback(frameNumber, callback);
+
+    return SUCCESS;
+}
+
+void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
+{
+    audioStream_->UnsetRendererPeriodPositionCallback();
+}
+
 bool AudioRendererPrivate::Start()
 {
     RendererState state = GetStatus();

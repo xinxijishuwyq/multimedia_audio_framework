@@ -49,6 +49,12 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override;
+    int32_t SetRendererPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPositionCallback> &callback) override;
+    void UnsetRendererPositionCallback() override;
+    int32_t SetRendererPeriodPositionCallback(int64_t frameNumber,
+        const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
+    void UnsetRendererPeriodPositionCallback() override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioRendererInfo rendererInfo_ = {};

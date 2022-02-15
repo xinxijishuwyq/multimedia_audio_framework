@@ -59,6 +59,30 @@ enum CapturerState {
     CAPTURER_RELEASED
 };
 
+class CapturerPositionCallback {
+public:
+    virtual ~CapturerPositionCallback() = default;
+
+    /**
+     * Called when the requested frame number is read.
+     *
+     * @param framePosition requested frame position.
+     */
+    virtual void OnMarkReached(const int64_t &framePosition) = 0;
+};
+
+class CapturerPeriodPositionCallback {
+public:
+    virtual ~CapturerPeriodPositionCallback() = default;
+
+    /**
+     * Called when the requested frame count is read.
+     *
+     * @param frameCount requested frame frame count for callback.
+     */
+    virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -198,6 +222,36 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
+
+    /**
+     * @brief Registers the capturer position callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetCapturerPositionCallback(int64_t markPosition,
+        const std::shared_ptr<CapturerPositionCallback> &callback) = 0;
+
+    /**
+     * @brief Unregisters the capturer position callback listener
+     *
+     */
+    virtual void UnsetCapturerPositionCallback() = 0;
+
+    /**
+     * @brief Registers the capturer period position callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetCapturerPeriodPositionCallback(int64_t frameNumber,
+        const std::shared_ptr<CapturerPeriodPositionCallback> &callback) = 0;
+
+    /**
+     * @brief Unregisters the capturer period position callback listener
+     *
+     */
+    virtual void UnsetCapturerPeriodPositionCallback() = 0;
 
     /**
      * @brief Obtains the capturer supported formats.

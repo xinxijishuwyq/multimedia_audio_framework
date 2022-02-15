@@ -119,6 +119,32 @@ int32_t AudioCapturerPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
     return result;
 }
 
+int32_t AudioCapturerPrivate::SetCapturerPositionCallback(int64_t markPosition,
+    const std::shared_ptr<CapturerPositionCallback> &callback)
+{
+    audioCapturer->SetCapturerPositionCallback(markPosition, callback);
+
+    return SUCCESS;
+}
+
+void AudioCapturerPrivate::UnsetCapturerPositionCallback()
+{
+    audioCapturer->UnsetCapturerPositionCallback();
+}
+
+int32_t AudioCapturerPrivate::SetCapturerPeriodPositionCallback(int64_t frameNumber,
+    const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
+{
+    audioCapturer->SetCapturerPeriodPositionCallback(frameNumber, callback);
+
+    return SUCCESS;
+}
+
+void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
+{
+    audioCapturer->UnsetCapturerPeriodPositionCallback();
+}
+
 bool AudioCapturerPrivate::Start() const
 {
     return audioCapturer->StartAudioStream();

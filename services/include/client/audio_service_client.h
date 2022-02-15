@@ -31,6 +31,8 @@
 #include <audio_info.h>
 #include <audio_timer.h>
 
+#include "audio_capturer.h"
+#include "audio_renderer.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -293,6 +295,68 @@ public:
     void RegisterAudioCapturerCallbacks(const AudioCapturerCallbacks &cb);
 
     /**
+    * Set the renderer frame position callback
+    *
+    * @param callback indicates pointer for registered callbacks
+    * @return none
+    */
+    void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback);
+
+    /**
+    * Unset the renderer frame position callback
+    *
+    * @return none
+    */
+    void UnsetRendererPositionCallback();
+
+    /**
+    * Set the renderer frame period position callback
+    *
+    * @param callback indicates pointer for registered callbacks
+    * @return none
+    */
+    void SetRendererPeriodPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPeriodPositionCallback> &callback);
+
+    /**
+    * Unset the renderer frame period position callback
+    *
+    * @return none
+    */
+    void UnsetRendererPeriodPositionCallback();
+
+    /**
+    * Set the capturer frame position callback
+    *
+    * @param callback indicates pointer for registered callbacks
+    * @return none
+    */
+    void SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback);
+
+    /**
+    * Unset the capturer frame position callback
+    *
+    * @return none
+    */
+    void UnsetCapturerPositionCallback();
+
+    /**
+    * Set the capturer frame period position callback
+    *
+    * @param callback indicates pointer for registered callbacks
+    * @return none
+    */
+    void SetCapturerPeriodPositionCallback(int64_t markPosition,
+        const std::shared_ptr<CapturerPeriodPositionCallback> &callback);
+
+    /**
+    * Unset the capturer frame period position callback
+    *
+    * @return none
+    */
+    void UnsetCapturerPeriodPositionCallback();
+
+    /**
      * @brief Set the track volume
      *
      * @param volume The volume to be set for the current track.
@@ -359,6 +423,24 @@ private:
 
     AudioRendererRate renderRate;
 
+    int32_t mFrameSize = 0;
+    bool mMarkReached = false;
+    int64_t mFrameMarkPosition = 0;
+    int64_t mFramePeriodNumber = 0;
+
+    int64_t mTotalBytesWritten = 0;
+    int64_t mFramePeriodWritten = 0;
+    std::shared_ptr<RendererPositionCallback> mRenderPositionCb;
+    std::shared_ptr<RendererPeriodPositionCallback> mRenderPeriodPositionCb;
+
+    int64_t mTotalBytesRead = 0;
+    int64_t mFramePeriodRead = 0;
+    std::shared_ptr<CapturerPositionCallback> mCapturePositionCb;
+    std::shared_ptr<CapturerPeriodPositionCallback> mCapturePeriodPositionCb;
+
+    std::vector<std::unique_ptr<std::thread>> mPositionCBThreads;
+    std::vector<std::unique_ptr<std::thread>> mPeriodPositionCBThreads;
+
     // To be set while using audio stream
     // functionality for callbacks
     AudioRendererCallbacks *mAudioRendererCallbacks;
@@ -382,6 +464,8 @@ private:
 
     int32_t UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize);
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
+    void HandleRenderPositionCallbacks(size_t bytesWritten);
+    void HandleCapturePositionCallbacks(size_t bytesRead);
 
     // Error code used
     static const uint32_t AUDIO_CLIENT_SUCCESS = 0;

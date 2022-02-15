@@ -80,6 +80,8 @@ private:
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+    static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturerWrapper(napi_env env, std::unique_ptr<AudioCapturerOptions> &captureOptions);
 
@@ -114,6 +116,9 @@ private:
     uint32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
+
+    std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;
+    std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
 };
 }
 }

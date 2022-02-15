@@ -71,6 +71,30 @@ public:
     virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
 };
 
+class RendererPositionCallback {
+public:
+    virtual ~RendererPositionCallback() = default;
+
+    /**
+     * Called when the requested frame number is reached.
+     *
+     * @param framePosition requested frame position.
+     */
+    virtual void OnMarkReached(const int64_t &framePosition) = 0;
+};
+
+class RendererPeriodPositionCallback {
+public:
+    virtual ~RendererPeriodPositionCallback() = default;
+
+    /**
+     * Called when the requested frame count is written.
+     *
+     * @param frameCount requested frame frame count for callback.
+     */
+    virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  */
@@ -297,6 +321,36 @@ public:
      */
 
     virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
+
+    /**
+     * @brief Registers the renderer position callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRendererPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPositionCallback> &callback) = 0;
+
+    /**
+     * @brief Unregisters the renderer position callback listener
+     *
+     */
+    virtual void UnsetRendererPositionCallback() = 0;
+
+    /**
+     * @brief Registers the renderer period position callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRendererPeriodPositionCallback(int64_t frameNumber,
+        const std::shared_ptr<RendererPeriodPositionCallback> &callback) = 0;
+
+    /**
+     * @brief Unregisters the renderer period position callback listener
+     *
+     */
+    virtual void UnsetRendererPeriodPositionCallback() = 0;
 
     /**
      * @brief Obtains the formats supported by renderer.

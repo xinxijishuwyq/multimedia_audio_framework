@@ -243,6 +243,18 @@ AudioServiceClient::AudioServiceClient()
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
+    mFrameSize = 0;
+    mFrameMarkPosition = 0;
+    mMarkReached = false;
+    mFramePeriodNumber = 0;
+
+    mTotalBytesWritten = 0;
+    mFramePeriodWritten = 0;
+    mTotalBytesRead = 0;
+    mFramePeriodRead = 0;
+    mRenderPositionCb = NULL;
+    mRenderPeriodPositionCb = NULL;
+
     mAudioRendererCallbacks = NULL;
     mAudioCapturerCallbacks = NULL;
     internalReadBuffer = NULL;
@@ -292,6 +304,18 @@ void AudioServiceClient::ResetPAAudioClient()
 
     if (mainLoop)
         pa_threaded_mainloop_free(mainLoop);
+
+    for (auto &thread : mPositionCBThreads) {
+        if (thread && thread->joinable()) {
+            thread->join();
+        }
+    }
+
+    for (auto &thread : mPeriodPositionCBThreads) {
+        if (thread && thread->joinable()) {
+            thread->join();
+        }
+    }
 
     isMainLoopStarted  = false;
     isContextConnected = false;
@@ -354,6 +378,12 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 {
     int error = PA_ERR_INTERNAL;
     eAudioClientType = eClientType;
+
+    mMarkReached = false;
+    mTotalBytesWritten = 0;
+    mFramePeriodWritten = 0;
+    mTotalBytesRead = 0;
+    mFramePeriodRead = 0;
 
     SetEnv();
 
@@ -557,6 +587,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     const std::string StreamStartTime = ctime(&timenow);
 
     sampleSpec = ConvertToPAAudioParams(audioParams);
+    mFrameSize = pa_frame_size(&sampleSpec);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == NULL) {
@@ -833,9 +864,41 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
         length -= writableSize;
         acache.readIndex += writableSize;
         acache.isFull = false;
+
+        HandleRenderPositionCallbacks(writableSize);
     }
 
     return error;
+}
+
+void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
+{
+    mTotalBytesWritten += bytesWritten;
+    int64_t writtenFrameNumber = mTotalBytesWritten/mFrameSize;
+    MEDIA_DEBUG_LOG("frame size: %{public}d", mFrameSize);
+    if (!mMarkReached && mRenderPositionCb) {
+        MEDIA_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
+            static_cast<uint64_t>(mFrameMarkPosition), static_cast<uint64_t>(writtenFrameNumber));
+        if (writtenFrameNumber >= mFrameMarkPosition) {
+            MEDIA_DEBUG_LOG("audio service client OnMarkReached");
+            mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&RendererPositionCallback::OnMarkReached,
+                                            mRenderPositionCb, mFrameMarkPosition));
+            mMarkReached = true;
+        }
+    }
+
+    if (mRenderPeriodPositionCb) {
+        mFramePeriodWritten += (bytesWritten / mFrameSize);
+        MEDIA_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
+            static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(writtenFrameNumber));
+        if (mFramePeriodWritten >= mFramePeriodNumber) {
+            mFramePeriodWritten %= mFramePeriodNumber;
+            MEDIA_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRIu64,
+                static_cast<uint64_t>(mFramePeriodWritten));
+            mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
+                &RendererPeriodPositionCallback::OnPeriodReached, mRenderPeriodPositionCb, mFramePeriodNumber));
+        }
+    }
 }
 
 int32_t AudioServiceClient::DrainAudioCache()
@@ -988,6 +1051,36 @@ void AudioServiceClient::OnTimeOut()
     pa_threaded_mainloop_unlock(mainLoop);
 }
 
+void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
+{
+    mTotalBytesRead += bytesRead;
+    int64_t readFrameNumber = mTotalBytesRead/mFrameSize;
+    MEDIA_DEBUG_LOG("frame size: %{public}d", mFrameSize);
+    if (!mMarkReached && mCapturePositionCb) {
+        MEDIA_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
+            static_cast<uint64_t>(mFrameMarkPosition), static_cast<uint64_t>(readFrameNumber));
+        if (readFrameNumber >= mFrameMarkPosition) {
+            MEDIA_DEBUG_LOG("audio service client capturer OnMarkReached");
+            mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&CapturerPositionCallback::OnMarkReached,
+                                            mCapturePositionCb, mFrameMarkPosition));
+            mMarkReached = true;
+        }
+    }
+
+    if (mCapturePeriodPositionCb) {
+        mFramePeriodRead += (bytesRead / mFrameSize);
+        MEDIA_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
+            static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(readFrameNumber));
+        if (mFramePeriodRead >= mFramePeriodNumber) {
+            mFramePeriodRead %= mFramePeriodNumber;
+            MEDIA_DEBUG_LOG("audio service client OnPeriodReached, remaining frames: %{public}" PRIu64,
+                static_cast<uint64_t>(mFramePeriodRead));
+            mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
+                &CapturerPeriodPositionCallback::OnPeriodReached, mCapturePeriodPositionCb, mFramePeriodNumber));
+        }
+    }
+}
+
 int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
 {
     uint8_t *buffer = stream.buffer;
@@ -1019,6 +1112,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     }
                 } else {
                     pa_threaded_mainloop_unlock(mainLoop);
+                    HandleCapturePositionCallbacks(readSize);
                     return readSize;
                 }
             } else if (!internalReadBuffer) {
@@ -1041,6 +1135,8 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
         buffer = stream.buffer + readSize;
     }
     pa_threaded_mainloop_unlock(mainLoop);
+    HandleCapturePositionCallbacks(readSize);
+
     return readSize;
 }
 
@@ -1212,6 +1308,74 @@ void AudioServiceClient::RegisterAudioCapturerCallbacks(const AudioCapturerCallb
 {
     MEDIA_INFO_LOG("Registering audio record callbacks");
     mAudioCapturerCallbacks = (AudioCapturerCallbacks *)&cb;
+}
+
+void AudioServiceClient::SetRendererPositionCallback(int64_t markPosition,
+    const std::shared_ptr<RendererPositionCallback> &callback)
+{
+    MEDIA_INFO_LOG("Registering render frame position callback");
+    MEDIA_INFO_LOG("mark position: %{public}" PRIu64, markPosition);
+    mFrameMarkPosition = markPosition;
+    mRenderPositionCb = callback;
+}
+
+void AudioServiceClient::UnsetRendererPositionCallback()
+{
+    MEDIA_INFO_LOG("Unregistering render frame position callback");
+    mRenderPositionCb = nullptr;
+    mMarkReached = false;
+    mFrameMarkPosition = 0;
+}
+
+void AudioServiceClient::SetRendererPeriodPositionCallback(int64_t periodPosition,
+    const std::shared_ptr<RendererPeriodPositionCallback> &callback)
+{
+    MEDIA_INFO_LOG("Registering render period position callback");
+    mFramePeriodNumber = periodPosition;
+    mFramePeriodWritten = (mTotalBytesWritten / mFrameSize) % mFramePeriodNumber;
+    mRenderPeriodPositionCb = callback;
+}
+
+void AudioServiceClient::UnsetRendererPeriodPositionCallback()
+{
+    MEDIA_INFO_LOG("Unregistering render period position callback");
+    mRenderPeriodPositionCb = nullptr;
+    mFramePeriodWritten = 0;
+    mFramePeriodNumber = 0;
+}
+
+void AudioServiceClient::SetCapturerPositionCallback(int64_t markPosition,
+    const std::shared_ptr<CapturerPositionCallback> &callback)
+{
+    MEDIA_INFO_LOG("Registering capture frame position callback");
+    MEDIA_INFO_LOG("mark position: %{public}" PRIu64, markPosition);
+    mFrameMarkPosition = markPosition;
+    mCapturePositionCb = callback;
+}
+
+void AudioServiceClient::UnsetCapturerPositionCallback()
+{
+    MEDIA_INFO_LOG("Unregistering capture frame position callback");
+    mCapturePositionCb = nullptr;
+    mMarkReached = false;
+    mFrameMarkPosition = 0;
+}
+
+void AudioServiceClient::SetCapturerPeriodPositionCallback(int64_t periodPosition,
+    const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
+{
+    MEDIA_INFO_LOG("Registering period position callback");
+    mFramePeriodNumber = periodPosition;
+    mFramePeriodRead = (mTotalBytesRead / mFrameSize) % mFramePeriodNumber;
+    mCapturePeriodPositionCb = callback;
+}
+
+void AudioServiceClient::UnsetCapturerPeriodPositionCallback()
+{
+    MEDIA_INFO_LOG("Unregistering period position callback");
+    mCapturePeriodPositionCb = nullptr;
+    mFramePeriodRead = 0;
+    mFramePeriodNumber = 0;
 }
 
 int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
