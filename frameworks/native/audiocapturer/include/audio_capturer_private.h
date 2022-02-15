@@ -25,6 +25,7 @@ class AudioCapturerPrivate : public AudioCapturer {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t SetParams(const AudioCapturerParams params) const override;
+    int32_t SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback) override;
     int32_t GetParams(AudioCapturerParams &params) const override;
     int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
@@ -43,11 +44,23 @@ public:
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
     void UnsetCapturerPeriodPositionCallback() override;
 
-    std::unique_ptr<AudioStream> audioCapturer;
+    std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
 
     explicit AudioCapturerPrivate(AudioStreamType audioStreamType);
     virtual ~AudioCapturerPrivate();
+private:
+    std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+};
+
+class AudioStreamCallbackCapturer : public AudioStreamCallback {
+public:
+    virtual ~AudioStreamCallbackCapturer() = default;
+
+    void OnStateChange(const State state) override;
+    void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
+private:
+    std::weak_ptr<AudioCapturerCallback> callback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

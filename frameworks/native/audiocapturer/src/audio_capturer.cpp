@@ -18,6 +18,7 @@
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
 #include "audio_stream.h"
+#include "media_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,12 +66,12 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType)
 {
-    audioCapturer = std::make_unique<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
+    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 {
-    return audioCapturer->GetFrameCount(frameCount);
+    return audioStream_->GetFrameCount(frameCount);
 }
 
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params) const
@@ -81,13 +82,43 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params) const
     audioStreamParams.channels = params.audioChannel;
     audioStreamParams.encoding = params.audioEncoding;
 
-    return audioCapturer->SetAudioStreamInfo(audioStreamParams);
+    return audioStream_->SetAudioStreamInfo(audioStreamParams);
+}
+
+int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback)
+{
+    // If the client is using the deprecated SetParams API. SetCapturerCallback must be invoked, after SetParams.
+    // In general, callbacks can only be set after the capturer state is  PREPARED.
+    CapturerState state = GetStatus();
+    if (state == CAPTURER_NEW || state == CAPTURER_RELEASED) {
+        MEDIA_DEBUG_LOG("AudioCapturerPrivate::SetCapturerCallback ncorrect state:%{public}d to register cb", state);
+        return ERR_ILLEGAL_STATE;
+    }
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioCapturerPrivate::SetCapturerCallback callback param is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    // Save and Set reference for stream callback. Order is important here.
+    if (audioStreamCallback_ == nullptr) {
+        audioStreamCallback_ = std::make_shared<AudioStreamCallbackCapturer>();
+        if (audioStreamCallback_ == nullptr) {
+            MEDIA_ERR_LOG("AudioCapturerPrivate::Failed to allocate memory for audioStreamCallback_");
+            return ERROR;
+        }
+    }
+    std::shared_ptr<AudioStreamCallbackCapturer> cbStream =
+        std::static_pointer_cast<AudioStreamCallbackCapturer>(audioStreamCallback_);
+    cbStream->SaveCallback(callback);
+    (void)audioStream_->SetStreamCallback(audioStreamCallback_);
+
+    return SUCCESS;
 }
 
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
 {
     AudioStreamParams audioStreamParams;
-    int32_t result = audioCapturer->GetAudioStreamInfo(audioStreamParams);
+    int32_t result = audioStream_->GetAudioStreamInfo(audioStreamParams);
     if (SUCCESS == result) {
         params.audioSampleFormat = static_cast<AudioSampleFormat>(audioStreamParams.format);
         params.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
@@ -108,7 +139,7 @@ int32_t AudioCapturerPrivate::GetCapturerInfo(AudioCapturerInfo &capturerInfo) c
 int32_t AudioCapturerPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 {
     AudioStreamParams audioStreamParams;
-    int32_t result = audioCapturer->GetAudioStreamInfo(audioStreamParams);
+    int32_t result = audioStream_->GetAudioStreamInfo(audioStreamParams);
     if (SUCCESS == result) {
         streamInfo.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
@@ -122,67 +153,83 @@ int32_t AudioCapturerPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 int32_t AudioCapturerPrivate::SetCapturerPositionCallback(int64_t markPosition,
     const std::shared_ptr<CapturerPositionCallback> &callback)
 {
-    audioCapturer->SetCapturerPositionCallback(markPosition, callback);
+    audioStream_->SetCapturerPositionCallback(markPosition, callback);
 
     return SUCCESS;
 }
 
 void AudioCapturerPrivate::UnsetCapturerPositionCallback()
 {
-    audioCapturer->UnsetCapturerPositionCallback();
+    audioStream_->UnsetCapturerPositionCallback();
 }
 
 int32_t AudioCapturerPrivate::SetCapturerPeriodPositionCallback(int64_t frameNumber,
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
-    audioCapturer->SetCapturerPeriodPositionCallback(frameNumber, callback);
+    audioStream_->SetCapturerPeriodPositionCallback(frameNumber, callback);
 
     return SUCCESS;
 }
 
 void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 {
-    audioCapturer->UnsetCapturerPeriodPositionCallback();
+    audioStream_->UnsetCapturerPeriodPositionCallback();
 }
 
 bool AudioCapturerPrivate::Start() const
 {
-    return audioCapturer->StartAudioStream();
+    return audioStream_->StartAudioStream();
 }
 
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
 {
-    return audioCapturer->Read(buffer, userSize, isBlockingRead);
+    return audioStream_->Read(buffer, userSize, isBlockingRead);
 }
 
 CapturerState AudioCapturerPrivate::GetStatus() const
 {
-    return (CapturerState)audioCapturer->GetState();
+    return (CapturerState)audioStream_->GetState();
 }
 
 bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
-    return audioCapturer->GetAudioTime(timestamp, base);
+    return audioStream_->GetAudioTime(timestamp, base);
 }
 
 bool AudioCapturerPrivate::Stop() const
 {
-    return audioCapturer->StopAudioStream();
+    return audioStream_->StopAudioStream();
 }
 
 bool AudioCapturerPrivate::Flush() const
 {
-    return audioCapturer->FlushAudioStream();
+    return audioStream_->FlushAudioStream();
 }
 
 bool AudioCapturerPrivate::Release() const
 {
-    return audioCapturer->ReleaseAudioStream();
+    return audioStream_->ReleaseAudioStream();
 }
 
 int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
 {
-    return audioCapturer->GetBufferSize(bufferSize);
+    return audioStream_->GetBufferSize(bufferSize);
+}
+
+void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
+{
+    callback_ = callback;
+}
+
+void AudioStreamCallbackCapturer::OnStateChange(const State state)
+{
+    std::shared_ptr<AudioCapturerCallback> cb = callback_.lock();
+    if (cb == nullptr) {
+        MEDIA_ERR_LOG("AudioStreamCallbackCapturer::OnStateChange cb == nullptr.");
+        return;
+    }
+
+    cb->OnStateChange(static_cast<CapturerState>(state));
 }
 
 std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()

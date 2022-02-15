@@ -21,6 +21,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+    const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
+}
+
+class AudioCommonNapi {
+public:
+    AudioCommonNapi() = delete;
+    ~AudioCommonNapi() = delete;
+    static std::string GetStringArgument(napi_env env, napi_value value);
+};
+
 struct AutoRef {
     AutoRef(napi_env env, napi_ref cb)
         : env_(env), cb_(cb)

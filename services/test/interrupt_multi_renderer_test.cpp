@@ -34,6 +34,32 @@ namespace {
     constexpr int32_t NUM_BASE = 10;
 }
 
+void AudioRendererCallbackTestImpl::OnStateChange(const RendererState state)
+{
+    MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl:: OnStateChange");
+
+    switch (state) {
+        case RENDERER_PREPARED:
+            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PREPARED");
+            break;
+        case RENDERER_RUNNING:
+            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RUNNING");
+            break;
+        case RENDERER_STOPPED:
+            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_STOPPED");
+            break;
+        case RENDERER_PAUSED:
+            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PAUSED");
+            break;
+        case RENDERER_RELEASED:
+            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RELEASED");
+            break;
+        default:
+            MEDIA_ERR_LOG("AudioRendererCallbackTestImpl: OnStateChange NOT A VALID state");
+            break;
+    }
+}
+
 void AudioRendererCallbackTestImpl::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     MEDIA_DEBUG_LOG("InterruptMultiRendererTest:  OnInterrupt");

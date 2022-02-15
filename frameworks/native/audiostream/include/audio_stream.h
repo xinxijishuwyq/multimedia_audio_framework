@@ -25,29 +25,6 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
-/**
- * @brief Enumerates the stream states of the current device.
- *
- * @since 1.0
- * @version 1.0
- */
-enum State {
-    /** INVALID */
-    INVALID = -1,
-    /** New */
-    NEW,
-    /** Prepared */
-    PREPARED,
-    /** Running */
-    RUNNING,
-    /** Stopped */
-    STOPPED,
-    /** Released */
-    RELEASED,
-    /** Paused */
-    PAUSED
-};
-
 class AudioStream : public AudioSession {
 public:
     AudioStream(AudioStreamType eStreamType, AudioMode eMode);
@@ -68,6 +45,7 @@ public:
     float GetVolume();
     int32_t SetRenderRate(AudioRendererRate renderRate);
     AudioRendererRate GetRenderRate();
+    int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback);
 
     std::vector<AudioSampleFormat> GetSupportedFormats();
     std::vector<AudioChannel> GetSupportedChannels();

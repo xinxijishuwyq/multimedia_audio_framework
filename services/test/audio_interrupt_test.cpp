@@ -21,8 +21,30 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-namespace AudioTestConstants {
-    constexpr int32_t SUCCESS = 0;
+void AudioInterruptTest::OnStateChange(const RendererState state)
+{
+    MEDIA_DEBUG_LOG("AudioInterruptTest:: OnStateChange");
+
+    switch (state) {
+        case RENDERER_PREPARED:
+            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_PREPARED");
+            break;
+        case RENDERER_RUNNING:
+            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_RUNNING");
+            break;
+        case RENDERER_STOPPED:
+            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_STOPPED");
+            break;
+        case RENDERER_PAUSED:
+            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_PAUSED");
+            break;
+        case RENDERER_RELEASED:
+            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_RELEASED");
+            break;
+        default:
+            MEDIA_ERR_LOG("AudioInterruptTest: OnStateChange NOT A VALID state");
+            break;
+    }
 }
 
 void AudioInterruptTest::OnInterrupt(const InterruptEvent &interruptEvent)
@@ -158,7 +180,7 @@ bool AudioInterruptTest::StartRender()
     return true;
 }
 
-bool AudioInterruptTest::InitRender() const
+bool AudioInterruptTest::InitRender()
 {
     wav_hdr wavHeader;
     size_t headerSize = sizeof(wav_hdr);
@@ -168,17 +190,18 @@ bool AudioInterruptTest::InitRender() const
         return false;
     }
 
-    AudioRendererParams rendererParams;
-    rendererParams.sampleFormat = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
-    rendererParams.sampleRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
-    rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
-    rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
+    AudioRendererOptions rendererOptions = {};
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
+    rendererOptions.streamInfo.format = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
+    rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
+    rendererOptions.rendererInfo.contentType = contentType_;
+    rendererOptions.rendererInfo.streamUsage = streamUsage_;
+    rendererOptions.rendererInfo.rendererFlags = 0;
 
-    if (audioRenderer_->SetParams(rendererParams) !=  AudioTestConstants::SUCCESS) {
-        MEDIA_ERR_LOG("AudioInterruptTest: Set audio renderer parameters failed");
-        if (!audioRenderer_->Release()) {
-            MEDIA_ERR_LOG("AudioInterruptTest: Release failed");
-        }
+    audioRenderer_ = AudioRenderer::Create(rendererOptions);
+    if (audioRenderer_== nullptr) {
+        MEDIA_INFO_LOG("AudioInterruptTest: Renderer create failed");
         return false;
     }
     MEDIA_INFO_LOG("AudioInterruptTest: Playback renderer created");
@@ -186,10 +209,9 @@ bool AudioInterruptTest::InitRender() const
     return true;
 }
 
-int32_t AudioInterruptTest::TestPlayback(const AudioStreamType &streamType)
+int32_t AudioInterruptTest::TestPlayback()
 {
     MEDIA_INFO_LOG("AudioInterruptTest: TestPlayback start ");
-    audioRenderer_ = AudioRenderer::Create(streamType);
     if (!InitRender()) {
         fclose(wavFile_);
         return -1;
@@ -232,6 +254,12 @@ int32_t AudioInterruptTest::TestPlayback(const AudioStreamType &streamType)
 
     return 0;
 }
+
+void AudioInterruptTest::saveStreamInfo(ContentType contentType, StreamUsage streamUsage)
+{
+    contentType_ = contentType;
+    streamUsage_ = streamUsage;
+}
 } // AudioStandard
 } // OHOS
 
@@ -243,9 +271,15 @@ int main(int argc, char *argv[])
     MEDIA_INFO_LOG("AudioInterruptTest: Render test in");
     constexpr int32_t minNumOfArgs = 2;
     constexpr int32_t argIndexTwo = 2;
+    constexpr int32_t argIndexThree = 3;
 
-    if ((argv == nullptr) || (argc < minNumOfArgs)) {
+    if (argv == nullptr) {
         MEDIA_ERR_LOG("AudioInterruptTest: argv is null");
+        return 0;
+    }
+
+    if (argc < minNumOfArgs || argc == minNumOfArgs + 1) {
+        MEDIA_ERR_LOG("AudioInterruptTest: incorrect argc. Enter either 2 or 4 args");
         return 0;
     }
 
@@ -261,10 +295,6 @@ int main(int argc, char *argv[])
     }
     MEDIA_INFO_LOG("AudioInterruptTest: path = %{public}s", path);
 
-    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-    if (argc > minNumOfArgs)
-        streamType = static_cast<AudioStreamType>(strtol(argv[argIndexTwo], NULL, numBase));
-
     auto audioInterruptTest = std::make_shared<AudioInterruptTest>();
 
     audioInterruptTest->wavFile_ = fopen(path, "rb");
@@ -273,7 +303,13 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    int32_t ret = audioInterruptTest->TestPlayback(streamType);
+    if (argc > minNumOfArgs + 1) { // argc = 4
+        ContentType contentType = static_cast<ContentType>(strtol(argv[argIndexTwo], NULL, numBase));
+        StreamUsage streamUsage = static_cast<StreamUsage>(strtol(argv[argIndexThree], NULL, numBase));
+        audioInterruptTest->saveStreamInfo(contentType, streamUsage);
+    }
+
+    int32_t ret = audioInterruptTest->TestPlayback();
 
     return ret;
 }

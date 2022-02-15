@@ -13,39 +13,35 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_RENDERER_CALLBACK_NAPI_H_
-#define AUDIO_RENDERER_CALLBACK_NAPI_H_
+#ifndef AUDIO_CAPTURER_CALLBACK_NAPI_H_
+#define AUDIO_CAPTURER_CALLBACK_NAPI_H_
 
 #include "audio_common_napi.h"
-#include "audio_renderer.h"
+#include "audio_capturer.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRendererCallbackNapi : public AudioRendererCallback {
+class AudioCapturerCallbackNapi : public AudioCapturerCallback {
 public:
-    explicit AudioRendererCallbackNapi(napi_env env);
-    virtual ~AudioRendererCallbackNapi();
+    explicit AudioCapturerCallbackNapi(napi_env env);
+    virtual ~AudioCapturerCallbackNapi();
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
-    void OnStateChange(const RendererState state) override;
+    void OnStateChange(const CapturerState state) override;
 private:
-    struct AudioRendererJsCallback {
+    struct AudioCapturerJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
-        InterruptEvent interruptEvent;
-        RendererState state;
+        CapturerState state;
     };
 
-    void OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb);
-    void OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb);
+    void OnJsCallbackStateChange(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_RENDERER_CALLBACK_NAPI_H_
+#endif // AUDIO_CAPTURER_CALLBACK_NAPI_H_
