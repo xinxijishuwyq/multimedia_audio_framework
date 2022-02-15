@@ -81,8 +81,6 @@ private:
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value GetBufferSize(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
-    static napi_value CreateCapturerStateObject(napi_env env);
-    static napi_value CreateAudioSampleFormatObject(napi_env env);
     static napi_value CreateAudioCapturerWrapper(napi_env env, std::unique_ptr<AudioCapturerOptions> &captureOptions);
 
     static void CommonCallbackRoutine(napi_env env, AudioCapturerAsyncContext* &asyncContext,
@@ -106,8 +104,6 @@ private:
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sAudioCapturerOptions_;
     static AudioCapturerOptions sCapturerOptions_;
-    static napi_ref capturerState_;
-    static napi_ref sampleFormat_;
 
     std::unique_ptr<AudioCapturer> audioCapturer_;
     ContentType contentType_;
@@ -118,15 +114,6 @@ private:
     uint32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
-};
-
-static const std::map<std::string, CapturerState> audioCapturerStateMap = {
-    {"STATE_INVALID", CAPTURER_INVALID},
-    {"STATE_NEW", CAPTURER_NEW},
-    {"STATE_PREPARED", CAPTURER_PREPARED},
-    {"STATE_RUNNING", CAPTURER_RUNNING},
-    {"STATE_STOPPED", CAPTURER_STOPPED},
-    {"STATE_RELEASED", CAPTURER_RELEASED}
 };
 }
 }

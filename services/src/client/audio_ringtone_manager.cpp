@@ -346,11 +346,11 @@ std::string RingtonePlayer::GetTitle()
     Uri mediaLibUri(Media::MEDIALIBRARY_DATA_URI);
 
     vector<string> columns = {};
-    columns.push_back(MEDIA_DATA_DB_TITLE);
+    columns.push_back(Media::MEDIA_DATA_DB_TITLE);
 
     auto uri = audioRingtoneMgr_.GetSystemRingtoneUri(context_, type_);
     DataAbilityPredicates predicates;
-    predicates.EqualTo(MEDIA_DATA_DB_FILE_PATH, uri);
+    predicates.EqualTo(Media::MEDIA_DATA_DB_FILE_PATH, uri);
 
     shared_ptr<AbsSharedResultSet> resultSet = nullptr;
     resultSet = helper->Query(mediaLibUri, columns, predicates);
@@ -361,7 +361,7 @@ std::string RingtonePlayer::GetTitle()
 
     int32_t titleIndex(0);
     string title("");
-    resultSet->GetColumnIndex(MEDIA_DATA_DB_TITLE, titleIndex);
+    resultSet->GetColumnIndex(Media::MEDIA_DATA_DB_TITLE, titleIndex);
     resultSet->GetString(titleIndex, title);
 
     helper->Release();
