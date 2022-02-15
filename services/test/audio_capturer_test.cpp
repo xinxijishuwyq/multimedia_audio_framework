@@ -24,10 +24,13 @@ using namespace std;
 using namespace std::chrono;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
-
+int32_t bufferMsec = 0;
 namespace AudioTestConstants {
+    constexpr int32_t FIRST_ARG_IDX = 1;
     constexpr int32_t SECOND_ARG_IDX = 2;
     constexpr int32_t THIRD_ARG_IDX = 3;
+    constexpr int32_t FOURTH_ARG_IDX = 4;
+    constexpr int32_t NUM_BASE = 10;
     constexpr int32_t PAUSE_BUFFER_POSITION = 128;
     constexpr int32_t PAUSE_READ_TIME_SECONDS = 2;
     constexpr int32_t SUCCESS = 0;
@@ -192,6 +195,11 @@ public:
         }
 
         CheckSupportedParams();
+        MEDIA_ERR_LOG("AudioCaptruerTest: buffermsec = %{public}d", bufferMsec);
+        int32_t status = audioCapturer->SetBufferDuration(bufferMsec);
+        if (status) {
+            MEDIA_ERR_LOG("Failed to set buffer duration");
+        }
 
         if (!InitCapture(audioCapturer)) {
             MEDIA_ERR_LOG("Initialize capturer failed");
@@ -240,14 +248,16 @@ int main(int argc, char *argv[])
     }
 
     MEDIA_INFO_LOG("argc=%d", argc);
-    MEDIA_INFO_LOG("argv[1]=%{public}s", argv[1]);
+    MEDIA_INFO_LOG("argv[1]=%{public}s", argv[AudioTestConstants::FIRST_ARG_IDX]);
     MEDIA_INFO_LOG("argv[2]=%{public}s", argv[AudioTestConstants::SECOND_ARG_IDX]);
     MEDIA_INFO_LOG("argv[3]=%{public}s", argv[AudioTestConstants::THIRD_ARG_IDX]);
 
     int32_t samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
     bool isBlocking = (atoi(argv[AudioTestConstants::THIRD_ARG_IDX]) == 1);
-    string filePath = argv[AudioTestConstants::SECOND_ARG_IDX - 1];
-
+    string filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
+    if (argc > AudioTestConstants::FOURTH_ARG_IDX) {
+        bufferMsec = strtol(argv[AudioTestConstants::FOURTH_ARG_IDX], nullptr, AudioTestConstants::NUM_BASE);
+    }
     AudioCapturerTest testObj;
     bool ret = testObj.TestRecording(samplingRate, isBlocking, filePath);
 

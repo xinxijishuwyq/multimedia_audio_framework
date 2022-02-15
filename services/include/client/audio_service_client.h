@@ -423,6 +423,14 @@ public:
      */
     AudioRendererRate GetStreamRenderRate();
 
+    /**
+     * @brief Set the buffer duration in msec
+     *
+     * @param bufferSizeInMsec buffer size in duration.
+     * @return Returns {@link SUCCESS} defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec);
+
     void SaveStreamCallback(const std::weak_ptr<AudioStreamCallback> &callback);
 
     // Audio timer callback
@@ -442,6 +450,7 @@ private:
     const void *internalReadBuffer;
     size_t internalRdBufLen;
     size_t internalRdBufIndex;
+    size_t setBufferSize = MINIMUM_BUFFER_SIZE;
     int32_t streamCmdStatus;
     int32_t streamDrainStatus;
     int32_t streamFlushStatus;

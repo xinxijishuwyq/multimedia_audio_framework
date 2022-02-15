@@ -339,6 +339,16 @@ AudioRendererRate AudioRendererPrivate::GetRenderRate() const
     return audioStream_->GetRenderRate();
 }
 
+int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
+{
+    if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {
+        MEDIA_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 20ms");
+        return ERR_INVALID_PARAM;
+    }
+
+    return audioStream_->SetBufferSizeInMsec(bufferDuration);
+}
+
 AudioInterruptCallbackImpl::AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
     const AudioInterrupt &audioInterrupt)
     : audioStream_(audioStream), audioInterrupt_(audioInterrupt)

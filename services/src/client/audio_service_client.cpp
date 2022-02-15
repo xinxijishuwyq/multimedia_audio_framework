@@ -1220,6 +1220,13 @@ int32_t AudioServiceClient::ReleaseStream()
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
+{
+    size_t bufferSize =  pa_usec_to_bytes(bufferSizeInMsec * PA_USEC_PER_MSEC, &sampleSpec);
+    setBufferSize = bufferSize;
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
 {
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
@@ -1232,7 +1239,7 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        minBufferSize = (size_t)MINIMUM_BUFFER_SIZE;
+        minBufferSize = setBufferSize;
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
@@ -1255,7 +1262,7 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        minBufferSize = (size_t)MINIMUM_BUFFER_SIZE;
+        minBufferSize =  setBufferSize;
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {

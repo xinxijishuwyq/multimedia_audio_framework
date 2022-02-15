@@ -278,6 +278,16 @@ public:
     virtual void UnsetCapturerPeriodPositionCallback() = 0;
 
     /**
+     * @brief set the buffer duration for capturer, minimum buffer duration is 5msec
+     *         maximum is 20msec
+     *
+     * @param bufferDuration  Indicates a buffer duration to be set for capturer
+     * @return Returns {@link SUCCESS} if bufferDuration is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
+
+    /**
      * @brief Obtains the capturer supported formats.
      *
      * @return vector with capturer supported formats.
