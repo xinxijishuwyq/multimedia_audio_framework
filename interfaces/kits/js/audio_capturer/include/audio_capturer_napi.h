@@ -100,8 +100,19 @@ private:
     static napi_status CreateReadAsyncWork(const AudioCapturerAsyncContext &asyncContext);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static bool ParseCapturerOptions(napi_env env, napi_value root, AudioCapturerOptions *opts);
-    static bool ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *rendererInfo);
+    static bool ParseCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *capturerInfo);
     static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
+
+    static napi_value RegisterCallback(napi_env env, napi_value jsThis,
+                                       napi_value* argv, const std::string& cbName);
+    static napi_value RegisterCapturerCallback(napi_env env, napi_value* argv,
+                                               const std::string& cbName, AudioCapturerNapi *capturerNapi);
+    static napi_value RegisterPositionCallback(napi_env env, napi_value* argv,
+                                               const std::string& cbName, AudioCapturerNapi *capturerNapi);
+    static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
+                                                     const std::string& cbName, AudioCapturerNapi *capturerNapi);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis,
+                                         napi_value* argv, const std::string& cbName);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sAudioCapturerOptions_;

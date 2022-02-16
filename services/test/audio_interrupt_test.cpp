@@ -200,7 +200,7 @@ bool AudioInterruptTest::InitRender()
     rendererOptions.rendererInfo.rendererFlags = 0;
 
     audioRenderer_ = AudioRenderer::Create(rendererOptions);
-    if (audioRenderer_== nullptr) {
+    if (audioRenderer_ == nullptr) {
         MEDIA_INFO_LOG("AudioInterruptTest: Renderer create failed");
         return false;
     }
@@ -255,7 +255,7 @@ int32_t AudioInterruptTest::TestPlayback()
     return 0;
 }
 
-void AudioInterruptTest::saveStreamInfo(ContentType contentType, StreamUsage streamUsage)
+void AudioInterruptTest::SaveStreamInfo(ContentType contentType, StreamUsage streamUsage)
 {
     contentType_ = contentType;
     streamUsage_ = streamUsage;
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     if (argc > minNumOfArgs + 1) { // argc = 4
         ContentType contentType = static_cast<ContentType>(strtol(argv[argIndexTwo], NULL, numBase));
         StreamUsage streamUsage = static_cast<StreamUsage>(strtol(argv[argIndexThree], NULL, numBase));
-        audioInterruptTest->saveStreamInfo(contentType, streamUsage);
+        audioInterruptTest->SaveStreamInfo(contentType, streamUsage);
     }
 
     int32_t ret = audioInterruptTest->TestPlayback();
