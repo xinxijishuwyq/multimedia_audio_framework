@@ -47,6 +47,7 @@ public:
     int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
     int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene);
+    int32_t OpenOutput(DeviceType deviceType);
     static AudioRendererSink *GetInstance(void);
     bool rendererInited_;
 private:
@@ -57,6 +58,7 @@ private:
     bool paused_;
     float leftVolume_;
     float rightVolume_;
+    int32_t routeHandle_ = -1;
     struct AudioProxyManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;

@@ -60,6 +60,7 @@ public:
     int32_t SetMute(bool isMute);
     int32_t GetMute(bool &isMute);
     int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene);
+    int32_t OpenInput(DeviceType deviceType);
 
     static AudioCapturerSource *GetInstance(void);
     bool capturerInited_;
@@ -75,6 +76,8 @@ private:
     bool paused_;
     float leftVolume_;
     float rightVolume_;
+
+    int32_t routeHandle_ = -1;
 
     struct AudioProxyManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
