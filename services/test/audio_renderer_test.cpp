@@ -27,6 +27,7 @@ namespace {
     constexpr int32_t ARGS_INDEX_TWO = 2;
     constexpr int32_t ARGS_COUNT_TWO = 2;
     constexpr int32_t ARGS_COUNT_THREE = 3;
+    constexpr int32_t ARGS_COUNT_FOUR = 4;
     constexpr int32_t SUCCESS = 0;
     constexpr int32_t STOP_BUFFER_POSITION = 700000;
     constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;
@@ -267,6 +268,10 @@ public:
             contentType = static_cast<ContentType>(strtol(argv[ARGS_INDEX_TWO], NULL, numBase));
             streamUsage = static_cast<StreamUsage>(strtol(argv[ARGS_INDEX_THREE], NULL, numBase));
         }
+        int32_t bufferMsec = 0;
+        if (argc > ARGS_COUNT_FOUR) {
+            bufferMsec = strtol(argv[ARGS_COUNT_FOUR], NULL, numBase);
+        }
 
         AudioRendererOptions rendererOptions = {};
         rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
@@ -295,6 +300,11 @@ public:
         GetRendererStreamInfo(audioRenderer);
 
         CheckSupportedParams();
+        MEDIA_ERR_LOG("AudioRendererTest: buffermsec = %{public}d", bufferMsec);
+        int32_t status = audioRenderer->SetBufferDuration(bufferMsec);
+        if (status) {
+            MEDIA_ERR_LOG("Failed to set buffer duration");
+        }
 
         if (!InitRender(audioRenderer)) {
             MEDIA_ERR_LOG("AudioRendererTest: Init render failed");

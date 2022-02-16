@@ -55,6 +55,7 @@ public:
     int32_t SetRendererPeriodPositionCallback(int64_t frameNumber,
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
     void UnsetRendererPeriodPositionCallback() override;
+    int32_t SetBufferDuration(uint64_t bufferDuration) const override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioRendererInfo rendererInfo_ = {};

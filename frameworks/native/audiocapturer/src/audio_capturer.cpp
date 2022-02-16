@@ -216,6 +216,15 @@ int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
     return audioStream_->GetBufferSize(bufferSize);
 }
 
+int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
+{
+    if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {
+        MEDIA_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 20ms");
+        return ERR_INVALID_PARAM;
+    }
+    return audioStream_->SetBufferSizeInMsec(bufferDuration);
+}
+
 void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
 {
     callback_ = callback;

@@ -29,6 +29,9 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t MAX_NUM_STREAMS = 3;
 constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
+constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
+constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+
 
 enum DeviceFlag {
     /**
