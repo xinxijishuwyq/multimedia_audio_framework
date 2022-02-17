@@ -490,7 +490,7 @@ private:
     std::weak_ptr<AudioStreamCallback> streamCallback_;
     State state_;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
-    
+
     // To be set while using audio stream
     // functionality for callbacks
     AudioRendererCallbacks *mAudioRendererCallbacks;

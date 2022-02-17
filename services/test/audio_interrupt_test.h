@@ -33,7 +33,7 @@ public:
     int32_t TestPlayback();
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const RendererState state) override;
-    void saveStreamInfo(ContentType contentType, StreamUsage streamUsage);
+    void SaveStreamInfo(ContentType contentType, StreamUsage streamUsage);
     FILE *wavFile_ = nullptr;
 private:
     bool InitRender();
