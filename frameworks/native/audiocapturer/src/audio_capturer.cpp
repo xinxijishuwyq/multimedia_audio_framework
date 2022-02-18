@@ -153,6 +153,11 @@ int32_t AudioCapturerPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 int32_t AudioCapturerPrivate::SetCapturerPositionCallback(int64_t markPosition,
     const std::shared_ptr<CapturerPositionCallback> &callback)
 {
+    if ((callback == nullptr) || (markPosition <= 0)) {
+        MEDIA_ERR_LOG("AudioCapturerPrivate::SetCapturerPositionCallback input param is invalid");
+        return ERR_INVALID_PARAM;
+    }
+
     audioStream_->SetCapturerPositionCallback(markPosition, callback);
 
     return SUCCESS;
@@ -166,6 +171,11 @@ void AudioCapturerPrivate::UnsetCapturerPositionCallback()
 int32_t AudioCapturerPrivate::SetCapturerPeriodPositionCallback(int64_t frameNumber,
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
+    if ((callback == nullptr) || (frameNumber <= 0)) {
+        MEDIA_ERR_LOG("AudioCapturerPrivate::SetCapturerPeriodPositionCallback input param is invalid");
+        return ERR_INVALID_PARAM;
+    }
+
     audioStream_->SetCapturerPeriodPositionCallback(frameNumber, callback);
 
     return SUCCESS;

@@ -20,6 +20,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class CapturerPositionCallbackTest : public CapturerPositionCallback {
+public:
+    void OnMarkReached(const int64_t &framePosition) override {}
+};
+
+class CapturerPeriodPositionCallbackTest : public CapturerPeriodPositionCallback {
+public:
+    void OnPeriodReached(const int64_t &frameNumber) override {}
+};
+
 class AudioCapturerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
