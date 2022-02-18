@@ -1,0 +1,54 @@
+import("//build/ohos.gni")
+
+pulseaudio_dir = "//third_party/pulseaudio"
+opensles_dir = "//third_party/openSLES"
+
+config("audio_renderer_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_standard/services/include",
+    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/test",
+    "//utils/native/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+config("audio_opensles_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/include",
+    "$opensles_dir/api/1.0.1",
+  ]
+}
+
+ohos_executable("audio_opensles_test") {
+  install_enable = true
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_test.cpp" ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_renderer_config"
+  ]
+
+  deps = [ 
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
+    "//foundation/multimedia/audio_standard:libsl"
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
