@@ -27,38 +27,13 @@ static SLresult Resume(SLObjectItf self, SLboolean async)
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetState(SLObjectItf self, SLuint32 *state) {
+static SLresult GetState(SLObjectItf self, SLuint32 *state) 
+{
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
 static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *interface)
 {
-    /*
-    switch (iid) {
-        case SL_IID_ENGINE: {
-            CEngine *cEngine = (CEngine *)self;
-            *(void **)interface = (void *)&(cEngine->mEngine.mItf);
-            return SL_RESULT_SUCCESS;
-        }
-        case SL_IID_PLAY: {
-            CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-            *(void **)interface = (void *)&(cAudioPlayer->mPlay.mItf);
-            return SL_RESULT_SUCCESS;
-        }
-        case SL_IID_VOLUME: {
-            CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-            *(void **)interface = (void *)&(cAudioPlayer->mVolume.mItf);
-            return SL_RESULT_SUCCESS;
-        }
-        case SL_IID_OH_BUFFERQUEUE: {
-            CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-            *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
-            return SL_RESULT_SUCCESS;
-        }
-        default:
-            return SL_RESULT_FEATURE_UNSUPPORTED;
-    }
-    */
    if (iid == SL_IID_ENGINE) {
         CEngine *cEngine = (CEngine *)self;
         *(void **)interface = (void *)&(cEngine->mEngine.mItf);
@@ -106,7 +81,8 @@ static SLresult SetLossOfControlInterfaces(SLObjectItf self,
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-void Destroy(SLObjectItf self) {
+void Destroy(SLObjectItf self)
+{
     IObject *iObject = (IObject *)self;
     SLuint32 objectId = iObject->mClass->mObjectId;
     switch (objectId) {

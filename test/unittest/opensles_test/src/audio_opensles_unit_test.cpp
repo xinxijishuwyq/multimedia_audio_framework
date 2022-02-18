@@ -21,7 +21,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    const char * AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
+    char * AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     FILE *wavFile_;
     wav_hdr wavHeader_;
     SLObjectItf engineObject_;

@@ -40,7 +40,7 @@ ClassTable *ObjectIdToClass(SLuint32 objectId) {
 }
 
 IObject *Construct(const ClassTable *classTable, SLEngineItf engine) {
-    IObject *thiz = (IObject *) calloc(1, classTable->mSize);                                                                      
+    IObject *thiz = (IObject *) calloc(1, classTable->mSize);
     if (thiz != nullptr) {
         IEngine *thisEngine = (IEngine *) engine;
         if (thisEngine != nullptr) {

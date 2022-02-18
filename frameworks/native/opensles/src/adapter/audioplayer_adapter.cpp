@@ -46,8 +46,9 @@ void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
     return;
 }
 
-SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter(SLuint32 id, SLDataSource *dataSource, SLDataSink *dataSink, AudioStreamType streamType)
-{    
+SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
+    (SLuint32 id, SLDataSource *dataSource, SLDataSink *dataSink, AudioStreamType streamType)
+{
     SLDataFormat_PCM *pcmFormat = (SLDataFormat_PCM *)dataSource->pFormat;
     AudioRendererParams rendererParams;
     ConvertPcmFormat(pcmFormat, &rendererParams);
@@ -93,13 +94,13 @@ SLresult AudioPlayerAdapter::GetPlayStateAdapter(SLuint32 id, SLuint32 *state)
     switch (rendererState) {
         case RENDERER_RUNNING:
             *state = SL_PLAYSTATE_PLAYING;
-            break;    
+            break;
         case RENDERER_PAUSED:
             *state = SL_PLAYSTATE_PAUSED;
-            break; 
+            break;
         case RENDERER_STOPPED:
             *state = SL_PLAYSTATE_STOPPED;
-            break;    
+            break;
         default:
             *state = -1;
             break;
@@ -110,10 +111,10 @@ SLresult AudioPlayerAdapter::GetPlayStateAdapter(SLuint32 id, SLuint32 *state)
 SLresult AudioPlayerAdapter::SetVolumeLevelAdapter(SLuint32 id, SLmillibel level)
 {
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
-    float volume = pow(10, level / 2000.0);
-    std::cout << "setVolume level: " << level << std::endl;
-    audioRenderer->SetVolume(volume / 15.0);
-    std::cout << "setVolume volume: " << volume << std::endl;
+    int base = 10;
+    float volume = pow(base, level / MAGNIFICATION);
+    float volumeMaxLevel = 15;
+    audioRenderer->SetVolume(volume / volumeMaxLevel);
     return SL_RESULT_SUCCESS;
 }
 
@@ -121,17 +122,14 @@ SLresult AudioPlayerAdapter::GetVolumeLevelAdapter(SLuint32 id, SLmillibel *leve
 {
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
     float volume = audioRenderer->GetVolume();
-    *level = (SLmillibel) (2000 * log10(volume));
-    std::cout << "getVolume *level*: " << pow(10, volume / 2000.0) << std::endl;
+    *level = (SLmillibel) (MAGNIFICATION * log10(volume));
     return SL_RESULT_SUCCESS;
 }
 
 SLresult AudioPlayerAdapter::GetMaxVolumeLevelAdapter(SLuint32 id, SLmillibel *level)
 {
     float volume = AudioSystemManager::GetInstance()->GetMaxVolume(AudioSystemManager::STREAM_MUSIC);
-    *level = (SLmillibel) (2000 * log10(volume));
-    std::cout << "getMaxVolume volume: " << volume << std::endl;
-    std::cout << "getMaxVolume level*: " << *level << std::endl;
+    *level = (SLmillibel) (MAGNIFICATION * log10(volume));
     return SL_RESULT_SUCCESS;
 }
 
@@ -172,7 +170,8 @@ SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **pBuffer, SL
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayerAdapter::RegisterCallbackAdapter(SLOHBufferQueueItf itf, SlOHBufferQueueCallback callback, void *pContext)
+SLresult AudioPlayerAdapter::RegisterCallbackAdapter
+    (SLOHBufferQueueItf itf, SlOHBufferQueueCallback callback, void *pContext)
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)itf;
     AudioRenderer *audioRenderer = GetAudioRenderById(thiz->mId);
@@ -216,16 +215,15 @@ AudioSampleFormat AudioPlayerAdapter::SlToOhosSampelFormat(SLDataFormat_PCM *pcm
             sampleFormat = SAMPLE_S32LE;
             break;
         default:
-            sampleFormat = INVALID_WIDTH;  
+            sampleFormat = INVALID_WIDTH;
     }
-    return sampleFormat;;
+    return sampleFormat;
 }
 
 AudioSamplingRate AudioPlayerAdapter::SlToOhosSamplingRate(SLDataFormat_PCM *pcmFormat)
 {
     AudioSamplingRate sampleRate;
-    switch (pcmFormat->samplesPerSec)
-    {
+    switch (pcmFormat->samplesPerSec) {
         case SL_SAMPLINGRATE_8:
             sampleRate = SAMPLE_RATE_8000;
             break;
@@ -274,13 +272,11 @@ AudioSamplingRate AudioPlayerAdapter::SlToOhosSamplingRate(SLDataFormat_PCM *pcm
 AudioChannel AudioPlayerAdapter::SlToOhosChannel(SLDataFormat_PCM *pcmFormat)
 {
     AudioChannel channelCount;
-    std::cout << "numChannels: " << pcmFormat->numChannels << std::endl;
-    switch (pcmFormat->numChannels)
-    {
-        case 1:
+    switch (pcmFormat->numChannels) {
+        case MONO:
             channelCount = MONO;
             break;
-        case 2:
+        case STEREO:
             channelCount = STEREO;
             break;
         default:
