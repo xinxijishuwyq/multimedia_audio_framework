@@ -56,6 +56,13 @@ public:
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
     void UnsetRendererPeriodPositionCallback() override;
     int32_t SetBufferDuration(uint64_t bufferDuration) const override;
+    int32_t SetRenderMode(AudioRenderMode renderMode) const override;
+    AudioRenderMode GetRenderMode() const override;
+    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
+    int32_t Enqueue(const BufferDesc &bufDesc) const override;
+    int32_t Clear() const override;
+    int32_t GetBufQueueState(BufferQueueState &bufState) const override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioRendererInfo rendererInfo_ = {};

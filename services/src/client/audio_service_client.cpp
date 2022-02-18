@@ -31,6 +31,7 @@ const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
 const uint32_t T_LENGTH_FACTOR = 4;
+const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 
 #define CHECK_AND_RETURN_IFINVALID(expr) \
 do {                                     \
@@ -194,6 +195,89 @@ void AudioServiceClient::PAStreamRequestCb(pa_stream *stream, size_t length, voi
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
+
+    MEDIA_DEBUG_LOG("AAudioServiceClient::PAStreamSetBufAttrSuccessCb is called");
+    if (!success) {
+        MEDIA_ERR_LOG("AAudioServiceClient::PAStreamSetBufAttrSuccessCb SetBufAttr failed");
+    } else {
+        MEDIA_ERR_LOG("AAudioServiceClient::PAStreamSetBufAttrSuccessCb SetBufAttr success");
+    }
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
+int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
+{
+    MEDIA_DEBUG_LOG("AudioServiceClient::SetAudioRenderMode begin");
+    renderMode_ = renderMode;
+
+    if (renderMode_ != RENDER_MODE_CALLBACK) {
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
+    CHECK_AND_RETURN_IFINVALID(mainLoop && context && paStream);
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_buffer_attr bufferAttr;
+    bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec);
+    bufferAttr.maxlength = static_cast<uint32_t>(-1);
+    bufferAttr.tlength = static_cast<uint32_t>(-1);
+    bufferAttr.minreq = bufferAttr.prebuf;
+    pa_operation *operation = pa_stream_set_buffer_attr(paStream, &bufferAttr,
+        PAStreamSetBufAttrSuccessCb, (void *)this);
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mainLoop);
+    }
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    MEDIA_DEBUG_LOG("AudioServiceClient::SetAudioRenderMode end");
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+AudioRenderMode AudioServiceClient::GetAudioRenderMode()
+{
+    return renderMode_;
+}
+
+int32_t AudioServiceClient::SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback)
+{
+    if (callback.lock() == nullptr) {
+        MEDIA_ERR_LOG("AudioServiceClient::SaveWriteCallback callback == nullptr");
+        return AUDIO_CLIENT_INIT_ERR;
+    }
+    writeCallback_ = callback;
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
+{
+    MEDIA_INFO_LOG("AudioServiceClient::Inside PA write callback");
+    auto asClient = static_cast<AudioServiceClient *>(userdata);
+    auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
+    pa_threaded_mainloop_signal(mainLoop, 0);
+
+    if (asClient->renderMode_ != RENDER_MODE_CALLBACK) {
+        return;
+    }
+
+    std::shared_ptr<AudioRendererWriteCallback> cb = asClient->writeCallback_.lock();
+    if (cb != nullptr) {
+        size_t requestSize;
+        asClient->GetMinimumBufferSize(requestSize);
+        MEDIA_INFO_LOG("AudioServiceClient::PAStreamWriteCb: cb != nullptr firing OnWriteData");
+        MEDIA_INFO_LOG("AudioServiceClient::OnWriteData requestSize : %{public}zu", requestSize);
+        cb->OnWriteData(requestSize);
+    } else {
+        MEDIA_ERR_LOG("AudioServiceClient::PAStreamWriteCb: cb == nullptr not firing OnWriteData");
+    }
+}
+
 void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 {
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
@@ -273,6 +357,7 @@ AudioServiceClient::AudioServiceClient()
     streamInfoUpdated = false;
 
     renderRate = RENDER_RATE_NORMAL;
+    renderMode_ = RENDER_MODE_NORMAL;
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
@@ -535,10 +620,12 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
+
     bufferAttr.prebuf = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
     bufferAttr.maxlength = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC * MAX_LENGTH_FACTOR, &sampleSpec);
     bufferAttr.tlength = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC * T_LENGTH_FACTOR, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(LATENCY_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
+
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK)
         result = pa_stream_connect_playback(paStream, NULL, &bufferAttr,
                                             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
@@ -648,7 +735,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
-    pa_stream_set_write_callback(paStream, PAStreamRequestCb, mainLoop);
+    pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
     pa_stream_set_read_callback(paStream, PAStreamRequestCb, mainLoop);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
@@ -929,8 +1016,6 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
                        writableSize, length, error);
         buffer = buffer + writableSize;
         length -= writableSize;
-        acache.readIndex += writableSize;
-        acache.isFull = false;
 
         HandleRenderPositionCallbacks(writableSize);
     }
@@ -1030,6 +1115,22 @@ size_t AudioServiceClient::WriteToAudioCache(const StreamBuffer &stream)
     return (stream.bufferLen - inputLen);
 }
 
+size_t AudioServiceClient::WriteStreamInCb(const StreamBuffer &stream, int32_t &pError)
+{
+    lock_guard<mutex> lock(dataMutex);
+    int error = 0;
+
+    CHECK_PA_STATUS_FOR_WRITE(mainLoop, context, paStream, pError, 0);
+    pa_threaded_mainloop_lock(mainLoop);
+
+    const uint8_t *buffer = stream.buffer;
+    size_t length = stream.bufferLen;
+    error = PaWriteStream(buffer, length);
+    pa_threaded_mainloop_unlock(mainLoop);
+    pError = error;
+    return (stream.bufferLen - length);
+}
+
 size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)
 {
     lock_guard<mutex> lock(dataMutex);
@@ -1054,6 +1155,9 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     size_t length = acache.totalCacheSize;
 
     error = PaWriteStream(buffer, length);
+    acache.readIndex += acache.totalCacheSize;
+    acache.isFull = false;
+
     if (!error && (length >= 0) && !acache.isFull) {
         uint8_t *cacheBuffer = acache.buffer.get();
         uint32_t offset = acache.readIndex;
@@ -1239,7 +1343,11 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        minBufferSize = setBufferSize;
+        if (renderMode_ == RENDER_MODE_CALLBACK) {
+            minBufferSize = (size_t)bufferAttr->minreq;
+        } else {
+            minBufferSize = setBufferSize;
+        }
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
@@ -1262,7 +1370,11 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        minBufferSize =  setBufferSize;
+        if (renderMode_ == RENDER_MODE_CALLBACK) {
+            minBufferSize = (size_t)bufferAttr->minreq;
+        } else {
+            minBufferSize = setBufferSize;
+        }
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {

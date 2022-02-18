@@ -103,6 +103,18 @@ public:
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
 };
 
+class AudioRendererWriteCallback {
+public:
+    virtual ~AudioRendererWriteCallback() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     */
+    virtual void OnWriteData(size_t length) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  */
@@ -193,6 +205,7 @@ public:
 
     /**
      * @brief Writes audio data.
+     * * This API cannot be used if render mode is RENDER_MODE_CALLBACK.
      *
      * @param buffer Indicates the pointer to the buffer which contains the audio data to be written.
      * @param bufferSize Indicates the size of the buffer which contains audio data to be written, in bytes.
@@ -402,6 +415,74 @@ public:
      * @return Returns vector with supported encoding types.
      */
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
+
+    /**
+     * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
+     * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
+     *
+     * * @param renderMode The mode of render.
+     * @return  Returns {@link SUCCESS} if render mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRenderMode(AudioRenderMode renderMode) const = 0;
+
+    /**
+     * @brief Obtains the render mode.
+     *
+     * @return  Returns current render mode.
+     */
+    virtual AudioRenderMode GetRenderMode() const = 0;
+
+    /**
+     * @brief Registers the renderer write callback listener.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) = 0;
+
+    /**
+     * @brief Gets the BufferDesc to fill the data.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the buffer descriptor in which data will filled.
+     * refer BufferQueueState in audio_info.h.
+     * @return Returns {@link SUCCESS} if bufDesc is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+
+    /**
+     * @brief Enqueues the buffer to the bufferQueue.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the buffer descriptor in which buffer data will filled.
+     * refer BufferQueueState in audio_info.h.
+     * @return Returns {@link SUCCESS} if bufDesc is successfully enqued; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+
+    /**
+     * @brief Clears the bufferQueue.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @return Returns {@link SUCCESS} if successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t Clear() const = 0;
+
+    /**
+     * @brief Obtains the current state of bufferQueue.
+     * This API should only be used if RENDER_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the bufState reference in which state will be obtained.
+     * refer BufferQueueState in audio_info.h.
+     * @return Returns {@link SUCCESS} if bufState is successfully obtained; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
 
     virtual ~AudioRenderer();
 };
