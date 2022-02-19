@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEvent &interruptEvent) override {}
     void OnStateChange(const RendererState state) override {}
 };
 

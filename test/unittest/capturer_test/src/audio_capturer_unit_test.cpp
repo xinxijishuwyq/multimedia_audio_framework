@@ -2162,5 +2162,115 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_0
     ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_NEGATIVE, positionCB);
     EXPECT_NE(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test SetCapturerCallback with null pointer.
+* @tc.number: Audio_Capturer_SetCapturerCallback_001
+* @tc.desc  : Test SetCapturerCallback interface. Returns error code, if null pointer is set.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetCapturerCallback(nullptr);
+    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerCallback with valid callback pointer.
+* @tc.number: Audio_Capturer_SetCapturerCallback_002
+* @tc.desc  : Test SetCapturerCallback interface. Returns success, if valid callback is set.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
+    ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerCallback via illegal state, CAPTURER_RELEASED: After RELEASED
+* @tc.number: Audio_Capturer_SetCapturerCallback_003
+* @tc.desc  : Test SetCapturerCallback interface. Returns error, if callback is set in released state.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    CapturerState state = audioCapturer->GetStatus();
+    EXPECT_EQ(CAPTURER_RELEASED, state);
+
+    shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
+    ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
+    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerCallback via legal state, CAPTURER_PREPARED: After PREPARED
+* @tc.number: Audio_Capturer_SetCapturerCallback_004
+* @tc.desc  : Test SetCapturerCallback interface. Returns success, if callback is set in proper state.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    CapturerState state = audioCapturer->GetStatus();
+    EXPECT_EQ(CAPTURER_PREPARED, state);
+
+    shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
+    ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
