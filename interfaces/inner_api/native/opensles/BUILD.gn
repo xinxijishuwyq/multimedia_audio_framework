@@ -52,12 +52,12 @@ ohos_executable("audio_opensles_test") {
 
   configs = [
     ":audio_opensles_config",
-    ":audio_renderer_config"
+    ":audio_renderer_config",
   ]
 
-  deps = [ 
+  deps = [
+    "//foundation/multimedia/audio_standard:libsl",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
-    "//foundation/multimedia/audio_standard:libsl"
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

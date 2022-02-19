@@ -46,35 +46,31 @@ ohos_shared_library("opensles") {
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiomanager/include/",
   ]
 
-  configs = [
-    ":audio_renderer_config", 
-  ]
+  configs = [ ":audio_renderer_config" ]
 
   sources = [
+    "$opensles_dir/api/1.0.1/OpenSLES_IID.c",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/writecallback_adapter.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/engine_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/object_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/play_itf.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/volume_itf.cpp",
-    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/engine_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/engine_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/OpenSLES_OpenHarmony_IID.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/builder.cpp",
     "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/table_struct.cpp",
-    "$opensles_dir/api/1.0.1/OpenSLES_IID.c",
   ]
 
-  cflags = [
-    "-Werror",
-  ]
+  cflags = [ "-Werror" ]
 
   deps = [
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_standard:libsl",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
-    "//foundation/multimedia/audio_standard:libsl"
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

@@ -48,13 +48,11 @@ config("audio_opensles_config") {
 
 ohos_unittest("audio_opensles_unit_test") {
   module_out_path = module_output_path
-  include_dirs = [
-    "./include",
-  ]
+  include_dirs = [ "./include" ]
 
   configs = [
     ":audio_opensles_config",
-    ":audio_renderer_config"
+    ":audio_renderer_config",
   ]
 
   sources = [ "src/audio_opensles_unit_test.cpp" ]

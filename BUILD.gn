@@ -23,7 +23,5 @@ group("audio_packages") {
 }
 
 group("libsl") {
-  public_deps = [
-    "//third_party/openSLES:libSLES",
-  ]
+  public_deps = [ "//third_party/openSLES:libSLES" ]
 }
