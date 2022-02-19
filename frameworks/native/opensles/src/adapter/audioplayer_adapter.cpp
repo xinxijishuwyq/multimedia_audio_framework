@@ -34,13 +34,13 @@ AudioPlayerAdapter* AudioPlayerAdapter::GetInstance()
 
 AudioRenderer* AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
 {
-    MEDIA_INFO_LOG("GetAudioRenderById: %{public}lu", id);
+    MEDIA_INFO_LOG("AudioPlayerAdapter::GetAudioRenderById: %{public}lu", id);
     return renderMap_.find(id)->second;
 }
 
 void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)
 {
-    MEDIA_INFO_LOG("EraseAudioRenderById: %{public}lu", id);
+    MEDIA_INFO_LOG("AudioPlayerAdapter::EraseAudioRenderById: %{public}lu", id);
     renderMap_.erase(id);
     callbackMap_.erase(id);
     return;
@@ -56,7 +56,7 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(streamType);
     rendererHolder->SetParams(rendererParams);
     AudioRenderer *renderer = rendererHolder.release();
-    MEDIA_INFO_LOG("CreateAudioPlayer ID: %{public}lu", id);
+    MEDIA_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
     renderer->SetRenderMode(RENDER_MODE_CALLBACK);
     renderMap_.insert(make_pair(id, renderer));
     return SL_RESULT_SUCCESS;
@@ -81,7 +81,7 @@ SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
             break;
         }
         default:
-            MEDIA_ERR_LOG("play state not supported ");
+            MEDIA_ERR_LOG("AudioPlayerAdapter::play state not supported ");
             break;
     }
     return slResult;
@@ -281,7 +281,7 @@ AudioChannel AudioPlayerAdapter::SlToOhosChannel(SLDataFormat_PCM *pcmFormat)
             break;
         default:
             channelCount = MONO;
-            break;
+            MEDIA_ERR_LOG("AudioPlayerAdapter::channel count not supported ");
     }
     return channelCount;
 }

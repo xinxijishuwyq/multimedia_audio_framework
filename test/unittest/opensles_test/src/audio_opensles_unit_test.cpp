@@ -21,7 +21,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    char * AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
+    const char *AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     FILE *wavFile_;
     wav_hdr wavHeader_;
     SLObjectItf engineObject_;
@@ -33,15 +33,22 @@ namespace {
     SLEngineItf engineEngine_;
 } // namespace
 
-void AudioOpenslesUnitTest::SetUpTestCase(void)
+static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
-
+    FILE *wavFile = (FILE *)pContext;
+    if (!feof(wavFile)) {
+        SLuint8 *buffer = nullptr;
+        SLuint32 pSize = 0;
+        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        fread(buffer, 1, size, wavFile);
+        (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
+    }
+    return;
 }
 
-void AudioOpenslesUnitTest::TearDownTestCase(void)
-{
+void AudioOpenslesUnitTest::SetUpTestCase(void) { }
 
-}
+void AudioOpenslesUnitTest::TearDownTestCase(void) { }
 
 void AudioOpenslesUnitTest::SetUp(void)
 {
@@ -53,10 +60,7 @@ void AudioOpenslesUnitTest::SetUp(void)
     fread(&wavHeader_, 1, headerSize, wavFile_);
 }
 
-void AudioOpenslesUnitTest::TearDown(void)
-{
-
-}
+void AudioOpenslesUnitTest::TearDown(void) { }
 
 HWTEST(AudioOpenslesUnitTest, Audio_Opensles_CreateEngine_001, TestSize.Level0)
 {
@@ -128,11 +132,94 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_GetVoumeItf_001, TestSize.Level0)
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_GetVoume_001, TestSize.Level0)
+{
+    SLmillibel level = 0;
+    SLresult result = (*volumeItf_)->GetVolumeLevel(volumeItf_, &level);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_GetVoume_002, TestSize.Level0)
+{
+    SLmillibel level = 0;
+    SLresult result = (*volumeItf_)->GetMaxVolumeLevel(volumeItf_, &level);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetVoume_001, TestSize.Level0)
+{
+    SLresult result = (*volumeItf_)->SetVolumeLevel(volumeItf_, 0);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetVoume_002, TestSize.Level0)
+{
+    SLmillibel level = 0;
+    (*volumeItf_)->GetMaxVolumeLevel(volumeItf_, &level);
+    SLresult result = (*volumeItf_)->SetVolumeLevel(volumeItf_, level);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
 HWTEST(AudioOpenslesUnitTest, Audio_Opensles_CetBufferQueue_001, TestSize.Level0)
 {
     SLresult result = (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_RegisterCallback_001, TestSize.Level0)
+{
+    SLresult result = (*bufferQueueItf_)->RegisterCallback(bufferQueueItf_, BuqqerQueueCallback, wavFile_);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetPlayState_001, TestSize.Level0)
+{
+    SLresult result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_PLAYING);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_play_001, TestSize.Level0)
+{
+    if (!feof(wavFile_)) {
+        SLuint8* buffer = nullptr;
+        SLuint32 size = 0;
+        SLresult result = (*bufferQueueItf_)->GetBuffer(bufferQueueItf_, &buffer, size);
+        EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+        fread(buffer, 1, size, wavFile_);
+        result = (*bufferQueueItf_)->Enqueue(bufferQueueItf_, buffer, size);
+        EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    }
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_play_002, TestSize.Level0)
+{
+    SLresult result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_STOPPED);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_GetPlayState_001, TestSize.Level0)
+{
+    SLuint32 state;
+    SLresult result = (*playItf_)->GetPlayState(playItf_, &state);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_Destroy_001, TestSize.Level0)
+{
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+    EXPECT_TRUE(true);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_Destroy_002, TestSize.Level0)
+{
+    (*engineObject_)->Destroy(engineObject_);
+    EXPECT_TRUE(true);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_Destroy_003, TestSize.Level0)
+{
+    (*outputMixObject_)->Destroy(outputMixObject_);
+    EXPECT_TRUE(true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
 static void OpenSlTest()
 {
-    MEDIA_INFO_LOG("OpenSlTestConcurrent");
+    MEDIA_INFO_LOG("OpenSlTest");
     engineObject = nullptr;
     SLEngineItf engineEngine = nullptr;
     SLresult result;
@@ -184,13 +184,10 @@ static void OpenSlTest()
     
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_PLAY, &playItf);
     SLVolumeItf volumeItf;
-    
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_VOLUME, &volumeItf);
     SLmillibel pLevel = 0;
-    
     (*volumeItf)->GetVolumeLevel(volumeItf, &pLevel);
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
-    
     (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BuqqerQueueCallback, wavFile_);
     
     PlayerStart(playItf, bufferQueueItf, wavFile_);
