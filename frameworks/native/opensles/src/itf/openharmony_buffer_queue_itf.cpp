@@ -17,10 +17,10 @@
 
 using namespace OHOS::AudioStandard;
 
-SLresult Enqueue(SLOHBufferQueueItf self, const void *pBuffer, SLuint32 size)
+SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
-    AudioPlayerAdapter::GetInstance()->EnqueueAdapter(thiz->mId, pBuffer, size);
+    AudioPlayerAdapter::GetInstance()->EnqueueAdapter(thiz->mId, buffer, size);
     return SL_RESULT_SUCCESS;
 }
 
@@ -31,17 +31,17 @@ SLresult Clear(SLOHBufferQueueItf self)
     return SL_RESULT_SUCCESS;
 }
 
-SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *pState)
+SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
-    AudioPlayerAdapter::GetInstance()->GetStateAdapter(thiz->mId, pState);
+    AudioPlayerAdapter::GetInstance()->GetStateAdapter(thiz->mId, state);
     return SL_RESULT_SUCCESS;
 }
 
-SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **pBuffer, SLuint32 &pSize)
+SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 &size)
 {
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
-    AudioPlayerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, pBuffer, pSize);
+    AudioPlayerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
     return SL_RESULT_SUCCESS;
 }
 

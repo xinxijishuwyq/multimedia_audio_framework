@@ -21,7 +21,6 @@ using namespace OHOS::AudioStandard;
 
 namespace OHOS {
 namespace AudioStandard {
-
 AudioPlayerAdapter::AudioPlayerAdapter() { }
 
 AudioPlayerAdapter::~AudioPlayerAdapter() { }
@@ -133,11 +132,11 @@ SLresult AudioPlayerAdapter::GetMaxVolumeLevelAdapter(SLuint32 id, SLmillibel *l
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayerAdapter::EnqueueAdapter(SLuint32 id, const void *pBuffer, SLuint32 size)
+SLresult AudioPlayerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLuint32 size)
 {
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
     BufferDesc bufDesc = {};
-    bufDesc.buffer = (uint8_t*) pBuffer;
+    bufDesc.buffer = (uint8_t*) buffer;
     bufDesc.length = size;
     audioRenderer->Enqueue(bufDesc);
     return SL_RESULT_SUCCESS;
@@ -150,23 +149,23 @@ SLresult AudioPlayerAdapter::ClearAdapter(SLuint32 id)
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *pState)
+SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *state)
 {
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
-    BufferQueueState state = {0, 0};
-    audioRenderer->GetBufQueueState(state);
-    pState->count = state.numBuffers;
-    pState->playIndex = state.currentIndex;
+    BufferQueueState queueState = {0, 0};
+    audioRenderer->GetBufQueueState(queueState);
+    state->count = state.numBuffers;
+    state->playIndex = state.currentIndex;
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **pBuffer, SLuint32 &pSize)
+SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 &size)
 {
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
     BufferDesc bufferDesc = {};
     audioRenderer->GetBufferDesc(bufferDesc);
-    *pBuffer = bufferDesc.buffer;
-    pSize = bufferDesc.length;
+    *buffer = bufferDesc.buffer;
+    size = bufferDesc.length;
     return SL_RESULT_SUCCESS;
 }
 

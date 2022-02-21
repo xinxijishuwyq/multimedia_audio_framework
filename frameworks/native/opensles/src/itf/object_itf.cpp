@@ -17,7 +17,7 @@
 
 using namespace OHOS::AudioStandard;
 
-static SLresult Realize(SLObjectItf self, SLboolean async) 
+static SLresult Realize(SLObjectItf self, SLboolean async)
 {
     return SL_RESULT_SUCCESS;
 }
@@ -27,14 +27,14 @@ static SLresult Resume(SLObjectItf self, SLboolean async)
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetState(SLObjectItf self, SLuint32 *state) 
+static SLresult GetState(SLObjectItf self, SLuint32 *state)
 {
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
 static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *interface)
 {
-   if (iid == SL_IID_ENGINE) {
+    if (iid == SL_IID_ENGINE) {
         CEngine *cEngine = (CEngine *)self;
         *(void **)interface = (void *)&(cEngine->mEngine.mItf);
         return SL_RESULT_SUCCESS;

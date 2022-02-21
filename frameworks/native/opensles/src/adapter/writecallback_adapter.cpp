@@ -18,7 +18,7 @@
 namespace OHOS {
 namespace AudioStandard {
     WriteCallbackAdapter::WriteCallbackAdapter
-        (SlOHBufferQueueCallback callback, SLOHBufferQueueItf itf, void *context) 
+        (SlOHBufferQueueCallback callback, SLOHBufferQueueItf itf, void *context)
     {
         callback_ = callback;
         itf_ = itf;

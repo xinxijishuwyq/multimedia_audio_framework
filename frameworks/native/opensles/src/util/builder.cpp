@@ -27,7 +27,8 @@ SLresult SLAPIENTRY slCreateEngine(SLObjectItf *pEngine, SLuint32 numOptions,
     return SL_RESULT_SUCCESS;
 }
 
-ClassTable *ObjectIdToClass(SLuint32 objectId) {
+ClassTable *ObjectIdToClass(SLuint32 objectId)
+{
     ClassTable *classTable = nullptr;
     if (objectId == SL_OBJECTID_ENGINE) {
         classTable = (ClassTable *) &EngineTab;
@@ -39,7 +40,8 @@ ClassTable *ObjectIdToClass(SLuint32 objectId) {
     return classTable;
 }
 
-IObject *Construct(const ClassTable *classTable, SLEngineItf engine) {
+IObject *Construct(const ClassTable *classTable, SLEngineItf engine)
+{
     IObject *thiz = (IObject *) calloc(1, classTable->mSize);
     if (thiz != nullptr) {
         IEngine *thisEngine = (IEngine *) engine;

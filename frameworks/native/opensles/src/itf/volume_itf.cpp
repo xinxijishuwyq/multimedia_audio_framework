@@ -24,10 +24,10 @@ static SLresult SetVolumeLevel(SLVolumeItf self, SLmillibel level)
     return SL_RESULT_SUCCESS;
 }
 
-static SLresult GetVolumeLevel(SLVolumeItf self, SLmillibel *pLevel)
+static SLresult GetVolumeLevel(SLVolumeItf self, SLmillibel *level)
 {
     IVolume *thiz = (IVolume *)self;
-    AudioPlayerAdapter::GetInstance()->GetVolumeLevelAdapter(thiz->mId, pLevel);
+    AudioPlayerAdapter::GetInstance()->GetVolumeLevelAdapter(thiz->mId, level);
     return SL_RESULT_SUCCESS;
 }
 
@@ -43,7 +43,7 @@ static SLresult SetMute(SLVolumeItf self, SLboolean state)
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }
 
-static SLresult GetMute(SLVolumeItf self, SLboolean *pState)
+static SLresult GetMute(SLVolumeItf self, SLboolean *state)
 {
     return SL_RESULT_FEATURE_UNSUPPORTED;
 }

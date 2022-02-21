@@ -26,10 +26,10 @@ static SLresult SetPlayState(SLPlayItf self, SLuint32 state)
     return SL_RESULT_SUCCESS;
 }
 
-static SLresult GetPlayState(SLPlayItf self, SLuint32 *pState)
+static SLresult GetPlayState(SLPlayItf self, SLuint32 *state)
 {
     IPlay *thiz = (IPlay *)self;
-    AudioPlayerAdapter::GetInstance()->GetPlayStateAdapter(thiz->mId, pState);
+    AudioPlayerAdapter::GetInstance()->GetPlayStateAdapter(thiz->mId, state);
     return SL_RESULT_SUCCESS;
 }
 

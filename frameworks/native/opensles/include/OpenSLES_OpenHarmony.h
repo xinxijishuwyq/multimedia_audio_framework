@@ -45,7 +45,7 @@ typedef struct SLOHBufferQueueState_ {
 struct SLOHBufferQueueItf_ {
     SLresult (*Enqueue) (
         SLOHBufferQueueItf self,
-        const void *pBuffer,
+        const void *buffer,
         SLuint32 size
     );
     SLresult (*Clear) (
@@ -53,12 +53,12 @@ struct SLOHBufferQueueItf_ {
     );
     SLresult (*GetState) (
         SLOHBufferQueueItf self,
-        SLOHBufferQueueState *pState
+        SLOHBufferQueueState *state
     );
     SLresult (*GetBuffer) (
         SLOHBufferQueueItf self,
-        SLuint8** pBuffer,
-        SLuint32& pSize
+        SLuint8** buffer,
+        SLuint32& size
     );
     SLresult (*RegisterCallback) (
         SLOHBufferQueueItf self,
