@@ -79,7 +79,7 @@ You can use APIs provided in this repository to convert audio data into audible 
 
 3. (Optional) use audioRenderer->**GetRendererInfo**(AudioRendererInfo &) and audioRenderer->**GetStreamInfo**(AudioStreamInfo &) to retrieve the current renderer configuration values.
 
-4. Inorder to listen to Audio Interrupt events, it would be required to Register to **RendererCallbacks** using audioRenderer->**SetRendererCallback**
+4. Inorder to listen to Audio Interrupt and state change events, it would be required to register to **RendererCallbacks** using audioRenderer->**SetRendererCallback**
     ```
     class AudioRendererCallbackImpl : public AudioRendererCallback {
         void OnInterrupt(const InterruptEvent &interruptEvent) override
@@ -104,6 +104,22 @@ You can use APIs provided in this repository to convert audio data into audible 
                 }
             }
         }
+
+        void OnStateChange(const RendererState state) override
+        {
+            switch (state) {
+                case RENDERER_PREPARED:
+                    // Renderer prepared
+                case RENDERER_RUNNING:
+                    // Renderer in running state
+                case RENDERER_STOPPED:
+                    // Renderer stopped
+                case RENDERER_RELEASED:
+                    // Renderer released
+                case RENDERER_PAUSED:
+                    // Renderer paused
+            }
+        }
     }
 
     std::shared_ptr<AudioRendererCallback> audioRendererCB = std::make_shared<AudioRendererCallbackImpl>();
@@ -114,6 +130,36 @@ You can use APIs provided in this repository to convert audio data into audible 
    On registering to the callback, the application would receive the interrupt events.
 
    This will have information on the audio interrupt forced action taken by the Audio framework and also the action hints to be handled by the application. Refer to **audio_renderer.h** and **audio_info.h** for more details.
+
+   Similarly, renderer state change callbacks can be received by overriding **OnStateChange** function in **AudioRendererCallback** class. Refer to **audio_renderer.h** for the list of renderer states.
+
+5. In order to get callbacks for frame mark position and/or frame period position, register for the corresponding callbacks in audio renderer using audioRenderer->**SetRendererPositionCallback** and/or audioRenderer->**SetRendererPeriodPositionCallback** functions respectively.
+    ```
+    class RendererPositionCallbackImpl : public RendererPositionCallback {
+        void OnMarkReached(const int64_t &framePosition) override
+        {
+            // frame mark reached
+            // framePosition is the frame mark number 
+        }
+    }
+
+    std::shared_ptr<RendererPositionCallback> framePositionCB = std::make_shared<RendererPositionCallbackImpl>();
+    //markPosition is the frame mark number for which callback is requested.
+    audioRenderer->SetRendererPositionCallback(markPosition, framePositionCB); 
+
+    class RendererPeriodPositionCallbackImpl : public RendererPeriodPositionCallback {
+        void OnPeriodReached(const int64_t &frameNumber) override
+        {
+            // frame period reached
+            // frameNumber is the frame period number 
+        }
+    }
+
+    std::shared_ptr<RendererPeriodPositionCallback> periodPositionCB = std::make_shared<RendererPeriodPositionCallbackImpl>();
+    //framePeriodNumber is the frame period number for which callback is requested.
+    audioRenderer->SetRendererPeriodPositionCallback(framePeriodNumber, periodPositionCB); 
+    ```
+    For unregistering the position callbacks, call the corresponding audioRenderer->**UnsetRendererPositionCallback** and/or audioRenderer->**UnsetRendererPeriodPositionCallback** APIs.
 
 6. Call audioRenderer->**Start**() function on the AudioRenderer instance to start the playback task.
 7. Get the buffer length to be written, using **GetBufferSize** API.
@@ -177,13 +223,63 @@ You can use the APIs provided in this repository for your application to record 
 
 4. (Optional) use audioCapturer->**GetCapturerInfo**(AudioCapturerInfo &) and audioCapturer->**GetStreamInfo**(AudioStreamInfo &) to retrieve the current capturer configuration values.
 
-5. Call audioCapturer->**Start**() function on the AudioCapturer instance to start the recording task.
+5. Capturer state change callbacks can be received by overriding **OnStateChange** function in **AudioCapturerCallback** class, and registering the callback instance using audioCapturer->**SetCapturerCallback** API.
+    ```
+    class AudioCapturerCallbackImpl : public AudioCapturerCallback {
+        void OnStateChange(const CapturerState state) override
+        {
+            switch (state) {
+                case CAPTURER_PREPARED:
+                    // Capturer prepared
+                case CAPTURER_RUNNING:
+                    // Capturer in running state
+                case CAPTURER_STOPPED:
+                    // Capturer stopped
+                case CAPTURER_RELEASED:
+                    // Capturer released
+            }
+        }
+    }
 
-6. Get the buffer length to be read, using **GetBufferSize** API.
+    std::shared_ptr<AudioCapturerCallback> audioCapturerCB = std::make_shared<AudioCapturerCallbackImpl>();
+    audioCapturer->SetCapturerCallback(audioCapturerCB);
+    ```
+
+6. In order to get callbacks for frame mark position and/or frame period position, register for the corresponding callbacks in audio capturer using audioCapturer->**SetCapturerPositionCallback** and/or audioCapturer->**SetCapturerPeriodPositionCallback** functions respectively.
+    ```
+    class CapturerPositionCallbackImpl : public CapturerPositionCallback {
+        void OnMarkReached(const int64_t &framePosition) override
+        {
+            // frame mark reached
+            // framePosition is the frame mark number 
+        }
+    }
+
+    std::shared_ptr<CapturerPositionCallback> framePositionCB = std::make_shared<CapturerPositionCallbackImpl>();
+    //markPosition is the frame mark number for which callback is requested.
+    audioCapturer->SetCapturerPositionCallback(markPosition, framePositionCB); 
+
+    class CapturerPeriodPositionCallbackImpl : public CapturerPeriodPositionCallback {
+        void OnPeriodReached(const int64_t &frameNumber) override
+        {
+            // frame period reached
+            // frameNumber is the frame period number 
+        }
+    }
+
+    std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCB = std::make_shared<CapturerPeriodPositionCallbackImpl>();
+    //framePeriodNumber is the frame period number for which callback is requested.
+    audioCapturer->SetCapturerPeriodPositionCallback(framePeriodNumber, periodPositionCB); 
+    ```
+    For unregistering the position callbacks, call the corresponding audioCapturer->**UnsetCapturerPositionCallback** and/or audioCapturer->**UnsetCapturerPeriodPositionCallback** APIs.
+
+7. Call audioCapturer->**Start**() function on the AudioCapturer instance to start the recording task.
+
+8. Get the buffer length to be read, using **GetBufferSize** API.
     ```
     audioCapturer->GetBufferSize(bufferLen);
     ```
-7. Read the captured audio data and convert it to a byte stream. Call the read function repeatedly to read data untill you want to stop recording
+9. Read the captured audio data and convert it to a byte stream. Call the read function repeatedly to read data untill you want to stop recording
     ```
     // set isBlocking = true/false for blocking/non-blocking read
     bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlocking);
@@ -197,9 +293,9 @@ You can use the APIs provided in this repository for your application to record 
         }
     }
     ```
-8. (Optional) Call audioCapturer->**Flush**() to flush the capture buffer of this stream.
-9. Call the audioCapturer->**Stop**() function on the AudioCapturer instance to stop the recording.
-10. After the recording task is complete, call the audioCapturer->**Release**() function on the AudioCapturer instance to release the stream resources.
+10. (Optional) Call audioCapturer->**Flush**() to flush the capture buffer of this stream.
+11. Call the audioCapturer->**Stop**() function on the AudioCapturer instance to stop the recording.
+12. After the recording task is complete, call the audioCapturer->**Release**() function on the AudioCapturer instance to release the stream resources.
 
 Provided the basic recording usecase above. Please refer [**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for more APIs.
 
@@ -238,12 +334,12 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
 #### Device control
 7. Use **GetDevices**, **deviceType_** and **deviceRole_** APIs to get audio I/O devices information. For DeviceFlag, DeviceType and DeviceRole enums refer [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
     ```
-    DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
-    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
-        = audioSystemMgr->GetDevices(deviceFlag);
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
-    cout << audioDeviceDescriptor->deviceType_;
-    cout << audioDeviceDescriptor->deviceRole_;
+    DeviceFlag deviceFlag = ALL_DEVICES_FLAG;
+    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = audioSystemMgr->GetDevices(deviceFlag);
+    for (auto &audioDeviceDescriptor : audioDeviceDescriptors) {
+        cout << audioDeviceDescriptor->deviceType_ << endl;
+        cout << audioDeviceDescriptor->deviceRole_ << endl;
+    }
     ```
 8. Use **SetDeviceActive** and **IsDeviceActive** APIs to Actiavte/Deactivate the device and to check if the device is active.
      ```
@@ -251,9 +347,33 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     int32_t result = audioSystemMgr->SetDeviceActive(deviceType, true);
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
-9. Other useful APIs such as **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter** are also provided. Please refer [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) for more details
 
-10. Applications can register for change in system volume using **AudioManagerNapi::On**. Here when an application registers to volume change event, whenever there is change in volume, the application is notified with following parameters:
+9. Use **SetDeviceChangeCallback** API to register for device change events. Clients will recieve callback when a device is connected/disconnected.
+**OnDeviceChange** function will be called and client will receive **DeviceChangeAction** object, which will contain following parameters:\
+*type* : **DeviceChangeType** which specifies whether device is connected or disconnected.\
+*deviceDescriptors* : Array of **AudioDeviceDescriptor** object which specifies the type of device and its role(input/output device).
+     ```
+    class DeviceChangeCallback : public AudioManagerDeviceChangeCallback {
+    public:
+        DeviceChangeCallback = default;
+        ~DeviceChangeCallback = default;
+        void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override
+        {
+            cout << deviceChangeAction.type << endl;
+            for (auto &audioDeviceDescriptor : deviceChangeAction.deviceDescriptors) {
+                cout << audioDeviceDescriptor->deviceType_ << endl;
+                cout << audioDeviceDescriptor->deviceRole_ << endl;
+            }
+        }
+    };
+
+    auto callback = std::make_shared<DeviceChangeCallback>();
+    audioSystemMgr->SetDeviceChangeCallback(callback);
+    ```
+
+10. Other useful APIs such as **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter** are also provided. Please refer [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) for more details
+
+11. Applications can register for change in system volume using **AudioManagerNapi::On**. Here when an application registers to volume change event, whenever there is change in volume, the application is notified with following parameters:
 volumeType : The AudioVolumeType for which volume is updated
 volume : The curret volume level set.
 updateUi : Whether the volume change details need to be shown or not. (If volume is updated through volume key up/down we set the updateUi flag to true, in other scenarios the updateUi is set as false).
