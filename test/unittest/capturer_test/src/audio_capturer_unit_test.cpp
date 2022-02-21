@@ -32,10 +32,16 @@ namespace {
     const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
     const string AUDIO_FLUSH_STABILITY_TEST_FILE = "/data/audiocapture_flush_stability_test.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
+    const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
+
+    constexpr uint64_t BUFFER_DURATION_FIVE = 5;
+    constexpr uint64_t BUFFER_DURATION_TEN = 10;
+    constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
+    constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
 } // namespace
 
 void AudioCapturerUnitTest::SetUpTestCase(void) {}
@@ -1939,6 +1945,222 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_001, TestSize.Level1)
     EXPECT_EQ(AudioEncodingType::ENCODING_PCM, streamInfo.encoding);
     EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo.format);
     EXPECT_EQ(AudioChannel::MONO, streamInfo.channels);
+}
+
+/**
+* @tc.name  : Test SetBufferDuration API
+* @tc.number: Audio_Capturer_SetBufferDuration_001
+* @tc.desc  : Test SetBufferDuration interface. Check whether valid parameters are accepted.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetBufferDuration(BUFFER_DURATION_FIVE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer->SetBufferDuration(BUFFER_DURATION_TEN);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer->SetBufferDuration(BUFFER_DURATION_FIFTEEN);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer->SetBufferDuration(BUFFER_DURATION_TWENTY);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetBufferDuration API
+* @tc.number: Audio_Capturer_SetBufferDuration_002
+* @tc.desc  : Test SetBufferDuration interface. Check whether invalid parameters are rejected.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetBufferDuration(VALUE_NEGATIVE);
+    EXPECT_NE(SUCCESS, ret);
+
+    ret = audioCapturer->SetBufferDuration(VALUE_ZERO);
+    EXPECT_NE(SUCCESS, ret);
+
+    ret = audioCapturer->SetBufferDuration(VALUE_HUNDRED);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPositionCallback_001
+* @tc.desc  : Test SetCapturerPositionCallback interface to check set position callback is success for valid callback.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<CapturerPositionCallbackTest> positionCB = std::make_shared<CapturerPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, positionCB);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPositionCallback_002
+* @tc.desc  : Test SetCapturerPositionCallback interface again after unregister.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<CapturerPositionCallbackTest> positionCB1 = std::make_shared<CapturerPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, positionCB1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioCapturer->UnsetCapturerPositionCallback();
+
+    shared_ptr<CapturerPositionCallbackTest> positionCB2 = std::make_shared<CapturerPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, positionCB2);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPositionCallback_003
+* @tc.desc  : Test SetCapturerPositionCallback interface with null callback.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetCapturerPositionCallback(VALUE_THOUSAND, nullptr);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPositionCallback_004
+* @tc.desc  : Test SetCapturerPositionCallback interface with invalid parameter.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPositionCallback_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<CapturerPositionCallbackTest> positionCB = std::make_shared<CapturerPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPositionCallback(VALUE_ZERO, positionCB);
+    EXPECT_NE(SUCCESS, ret);
+
+    ret = audioCapturer->SetCapturerPositionCallback(VALUE_NEGATIVE, positionCB);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPeriodPositionCallback API
+* @tc.number: SetCapturerPeriodPositionCallback_001
+* @tc.desc  : Test SetCapturerPeriodPositionCallback interface to check set period position
+*             callback is success for valid callback.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<CapturerPeriodPositionCallbackTest> positionCB = std::make_shared<CapturerPeriodPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_THOUSAND, positionCB);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPeriodPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPeriodPositionCallback_002
+* @tc.desc  : Test SetCapturerPeriodPositionCallback interface again after unregister.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<CapturerPeriodPositionCallbackTest> positionCB1 = std::make_shared<CapturerPeriodPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_THOUSAND, positionCB1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioCapturer->UnsetCapturerPeriodPositionCallback();
+
+    shared_ptr<CapturerPeriodPositionCallbackTest> positionCB2 = std::make_shared<CapturerPeriodPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPeriodPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPeriodPositionCallback_003
+* @tc.desc  : Test SetCapturerPeriodPositionCallback interface with null callback.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_THOUSAND, nullptr);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetCapturerPeriodPositionCallback API
+* @tc.number: Audio_Capturer_SetCapturerPeriodPositionCallback_004
+* @tc.desc  : Test SetCapturerPeriodPositionCallback interface with invalid parameter.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerPeriodPositionCallback_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    shared_ptr<CapturerPeriodPositionCallbackTest> positionCB = std::make_shared<CapturerPeriodPositionCallbackTest>();
+    ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_ZERO, positionCB);
+    EXPECT_NE(SUCCESS, ret);
+
+    ret = audioCapturer->SetCapturerPeriodPositionCallback(VALUE_NEGATIVE, positionCB);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
