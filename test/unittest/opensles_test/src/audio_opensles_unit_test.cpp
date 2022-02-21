@@ -50,15 +50,7 @@ void AudioOpenslesUnitTest::SetUpTestCase(void) { }
 
 void AudioOpenslesUnitTest::TearDownTestCase(void) { }
 
-void AudioOpenslesUnitTest::SetUp(void)
-{
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "rb");
-    if (wavFile_ == nullptr) {
-        MEDIA_INFO_LOG("AudioRendererTest: Unable to open wave file");
-    }
-    size_t headerSize = sizeof(wav_hdr);
-    fread(&wavHeader_, 1, headerSize, wavFile_);
-}
+void AudioOpenslesUnitTest::SetUp(void) { }
 
 void AudioOpenslesUnitTest::TearDown(void) { }
 
@@ -94,6 +86,13 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_CreateOutputMix_002, TestSize.Level
 
 HWTEST(AudioOpenslesUnitTest, Audio_Opensles_CreateAudioPlayer_001, TestSize.Level0)
 {
+    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "rb");
+    if (wavFile_ == nullptr) {
+        MEDIA_INFO_LOG("AudioRendererTest: Unable to open wave file");
+    }
+    size_t headerSize = sizeof(wav_hdr);
+    fread(&wavHeader_, 1, headerSize, wavFile_);
+
     SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject_};
     SLDataSink slSink = {&slOutputMix, nullptr};
     SLDataLocator_BufferQueue slBufferQueue = {
