@@ -283,19 +283,6 @@ AudioScene AudioPolicyService::GetAudioScene() const
 void AudioPolicyService::OnAudioPortAvailable(const AudioModuleInfo &moduleInfo)
 {
     MEDIA_INFO_LOG("Port detected for [%{public}s]", moduleInfo.name.c_str());
-    AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
-
-    auto devType = GetDeviceType(moduleInfo.name);
-    if (devType == DeviceType::DEVICE_TYPE_SPEAKER || devType == DeviceType::DEVICE_TYPE_MIC) {
-        mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
-
-        // add new device into active device list
-        auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, GetDeviceRole(moduleInfo.role));
-        mActiveDevices.insert(mActiveDevices.begin(), audioDescriptor);
-    }
-
-    mIOHandles[moduleInfo.name] = ioHandle;
-
     return;
 }
 
@@ -338,6 +325,30 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     MEDIA_INFO_LOG("output device list = [%{public}zu]", mActiveDevices.size());
+}
+
+void AudioPolicyService::OnServiceConnected()
+{
+    MEDIA_INFO_LOG("HDI service started: load modules");
+    auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_PRIMARY);
+    if (primaryModulesPos != deviceClassInfo_.end()) {
+        auto moduleInfoList = primaryModulesPos->second;
+        for (auto &moduleInfo : moduleInfoList) {
+            MEDIA_INFO_LOG("Load modules: %{public}s", moduleInfo.name.c_str());
+            AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
+
+            auto devType = GetDeviceType(moduleInfo.name);
+            if (devType == DeviceType::DEVICE_TYPE_SPEAKER || devType == DeviceType::DEVICE_TYPE_MIC) {
+                mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+
+                // add new device into active device list
+                auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, GetDeviceRole(moduleInfo.role));
+                mActiveDevices.insert(mActiveDevices.begin(), audioDescriptor);
+            }
+
+            mIOHandles[moduleInfo.name] = ioHandle;
+        }
+    }
 }
 
 // Parser callbacks
