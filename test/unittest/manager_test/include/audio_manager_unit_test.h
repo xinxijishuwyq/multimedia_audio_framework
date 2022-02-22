@@ -12,31 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_RENDERER_UNIT_TEST_H
-#define AUDIO_RENDERER_UNIT_TEST_H
+#ifndef AUDIO_MANAGER_UNIT_TEST_H
+#define AUDIO_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRendererCallbackTest : public AudioRendererCallback {
-public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override {}
-    void OnStateChange(const RendererState state) override {}
-};
-
-class RendererPositionCallbackTest : public RendererPositionCallback {
-public:
-    void OnMarkReached(const int64_t &framePosition) override {}
-};
-
-class RendererPeriodPositionCallbackTest : public RendererPeriodPositionCallback {
-public:
-    void OnPeriodReached(const int64_t &frameNumber) override {}
-};
-
-class AudioRendererUnitTest : public testing::Test {
+class AudioManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -46,10 +29,8 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-    // Init Renderer
-    static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_RENDERER_UNIT_TEST_H
+#endif // AUDIO_MANAGER_UNIT_TEST_H
