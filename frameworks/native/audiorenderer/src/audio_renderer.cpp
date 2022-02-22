@@ -196,6 +196,11 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
 int32_t AudioRendererPrivate::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
+    if ((callback == nullptr) || (markPosition <= 0)) {
+        MEDIA_ERR_LOG("AudioRendererPrivate::SetRendererPositionCallback input param is invalid");
+        return ERR_INVALID_PARAM;
+    }
+
     audioStream_->SetRendererPositionCallback(markPosition, callback);
 
     return SUCCESS;
@@ -209,6 +214,11 @@ void AudioRendererPrivate::UnsetRendererPositionCallback()
 int32_t AudioRendererPrivate::SetRendererPeriodPositionCallback(int64_t frameNumber,
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
+    if ((callback == nullptr) || (frameNumber <= 0)) {
+        MEDIA_ERR_LOG("AudioRendererPrivate::SetRendererPeriodPositionCallback input param is invalid");
+        return ERR_INVALID_PARAM;
+    }
+
     audioStream_->SetRendererPeriodPositionCallback(frameNumber, callback);
 
     return SUCCESS;

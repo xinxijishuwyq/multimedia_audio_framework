@@ -78,6 +78,7 @@ public:
     void OnAudioInterruptEnable(bool enable);
 
     void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData);
+    void OnServiceConnected();
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 

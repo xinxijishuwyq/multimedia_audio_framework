@@ -22,8 +22,18 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEvent &interruptEvent) override {}
     void OnStateChange(const RendererState state) override {}
+};
+
+class RendererPositionCallbackTest : public RendererPositionCallback {
+public:
+    void OnMarkReached(const int64_t &framePosition) override {}
+};
+
+class RendererPeriodPositionCallbackTest : public RendererPeriodPositionCallback {
+public:
+    void OnPeriodReached(const int64_t &frameNumber) override {}
 };
 
 class AudioRendererUnitTest : public testing::Test {
