@@ -180,11 +180,6 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
             }
 
             portInfoList.push_back(moduleInfo);
-
-            // Open the ports for internal devices
-            if (deviceClassType_ == ClassType::TYPE_PRIMARY) {
-                mPortObserver.OnAudioPortAvailable(moduleInfo);
-            }
         }
         portNode = portNode->next;
     }
