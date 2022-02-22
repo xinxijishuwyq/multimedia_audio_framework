@@ -48,6 +48,8 @@ public:
     void TearDown(void);
     // Init Renderer
     static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
+    // Init Renderer Options
+    static void InitializeRendererOptions(AudioRendererOptions &rendererOptions);
 };
 } // namespace AudioStandard
 } // namespace OHOS
