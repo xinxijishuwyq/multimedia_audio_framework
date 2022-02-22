@@ -1,0 +1,67 @@
+# Copyright (C) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+pulseaudio_dir = "//third_party/pulseaudio"
+opensles_dir = "//third_party/openSLES"
+
+config("audio_renderer_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_standard/services/include",
+    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/test",
+    "//utils/native/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+config("audio_opensles_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/include",
+    "$opensles_dir/api/1.0.1",
+  ]
+}
+
+ohos_executable("audio_opensles_test") {
+  install_enable = true
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_test.cpp" ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_renderer_config",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_standard:libsl",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}

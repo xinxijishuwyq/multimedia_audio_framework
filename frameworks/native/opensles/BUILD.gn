@@ -1,0 +1,82 @@
+# Copyright (C) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+pulseaudio_dir = "//third_party/pulseaudio"
+opensles_dir = "//third_party/openSLES"
+
+config("audio_renderer_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_standard/services/include",
+    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/test",
+    "//utils/native/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+ohos_shared_library("opensles") {
+  include_dirs = [
+    "$opensles_dir/api/1.0.1",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiorenderer/include/",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/andiomanager/include/",
+  ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  sources = [
+    "$opensles_dir/api/1.0.1/OpenSLES_IID.c",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/adapter/writecallback_adapter.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/engine_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/object_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/play_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/itf/volume_itf.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/engine_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/OpenSLES_OpenHarmony_IID.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/builder.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles/src/util/table_struct.cpp",
+  ]
+
+  cflags = [ "-Werror" ]
+
+  deps = [
+    "//foundation/multimedia/audio_standard:libsl",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  output_name = "OpenSLES"
+  output_extension = "so"
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_standard"
+}
