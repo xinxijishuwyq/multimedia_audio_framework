@@ -44,8 +44,6 @@ namespace {
     constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
 } // namespace
 
-void AudioRendererCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent) {}
-
 void AudioRendererUnitTest::SetUpTestCase(void) {}
 void AudioRendererUnitTest::TearDownTestCase(void) {}
 void AudioRendererUnitTest::SetUp(void) {}
@@ -2720,11 +2718,21 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_001, TestSize.L
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetRendererCallback(nullptr);
     EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -2736,167 +2744,83 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_002, TestSize.L
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
     ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetRendererCallback(nullptr);
-    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
-* @tc.name  : Test start for 2 streams with both stream types as STREAM_MUSIC.
+* @tc.name  : Test SetRendererCallback via illegal state, RENDERER_RELEASED: After RELEASED
 * @tc.number: Audio_Renderer_SetRendererCallback_003
-* @tc.desc  : Test interrupt interfaces. Allow concurrent streams if stream types are both STREAM_MUSIC.
+* @tc.desc  : Test SetRendererCallback interface. Returns error, if callback is set in released state.
 */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_003, TestSize.Level1)
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer1);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    RendererState state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_RELEASED, state);
 
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
-    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
-    EXPECT_EQ(SUCCESS, ret);
-
-    bool isStarted = audioRenderer1->Start();
-    EXPECT_EQ(true, isStarted);
-
-    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer2);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isStarted = audioRenderer2->Start();
-    EXPECT_EQ(true, isStarted);
-
-    bool isReleased = audioRenderer1->Release();
-    EXPECT_EQ(true, isReleased);
-
-    isReleased = audioRenderer2->Release();
-    EXPECT_EQ(true, isReleased);
+    ret = audioRenderer->SetRendererCallback(audioRendererCB);
+    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
-* @tc.name  : Test start for 2 streams with both stream types as STREAM_VOICE_CALL.
+* @tc.name  : Test SetRendererCallback via legal state, RENDERER_PREPARED: After PREPARED
 * @tc.number: Audio_Renderer_SetRendererCallback_004
-* @tc.desc  : Test interrupt interfaces. Do not allow concurrent streams if stream types are both STREAM_VOICE_CALL.
+* @tc.desc  : Test SetRendererCallback interface. Returns success, if callback is set in proper state.
 */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_004, TestSize.Level1)
 {
     int32_t ret = -1;
 
-    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_VOICE_CALL);
-    ASSERT_NE(nullptr, audioRenderer1);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    RendererState state = audioRenderer->GetStatus();
+    EXPECT_EQ(RENDERER_PREPARED, state);
 
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
-    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
+    ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
-    EXPECT_EQ(SUCCESS, ret);
-
-    bool isStarted = audioRenderer1->Start();
-    EXPECT_EQ(true, isStarted);
-
-    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_VOICE_CALL);
-    ASSERT_NE(nullptr, audioRenderer2);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isStarted = audioRenderer2->Start();
-    EXPECT_EQ(false, isStarted);
-
-    bool isReleased = audioRenderer1->Release();
-    EXPECT_EQ(true, isReleased);
-
-    isReleased = audioRenderer2->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
-* @tc.name  : Test start for 2 streams with both stream types as STREAM_RING.
-* @tc.number: Audio_Renderer_SetRendererCallback_005
-* @tc.desc  : Test interrupt interfaces. Do not allow concurrent streams if stream types are both STREAM_RING.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_005, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_RING);
-    ASSERT_NE(nullptr, audioRenderer1);
-
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
-    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
-    EXPECT_EQ(SUCCESS, ret);
-
-    bool isStarted = audioRenderer1->Start();
-    EXPECT_EQ(true, isStarted);
-
-    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_RING);
-    ASSERT_NE(nullptr, audioRenderer2);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isStarted = audioRenderer2->Start();
-    EXPECT_EQ(false, isStarted);
-
-    bool isReleased = audioRenderer1->Release();
-    EXPECT_EQ(true, isReleased);
-
-    isReleased = audioRenderer2->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
-* @tc.name  : Test start of STREAM_VOICE_CALL and STREAM_RING.
-* @tc.number: Audio_Renderer_SetRendererCallback_006
-* @tc.desc  : Test interrupt interfaces. Do not allow STREAM_RING to start if STREAM_VOICE_CALL already running.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_006, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(STREAM_VOICE_CALL);
-    ASSERT_NE(nullptr, audioRenderer1);
-
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
-    ret = audioRenderer1->SetRendererCallback(audioRendererCB);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer1);
-    EXPECT_EQ(SUCCESS, ret);
-
-    bool isStarted = audioRenderer1->Start();
-    EXPECT_EQ(true, isStarted);
-
-    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(STREAM_RING);
-    ASSERT_NE(nullptr, audioRenderer2);
-
-    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer2);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isStarted = audioRenderer2->Start();
-    EXPECT_EQ(false, isStarted);
-
-    bool isReleased = audioRenderer1->Release();
-    EXPECT_EQ(true, isReleased);
-
-    isReleased = audioRenderer2->Release();
-    EXPECT_EQ(true, isReleased);
 }
 
 /**
