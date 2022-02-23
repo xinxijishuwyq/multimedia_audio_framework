@@ -42,12 +42,19 @@ namespace {
     constexpr uint64_t BUFFER_DURATION_TEN = 10;
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
     constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
+
+    static size_t g_reqBufLen = 0;
 } // namespace
 
 void AudioRendererUnitTest::SetUpTestCase(void) {}
 void AudioRendererUnitTest::TearDownTestCase(void) {}
 void AudioRendererUnitTest::SetUp(void) {}
 void AudioRendererUnitTest::TearDown(void) {}
+
+void AudioRenderModeCallbackTest::OnWriteData(size_t length)
+{
+    g_reqBufLen = length;
+}
 
 int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &audioRenderer)
 {
@@ -1691,6 +1698,47 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_008, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test Write API via illegl render mode, RENDER_MODE_CALLBACK.
+* @tc.number: Audio_Renderer_Write_009
+* @tc.desc  : Test Write interface. Returns error code, if the render mode is RENDER_MODE_CALLBACK.
+*           : In RENDER_MODE_CALLBACK Write API call not supported. By default render mode is RENDER_MODE_NORMAL.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_009, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
+    EXPECT_EQ(ERR_INCORRECT_MODE, bytesWritten);
+
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
 * @tc.name  : Test GetAudioTime API via legal input.
 * @tc.number: Audio_Renderer_GetAudioTime_001
 * @tc.desc  : Test GetAudioTime interface. Returns true, if the getting is successful.
@@ -3087,7 +3135,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_002, TestSize.L
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -3119,7 +3167,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_003, TestSize.L
     RendererState state = audioRenderer->GetStatus();
     EXPECT_EQ(RENDERER_RELEASED, state);
 
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_NE(SUCCESS, ret);
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
@@ -3149,9 +3197,509 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererCallback_004, TestSize.L
     RendererState state = audioRenderer->GetStatus();
     EXPECT_EQ(RENDERER_PREPARED, state);
 
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = std::make_shared<AudioRendererCallbackTest>();
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     ret = audioRenderer->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetRenderMode via legal input, RENDER_MODE_CALLBACK
+* @tc.number: Audio_Renderer_SetRenderMode_001
+* @tc.desc  : Test SetRenderMode interface. Returns SUCCESS, if the render mode is successfully set.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetRenderMode via legal input, RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_SetRenderMode_002
+* @tc.desc  : Test SetRenderMode interface. Returns SUCCESS, if the render mode is successfully set.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderMode_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetRenderMode with, RENDER_MODE_CALLBACK
+* @tc.number: Audio_Renderer_GetRenderMode_001
+* @tc.desc  : Test GetRenderMode interface. Returns the current render mode.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRenderMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetRenderMode with, RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_GetRenderMode_002
+* @tc.desc  : Test GetRenderMode interface. Returns the current render mode.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRenderMode_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_NORMAL, renderMode);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetRenderMode with, default renderMode
+* @tc.number: Audio_Renderer_GetRenderMode_003
+* @tc.desc  : Test GetRenderMode interface. Returns the default render mode RENDER_MODE_NORMAL.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRenderMode_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_NORMAL, renderMode);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetRendererWriteCallback via legal render mode, RENDER_MODE_CALLBACK
+* @tc.number: Audio_Renderer_SetRendererWriteCallback_001
+* @tc.desc  : Test SetRendererWriteCallback interface. Returns SUCCESS, if the callback is successfully set.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererWriteCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetRendererWriteCallback via illegal render mode, RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_SetRendererWriteCallback_002
+* @tc.desc  : Test SetRendererWriteCallback interface. Returns error code, if the render mode is not callback.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererWriteCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_NORMAL, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetRendererWriteCallback via illegal render mode, default render mode RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_SetRendererWriteCallback_003
+* @tc.desc  : Test SetRendererWriteCallback interface. Returns error code, if the render mode is not callback.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererWriteCallback_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test SetRendererWriteCallback via illegal input, nullptr
+* @tc.number: Audio_Renderer_SetRendererWriteCallback_004
+* @tc.desc  : Test SetRendererWriteCallback interface. Returns error code, if the callback reference is nullptr.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererWriteCallback_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    ret = audioRenderer->SetRendererWriteCallback(nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetBufferDesc via legal render mode, RENDER_MODE_CALLBACK
+* @tc.number: Audio_Renderer_GetBufferDesc_001
+* @tc.desc  : Test GetBufferDesc interface. Returns SUCCESS, if BufferDesc obtained successfully.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferDesc_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(nullptr, bufDesc.buffer);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetBufferDesc via illegal render mode, RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_GetBufferDesc_002
+* @tc.desc  : Test GetBufferDesc interface. Returns errorcode, if render mode is not callback.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetBufferDesc_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+    EXPECT_EQ(nullptr, bufDesc.buffer);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Enqueue via legal render mode, RENDER_MODE_CALLBACK
+* @tc.number: Audio_Renderer_Enqueue_001
+* @tc.desc  : Test Enqueue interface. Returns SUCCESS , if the buff desc enqueued successfully.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(nullptr, bufDesc.buffer);
+
+    ret = audioRenderer->Enqueue(bufDesc);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Enqueue via illegal render mode, RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_Enqueue_002
+* @tc.desc  : Test Enqueue interface. Returns error code, if the render mode is not callback.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    ret = audioRenderer->Enqueue(bufDesc);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Enqueue via illegal state, state is not RUNNING
+* @tc.number: Audio_Renderer_Enqueue_003
+* @tc.desc  : Test Enqueue interface. Returns error code, if state is not RUNNING
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(nullptr, bufDesc.buffer);
+
+    ret = audioRenderer->Enqueue(bufDesc);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Enqueue via illegal input, buffer nullptr
+* @tc.number: Audio_Renderer_Enqueue_004
+* @tc.desc  : Test Enqueue interface. Returns error code, if the buffer nullptr
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+
+    ret = audioRenderer->Enqueue(bufDesc);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Clear via legal render mode, RENDER_MODE_CALLBACK
+* @tc.number: Audio_Renderer_Clear_001
+* @tc.desc  : Test Clear interface. Returns SUCCESS , if the buff queue cleared successfully.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Clear_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(nullptr, bufDesc.buffer);
+
+    ret = audioRenderer->Enqueue(bufDesc);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->Clear();
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test Clear via illegal render mode, RENDER_MODE_NORMAL
+* @tc.number: Audio_Renderer_Clear_002
+* @tc.desc  : Test Clear interface. Returns error code, if the render mode is not callback.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Clear_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    BufferDesc bufDesc {};
+    bufDesc.buffer = nullptr;
+    bufDesc.dataLength = g_reqBufLen;
+    ret = audioRenderer->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    ret = audioRenderer->Enqueue(bufDesc);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    ret = audioRenderer->Clear();
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
 }
 
 /**

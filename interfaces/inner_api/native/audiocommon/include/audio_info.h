@@ -479,7 +479,8 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
 
 struct BufferDesc {
     uint8_t* buffer;
-    size_t length;
+    size_t bufLength;
+    size_t dataLength;
 };
 
 struct BufferQueueState {
