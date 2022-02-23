@@ -31,6 +31,7 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
 {
     MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnRemoteRequest");
     if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioVolumeKeyEventCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {

@@ -124,19 +124,25 @@ int32_t AudioPolicyServiceProxy::ReleaseAudioRoute()
     return result;
 }
 
+const char *AudioPolicyServiceProxy::RetrieveCookie(int32_t &size)
+{
+    return nullptr;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(DeviceFlag deviceFlag)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        return deviceInfo;
     }
     data.WriteInt32(static_cast<int32_t>(deviceFlag));
 
     int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("Get devices failed, error: %d", error);
         return deviceInfo;

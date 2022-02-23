@@ -241,6 +241,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioPolicyManagerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {

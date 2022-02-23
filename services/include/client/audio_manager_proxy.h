@@ -36,6 +36,7 @@ public:
     void SetAudioParameter(const std::string key, const std::string value) override;
     int32_t UpdateAudioRoute() override;
     int32_t ReleaseAudioRoute() override;
+    const char *RetrieveCookie(int32_t &size) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
