@@ -137,7 +137,7 @@ SLresult AudioPlayerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLu
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
     BufferDesc bufDesc = {};
     bufDesc.buffer = (uint8_t*) buffer;
-    bufDesc.bufLength = size;
+    bufDesc.dataLength = size;
     audioRenderer->Enqueue(bufDesc);
     return SL_RESULT_SUCCESS;
 }
@@ -165,7 +165,7 @@ SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLu
     BufferDesc bufferDesc = {};
     audioRenderer->GetBufferDesc(bufferDesc);
     *buffer = bufferDesc.buffer;
-    size = bufferDesc.dataLength;
+    size = bufferDesc.bufLength;
     return SL_RESULT_SUCCESS;
 }
 
