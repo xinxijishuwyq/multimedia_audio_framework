@@ -19,6 +19,9 @@ SLresult SLAPIENTRY slCreateEngine(SLObjectItf *pEngine, SLuint32 numOptions,
     const SLEngineOption *pEngineOptions, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
 {
+    if (pEngine == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     ClassTable *engineClass = ObjectIdToClass(SL_OBJECTID_ENGINE);
     CEngine *thiz = (CEngine *) Construct(engineClass, nullptr);
     IObjectInit(&thiz->mObject);

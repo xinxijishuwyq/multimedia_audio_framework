@@ -190,7 +190,13 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_play_001, TestSize.Level0)
     }
 }
 
-HWTEST(AudioOpenslesUnitTest, Audio_Opensles_play_002, TestSize.Level0)
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetPlayState_002, TestSize.Level0)
+{
+    SLresult result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_PAUSED);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetPlayState_003, TestSize.Level0)
 {
     SLresult result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_STOPPED);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
@@ -219,6 +225,189 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_Destroy_003, TestSize.Level0)
 {
     (*outputMixObject_)->Destroy(outputMixObject_);
     EXPECT_TRUE(true);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateEngine_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_DestoryEngine_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        engineObject_ = {};
+        slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*engineObject_)->Destroy(engineObject_);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_Realize_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    engineObject_ = {};
+    slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*engineObject_)->Realize(engineObject_, SL_BOOLEAN_FALSE);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetInterface_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*engineObject_)->GetInterface(engineObject_, SL_IID_ENGINE, &engineEngine_);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateOutputMix_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*engineEngine_)->CreateOutputMix(engineEngine_, &outputMixObject_, 0, nullptr, nullptr);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateAudioPlayer_001, TestSize.Level0)
+{
+    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "rb");
+    if (wavFile_ == nullptr) {
+        MEDIA_INFO_LOG("AudioRendererTest: Unable to open wave file");
+    }
+    size_t headerSize = sizeof(wav_hdr);
+    fread(&wavHeader_, 1, headerSize, wavFile_);
+    SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject_};
+    SLDataSink slSink = {&slOutputMix, nullptr};
+    SLDataLocator_BufferQueue slBufferQueue = {
+        SL_DATALOCATOR_BUFFERQUEUE,
+        0
+    };
+    SLDataFormat_PCM pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        wavHeader_.NumOfChan,
+        wavHeader_.SamplesPerSec * 1000,
+        wavHeader_.bitsPerSample,
+        0,
+        0,
+        0
+    };
+    SLDataSource slSource = {&slBufferQueue, &pcmFormat};
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_, &slSource, &slSink, 0, nullptr, nullptr);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 10000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetVolumeLevel_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    SLmillibel level = 0;
+    (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_VOLUME, &volumeItf_);
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*volumeItf_)->GetVolumeLevel(volumeItf_, &level);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 10000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetMaxVolumeLevel_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    SLmillibel level = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*volumeItf_)->GetMaxVolumeLevel(volumeItf_, &level);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
+}
+
+HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_SetVolumeLevel_001, TestSize.Level0)
+{
+    struct timespec tv1 = {0};
+    struct timespec tv2 = {0};
+    int64_t performanceTestTimes = 10;
+    int64_t usecTimes = 1000000;
+    int64_t totalTime = 0;
+    SLmillibel level = 0;
+    for (int32_t i = 0; i < performanceTestTimes; i++) {
+        clock_gettime(CLOCK_REALTIME, &tv1);
+        (*volumeItf_)->SetVolumeLevel(volumeItf_, level);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+        totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
+    }
+    int64_t expectTime = 1000000;
+    EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 } // namespace AudioStandard
 } // namespace OHOS

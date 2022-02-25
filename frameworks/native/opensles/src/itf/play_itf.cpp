@@ -21,6 +21,9 @@ using namespace OHOS::AudioStandard;
 
 static SLresult SetPlayState(SLPlayItf self, SLuint32 state)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IPlay *thiz = (IPlay *)self;
     AudioPlayerAdapter::GetInstance()->SetPlayStateAdapter(thiz->mId, state);
     return SL_RESULT_SUCCESS;
@@ -28,6 +31,9 @@ static SLresult SetPlayState(SLPlayItf self, SLuint32 state)
 
 static SLresult GetPlayState(SLPlayItf self, SLuint32 *state)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IPlay *thiz = (IPlay *)self;
     AudioPlayerAdapter::GetInstance()->GetPlayStateAdapter(thiz->mId, state);
     return SL_RESULT_SUCCESS;

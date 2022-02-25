@@ -34,6 +34,9 @@ static SLresult GetState(SLObjectItf self, SLuint32 *state)
 
 static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *interface)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     if (iid == SL_IID_ENGINE) {
         CEngine *cEngine = (CEngine *)self;
         *(void **)interface = (void *)&(cEngine->mEngine.mItf);
@@ -51,7 +54,7 @@ static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *in
         *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
         return SL_RESULT_SUCCESS;
     } else {
-        MEDIA_ERR_LOG("GetInterface: id not supported");
+        MEDIA_ERR_LOG("GetInterface: SLInterfaceID not supported");
         return SL_RESULT_FEATURE_UNSUPPORTED;
     }
 }
@@ -84,6 +87,9 @@ static SLresult SetLossOfControlInterfaces(SLObjectItf self,
 
 void Destroy(SLObjectItf self)
 {
+    if (self == nullptr) {
+        return;
+    }
     IObject *iObject = (IObject *)self;
     SLuint32 objectId = iObject->mClass->mObjectId;
     switch (objectId) {
@@ -97,7 +103,7 @@ void Destroy(SLObjectItf self)
             OutputMixDestroy((void *)self);
             break;
         default:
-            MEDIA_ERR_LOG("object not supported");
+            MEDIA_ERR_LOG("objectId not supported");
             break;
     }
     return;

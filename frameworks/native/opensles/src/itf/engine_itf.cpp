@@ -37,6 +37,9 @@ static SLresult CreateAudioPlayer(
     SLEngineItf self, SLObjectItf *pPlayer, SLDataSource *pAudioSrc, SLDataSink *pAudioSnk, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
 {
+    if (pPlayer == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     ClassTable *audioPlayerClass = ObjectIdToClass(SL_OBJECTID_AUDIOPLAYER);
     CAudioPlayer *thiz = (CAudioPlayer *) Construct(audioPlayerClass, self);
     thiz->mId = audioplayerId;
@@ -84,6 +87,9 @@ static SLresult CreateOutputMix(
     SLEngineItf self, SLObjectItf *pMix, SLuint32 numInterfaces, const SLInterfaceID *pInterfaceIds,
     const SLboolean *pInterfaceRequired)
 {
+    if (pMix == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     ClassTable *outputMixClass = ObjectIdToClass(SL_OBJECTID_OUTPUTMIX);
     COutputMix *thiz = (COutputMix *) Construct(outputMixClass, self);
     IObjectInit(&thiz->mObject);

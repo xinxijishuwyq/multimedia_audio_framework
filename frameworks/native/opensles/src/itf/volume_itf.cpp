@@ -19,6 +19,9 @@ using namespace OHOS::AudioStandard;
 
 static SLresult SetVolumeLevel(SLVolumeItf self, SLmillibel level)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IVolume *thiz = (IVolume *)self;
     AudioPlayerAdapter::GetInstance()->SetVolumeLevelAdapter(thiz->mId, level);
     return SL_RESULT_SUCCESS;
@@ -26,15 +29,21 @@ static SLresult SetVolumeLevel(SLVolumeItf self, SLmillibel level)
 
 static SLresult GetVolumeLevel(SLVolumeItf self, SLmillibel *level)
 {
+    if (self == nullptr || level == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IVolume *thiz = (IVolume *)self;
     AudioPlayerAdapter::GetInstance()->GetVolumeLevelAdapter(thiz->mId, level);
     return SL_RESULT_SUCCESS;
 }
 
-static SLresult GetMaxVolumeLevel(SLVolumeItf self, SLmillibel *pMaxLevel)
+static SLresult GetMaxVolumeLevel(SLVolumeItf self, SLmillibel *maxLevel)
 {
+    if (self == nullptr || maxLevel == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IVolume *thiz = (IVolume *)self;
-    AudioPlayerAdapter::GetInstance()->GetMaxVolumeLevelAdapter(thiz->mId, pMaxLevel);
+    AudioPlayerAdapter::GetInstance()->GetMaxVolumeLevelAdapter(thiz->mId, maxLevel);
     return SL_RESULT_SUCCESS;
 }
 
