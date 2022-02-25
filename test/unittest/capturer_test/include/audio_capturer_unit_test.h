@@ -47,6 +47,8 @@ public:
     void TearDown(void);
     // Init Capturer
     static int32_t InitializeCapturer(std::unique_ptr<AudioCapturer> &audioCapturer);
+    // Init Capturer Options
+    static void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions);
 };
 } // namespace AudioStandard
 } // namespace OHOS
