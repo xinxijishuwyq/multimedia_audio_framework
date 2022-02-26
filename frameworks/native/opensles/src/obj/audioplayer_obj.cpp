@@ -19,6 +19,9 @@ using namespace OHOS::AudioStandard;
 
 SLresult AudioPlayerDestroy(void *self)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
     AudioPlayerAdapter::GetInstance()->EraseAudioRenderById(cAudioPlayer->mId);
     return SL_RESULT_SUCCESS;

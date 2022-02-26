@@ -17,6 +17,9 @@
 
 SLresult OutputMixDestroy(void *self)
 {
-    free(self);
+    if (self != nullptr) {
+        free(self);
+        self = nullptr;
+    }
     return SL_RESULT_SUCCESS;
 }

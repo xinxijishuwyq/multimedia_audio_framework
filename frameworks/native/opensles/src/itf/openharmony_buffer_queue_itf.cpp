@@ -19,6 +19,9 @@ using namespace OHOS::AudioStandard;
 
 SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     AudioPlayerAdapter::GetInstance()->EnqueueAdapter(thiz->mId, buffer, size);
     return SL_RESULT_SUCCESS;
@@ -26,6 +29,9 @@ SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
 
 SLresult Clear(SLOHBufferQueueItf self)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     AudioPlayerAdapter::GetInstance()->ClearAdapter(thiz->mId);
     return SL_RESULT_SUCCESS;
@@ -33,6 +39,9 @@ SLresult Clear(SLOHBufferQueueItf self)
 
 SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     AudioPlayerAdapter::GetInstance()->GetStateAdapter(thiz->mId, state);
     return SL_RESULT_SUCCESS;
@@ -40,6 +49,9 @@ SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
 
 SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 &size)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IOHBufferQueue *thiz = (IOHBufferQueue *)self;
     AudioPlayerAdapter::GetInstance()->GetBufferAdapter(thiz->mId, buffer, size);
     return SL_RESULT_SUCCESS;
@@ -48,6 +60,9 @@ SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 &size)
 SLresult RegisterCallback(SLOHBufferQueueItf self,
     SlOHBufferQueueCallback callback, void *pContext)
 {
+    if (self == nullptr || callback == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     AudioPlayerAdapter::GetInstance()->RegisterCallbackAdapter(self, callback, pContext);
     return SL_RESULT_SUCCESS;
 }
