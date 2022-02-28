@@ -97,7 +97,6 @@ bool AudioManagerProxy::IsMicrophoneMute()
     MessageOption option;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
     }
     int32_t error = Remote()->SendRequest(IS_MICROPHONE_MUTE, data, reply, option);
     if (error != ERR_NONE) {
@@ -151,7 +150,6 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string key)
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
     }
     data.WriteString(static_cast<std::string>(key));
     int32_t error = Remote()->SendRequest(GET_AUDIO_PARAMETER, data, reply, option);
@@ -173,7 +171,6 @@ void AudioManagerProxy::SetAudioParameter(const std::string key, const std::stri
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
     }
     data.WriteString(static_cast<std::string>(key));
     data.WriteString(static_cast<std::string>(value));
