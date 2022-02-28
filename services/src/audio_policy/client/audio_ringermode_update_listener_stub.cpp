@@ -34,6 +34,9 @@ AudioRingerModeUpdateListenerStub::~AudioRingerModeUpdateListenerStub()
 int AudioRingerModeUpdateListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        return -1;
+    }
     switch (code) {
         case ON_RINGERMODE_UPDATE: {
             AudioRingerMode ringerMode = static_cast<AudioRingerMode>(data.ReadInt32());

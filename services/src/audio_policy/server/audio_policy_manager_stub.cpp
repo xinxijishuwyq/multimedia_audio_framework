@@ -232,6 +232,9 @@ void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &da
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        return -1;
+    }
     switch (code) {
         case SET_STREAM_VOLUME:
             SetStreamVolumeInternal(data, reply);

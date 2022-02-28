@@ -25,6 +25,9 @@ int AudioManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     MEDIA_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        return -1;
+    }
     if (!IsPermissionValid()) {
         MEDIA_ERR_LOG("caller app not acquired audio permission");
         return MEDIA_PERMISSION_DENIED;
