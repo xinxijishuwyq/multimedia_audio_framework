@@ -51,7 +51,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     }
 
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    std::vector<int32_t> preKeys;
+    std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
     keyOption_down->SetPreKeys(preKeys);
     keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
