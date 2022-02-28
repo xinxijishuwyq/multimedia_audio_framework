@@ -48,27 +48,23 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        MEDIA_ERR_LOG("[Policy Service] Get samgr failed");
-        return false;
-    }
-
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    if (object == nullptr) {
-        MEDIA_DEBUG_LOG("[Policy Service] audio service remote object is NULL.");
-        return false;
-    }
-    g_sProxy = iface_cast<IStandardAudioService>(object);
-    if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is NULL.");
-        return false;
-    } else {
-        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is assigned.");
-    }
-
     if (mDeviceStatusListener->RegisterDeviceStatusListener(nullptr)) {
         MEDIA_ERR_LOG("[Policy Service] Register for device status events failed");
+        return false;
+    }
+
+    return true;
+}
+
+void AudioPolicyService::InitKVStore()
+{
+    mAudioPolicyManager.InitKVStore();
+}
+
+bool AudioPolicyService::ConnectServiceAdapter()
+{
+    if (!mAudioPolicyManager.ConnectServiceAdapter()) {
+        MEDIA_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
         return false;
     }
 
