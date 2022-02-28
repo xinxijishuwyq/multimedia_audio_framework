@@ -38,6 +38,7 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
+const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 }
 
 #ifdef DUMPFILE
@@ -104,6 +105,7 @@ int32_t InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
+    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -428,7 +430,7 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = 0;
+    source.ext.mix.streamId = INTERNAL_OUTPUT_STREAM_ID;
 
     sink.portId = audioPort.portId;
     sink.role = AUDIO_PORT_SINK_ROLE;
