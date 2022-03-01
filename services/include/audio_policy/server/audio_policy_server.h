@@ -85,7 +85,9 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) override;
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
 
     void OnSessionRemoved(const uint32_t sessionID) override;
 
@@ -102,12 +104,12 @@ private:
     void RegisterAudioServerDeathRecipient();
     void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
-    
+
     static float GetVolumeFactor();
     static int32_t ConvertVolumeToInt(float volume);
 
     AudioPolicyService& mPolicyService;
-    std::shared_ptr<VolumeKeyEventCallback> audioVolumeChangeCallback;
+    std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;
     std::mutex volumeKeyEventMutex_;

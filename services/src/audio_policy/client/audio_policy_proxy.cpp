@@ -459,7 +459,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -473,10 +473,33 @@ int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &o
         MEDIA_ERR_LOG("VolumeKeyEventCallback object is null");
         return ERR_NULL_OBJECT;
     }
+
+    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int result = Remote()->SendRequest(SET_VOLUME_KEY_EVENT_CALLBACK, data, reply, option);
     if (result != ERR_NONE) {
         MEDIA_ERR_LOG("SetAudioVolumeKeyEventCallback failed, result: %{public}d", result);
+        return result;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientPid);
+    int result = Remote()->SendRequest(UNSET_VOLUME_KEY_EVENT_CALLBACK, data, reply, option);
+    if (result != ERR_NONE) {
+        MEDIA_ERR_LOG("UnsetVolumeKeyEventCallback failed, result: %{public}d", result);
         return result;
     }
 

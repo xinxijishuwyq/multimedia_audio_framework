@@ -49,6 +49,7 @@ private:
     void ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt);
     void WriteAudioInteruptParams(MessageParcel &reply, const AudioInterrupt &audioInterrupt);
     void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 };
