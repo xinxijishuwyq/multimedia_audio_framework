@@ -25,8 +25,10 @@ namespace AudioStandard {
 namespace {
 #ifdef DEVICE_BALTIMORE
     const std::string AUDIO_HDI_SERVICE_NAME = "audio_adapter_service";
+    DeviceClass EVENT_CLASS = DEVICE_CLASS_AUDIO;
 #else
     const std::string AUDIO_HDI_SERVICE_NAME = "audio_hdi_service";
+    DeviceClass EVENT_CLASS = DEVICE_CLASS_DEFAULT;
 #endif
 }
 
@@ -89,8 +91,7 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
     listener_ = HdiServiceStatusListenerNewInstance();
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
-    int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
-                                                                       DEVICE_CLASS_DEFAULT);
+    int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_, EVENT_CLASS);
     if (status != HDF_SUCCESS) {
         MEDIA_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
         return ERR_OPERATION_FAILED;
