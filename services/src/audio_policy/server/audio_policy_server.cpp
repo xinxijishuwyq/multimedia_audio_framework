@@ -26,7 +26,6 @@
 
 #include "input_manager.h"
 #include "key_event.h"
-#include "key_event_pre.h"
 #include "key_option.h"
 
 #include "media_log.h"
