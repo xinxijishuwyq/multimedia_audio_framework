@@ -27,6 +27,10 @@ void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamTy
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioVolumeKeyEventCallbackProxy: WriteInterfaceToken failed");
+    }
     data.WriteInt32(static_cast<int32_t>(streamType));
     data.WriteInt32(volumeLevel);
     data.WriteBool(isUpdateUi);
