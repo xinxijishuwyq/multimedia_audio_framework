@@ -45,13 +45,13 @@ int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volu
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    data.WriteInt32(static_cast<int32_t>(streamType));
-    data.WriteFloat(volume);
-
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+
+    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteFloat(volume);
     int32_t error = Remote()->SendRequest(SET_STREAM_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
         MEDIA_ERR_LOG("set volume failed, error: %d", error);
