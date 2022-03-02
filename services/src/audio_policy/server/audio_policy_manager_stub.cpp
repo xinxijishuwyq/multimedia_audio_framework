@@ -220,12 +220,20 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply)
 
 void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
+    int32_t clientPid =  data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
         return;
     }
-    int ret = SetVolumeKeyEventCallback(remoteObject);
+    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientPid = data.ReadInt32();
+    int ret = UnsetVolumeKeyEventCallback(clientPid);
     reply.WriteInt32(ret);
 }
 
@@ -310,6 +318,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case SET_VOLUME_KEY_EVENT_CALLBACK:
             SetVolumeKeyEventCallbackInternal(data, reply);
+            break;
+
+        case UNSET_VOLUME_KEY_EVENT_CALLBACK:
+            UnsetVolumeKeyEventCallbackInternal(data, reply);
             break;
 
         case GET_STREAM_IN_FOCUS:

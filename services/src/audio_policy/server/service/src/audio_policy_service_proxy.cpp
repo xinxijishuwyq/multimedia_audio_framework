@@ -129,7 +129,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(Dev
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    
+
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
     }

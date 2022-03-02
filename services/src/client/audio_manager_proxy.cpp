@@ -31,7 +31,7 @@ int32_t AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volu
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    
+
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
@@ -52,7 +52,7 @@ int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volu
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    
+
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
@@ -74,7 +74,7 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    
+
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;

@@ -64,7 +64,9 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object) override;
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
 
     AudioStreamType GetStreamInFocus() override;
 
