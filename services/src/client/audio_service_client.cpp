@@ -804,8 +804,6 @@ int32_t AudioServiceClient::StartStream()
     }
 
     streamCmdStatus = 0;
-    State oldState = state_;
-    state_ = RUNNING;
     operation = pa_stream_cork(paStream, 0, PAStreamStartSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
@@ -816,7 +814,6 @@ int32_t AudioServiceClient::StartStream()
 
     if (!streamCmdStatus) {
         MEDIA_ERR_LOG("Stream Start Failed");
-        state_ = oldState;
         ResetPAAudioClient();
         return AUDIO_CLIENT_START_STREAM_ERR;
     } else {

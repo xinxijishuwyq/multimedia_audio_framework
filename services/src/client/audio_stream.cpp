@@ -265,6 +265,7 @@ bool AudioStream::StartAudioStream()
         writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteBuffers, this);
     }
 
+    state_ = RUNNING;
     MEDIA_INFO_LOG("StartAudioStream SUCCESS");
     return true;
 }
