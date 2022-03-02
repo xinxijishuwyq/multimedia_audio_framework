@@ -19,17 +19,27 @@ using namespace OHOS::AudioStandard;
 
 static SLresult Realize(SLObjectItf self, SLboolean async)
 {
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
+    IObject *thiz = (IObject *) self;
+    thiz->mState = SL_OBJECT_STATE_REALIZED;
     return SL_RESULT_SUCCESS;
 }
 
 static SLresult Resume(SLObjectItf self, SLboolean async)
 {
-    return SL_RESULT_FEATURE_UNSUPPORTED;
+    return SL_RESULT_SUCCESS;
 }
 
 static SLresult GetState(SLObjectItf self, SLuint32 *state)
 {
-    return SL_RESULT_FEATURE_UNSUPPORTED;
+    if (self == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
+    IObject *thiz = (IObject *) self;
+    *state = thiz->mState;
+    return SL_RESULT_SUCCESS;
 }
 
 static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *interface)
@@ -126,4 +136,5 @@ void IObjectInit(void *self)
 {
     IObject *thiz = (IObject *) self;
     thiz->mItf = &ObjectItf;
+    thiz->mState = SL_OBJECT_STATE_UNREALIZED;
 }
