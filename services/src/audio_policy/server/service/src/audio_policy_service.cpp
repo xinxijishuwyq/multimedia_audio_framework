@@ -151,7 +151,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     MEDIA_INFO_LOG("GetDevices mActiveDevices size = [%{public}zu]", mActiveDevices.size());
     for (auto &device : mActiveDevices) {
         if (device->deviceRole_ == role) {
-            auto devDesc = new(std::nothrow) AudioDeviceDescriptor(device->deviceType_, device->deviceRole_);
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(device->deviceType_,
+                                                                                          device->deviceRole_);
             deviceList.push_back(devDesc);
         }
     }
@@ -208,7 +209,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
         return ERROR;
     }
 
-    auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceType, role);
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceType, role);
 
     // If a device is made active, bring it to the top
     if (updateActiveDevices) {
@@ -299,7 +300,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-    auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, role);
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, role);
     deviceChangeDescriptor.push_back(audioDescriptor);
 
     auto isPresent = [&devType, &role] (const sptr<AudioDeviceDescriptor> &descriptor) {
@@ -338,7 +339,8 @@ void AudioPolicyService::OnServiceConnected()
                 mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
 
                 // add new device into active device list
-                auto audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, GetDeviceRole(moduleInfo.role));
+                sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
+                    GetDeviceRole(moduleInfo.role));
                 mActiveDevices.insert(mActiveDevices.begin(), audioDescriptor);
             }
 
