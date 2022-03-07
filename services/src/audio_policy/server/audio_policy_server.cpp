@@ -49,6 +49,89 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
         MEDIA_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
 
+    interruptPriorityMap_[STREAM_VOICE_CALL] = 3;
+    interruptPriorityMap_[STREAM_RING] = 2;
+    interruptPriorityMap_[STREAM_MUSIC] = 1;
+}
+
+void AudioPolicyServer::OnDump()
+{
+    return;
+}
+
+void AudioPolicyServer::OnStart()
+{
+    bool res = Publish(this);
+    if (res) {
+        MEDIA_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
+    }
+    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
+    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
+
+    mPolicyService.Init();
+    RegisterAudioServerDeathRecipient();
+    return;
+}
+
+void AudioPolicyServer::OnStop()
+{
+    mPolicyService.Deinit();
+    return;
+}
+
+void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    switch (systemAbilityId) {
+        case MULTIMODAL_INPUT_SERVICE_ID:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility SubscribeKeyEvents");
+            SubscribeKeyEvents();
+            break;
+        case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility InitKVStore");
+            InitKVStore();
+            break;
+        case AUDIO_DISTRIBUTED_SERVICE_ID:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
+            ConnectServiceAdapter();
+            break;
+        default:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            break;
+    }
+}
+
+void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    MEDIA_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
+}
+
+void AudioPolicyServer::RegisterAudioServerDeathRecipient()
+{
+    MEDIA_INFO_LOG("Register audio server death recipient");
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+    if (deathRecipient_ != nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
+        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
+        bool result = object->AddDeathRecipient(deathRecipient_);
+        if (!result) {
+            MEDIA_ERR_LOG("failed to add deathRecipient");
+        }
+    }
+}
+
+void AudioPolicyServer::AudioServerDied(pid_t pid)
+{
+    MEDIA_INFO_LOG("Audio server died: restart policy server");
+    MEDIA_INFO_LOG("AudioPolicyServer: Kill pid:%{public}d", pid);
+    kill(pid, SIGKILL);
+}
+
+void AudioPolicyServer::SubscribeKeyEvents()
+{
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
@@ -105,56 +188,19 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
         }
         SetStreamVolume(streamInFocus, currentVolume+GetVolumeFactor(), true);
     });
-
-    interruptPriorityMap_[STREAM_VOICE_CALL] = 3;
-    interruptPriorityMap_[STREAM_RING] = 2;
-    interruptPriorityMap_[STREAM_MUSIC] = 1;
 }
 
-void AudioPolicyServer::OnDump()
+void AudioPolicyServer::InitKVStore()
 {
-    return;
+    mPolicyService.InitKVStore();
 }
 
-void AudioPolicyServer::OnStart()
+void AudioPolicyServer::ConnectServiceAdapter()
 {
-    bool res = Publish(this);
-    if (res) {
-        MEDIA_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
+    if (!mPolicyService.ConnectServiceAdapter()) {
+        MEDIA_ERR_LOG("AudioPolicyServer::ConnectServiceAdapter Error in connecting to audio service adapter");
+        return;
     }
-
-    mPolicyService.Init();
-    RegisterAudioServerDeathRecipient();
-    return;
-}
-
-void AudioPolicyServer::OnStop()
-{
-    mPolicyService.Deinit();
-    return;
-}
-
-void AudioPolicyServer::RegisterAudioServerDeathRecipient()
-{
-    MEDIA_INFO_LOG("Register audio server death recipient");
-    pid_t pid = IPCSkeleton::GetCallingPid();
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
-    if (deathRecipient_ != nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
-        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
-        if (!result) {
-            MEDIA_ERR_LOG("failed to add deathRecipient");
-        }
-    }
-}
-
-void AudioPolicyServer::AudioServerDied(pid_t pid)
-{
-    MEDIA_INFO_LOG("Audio server died: restart policy server");
-    MEDIA_INFO_LOG("AudioPolicyServer: Kill pid:%{public}d", pid);
-    kill(pid, SIGKILL);
 }
 
 int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume)

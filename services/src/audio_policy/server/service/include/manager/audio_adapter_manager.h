@@ -42,6 +42,8 @@ public:
 
     bool Init();
     void Deinit(void);
+    void InitKVStore();
+    bool ConnectServiceAdapter();
 
     std::string GetPolicyManagerName();
 

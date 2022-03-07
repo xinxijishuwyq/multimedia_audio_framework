@@ -33,6 +33,10 @@ public:
 
     virtual bool Init() = 0;
 
+    virtual void InitKVStore() = 0;
+
+    virtual bool ConnectServiceAdapter() = 0;
+
     virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume) = 0;
 
     virtual float GetStreamVolume(AudioStreamType streamType) = 0;
