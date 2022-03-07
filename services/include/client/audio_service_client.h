@@ -599,7 +599,7 @@ private:
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
-    static void PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata);
+    static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
