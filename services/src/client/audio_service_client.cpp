@@ -189,7 +189,7 @@ void AudioServiceClient::PAStreamFlushSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
-void AudioServiceClient::PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata)
+void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     pa_threaded_mainloop_signal(mainLoop, 0);
@@ -736,7 +736,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
     pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
-    pa_stream_set_read_callback(paStream, PAStreamRequestCb, mainLoop);
+    pa_stream_set_read_callback(paStream, PAStreamReadCb, mainLoop);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
 
