@@ -36,6 +36,11 @@ public:
     void OnPeriodReached(const int64_t &frameNumber) override {}
 };
 
+class AudioRenderModeCallbackTest : public AudioRendererWriteCallback {
+public:
+    void OnWriteData(size_t length) override;
+};
+
 class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

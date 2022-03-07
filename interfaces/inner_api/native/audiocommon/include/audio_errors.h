@@ -115,6 +115,9 @@ const int32_t  ERR_INVALID_INDEX = BASE_AUDIO_ERR_OFFSET - 17;
 /** focus request denied */
 const int32_t  ERR_FOCUS_DENIED = BASE_AUDIO_ERR_OFFSET - 18;
 
+/** incorrect render/capture mode */
+const int32_t  ERR_INCORRECT_MODE = BASE_AUDIO_ERR_OFFSET - 19;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard
