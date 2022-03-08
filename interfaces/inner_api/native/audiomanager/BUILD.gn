@@ -35,7 +35,7 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_flinger/client",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/client",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/common",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
@@ -61,11 +61,11 @@ config("audio_client_public_config") {
 ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
-    "//foundation/multimedia/audio_standard/services/src/client/audio_manager_proxy.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_service_client.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_session.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_stream.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_system_manager.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_flinger/client/audio_manager_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_flinger/client/audio_service_client.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_flinger/client/audio_session.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_flinger/client/audio_stream.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_flinger/client/audio_system_manager.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]

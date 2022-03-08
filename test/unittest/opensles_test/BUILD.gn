@@ -26,7 +26,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_flinger/client",
     "//foundation/multimedia/audio_standard/services/test",
     "//utils/native/base/include",
     "$pulseaudio_dir/src",

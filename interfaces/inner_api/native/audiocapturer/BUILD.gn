@@ -27,7 +27,7 @@ config("audio_capturer_config") {
     "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_flinger/client",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
