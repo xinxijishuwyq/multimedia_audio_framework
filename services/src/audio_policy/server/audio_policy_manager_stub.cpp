@@ -330,6 +330,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_SESSION_INFO_IN_FOCUS:
             GetSessionInfoInFocusInternal(reply);
+            break;
 
         case GET_DEVICES:
             GetDevicesInternal(data, reply);
