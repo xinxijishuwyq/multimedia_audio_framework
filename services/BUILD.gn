@@ -28,7 +28,7 @@ config("audio_service_config") {
 
   include_dirs = [
     "include",
-    "include/audio_flinger/server",
+    "include/audio_service/server",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
@@ -46,8 +46,8 @@ ohos_shared_library("audio_service") {
   install_enable = true
 
   sources = [
-    "src/audio_flinger/server/audio_manager_stub.cpp",
-    "src/audio_flinger/server/audio_server.cpp",
+    "src/audio_service/server/audio_manager_stub.cpp",
+    "src/audio_service/server/audio_server.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -91,7 +91,7 @@ ohos_prebuilt_etc("audio_policy.rc") {
 config("audio_policy_public_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/audio_flinger/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/distributedschedule/safwk/services/safwk/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
