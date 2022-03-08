@@ -330,6 +330,54 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     return 0;
 }
 
+#ifndef DEVICE_RK3568
+static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
+{
+    enum AudioFormat hdiAudioFormat;
+    switch (format) {
+        case PA_SAMPLE_U8:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_8_BIT;
+            break;
+        case PA_SAMPLE_S16LE:
+        case PA_SAMPLE_S16BE:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            break;
+        case PA_SAMPLE_S24LE:
+        case PA_SAMPLE_S24BE:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_24_BIT;
+            break;
+        case PA_SAMPLE_S32LE:
+        case PA_SAMPLE_S32BE:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_32_BIT;
+            break;
+        default:
+            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            break;
+    }
+
+    return hdiAudioFormat;
+}
+
+static bool GetEndianInfo(pa_sample_format_t format)
+{
+    bool isBigEndian = false;
+    switch (format) {
+        case PA_SAMPLE_S16BE:
+        case PA_SAMPLE_S24BE:
+        case PA_SAMPLE_S32BE:
+        case PA_SAMPLE_FLOAT32BE:
+        case PA_SAMPLE_S24_32BE:
+            isBigEndian = true;
+            break;
+        default:
+            isBigEndian = false;
+            break;
+    }
+
+    return isBigEndian;
+}
+#endif // #ifndef DEVICE_RK3568
+
 pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
@@ -361,11 +409,21 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     u->buffer_size = DEFAULT_BUFFER_SIZE;
-    u->attrs.format = AUDIO_FORMAT_PCM_16_BIT;
-    u->attrs.channel = ss.channels;
     u->attrs.sampleRate = ss.rate;
-    MEDIA_INFO_LOG("AudioDeviceCreateCapture format: %{public}d, channel: %{public}d, sampleRate: %{public}d",
-                   u->attrs.format, u->attrs.channel, u->attrs.sampleRate);
+// The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
+#ifdef DEVICE_RK3568
+    int32_t channelCount = 2;
+    u->attrs.channel = channelCount;
+    u->attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    u->attrs.isBigEndian = false;
+#else
+    u->attrs.channel = ss.channels;
+    u->attrs.format = ConvertToHDIAudioFormat(ss.format);
+    u->attrs.isBigEndian = GetEndianInfo(ss.format);
+#endif
+
+    MEDIA_INFO_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
+        "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
     ret = pa_set_source_properties(m, ma, &ss, &map, u);
     if (ret != 0) {
