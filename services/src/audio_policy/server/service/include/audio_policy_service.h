@@ -39,6 +39,8 @@ public:
 
     bool Init(void);
     void Deinit(void);
+    void InitKVStore();
+    bool ConnectServiceAdapter();
 
     int32_t SetStreamVolume(AudioStreamType streamType, float volume) const;
 

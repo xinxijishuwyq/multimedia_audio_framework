@@ -123,13 +123,22 @@ private:
         MEDIA_INFO_LOG("RenderCallbackTest: EnqueueBuffer thread");
         while (!feof(wavFile_)) {
             if (isEnqueue_) {
-                size_t bufLen = reqBufLen_;
+                // Requested length received in callback
+                size_t reqLen = reqBufLen_;
                 bufDesc_.buffer = nullptr;
                 audioRenderer_->GetBufferDesc(bufDesc_);
                 if (bufDesc_.buffer == nullptr) {
                     continue;
                 }
-                fread(bufDesc_.buffer, 1, bufLen, wavFile_);
+                // requested len in callback will never be greater than allocated buf length
+                // This is just a fail-safe
+                if (reqLen > bufDesc_.bufLength) {
+                    bufDesc_.dataLength = bufDesc_.bufLength;
+                } else {
+                    bufDesc_.dataLength = reqLen;
+                }
+
+                fread(bufDesc_.buffer, 1, bufDesc_.dataLength, wavFile_);
                 audioRenderer_->Enqueue(bufDesc_);
                 isEnqueue_ = false;
             }

@@ -25,6 +25,11 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioAdapterManager::Init()
 {
+    return true;
+}
+
+bool AudioAdapterManager::ConnectServiceAdapter()
+{
     std::unique_ptr<AudioAdapterManager> audioAdapterManager(this);
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
     mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
@@ -33,12 +38,17 @@ bool AudioAdapterManager::Init()
         MEDIA_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
         return false;
     }
+
+    return true;
+}
+
+
+void AudioAdapterManager::InitKVStore()
+{
     bool isFirstBoot = false;
     InitAudioPolicyKvStore(isFirstBoot);
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
-
-    return true;
 }
 
 void AudioAdapterManager::Deinit(void)

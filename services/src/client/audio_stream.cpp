@@ -300,7 +300,7 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
 {
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         MEDIA_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
-        return ERR_INVALID_OPERATION;
+        return ERR_INCORRECT_MODE;
     }
 
     if ((buffer == nullptr) || (buffer_size <= 0)) {
@@ -508,17 +508,19 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
     renderMode_ = renderMode;
 
     for (int32_t i = 0; i < MAX_NUM_BUFFERS; ++i) {
-        BufferDesc bufDesc {};
-        GetMinimumBufferSize(bufDesc.length);
-        MEDIA_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", bufDesc.length);
+        size_t length;
+        GetMinimumBufferSize(length);
+        MEDIA_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", length);
 
-        bufferPool_[i] = std::make_unique<uint8_t[]>(bufDesc.length);
+        bufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (bufferPool_[i] == nullptr) {
             MEDIA_INFO_LOG("AudioServiceClient::GetBufferDescriptor bufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
 
+        BufferDesc bufDesc {};
         bufDesc.buffer = bufferPool_[i].get();
+        bufDesc.bufLength = length;
         freeBufferQ_.emplace(bufDesc);
     }
 
@@ -534,7 +536,7 @@ int32_t AudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRendere
 {
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         MEDIA_ERR_LOG("AudioStream::SetRendererWriteCallback not supported. Render mode is not callback.");
-        return ERR_NOT_SUPPORTED;
+        return ERR_INCORRECT_MODE;
     }
 
     int32_t ret = SaveWriteCallback(callback);
@@ -550,7 +552,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
 {
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         MEDIA_ERR_LOG("AudioStream::GetBufferDesc not supported. Render mode is not callback.");
-        return ERR_NOT_SUPPORTED;
+        return ERR_INCORRECT_MODE;
     }
 
     MEDIA_INFO_LOG("AudioStream::freeBufferQ_ count %{public}zu", freeBufferQ_.size());
@@ -558,7 +560,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
 
     if (!freeBufferQ_.empty()) {
         bufDesc.buffer = freeBufferQ_.front().buffer;
-        bufDesc.length = freeBufferQ_.front().length;
+        bufDesc.bufLength = freeBufferQ_.front().bufLength;
         freeBufferQ_.pop();
     } else {
         bufDesc.buffer = nullptr;
@@ -577,13 +579,7 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
     MEDIA_INFO_LOG("AudioStream::Enqueue");
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         MEDIA_ERR_LOG("AudioStream::Enqueue not supported. Render mode is not callback.");
-        return ERR_NOT_SUPPORTED;
-    }
-
-    if (state_ != RUNNING) {
-        MEDIA_ERR_LOG("AudioStream::Enqueue: failed. Illegal state:%{public}u", state_);
-        isReadyToWrite_ = false;
-        return ERR_ILLEGAL_STATE;
+        return ERR_INCORRECT_MODE;
     }
 
     if (bufDesc.buffer == nullptr) {
@@ -599,7 +595,7 @@ int32_t AudioStream::Clear()
 {
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         MEDIA_ERR_LOG("AudioStream::Clear not supported. Render mode is not callback.");
-        return ERR_NOT_SUPPORTED;
+        return ERR_INCORRECT_MODE;
     }
 
     while (!filledBufferQ_.empty()) {
@@ -626,7 +622,7 @@ void AudioStream::WriteBuffers()
             }
             MEDIA_DEBUG_LOG("AudioStream::WriteBuffers !filledBufferQ_.empty()");
             stream.buffer = filledBufferQ_.front().buffer;
-            stream.bufferLen = filledBufferQ_.front().length;
+            stream.bufferLen = filledBufferQ_.front().dataLength;
             MEDIA_DEBUG_LOG("AudioStream::WriteBuffers stream.bufferLen:%{public}d", stream.bufferLen);
             freeBufferQ_.emplace(filledBufferQ_.front());
             filledBufferQ_.pop();
