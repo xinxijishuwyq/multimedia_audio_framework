@@ -74,7 +74,9 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
         bool isFirstBoot = false;
         InitAudioPolicyKvStore(isFirstBoot);
     }
-    mVolumeMap[streamType] = volume;
+
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    mVolumeMap[streamForVolumeMap] = volume;
     WriteVolumeToKvStore(streamType, volume);
 
     return mAudioServiceAdapter->SetVolume(streamType, volume);
@@ -82,7 +84,9 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
 
 float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 {
-    return mVolumeMap[streamType];
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+
+    return mVolumeMap[streamForVolumeMap];
 }
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
@@ -263,6 +267,27 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
         stream = STREAM_VOICE_ASSISTANT;
 
     return stream;
+}
+
+AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_MUSIC:
+            return STREAM_MUSIC;
+        case STREAM_NOTIFICATION:
+        case STREAM_DTMF:
+        case STREAM_SYSTEM:
+        case STREAM_RING:
+            return STREAM_RING;
+        case STREAM_ALARM:
+            return STREAM_ALARM;
+        case STREAM_VOICE_CALL:
+            return STREAM_VOICE_CALL;
+        case STREAM_VOICE_ASSISTANT:
+            return STREAM_VOICE_ASSISTANT;
+        default:
+            return STREAM_MUSIC;
+    }
 }
 
 bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)

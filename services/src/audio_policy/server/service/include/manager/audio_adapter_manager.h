@@ -101,6 +101,7 @@ private:
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo);
     std::string GetStreamNameByStreamType(AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
+    AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
@@ -133,13 +134,15 @@ public:
 
     float OnGetVolumeCb(std::string streamType)
     {
+        AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(
+            audioAdapterManager_->GetStreamIDByType(streamType));
         if (audioAdapterManager_->mRingerMode != RINGER_MODE_NORMAL) {
-            if (!streamType.compare("ring")) {
+            if (streamForVolumeMap == STREAM_RING) {
                 return AudioAdapterManager::MIN_VOLUME;
             }
         }
-        AudioStreamType streamID = audioAdapterManager_->GetStreamIDByType(streamType);
-        return audioAdapterManager_->mVolumeMap[streamID];
+
+        return audioAdapterManager_->mVolumeMap[streamForVolumeMap];
     }
 
     void OnSessionRemoved(const uint32_t sessionID)
