@@ -38,6 +38,7 @@ void AudioRingerModeUpdateListenerProxy::OnRingerModeUpdated(const AudioRingerMo
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioRingerModeListenerCallback: WriteInterfaceToken failed");
+        return;
     }
     data.WriteInt32(static_cast<int32_t>(ringerMode));
     int error = Remote()->SendRequest(ON_RINGERMODE_UPDATE, data, reply, option);

@@ -102,6 +102,13 @@ public:
      */
     virtual int32_t ReleaseAudioRoute() = 0;
 
+    /**
+     * Retrieve cookie information from the service
+     *
+     * @return Returns cookie information, null if failed.
+     */
+    virtual const char *RetrieveCookie(int32_t &size) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -111,8 +118,9 @@ public:
         SET_MICROPHONE_MUTE = 5,
         IS_MICROPHONE_MUTE = 6,
         SET_AUDIO_SCENE = 7,
-        UPDATE_ROUTE_REQ,
-        RELEASE_ROUTE_REQ
+        UPDATE_ROUTE_REQ = 8,
+        RELEASE_ROUTE_REQ = 9,
+        RETRIEVE_COOKIE = 10,
     };
 
 public:

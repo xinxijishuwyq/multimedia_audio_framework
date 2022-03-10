@@ -21,6 +21,9 @@
 #include "system_ability_definition.h"
 #include "audio_server.h"
 
+#include <fstream>
+#include <sstream>
+
 #define PA
 #ifdef PA
 extern "C" {
@@ -33,6 +36,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 std::map<std::string, std::string> AudioServer::audioParameters;
+const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -98,6 +102,27 @@ const std::string AudioServer::GetAudioParameter(const std::string key)
         const std::string value = "";
         return value;
     }
+}
+
+const char *AudioServer::RetrieveCookie(int32_t &size)
+{
+    char *cookieInfo = nullptr;
+    size = 0;
+    std::ifstream cookieFile(DEFAULT_COOKIE_PATH, std::ifstream::binary);
+    if (cookieFile) {
+        cookieFile.seekg (0, cookieFile.end);
+        size = cookieFile.tellg();
+        cookieFile.seekg (0, cookieFile.beg);
+
+        if ((size > 0) && (size < PATH_MAX)) {
+            cookieInfo = (char *)malloc(size * sizeof(char));
+            MEDIA_DEBUG_LOG("Reading: %{public}d characters...", size);
+            cookieFile.read(cookieInfo, size);
+        }
+        cookieFile.close();
+    }
+
+    return cookieInfo;
 }
 
 int32_t AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)

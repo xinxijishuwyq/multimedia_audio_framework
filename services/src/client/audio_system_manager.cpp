@@ -155,6 +155,11 @@ void AudioSystemManager::SetAudioParameter(const std::string key, const std::str
     g_sProxy->SetAudioParameter(key, value);
 }
 
+const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
+{
+    return g_sProxy->RetrieveCookie(size);
+}
+
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     /* Validate and return INVALID_PARAMS error */
