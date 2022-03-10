@@ -93,14 +93,7 @@ public:
      *
      * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateAudioRoute() = 0;
-
-    /**
-     * Releases the audio route after device is disconnected
-     *
-     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
-     */
-    virtual int32_t ReleaseAudioRoute() = 0;
+    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
 
     /**
      * Retrieve cookie information from the service
@@ -119,8 +112,7 @@ public:
         IS_MICROPHONE_MUTE = 6,
         SET_AUDIO_SCENE = 7,
         UPDATE_ROUTE_REQ = 8,
-        RELEASE_ROUTE_REQ = 9,
-        RETRIEVE_COOKIE = 10,
+        RETRIEVE_COOKIE = 9,
     };
 
 public:

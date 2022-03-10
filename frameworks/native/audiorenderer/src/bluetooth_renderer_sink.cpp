@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "bluetooth_renderer_sink.h"
+
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
@@ -20,9 +22,9 @@
 
 #include "audio_errors.h"
 #include "media_log.h"
-#include "audio_renderer_sink.h"
 
 using namespace std;
+using namespace OHOS::HDI::Audio_Bluetooth;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,36 +40,36 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 }
 
-#ifdef DUMPFILE
-const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
-#endif // DUMPFILE
+#ifdef BT_DUMPFILE
+const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_bt.pcm";
+#endif // BT_DUMPFILE
 
-AudioRendererSink::AudioRendererSink()
+BluetoothRendererSink::BluetoothRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr),
+      handle_(nullptr)
 {
     attr_ = {};
-#ifdef DUMPFILE
+#ifdef BT_DUMPFILE
     pfd = nullptr;
-#endif // DUMPFILE
+#endif // BT_DUMPFILE
 }
 
-AudioRendererSink::~AudioRendererSink()
+BluetoothRendererSink::~BluetoothRendererSink()
 {
     DeInit();
 }
 
-AudioRendererSink *AudioRendererSink::GetInstance()
+BluetoothRendererSink *BluetoothRendererSink::GetInstance()
 {
-    static AudioRendererSink audioRenderer_;
+    static BluetoothRendererSink audioRenderer_;
 
     return &audioRenderer_;
 }
 
-void AudioRendererSink::DeInit()
+void BluetoothRendererSink::DeInit()
 {
     started_ = false;
     rendererInited_ = false;
@@ -77,35 +79,29 @@ void AudioRendererSink::DeInit()
     audioRender_ = nullptr;
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
-        if (routeHandle_ != -1) {
-            audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
-        }
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-#ifdef DUMPFILE
+
+    dlclose(handle_);
+
+#ifdef BT_DUMPFILE
     if (pfd) {
         fclose(pfd);
         pfd = nullptr;
     }
-#endif // DUMPFILE
+#endif // BT_DUMPFILE
 }
 
 int32_t InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
-#ifdef DEVICE_BALTIMORE
-    attrs.format = AUDIO_FORMAT_PCM_32_BIT;
-    attrs.frameSize = PCM_32_BIT * attrs.channelCount / PCM_8_BIT;
-#else
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
-#endif
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
-    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -120,6 +116,7 @@ int32_t InitAttrs(struct AudioSampleAttributes &attrs)
 static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapterNameCase,
     enum AudioPortDirection portFlag, struct AudioPort &renderPort, int32_t size)
 {
+    MEDIA_INFO_LOG("BluetoothRendererSink: adapterNameCase: %{public}s", adapterNameCase.c_str());
     if (descs == nullptr) {
         return ERROR;
     }
@@ -129,11 +126,13 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
         if (desc == nullptr) {
             continue;
         }
+        MEDIA_INFO_LOG("BluetoothRendererSink: adapter name for %{public}d: %{public}s", index, desc->adapterName);
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
             for (uint32_t port = 0; port < desc->portNum; port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     renderPort = desc->ports[port];
+                    MEDIA_INFO_LOG("BluetoothRendererSink: index found %{public}d", index);
                     return index;
                 }
             }
@@ -144,19 +143,40 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
     return ERR_INVALID_INDEX;
 }
 
-int32_t AudioRendererSink::InitAudioManager()
+int32_t BluetoothRendererSink::InitAudioManager()
 {
-    MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
+    MEDIA_INFO_LOG("BluetoothRendererSink: Initialize audio proxy manager");
+#ifdef DEVICE_RK
+    char resolvedPath[100] = "/vendor/lib/libaudio_bluetooth_hdi_proxy_server.z.so";
+#else
+    char resolvedPath[100] = "/system/lib/libaudio_bluetooth_hdi_proxy_server.z.so";
+#endif
+    MEDIA_DEBUG_LOG("BluetoothRendererSink: hdi service lib: %{public}s", resolvedPath);
+    struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
-    audioManager_ = GetAudioProxyManagerFuncs();
+    handle_ = dlopen(resolvedPath, 1);
+    if (handle_ == nullptr) {
+        MEDIA_ERR_LOG("Open so Fail");
+        return ERR_INVALID_HANDLE;
+    }
+    MEDIA_INFO_LOG("dlopen successful");
+
+    getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
+    if (getAudioManager == nullptr) {
+        return ERR_INVALID_HANDLE;
+    }
+    MEDIA_INFO_LOG("getaudiomanager done");
+
+    audioManager_ = getAudioManager();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
+    MEDIA_INFO_LOG("audio manager created");
 
     return 0;
 }
 
-uint32_t PcmFormatToBits(enum AudioFormat format)
+uint32_t PcmFormatToBits(AudioFormat format)
 {
     switch (format) {
         case AUDIO_FORMAT_PCM_8_BIT:
@@ -172,8 +192,9 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     };
 }
 
-int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
+int32_t BluetoothRendererSink::CreateRender(struct AudioPort &renderPort)
 {
+    MEDIA_INFO_LOG("Create render in");
     int32_t ret;
     struct AudioSampleAttributes param;
     InitAttrs(param);
@@ -182,7 +203,7 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     param.format = attr_.format;
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    MEDIA_ERR_LOG("AudioRendererSink Create render format: %{public}d", param.format);
+    MEDIA_ERR_LOG("BluetoothRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -193,18 +214,17 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
+    MEDIA_INFO_LOG("create render done");
 
     return 0;
 }
 
-int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
+int32_t BluetoothRendererSink::Init(AudioSinkAttr &attr)
 {
+    MEDIA_INFO_LOG("BluetoothRendererSink::Init");
     attr_ = attr;
-#ifdef DEVICE_BALTIMORE
-    string adapterNameCase = "internal";  // Set sound card information
-#else
-    string adapterNameCase = "usb";  // Set sound card information
-#endif
+
+    string adapterNameCase = "bt_a2dp";  // Set sound card information
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     if (InitAudioManager() != 0) {
@@ -250,50 +270,46 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-#ifdef DEVICE_BALTIMORE
-    ret = OpenOutput(DEVICE_TYPE_SPEAKER);
-    if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
-    }
-#endif
-
     rendererInited_ = true;
 
-#ifdef DUMPFILE
+#ifdef BT_DUMPFILE
     pfd = fopen(g_audioOutTestFilePath, "wb+");
     if (pfd == nullptr) {
         MEDIA_ERR_LOG("Error opening pcm test file!");
     }
-#endif // DUMPFILE
+#endif // BT_DUMPFILE
 
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t BluetoothRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    MEDIA_INFO_LOG("Bluetooth Render: RenderFrame in");
     int32_t ret;
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("Audio Render Handle is nullptr!");
+        MEDIA_ERR_LOG("Bluetooth Render Handle is nullptr!");
         return ERR_INVALID_HANDLE;
     }
 
-#ifdef DUMPFILE
+#ifdef BT_DUMPFILE
     size_t writeResult = fwrite((void*)&data, 1, len, pfd);
     if (writeResult != len) {
         MEDIA_ERR_LOG("Failed to write the file.");
     }
-#endif // DUMPFILE
+#endif // BT_DUMPFILE
 
     ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+    MEDIA_INFO_LOG("Bluetooth Render: after RenderFrame");
     if (ret != 0) {
-        MEDIA_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
+        MEDIA_ERR_LOG("A2dp RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
+    MEDIA_INFO_LOG("Bluetooth Render: RenderFrame SUCCESS");
 
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Start(void)
+int32_t BluetoothRendererSink::Start(void)
 {
     int32_t ret;
 
@@ -303,7 +319,7 @@ int32_t AudioRendererSink::Start(void)
             started_ = true;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Start failed!");
+            MEDIA_ERR_LOG("BluetoothRendererSink::Start failed!");
             return ERR_NOT_STARTED;
         }
     }
@@ -311,13 +327,13 @@ int32_t AudioRendererSink::Start(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetVolume(float left, float right)
+int32_t BluetoothRendererSink::SetVolume(float left, float right)
 {
     int32_t ret;
     float volume;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::SetVolume failed audioRender_ null");
+        MEDIA_ERR_LOG("BluetoothRendererSink::SetVolume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -333,28 +349,28 @@ int32_t AudioRendererSink::SetVolume(float left, float right)
 
     ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
     if (ret) {
-        MEDIA_ERR_LOG("AudioRendererSink::Set volume failed!");
+        MEDIA_ERR_LOG("BluetoothRendererSink::Set volume failed!");
     }
 
     return ret;
 }
 
-int32_t AudioRendererSink::GetVolume(float &left, float &right)
+int32_t BluetoothRendererSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::GetLatency(uint32_t *latency)
+int32_t BluetoothRendererSink::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink: GetLatency failed audio render null");
+        MEDIA_ERR_LOG("BluetoothRendererSink: GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!latency) {
-        MEDIA_ERR_LOG("AudioRendererSink: GetLatency failed latency null");
+        MEDIA_ERR_LOG("BluetoothRendererSink: GetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
@@ -367,146 +383,25 @@ int32_t AudioRendererSink::GetLatency(uint32_t *latency)
     }
 }
 
-#ifdef DEVICE_BALTIMORE
-static AudioCategory GetAudioCategory(AudioScene audioScene)
+int32_t BluetoothRendererSink::Stop(void)
 {
-    AudioCategory audioCategory;
-    switch (audioScene) {
-        case AUDIO_SCENE_DEFAULT:
-            audioCategory = AUDIO_IN_MEDIA;
-            break;
-        case AUDIO_SCENE_RINGING:
-            audioCategory = AUDIO_IN_RINGTONE;
-            break;
-        case AUDIO_SCENE_PHONE_CALL:
-            audioCategory = AUDIO_IN_CALL;
-            break;
-        case AUDIO_SCENE_PHONE_CHAT:
-            audioCategory = AUDIO_IN_COMMUNICATION;
-            break;
-        default:
-            audioCategory = AUDIO_IN_MEDIA;
-            break;
-    }
-    MEDIA_DEBUG_LOG("AudioRendererSink: Audio category returned is: %{public}d", audioCategory);
-
-    return audioCategory;
-}
-#endif
-
-static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
-{
-    int32_t ret = SUCCESS;
-
-    switch (outputDevice) {
-        case DEVICE_TYPE_SPEAKER:
-            sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = "pin_out_speaker";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-            sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = "pin_out_headset";
-            break;
-        case DEVICE_TYPE_USB_HEADSET:
-            sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = "pin_out_usb_ext";
-            break;
-        default:
-            ret = ERR_NOT_SUPPORTED;
-            break;
-    }
-
-    return ret;
-}
-
-int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
-{
-    AudioRouteNode source = {};
-    AudioRouteNode sink = {};
-
-    int32_t ret = SetOutputPortPin(outputDevice, sink);
-    if (ret != SUCCESS) {
-        MEDIA_ERR_LOG("AudioRendererSink: OpenOutput FAILED: %{public}d", ret);
-        return ret;
-    }
-
-    source.portId = 0;
-    source.role = AUDIO_PORT_SOURCE_ROLE;
-    source.type = AUDIO_PORT_MIX_TYPE;
-    source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = INTERNAL_OUTPUT_STREAM_ID;
-
-    sink.portId = audioPort.portId;
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
-    sink.ext.device.moduleId = 0;
-
-    AudioRoute route = {
-        .sourcesNum = 1,
-        .sources = &source,
-        .sinksNum = 1,
-        .sinks = &sink,
-    };
-
-    ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
-    MEDIA_DEBUG_LOG("AudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
-    if (ret != 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");
-        return ERR_OPERATION_FAILED;
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioRendererSink::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
-{
-    MEDIA_INFO_LOG("AudioRendererSink::SetAudioScene in");
-    if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
-        return ERR_INVALID_HANDLE;
-    }
-
-#ifdef DEVICE_BALTIMORE
-    int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
-    if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
-    }
-
-    struct AudioSceneDescriptor scene;
-    scene.scene.id = GetAudioCategory(audioScene);
-    scene.desc.pins = PIN_OUT_SPEAKER;
-    if (audioRender_->scene.SelectScene == NULL) {
-        MEDIA_ERR_LOG("AudioRendererSink: Select scene NULL");
-        return ERR_OPERATION_FAILED;
-    }
-
-    ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
-    if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
-        return ERR_OPERATION_FAILED;
-    }
-#endif
-
-    MEDIA_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
-    return SUCCESS;
-}
-
-int32_t AudioRendererSink::Stop(void)
-{
+    MEDIA_INFO_LOG("BluetoothRendererSink::Stop in");
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Stop failed audioRender_ null");
+        MEDIA_ERR_LOG("BluetoothRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (started_) {
+        MEDIA_INFO_LOG("BluetoothRendererSink::Stop control before");
         ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        MEDIA_INFO_LOG("BluetoothRendererSink::Stop control after");
         if (!ret) {
             started_ = false;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Stop failed!");
+            MEDIA_ERR_LOG("BluetoothRendererSink::Stop failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -514,17 +409,17 @@ int32_t AudioRendererSink::Stop(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Pause(void)
+int32_t BluetoothRendererSink::Pause(void)
 {
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Pause failed audioRender_ null");
+        MEDIA_ERR_LOG("BluetoothRendererSink::Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        MEDIA_ERR_LOG("AudioRendererSink::Pause invalid state!");
+        MEDIA_ERR_LOG("BluetoothRendererSink::Pause invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -534,7 +429,7 @@ int32_t AudioRendererSink::Pause(void)
             paused_ = true;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Pause failed!");
+            MEDIA_ERR_LOG("BluetoothRendererSink::Pause failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -542,17 +437,17 @@ int32_t AudioRendererSink::Pause(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Resume(void)
+int32_t BluetoothRendererSink::Resume(void)
 {
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Resume failed audioRender_ null");
+        MEDIA_ERR_LOG("BluetoothRendererSink::Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        MEDIA_ERR_LOG("AudioRendererSink::Resume invalid state!");
+        MEDIA_ERR_LOG("BluetoothRendererSink::Resume invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -562,7 +457,7 @@ int32_t AudioRendererSink::Resume(void)
             paused_ = false;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Resume failed!");
+            MEDIA_ERR_LOG("BluetoothRendererSink::Resume failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -570,7 +465,7 @@ int32_t AudioRendererSink::Resume(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Reset(void)
+int32_t BluetoothRendererSink::Reset(void)
 {
     int32_t ret;
 
@@ -579,7 +474,7 @@ int32_t AudioRendererSink::Reset(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Reset failed!");
+            MEDIA_ERR_LOG("BluetoothRendererSink::Reset failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -587,7 +482,7 @@ int32_t AudioRendererSink::Reset(void)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t AudioRendererSink::Flush(void)
+int32_t BluetoothRendererSink::Flush(void)
 {
     int32_t ret;
 
@@ -596,7 +491,7 @@ int32_t AudioRendererSink::Flush(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Flush failed!");
+            MEDIA_ERR_LOG("BluetoothRendererSink::Flush failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -612,90 +507,90 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
+BluetoothRendererSink *g_bluetoothRendrSinkInstance = BluetoothRendererSink::GetInstance();
 
-int32_t AudioRendererSinkInit(AudioSinkAttr *attr)
+int32_t BluetoothRendererSinkInit(AudioSinkAttr *attr)
 {
     int32_t ret;
 
-    if (g_audioRendrSinkInstance->rendererInited_)
+    if (g_bluetoothRendrSinkInstance->rendererInited_)
         return SUCCESS;
 
-    ret = g_audioRendrSinkInstance->Init(*attr);
+    ret = g_bluetoothRendrSinkInstance->Init(*attr);
     return ret;
 }
 
-void AudioRendererSinkDeInit()
+void BluetoothRendererSinkDeInit()
 {
-    if (g_audioRendrSinkInstance->rendererInited_)
-        g_audioRendrSinkInstance->DeInit();
+    if (g_bluetoothRendrSinkInstance->rendererInited_)
+        g_bluetoothRendrSinkInstance->DeInit();
 }
 
-int32_t AudioRendererSinkStop()
+int32_t BluetoothRendererSinkStop()
 {
     int32_t ret;
 
-    if (!g_audioRendrSinkInstance->rendererInited_)
+    if (!g_bluetoothRendrSinkInstance->rendererInited_)
         return SUCCESS;
 
-    ret = g_audioRendrSinkInstance->Stop();
+    ret = g_bluetoothRendrSinkInstance->Stop();
     return ret;
 }
 
-int32_t AudioRendererSinkStart()
+int32_t BluetoothRendererSinkStart()
 {
     int32_t ret;
 
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->Start();
+    ret = g_bluetoothRendrSinkInstance->Start();
     return ret;
 }
 
-int32_t AudioRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t BluetoothRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int32_t ret;
 
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->RenderFrame(data, len, writeLen);
+    ret = g_bluetoothRendrSinkInstance->RenderFrame(data, len, writeLen);
     return ret;
 }
 
-int32_t AudioRendererSinkSetVolume(float left, float right)
+int32_t BluetoothRendererSinkSetVolume(float left, float right)
 {
     int32_t ret;
 
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->SetVolume(left, right);
+    ret = g_bluetoothRendrSinkInstance->SetVolume(left, right);
     return ret;
 }
 
-int32_t AudioRendererSinkGetLatency(uint32_t *latency)
+int32_t BluetoothRendererSinkGetLatency(uint32_t *latency)
 {
     int32_t ret;
 
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
         MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
     if (!latency) {
-        MEDIA_ERR_LOG("AudioRendererSinkGetLatency failed latency null");
+        MEDIA_ERR_LOG("BluetoothRendererSinkGetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
-    ret = g_audioRendrSinkInstance->GetLatency(latency);
+    ret = g_bluetoothRendrSinkInstance->GetLatency(latency);
     return ret;
 }
 #ifdef __cplusplus

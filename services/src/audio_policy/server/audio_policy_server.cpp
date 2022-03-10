@@ -844,10 +844,10 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     }
 
     // Get Input & Output Devices
-    
+
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
-    
+
     for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
         AudioDeviceDescriptor audioDeviceDescriptor = **it;
         DevicesInfo deviceInfo;
@@ -858,7 +858,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
 
     deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     audioDeviceDescriptors = GetDevices(deviceFlag);
-    
+
     for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
         AudioDeviceDescriptor audioDeviceDescriptor = **it;
         DevicesInfo deviceInfo;

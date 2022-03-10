@@ -19,6 +19,7 @@
 #include <servmgr_hdi.h>
 
 #include "audio_module_info.h"
+#include "audio_events.h"
 #include "idevice_status_observer.h"
 
 namespace OHOS {
@@ -33,6 +34,7 @@ public:
 
     IDeviceStatusObserver &deviceObserver_;
     void *privData_;
+
 private:
     struct HDIServiceManager *hdiServiceManager_;
     struct ServiceStatusListener *listener_;
