@@ -165,14 +165,14 @@ static void ThreadFuncUseTiming(void *userdata)
         pa_usec_t now = 0;
         int ret;
 
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state))
+        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state))
             now = pa_rtclock_now();
 
         if (PA_UNLIKELY(u->sink->thread_info.rewind_requested))
             pa_sink_process_rewind(u->sink, 0);
 
         // Render some data and drop it immediately
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
             if (u->timestamp <= now)
                 ProcessRenderUseTiming(u, now);
 
