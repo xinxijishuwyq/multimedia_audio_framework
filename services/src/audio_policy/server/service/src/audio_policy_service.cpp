@@ -68,6 +68,24 @@ bool AudioPolicyService::ConnectServiceAdapter()
         return false;
     }
 
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgr == nullptr) {
+        MEDIA_ERR_LOG("[Policy Service] Get samgr failed");
+        return false;
+    }
+
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    if (object == nullptr) {
+        MEDIA_DEBUG_LOG("[Policy Service] audio service remote object is NULL.");
+        return false;
+    }
+
+    g_sProxy = iface_cast<IStandardAudioService>(object);
+    if (g_sProxy == nullptr) {
+        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is NULL.");
+        return false;
+    }
+
     return true;
 }
 
@@ -256,6 +274,10 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
 
 int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
+    if (g_sProxy == nullptr) {
+        MEDIA_DEBUG_LOG("AudioPolicyService::SetAudioScene g_sProxy is nullptr");
+        return ERR_OPERATION_FAILED;
+    }
     list<InternalDeviceType> activeDeviceList;
 
     for (const sptr<AudioDeviceDescriptor> &devDesc : mActiveDevices) {
