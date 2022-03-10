@@ -111,6 +111,9 @@ ohos_source_set("pulsecore_sources") {
   ]
 
   configs = [ ":pulsecore_config" ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_standard"
 }
 
 ohos_shared_library("pulsecore") {

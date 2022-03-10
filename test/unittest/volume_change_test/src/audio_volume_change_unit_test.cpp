@@ -102,7 +102,7 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_001, TestSize.Level1)
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventNapiCallback(appCallback);
+    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
     result = g_audioManagerInstance->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(callBackSetResult, SUCCESS);
@@ -137,7 +137,7 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventNapiCallback(appCallback);
+    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
     result = g_audioManagerInstance->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(callBackSetResult, SUCCESS);
@@ -172,7 +172,7 @@ HWTEST(AudioVolumeChangeUnitTest,  volumeChange_test_003, TestSize.Level1)
     g_callbackName = testCaseName;
     bool isUpdateUi = false;
     auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventNapiCallback(appCallback);
+    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
     result = g_audioManagerInstance->SetVolume(volumeType, volume);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(callBackSetResult, SUCCESS);

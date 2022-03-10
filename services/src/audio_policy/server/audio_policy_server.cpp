@@ -49,49 +49,6 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
         MEDIA_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
 
-    MMI::InputManager *im = MMI::InputManager::GetInstance();
-    std::vector<int32_t> preKeys;
-    std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
-    keyOption_down->SetPreKeys(preKeys);
-    keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
-    keyOption_down->SetFinalKeyDown(true);
-    keyOption_down->SetFinalKeyDownDuration(0);
-    im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
-        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
-        AudioStreamType streamInFocus = GetStreamInFocus();
-        if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
-            streamInFocus = AudioStreamType::STREAM_MUSIC;
-        }
-        float currentVolume = GetStreamVolume(streamInFocus);
-        if (ConvertVolumeToInt(currentVolume) <= MIN_VOLUME_LEVEL) {
-            if (audioVolumeChangeCallback != nullptr) {
-                audioVolumeChangeCallback->OnVolumeKeyEvent(streamInFocus, MIN_VOLUME_LEVEL, true);
-            }
-            return;
-        }
-        SetStreamVolume(streamInFocus, currentVolume-GetVolumeFactor(), true);
-    });
-    std::shared_ptr<OHOS::MMI::KeyOption> keyOption_up = std::make_shared<OHOS::MMI::KeyOption>();
-    keyOption_up->SetPreKeys(preKeys);
-    keyOption_up->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
-    keyOption_up->SetFinalKeyDown(true);
-    keyOption_up->SetFinalKeyDownDuration(0);
-    im->SubscribeKeyEvent(keyOption_up, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
-        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
-        AudioStreamType streamInFocus = GetStreamInFocus();
-        if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
-            streamInFocus = AudioStreamType::STREAM_MUSIC;
-        }
-        float currentVolume = GetStreamVolume(streamInFocus);
-        if (ConvertVolumeToInt(currentVolume) >= MAX_VOLUME_LEVEL) {
-            if (audioVolumeChangeCallback != nullptr) {
-                audioVolumeChangeCallback->OnVolumeKeyEvent(streamInFocus, MAX_VOLUME_LEVEL, true);
-            }
-            return;
-        }
-        SetStreamVolume(streamInFocus, currentVolume+GetVolumeFactor(), true);
-    });
-
     interruptPriorityMap_[STREAM_VOICE_CALL] = 3;
     interruptPriorityMap_[STREAM_RING] = 2;
     interruptPriorityMap_[STREAM_MUSIC] = 1;
@@ -108,6 +65,9 @@ void AudioPolicyServer::OnStart()
     if (res) {
         MEDIA_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
     }
+    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
+    AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
 
     mPolicyService.Init();
     RegisterAudioServerDeathRecipient();
@@ -118,6 +78,33 @@ void AudioPolicyServer::OnStop()
 {
     mPolicyService.Deinit();
     return;
+}
+
+void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    switch (systemAbilityId) {
+        case MULTIMODAL_INPUT_SERVICE_ID:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility SubscribeKeyEvents");
+            SubscribeKeyEvents();
+            break;
+        case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility InitKVStore");
+            InitKVStore();
+            break;
+        case AUDIO_DISTRIBUTED_SERVICE_ID:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
+            ConnectServiceAdapter();
+            break;
+        default:
+            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            break;
+    }
+}
+
+void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    MEDIA_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
 }
 
 void AudioPolicyServer::RegisterAudioServerDeathRecipient()
@@ -143,6 +130,79 @@ void AudioPolicyServer::AudioServerDied(pid_t pid)
     kill(pid, SIGKILL);
 }
 
+void AudioPolicyServer::SubscribeKeyEvents()
+{
+    MMI::InputManager *im = MMI::InputManager::GetInstance();
+    std::vector<int32_t> preKeys;
+    std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
+    keyOption_down->SetPreKeys(preKeys);
+    keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    keyOption_down->SetFinalKeyDown(true);
+    keyOption_down->SetFinalKeyDownDuration(0);
+    im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+        AudioStreamType streamInFocus = GetStreamInFocus();
+        if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
+            streamInFocus = AudioStreamType::STREAM_MUSIC;
+        }
+        float currentVolume = GetStreamVolume(streamInFocus);
+        if (ConvertVolumeToInt(currentVolume) <= MIN_VOLUME_LEVEL) {
+            for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+                std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+                if (volumeChangeCb == nullptr) {
+                    MEDIA_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                    continue;
+                }
+
+                MEDIA_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MIN_VOLUME_LEVEL, true);
+            }
+            return;
+        }
+        SetStreamVolume(streamInFocus, currentVolume-GetVolumeFactor(), true);
+    });
+    std::shared_ptr<OHOS::MMI::KeyOption> keyOption_up = std::make_shared<OHOS::MMI::KeyOption>();
+    keyOption_up->SetPreKeys(preKeys);
+    keyOption_up->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    keyOption_up->SetFinalKeyDown(true);
+    keyOption_up->SetFinalKeyDownDuration(0);
+    im->SubscribeKeyEvent(keyOption_up, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+        AudioStreamType streamInFocus = GetStreamInFocus();
+        if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
+            streamInFocus = AudioStreamType::STREAM_MUSIC;
+        }
+        float currentVolume = GetStreamVolume(streamInFocus);
+        if (ConvertVolumeToInt(currentVolume) >= MAX_VOLUME_LEVEL) {
+            for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+                std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+                if (volumeChangeCb == nullptr) {
+                    MEDIA_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                    continue;
+                }
+
+                MEDIA_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MAX_VOLUME_LEVEL, true);
+            }
+            return;
+        }
+        SetStreamVolume(streamInFocus, currentVolume+GetVolumeFactor(), true);
+    });
+}
+
+void AudioPolicyServer::InitKVStore()
+{
+    mPolicyService.InitKVStore();
+}
+
+void AudioPolicyServer::ConnectServiceAdapter()
+{
+    if (!mPolicyService.ConnectServiceAdapter()) {
+        MEDIA_ERR_LOG("AudioPolicyServer::ConnectServiceAdapter Error in connecting to audio service adapter");
+        return;
+    }
+}
+
 int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume)
 {
     return SetStreamVolume(streamType, volume, false);
@@ -161,9 +221,15 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
 int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi)
 {
     int ret = mPolicyService.SetStreamVolume(streamType, volume);
-    if (audioVolumeChangeCallback != nullptr) {
-        audioVolumeChangeCallback->OnVolumeKeyEvent(streamType,
-            ConvertVolumeToInt(GetStreamVolume(streamType)), isUpdateUi);
+    for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+        std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+        if (volumeChangeCb == nullptr) {
+            MEDIA_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+            continue;
+        }
+
+        MEDIA_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+        volumeChangeCb->OnVolumeKeyEvent(streamType, ConvertVolumeToInt(GetStreamVolume(streamType)), isUpdateUi);
     }
 
     return ret;
@@ -708,13 +774,37 @@ int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     MEDIA_DEBUG_LOG("AudioPolicyServer::SetVolumeKeyEventCallback");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+                             "AudioPolicyServer::SetVolumeKeyEventCallback listener object is nullptr");
+
     sptr<IAudioVolumeKeyEventCallback> listener = iface_cast<IAudioVolumeKeyEventCallback>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+                             "AudioPolicyServer::SetVolumeKeyEventCallback listener obj cast failed");
+
     std::shared_ptr<VolumeKeyEventCallback> callback = std::make_shared<VolumeKeyEventCallbackListner>(listener);
-    audioVolumeChangeCallback = callback;
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+                             "AudioPolicyServer::SetVolumeKeyEventCallback failed to create cb obj");
+
+    volumeChangeCbsMap_.insert({ clientPid, callback });
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+{
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+
+    if (volumeChangeCbsMap_.find(clientPid) != volumeChangeCbsMap_.end()) {
+        volumeChangeCbsMap_.erase(clientPid);
+        MEDIA_ERR_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback for clientPid %{public}d done", clientPid);
+    } else {
+        MEDIA_DEBUG_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback clientPid %{public}d not present/unset already",
+                        clientPid);
+    }
+
     return SUCCESS;
 }
 
@@ -754,10 +844,10 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     }
 
     // Get Input & Output Devices
-    
+
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
-    
+
     for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
         AudioDeviceDescriptor audioDeviceDescriptor = **it;
         DevicesInfo deviceInfo;
@@ -768,7 +858,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
 
     deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
     audioDeviceDescriptors = GetDevices(deviceFlag);
-    
+
     for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
         AudioDeviceDescriptor audioDeviceDescriptor = **it;
         DevicesInfo deviceInfo;

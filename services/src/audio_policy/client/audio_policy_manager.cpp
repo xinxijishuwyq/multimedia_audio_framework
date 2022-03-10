@@ -240,7 +240,8 @@ int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt
     return g_sProxy->GetSessionInfoInFocus(audioInterrupt);
 }
 
-int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
+int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
+                                                      const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     if (callback == nullptr) {
         MEDIA_ERR_LOG("AudioSystemManager volume back is nullptr");
@@ -261,7 +262,12 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const std::shared_ptr<Volu
         MEDIA_ERR_LOG("AudioPolicyManager: volumeKeyEventListenerStub_->AsObject is nullptr..");
         return ERROR;
     }
-    return g_sProxy->SetVolumeKeyEventCallback(object);
+    return g_sProxy->SetVolumeKeyEventCallback(clientPid, object);
+}
+
+int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+{
+    return g_sProxy->UnsetVolumeKeyEventCallback(clientPid);
 }
 } // namespace AudioStandard
 } // namespace OHOS

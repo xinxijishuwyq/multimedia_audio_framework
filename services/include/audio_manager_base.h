@@ -93,14 +93,14 @@ public:
      *
      * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t UpdateAudioRoute() = 0;
+    virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
 
     /**
-     * Releases the audio route after device is disconnected
+     * Retrieve cookie information from the service
      *
-     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     * @return Returns cookie information, null if failed.
      */
-    virtual int32_t ReleaseAudioRoute() = 0;
+    virtual const char *RetrieveCookie(int32_t &size) = 0;
 
     enum {
         GET_MAX_VOLUME = 0,
@@ -111,8 +111,8 @@ public:
         SET_MICROPHONE_MUTE = 5,
         IS_MICROPHONE_MUTE = 6,
         SET_AUDIO_SCENE = 7,
-        UPDATE_ROUTE_REQ,
-        RELEASE_ROUTE_REQ
+        UPDATE_ROUTE_REQ = 8,
+        RETRIEVE_COOKIE = 9,
     };
 
 public:

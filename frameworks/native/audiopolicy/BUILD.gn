@@ -16,7 +16,7 @@ import("//build/ohos.gni")
 config("audio_policy_public_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/distributedschedule/safwk/services/safwk/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",

@@ -30,6 +30,10 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnRemoteRequest");
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioVolumeKeyEventCallbackStub: ReadInterfaceToken failed");
+        return -1;
+    }
     switch (code) {
         case ON_VOLUME_KEY_EVENT: {
             AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());

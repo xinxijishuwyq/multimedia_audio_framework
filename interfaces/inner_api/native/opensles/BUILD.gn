@@ -25,7 +25,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/multimedia/audio_standard/services/test",
     "//utils/native/base/include",
     "$pulseaudio_dir/src",
@@ -46,7 +46,7 @@ config("audio_opensles_config") {
 }
 
 ohos_executable("audio_opensles_test") {
-  install_enable = true
+  install_enable = false
 
   sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_test.cpp" ]
 

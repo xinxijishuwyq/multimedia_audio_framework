@@ -14,12 +14,19 @@
  */
 
 #include "audio_service_client.h"
+
+#include <fstream>
+
+#include "bundle_mgr_interface.h"
+#include "iservice_registry.h"
 #include "media_log.h"
 #include "securec.h"
-
+#include "system_ability_definition.h"
 #include "unistd.h"
 
 using namespace std;
+using namespace OHOS::AppExecFwk;
+using namespace OHOS::AAFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +39,9 @@ const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
 const uint32_t T_LENGTH_FACTOR = 4;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
+
+const string APP_DATA_BASE_PATH = "/data/accounts/account_0/appdata/";
+const string APP_COOKIE_FILE_PATH = "/cache/cookie";
 
 #define CHECK_AND_RETURN_IFINVALID(expr) \
 do {                                     \
@@ -189,7 +199,7 @@ void AudioServiceClient::PAStreamFlushSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
-void AudioServiceClient::PAStreamRequestCb(pa_stream *stream, size_t length, void *userdata)
+void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     pa_threaded_mainloop_signal(mainLoop, 0);
@@ -437,6 +447,11 @@ void AudioServiceClient::ResetPAAudioClient()
         }
     }
 
+    if (appCookiePath.compare("")) {
+        remove(appCookiePath.c_str());
+        appCookiePath = "";
+    }
+
     isMainLoopStarted  = false;
     isContextConnected = false;
     isStreamConnected  = false;
@@ -474,26 +489,35 @@ AudioServiceClient::~AudioServiceClient()
     ResetPAAudioClient();
 }
 
-void AudioServiceClient::SetEnv()
+static std::string GetClientBundle(int uid)
 {
-    int ret = 0;
-    const char *env_home_pa = getenv("HOME");
-    if (!env_home_pa) {
-        ret = setenv("HOME", PA_HOME_DIR, 1);
-        MEDIA_INFO_LOG("set env HOME: %{public}d", ret);
+    std::string bundleName = "";
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgr == nullptr) {
+        MEDIA_ERR_LOG("Get ability manager failed");
+        return bundleName;
     }
 
-    const char *env_runtime_pa = getenv("PULSE_RUNTIME_PATH");
-    if (!env_runtime_pa) {
-        ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
-        MEDIA_INFO_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (object == nullptr) {
+        MEDIA_DEBUG_LOG("object is NULL.");
+        return bundleName;
     }
 
-    const char *env_state_pa = getenv("PULSE_STATE_PATH");
-    if (!env_state_pa) {
-        ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
-        MEDIA_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
+    sptr<AppExecFwk::IBundleMgr> bms = iface_cast<AppExecFwk::IBundleMgr>(object);
+    if (bms == nullptr) {
+        MEDIA_DEBUG_LOG("bundle manager service is NULL.");
+        return bundleName;
     }
+
+    auto result = bms->GetBundleNameForUid(uid, bundleName);
+    if (!result) {
+        MEDIA_ERR_LOG("GetBundleNameForUid fail");
+        return "";
+    }
+    MEDIA_INFO_LOG("bundle name is %{public}s ", bundleName.c_str());
+
+    return bundleName;
 }
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
@@ -507,7 +531,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     mTotalBytesRead = 0;
     mFramePeriodRead = 0;
 
-    SetEnv();
+    mAudioSystemMgr = AudioSystemManager::GetInstance();
 
     mainLoop = pa_threaded_mainloop_new();
     if (mainLoop == NULL)
@@ -527,14 +551,33 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
 
+    string bundleName = GetClientBundle(getuid());
+    if (bundleName.compare("")) {
+        int32_t size = 0;
+        const char *cookieData = mAudioSystemMgr->RetrieveCookie(size);
+        if (size <= 0) {
+            MEDIA_ERR_LOG("Error retrieving cookie");
+            return AUDIO_CLIENT_INIT_ERR;
+        }
+
+        appCookiePath = APP_DATA_BASE_PATH;
+        appCookiePath.append(bundleName);
+        appCookiePath.append(APP_COOKIE_FILE_PATH);
+        MEDIA_DEBUG_LOG("cookie file path: %{public}s", appCookiePath.c_str());
+
+        ofstream cookieCache(appCookiePath.c_str(), std::ofstream::binary);
+        cookieCache.write(cookieData, size);
+        cookieCache.close();
+
+        pa_context_load_cookie_from_file(context, appCookiePath.c_str());
+    }
+
     if (pa_context_connect(context, NULL, PA_CONTEXT_NOFAIL, NULL) < 0) {
         error = pa_context_errno(context);
         MEDIA_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
-
-    mAudioSystemMgr = AudioSystemManager::GetInstance();
 
     isContextConnected = true;
     pa_threaded_mainloop_lock(mainLoop);
@@ -560,6 +603,11 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         }
 
         pa_threaded_mainloop_wait(mainLoop);
+    }
+
+    if (appCookiePath.compare("")) {
+        remove(appCookiePath.c_str());
+        appCookiePath = "";
     }
 
     pa_threaded_mainloop_unlock(mainLoop);
@@ -736,7 +784,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
     pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
-    pa_stream_set_read_callback(paStream, PAStreamRequestCb, mainLoop);
+    pa_stream_set_read_callback(paStream, PAStreamReadCb, mainLoop);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
 

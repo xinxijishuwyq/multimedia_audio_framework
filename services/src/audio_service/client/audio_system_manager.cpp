@@ -38,10 +38,15 @@ AudioSystemManager::AudioSystemManager()
 
 AudioSystemManager::~AudioSystemManager()
 {
+    MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
     if (cbClientId_ != -1) {
         UnsetRingerModeCallback(cbClientId_);
     }
-    MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
+
+    if (volumeChangeClientPid_ != -1) {
+        MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
+        (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
+    }
 }
 
 AudioSystemManager *AudioSystemManager::GetInstance()
@@ -150,6 +155,11 @@ void AudioSystemManager::SetAudioParameter(const std::string key, const std::str
     g_sProxy->SetAudioParameter(key, value);
 }
 
+const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
+{
+    return g_sProxy->RetrieveCookie(size);
+}
+
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     /* Validate and return INVALID_PARAMS error */
@@ -161,6 +171,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -180,6 +191,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -224,6 +236,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -244,6 +257,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
             break;
@@ -301,10 +315,30 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
 }
 
-int32_t AudioSystemManager::RegisterVolumeKeyEventNapiCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback)
+int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
+                                                           const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager RegisterVolumeKeyEventNapiCallback");
-    return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(callback);
+    MEDIA_DEBUG_LOG("AudioSystemManager RegisterVolumeKeyEventCallback");
+
+    if (callback == nullptr) {
+        MEDIA_ERR_LOG("AudioSystemManager::RegisterVolumeKeyEventCallbackcallback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+    volumeChangeClientPid_ = clientPid;
+
+    return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(clientPid, callback);
+}
+
+int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid)
+{
+    MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback");
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(clientPid);
+    if (!ret) {
+        MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
+        volumeChangeClientPid_ = -1;
+    }
+
+    return ret;
 }
 
 // Below stub implemention is added to handle compilation error in call manager

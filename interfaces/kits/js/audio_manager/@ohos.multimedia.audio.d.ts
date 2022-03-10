@@ -200,6 +200,11 @@ declare namespace audio {
      * @since 7
      */
     MIC = 15,
+    /**
+     * USB audio headset.
+     * @since 7
+     */
+    USB_HEADSET = 22
   }
 
   /**
