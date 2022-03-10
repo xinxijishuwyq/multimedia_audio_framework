@@ -59,6 +59,8 @@ public:
     virtual AudioRingerMode GetRingerMode() = 0;
 
     virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
+
+    virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -107,15 +107,25 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
     return result;
 }
 
+int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
+{
+    return mAudioServiceAdapter->SuspendAudioDevice(portName, isSuspend);
+}
+
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+            MEDIA_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
         case InternalDeviceType::DEVICE_TYPE_MIC: {
+            MEDIA_INFO_LOG("SetDefaultSource %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSource(name);
         }
         default:
@@ -158,8 +168,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
             MEDIA_ERR_LOG("[AudioAdapterManager] Error audioModuleInfo.fileName is null! or file not exists");
         }
     }
-    AudioIOHandle ioHandle = mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
-    return ioHandle;
+
+    return mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
@@ -170,9 +180,9 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.rate.empty()) {
-            args = "rate=";
-            args.append(audioModuleInfo.rate);
-        }
+        args = "rate=";
+        args.append(audioModuleInfo.rate);
+    }
 
     if (!audioModuleInfo.channels.empty()) {
         args.append(" channels=");
@@ -201,6 +211,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.adapterName.empty()) {
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);
+        }
+
+        if (!audioModuleInfo.className.empty()) {
+            args.append(" device_class=");
+            args.append(audioModuleInfo.className);
         }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);

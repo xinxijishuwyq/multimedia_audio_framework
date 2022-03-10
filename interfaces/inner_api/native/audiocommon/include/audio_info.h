@@ -105,6 +105,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_MIC = 15,
     /**
+     * Indicates a microphone built in a device.
+     */
+    DEVICE_TYPE_USB_HEADSET = 22,
+    /**
      * Indicates device type max count.
      */
     DEVICE_TYPE_MAX

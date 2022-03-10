@@ -187,15 +187,30 @@ int32_t AudioServer::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScen
     return SUCCESS;
 }
 
-int32_t AudioServer::UpdateAudioRoute()
+int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     MEDIA_INFO_LOG("[%{public}s]", __func__);
-    return SUCCESS;
-}
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
-int32_t AudioServer::ReleaseAudioRoute()
-{
-    MEDIA_INFO_LOG("[%{public}s]", __func__);
+    switch (flag) {
+        case DeviceFlag::INPUT_DEVICES_FLAG: {
+            audioCapturerSourceInstance->OpenInput(type);
+            break;
+        }
+        case DeviceFlag::OUTPUT_DEVICES_FLAG: {
+            audioRendererSinkInstance->OpenOutput(type);
+            break;
+        }
+        case DeviceFlag::ALL_DEVICES_FLAG: {
+            audioCapturerSourceInstance->OpenInput(type);
+            audioRendererSinkInstance->OpenOutput(type);
+            break;
+        }
+        default:
+            break;
+    }
+
     return SUCCESS;
 }
 
