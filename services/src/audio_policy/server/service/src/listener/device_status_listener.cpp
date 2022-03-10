@@ -90,7 +90,7 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
     int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
-                                                                       DEVICE_CLASS_DEFAULT);
+                                                                       DEVICE_CLASS_AUDIO);
     if (status != HDF_SUCCESS) {
         MEDIA_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
         return ERR_OPERATION_FAILED;
