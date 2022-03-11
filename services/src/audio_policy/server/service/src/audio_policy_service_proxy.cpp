@@ -56,9 +56,9 @@ int32_t AudioPolicyServiceProxy::SetAudioScene(list<DeviceType> &activeDeviceLis
         MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
         return -1;
     }
-    int32_t size = activeDeviceList.size();
+    uint32_t size = activeDeviceList.size();
     MEDIA_DEBUG_LOG("[AudioPolicyServiceProxy] Size of active device list %{public}d", size);
-    data.WriteInt32(size);
+    data.WriteInt32(static_cast<int32_t>(size));
     for (auto i = activeDeviceList.begin(); i != activeDeviceList.end(); ++i) {
         data.WriteInt32(static_cast<int32_t>(*i));
     }

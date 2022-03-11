@@ -119,8 +119,8 @@ int32_t AudioManagerProxy::SetAudioScene(list<DeviceType> &activeDeviceList, Aud
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
     }
-    int32_t size = activeDeviceList.size();
-    data.WriteInt32(size);
+    uint32_t size = activeDeviceList.size();
+    data.WriteInt32(static_cast<int32_t>(size));
     for (auto i = activeDeviceList.begin(); i != activeDeviceList.end(); ++i) {
         data.WriteInt32(static_cast<int32_t>(*i));
     }

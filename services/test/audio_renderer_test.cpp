@@ -141,7 +141,7 @@ public:
     bool TestPauseStop(const unique_ptr<AudioRenderer> &audioRenderer, bool &pauseTested, bool &stopTested,
                        FILE &wavFile) const
     {
-        uint64_t currFilePos = ftell(&wavFile);
+        int64_t currFilePos = ftell(&wavFile);
         if (!stopTested && (currFilePos > STOP_BUFFER_POSITION) && audioRenderer->Stop()) {
             stopTested = true;
             sleep(STOP_RENDER_TIME_SECONDS);

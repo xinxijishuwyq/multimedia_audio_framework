@@ -129,6 +129,7 @@ void AudioFocusParser::ParseStreams(xmlNode *node)
                 MEDIA_INFO_LOG("stream type: %{public}s",  sType);
                 ParseFocusTable(currNode->children, sType);
             }
+            xmlFree(sType);
         }
         currNode = currNode->next;
     }
@@ -157,6 +158,7 @@ void AudioFocusParser::ParseRejectedStreams(xmlNode *node, char *curStream)
                     MEDIA_INFO_LOG("actionOn: %d, hintType: %d, forceType: %d isReject: %d", pAction->actionOn,
                                    pAction->hintType, pAction->forceType, pAction->isReject);
                 }
+                xmlFree(newStream);
             }
         }
         currNode = currNode->next;
@@ -196,6 +198,10 @@ void AudioFocusParser::ParseAllowedStreams(xmlNode *node, char *curStream)
                     MEDIA_INFO_LOG("actionOn: %d, hintType: %d, forceType: %d isReject: %d", pAction->actionOn,
                                    pAction->hintType, pAction->forceType, pAction->isReject);
                 }
+                xmlFree(newStream);
+                xmlFree(aType);
+                xmlFree(aTarget);
+                xmlFree(isForced);
             }
         }
         currNode = currNode->next;
