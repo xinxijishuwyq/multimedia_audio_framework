@@ -99,7 +99,6 @@ private:
     pa_threaded_mainloop *mainLoop;
     pa_mainloop_api *api;
     pa_context *context;
-    pa_sample_spec sampleSpec;
     std::mutex ctrlMutex;
     
     bool isMainLoopStarted;

@@ -128,7 +128,7 @@ Fail:
     return false;
 }
 
-int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
+uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -591,7 +591,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     float vol = volumeCb * volumeFactor;
 
     pa_cvolume cv = i->volume;
-    int32_t volume = pa_sw_volume_from_linear(vol);
+    uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, NULL, NULL));
 

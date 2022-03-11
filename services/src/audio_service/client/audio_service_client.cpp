@@ -977,7 +977,7 @@ int32_t AudioServiceClient::FlushStream()
 
 int32_t AudioServiceClient::DrainStream()
 {
-    int error;
+    uint32_t error;
 
     if (eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
         MEDIA_ERR_LOG("Drain is not supported");
@@ -1074,7 +1074,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
 {
     mTotalBytesWritten += bytesWritten;
-    int64_t writtenFrameNumber = mTotalBytesWritten/mFrameSize;
+    uint64_t writtenFrameNumber = mTotalBytesWritten / mFrameSize;
     MEDIA_DEBUG_LOG("frame size: %{public}d", mFrameSize);
     if (!mMarkReached && mRenderPositionCb) {
         MEDIA_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
@@ -1273,7 +1273,7 @@ void AudioServiceClient::OnTimeOut()
 void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
 {
     mTotalBytesRead += bytesRead;
-    int64_t readFrameNumber = mTotalBytesRead/mFrameSize;
+    uint64_t readFrameNumber = mTotalBytesRead / mFrameSize;
     MEDIA_DEBUG_LOG("frame size: %{public}d", mFrameSize);
     if (!mMarkReached && mCapturePositionCb) {
         MEDIA_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
@@ -1459,6 +1459,11 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
 {
     CHECK_PA_STATUS_RET_IF_FAIL(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
     const pa_sample_spec *paSampleSpec = pa_stream_get_sample_spec(paStream);
+
+    if (!paSampleSpec) {
+        MEDIA_ERR_LOG("GetAudioStreamParams Failed");
+        return AUDIO_CLIENT_ERR;
+    }
 
     audioParams = ConvertFromPAAudioParams(*paSampleSpec);
     return AUDIO_CLIENT_SUCCESS;
@@ -1757,7 +1762,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         vol = MIN_STREAM_VOLUME_LEVEL;
     }
 
-    int32_t volume = pa_sw_volume_from_linear(vol);
+    uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, client.volumeChannels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, NULL, NULL));
 
