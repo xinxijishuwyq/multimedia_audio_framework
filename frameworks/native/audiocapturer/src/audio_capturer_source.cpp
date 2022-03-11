@@ -378,6 +378,10 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
             source.ext.device.type = PIN_IN_HS_MIC;
             source.ext.device.desc = "pin_in_hs_mic";
             break;
+        case DEVICE_TYPE_USB_HEADSET:
+            source.ext.device.type = PIN_IN_USB_EXT;
+            source.ext.device.desc = "pin_in_usb_ext";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;

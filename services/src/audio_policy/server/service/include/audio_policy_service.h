@@ -66,6 +66,7 @@ public:
     {
         return focusTable_;
     }
+
     AudioRingerMode GetRingerMode() const;
 
     int32_t SetAudioScene(AudioScene audioScene);
@@ -73,20 +74,19 @@ public:
     AudioScene GetAudioScene() const;
 
     // Parser callbacks
-    void OnAudioPortAvailable(const AudioModuleInfo &moduleInfo);
-
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
     void OnAudioInterruptEnable(bool enable);
 
     void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData);
+
     void OnServiceConnected();
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
     int32_t SetDeviceChangeCallback(const sptr<IRemoteObject> &object);
-private:
 
+private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
           mConfigParser(ParserFactory::GetInstance().CreateParser(*this))
@@ -96,47 +96,48 @@ private:
 
     virtual ~AudioPolicyService() {}
 
+    std::string GetPortName(InternalDeviceType deviceType);
+
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
+
     InternalDeviceType GetDeviceType(const std::string &deviceName);
+
+    InternalDeviceType GetCurrentActiveDevice(DeviceRole role) const;
+
+    DeviceRole GetDeviceRole(DeviceType deviceType) const;
+
+    DeviceRole GetDeviceRole(const std::string &role);
+
+    int32_t ActivateNewDevice(DeviceType deviceType);
+
+    DeviceType FetchHighPriorityDevice();
+
+    void UpdateConnectedDevices(DeviceType deviceType, std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status);
+
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
 
-    DeviceRole GetDeviceRole(DeviceType deviceType)
-    {
-        switch (deviceType) {
-            case DeviceType::DEVICE_TYPE_SPEAKER:
-            case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-            case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-            case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-                return DeviceRole::OUTPUT_DEVICE;
-            case DeviceType::DEVICE_TYPE_MIC:
-                return DeviceRole::INPUT_DEVICE;
-            default:
-                return DeviceRole::DEVICE_ROLE_NONE; // Default case return Output device
-        }
-    }
-
-    DeviceRole GetDeviceRole(const std::string &role)
-    {
-        if (role == ROLE_SINK) {
-            return DeviceRole::OUTPUT_DEVICE;
-        } else if (role == ROLE_SOURCE) {
-            return DeviceRole::INPUT_DEVICE;
-        } else {
-            return DeviceRole::DEVICE_ROLE_NONE;
-        }
-    }
-
+    bool interruptEnabled_ = true;
+    DeviceType mCurrentActiveDevice = DEVICE_TYPE_NONE;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
-    std::unordered_map<std::string, AudioIOHandle> mIOHandles;
-    std::vector<sptr<AudioDeviceDescriptor>> mActiveDevices;
+    std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
     std::list<sptr<IStandardAudioPolicyManagerListener>> deviceChangeCallbackList_;
-    std::string GetPortName(InternalDeviceType deviceType);
-    bool interruptEnabled_ = true;
     AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
     AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
+    std::unordered_map<std::string, AudioIOHandle> mIOHandles = {};
+    std::vector<DeviceType> ioDeviceList = {
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_WIRED_HEADSET
+    };
+    std::vector<DeviceType> priorityList = {
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_SPEAKER
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -210,12 +210,7 @@ const char *AudioManagerProxy::RetrieveCookie(int32_t &size)
     return cookieInfo;
 }
 
-int32_t AudioManagerProxy::UpdateAudioRoute()
-{
-    return ERR_NONE;
-}
-
-int32_t AudioManagerProxy::ReleaseAudioRoute()
+int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     return ERR_NONE;
 }

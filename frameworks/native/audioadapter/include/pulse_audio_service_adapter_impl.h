@@ -35,6 +35,7 @@ public:
     int32_t SetDefaultSource(std::string name) override;
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
     int32_t SetMute(AudioStreamType streamType, bool mute) override;
+    int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     bool IsMute(AudioStreamType streamType) override;
     bool IsStreamActive(AudioStreamType streamType) override;
     void Disconnect() override;

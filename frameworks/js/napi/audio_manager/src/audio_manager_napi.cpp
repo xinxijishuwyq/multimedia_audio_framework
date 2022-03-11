@@ -420,6 +420,9 @@ napi_value AudioManagerNapi::CreateDeviceTypeObject(napi_env env)
                 case DEVICE_TYPE_MIC:
                     propName = "MIC";
                     break;
+                case DEVICE_TYPE_USB_HEADSET:
+                    propName = "USB_HEADSET";
+                    break;
                 default:
                     HiLog::Error(LABEL, "CreateDeviceTypeObject: No prob with this value try next value!");
                     continue;

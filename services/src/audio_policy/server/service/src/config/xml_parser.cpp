@@ -74,7 +74,6 @@ bool XMLParser::ParseInternal(xmlNode &node)
         }
     }
 
-    MEDIA_ERR_LOG("%{public}s::xml parsing completed. size is [%{public}zu]", __func__, xmlParsedDataMap_.size());
     mPortObserver.OnXmlParsingCompleted(xmlParsedDataMap_);
     return true;
 }
@@ -95,13 +94,13 @@ void XMLParser::ParseDeviceClass(xmlNode &node)
 
     while (modulesNode != NULL) {
         if (modulesNode->type == XML_ELEMENT_NODE) {
-            ParseModules(*modulesNode);
+            ParseModules(*modulesNode, className);
         }
         modulesNode = modulesNode->next;
     }
 }
 
-void XMLParser::ParseModules(xmlNode &node)
+void XMLParser::ParseModules(xmlNode &node, std::string &className)
 {
     xmlNode *moduleNode = NULL;
     std::list<AudioModuleInfo> moduleList = {};
@@ -110,6 +109,7 @@ void XMLParser::ParseModules(xmlNode &node)
     while (moduleNode != NULL) {
         if (moduleNode->type == XML_ELEMENT_NODE) {
             AudioModuleInfo moduleInfo = {};
+            moduleInfo.className = className;
             moduleInfo.name = ExtractPropertyValue("name", *moduleNode);
             moduleInfo.lib = ExtractPropertyValue("lib", *moduleNode);
             moduleInfo.role = ExtractPropertyValue("role", *moduleNode);
@@ -212,11 +212,11 @@ void XMLParser::ParseAudioInterrupt(xmlNode &node)
 
 ClassType XMLParser::GetDeviceClassType(const std::string &deviceClass)
 {
-    if (deviceClass == PRIMARY_DEVICE)
+    if (deviceClass == PRIMARY_CLASS)
         return ClassType::TYPE_PRIMARY;
-    else if (deviceClass == BLUETOOTH_DEVICE)
+    else if (deviceClass == A2DP_CLASS)
         return ClassType::TYPE_A2DP;
-    else if (deviceClass == USB_DEVICE)
+    else if (deviceClass == USB_CLASS)
         return ClassType::TYPE_USB;
     else
         return ClassType::TYPE_INVALID;

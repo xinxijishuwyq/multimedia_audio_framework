@@ -49,7 +49,7 @@ private:
     NodeName GetNodeNameAsInt(xmlNode &node);
     bool ParseInternal(xmlNode &node);
     void ParseDeviceClass(xmlNode &node);
-    void ParseModules(xmlNode &node);
+    void ParseModules(xmlNode &node, std::string &className);
     void ParsePorts(xmlNode &node, AudioModuleInfo &moduleInfo);
     void ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo);
     void ParseAudioInterrupt(xmlNode &node);
