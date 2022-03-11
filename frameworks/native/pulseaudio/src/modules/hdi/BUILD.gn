@@ -86,6 +86,10 @@ ohos_shared_library("module-hdi-source") {
     cflags += [ "-DDEVICE_BALTIMORE" ]
   }
 
+  if (device_name == "rk3568") {
+    cflags += [ "-DDEVICE_RK3568" ]
+  }
+
   deps = [
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
