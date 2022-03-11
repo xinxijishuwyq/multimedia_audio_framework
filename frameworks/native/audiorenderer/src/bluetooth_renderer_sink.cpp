@@ -146,12 +146,8 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
 int32_t BluetoothRendererSink::InitAudioManager()
 {
     MEDIA_INFO_LOG("BluetoothRendererSink: Initialize audio proxy manager");
-#ifdef DEVICE_RK
+
     char resolvedPath[100] = "/vendor/lib/libaudio_bluetooth_hdi_proxy_server.z.so";
-#else
-    char resolvedPath[100] = "/system/lib/libaudio_bluetooth_hdi_proxy_server.z.so";
-#endif
-    MEDIA_DEBUG_LOG("BluetoothRendererSink: hdi service lib: %{public}s", resolvedPath);
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
