@@ -62,7 +62,7 @@ public:
      * @param activeDeviceList List of active device types.
      * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene) = 0;
 
     /**
      * Obtains device array.
