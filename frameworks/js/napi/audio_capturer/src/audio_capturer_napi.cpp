@@ -1055,8 +1055,7 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
     return RegisterCallback(env, jsThis, argv, callbackName);
 }
 
-napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis,
-                                                 napi_value* argv, const std::string& cbName)
+napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName)
 {
     AudioCapturerNapi *capturerNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
@@ -1096,7 +1095,7 @@ napi_value AudioCapturerNapi::Off(napi_env env, napi_callback_info info)
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
     MEDIA_DEBUG_LOG("AudioCapturerNapi: Off callbackName: %{public}s", callbackName.c_str());
 
-    return UnregisterCallback(env, jsThis, argv, callbackName);
+    return UnregisterCallback(env, jsThis, callbackName);
 }
 
 napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info info)

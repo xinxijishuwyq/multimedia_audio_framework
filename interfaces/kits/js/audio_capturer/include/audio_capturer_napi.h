@@ -111,8 +111,7 @@ private:
                                                const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioCapturerNapi *capturerNapi);
-    static napi_value UnregisterCallback(napi_env env, napi_value jsThis,
-                                         napi_value* argv, const std::string& cbName);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sAudioCapturerOptions_;
@@ -124,7 +123,7 @@ private:
     DeviceRole deviceRole_;
     DeviceType deviceType_;
     SourceType sourceType_;
-    uint32_t capturerFlags_;
+    int32_t capturerFlags_;
     napi_env env_;
     napi_ref wrapper_;
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;

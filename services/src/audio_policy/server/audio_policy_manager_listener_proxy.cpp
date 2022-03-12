@@ -61,12 +61,12 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
     MessageOption option;
 
     auto devices = deviceChangeAction.deviceDescriptors;
-    auto size = deviceChangeAction.deviceDescriptors.size();
+    size_t size = deviceChangeAction.deviceDescriptors.size();
 
     data.WriteInt32(deviceChangeAction.type);
-    data.WriteInt32(size);
+    data.WriteInt32(static_cast<int32_t>(size));
 
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         devices[i]->Marshalling(data);
     }
 
