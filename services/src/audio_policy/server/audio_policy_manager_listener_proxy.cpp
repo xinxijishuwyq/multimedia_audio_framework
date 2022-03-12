@@ -44,6 +44,10 @@ void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
 
     WriteInterruptEventParams(data, interruptEvent);
     int error = Remote()->SendRequest(ON_INTERRUPT, data, reply, option);
@@ -59,6 +63,10 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        MEDIA_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
 
     auto devices = deviceChangeAction.deviceDescriptors;
     size_t size = deviceChangeAction.deviceDescriptors.size();
