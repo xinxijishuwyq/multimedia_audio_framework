@@ -27,12 +27,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-typedef char* charPtr;
-typedef const xmlChar* xmlCharPtr;
-
-static const std::string PRIMARY_DEVICE = "primary";
-static const std::string BLUETOOTH_DEVICE = "bluetooth";
-static const std::string USB_DEVICE = "usb";
+static const std::string PRIMARY_CLASS = "primary";
+static const std::string A2DP_CLASS = "a2dp";
+static const std::string USB_CLASS = "usb";
+static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const std::string PRIMARY_SPEAKER = "Speaker";
 static const std::string PRIMARY_MIC = "Built_in_mic";
 static const std::string PIPE_SINK = "fifo_output";
@@ -64,6 +62,7 @@ public:
     AudioModuleInfo() = default;
     virtual ~AudioModuleInfo() = default;
 
+    std::string className;
     std::string name;
     std::string adapterName;
     std::string id;

@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//drivers/adapter/uhdf2/uhdf.gni")
+import("//foundation/appexecfwk/standard/appexecfwk.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
@@ -27,6 +28,7 @@ group("audio_client_test_packages") {
 
 config("audio_client_public_config") {
   include_dirs = [
+    "//foundation/appexecfwk/standard/interfaces/innerkits/appexecfwk_core/include/bundlemgr",
     "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
@@ -35,7 +37,7 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/client",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/common",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
@@ -61,16 +63,17 @@ config("audio_client_public_config") {
 ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
-    "//foundation/multimedia/audio_standard/services/src/client/audio_manager_proxy.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_service_client.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_session.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_stream.cpp",
-    "//foundation/multimedia/audio_standard/services/src/client/audio_system_manager.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_manager_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_service_client.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_session.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_stream.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_system_manager.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    "//foundation/aafwk/standard/interfaces/innerkits/want:want",
     "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_static",
@@ -78,6 +81,8 @@ ohos_shared_library("audio_client") {
   ]
 
   external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",

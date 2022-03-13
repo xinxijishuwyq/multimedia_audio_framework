@@ -146,8 +146,11 @@ int32_t AudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     InitAttrsCapture(param);
     param.sampleRate = attr_.sampleRate;
     param.format = attr_.format;
+    param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
+    param.frameSize = param.format * param.channelCount;
+    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
@@ -377,6 +380,10 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
         case DEVICE_TYPE_WIRED_HEADSET:
             source.ext.device.type = PIN_IN_HS_MIC;
             source.ext.device.desc = "pin_in_hs_mic";
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            source.ext.device.type = PIN_IN_USB_EXT;
+            source.ext.device.desc = "pin_in_usb_ext";
             break;
         default:
             ret = ERR_NOT_SUPPORTED;

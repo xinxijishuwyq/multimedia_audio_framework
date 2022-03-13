@@ -105,6 +105,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_MIC = 15,
     /**
+     * Indicates a microphone built in a device.
+     */
+    DEVICE_TYPE_USB_HEADSET = 22,
+    /**
      * Indicates device type max count.
      */
     DEVICE_TYPE_MAX
@@ -479,7 +483,8 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
 
 struct BufferDesc {
     uint8_t* buffer;
-    size_t length;
+    size_t bufLength;
+    size_t dataLength;
 };
 
 struct BufferQueueState {

@@ -62,6 +62,10 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        MEDIA_ERR_LOG("AudioPolicyManagerListenerStub: ReadInterfaceToken failed");
+        return -1;
+    }
     switch (code) {
         case ON_INTERRUPT: {
             InterruptEventInternal interruptEvent = {};

@@ -30,6 +30,7 @@ PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_LOAD_ONCE(false);
 PA_MODULE_USAGE(
         "sink_name=<name for the sink> "
+        "device_class=<name for the device class> "
         "sink_properties=<properties for the sink> "
         "format=<sample format> "
         "rate=<sample rate> "
@@ -40,6 +41,7 @@ PA_MODULE_USAGE(
 
 static const char * const VALID_MODARGS[] = {
     "sink_name",
+    "device_class",
     "sink_properties",
     "format",
     "rate",

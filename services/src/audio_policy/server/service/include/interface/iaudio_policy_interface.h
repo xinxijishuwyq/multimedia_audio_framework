@@ -33,6 +33,10 @@ public:
 
     virtual bool Init() = 0;
 
+    virtual void InitKVStore() = 0;
+
+    virtual bool ConnectServiceAdapter() = 0;
+
     virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume) = 0;
 
     virtual float GetStreamVolume(AudioStreamType streamType) = 0;
@@ -55,6 +59,8 @@ public:
     virtual AudioRingerMode GetRingerMode() = 0;
 
     virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
+
+    virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

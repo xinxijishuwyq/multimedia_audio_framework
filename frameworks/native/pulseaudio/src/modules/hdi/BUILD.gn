@@ -64,7 +64,7 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_sink",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:renderer_sink_adapter",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -84,6 +84,10 @@ ohos_shared_library("module-hdi-source") {
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_source_z_so" ]
   if (device_name == "baltimore") {
     cflags += [ "-DDEVICE_BALTIMORE" ]
+  }
+
+  if (device_name == "rk3568") {
+    cflags += [ "-DDEVICE_RK3568" ]
   }
 
   deps = [

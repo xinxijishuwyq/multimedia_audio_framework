@@ -32,8 +32,7 @@ public:
     ~AudioDeviceDescriptorNapi();
 
     static napi_value Init(napi_env env, napi_value exports);
-    static napi_value CreateAudioDeviceDescriptorWrapper(napi_env env,
-        sptr<AudioDeviceDescriptor> deviceDescriptor);
+    static napi_value CreateAudioDeviceDescriptorWrapper(napi_env env, const sptr<AudioDeviceDescriptor> &desc);
 
 private:
     static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);

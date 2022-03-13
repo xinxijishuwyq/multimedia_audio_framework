@@ -106,7 +106,7 @@ napi_value AudioDeviceDescriptorNapi::Construct(napi_env env, napi_callback_info
 }
 
 napi_value AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(napi_env env,
-    sptr<AudioDeviceDescriptor> deviceDescriptor)
+    const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -127,7 +127,6 @@ napi_value AudioDeviceDescriptorNapi::CreateAudioDeviceDescriptorWrapper(napi_en
     } else {
         HiLog::Error(LABEL, "sptr<AudioDeviceDescriptor> is null");
     }
-    napi_get_undefined(env, &result);
 
     return result;
 }

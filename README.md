@@ -391,6 +391,14 @@ updateUi : Whether the volume change details need to be shown or not. (If volume
     }
     ```
 
+#### Audio Scene
+12. Use **SetAudioscene** and **getAudioScene** APIs to change and check the audio strategy, respectively.
+    ```
+    int32_t result = audioSystemMgr->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
+    AudioScene audioScene = audioSystemMgr->GetAudioScene();
+    ```
+Please refer **AudioScene** enum in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for supported audio scenes.
+
 #### JavaScript Usage:
 JavaScript apps can use the APIs provided by audio manager to control the volume and the device.\
 Please refer [**audio-management.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/js-reference/audio-management.md) for JavaScript usage of audio volume and device management.

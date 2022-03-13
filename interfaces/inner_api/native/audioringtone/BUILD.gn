@@ -15,14 +15,14 @@ import("//build/ohos.gni")
 
 ohos_shared_library("audio_ringtone_client") {
   install_enable = true
-  sources = [ "//foundation/multimedia/audio_standard/services/src/client/audio_ringtone_manager.cpp" ]
+  sources = [ "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_ringtone_manager.cpp" ]
 
   public_configs = [ ":ringtone_external_library_config" ]
 
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audioringtone/include",
     "//foundation/multimedia/audio_standard/frameworks/native/ringtoneplayer/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/medialibrary_standard/interfaces/innerkits/native/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/innerkits/native_rdb/include",
@@ -32,8 +32,8 @@ ohos_shared_library("audio_ringtone_client") {
   deps = [
     "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
     "//foundation/aafwk/standard/frameworks/kits/appkit:appkit_native",
+    "//foundation/aafwk/standard/interfaces/innerkits/uri:zuri",
     "//foundation/aafwk/standard/interfaces/innerkits/want:want",
-    "//foundation/distributedschedule/dmsfwk/interfaces/innerkits/uri:zuri",
     "//foundation/graphic/standard/frameworks/surface:surface",
     "//foundation/multimedia/media_standard/interfaces/innerkits/native/media:media_client",
   ]
