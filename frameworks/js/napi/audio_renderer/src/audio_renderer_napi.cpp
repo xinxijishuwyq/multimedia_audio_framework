@@ -1785,8 +1785,7 @@ napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
     return RegisterCallback(env, jsThis, argv, callbackName);
 }
 
-napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis,
-                                                 napi_value* argv, const std::string& cbName)
+napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName)
 {
     AudioRendererNapi *rendererNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
@@ -1826,7 +1825,7 @@ napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
     MEDIA_DEBUG_LOG("AudioRendererNapi: Off callbackName: %{public}s", callbackName.c_str());
 
-    return UnregisterCallback(env, jsThis, argv, callbackName);
+    return UnregisterCallback(env, jsThis, callbackName);
 }
 
 bool AudioRendererNapi::ParseRendererOptions(napi_env env, napi_value root, AudioRendererOptions *opts)

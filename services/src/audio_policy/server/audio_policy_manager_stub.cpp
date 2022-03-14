@@ -112,7 +112,7 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     int deviceFlag = data.ReadInt32();
     DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
-    int32_t size = devices.size();
+    int32_t size = static_cast<int32_t>(devices.size());
     MEDIA_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {

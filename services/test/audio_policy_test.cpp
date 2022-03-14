@@ -167,7 +167,12 @@ static void NoValueError()
 {
     char option[AudioPolicyTest::OPT_SHORT_LEN];
     cout << "option ";
-    snprintf_s(option, sizeof(option), sizeof(option) - 1, "-%c", optopt);
+    int len = snprintf_s(option, sizeof(option), sizeof(option) - 1, "-%c", optopt);
+    if (len <= 0) {
+        cout << "NoValueError: snprintf_s error : buffer allocation fails";
+        return;
+    }
+
     cout << option << " needs a value" << endl << endl;
     PrintUsage();
 }
@@ -175,7 +180,11 @@ static void NoValueError()
 static void UnknownOptionError()
 {
     char option[AudioPolicyTest::OPT_SHORT_LEN];
-    snprintf_s(option, sizeof(option), sizeof(option) - 1, "-%c", optopt);
+    int len = snprintf_s(option, sizeof(option), sizeof(option) - 1, "-%c", optopt);
+    if (len <= 0) {
+        cout << "unknown option: snprintf_s error : buffer allocation fails";
+        return;
+    }
     cout << "unknown option: " << option << endl << endl;
     PrintUsage();
 }

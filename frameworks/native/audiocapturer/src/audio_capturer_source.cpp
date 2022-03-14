@@ -432,7 +432,7 @@ int32_t AudioCapturerSource::OpenInput(DeviceType inputDevice)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSource::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
 {
     MEDIA_INFO_LOG("AudioCapturerSource::SetAudioScene in");
     if (audioCapture_ == nullptr) {
