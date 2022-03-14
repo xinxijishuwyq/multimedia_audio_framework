@@ -80,6 +80,7 @@ class CHECK_UTIL
 };
 
 
+
 AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec paSampleSpec)
 {
     AudioStreamParams audioParams;
