@@ -167,7 +167,7 @@ bool AudioServer::IsMicrophoneMute()
     return isMute;
 }
 
-int32_t AudioServer::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+int32_t AudioServer::SetAudioScene(AudioScene audioScene)
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
@@ -175,13 +175,13 @@ int32_t AudioServer::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScen
     if (audioCapturerSourceInstance->capturerInited_ == false) {
         MEDIA_WARNING_LOG("Capturer is not initialized.");
     } else {
-        audioCapturerSourceInstance->SetAudioScene(activeDeviceList, audioScene);
+        audioCapturerSourceInstance->SetAudioScene(audioScene);
     }
 
     if (audioRendererSinkInstance->rendererInited_ == false) {
         MEDIA_WARNING_LOG("Renderer is not initialized.");
     } else {
-        audioRendererSinkInstance->SetAudioScene(activeDeviceList, audioScene);
+        audioRendererSinkInstance->SetAudioScene(audioScene);
     }
 
     return SUCCESS;
