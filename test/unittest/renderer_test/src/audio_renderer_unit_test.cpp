@@ -3546,48 +3546,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Enqueue via illegal state, state is not RUNNING
-* @tc.number: Audio_Renderer_Enqueue_003
-* @tc.desc  : Test Enqueue interface. Returns error code, if state is not RUNNING
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_003, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
-    EXPECT_EQ(SUCCESS, ret);
-    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
-    EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
-
-    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
-
-    ret = audioRenderer->SetRendererWriteCallback(cb);
-    EXPECT_EQ(SUCCESS, ret);
-
-    BufferDesc bufDesc {};
-    bufDesc.buffer = nullptr;
-    bufDesc.dataLength = g_reqBufLen;
-    ret = audioRenderer->GetBufferDesc(bufDesc);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_NE(nullptr, bufDesc.buffer);
-
-    ret = audioRenderer->Enqueue(bufDesc);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
-
-    audioRenderer->Release();
-}
-
-/**
 * @tc.name  : Test Enqueue via illegal input, buffer nullptr
-* @tc.number: Audio_Renderer_Enqueue_004
+* @tc.number: Audio_Renderer_Enqueue_003
 * @tc.desc  : Test Enqueue interface. Returns error code, if the buffer nullptr
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_004, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Enqueue_003, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;

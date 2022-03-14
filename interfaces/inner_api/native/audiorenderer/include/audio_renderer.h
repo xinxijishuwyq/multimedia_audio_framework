@@ -132,8 +132,8 @@ public:
     /**
      * @brief creater renderer instance.
      *
-     * @param audioStreamType The audio streamtype to be created.
-     * refer AudioStreamType in audio_info.h.
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
