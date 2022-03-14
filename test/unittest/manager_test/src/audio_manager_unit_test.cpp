@@ -82,12 +82,12 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level0)
 /**
 * @tc.name  : Test SetDeviceActive API
 * @tc.number: SetDeviceActive_001
-* @tc.desc  : Test SetDeviceActive interface. Makes a device active
+* @tc.desc  : Test SetDeviceActive interface. Deactivate default speaker should not be success
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, false);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -97,9 +97,6 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
-
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
     EXPECT_TRUE(isActive);
 }

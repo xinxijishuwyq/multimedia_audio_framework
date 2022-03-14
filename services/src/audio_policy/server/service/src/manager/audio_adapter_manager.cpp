@@ -25,6 +25,11 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioAdapterManager::Init()
 {
+    return true;
+}
+
+bool AudioAdapterManager::ConnectServiceAdapter()
+{
     std::unique_ptr<AudioAdapterManager> audioAdapterManager(this);
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
     mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
@@ -33,12 +38,17 @@ bool AudioAdapterManager::Init()
         MEDIA_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
         return false;
     }
+
+    return true;
+}
+
+
+void AudioAdapterManager::InitKVStore()
+{
     bool isFirstBoot = false;
     InitAudioPolicyKvStore(isFirstBoot);
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
-
-    return true;
 }
 
 void AudioAdapterManager::Deinit(void)
@@ -64,7 +74,9 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
         bool isFirstBoot = false;
         InitAudioPolicyKvStore(isFirstBoot);
     }
-    mVolumeMap[streamType] = volume;
+
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    mVolumeMap[streamForVolumeMap] = volume;
     WriteVolumeToKvStore(streamType, volume);
 
     return mAudioServiceAdapter->SetVolume(streamType, volume);
@@ -72,7 +84,9 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
 
 float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 {
-    return mVolumeMap[streamType];
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+
+    return mVolumeMap[streamForVolumeMap];
 }
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
@@ -93,15 +107,25 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
     return result;
 }
 
+int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
+{
+    return mAudioServiceAdapter->SuspendAudioDevice(portName, isSuspend);
+}
+
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+            MEDIA_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
         case InternalDeviceType::DEVICE_TYPE_MIC: {
+            MEDIA_INFO_LOG("SetDefaultSource %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSource(name);
         }
         default:
@@ -144,8 +168,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
             MEDIA_ERR_LOG("[AudioAdapterManager] Error audioModuleInfo.fileName is null! or file not exists");
         }
     }
-    AudioIOHandle ioHandle = mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
-    return ioHandle;
+
+    return mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
@@ -156,9 +180,9 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.rate.empty()) {
-            args = "rate=";
-            args.append(audioModuleInfo.rate);
-        }
+        args = "rate=";
+        args.append(audioModuleInfo.rate);
+    }
 
     if (!audioModuleInfo.channels.empty()) {
         args.append(" channels=");
@@ -187,6 +211,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.adapterName.empty()) {
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);
+        }
+
+        if (!audioModuleInfo.className.empty()) {
+            args.append(" device_class=");
+            args.append(audioModuleInfo.className);
         }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
@@ -253,6 +282,27 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
         stream = STREAM_VOICE_ASSISTANT;
 
     return stream;
+}
+
+AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_MUSIC:
+            return STREAM_MUSIC;
+        case STREAM_NOTIFICATION:
+        case STREAM_DTMF:
+        case STREAM_SYSTEM:
+        case STREAM_RING:
+            return STREAM_RING;
+        case STREAM_ALARM:
+            return STREAM_ALARM;
+        case STREAM_VOICE_CALL:
+            return STREAM_VOICE_CALL;
+        case STREAM_VOICE_ASSISTANT:
+            return STREAM_VOICE_ASSISTANT;
+        default:
+            return STREAM_MUSIC;
+    }
 }
 
 bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)

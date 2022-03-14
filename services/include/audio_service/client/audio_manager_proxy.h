@@ -13,46 +13,32 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_SERVER_H
-#define ST_AUDIO_SERVER_H
+#ifndef ST_AUDIO_MANAGER_PROXY_H
+#define ST_AUDIO_MANAGER_PROXY_H
 
-#include <mutex>
-#include <unordered_map>
-#include <pthread.h>
-#include "iremote_stub.h"
-#include "system_ability.h"
+#include "iremote_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_manager_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub {
-    DECLARE_SYSTEM_ABILITY(AudioServer);
+class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
 public:
-    DISALLOW_COPY_AND_MOVE(AudioServer);
-    explicit AudioServer(int32_t systemAbilityId, bool runOnCreate = true);
-    virtual ~AudioServer() = default;
-    void OnDump() override;
-    void OnStart() override;
-    void OnStop() override;
+    explicit AudioManagerProxy(const sptr<IRemoteObject> &impl);
+    virtual ~AudioManagerProxy() = default;
     int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) override;
     int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
-    static void *paDaemonThread(void *arg);
-    void SetAudioParameter(const std::string key, const std::string value) override;
     const std::string GetAudioParameter(const std::string key) override;
-    int32_t UpdateAudioRoute() override;
-    int32_t ReleaseAudioRoute() override;
+    void SetAudioParameter(const std::string key, const std::string value) override;
+    int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    const char *RetrieveCookie(int32_t &size) override;
 private:
-    static constexpr int32_t MAX_VOLUME = 15;
-    static constexpr int32_t MIN_VOLUME = 0;
-    static std::unordered_map<int, float> AudioStreamVolumeMap;
-    static std::map<std::string, std::string> audioParameters;
-    pthread_t m_paDaemonThread;
+    static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // ST_AUDIO_SERVER_H
+#endif // ST_AUDIO_MANAGER_PROXY_H

@@ -85,7 +85,9 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt);
 
-    int32_t SetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+                                      const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 private:
     AudioPolicyManager()
     {

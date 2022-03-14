@@ -13,6 +13,9 @@
 
 import("//build/ohos.gni")
 import("//drivers/adapter/uhdf2/uhdf.gni")
+
+samgr_dir = "//foundation/distributedschedule/samgr"
+
 AUDIO_POLICY_SERVER_DIR =
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server"
 
@@ -28,7 +31,7 @@ config("audio_service_config") {
 
   include_dirs = [
     "include",
-    "include/server",
+    "include/audio_service/server",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
@@ -46,8 +49,8 @@ ohos_shared_library("audio_service") {
   install_enable = true
 
   sources = [
-    "src/server/audio_manager_stub.cpp",
-    "src/server/audio_server.cpp",
+    "src/audio_service/server/audio_manager_stub.cpp",
+    "src/audio_service/server/audio_server.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -90,8 +93,9 @@ ohos_prebuilt_etc("audio_policy.rc") {
 
 config("audio_policy_public_config") {
   include_dirs = [
+    "//drivers/peripheral/audio/interfaces/include",
     "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/client",
+    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/distributedschedule/safwk/services/safwk/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
@@ -118,11 +122,37 @@ config("audio_policy_public_config") {
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
     "//third_party/bounds_checking_function/include",
+    "//third_party/cJSON",
+    "//drivers/peripheral/bluetooth/audio/interfaces/include",
+    "//foundation/communication/bluetooth/services/bluetooth_standard/ipc/include",
+    "//foundation/communication/bluetooth/services/bluetooth_standard/common/",
+    "//foundation/communication/bluetooth/interfaces/innerkits/native_cpp/include",
+    "//foundation/communication/bluetooth/interfaces/innerkits/native_cpp/framework/common",
+    "//foundation/communication/bluetooth/interfaces/innerkits/native_c/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
   ]
 
   cflags = [
+    "-fPIC",
     "-Wall",
+    "-Wextra",
     "-Werror",
+    "-DGST_DISABLE_DEPRECATED",
+    "-DHAVE_CONFIG_H",
+    "-fno-strict-aliasing",
+    "-Wno-sign-compare",
+    "-Wno-builtin-requires-header",
+    "-Wno-implicit-function-declaration",
+    "-Wno-format",
+    "-Wno-int-conversion",
+    "-Wno-unused-function",
+    "-Wno-unused-parameter",
+    "-Wno-thread-safety-attributes",
+    "-Wno-inconsistent-missing-override",
+    "-fno-rtti",
+    "-fno-exceptions",
+    "-ffunction-sections",
+    "-fdata-sections",
   ]
 
   if (target_cpu == "arm") {
@@ -132,6 +162,8 @@ config("audio_policy_public_config") {
   if (device_name == "baltimore") {
     cflags += [ "-DDEVICE_BALTIMORE" ]
   }
+
+  ldflags = [ "-Wl" ]
 }
 
 ohos_shared_library("audio_dump") {
@@ -155,6 +187,9 @@ ohos_shared_library("audio_dump") {
 ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/audio_bluetooth_manager.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/bluetooth_a2dp_audio_src_observer_stub.cpp",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/bluetooth_a2dp_src_observer.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/client/audio_device_descriptor.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_listener_proxy.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/audio_policy_manager_stub.cpp",
@@ -176,6 +211,10 @@ ohos_shared_library("audio_policy_service") {
     "$hdf_uhdf_path/host:libhdf_host",
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
     "$hdf_uhdf_path/utils:libhdf_utils",
+    "${samgr_dir}/interfaces/innerkits/common:samgr_common",
+    "${samgr_dir}/interfaces/innerkits/lsamgr:lsamgr",
+    "//foundation/communication/bluetooth/services/bluetooth_standard/ipc:btipc_static",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/multimedia/audio_standard/frameworks/native/audioadapter:pulse_audio_service_adapter",

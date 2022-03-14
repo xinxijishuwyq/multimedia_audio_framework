@@ -22,7 +22,7 @@
 #include <pulsecore/sink.h>
 
 #include <audio_manager.h>
-#include <audio_renderer_sink_intf.h>
+#include <renderer_sink_adapter.h>
 
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
@@ -40,6 +40,7 @@
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
+#define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_BUFFER_SIZE 8192
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
@@ -58,17 +59,17 @@ struct Userdata {
     pa_sample_spec ss;
     pa_channel_map map;
     bool isHDISinkStarted;
+    struct RendererSinkAdapter *sinkAdapter;
 };
 
 static void UserdataFree(struct Userdata *u);
-static int32_t PrepareDevice(const pa_sample_spec *ss);
+static int32_t PrepareDevice(struct Userdata *u);
 
-static ssize_t RenderWrite(pa_memchunk *pchunk)
+static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
 {
     size_t index, length;
     ssize_t count = 0;
     void *p = NULL;
-    int32_t ret;
 
     pa_assert(pchunk);
 
@@ -80,7 +81,7 @@ static ssize_t RenderWrite(pa_memchunk *pchunk)
     while (true) {
         uint64_t writeLen = 0;
 
-        ret = AudioRendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
+        int32_t ret = u->sinkAdapter->RendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
         if (writeLen > length) {
             MEDIA_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
@@ -122,7 +123,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
         pa_assert(chunk.length > 0);
 
-        if ((written = RenderWrite(&chunk)) < 0) {
+        if ((written = RenderWrite(u, &chunk)) < 0) {
             pa_memblock_unref(chunk.memblock);
             break;
         }
@@ -165,14 +166,14 @@ static void ThreadFuncUseTiming(void *userdata)
         pa_usec_t now = 0;
         int ret;
 
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state))
+        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state))
             now = pa_rtclock_now();
 
         if (PA_UNLIKELY(u->sink->thread_info.rewind_requested))
             pa_sink_process_rewind(u->sink, 0);
 
         // Render some data and drop it immediately
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
             if (u->timestamp <= now)
                 ProcessRenderUseTiming(u, now);
 
@@ -231,7 +232,7 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
 
             // Tries to fetch latency from HDI else will make an estimate based
             // on samples to be rendered based on the timestamp and current time
-            if (AudioRendererSinkGetLatency(&hdiLatency) == 0) {
+            if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
                 latency = (PA_USEC_PER_MSEC * hdiLatency);
             } else {
                 pa_usec_t now = pa_rtclock_now();
@@ -267,9 +268,9 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
         }
 
         MEDIA_INFO_LOG("Restarting HDI rendering device with rate:%d,channels:%d", u->ss.rate, u->ss.channels);
-        if (AudioRendererSinkStart()) {
+        if (u->sinkAdapter->RendererSinkStart()) {
             MEDIA_ERR_LOG("audiorenderer control start failed!");
-            AudioRendererSinkDeInit();
+            u->sinkAdapter->RendererSinkDeInit();
             pa_core_exit(u->core, true, 0);
         } else {
             u->isHDISinkStarted = true;
@@ -287,7 +288,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
         }
 
         if (u->isHDISinkStarted) {
-            AudioRendererSinkStop();
+            u->sinkAdapter->RendererSinkStop();
             MEDIA_INFO_LOG("Stopped HDI renderer");
             u->isHDISinkStarted = false;
         }
@@ -320,42 +321,34 @@ static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
     return hdiAudioFormat;
 }
 
-static int32_t PrepareDevice(const pa_sample_spec *ss)
+static int32_t PrepareDevice(struct Userdata *u)
 {
-    AudioSinkAttr sample_attrs;
+    SinkAttr sample_attrs;
     int32_t ret;
 #ifdef DEVICE_BALTIMORE
     sample_attrs.format = AUDIO_FORMAT_PCM_32_BIT;
 #else
     sample_attrs.format = AUDIO_FORMAT_PCM_16_BIT;
 #endif
-    enum AudioFormat format = ConvertToHDIAudioFormat(ss->format);
+    enum AudioFormat format = ConvertToHDIAudioFormat(u->ss.format);
     sample_attrs.format = format;
     sample_attrs.sampleFmt = format;
     MEDIA_ERR_LOG("audiorenderer format: %d", sample_attrs.format);
 
-    sample_attrs.sampleRate = ss->rate;
-    sample_attrs.channel = ss->channels;
+    sample_attrs.sampleRate = u->ss.rate;
+    sample_attrs.channel = u->ss.channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
 
-    ret = AudioRendererSinkInit(&sample_attrs);
+    ret = u->sinkAdapter->RendererSinkInit(&sample_attrs);
     if (ret != 0) {
         MEDIA_ERR_LOG("audiorenderer Init failed!");
         return -1;
     }
 
-    ret = AudioRendererSinkStart();
+    ret = u->sinkAdapter->RendererSinkStart();
     if (ret != 0) {
         MEDIA_ERR_LOG("audiorenderer control start failed!");
-        AudioRendererSinkDeInit();
-        return -1;
-    }
-
-    ret = AudioRendererSinkSetVolume(MAX_SINK_VOLUME_LEVEL, MAX_SINK_VOLUME_LEVEL);
-    if (ret != 0) {
-        MEDIA_ERR_LOG("audiorenderer set volume failed!");
-        AudioRendererSinkStop();
-        AudioRendererSinkDeInit();
+        u->sinkAdapter->RendererSinkDeInit();
         return -1;
     }
 
@@ -377,7 +370,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     }
 
     MEDIA_INFO_LOG("Initializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
-    if (PrepareDevice(&u->ss) < 0)
+    if (PrepareDevice(u) < 0)
         goto fail;
 
     u->isHDISinkStarted = true;
@@ -426,6 +419,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
         MEDIA_ERR_LOG("pa_thread_mq_init() failed.");
+        goto fail;
+    }
+
+    MEDIA_INFO_LOG("Load sink adapter");
+    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS), &u->sinkAdapter);
+    if (ret) {
+        MEDIA_ERR_LOG("Load adapter failed");
         goto fail;
     }
 
@@ -501,8 +501,11 @@ static void UserdataFree(struct Userdata *u)
     if (u->rtpoll)
         pa_rtpoll_free(u->rtpoll);
 
-    AudioRendererSinkStop();
-    AudioRendererSinkDeInit();
+    if (u->sinkAdapter) {
+        u->sinkAdapter->RendererSinkStop();
+        u->sinkAdapter->RendererSinkDeInit();
+        UnLoadSinkAdapter(u->sinkAdapter);
+    }
 
     pa_xfree(u);
 }

@@ -174,6 +174,7 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key) const;
     void SetAudioParameter(const std::string key, const std::string value) const;
+    const char *RetrieveCookie(int32_t &size) const;
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
@@ -185,7 +186,9 @@ public:
     int32_t SetRingerModeCallback(const int32_t clientId,
                                   const std::shared_ptr<AudioRingerModeCallback> &callback);
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
-    int32_t RegisterVolumeKeyEventNapiCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t RegisterVolumeKeyEventCallback(const int32_t clientPid,
+                                           const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
 
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be rmeoved
@@ -202,6 +205,7 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
     int32_t cbClientId_ = -1;
+    int32_t volumeChangeClientPid_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
 };
 } // namespace AudioStandard

@@ -25,7 +25,6 @@ class IPortObserver {
 public:
     virtual void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata) = 0;
     virtual void OnAudioInterruptEnable(bool enable) = 0;
-    virtual void OnAudioPortAvailable(const AudioModuleInfo &moduleInfo) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
