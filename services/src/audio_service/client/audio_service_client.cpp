@@ -45,32 +45,34 @@ const string APP_DATA_BASE_PATH = "/data/accounts/account_0/appdata/";
 const string APP_COOKIE_FILE_PATH = "/cache/cookie";
 
 
-static int32_t CheckCallBack(bool expr,const uint32_t retVal)
+static int32_t CheckCallBack(bool expr, const uint32_t retVal)
 {
     do {
-        if (!expr) { 
+        if (!(expr)) { 
             return retVal; 
         }
     }
-    while(false);
+    while (false);
     return CHECK_UTIL_SUCCESS;
 }
 
-static int32_t CheckReturnIfinvalid(bool expr,const uint32_t retVal)
+static int32_t CheckReturnIfinvalid(bool expr, const uint32_t retVal)
 {
-    return CheckCallBack(expr,retVal);
+    return CheckCallBack(expr, retVal);
 }
 
-static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop,pa_context *context,pa_stream *paStream, const uint32_t retVal)
+static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context *context, 
+    pa_stream *paStream, const uint32_t retVal)
 {
     return CheckCallBack(mainLoop && context && 
-                            paStream && PA_CONTEXT_IS_GOOD(pa_context_get_state(context)) && 
-                            PA_STREAM_IS_GOOD(pa_stream_get_state(paStream)),retVal);
+        paStream && PA_CONTEXT_IS_GOOD(pa_context_get_state(context)) && 
+        PA_STREAM_IS_GOOD(pa_stream_get_state(paStream)), retVal);
 }
 
-static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop,pa_context *context,pa_stream *paStream, const uint32_t retVal,int32_t &pError)
+static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context *context, 
+    pa_stream *paStream, const uint32_t retVal, int32_t &pError)
 {
-    if (CheckPaStatusIfinvalid(mainLoop,context,paStream,-1) < 0) { 
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,-1) < 0) { 
         pError = pa_context_errno(context);
         return -1;
     }
@@ -236,7 +238,7 @@ int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
         return AUDIO_CLIENT_SUCCESS;
     }
 
-    if (CheckReturnIfinvalid(mainLoop && context && paStream,AUDIO_CLIENT_ERR) < 0) {
+    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
         return AUDIO_CLIENT_ERR;
     }
 
@@ -674,7 +676,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 {
     int error, result;
 
-    if (CheckReturnIfinvalid(mainLoop && context && paStream,AUDIO_CLIENT_ERR) < 0 ) {
+    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0 ) {
         return AUDIO_CLIENT_ERR;
     }
 
@@ -735,7 +737,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
 {
     MEDIA_INFO_LOG("Initializing internal audio cache");
 
-    if (CheckReturnIfinvalid((mainLoop && context && paStream),AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -761,7 +763,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
 int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
 {
     int error;
-    if (CheckReturnIfinvalid(mainLoop&&context,AUDIO_CLIENT_ERR) < 0 ) {
+    if (CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR) < 0 ) {
         return AUDIO_CLIENT_ERR;
     }
 
@@ -854,7 +856,7 @@ int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID)
 int32_t AudioServiceClient::StartStream()
 {
     int error;
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
     
@@ -928,7 +930,7 @@ int32_t AudioServiceClient::StopStream()
 
 int32_t AudioServiceClient::CorkStream()
 {
-    if (CheckPaStatusIfinvalid(mainLoop,context,paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -958,7 +960,7 @@ int32_t AudioServiceClient::CorkStream()
 int32_t AudioServiceClient::FlushStream()
 {
     int error;
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
     
@@ -1017,7 +1019,7 @@ int32_t AudioServiceClient::DrainStream()
         MEDIA_ERR_LOG("Audio cache drain failed");
         return AUDIO_CLIENT_ERR;
     }
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1131,7 +1133,7 @@ void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
 
 int32_t AudioServiceClient::DrainAudioCache()
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1198,7 +1200,7 @@ size_t AudioServiceClient::WriteStreamInCb(const StreamBuffer &stream, int32_t &
 {
     lock_guard<mutex> lock(dataMutex);
     int error = 0;
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,0,pError) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, 0, pError) < 0) {
         return 0;
     }
     
@@ -1222,7 +1224,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         pError = error;
         return cachedLen;
     }
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,0,pError) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, 0, pError) < 0) {
         return 0;
     }
     pa_threaded_mainloop_lock(mainLoop);
@@ -1339,7 +1341,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
     uint8_t *buffer = stream.buffer;
     size_t length = stream.bufferLen;
     size_t readSize = 0;
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1349,7 +1351,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
         while (!internalReadBuffer) {
             int retVal = pa_stream_peek(paStream, &internalReadBuffer, &internalRdBufLen);
             if (retVal < 0) {
-                MEDIA_ERR_LOG("pa_stream_peek failed, retVal: %{public}d", retVal);
+                // MEDIA_ERR_LOG("pa_stream_peek failed, retVal: %{public}d", retVal);
                 pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
             }
@@ -1360,7 +1362,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     pa_threaded_mainloop_wait(mainLoop);
                     StopTimer();
                     if (IsTimeOut()) {
-                        MEDIA_ERR_LOG("Read timeout");
+                        // MEDIA_ERR_LOG("Read timeout");
                         pa_threaded_mainloop_unlock(mainLoop);
                         return AUDIO_CLIENT_READ_STREAM_ERR;
                     }
@@ -1378,7 +1380,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
-                MEDIA_INFO_LOG("buffer size from PA: %zu", internalRdBufLen);
+                // MEDIA_INFO_LOG("buffer size from PA: %zu", internalRdBufLen);
             }
         }
 
@@ -1416,7 +1418,7 @@ int32_t AudioServiceClient::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 
 int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1444,7 +1446,7 @@ int32_t AudioServiceClient::GetMinimumBufferSize(size_t &minBufferSize)
 
 int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount)
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1497,7 +1499,7 @@ uint8_t AudioServiceClient::GetSampleSize()
 
 int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 	
@@ -1519,7 +1521,7 @@ uint32_t AudioServiceClient::GetStreamVolume(uint32_t sessionID)
 
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -1545,7 +1547,7 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 
 int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream,AUDIO_CLIENT_PA_ERR) < 0) {
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
  
