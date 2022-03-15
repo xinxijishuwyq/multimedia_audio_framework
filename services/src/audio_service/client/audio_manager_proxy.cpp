@@ -109,7 +109,7 @@ bool AudioManagerProxy::IsMicrophoneMute()
     return isMute;
 }
 
-int32_t AudioManagerProxy::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -118,11 +118,6 @@ int32_t AudioManagerProxy::SetAudioScene(list<DeviceType> &activeDeviceList, Aud
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
-    }
-    uint32_t size = activeDeviceList.size();
-    data.WriteInt32(static_cast<int32_t>(size));
-    for (auto i = activeDeviceList.begin(); i != activeDeviceList.end(); ++i) {
-        data.WriteInt32(static_cast<int32_t>(*i));
     }
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
