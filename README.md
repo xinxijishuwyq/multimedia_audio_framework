@@ -7,6 +7,7 @@
     - [Audio Playback](#audio-playback)
     - [Audio Recording](#audio-recording)
     - [Audio Management](#audio-management)
+  - [Supported Devices](#supported-devices)
   - [Repositories Involved](#repositories-involved)
 
 ## Introduction<a name="introduction"></a>
@@ -139,25 +140,25 @@ You can use APIs provided in this repository to convert audio data into audible 
         void OnMarkReached(const int64_t &framePosition) override
         {
             // frame mark reached
-            // framePosition is the frame mark number 
+            // framePosition is the frame mark number
         }
     }
 
     std::shared_ptr<RendererPositionCallback> framePositionCB = std::make_shared<RendererPositionCallbackImpl>();
     //markPosition is the frame mark number for which callback is requested.
-    audioRenderer->SetRendererPositionCallback(markPosition, framePositionCB); 
+    audioRenderer->SetRendererPositionCallback(markPosition, framePositionCB);
 
     class RendererPeriodPositionCallbackImpl : public RendererPeriodPositionCallback {
         void OnPeriodReached(const int64_t &frameNumber) override
         {
             // frame period reached
-            // frameNumber is the frame period number 
+            // frameNumber is the frame period number
         }
     }
 
     std::shared_ptr<RendererPeriodPositionCallback> periodPositionCB = std::make_shared<RendererPeriodPositionCallbackImpl>();
     //framePeriodNumber is the frame period number for which callback is requested.
-    audioRenderer->SetRendererPeriodPositionCallback(framePeriodNumber, periodPositionCB); 
+    audioRenderer->SetRendererPeriodPositionCallback(framePeriodNumber, periodPositionCB);
     ```
     For unregistering the position callbacks, call the corresponding audioRenderer->**UnsetRendererPositionCallback** and/or audioRenderer->**UnsetRendererPeriodPositionCallback** APIs.
 
@@ -251,25 +252,25 @@ You can use the APIs provided in this repository for your application to record 
         void OnMarkReached(const int64_t &framePosition) override
         {
             // frame mark reached
-            // framePosition is the frame mark number 
+            // framePosition is the frame mark number
         }
     }
 
     std::shared_ptr<CapturerPositionCallback> framePositionCB = std::make_shared<CapturerPositionCallbackImpl>();
     //markPosition is the frame mark number for which callback is requested.
-    audioCapturer->SetCapturerPositionCallback(markPosition, framePositionCB); 
+    audioCapturer->SetCapturerPositionCallback(markPosition, framePositionCB);
 
     class CapturerPeriodPositionCallbackImpl : public CapturerPeriodPositionCallback {
         void OnPeriodReached(const int64_t &frameNumber) override
         {
             // frame period reached
-            // frameNumber is the frame period number 
+            // frameNumber is the frame period number
         }
     }
 
     std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCB = std::make_shared<CapturerPeriodPositionCallbackImpl>();
     //framePeriodNumber is the frame period number for which callback is requested.
-    audioCapturer->SetCapturerPeriodPositionCallback(framePeriodNumber, periodPositionCB); 
+    audioCapturer->SetCapturerPeriodPositionCallback(framePeriodNumber, periodPositionCB);
     ```
     For unregistering the position callbacks, call the corresponding audioCapturer->**UnsetCapturerPositionCallback** and/or audioCapturer->**UnsetCapturerPeriodPositionCallback** APIs.
 
@@ -348,7 +349,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
 
-9. Use **SetDeviceChangeCallback** API to register for device change events. Clients will recieve callback when a device is connected/disconnected.
+9. Use **SetDeviceChangeCallback** API to register for device change events. Clients will recieve callback when a device is connected/disconnected. Currently audio subsystem supports sending device change events for WIRED_HEADSET, USB_HEADSET and BLUETOOTH_A2DP device.
 **OnDeviceChange** function will be called and client will receive **DeviceChangeAction** object, which will contain following parameters:\
 *type* : **DeviceChangeType** which specifies whether device is connected or disconnected.\
 *deviceDescriptors* : Array of **AudioDeviceDescriptor** object which specifies the type of device and its role(input/output device).
@@ -361,8 +362,36 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
         {
             cout << deviceChangeAction.type << endl;
             for (auto &audioDeviceDescriptor : deviceChangeAction.deviceDescriptors) {
-                cout << audioDeviceDescriptor->deviceType_ << endl;
-                cout << audioDeviceDescriptor->deviceRole_ << endl;
+                switch (audioDeviceDescriptor->deviceType_) {
+                    case DEVICE_TYPE_WIRED_HEADSET: {
+                        if (deviceChangeAction.type == CONNECT) {
+                            cout << wired headset connected << endl;
+                        } else {
+                            cout << wired headset disconnected << endl;
+                        }
+                        break;
+                    }
+                    case DEVICE_TYPE_USB_HEADSET:{
+                        if (deviceChangeAction.type == CONNECT) {
+                            cout << usb headset connected << endl;
+                        } else {
+                            cout << usb headset disconnected << endl;
+                        }
+                        break;
+                    }
+                    case DEVICE_TYPE_BLUETOOTH_A2DP:{
+                        if (deviceChangeAction.type == CONNECT) {
+                            cout << Bluetooth device connected << endl;
+                        } else {
+                            cout << Bluetooth device disconnected << endl;
+                        }
+                        break;
+                    }
+                    default: {
+                        cout << "Unsupported device" << endl;
+                        break;
+                    }
+                }
             }
         }
     };
@@ -434,6 +463,19 @@ You can use the APIs provided in [**iringtone_sound_manager.h**](https://gitee.c
 6. Use **GetTitle** API to get the title of current system ringtone.
 7. Use **GetRingtoneState** to the the ringtone playback state - **RingtoneState**
 8. Use **GetAudioRendererInfo** to get the **AudioRendererInfo** to check the content type and stream usage.
+
+
+## Supported devices<a name="supported-devices"></a>
+Currently following are the list of device types supported by audio subsystem.
+
+1. **USB Type-C Headset**\
+    Digital headset which includes their own DAC (Digital to Analogue Converter) and amp as part of the headset.
+2. **WIRED Headset**\
+    Analog headset which doesn't contain any DAC inside. It can have 3.5mm jack or Type-C jack without DAC.
+3. **Bluetooth Headset**\
+    Bluetooth A2DP(Advanced Audio Distribution Profile) headset used for streaming audio wirelessly.
+4. **Internal Speaker and MIC**\
+    Internal speaker and mic is supported and will be used as default device for playback and record respectively.
 
 ## Repositories Involved<a name="repositories-involved"></a>
 
