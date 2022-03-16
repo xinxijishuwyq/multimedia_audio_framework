@@ -1351,7 +1351,6 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
         while (!internalReadBuffer) {
             int retVal = pa_stream_peek(paStream, &internalReadBuffer, &internalRdBufLen);
             if (retVal < 0) {
-                // LOG FOR "pa_stream_peek failed, retVal: %{public}d", retVal";
                 pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
             }
@@ -1362,7 +1361,6 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     pa_threaded_mainloop_wait(mainLoop);
                     StopTimer();
                     if (IsTimeOut()) {
-                        // LOG FOR "Read timeout";
                         pa_threaded_mainloop_unlock(mainLoop);
                         return AUDIO_CLIENT_READ_STREAM_ERR;
                     }
@@ -1380,7 +1378,6 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
-                // LOG FOR "buffer size from PA: %zu", internalRdBufLen";
             }
         }
 
