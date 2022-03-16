@@ -91,20 +91,17 @@ float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    bool result =  mAudioServiceAdapter->SetMute(streamType, mute);
-    return result;
+    return mAudioServiceAdapter->SetMute(streamType, mute);
 }
 
-bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
+bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType) const
 {
-    bool result =  mAudioServiceAdapter->IsMute(streamType);
-    return result;
+    return  mAudioServiceAdapter->IsMute(streamType);
 }
 
 bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 {
-    bool result = mAudioServiceAdapter->IsStreamActive(streamType);
-    return result;
+    return mAudioServiceAdapter->IsStreamActive(streamType);
 }
 
 int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
@@ -148,7 +145,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
     return SUCCESS;
 }
 
-AudioRingerMode AudioAdapterManager::GetRingerMode()
+AudioRingerMode AudioAdapterManager::GetRingerMode() const
 {
     return mRingerMode;
 }
@@ -206,7 +203,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 }
 
 // Private Members
-std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo)
+std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const
 {
     std::string args;
 
@@ -378,7 +375,6 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     } else {
         LoadVolumeMap();
     }
-    return;
 }
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)

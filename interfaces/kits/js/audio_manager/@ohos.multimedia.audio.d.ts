@@ -851,7 +851,7 @@ declare namespace audio {
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
-    setAudioScene(scene: AudioScene, callback: AsyncCallback<void> ): void;
+    setAudioScene(scene: AudioScene, callback: AsyncCallback<void>): void;
     /**
      * Sets the audio scene mode to change audio strategy. This method uses a promise to return the execution result.
      * @since 8
@@ -863,7 +863,7 @@ declare namespace audio {
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
-    getAudioScene(callback: AsyncCallback<AudioScene> ): void;
+    getAudioScene(callback: AsyncCallback<AudioScene>): void;
     /**
      * Obtains the system audio scene mode. This method uses a promise to return the execution result.
      * @since 8
