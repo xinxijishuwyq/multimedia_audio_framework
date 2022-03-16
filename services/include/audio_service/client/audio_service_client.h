@@ -496,7 +496,7 @@ private:
     const void *internalReadBuffer;
     size_t internalRdBufLen;
     size_t internalRdBufIndex;
-    size_t setBufferSize = MINIMUM_BUFFER_SIZE;
+    size_t setBufferSize;
     int32_t streamCmdStatus;
     int32_t streamDrainStatus;
     int32_t streamFlushStatus;
