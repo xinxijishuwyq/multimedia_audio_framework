@@ -208,6 +208,8 @@ void XMLParser::ParseAudioInterrupt(xmlNode &node)
     } else {
         mPortObserver.OnAudioInterruptEnable(false);
     }
+
+    xmlFree(enableFlag);
 }
 
 ClassType XMLParser::GetDeviceClassType(const std::string &deviceClass)

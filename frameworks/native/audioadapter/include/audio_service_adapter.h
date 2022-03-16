@@ -66,7 +66,7 @@ public:
      * @return Returns module index if module loaded sucessfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) = 0;
+    virtual uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) = 0;
 
     /**
      * @brief closes/unloads the audio modules loaded.

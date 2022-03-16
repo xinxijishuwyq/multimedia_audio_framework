@@ -61,7 +61,7 @@ public:
     int32_t GetVolume(float &left, float &right);
     int32_t SetMute(bool isMute);
     int32_t GetMute(bool &isMute);
-    int32_t SetAudioScene(std::list<DeviceType> &activeDeviceList, AudioScene audioScene);
+    int32_t SetAudioScene(AudioScene audioScene);
     int32_t OpenInput(DeviceType deviceType);
 
     static AudioCapturerSource *GetInstance(void);

@@ -227,7 +227,7 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
     struct Userdata *u = PA_SINK(o)->userdata;
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
-            int64_t latency;
+            uint64_t latency;
             uint32_t hdiLatency;
 
             // Tries to fetch latency from HDI else will make an estimate based
@@ -239,7 +239,7 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                 latency = (now - u->timestamp);
             }
 
-            *((int64_t *)data) = latency;
+            *((uint64_t *)data) = latency;
             return 0;
         }
         default:

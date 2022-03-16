@@ -458,7 +458,7 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetAudioScene(list<DeviceType> &activeDeviceList, AudioScene audioScene)
+int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
 {
     MEDIA_INFO_LOG("AudioRendererSink::SetAudioScene in");
     if (audioRender_ == nullptr) {
