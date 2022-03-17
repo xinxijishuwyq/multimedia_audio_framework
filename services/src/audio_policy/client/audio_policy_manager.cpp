@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,23 +29,16 @@ bool AudioPolicyManager::serverConnected = false;
 void AudioPolicyManager::Init()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyManager::init failed");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(samgr != nullptr, "AudioPolicyManager::init failed");
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
-    if (object == nullptr) {
-        MEDIA_DEBUG_LOG("AudioPolicyManager::object is NULL.");
-    }
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioPolicyManager::object is NULL.");
 
     g_sProxy = iface_cast<IAudioPolicy>(object);
-    if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("AudioPolicyManager::init g_sProxy is NULL.");
-    } else {
-        serverConnected = true;
-        MEDIA_DEBUG_LOG("AudioPolicyManager::init g_sProxy is assigned.");
-    }
+    CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "AudioPolicyManager::init g_sProxy is NULL.");
+
+    serverConnected = true;
+    MEDIA_DEBUG_LOG("AudioPolicyManager::init g_sProxy is assigned.");
 
     RegisterAudioPolicyServerDeathRecipient();
 }
@@ -57,7 +50,11 @@ void AudioPolicyManager::RegisterAudioPolicyServerDeathRecipient()
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain samgr");
+
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
+        CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
+
         deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied, this,
                                                std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);

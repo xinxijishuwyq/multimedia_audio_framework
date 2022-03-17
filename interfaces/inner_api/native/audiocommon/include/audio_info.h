@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,7 @@ constexpr int32_t MAX_NUM_STREAMS = 3;
 constexpr int32_t RENDERER_STREAM_USAGE_SHIFT = 16;
 constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+constexpr int32_t MIN_SERVICE_COUNT = 2;
 
 
 enum DeviceFlag {
@@ -516,6 +517,11 @@ struct InterruptAction {
     InterruptActionType actionType;
     InterruptType interruptType;
     InterruptHint interruptHint;
+};
+
+enum AudioServiceIndex {
+    HDI_SERVICE_INDEX = 0,
+    AUDIO_SERVICE_INDEX
 };
 } // namespace AudioStandard
 } // namespace OHOS

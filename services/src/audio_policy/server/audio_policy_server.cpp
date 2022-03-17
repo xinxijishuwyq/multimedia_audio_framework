@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -114,7 +114,11 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain samgr");
+
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
+        CHECK_AND_RETURN_LOG(object != nullptr, "Audio service unavailable");
+
         deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {
@@ -125,8 +129,7 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
 
 void AudioPolicyServer::AudioServerDied(pid_t pid)
 {
-    MEDIA_INFO_LOG("Audio server died: restart policy server");
-    MEDIA_INFO_LOG("AudioPolicyServer: Kill pid:%{public}d", pid);
+    MEDIA_INFO_LOG("Audio server died: restart policy server pid %{public}d", pid);
     kill(pid, SIGKILL);
 }
 
