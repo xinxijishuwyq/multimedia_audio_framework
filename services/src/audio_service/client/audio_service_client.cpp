@@ -44,27 +44,20 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const string APP_DATA_BASE_PATH = "/data/accounts/account_0/appdata/";
 const string APP_COOKIE_FILE_PATH = "/cache/cookie";
 
-
-static int32_t CheckCallBack(bool expr, const uint32_t retVal)
+static int32_t CheckReturnIfinvalid(bool expr, const uint32_t retVal)
 {
     do {
         if (!(expr)) {
             return retVal;
         }
-    }
-    while (false);
+    } while (false);
     return CHECK_UTIL_SUCCESS;
-}
-
-static int32_t CheckReturnIfinvalid(bool expr, const uint32_t retVal)
-{
-    return CheckCallBack(expr, retVal);
 }
 
 static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context *context,
     pa_stream *paStream, const uint32_t retVal)
 {
-    return CheckCallBack(mainLoop && context &&
+    return CheckReturnIfinvalid(mainLoop && context &&
         paStream && PA_CONTEXT_IS_GOOD(pa_context_get_state(context)) &&
         PA_STREAM_IS_GOOD(pa_stream_get_state(paStream)), retVal);
 }
@@ -1351,6 +1344,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
         while (!internalReadBuffer) {
             int retVal = pa_stream_peek(paStream, &internalReadBuffer, &internalRdBufLen);
             if (retVal < 0) {
+                MEDIA_ERR_LOG("pa_stream_peek failed, retVal: %{public}d", retVal);
                 pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_READ_STREAM_ERR;
             }
@@ -1361,6 +1355,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     pa_threaded_mainloop_wait(mainLoop);
                     StopTimer();
                     if (IsTimeOut()) {
+                        MEDIA_ERR_LOG("Read timeout");
                         pa_threaded_mainloop_unlock(mainLoop);
                         return AUDIO_CLIENT_READ_STREAM_ERR;
                     }
@@ -1378,6 +1373,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
+                MEDIA_INFO_LOG("buffer size from PA: %zu", internalRdBufLen);
             }
         }
 

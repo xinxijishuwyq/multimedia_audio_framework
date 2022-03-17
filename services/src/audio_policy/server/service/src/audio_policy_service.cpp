@@ -230,7 +230,6 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
     }
 }
 
-
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
 {
     int32_t result = SUCCESS;
