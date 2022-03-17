@@ -38,7 +38,7 @@ public:
 
     int32_t GetAudioSessionID(uint32_t &sessionID) const;
     State GetState();
-    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const;
+    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
     int32_t GetBufferSize(size_t &bufferSize) const;
     int32_t GetFrameCount(uint32_t &frameCount) const;
     int32_t GetLatency(uint64_t &latency) const;
@@ -80,6 +80,7 @@ private:
     State state_;
     std::atomic<bool> isReadInProgress_;
     std::atomic<bool> isWriteInProgress_;
+    bool resetTime_;
     uint64_t resetTimestamp_;
     struct timespec baseTimestamp_;
     AudioRenderMode renderMode_;
