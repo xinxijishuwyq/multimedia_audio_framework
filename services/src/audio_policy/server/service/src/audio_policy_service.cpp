@@ -46,8 +46,8 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
-    std::unique_ptr<AudioFocusParser> audioFocusParser;
-    audioFocusParser = make_unique<AudioFocusParser>();
+    std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
+    CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
     std::string AUDIO_FOCUS_CONFIG_FILE = "/etc/audio/audio_interrupt_policy_config.xml";
 
     if (audioFocusParser->LoadConfig(focusTable_[0][0])) {
@@ -178,16 +178,15 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     }
 
     if (deviceFlag == DeviceFlag::ALL_DEVICES_FLAG) {
-        deviceList = mConnectedDevices;
-        return deviceList;
+        return mConnectedDevices;
     }
 
     DeviceRole role = DeviceRole::OUTPUT_DEVICE;
     role = (deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) ? DeviceRole::OUTPUT_DEVICE : DeviceRole::INPUT_DEVICE;
 
     MEDIA_INFO_LOG("GetDevices mConnectedDevices size = [%{public}zu]", mConnectedDevices.size());
-    for (auto &device : mConnectedDevices) {
-        if (device->deviceRole_ == role) {
+    for (const auto &device : mConnectedDevices) {
+        if (device != nullptr && device->deviceRole_ == role) {
             auto devDesc = new(std::nothrow) AudioDeviceDescriptor(device->deviceType_, device->deviceRole_);
             deviceList.push_back(devDesc);
         }
@@ -204,6 +203,7 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice()
 
     for (const auto &device : priorityList) {
         auto isPresent = [&device] (const sptr<AudioDeviceDescriptor> &desc) {
+            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "FetchHighPriorityDevice device is nullptr");
             return desc->deviceType_ == device;
         };
 

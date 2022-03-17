@@ -36,13 +36,13 @@ std::unique_ptr<AudioParameters> AudioCapturerNapi::sAudioParameters_ = nullptr;
 std::unique_ptr<AudioCapturerOptions> AudioCapturerNapi::sAudioCapturerOptions_ = nullptr;
 
 namespace {
-    const int ARGS_ONE = 1;
-    const int ARGS_TWO = 2;
-    const int ARGS_THREE = 3;
+    constexpr int ARGS_ONE = 1;
+    constexpr int ARGS_TWO = 2;
+    constexpr int ARGS_THREE = 3;
 
-    const int PARAM0 = 0;
-    const int PARAM1 = 1;
-    const int PARAM2 = 2;
+    constexpr int PARAM0 = 0;
+    constexpr int PARAM1 = 1;
+    constexpr int PARAM2 = 2;
 
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioCapturerNapi"};
 
@@ -511,6 +511,7 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -631,6 +632,7 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -1293,5 +1295,5 @@ napi_value AudioCapturerNapi::CreateAudioCapturerWrapper(napi_env env, unique_pt
 
     return result;
 }
-}
-}
+}  // namespace AudioStandard
+}  // namespace OHOS

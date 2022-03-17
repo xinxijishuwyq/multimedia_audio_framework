@@ -80,6 +80,7 @@ void AudioRendererNapi::Destructor(napi_env env, void *nativeObject, void *final
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioRendererNapi *>(nativeObject);
         delete obj;
+        obj = nullptr;
     }
 }
 

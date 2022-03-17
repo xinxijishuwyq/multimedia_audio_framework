@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
+#include "audio_volume_key_event_napi.h"
+
 #include <uv.h>
 
 #include "media_log.h"
-
-#include "audio_volume_key_event_napi.h"
 
 using namespace std;
 namespace {
@@ -133,6 +133,11 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
         MEDIA_ERR_LOG("AudioVolumeKeyEventNapi: OnJsCallBackInterrupt: No memory");
+        return;
+    }
+    if (jsCb.get() == nullptr) {
+        MEDIA_ERR_LOG("AudioVolumeKeyEventNapi: OnJsCallBackInterrupt: jsCb.get() is null");
+        delete work;
         return;
     }
     work->data = reinterpret_cast<void *>(jsCb.get());

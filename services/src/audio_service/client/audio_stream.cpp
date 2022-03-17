@@ -108,7 +108,7 @@ State AudioStream::GetState()
     return state_;
 }
 
-int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
+int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID) const
 {
     if ((state_ == RELEASED) || (state_ == NEW)) {
         return ERR_ILLEGAL_STATE;
@@ -121,7 +121,7 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
     return SUCCESS;
 }
 
-bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
@@ -139,7 +139,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     return false;
 }
 
-int32_t AudioStream::GetBufferSize(size_t &bufferSize)
+int32_t AudioStream::GetBufferSize(size_t &bufferSize) const
 {
     MEDIA_INFO_LOG("AudioStream: Get Buffer size");
     if (GetMinimumBufferSize(bufferSize) != 0) {
@@ -149,7 +149,7 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
     return SUCCESS;
 }
 
-int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
+int32_t AudioStream::GetFrameCount(uint32_t &frameCount) const
 {
     MEDIA_INFO_LOG("AudioStream: Get frame count");
     if (GetMinimumFrameCount(frameCount) != 0) {
@@ -159,7 +159,7 @@ int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
     return SUCCESS;
 }
 
-int32_t AudioStream::GetLatency(uint64_t &latency)
+int32_t AudioStream::GetLatency(uint64_t &latency) const
 {
     if (GetAudioLatency(latency) != SUCCESS) {
         return ERR_OPERATION_FAILED;
@@ -168,22 +168,22 @@ int32_t AudioStream::GetLatency(uint64_t &latency)
     }
 }
 
-vector<AudioSampleFormat> AudioStream::GetSupportedFormats()
+vector<AudioSampleFormat> AudioStream::GetSupportedFormats() const
 {
     return AUDIO_SUPPORTED_FORMATS;
 }
 
-vector<AudioChannel> AudioStream::GetSupportedChannels()
+vector<AudioChannel> AudioStream::GetSupportedChannels() const
 {
     return AUDIO_SUPPORTED_CHANNELS;
 }
 
-vector<AudioEncodingType> AudioStream::GetSupportedEncodingTypes()
+vector<AudioEncodingType> AudioStream::GetSupportedEncodingTypes() const
 {
     return AUDIO_SUPPORTED_ENCODING_TYPES;
 }
 
-vector<AudioSamplingRate> AudioStream::GetSupportedSamplingRates()
+vector<AudioSamplingRate> AudioStream::GetSupportedSamplingRates() const
 {
     return AUDIO_SUPPORTED_SAMPLING_RATES;
 }
@@ -371,11 +371,6 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
         MEDIA_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
         return ERR_WRITE_FAILED;
     }
-    if (bytesWritten < 0) {
-        MEDIA_ERR_LOG("WriteStream fail,bytesWritten:%{public}zu", bytesWritten);
-        return ERR_INVALID_WRITE;
-    }
-
     return bytesWritten;
 }
 
