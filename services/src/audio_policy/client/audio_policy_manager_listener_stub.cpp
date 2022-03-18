@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -76,7 +76,7 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             return MEDIA_OK;
         }
         case ON_DEVICE_CHANGED: {
-            MEDIA_INFO_LOG("Device chnage callback received");
+            MEDIA_INFO_LOG("Device change callback received");
             DeviceChangeAction deviceChangeAction = {};
 
             ReadAudioDeviceChangeData(data, deviceChangeAction);

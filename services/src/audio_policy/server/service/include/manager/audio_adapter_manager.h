@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,7 +59,7 @@ public:
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
-    bool GetStreamMute(AudioStreamType streamType);
+    bool GetStreamMute(AudioStreamType streamType) const;
 
     bool IsStreamActive(AudioStreamType streamType);
 
@@ -71,7 +71,7 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringerMode);
 
-    AudioRingerMode GetRingerMode(void);
+    AudioRingerMode GetRingerMode(void) const;
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
@@ -100,7 +100,7 @@ private:
     }
 
     bool ConnectToPulseAudio(void);
-    std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo);
+    std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
     std::string GetStreamNameByStreamType(AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);

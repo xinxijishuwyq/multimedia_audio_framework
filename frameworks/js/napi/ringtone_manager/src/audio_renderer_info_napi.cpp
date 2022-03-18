@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,6 +45,7 @@ void AudioRendererInfoNapi::Destructor(napi_env env, void *nativeObject, void *f
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioRendererInfoNapi *>(nativeObject);
         delete obj;
+        obj = nullptr;
     }
 }
 
@@ -240,12 +241,15 @@ napi_value AudioRendererInfoNapi::SetStreamUsage(napi_env env, napi_callback_inf
     }
 
     status = napi_unwrap(env, jsThis, (void **)&audioRendererInfoNapi);
-    if (status == napi_ok) {
-        napi_valuetype valueType = napi_undefined;
-        if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
-            HiLog::Error(LABEL, "set stream usage fail: wrong data type");
-            return jsResult;
-        }
+    if (status != napi_ok) {
+        HiLog::Error(LABEL, "Napi unwrap failed");
+        return jsResult;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
+        HiLog::Error(LABEL, "set stream usage fail: wrong data type");
+        return jsResult;
     }
 
     status = napi_get_value_int32(env, args[0], &usage);

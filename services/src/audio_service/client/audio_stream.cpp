@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +34,51 @@ constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t READ_WRITE_WAIT_TIME_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_US = 500;
 
+const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::streamTypeMap_ = AudioStream::CreateStreamMap();
+
+map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMap()
+{
+    map<pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
+
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
+
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_MEDIA)] = STREAM_VOICE_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
+
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+
+    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_UNKNOWN)] = STREAM_MEDIA;
+    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA)] = STREAM_MEDIA;
+    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
+
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_UNKNOWN)] = STREAM_NOTIFICATION;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_MEDIA)] = STREAM_NOTIFICATION;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
+
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+
+    return streamMap;
+}
+
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStreamType_(eStreamType),
                                                                          eMode_(eMode),
                                                                          state_(NEW),
@@ -63,7 +108,7 @@ State AudioStream::GetState()
     return state_;
 }
 
-int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
+int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID) const
 {
     if ((state_ == RELEASED) || (state_ == NEW)) {
         return ERR_ILLEGAL_STATE;
@@ -76,7 +121,7 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
     return SUCCESS;
 }
 
-bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
@@ -94,7 +139,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     return false;
 }
 
-int32_t AudioStream::GetBufferSize(size_t &bufferSize)
+int32_t AudioStream::GetBufferSize(size_t &bufferSize) const
 {
     MEDIA_INFO_LOG("AudioStream: Get Buffer size");
     if (GetMinimumBufferSize(bufferSize) != 0) {
@@ -104,7 +149,7 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
     return SUCCESS;
 }
 
-int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
+int32_t AudioStream::GetFrameCount(uint32_t &frameCount) const
 {
     MEDIA_INFO_LOG("AudioStream: Get frame count");
     if (GetMinimumFrameCount(frameCount) != 0) {
@@ -114,7 +159,7 @@ int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
     return SUCCESS;
 }
 
-int32_t AudioStream::GetLatency(uint64_t &latency)
+int32_t AudioStream::GetLatency(uint64_t &latency) const
 {
     if (GetAudioLatency(latency) != SUCCESS) {
         return ERR_OPERATION_FAILED;
@@ -123,22 +168,22 @@ int32_t AudioStream::GetLatency(uint64_t &latency)
     }
 }
 
-vector<AudioSampleFormat> AudioStream::GetSupportedFormats()
+vector<AudioSampleFormat> AudioStream::GetSupportedFormats() const
 {
     return AUDIO_SUPPORTED_FORMATS;
 }
 
-vector<AudioChannel> AudioStream::GetSupportedChannels()
+vector<AudioChannel> AudioStream::GetSupportedChannels() const
 {
     return AUDIO_SUPPORTED_CHANNELS;
 }
 
-vector<AudioEncodingType> AudioStream::GetSupportedEncodingTypes()
+vector<AudioEncodingType> AudioStream::GetSupportedEncodingTypes() const
 {
     return AUDIO_SUPPORTED_ENCODING_TYPES;
 }
 
-vector<AudioSamplingRate> AudioStream::GetSupportedSamplingRates()
+vector<AudioSamplingRate> AudioStream::GetSupportedSamplingRates() const
 {
     return AUDIO_SUPPORTED_SAMPLING_RATES;
 }
@@ -326,11 +371,6 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
         MEDIA_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
         return ERR_WRITE_FAILED;
     }
-    if (bytesWritten < 0) {
-        MEDIA_ERR_LOG("WriteStream fail,bytesWritten:%{public}zu", bytesWritten);
-        return ERR_INVALID_WRITE;
-    }
-
     return bytesWritten;
 }
 
@@ -453,7 +493,12 @@ bool AudioStream::ReleaseAudioStream()
 
 AudioStreamType AudioStream::GetStreamType(ContentType contentType, StreamUsage streamUsage)
 {
-    AudioStreamType streamType = streamTypeMap_[contentType][streamUsage];
+    AudioStreamType streamType = STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    }
+
     if (streamType == STREAM_MEDIA) {
         streamType = STREAM_MUSIC;
     }

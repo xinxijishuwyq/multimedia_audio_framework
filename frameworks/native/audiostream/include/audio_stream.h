@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,12 +36,12 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
 
-    int32_t GetAudioSessionID(uint32_t &sessionID);
+    int32_t GetAudioSessionID(uint32_t &sessionID) const;
     State GetState();
-    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
-    int32_t GetBufferSize(size_t &bufferSize);
-    int32_t GetFrameCount(uint32_t &frameCount);
-    int32_t GetLatency(uint64_t &latency);
+    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const;
+    int32_t GetBufferSize(size_t &bufferSize) const;
+    int32_t GetFrameCount(uint32_t &frameCount) const;
+    int32_t GetLatency(uint64_t &latency) const;
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetAudioStreamType(AudioStreamType audioStreamType);
     int32_t SetVolume(float volume);
@@ -56,10 +56,10 @@ public:
     int32_t Enqueue(const BufferDesc &bufDesc);
     int32_t Clear();
 
-    std::vector<AudioSampleFormat> GetSupportedFormats();
-    std::vector<AudioChannel> GetSupportedChannels();
-    std::vector<AudioEncodingType> GetSupportedEncodingTypes();
-    std::vector<AudioSamplingRate> GetSupportedSamplingRates();
+    std::vector<AudioSampleFormat> GetSupportedFormats() const;
+    std::vector<AudioChannel> GetSupportedChannels() const;
+    std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;
+    std::vector<AudioSamplingRate> GetSupportedSamplingRates() const;
 
     // Common APIs
     bool StartAudioStream();
@@ -90,14 +90,8 @@ private:
     bool isReadyToWrite_;
     void WriteBuffers();
 
-    static constexpr AudioStreamType streamTypeMap_[CONTENT_TYPE_RINGTONE + 1][STREAM_USAGE_VOICE_ASSISTANT + 1] = {
-        {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
-        {STREAM_MUSIC, STREAM_VOICE_ASSISTANT, STREAM_VOICE_CALL, STREAM_MUSIC, STREAM_VOICE_ASSISTANT},
-        {STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC, STREAM_RING, STREAM_VOICE_ASSISTANT},
-        {STREAM_MEDIA, STREAM_MEDIA, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
-        {STREAM_NOTIFICATION, STREAM_NOTIFICATION, STREAM_MUSIC, STREAM_MUSIC, STREAM_MUSIC},
-        {STREAM_RING, STREAM_RING, STREAM_MUSIC, STREAM_RING, STREAM_MUSIC}
-    };
+    static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
+    static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
 };
 } // namespace AudioStandard
 } // namespace OHOS

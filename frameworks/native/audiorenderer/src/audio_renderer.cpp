@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,7 +44,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
                              "Invalid content type");
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_VOICE_ASSISTANT,
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              nullptr, "Invalid stream usage");
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
@@ -381,11 +381,11 @@ void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEven
     MEDIA_DEBUG_LOG("AudioRendererPrivate: NotifyEvent: Hint: %{public}d", interruptEvent.hintType);
     MEDIA_DEBUG_LOG("AudioRendererPrivate: NotifyEvent: eventType: %{public}d", interruptEvent.eventType);
 
-    if (cb != nullptr) {
-        cb->OnInterrupt(interruptEvent);
+    if (cb_ != nullptr) {
+        cb_->OnInterrupt(interruptEvent);
         MEDIA_DEBUG_LOG("AudioRendererPrivate: OnInterrupt : NotifyEvent to app complete");
     } else {
-        MEDIA_DEBUG_LOG("AudioRendererPrivate: cb == nullptr cannont NotifyEvent to app");
+        MEDIA_DEBUG_LOG("AudioRendererPrivate: cb_ == nullptr cannont NotifyEvent to app");
     }
 }
 
@@ -481,7 +481,7 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
 
 void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
-    cb = callback_.lock();
+    cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
     MEDIA_DEBUG_LOG("AudioRendererPrivate: OnInterrupt InterruptForceType: %{public}d", forceType);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -91,20 +91,17 @@ float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    bool result =  mAudioServiceAdapter->SetMute(streamType, mute);
-    return result;
+    return mAudioServiceAdapter->SetMute(streamType, mute);
 }
 
-bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
+bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType) const
 {
-    bool result =  mAudioServiceAdapter->IsMute(streamType);
-    return result;
+    return  mAudioServiceAdapter->IsMute(streamType);
 }
 
 bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 {
-    bool result = mAudioServiceAdapter->IsStreamActive(streamType);
-    return result;
+    return mAudioServiceAdapter->IsStreamActive(streamType);
 }
 
 int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
@@ -148,7 +145,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
     return SUCCESS;
 }
 
-AudioRingerMode AudioAdapterManager::GetRingerMode()
+AudioRingerMode AudioAdapterManager::GetRingerMode() const
 {
     return mRingerMode;
 }
@@ -163,17 +160,21 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
             if (ret) {
                 MEDIA_ERR_LOG("[AudioAdapterManager] Error Removing file: %{public}s Failed! ret val: %{public}d",
                     audioModuleInfo.fileName.c_str(), ret);
+                return ERR_OPERATION_FAILED;
             }
         } else {
             MEDIA_ERR_LOG("[AudioAdapterManager] Error audioModuleInfo.fileName is null! or file not exists");
+            return ERR_OPERATION_FAILED;
         }
     }
 
+    CHECK_AND_RETURN_RET_LOG(mAudioServiceAdapter != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
+    CHECK_AND_RETURN_RET_LOG(mAudioServiceAdapter != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return mAudioServiceAdapter->CloseAudioPort(ioHandle);
 }
 
@@ -202,7 +203,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 }
 
 // Private Members
-std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo)
+std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const
 {
     std::string args;
 
@@ -374,7 +375,6 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     } else {
         LoadVolumeMap();
     }
-    return;
 }
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)

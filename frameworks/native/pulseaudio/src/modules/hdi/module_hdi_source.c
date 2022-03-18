@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -62,8 +62,9 @@ int pa__init(pa_module *m)
         goto fail;
     }
 
-    if (!(m->userdata = pa_hdi_source_new(m, ma, __FILE__)))
+    if (!(m->userdata = pa_hdi_source_new(m, ma, __FILE__))) {
         goto fail;
+    }
 
     pa_modargs_free(ma);
 
@@ -71,8 +72,9 @@ int pa__init(pa_module *m)
 
 fail:
 
-    if (ma)
+    if (ma) {
         pa_modargs_free(ma);
+    }
 
     pa__done(m);
 
@@ -95,6 +97,7 @@ void pa__done(pa_module *m)
 
     pa_assert(m);
 
-    if ((source = m->userdata))
+    if ((source = m->userdata)) {
         pa_hdi_source_free(source);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,9 +49,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
         MEDIA_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
 
-    interruptPriorityMap_[STREAM_VOICE_CALL] = 3;
-    interruptPriorityMap_[STREAM_RING] = 2;
-    interruptPriorityMap_[STREAM_MUSIC] = 1;
+    interruptPriorityMap_[STREAM_VOICE_CALL] = THIRD_PRIORITY;
+    interruptPriorityMap_[STREAM_RING] = SECOND_PRIORITY;
+    interruptPriorityMap_[STREAM_MUSIC] = FIRST_PRIORITY;
 }
 
 void AudioPolicyServer::OnDump()
@@ -114,7 +114,10 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
+        CHECK_AND_RETURN_LOG(object != nullptr, "Audio service unavailable");
+
         deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {
@@ -125,20 +128,22 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
 
 void AudioPolicyServer::AudioServerDied(pid_t pid)
 {
-    MEDIA_INFO_LOG("Audio server died: restart policy server");
-    MEDIA_INFO_LOG("AudioPolicyServer: Kill pid:%{public}d", pid);
+    MEDIA_INFO_LOG("Audio server died: restart policy server pid %{public}d", pid);
     kill(pid, SIGKILL);
 }
 
 void AudioPolicyServer::SubscribeKeyEvents()
 {
     MMI::InputManager *im = MMI::InputManager::GetInstance();
+    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
+    CHECK_AND_RETURN_LOG(keyOption_down != nullptr, "Invalid key option");
     keyOption_down->SetPreKeys(preKeys);
     keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
     keyOption_down->SetFinalKeyDown(true);
-    keyOption_down->SetFinalKeyDownDuration(0);
+    keyOption_down->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
     im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = GetStreamInFocus();
@@ -483,7 +488,7 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
 int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInterrupt)
 {
     // Function: First Process pendingList and remove session that loses focus indefinitely
-    for (auto iterPending = pendingOwnersList_.begin(); iterPending != pendingOwnersList_.end(); ) {
+    for (auto iterPending = pendingOwnersList_.begin(); iterPending != pendingOwnersList_.end();) {
         bool IsIterPendingErased = ProcessPendingInterrupt(iterPending, incomingInterrupt);
         if (!IsIterPendingErased) {
             MEDIA_INFO_LOG("AudioPolicyServer: iterPending not erased while processing ++increment it");
@@ -493,7 +498,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
 
     auto focusTable = mPolicyService.GetAudioFocusTable();
     // Function: Process Focus entry
-    for (auto iterActive = curActiveOwnersList_.begin(); iterActive != curActiveOwnersList_.end(); ) {
+    for (auto iterActive = curActiveOwnersList_.begin(); iterActive != curActiveOwnersList_.end();) {
         AudioStreamType activeStreamType = iterActive->streamType;
         AudioStreamType incomingStreamType = incomingInterrupt.streamType;
         AudioFocusEntry focusEntry = focusTable[activeStreamType][incomingStreamType];
@@ -520,7 +525,7 @@ void AudioPolicyServer::AddToCurActiveList(const AudioInterrupt &audioInterrupt)
 
     auto itCurActive = curActiveOwnersList_.begin();
 
-    for ( ; itCurActive != curActiveOwnersList_.end(); ++itCurActive) {
+    for (; itCurActive != curActiveOwnersList_.end(); ++itCurActive) {
         AudioStreamType existingPriorityStreamType = itCurActive->streamType;
         if (interruptPriorityMap_[existingPriorityStreamType] > interruptPriorityMap_[audioInterrupt.streamType]) {
             continue;
@@ -624,7 +629,7 @@ void AudioPolicyServer::ResumeUnduckPendingList(const AudioInterrupt &exitInterr
     InterruptEventInternal forcedUnducking {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 0.2f};
     InterruptEventInternal resumeForcePaused {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 0.2f};
 
-    for (auto it = pendingOwnersList_.begin(); it != pendingOwnersList_.end(); ) {
+    for (auto it = pendingOwnersList_.begin(); it != pendingOwnersList_.end();) {
         AudioStreamType pendingStreamType = it->streamType;
         uint32_t pendingSessionID = it->sessionID;
         if (interruptPriorityMap_[pendingStreamType] > interruptPriorityMap_[exitStreamType]) {
@@ -671,7 +676,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     bool isInterruptActive = false;
     InterruptEventInternal forcedUnducking {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 0.2f};
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = nullptr;
-    for (auto it = curActiveOwnersList_.begin(); it != curActiveOwnersList_.end(); ) {
+    for (auto it = curActiveOwnersList_.begin(); it != curActiveOwnersList_.end();) {
         if (it->sessionID == audioInterrupt.sessionID) {
             policyListenerCb = policyListenerCbsMap_[it->sessionID];
             if (policyListenerCb != nullptr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,13 +36,13 @@ std::unique_ptr<AudioParameters> AudioCapturerNapi::sAudioParameters_ = nullptr;
 std::unique_ptr<AudioCapturerOptions> AudioCapturerNapi::sAudioCapturerOptions_ = nullptr;
 
 namespace {
-    const int ARGS_ONE = 1;
-    const int ARGS_TWO = 2;
-    const int ARGS_THREE = 3;
+    constexpr int ARGS_ONE = 1;
+    constexpr int ARGS_TWO = 2;
+    constexpr int ARGS_THREE = 3;
 
-    const int PARAM0 = 0;
-    const int PARAM1 = 1;
-    const int PARAM2 = 2;
+    constexpr int PARAM0 = 0;
+    constexpr int PARAM1 = 1;
+    constexpr int PARAM2 = 2;
 
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioCapturerNapi"};
 
@@ -456,6 +456,21 @@ void AudioCapturerNapi::IsTrueAsyncCallbackComplete(napi_env env, napi_status st
     }
 }
 
+void AudioCapturerNapi::GetBufferSizeAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    auto asyncContext = static_cast<AudioCapturerAsyncContext*>(data);
+    napi_value valueParam = nullptr;
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            napi_create_uint32(env, asyncContext->bufferSize, &valueParam);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: AudioCapturerAsyncContext* is Null!");
+    }
+}
+
 void AudioCapturerNapi::GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioCapturerAsyncContext*>(data);
@@ -496,6 +511,7 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -616,6 +632,7 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
+    NAPI_ASSERT(env, asyncContext != nullptr, "no memory");
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -1138,10 +1155,10 @@ napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info inf
                 size_t bufferSize;
                 context->status = context->objectInfo->audioCapturer_->GetBufferSize(bufferSize);
                 if (context->status == SUCCESS) {
-                    context->intValue = bufferSize;
+                    context->bufferSize = bufferSize;
                 }
             },
-            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+            GetBufferSizeAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
@@ -1278,5 +1295,5 @@ napi_value AudioCapturerNapi::CreateAudioCapturerWrapper(napi_env env, unique_pt
 
     return result;
 }
-}
-}
+}  // namespace AudioStandard
+}  // namespace OHOS

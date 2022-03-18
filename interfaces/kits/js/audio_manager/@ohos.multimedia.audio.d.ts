@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2021 Huawei Device Co., Ltd.
+* Copyright (c) 2021-2022 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -371,7 +371,7 @@ declare namespace audio {
      * Notification or ringtone usage.
      * @since 7
      */
-    STREAM_USAGE_NOTIFICATION_RINGTONE = 3
+    STREAM_USAGE_NOTIFICATION_RINGTONE = 6
   }
 
   /**
@@ -851,7 +851,7 @@ declare namespace audio {
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
-    setAudioScene(scene: AudioScene, callback: AsyncCallback<void> ): void;
+    setAudioScene(scene: AudioScene, callback: AsyncCallback<void>): void;
     /**
      * Sets the audio scene mode to change audio strategy. This method uses a promise to return the execution result.
      * @since 8
@@ -863,7 +863,7 @@ declare namespace audio {
      * @since 8
      * @syscap SystemCapability.Multimedia.Audio
      */
-    getAudioScene(callback: AsyncCallback<AudioScene> ): void;
+    getAudioScene(callback: AsyncCallback<AudioScene>): void;
     /**
      * Obtains the system audio scene mode. This method uses a promise to return the execution result.
      * @since 8

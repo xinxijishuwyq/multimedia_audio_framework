@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-#ifdef DEVICE_BALTIMORE
+#ifdef PRODUCT_M40
     const std::string AUDIO_HDI_SERVICE_NAME = "audio_adapter_service";
 #else
     const std::string AUDIO_HDI_SERVICE_NAME = "audio_hdi_service";
@@ -56,6 +56,7 @@ static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
 
 static void OnServiceStatusReceived(struct ServiceStatusListener *listener, struct ServiceStatus *serviceStatus)
 {
+    CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "Invalid ServiceStatus");
     std::string info = serviceStatus->info;
     MEDIA_DEBUG_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d] [info:%{public}s]",
                     serviceStatus->serviceName, serviceStatus->status, info.c_str());
@@ -65,7 +66,7 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
         CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");
 
         if (serviceStatus->status == SERVIE_STATUS_START) {
-            devListener->deviceObserver_.OnServiceConnected();
+            devListener->deviceObserver_.OnServiceConnected(AudioServiceIndex::HDI_SERVICE_INDEX);
         } else if (serviceStatus->status == SERVIE_STATUS_CHANGE && !info.empty()) {
             AudioDeviceType hdiDeviceType = HDF_AUDIO_DEVICE_UNKOWN;
             AudioEventType hdiEventType = HDF_AUDIO_EVENT_UNKOWN;

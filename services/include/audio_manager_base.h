@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -78,7 +78,7 @@ public:
      * @param  value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual void SetAudioParameter(const std::string key, const std::string value) = 0;
+    virtual void SetAudioParameter(const std::string &key, const std::string &value) = 0;
 
     /**
      * Get Audio Parameter.
@@ -86,7 +86,7 @@ public:
      * @param  key for the audio parameter to be set
      * @return Returns value associated to the key requested.
      */
-    virtual const std::string GetAudioParameter(const std::string key) = 0;
+    virtual const std::string GetAudioParameter(const std::string &key) = 0;
 
     /**
      * Update the audio route after device is detected and route is decided

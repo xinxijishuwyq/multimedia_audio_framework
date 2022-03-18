@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,11 +45,8 @@ int BluetoothA2dpAudioSrcObserverStub::OnRemoteRequest(
 {
     HILOGD("BluetoothA2dpAudioSrcObserverStub::OnRemoteRequest, cmd = %{public}d, flags = %{public}d",
         code, option.GetFlags());
-    std::u16string descriptor = BluetoothA2dpAudioSrcObserverStub::GetDescriptor();
-    std::u16string remoteDescriptor = data.ReadInterfaceToken();
-    if (descriptor != remoteDescriptor) {
-        HILOGI("local descriptor is not equal to remote, descriptor: %{public}s, remoteDescriptor:%{public}s",
-            descriptor.c_str(), remoteDescriptor.c_str());
+    if (data.ReadInterfaceToken() != BluetoothA2dpAudioSrcObserverStub::GetDescriptor()) {
+        HILOGE("BluetoothA2dpAudioSrcObserverStub: ReadInterfaceToken failed");
         return ERR_INVALID_STATE;
     }
     auto itFunc = memberFuncMap_.find(code);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,6 +42,9 @@ static SLresult CreateAudioPlayer(
     }
     ClassTable *audioPlayerClass = ObjectIdToClass(SL_OBJECTID_AUDIOPLAYER);
     CAudioPlayer *thiz = (CAudioPlayer *) Construct(audioPlayerClass, self);
+    if (thiz == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     thiz->mId = audioplayerId;
     IObjectInit(&thiz->mObject);
     IPlayInit(&thiz->mPlay, audioplayerId);
@@ -92,6 +95,9 @@ static SLresult CreateOutputMix(
     }
     ClassTable *outputMixClass = ObjectIdToClass(SL_OBJECTID_OUTPUTMIX);
     COutputMix *thiz = (COutputMix *) Construct(outputMixClass, self);
+    if (thiz == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
     IObjectInit(&thiz->mObject);
     *pMix = &thiz->mObject.mItf;
     return SL_RESULT_SUCCESS;

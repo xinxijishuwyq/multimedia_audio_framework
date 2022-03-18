@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -74,7 +74,7 @@ static int32_t InitPlayback(std::unique_ptr<AudioServiceClient> &client, AudioSt
 int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile)
 {
     uint8_t* buffer = nullptr;
-    int32_t n = 2;
+    size_t n = 2;
     size_t bytesToWrite = 0;
     size_t bytesWritten = 0;
     size_t minBytes = 4;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,7 +43,7 @@ public:
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
 
-    virtual bool GetStreamMute(AudioStreamType streamType) = 0;
+    virtual bool GetStreamMute(AudioStreamType streamType) const = 0;
 
     virtual bool IsStreamActive(AudioStreamType streamType) = 0;
 
@@ -56,7 +56,7 @@ public:
 
     virtual int32_t SetRingerMode(AudioRingerMode ringerMode) = 0;
 
-    virtual AudioRingerMode GetRingerMode() = 0;
+    virtual AudioRingerMode GetRingerMode() const = 0;
 
     virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -63,7 +63,7 @@ public:
      *
      * @param audioPortName name of the audio modules to be loaded
      * @param moduleArgs audio module info like rate, channel etc
-     * @return Returns module index if module loaded sucessfully; returns an error code
+     * @return Returns module index if module loaded successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) = 0;

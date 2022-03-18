@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -61,6 +61,8 @@ static void PrintUsage(void)
     cout << "-u\n\t Checks if the Microphone is muted " << endl << endl;
     cout << "-R\n\tSets RingerMode" << endl << endl;
     cout << "-r\n\tGets RingerMode status" << endl << endl;
+    cout << "-C\n\tSets AudioScene" << endl << endl;
+    cout << "-c\n\tGets AudioScene status" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
@@ -163,6 +165,19 @@ static void HandleRingerMode(char option)
     }
 }
 
+static void HandleAudioScene(char option)
+{
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    if (option == 'c') {
+        int scene = static_cast<int32_t>(audioSystemMgr->GetAudioScene());
+        cout << "Get Audio Scene : " << scene << endl;
+    } else {
+        int scene = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
+        cout << "Set Audio Scene : " << scene << endl;
+        audioSystemMgr->SetAudioScene(static_cast<AudioScene>(scene));
+    }
+}
+
 static void NoValueError()
 {
     char option[AudioPolicyTest::OPT_SHORT_LEN];
@@ -199,7 +214,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:d:s:vmru")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:vmruc")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -228,6 +243,10 @@ int main(int argc, char* argv[])
             case 'R':
             case 'r':
                 HandleRingerMode(opt);
+                break;
+            case 'C':
+            case 'c':
+                HandleAudioScene(opt);
                 break;
             case ':':
                 NoValueError();

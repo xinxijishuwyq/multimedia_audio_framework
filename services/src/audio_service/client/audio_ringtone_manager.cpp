@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -240,7 +240,7 @@ int32_t RingtonePlayer::Start()
         return ERROR;
     }
 
-    // Player doesnt support play in stopped state. Hence reiniialise player for making start<-->stop to work
+    // Player doesn't support play in stopped state. Hence reinitialise player for making start<-->stop to work
     if (ringtoneState_ == STATE_STOPPED) {
         (void)PrepareRingtonePlayer(true);
     } else {

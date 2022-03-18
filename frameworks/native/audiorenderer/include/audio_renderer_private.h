@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -64,13 +64,13 @@ public:
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
 
-    std::shared_ptr<AudioStream> audioStream_;
     AudioRendererInfo rendererInfo_ = {};
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType);
     ~AudioRendererPrivate();
 
 private:
+    std::shared_ptr<AudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AudioInterrupt audioInterrupt_ =
@@ -93,7 +93,7 @@ private:
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
     std::shared_ptr<AudioStream> audioStream_;
     std::weak_ptr<AudioRendererCallback> callback_;
-    std::shared_ptr<AudioRendererCallback> cb;
+    std::shared_ptr<AudioRendererCallback> cb_;
     AudioInterrupt audioInterrupt_ {};
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
