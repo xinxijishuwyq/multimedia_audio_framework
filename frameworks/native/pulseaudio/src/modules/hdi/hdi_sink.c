@@ -167,7 +167,11 @@ static void ThreadFuncUseTiming(void *userdata)
         pa_usec_t now = 0;
         int ret;
 
+#ifdef PRODUCT_RK3568
+        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+#else
         if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+#endif
             now = pa_rtclock_now();
         }
 
@@ -176,7 +180,11 @@ static void ThreadFuncUseTiming(void *userdata)
         }
 
         // Render some data and drop it immediately
+#ifdef PRODUCT_RK3568
+        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+#else
         if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+#endif
             if (u->timestamp <= now)
                 ProcessRenderUseTiming(u, now);
 

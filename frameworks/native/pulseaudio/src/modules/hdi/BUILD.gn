@@ -53,6 +53,8 @@ ohos_shared_library("module-hdi-sink") {
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_sink_z_so" ]
   if ("${product_name}" == "m40") {
     cflags += [ "-DPRODUCT_M40" ]
+  } else if ("${product_name}" == "rk3568") {
+    cflags += [ "-DPRODUCT_RK3568" ]
   }
 
   ldflags = [
