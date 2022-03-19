@@ -158,13 +158,9 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
         if (!audioModuleInfo.fileName.empty() && access(audioModuleInfo.fileName.c_str(), F_OK) == 0) {
             int32_t ret = std::remove(audioModuleInfo.fileName.c_str());
             if (ret) {
-                MEDIA_ERR_LOG("[AudioAdapterManager] Error Removing file: %{public}s Failed! ret val: %{public}d",
-                    audioModuleInfo.fileName.c_str(), ret);
+                MEDIA_ERR_LOG("Removing pipe file failed!. Ret val: %{public}d", ret);
                 return ERR_OPERATION_FAILED;
             }
-        } else {
-            MEDIA_ERR_LOG("[AudioAdapterManager] Error audioModuleInfo.fileName is null! or file not exists");
-            return ERR_OPERATION_FAILED;
         }
     }
 

@@ -33,7 +33,6 @@ constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 
-
 enum DeviceFlag {
     /**
      * Device flag none.
