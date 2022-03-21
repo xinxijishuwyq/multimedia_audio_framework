@@ -197,7 +197,6 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_bluetooth_client",
     "//foundation/multimedia/audio_standard/services:audio_dump",
     "//foundation/multimodalinput/input/frameworks/proxy:libmmi-client",
-    "//foundation/multimodalinput/input/frameworks/util:libmmi-util",
     "//third_party/libxml2:xml2",
     "//utils/native/base:utils",
   ]
