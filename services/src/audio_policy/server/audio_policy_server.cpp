@@ -794,6 +794,9 @@ int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t clientPid, co
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
                              "AudioPolicyServer::SetVolumeKeyEventCallback failed to create cb obj");
 
+    if (volumeChangeCbsMap_.find(clientPid) != volumeChangeCbsMap_.end()) {
+        volumeChangeCbsMap_.erase(clientPid);
+    }
     volumeChangeCbsMap_.insert({ clientPid, callback });
     return SUCCESS;
 }
