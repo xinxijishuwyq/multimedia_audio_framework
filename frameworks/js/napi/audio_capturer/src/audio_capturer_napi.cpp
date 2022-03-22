@@ -943,21 +943,24 @@ napi_value AudioCapturerNapi::RegisterPeriodPositionCallback(napi_env env, napi_
 {
     int64_t frameCount = 0;
     napi_get_value_int64(env, argv[PARAM1], &frameCount);
-    NAPI_ASSERT(env, frameCount > 0, "AudioCapturerNapi: On Invalid frameCount value: <= 0.");
 
-    if (capturerNapi->periodPositionCBNapi_ == nullptr) {
-        capturerNapi->periodPositionCBNapi_ = std::make_shared<CapturerPeriodPositionCallbackNapi>(env);
-        NAPI_ASSERT(env, capturerNapi->periodPositionCBNapi_ != nullptr, "AudioCapturerNapi: No memory.");
+    if (frameCount > 0) {
+        if (capturerNapi->periodPositionCBNapi_ == nullptr) {
+            capturerNapi->periodPositionCBNapi_ = std::make_shared<CapturerPeriodPositionCallbackNapi>(env);
+            NAPI_ASSERT(env, capturerNapi->periodPositionCBNapi_ != nullptr, "AudioCapturerNapi: No memory.");
 
-        int32_t ret = capturerNapi->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount,
-            capturerNapi->periodPositionCBNapi_);
-        NAPI_ASSERT(env, ret == SUCCESS, "AudioCapturerNapi: SetCapturerPositionCallback failed.");
+            int32_t ret = capturerNapi->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount,
+                capturerNapi->periodPositionCBNapi_);
+            NAPI_ASSERT(env, ret == SUCCESS, "AudioCapturerNapi: SetCapturerPositionCallback failed.");
 
-        std::shared_ptr<CapturerPeriodPositionCallbackNapi> cb =
-            std::static_pointer_cast<CapturerPeriodPositionCallbackNapi>(capturerNapi->periodPositionCBNapi_);
-        cb->SaveCallbackReference(cbName, argv[PARAM2]);
+            std::shared_ptr<CapturerPeriodPositionCallbackNapi> cb =
+                std::static_pointer_cast<CapturerPeriodPositionCallbackNapi>(capturerNapi->periodPositionCBNapi_);
+            cb->SaveCallbackReference(cbName, argv[PARAM2]);
+        } else {
+            MEDIA_DEBUG_LOG("AudioCapturerNapi: periodReach already subscribed.");
+        }
     } else {
-        MEDIA_DEBUG_LOG("AudioCapturerNapi: periodReach already subscribed.");
+        MEDIA_ERR_LOG("AudioCapturerNapi: frameCount value not supported!!");
     }
 
     napi_value result = nullptr;
@@ -970,20 +973,23 @@ napi_value AudioCapturerNapi::RegisterPositionCallback(napi_env env, napi_value*
 {
     int64_t markPosition = 0;
     napi_get_value_int64(env, argv[PARAM1], &markPosition);
-    NAPI_ASSERT(env, markPosition > 0, "AudioCapturerNapi: On Invalid markPosition value: <= 0.");
 
-    if (capturerNapi->positionCBNapi_ == nullptr) {
-        capturerNapi->positionCBNapi_ = std::make_shared<CapturerPositionCallbackNapi>(env);
-        NAPI_ASSERT(env, capturerNapi->positionCBNapi_ != nullptr, "AudioCapturerNapi: No memory.");
-        int32_t ret = capturerNapi->audioCapturer_->SetCapturerPositionCallback(markPosition,
-                                                                                capturerNapi->positionCBNapi_);
-        NAPI_ASSERT(env, ret == SUCCESS, "AudioCapturerNapi: SetCapturerPositionCallback failed.");
+    if (markPosition > 0) {
+        if (capturerNapi->positionCBNapi_ == nullptr) {
+            capturerNapi->positionCBNapi_ = std::make_shared<CapturerPositionCallbackNapi>(env);
+            NAPI_ASSERT(env, capturerNapi->positionCBNapi_ != nullptr, "AudioCapturerNapi: No memory.");
+            int32_t ret = capturerNapi->audioCapturer_->SetCapturerPositionCallback(markPosition,
+                                                                                    capturerNapi->positionCBNapi_);
+            NAPI_ASSERT(env, ret == SUCCESS, "AudioCapturerNapi: SetCapturerPositionCallback failed.");
 
-        std::shared_ptr<CapturerPositionCallbackNapi> cb =
-            std::static_pointer_cast<CapturerPositionCallbackNapi>(capturerNapi->positionCBNapi_);
-        cb->SaveCallbackReference(cbName, argv[PARAM2]);
+            std::shared_ptr<CapturerPositionCallbackNapi> cb =
+                std::static_pointer_cast<CapturerPositionCallbackNapi>(capturerNapi->positionCBNapi_);
+            cb->SaveCallbackReference(cbName, argv[PARAM2]);
+        } else {
+            MEDIA_DEBUG_LOG("AudioCapturerNapi: markReach already subscribed.");
+        }
     } else {
-        MEDIA_DEBUG_LOG("AudioCapturerNapi: markReach already subscribed.");
+        MEDIA_ERR_LOG("AudioCapturerNapi: Mark Position value not supported!!");
     }
 
     napi_value result = nullptr;
@@ -1062,7 +1068,12 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
         napi_valuetype paramArg1 = napi_undefined;
         napi_typeof(env, argv[1], &paramArg1);
         napi_valuetype expectedValType = napi_number;  // Default. Reset it with 'callbackName' if check, if required.
-        NAPI_ASSERT(env, paramArg1 == expectedValType, "type mismatch for parameter 2");
+        if (paramArg1 != expectedValType) {
+            MEDIA_ERR_LOG("Type mismatch for param 2!!");
+            napi_value result = nullptr;
+            napi_get_undefined(env, &result);
+            return result;
+        }
 
         const int32_t arg2 = 2;
         napi_typeof(env, argv[arg2], &handler);
