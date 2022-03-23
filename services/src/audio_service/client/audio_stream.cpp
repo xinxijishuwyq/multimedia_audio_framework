@@ -688,5 +688,5 @@ void AudioStream::WriteBuffers()
     }
     MEDIA_INFO_LOG("AudioStream::WriteBuffers thread end");
 }
-} // namspace AudioStandard
+} // namespace AudioStandard
 } // namespace OHOS
