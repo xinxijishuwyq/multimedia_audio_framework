@@ -53,6 +53,6 @@ private:
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 };
-} // AudioStandard
+} // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_MANAGER_STUB_H
