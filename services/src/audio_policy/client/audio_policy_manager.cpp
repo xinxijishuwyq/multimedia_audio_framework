@@ -178,6 +178,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const std::shared_ptr<AudioM
     sptr<IRemoteObject> object = deviceChangeCbStub->AsObject();
     if (object == nullptr) {
         MEDIA_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
+        delete deviceChangeCbStub;
         return ERROR;
     }
 
