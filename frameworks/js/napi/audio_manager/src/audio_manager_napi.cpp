@@ -1798,7 +1798,7 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
     napi_value ddWrapper = nullptr;
     napi_value retVal;
     size_t size = asyncContext->deviceDescriptors.size();
-    HiLog::Info(LABEL, "number of devices = %{public}d", size);
+    HiLog::Info(LABEL, "number of devices = %{public}lu", (unsigned long)size);
 
     napi_create_array_with_length(env, size, &result[PARAM1]);
 
