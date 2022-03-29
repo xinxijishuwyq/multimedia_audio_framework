@@ -151,7 +151,8 @@ void AudioPolicyServer::SubscribeKeyEvents()
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
         float currentVolume = GetStreamVolume(streamInFocus);
-        if (ConvertVolumeToInt(currentVolume) <= MIN_VOLUME_LEVEL) {
+        int32_t volumeLevelInInt = ConvertVolumeToInt(currentVolume);
+        if (volumeLevelInInt <= MIN_VOLUME_LEVEL) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
@@ -164,7 +165,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
             }
             return;
         }
-        SetStreamVolume(streamInFocus, currentVolume-GetVolumeFactor(), true);
+        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt - 1), true);
     });
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption_up = std::make_shared<OHOS::MMI::KeyOption>();
     keyOption_up->SetPreKeys(preKeys);
@@ -178,7 +179,8 @@ void AudioPolicyServer::SubscribeKeyEvents()
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
         float currentVolume = GetStreamVolume(streamInFocus);
-        if (ConvertVolumeToInt(currentVolume) >= MAX_VOLUME_LEVEL) {
+        int32_t volumeLevelInInt = ConvertVolumeToInt(currentVolume);
+        if (volumeLevelInInt >= MAX_VOLUME_LEVEL) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
@@ -191,7 +193,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
             }
             return;
         }
-        SetStreamVolume(streamInFocus, currentVolume+GetVolumeFactor(), true);
+        SetStreamVolume(streamInFocus, MapVolumeToHDI(volumeLevelInInt + 1), true);
     });
 }
 
@@ -813,9 +815,9 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return SUCCESS;
 }
 
-float AudioPolicyServer::GetVolumeFactor()
+float AudioPolicyServer::MapVolumeToHDI(int32_t volume)
 {
-    float value = (float)VOLUME_CHANGE_FACTOR / MAX_VOLUME_LEVEL;
+    float value = (float)volume / MAX_VOLUME_LEVEL;
     float roundValue = (int)(value * CONST_FACTOR);
 
     return (float)roundValue / CONST_FACTOR;
