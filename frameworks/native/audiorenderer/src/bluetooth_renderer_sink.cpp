@@ -35,6 +35,7 @@ const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
 const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
+const uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 20000;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
@@ -293,12 +294,11 @@ int32_t BluetoothRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &w
 #endif // BT_DUMPFILE
 
     ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
-    MEDIA_INFO_LOG("Bluetooth Render: after RenderFrame");
     if (ret != 0) {
         MEDIA_ERR_LOG("A2dp RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
-    MEDIA_INFO_LOG("Bluetooth Render: RenderFrame SUCCESS");
+    usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
 
     return SUCCESS;
 }
@@ -393,6 +393,7 @@ int32_t BluetoothRendererSink::Stop(void)
         MEDIA_INFO_LOG("BluetoothRendererSink::Stop control after");
         if (!ret) {
             started_ = false;
+            paused_ = false;
             return SUCCESS;
         } else {
             MEDIA_ERR_LOG("BluetoothRendererSink::Stop failed!");
@@ -542,6 +543,26 @@ int32_t BluetoothRendererSinkStart()
 
     ret = g_bluetoothRendrSinkInstance->Start();
     return ret;
+}
+
+int32_t BluetoothRendererSinkPause()
+{
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+        MEDIA_ERR_LOG("BT renderer sink pause failed");
+        return ERR_NOT_STARTED;
+    }
+
+    return g_bluetoothRendrSinkInstance->Pause();
+}
+
+int32_t BluetoothRendererSinkResume()
+{
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+        MEDIA_ERR_LOG("BT renderer sink resume failed");
+        return ERR_NOT_STARTED;
+    }
+
+    return g_bluetoothRendrSinkInstance->Resume();
 }
 
 int32_t BluetoothRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)

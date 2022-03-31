@@ -36,6 +36,8 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkInit)(const SinkAttr *attr);
     void (*RendererSinkDeInit)(void);
     int32_t (*RendererSinkStart)(void);
+    int32_t (*RendererSinkPause)(void);
+    int32_t (*RendererSinkResume)(void);
     int32_t (*RendererSinkStop)(void);
     int32_t (*RendererRenderFrame)(char *data, uint64_t len, uint64_t *writeLen);
     int32_t (*RendererSinkSetVolume)(float left, float right);
@@ -44,6 +46,7 @@ struct RendererSinkAdapter {
 
 int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);
 int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
+const char *GetDeviceClass(void);
 #ifdef __cplusplus
 }
 #endif
