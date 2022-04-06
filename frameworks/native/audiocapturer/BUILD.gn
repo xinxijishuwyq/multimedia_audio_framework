@@ -27,7 +27,6 @@ ohos_shared_library("audio_capturer_source") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/media_standard/interfaces/innerkits/native/media/include",
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
