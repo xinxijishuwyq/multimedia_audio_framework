@@ -185,7 +185,11 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     }
 
     // Get qualified sound card and port
+#ifdef PRODUCT_M40
     string adapterNameCase = "internal";
+#else
+    string adapterNameCase = "primary1";
+#endif
     index = SwitchAdapterCapture(descs, size, adapterNameCase, PORT_IN, audioPort);
     if (index < 0) {
         MEDIA_ERR_LOG("Switch Adapter Capture Fail");

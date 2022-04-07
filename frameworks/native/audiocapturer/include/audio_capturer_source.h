@@ -70,7 +70,7 @@ public:
 
 private:
     const int32_t HALF_FACTOR = 2;
-    const int32_t MAX_AUDIO_ADAPTER_NUM = 4;
+    const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
     const float MAX_VOLUME_LEVEL = 15.0f;
 
     AudioSourceAttr attr_;
@@ -81,7 +81,7 @@ private:
 
     int32_t routeHandle_ = -1;
 
-    struct AudioProxyManager *audioManager_;
+    struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioCapture *audioCapture_;
     struct AudioPort audioPort;

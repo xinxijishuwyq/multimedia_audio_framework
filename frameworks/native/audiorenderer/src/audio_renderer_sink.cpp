@@ -28,7 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 4;
+const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -201,7 +201,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 #ifdef PRODUCT_M40
     string adapterNameCase = "internal";  // Set sound card information
 #else
-    string adapterNameCase = "usb";  // Set sound card information
+    string adapterNameCase = "primary";  // Set sound card information
 #endif
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
