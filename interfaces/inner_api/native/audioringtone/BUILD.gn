@@ -35,7 +35,7 @@ ohos_shared_library("audio_ringtone_client") {
     "//foundation/aafwk/standard/interfaces/innerkits/uri:zuri",
     "//foundation/aafwk/standard/interfaces/innerkits/want:want",
     "//foundation/graphic/standard/frameworks/surface:surface",
-    "//foundation/multimedia/media_standard/interfaces/innerkits/native/media:media_client",
+    "//foundation/multimedia/media_standard/interfaces/inner_api/native:media_client",
   ]
 
   external_deps = [
