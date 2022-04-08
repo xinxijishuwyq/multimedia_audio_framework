@@ -48,7 +48,7 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const string APP_DATA_BASE_PATH = "/data/accounts/account_0/appdata/";
 const string APP_COOKIE_FILE_PATH = "/cache/cookie";
 
-static int32_t CheckReturnIfinvalid(bool expr, const uint32_t retVal)
+static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 {
     do {
         if (!(expr)) {
@@ -59,7 +59,7 @@ static int32_t CheckReturnIfinvalid(bool expr, const uint32_t retVal)
 }
 
 static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context *context,
-    pa_stream *paStream, const uint32_t retVal)
+    pa_stream *paStream, const int32_t retVal)
 {
     return CheckReturnIfinvalid(mainLoop && context &&
         paStream && PA_CONTEXT_IS_GOOD(pa_context_get_state(context)) &&
@@ -67,7 +67,7 @@ static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context
 }
 
 static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context *context,
-    pa_stream *paStream, const uint32_t retVal, int32_t &pError)
+    pa_stream *paStream, const int32_t retVal, int32_t &pError)
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, -1) < 0) {
         pError = pa_context_errno(context);
@@ -1030,7 +1030,7 @@ int32_t AudioServiceClient::FlushStream()
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-    
+
     pa_operation *operation = nullptr;
 
     lock_guard<mutex> lock(dataMutex);
@@ -1072,7 +1072,7 @@ int32_t AudioServiceClient::FlushStream()
 
 int32_t AudioServiceClient::DrainStream()
 {
-    uint32_t error;
+    int32_t error;
 
     if (eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
         MEDIA_ERR_LOG("Drain is not supported");
@@ -1278,7 +1278,7 @@ size_t AudioServiceClient::WriteStreamInCb(const StreamBuffer &stream, int32_t &
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, 0, pError) < 0) {
         return 0;
     }
-    
+
     pa_threaded_mainloop_lock(mainLoop);
 
     const uint8_t *buffer = stream.buffer;
@@ -1590,7 +1590,7 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-	
+
     const pa_sample_spec *paSampleSpec = pa_stream_get_sample_spec(paStream);
 
     if (!paSampleSpec) {
@@ -1638,7 +1638,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
- 
+
     pa_usec_t paLatency;
     pa_usec_t cacheLatency;
     int32_t retVal = AUDIO_CLIENT_SUCCESS;

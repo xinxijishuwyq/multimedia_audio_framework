@@ -568,15 +568,15 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     // Error code used
-    static const uint32_t AUDIO_CLIENT_SUCCESS = 0;
-    static const uint32_t AUDIO_CLIENT_ERR = -1;
-    static const uint32_t AUDIO_CLIENT_INVALID_PARAMS_ERR = -2;
-    static const uint32_t AUDIO_CLIENT_INIT_ERR = -3;
-    static const uint32_t AUDIO_CLIENT_CREATE_STREAM_ERR = -4;
-    static const uint32_t AUDIO_CLIENT_START_STREAM_ERR = -5;
-    static const uint32_t AUDIO_CLIENT_READ_STREAM_ERR = -6;
-    static const uint32_t AUDIO_CLIENT_WRITE_STREAM_ERR = -7;
-    static const uint32_t AUDIO_CLIENT_PA_ERR = -8;
+    static const int32_t AUDIO_CLIENT_SUCCESS = 0;
+    static const int32_t AUDIO_CLIENT_ERR = -1;
+    static const int32_t AUDIO_CLIENT_INVALID_PARAMS_ERR = -2;
+    static const int32_t AUDIO_CLIENT_INIT_ERR = -3;
+    static const int32_t AUDIO_CLIENT_CREATE_STREAM_ERR = -4;
+    static const int32_t AUDIO_CLIENT_START_STREAM_ERR = -5;
+    static const int32_t AUDIO_CLIENT_READ_STREAM_ERR = -6;
+    static const int32_t AUDIO_CLIENT_WRITE_STREAM_ERR = -7;
+    static const int32_t AUDIO_CLIENT_PA_ERR = -8;
 
     // Default values
     static const uint32_t MINIMUM_BUFFER_SIZE = 1024;
