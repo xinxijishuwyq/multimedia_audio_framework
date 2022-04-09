@@ -145,7 +145,11 @@ int32_t BluetoothRendererSink::InitAudioManager()
 {
     MEDIA_INFO_LOG("BluetoothRendererSink: Initialize audio proxy manager");
 
+#ifdef __aarch64__
+    char resolvedPath[100] = "/vendor/lib64/libaudio_bluetooth_hdi_proxy_server.z.so";
+#else
     char resolvedPath[100] = "/vendor/lib/libaudio_bluetooth_hdi_proxy_server.z.so";
+#endif
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
