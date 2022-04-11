@@ -372,6 +372,7 @@ struct AudioInterrupt {
     ContentType contentType;
     AudioStreamType streamType;
     uint32_t sessionID;
+    bool pauseWhenDucked;
 };
 
 struct VolumeEvent {
@@ -515,6 +516,7 @@ struct InterruptAction {
     InterruptActionType actionType;
     InterruptType interruptType;
     InterruptHint interruptHint;
+    bool activated;
 };
 
 enum AudioServiceIndex {
