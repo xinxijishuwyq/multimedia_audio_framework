@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "media_log.h"
+#include "audio_log.h"
 
 #include "xml_parser.h"
 
@@ -23,7 +23,7 @@ bool XMLParser::LoadConfiguration()
 {
     mDoc = xmlReadFile(CONFIG_FILE, nullptr, 0);
     if (mDoc == nullptr) {
-        MEDIA_ERR_LOG("xmlReadFile Failed");
+        AUDIO_ERR_LOG("xmlReadFile Failed");
         return false;
     }
 
@@ -34,7 +34,7 @@ bool XMLParser::Parse()
 {
     xmlNode *root = xmlDocGetRootElement(mDoc);
     if (root == nullptr) {
-        MEDIA_ERR_LOG("xmlDocGetRootElement Failed");
+        AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
         return false;
     }
 
@@ -82,7 +82,7 @@ void XMLParser::ParseDeviceClass(xmlNode &node)
 
     std::string className = ExtractPropertyValue("name", node);
     if (className.empty()) {
-        MEDIA_ERR_LOG("No name provided for the device class %{public}s", node.name);
+        AUDIO_ERR_LOG("No name provided for the device class %{public}s", node.name);
         return;
     }
 

@@ -18,7 +18,7 @@
 #include <uv.h>
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace {
     const std::string CAPTURER_PERIOD_POSITION_CALLBACK_NAME = "periodReach";
@@ -29,12 +29,12 @@ namespace AudioStandard {
 CapturerPeriodPositionCallbackNapi::CapturerPeriodPositionCallbackNapi(napi_env env)
     : env_(env)
 {
-    MEDIA_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: instance create");
+    AUDIO_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: instance create");
 }
 
 CapturerPeriodPositionCallbackNapi::~CapturerPeriodPositionCallbackNapi()
 {
-    MEDIA_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: instance destroy");
+    AUDIO_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: instance destroy");
 }
 
 void CapturerPeriodPositionCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
@@ -51,14 +51,14 @@ void CapturerPeriodPositionCallbackNapi::SaveCallbackReference(const std::string
     if (callbackName == CAPTURER_PERIOD_POSITION_CALLBACK_NAME) {
         capturerPeriodPositionCallback_ = cb;
     } else {
-        MEDIA_ERR_LOG("CapturerPeriodPositionCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("CapturerPeriodPositionCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
 void CapturerPeriodPositionCallbackNapi::OnPeriodReached(const int64_t &frameNumber)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: period reached");
+    AUDIO_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: period reached");
     CHECK_AND_RETURN_LOG(capturerPeriodPositionCallback_ != nullptr, "Cannot find the reference of position callback");
 
     std::unique_ptr<CapturerPeriodPositionJsCallback> cb = std::make_unique<CapturerPeriodPositionJsCallback>();
@@ -80,12 +80,12 @@ void CapturerPeriodPositionCallbackNapi::OnJsCapturerPeriodPositionCallback(
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        MEDIA_ERR_LOG("CapturerPeriodPositionCallbackNapi: OnJsCapturerPeriodPositionCallback: No memory");
+        AUDIO_ERR_LOG("CapturerPeriodPositionCallbackNapi: OnJsCapturerPeriodPositionCallback: No memory");
         return;
     }
 
     if (jsCb.get() == nullptr) {
-        MEDIA_ERR_LOG("CapturerPeriodPositionCallbackNapi: OnJsCapturerPeriodPositionCallback: jsCb.get() is null");
+        AUDIO_ERR_LOG("CapturerPeriodPositionCallbackNapi: OnJsCapturerPeriodPositionCallback: jsCb.get() is null");
         delete work;
         return;
     }
@@ -98,7 +98,7 @@ void CapturerPeriodPositionCallbackNapi::OnJsCapturerPeriodPositionCallback(
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        MEDIA_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: JsCallBack %{public}s, uv_queue_work start",
+        AUDIO_DEBUG_LOG("CapturerPeriodPositionCallbackNapi: JsCallBack %{public}s, uv_queue_work start",
             request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
@@ -123,7 +123,7 @@ void CapturerPeriodPositionCallbackNapi::OnJsCapturerPeriodPositionCallback(
         delete work;
     });
     if (ret != 0) {
-        MEDIA_ERR_LOG("Failed to execute libuv work queue");
+        AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
     } else {
         jsCb.release();

@@ -14,25 +14,25 @@
  */
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "audio_policy_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyManagerListenerStub::AudioPolicyManagerListenerStub()
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerLiternerStub Instance create");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub Instance create");
 }
 
 AudioPolicyManagerListenerStub::~AudioPolicyManagerListenerStub()
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerStub Instance start");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerStub Instance start");
     for (auto &thread : interruptThreads_) {
         if (thread && thread->joinable()) {
             thread->join();
         }
     }
-    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerStub Instance complete");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerStub Instance complete");
 }
 
 void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &data,
@@ -63,7 +63,7 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        MEDIA_ERR_LOG("AudioPolicyManagerListenerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
@@ -73,19 +73,19 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             // To be modified by enqueuing the interrupt action scheduler
             interruptThreads_.emplace_back(
                 std::make_unique<std::thread>(&AudioPolicyManagerListenerStub::OnInterrupt, this, interruptEvent));
-            return MEDIA_OK;
+            return AUDIO_OK;
         }
         case ON_DEVICE_CHANGED: {
-            MEDIA_INFO_LOG("Device change callback received");
+            AUDIO_INFO_LOG("Device change callback received");
             DeviceChangeAction deviceChangeAction = {};
 
             ReadAudioDeviceChangeData(data, deviceChangeAction);
             OnDeviceChange(deviceChangeAction);
 
-            return MEDIA_OK;
+            return AUDIO_OK;
         }
         default: {
-            MEDIA_ERR_LOG("default case, need check AudioListenerStub");
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
@@ -93,22 +93,22 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
 
 void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerLiternerStub OnInterrupt start");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnInterrupt start");
     std::shared_ptr<AudioInterruptCallback> cb = callback_.lock();
     if (cb != nullptr) {
         cb->OnInterrupt(interruptEvent);
     } else {
-        MEDIA_ERR_LOG("AudioPolicyManagerListenerStub: callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerStub: callback_ is nullptr");
     }
 }
 
 void AudioPolicyManagerListenerStub::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerLiternerStub OnDeviceChange start");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnDeviceChange start");
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangedCallback = deviceChangeCallback_.lock();
 
     if (deviceChangedCallback == nullptr) {
-        MEDIA_ERR_LOG("OnDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
+        AUDIO_ERR_LOG("OnDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
         return;
     }
 

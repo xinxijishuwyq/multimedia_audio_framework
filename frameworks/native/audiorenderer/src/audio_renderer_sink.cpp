@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "audio_renderer_sink.h"
 
 using namespace std;
@@ -137,14 +137,14 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
             }
         }
     }
-    MEDIA_ERR_LOG("SwitchAdapterRender Fail");
+    AUDIO_ERR_LOG("SwitchAdapterRender Fail");
 
     return ERR_INVALID_INDEX;
 }
 
 int32_t AudioRendererSink::InitAudioManager()
 {
-    MEDIA_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
+    AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
 
     audioManager_ = GetAudioProxyManagerFuncs();
     if (audioManager_ == nullptr) {
@@ -180,14 +180,14 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     param.format = attr_.format;
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    MEDIA_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
+    AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
     deviceDesc.desc = nullptr;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_);
     if (ret != 0 || audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioDeviceCreateRender failed");
+        AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
@@ -206,7 +206,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     if (InitAudioManager() != 0) {
-        MEDIA_ERR_LOG("Init audio manager Fail");
+        AUDIO_ERR_LOG("Init audio manager Fail");
         return ERR_NOT_STARTED;
     }
 
@@ -215,43 +215,43 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     struct AudioAdapterDescriptor *descs = nullptr;
     ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
-        MEDIA_ERR_LOG("Get adapters Fail");
+        AUDIO_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
 
     // Get qualified sound card and port
     int32_t index = SwitchAdapterRender(descs, adapterNameCase, port, audioPort_, size);
     if (index < 0) {
-        MEDIA_ERR_LOG("Switch Adapter Fail");
+        AUDIO_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;
     }
 
     struct AudioAdapterDescriptor *desc = &descs[index];
     if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
-        MEDIA_ERR_LOG("Load Adapter Fail");
+        AUDIO_ERR_LOG("Load Adapter Fail");
         return ERR_NOT_STARTED;
     }
     if (audioAdapter_ == nullptr) {
-        MEDIA_ERR_LOG("Load audio device failed");
+        AUDIO_ERR_LOG("Load audio device failed");
         return ERR_NOT_STARTED;
     }
 
     // Initialization port information, can fill through mode and other parameters
     ret = audioAdapter_->InitAllPorts(audioAdapter_);
     if (ret != 0) {
-        MEDIA_ERR_LOG("InitAllPorts failed");
+        AUDIO_ERR_LOG("InitAllPorts failed");
         return ERR_NOT_STARTED;
     }
 
     if (CreateRender(audioPort_) != 0) {
-        MEDIA_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
+        AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
         return ERR_NOT_STARTED;
     }
 
 #ifdef PRODUCT_M40
     ret = OpenOutput(DEVICE_TYPE_SPEAKER);
     if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
     }
 #endif
 
@@ -260,7 +260,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 #ifdef DUMPFILE
     pfd = fopen(g_audioOutTestFilePath, "wb+");
     if (pfd == nullptr) {
-        MEDIA_ERR_LOG("Error opening pcm test file!");
+        AUDIO_ERR_LOG("Error opening pcm test file!");
     }
 #endif // DUMPFILE
 
@@ -271,20 +271,20 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
 {
     int32_t ret;
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("Audio Render Handle is nullptr!");
+        AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
         return ERR_INVALID_HANDLE;
     }
 
 #ifdef DUMPFILE
     size_t writeResult = fwrite((void*)&data, 1, len, pfd);
     if (writeResult != len) {
-        MEDIA_ERR_LOG("Failed to write the file.");
+        AUDIO_ERR_LOG("Failed to write the file.");
     }
 #endif // DUMPFILE
 
     ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
     if (ret != 0) {
-        MEDIA_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
+        AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
 
@@ -301,7 +301,7 @@ int32_t AudioRendererSink::Start(void)
             started_ = true;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Start failed!");
+            AUDIO_ERR_LOG("AudioRendererSink::Start failed!");
             return ERR_NOT_STARTED;
         }
     }
@@ -315,7 +315,7 @@ int32_t AudioRendererSink::SetVolume(float left, float right)
     float volume;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::SetVolume failed audioRender_ null");
+        AUDIO_ERR_LOG("AudioRendererSink::SetVolume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -331,7 +331,7 @@ int32_t AudioRendererSink::SetVolume(float left, float right)
 
     ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
     if (ret) {
-        MEDIA_ERR_LOG("AudioRendererSink::Set volume failed!");
+        AUDIO_ERR_LOG("AudioRendererSink::Set volume failed!");
     }
 
     return ret;
@@ -347,12 +347,12 @@ int32_t AudioRendererSink::GetVolume(float &left, float &right)
 int32_t AudioRendererSink::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink: GetLatency failed audio render null");
+        AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!latency) {
-        MEDIA_ERR_LOG("AudioRendererSink: GetLatency failed latency null");
+        AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
@@ -386,7 +386,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_MEDIA;
             break;
     }
-    MEDIA_DEBUG_LOG("AudioRendererSink: Audio category returned is: %{public}d", audioCategory);
+    AUDIO_DEBUG_LOG("AudioRendererSink: Audio category returned is: %{public}d", audioCategory);
 
     return audioCategory;
 }
@@ -424,7 +424,7 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
 
     int32_t ret = SetOutputPortPin(outputDevice, sink);
     if (ret != SUCCESS) {
-        MEDIA_ERR_LOG("AudioRendererSink: OpenOutput FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioRendererSink: OpenOutput FAILED: %{public}d", ret);
         return ret;
     }
 
@@ -447,9 +447,9 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
     };
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
-    MEDIA_DEBUG_LOG("AudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
+    AUDIO_DEBUG_LOG("AudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
     if (ret != 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");
+        AUDIO_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;
     }
 
@@ -458,36 +458,36 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
 
 int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
 {
-    MEDIA_INFO_LOG("AudioRendererSink::SetAudioScene in");
+    AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
                              ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
+        AUDIO_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
 #ifdef PRODUCT_M40
     int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
     if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
     }
 
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = PIN_OUT_SPEAKER;
     if (audioRender_->scene.SelectScene == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink: Select scene nullptr");
+        AUDIO_ERR_LOG("AudioRendererSink: Select scene nullptr");
         return ERR_OPERATION_FAILED;
     }
 
     ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
     if (ret < 0) {
-        MEDIA_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
         return ERR_OPERATION_FAILED;
     }
 #endif
 
-    MEDIA_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
+    AUDIO_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }
 
@@ -496,7 +496,7 @@ int32_t AudioRendererSink::Stop(void)
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Stop failed audioRender_ null");
+        AUDIO_ERR_LOG("AudioRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -506,7 +506,7 @@ int32_t AudioRendererSink::Stop(void)
             started_ = false;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Stop failed!");
+            AUDIO_ERR_LOG("AudioRendererSink::Stop failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -519,12 +519,12 @@ int32_t AudioRendererSink::Pause(void)
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Pause failed audioRender_ null");
+        AUDIO_ERR_LOG("AudioRendererSink::Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        MEDIA_ERR_LOG("AudioRendererSink::Pause invalid state!");
+        AUDIO_ERR_LOG("AudioRendererSink::Pause invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -534,7 +534,7 @@ int32_t AudioRendererSink::Pause(void)
             paused_ = true;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Pause failed!");
+            AUDIO_ERR_LOG("AudioRendererSink::Pause failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -547,12 +547,12 @@ int32_t AudioRendererSink::Resume(void)
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererSink::Resume failed audioRender_ null");
+        AUDIO_ERR_LOG("AudioRendererSink::Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        MEDIA_ERR_LOG("AudioRendererSink::Resume invalid state!");
+        AUDIO_ERR_LOG("AudioRendererSink::Resume invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -562,7 +562,7 @@ int32_t AudioRendererSink::Resume(void)
             paused_ = false;
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Resume failed!");
+            AUDIO_ERR_LOG("AudioRendererSink::Resume failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -579,7 +579,7 @@ int32_t AudioRendererSink::Reset(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Reset failed!");
+            AUDIO_ERR_LOG("AudioRendererSink::Reset failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -596,7 +596,7 @@ int32_t AudioRendererSink::Flush(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            MEDIA_ERR_LOG("AudioRendererSink::Flush failed!");
+            AUDIO_ERR_LOG("AudioRendererSink::Flush failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -647,7 +647,7 @@ int32_t AudioRendererSinkStart()
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
-        MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
@@ -658,7 +658,7 @@ int32_t AudioRendererSinkStart()
 int32_t AudioRendererSinkPause()
 {
     if (!g_audioRendrSinkInstance->rendererInited_) {
-        MEDIA_ERR_LOG("Renderer pause failed");
+        AUDIO_ERR_LOG("Renderer pause failed");
         return ERR_NOT_STARTED;
     }
 
@@ -668,7 +668,7 @@ int32_t AudioRendererSinkPause()
 int32_t AudioRendererSinkResume()
 {
     if (!g_audioRendrSinkInstance->rendererInited_) {
-        MEDIA_ERR_LOG("Renderer resume failed");
+        AUDIO_ERR_LOG("Renderer resume failed");
         return ERR_NOT_STARTED;
     }
 
@@ -680,7 +680,7 @@ int32_t AudioRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
-        MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
@@ -693,7 +693,7 @@ int32_t AudioRendererSinkSetVolume(float left, float right)
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
-        MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
@@ -706,12 +706,12 @@ int32_t AudioRendererSinkGetLatency(uint32_t *latency)
     int32_t ret;
 
     if (!g_audioRendrSinkInstance->rendererInited_) {
-        MEDIA_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
     if (!latency) {
-        MEDIA_ERR_LOG("AudioRendererSinkGetLatency failed latency null");
+        AUDIO_ERR_LOG("AudioRendererSinkGetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 

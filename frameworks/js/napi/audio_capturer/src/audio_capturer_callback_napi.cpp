@@ -18,19 +18,19 @@
 #include <uv.h>
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioCapturerCallbackNapi::AudioCapturerCallbackNapi(napi_env env)
     : env_(env)
 {
-    MEDIA_DEBUG_LOG("AudioCapturerCallbackNapi: instance create");
+    AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: instance create");
 }
 
 AudioCapturerCallbackNapi::~AudioCapturerCallbackNapi()
 {
-    MEDIA_DEBUG_LOG("AudioCapturerCallbackNapi: instance destroy");
+    AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: instance destroy");
 }
 
 void AudioCapturerCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
@@ -46,15 +46,15 @@ void AudioCapturerCallbackNapi::SaveCallbackReference(const std::string &callbac
     if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
         stateChangeCallback_ = cb;
     } else {
-        MEDIA_ERR_LOG("AudioCapturerCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("AudioCapturerCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
 void AudioCapturerCallbackNapi::OnStateChange(const CapturerState state)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_DEBUG_LOG("AudioCapturerCallbackNapi: OnStateChange is called");
-    MEDIA_DEBUG_LOG("AudioCapturerCallbackNapi: state: %{public}d", state);
+    AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: OnStateChange is called");
+    AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: state: %{public}d", state);
     CHECK_AND_RETURN_LOG(stateChangeCallback_ != nullptr, "Cannot find the reference of stateChange callback");
 
     std::unique_ptr<AudioCapturerJsCallback> cb = std::make_unique<AudioCapturerJsCallback>();
@@ -75,12 +75,12 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        MEDIA_ERR_LOG("AudioCapturerCallbackNapi: OnJsCallbackStateChange: No memory");
+        AUDIO_ERR_LOG("AudioCapturerCallbackNapi: OnJsCallbackStateChange: No memory");
         return;
     }
 
     if (jsCb.get() == nullptr) {
-        MEDIA_ERR_LOG("AudioCapturerCallbackNapi: OnJsCallbackStateChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("AudioCapturerCallbackNapi: OnJsCallbackStateChange: jsCb.get() is null");
         delete work;
         return;
     }
@@ -93,7 +93,7 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        MEDIA_DEBUG_LOG("AudioCapturerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s cancelled", request.c_str());
 
@@ -117,7 +117,7 @@ void AudioCapturerCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioCap
         delete work;
     });
     if (ret != 0) {
-        MEDIA_ERR_LOG("Failed to execute libuv work queue");
+        AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
     } else {
         jsCb.release();

@@ -88,7 +88,7 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_CreateAudioPlayer_001, TestSize.Lev
 {
     wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
-        MEDIA_INFO_LOG("AudioRendererTest: Unable to open wave file");
+        AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
@@ -320,7 +320,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateAudioPlayer_001, TestSize
 {
     wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
-        MEDIA_INFO_LOG("AudioRendererTest: Unable to open wave file");
+        AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);

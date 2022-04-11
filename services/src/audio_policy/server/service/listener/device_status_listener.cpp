@@ -21,7 +21,7 @@
 #include "audio_bluetooth_manager.h"
 #include "audio_errors.h"
 #include "audio_events.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,7 +58,7 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
 {
     CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "Invalid ServiceStatus");
     std::string info = serviceStatus->info;
-    MEDIA_DEBUG_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d] [info:%{public}s]",
+    AUDIO_DEBUG_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d] [info:%{public}s]",
                     serviceStatus->serviceName, serviceStatus->status, info.c_str());
 
     if (serviceStatus->serviceName == AUDIO_HDI_SERVICE_NAME) {
@@ -71,7 +71,7 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             AudioDeviceType hdiDeviceType = HDF_AUDIO_DEVICE_UNKOWN;
             AudioEventType hdiEventType = HDF_AUDIO_EVENT_UNKOWN;
             if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d", &hdiEventType, &hdiDeviceType) < EVENT_PARAMS) {
-                MEDIA_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
+                AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
                 return;
             }
 
@@ -91,7 +91,7 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
 {
     hdiServiceManager_ = HDIServiceManagerGet();
     if (hdiServiceManager_ == nullptr) {
-        MEDIA_ERR_LOG("[DeviceStatusListener]: Get HDI service manager failed");
+        AUDIO_ERR_LOG("[DeviceStatusListener]: Get HDI service manager failed");
         return ERR_OPERATION_FAILED;
     }
 
@@ -102,11 +102,11 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
     int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
                                                                        DeviceClass::DEVICE_CLASS_AUDIO);
     if (status != HDF_SUCCESS) {
-        MEDIA_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
+        AUDIO_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
         return ERR_OPERATION_FAILED;
     }
 
-    MEDIA_DEBUG_LOG("call bluetooth interface");
+    AUDIO_DEBUG_LOG("call bluetooth interface");
     OHOS::Bluetooth::GetProxy();
     OHOS::Bluetooth::RegisterObserver(deviceObserver_);
 
@@ -121,7 +121,7 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
 
     int32_t status = hdiServiceManager_->UnregisterServiceStatusListener(hdiServiceManager_, listener_);
     if (status != HDF_SUCCESS) {
-        MEDIA_ERR_LOG("[DeviceStatusListener]: UnRegister service status listener failed");
+        AUDIO_ERR_LOG("[DeviceStatusListener]: UnRegister service status listener failed");
         return ERR_OPERATION_FAILED;
     }
 

@@ -23,7 +23,7 @@
 #include "i_bluetooth_a2dp_src.h"
 #include "i_bluetooth_host.h"
 #include "iservice_registry.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "system_ability_definition.h"
 
 namespace OHOS {
@@ -39,23 +39,23 @@ IDeviceStatusObserver *g_deviceObserver = nullptr;
 
 static void AudioOnPlayingStatusChanged(const RawAddress &device, int playingState, int error)
 {
-    MEDIA_INFO_LOG("AudioOnPlayingStatusChanged");
+    AUDIO_INFO_LOG("AudioOnPlayingStatusChanged");
     g_playState = playingState;
 }
 
 static void AudioOnConfigurationChanged(const RawAddress &device, const BluetoothA2dpCodecInfo &info, int error)
 {
-    MEDIA_INFO_LOG("AudioOnConfigurationChanged");
+    AUDIO_INFO_LOG("AudioOnConfigurationChanged");
 }
 
 static void AudioOnConnectionChanged(const RawAddress &device, int state)
 {
-    MEDIA_INFO_LOG("AudioOnConnectionChanged: device: %{public}s, state: %{public}d",
+    AUDIO_INFO_LOG("AudioOnConnectionChanged: device: %{public}s, state: %{public}d",
         device.GetAddress().c_str(), state);
     g_device = RawAddress(device);
 
     if (g_deviceObserver == nullptr) {
-        MEDIA_INFO_LOG("observer is null");
+        AUDIO_INFO_LOG("observer is null");
         return;
     }
 
@@ -84,43 +84,43 @@ RawAddress& GetDevice()
 
 void GetProxy()
 {
-    MEDIA_INFO_LOG("GetProxy start");
+    AUDIO_INFO_LOG("GetProxy start");
     sptr<ISystemAbilityManager> samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (!samgr) {
-        MEDIA_INFO_LOG("GetProxy error: no samgr");
+        AUDIO_INFO_LOG("GetProxy error: no samgr");
         return;
     }
 
     sptr<IRemoteObject> hostRemote = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
     if (!hostRemote) {
-        MEDIA_INFO_LOG("A2dpSource::impl:GetProxy failed: no hostRemote");
+        AUDIO_INFO_LOG("A2dpSource::impl:GetProxy failed: no hostRemote");
         return;
     }
 
     sptr<IBluetoothHost> hostProxy = iface_cast<IBluetoothHost>(hostRemote);
     if (!hostProxy) {
-        MEDIA_INFO_LOG("GetProxy error: host no proxy");
+        AUDIO_INFO_LOG("GetProxy error: host no proxy");
         return;
     }
 
     sptr<IRemoteObject> remote = hostProxy->GetProfile("A2dpSrcServer");
     if (!remote) {
-        MEDIA_INFO_LOG("GetProxy error: no remote");
+        AUDIO_INFO_LOG("GetProxy error: no remote");
         return;
     }
 
     g_proxy = iface_cast<IBluetoothA2dpSrc>(remote);
     if (!g_proxy) {
-        MEDIA_INFO_LOG("GetProxy error: no proxy");
+        AUDIO_INFO_LOG("GetProxy error: no proxy");
         return;
     }
 }
 
 void RegisterObserver(IDeviceStatusObserver &observer)
 {
-    MEDIA_INFO_LOG("RegisterObserver start");
+    AUDIO_INFO_LOG("RegisterObserver start");
     if (g_proxy == nullptr) {
-        MEDIA_ERR_LOG("proxy is null");
+        AUDIO_ERR_LOG("proxy is null");
         return;
     }
 

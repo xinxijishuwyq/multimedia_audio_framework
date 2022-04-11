@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 #include "audio_adapter_manager.h"
 
@@ -34,13 +34,13 @@ bool AudioAdapterManager::ConnectServiceAdapter()
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
     mAudioServiceAdapter = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");
+        AUDIO_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");
         return false;
     }
 
     bool result = mAudioServiceAdapter->Connect();
     if (!result) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
+        AUDIO_ERR_LOG("[AudioAdapterManager] Error in connecting audio adapter");
         return false;
     }
 
@@ -59,7 +59,7 @@ void AudioAdapterManager::InitKVStore()
 void AudioAdapterManager::Deinit(void)
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return;
     }
 
@@ -69,7 +69,7 @@ void AudioAdapterManager::Deinit(void)
 int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callback)
 {
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] SetAudioSessionCallback callback == nullptr");
+        AUDIO_ERR_LOG("[AudioAdapterManager] SetAudioSessionCallback callback == nullptr");
         return ERR_INVALID_PARAM;
     }
 
@@ -80,7 +80,7 @@ int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callb
 int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float volume)
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return ERR_OPERATION_FAILED;
     }
 
@@ -107,17 +107,17 @@ float AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return ERR_OPERATION_FAILED;
     }
- 
+
     return mAudioServiceAdapter->SetMute(streamType, mute);
 }
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType) const
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return false;
     }
 
@@ -127,7 +127,7 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType) const
 bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return false;
     }
 
@@ -137,7 +137,7 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return ERR_OPERATION_FAILED;
     }
 
@@ -148,7 +148,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     std::string name, bool active)
 {
     if (!mAudioServiceAdapter) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
         return ERR_OPERATION_FAILED;
     }
 
@@ -158,11 +158,11 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
-            MEDIA_INFO_LOG("SetDefaultSink %{public}d", deviceType);
+            AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
         case InternalDeviceType::DEVICE_TYPE_MIC: {
-            MEDIA_INFO_LOG("SetDefaultSource %{public}d", deviceType);
+            AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSource(name);
         }
         default:
@@ -193,12 +193,12 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    MEDIA_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
+    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
     if (audioModuleInfo.lib == PIPE_SOURCE || audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty() && access(audioModuleInfo.fileName.c_str(), F_OK) == 0) {
             int32_t ret = std::remove(audioModuleInfo.fileName.c_str());
             if (ret) {
-                MEDIA_ERR_LOG("Removing pipe file failed!. Ret val: %{public}d", ret);
+                AUDIO_ERR_LOG("Removing pipe file failed!. Ret val: %{public}d", ret);
                 return ERR_OPERATION_FAILED;
             }
         }
@@ -234,7 +234,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.format.empty()) {
         args.append(" format=");
         args.append(audioModuleInfo.format);
-        MEDIA_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
+        AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
 }
 
@@ -365,13 +365,13 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
         do {
             status = manager.GetSingleKvStore(options, appId, storeId, mAudioPolicyKvStore);
             if (status == Status::STORE_NOT_FOUND) {
-                MEDIA_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: STORE_NOT_FOUND!");
+                AUDIO_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: STORE_NOT_FOUND!");
             }
 
             if ((status == Status::SUCCESS) || (status == Status::STORE_NOT_FOUND)) {
                 break;
             } else {
-                MEDIA_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: Kvstore Connect failed! Retrying.");
+                AUDIO_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: Kvstore Connect failed! Retrying.");
                 retries++;
                 usleep(KVSTORE_CONNECT_RETRY_DELAY_TIME);
             }
@@ -380,20 +380,20 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
 
     if (mAudioPolicyKvStore == nullptr) {
         if (status == Status::STORE_NOT_FOUND) {
-            MEDIA_INFO_LOG("[AudioAdapterManager] First Boot: Create AudioPolicyKvStore");
+            AUDIO_INFO_LOG("[AudioAdapterManager] First Boot: Create AudioPolicyKvStore");
             options.createIfMissing = true;
             // [create and] open and initialize kvstore instance.
             status = manager.GetSingleKvStore(options, appId, storeId, mAudioPolicyKvStore);
             if (status == Status::SUCCESS) {
                 isFirstBoot = true;
             } else {
-                MEDIA_ERR_LOG("[AudioAdapterManager] Create AudioPolicyKvStore Failed!");
+                AUDIO_ERR_LOG("[AudioAdapterManager] Create AudioPolicyKvStore Failed!");
             }
         }
     }
 
     if (mAudioPolicyKvStore == nullptr) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: Failed!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] InitAudioPolicyKvStore: Failed!");
         return false;
     }
 
@@ -407,7 +407,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         WriteVolumeToKvStore(STREAM_RING, MAX_VOLUME);
         WriteVolumeToKvStore(STREAM_VOICE_CALL, MAX_VOLUME);
         WriteVolumeToKvStore(STREAM_VOICE_ASSISTANT, MAX_VOLUME);
-        MEDIA_INFO_LOG("[AudioAdapterManager] Wrote default stream volumes to KvStore");
+        AUDIO_INFO_LOG("[AudioAdapterManager] Wrote default stream volumes to KvStore");
     } else {
         LoadVolumeMap();
     }
@@ -416,14 +416,14 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
     if (mAudioPolicyKvStore == nullptr) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] mAudioPolicyKvStore is null!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] mAudioPolicyKvStore is null!");
         return;
     }
 
     if (isFirstBoot == true) {
         mRingerMode = RINGER_MODE_NORMAL;
         WriteRingerModeToKvStore(RINGER_MODE_NORMAL);
-        MEDIA_INFO_LOG("[AudioAdapterManager] Wrote default ringer mode to KvStore");
+        AUDIO_INFO_LOG("[AudioAdapterManager] Wrote default ringer mode to KvStore");
     } else {
         LoadRingerMode();
     }
@@ -455,7 +455,7 @@ bool AudioAdapterManager::LoadVolumeFromKvStore(AudioStreamType streamType)
     if (status == Status::SUCCESS) {
         float volume = TransferByteArrayToType<float>(value.Data());
         mVolumeMap[streamType] = volume;
-        MEDIA_DEBUG_LOG("[AudioAdapterManager] volume from kvStore %{public}f for streamType:%{public}d",
+        AUDIO_DEBUG_LOG("[AudioAdapterManager] volume from kvStore %{public}f for streamType:%{public}d",
                         volume, streamType);
         return true;
     }
@@ -466,21 +466,21 @@ bool AudioAdapterManager::LoadVolumeFromKvStore(AudioStreamType streamType)
 bool AudioAdapterManager::LoadVolumeMap(void)
 {
     if (mAudioPolicyKvStore == nullptr) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: mAudioPolicyKvStore is null!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: mAudioPolicyKvStore is null!");
         return false;
     }
 
     if (!LoadVolumeFromKvStore(STREAM_MUSIC))
-        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Music from kvStore!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Music from kvStore!");
 
     if (!LoadVolumeFromKvStore(STREAM_RING))
-        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Ring from kvStore!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Ring from kvStore!");
 
     if (!LoadVolumeFromKvStore(STREAM_VOICE_CALL))
-        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_call from kvStore!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_call from kvStore!");
 
     if (!LoadVolumeFromKvStore(STREAM_VOICE_ASSISTANT))
-        MEDIA_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_assistant from kvStore!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_assistant from kvStore!");
 
     return true;
 }
@@ -488,7 +488,7 @@ bool AudioAdapterManager::LoadVolumeMap(void)
 bool AudioAdapterManager::LoadRingerMode(void)
 {
     if (mAudioPolicyKvStore == nullptr) {
-        MEDIA_ERR_LOG("[AudioAdapterManager] LoadRingerMap: mAudioPolicyKvStore is null!");
+        AUDIO_ERR_LOG("[AudioAdapterManager] LoadRingerMap: mAudioPolicyKvStore is null!");
         return false;
     }
 
@@ -498,7 +498,7 @@ bool AudioAdapterManager::LoadRingerMode(void)
     Status status = mAudioPolicyKvStore->Get(key, value);
     if (status == Status::SUCCESS) {
         mRingerMode = static_cast<AudioRingerMode>(TransferByteArrayToType<int>(value.Data()));
-        MEDIA_DEBUG_LOG("[AudioAdapterManager] Ringer Mode from kvStore %{public}d", mRingerMode);
+        AUDIO_DEBUG_LOG("[AudioAdapterManager] Ringer Mode from kvStore %{public}d", mRingerMode);
     }
 
     return true;
@@ -514,10 +514,10 @@ void AudioAdapterManager::WriteVolumeToKvStore(AudioStreamType streamType, float
 
     Status status = mAudioPolicyKvStore->Put(key, value);
     if (status == Status::SUCCESS) {
-        MEDIA_INFO_LOG("[AudioAdapterManager] volume %{public}f for %{public}s updated in kvStore", volume,
+        AUDIO_INFO_LOG("[AudioAdapterManager] volume %{public}f for %{public}s updated in kvStore", volume,
             GetStreamNameByStreamType(streamType).c_str());
     } else {
-        MEDIA_ERR_LOG("[AudioAdapterManager] volume %{public}f for %{public}s failed to update in kvStore!", volume,
+        AUDIO_ERR_LOG("[AudioAdapterManager] volume %{public}f for %{public}s failed to update in kvStore!", volume,
             GetStreamNameByStreamType(streamType).c_str());
     }
 
@@ -534,9 +534,9 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
 
     Status status = mAudioPolicyKvStore->Put(key, value);
     if (status == Status::SUCCESS) {
-        MEDIA_INFO_LOG("[AudioAdapterManager] Wrote RingerMode:%d to kvStore", ringerMode);
+        AUDIO_INFO_LOG("[AudioAdapterManager] Wrote RingerMode:%d to kvStore", ringerMode);
     } else {
-        MEDIA_ERR_LOG("[AudioAdapterManager] Writing RingerMode:%d to kvStore failed!", ringerMode);
+        AUDIO_ERR_LOG("[AudioAdapterManager] Writing RingerMode:%d to kvStore failed!", ringerMode);
     }
 
     return;

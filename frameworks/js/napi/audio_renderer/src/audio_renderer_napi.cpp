@@ -23,7 +23,7 @@
 #include "audio_manager_napi.h"
 #include "audio_parameters_napi.h"
 #include "hilog/log.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "securec.h"
 
 using namespace std;
@@ -443,7 +443,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
         CHECK_AND_RETURN_RET_LOG(rendererNapi->callbackNapi_ != nullptr, result, "No memory");
         int32_t ret = rendererNapi->audioRenderer_->SetRendererCallback(rendererNapi->callbackNapi_);
         if (ret) {
-            MEDIA_DEBUG_LOG("AudioRendererNapi::Construct SetRendererCallback failed");
+            AUDIO_DEBUG_LOG("AudioRendererNapi::Construct SetRendererCallback failed");
         }
     }
 
@@ -1651,7 +1651,7 @@ napi_value AudioRendererNapi::GetState(napi_env env, napi_callback_info info)
     size_t argCount = 0;
     napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
     if (status != napi_ok || jsThis == nullptr) {
-        MEDIA_INFO_LOG("Failed to retrieve details about the callback");
+        AUDIO_INFO_LOG("Failed to retrieve details about the callback");
         return undefinedResult;
     }
 
@@ -1666,7 +1666,7 @@ napi_value AudioRendererNapi::GetState(napi_env env, napi_callback_info info)
     status = napi_create_int32(env, rendererState, &jsResult);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, undefinedResult, "napi_create_int32 error");
 
-    MEDIA_INFO_LOG("AudioRendererNapi: GetState Complete, Current state: %{public}d", rendererState);
+    AUDIO_INFO_LOG("AudioRendererNapi: GetState Complete, Current state: %{public}d", rendererState);
     return jsResult;
 }
 
@@ -1689,10 +1689,10 @@ napi_value AudioRendererNapi::RegisterPeriodPositionCallback(napi_env env, napi_
                 std::static_pointer_cast<RendererPeriodPositionCallbackNapi>(rendererNapi->periodPositionCBNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
         } else {
-            MEDIA_DEBUG_LOG("AudioRendererNapi: periodReach already subscribed.");
+            AUDIO_DEBUG_LOG("AudioRendererNapi: periodReach already subscribed.");
         }
     } else {
-        MEDIA_ERR_LOG("AudioRendererNapi: frameCount value not supported!!");
+        AUDIO_ERR_LOG("AudioRendererNapi: frameCount value not supported!!");
     }
 
     napi_value result = nullptr;
@@ -1718,10 +1718,10 @@ napi_value AudioRendererNapi::RegisterPositionCallback(napi_env env, napi_value*
                 std::static_pointer_cast<RendererPositionCallbackNapi>(rendererNapi->positionCBNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
         } else {
-            MEDIA_DEBUG_LOG("AudioRendererNapi: markReach already subscribed.");
+            AUDIO_DEBUG_LOG("AudioRendererNapi: markReach already subscribed.");
         }
     } else {
-        MEDIA_ERR_LOG("AudioRendererNapi: Mark Position value not supported!!");
+        AUDIO_ERR_LOG("AudioRendererNapi: Mark Position value not supported!!");
     }
 
     napi_value result = nullptr;
@@ -1790,7 +1790,7 @@ napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, eventType == napi_string, "AudioRendererNapi:On: type mismatch for event name, parameter 1");
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
-    MEDIA_DEBUG_LOG("AudioRendererNapi: On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_DEBUG_LOG("AudioRendererNapi: On callbackName: %{public}s", callbackName.c_str());
 
     napi_valuetype handler = napi_undefined;
     if (argc == requireArgc) {
@@ -1801,7 +1801,7 @@ napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
         napi_typeof(env, argv[1], &paramArg1);
         napi_valuetype expectedValType = napi_number;  // Default. Reset it with 'callbackName' if check, if required.
         if (paramArg1 != expectedValType) {
-            MEDIA_ERR_LOG("Type mismatch for param 2!!");
+            AUDIO_ERR_LOG("Type mismatch for param 2!!");
             napi_value result = nullptr;
             napi_get_undefined(env, &result);
             return result;
@@ -1853,7 +1853,7 @@ napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, eventType == napi_string, "AudioRendererNapi:Off: type mismatch for event name, parameter 1");
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
-    MEDIA_DEBUG_LOG("AudioRendererNapi: Off callbackName: %{public}s", callbackName.c_str());
+    AUDIO_DEBUG_LOG("AudioRendererNapi: Off callbackName: %{public}s", callbackName.c_str());
 
     return UnregisterCallback(env, jsThis, callbackName);
 }

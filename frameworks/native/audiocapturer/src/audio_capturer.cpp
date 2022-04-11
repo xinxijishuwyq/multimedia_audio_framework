@@ -18,7 +18,7 @@
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
 #include "audio_stream.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,11 +91,11 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
     // In general, callbacks can only be set after the capturer state is  PREPARED.
     CapturerState state = GetStatus();
     if (state == CAPTURER_NEW || state == CAPTURER_RELEASED) {
-        MEDIA_DEBUG_LOG("AudioCapturerPrivate::SetCapturerCallback ncorrect state:%{public}d to register cb", state);
+        AUDIO_DEBUG_LOG("AudioCapturerPrivate::SetCapturerCallback ncorrect state:%{public}d to register cb", state);
         return ERR_ILLEGAL_STATE;
     }
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("AudioCapturerPrivate::SetCapturerCallback callback param is null");
+        AUDIO_ERR_LOG("AudioCapturerPrivate::SetCapturerCallback callback param is null");
         return ERR_INVALID_PARAM;
     }
 
@@ -103,7 +103,7 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
     if (audioStreamCallback_ == nullptr) {
         audioStreamCallback_ = std::make_shared<AudioStreamCallbackCapturer>();
         if (audioStreamCallback_ == nullptr) {
-            MEDIA_ERR_LOG("AudioCapturerPrivate::Failed to allocate memory for audioStreamCallback_");
+            AUDIO_ERR_LOG("AudioCapturerPrivate::Failed to allocate memory for audioStreamCallback_");
             return ERROR;
         }
     }
@@ -154,7 +154,7 @@ int32_t AudioCapturerPrivate::SetCapturerPositionCallback(int64_t markPosition,
     const std::shared_ptr<CapturerPositionCallback> &callback)
 {
     if ((callback == nullptr) || (markPosition <= 0)) {
-        MEDIA_ERR_LOG("AudioCapturerPrivate::SetCapturerPositionCallback input param is invalid");
+        AUDIO_ERR_LOG("AudioCapturerPrivate::SetCapturerPositionCallback input param is invalid");
         return ERR_INVALID_PARAM;
     }
 
@@ -172,7 +172,7 @@ int32_t AudioCapturerPrivate::SetCapturerPeriodPositionCallback(int64_t frameNum
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
     if ((callback == nullptr) || (frameNumber <= 0)) {
-        MEDIA_ERR_LOG("AudioCapturerPrivate::SetCapturerPeriodPositionCallback input param is invalid");
+        AUDIO_ERR_LOG("AudioCapturerPrivate::SetCapturerPeriodPositionCallback input param is invalid");
         return ERR_INVALID_PARAM;
     }
 
@@ -229,7 +229,7 @@ int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
 int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {
-        MEDIA_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 20ms");
+        AUDIO_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 20ms");
         return ERR_INVALID_PARAM;
     }
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
@@ -244,7 +244,7 @@ void AudioStreamCallbackCapturer::OnStateChange(const State state)
 {
     std::shared_ptr<AudioCapturerCallback> cb = callback_.lock();
     if (cb == nullptr) {
-        MEDIA_ERR_LOG("AudioStreamCallbackCapturer::OnStateChange cb == nullptr.");
+        AUDIO_ERR_LOG("AudioStreamCallbackCapturer::OnStateChange cb == nullptr.");
         return;
     }
 

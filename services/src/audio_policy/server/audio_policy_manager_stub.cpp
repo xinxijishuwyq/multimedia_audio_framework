@@ -16,7 +16,7 @@
 #include "audio_errors.h"
 #include "audio_policy_server.h"
 #include "audio_policy_types.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "audio_policy_manager_stub.h"
 
 namespace OHOS {
@@ -43,9 +43,9 @@ void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, Messag
     float volume = data.ReadFloat();
     int result = SetStreamVolume(streamType, volume);
     if (result == SUCCESS)
-        reply.WriteInt32(MEDIA_OK);
+        reply.WriteInt32(AUDIO_OK);
     else
-        reply.WriteInt32(MEDIA_ERR);
+        reply.WriteInt32(AUDIO_ERR);
 }
 
 void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
@@ -87,9 +87,9 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
     bool mute = data.ReadBool();
     int result = SetStreamMute(streamType, mute);
     if (result == SUCCESS)
-        reply.WriteInt32(MEDIA_OK);
+        reply.WriteInt32(AUDIO_OK);
     else
-        reply.WriteInt32(MEDIA_ERR);
+        reply.WriteInt32(AUDIO_ERR);
 }
 
 void AudioPolicyManagerStub::GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
@@ -108,12 +108,12 @@ void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, Message
 
 void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
-    MEDIA_DEBUG_LOG("GET_DEVICES AudioManagerStub");
+    AUDIO_DEBUG_LOG("GET_DEVICES AudioManagerStub");
     int deviceFlag = data.ReadInt32();
     DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
     int32_t size = static_cast<int32_t>(devices.size());
-    MEDIA_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
+    AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
@@ -126,9 +126,9 @@ void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, Messag
     bool active = data.ReadBool();
     int32_t result = SetDeviceActive(deviceType, active);
     if (result == SUCCESS)
-        reply.WriteInt32(MEDIA_OK);
+        reply.WriteInt32(AUDIO_OK);
     else
-        reply.WriteInt32(MEDIA_ERR);
+        reply.WriteInt32(AUDIO_ERR);
 }
 
 void AudioPolicyManagerStub::IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
@@ -143,7 +143,7 @@ void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, 
     int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
         return;
     }
     int32_t result = SetRingerModeCallback(clientId, object);
@@ -161,7 +161,7 @@ void AudioPolicyManagerStub::SetDeviceChangeCallbackInternal(MessageParcel &data
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
     int32_t result = SetDeviceChangeCallback(object);
@@ -173,7 +173,7 @@ void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, M
     uint32_t sessionID = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
     int32_t result = SetAudioInterruptCallback(sessionID, object);
@@ -223,7 +223,7 @@ void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &da
     int32_t clientPid =  data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
-        MEDIA_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
         return;
     }
     int ret = SetVolumeKeyEventCallback(clientPid, remoteObject);
@@ -241,7 +241,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        MEDIA_ERR_LOG("AudioPolicyManagerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
@@ -338,10 +338,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             break;
 
         default:
-            MEDIA_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
-    return MEDIA_OK;
+    return AUDIO_OK;
 }
 
 bool AudioPolicyManagerStub::IsPermissionValid()

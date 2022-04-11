@@ -18,7 +18,7 @@
 
 #include <audio_system_manager.h>
 #include <gtest/gtest.h>
-#include <media_log.h>
+#include <audio_log.h>
 
 namespace OHOS {
 namespace AudioStandard {

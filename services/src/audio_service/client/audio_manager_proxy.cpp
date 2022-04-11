@@ -15,7 +15,7 @@
 
 #include "audio_manager_proxy.h"
 #include "audio_system_manager.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 using namespace std;
 
@@ -33,13 +33,13 @@ int32_t AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volu
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
     }
     data.WriteInt32(static_cast<int>(volumeType));
     int32_t error = Remote()->SendRequest(GET_MAX_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("Get max volume failed, error: %d", error);
+        AUDIO_ERR_LOG("Get max volume failed, error: %d", error);
         return error;
     }
 
@@ -54,14 +54,14 @@ int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volu
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
     }
     data.WriteInt32(static_cast<int32_t>(volumeType));
 
     int32_t error = Remote()->SendRequest(GET_MIN_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("Get min volume failed, error: %d", error);
+        AUDIO_ERR_LOG("Get min volume failed, error: %d", error);
         return error;
     }
 
@@ -76,13 +76,13 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
     }
     data.WriteBool(isMute);
     int32_t error = Remote()->SendRequest(SET_MICROPHONE_MUTE, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("SetMicrophoneMute failed, error: %d", error);
+        AUDIO_ERR_LOG("SetMicrophoneMute failed, error: %d", error);
         return error;
     }
 
@@ -96,12 +96,12 @@ bool AudioManagerProxy::IsMicrophoneMute()
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return false;
     }
     int32_t error = Remote()->SendRequest(IS_MICROPHONE_MUTE, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("IsMicrophoneMute failed, error: %d", error);
+        AUDIO_ERR_LOG("IsMicrophoneMute failed, error: %d", error);
         return false;
     }
 
@@ -116,7 +116,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return -1;
     }
 
@@ -124,7 +124,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
 
     int32_t error = Remote()->SendRequest(SET_AUDIO_SCENE, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("SetAudioScene failed, error: %d", error);
+        AUDIO_ERR_LOG("SetAudioScene failed, error: %d", error);
         return false;
     }
 
@@ -145,13 +145,13 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return "";
     }
     data.WriteString(static_cast<std::string>(key));
     int32_t error = Remote()->SendRequest(GET_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("Get audio parameter failed, error: %d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         const std::string value = "";
         return value;
     }
@@ -167,14 +167,14 @@ void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::str
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return;
     }
     data.WriteString(static_cast<std::string>(key));
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(SET_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("Get audio parameter failed, error: %d", error);
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
     }
 }
@@ -187,13 +187,13 @@ const char *AudioManagerProxy::RetrieveCookie(int32_t &size)
     const char *cookieInfo = nullptr;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
         return nullptr;
     }
 
     int32_t error = Remote()->SendRequest(RETRIEVE_COOKIE, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("retrieve cookie failed, error: %d", error);
+        AUDIO_ERR_LOG("retrieve cookie failed, error: %d", error);
         return nullptr;
     }
 

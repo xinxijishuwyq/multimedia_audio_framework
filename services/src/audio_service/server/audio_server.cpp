@@ -17,7 +17,7 @@
 #include "audio_errors.h"
 #include "audio_renderer_sink.h"
 #include "iservice_registry.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "system_ability_definition.h"
 #include "audio_server.h"
 
@@ -50,9 +50,9 @@ void *AudioServer::paDaemonThread(void *arg)
         (char*)"pulseaudio",
     };
 
-    MEDIA_INFO_LOG("Calling ohos_pa_main\n");
+    AUDIO_INFO_LOG("Calling ohos_pa_main\n");
     ohos_pa_main(PA_ARG_COUNT, argv);
-    MEDIA_INFO_LOG("Exiting ohos_pa_main\n");
+    AUDIO_INFO_LOG("Exiting ohos_pa_main\n");
     exit(-1);
 }
 #endif
@@ -66,35 +66,35 @@ void AudioServer::OnDump()
 
 void AudioServer::OnStart()
 {
-    MEDIA_DEBUG_LOG("AudioService OnStart");
+    AUDIO_DEBUG_LOG("AudioService OnStart");
     bool res = Publish(this);
     if (res) {
-        MEDIA_DEBUG_LOG("AudioService OnStart res=%{public}d", res);
+        AUDIO_DEBUG_LOG("AudioService OnStart res=%{public}d", res);
     }
 
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
     if (ret != 0) {
-        MEDIA_ERR_LOG("pthread_create failed %d", ret);
+        AUDIO_ERR_LOG("pthread_create failed %d", ret);
     }
-    MEDIA_INFO_LOG("Created paDaemonThread\n");
+    AUDIO_INFO_LOG("Created paDaemonThread\n");
 #endif
 }
 
 void AudioServer::OnStop()
 {
-    MEDIA_DEBUG_LOG("AudioService OnStop");
+    AUDIO_DEBUG_LOG("AudioService OnStop");
 }
 
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
-    MEDIA_DEBUG_LOG("server: set audio parameter");
+    AUDIO_DEBUG_LOG("server: set audio parameter");
     AudioServer::audioParameters[key] = value;
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
-    MEDIA_DEBUG_LOG("server: get audio parameter");
+    AUDIO_DEBUG_LOG("server: get audio parameter");
 
     if (AudioServer::audioParameters.count(key)) {
         return AudioServer::audioParameters[key];
@@ -119,11 +119,11 @@ const char *AudioServer::RetrieveCookie(int32_t &size)
     if ((size > 0) && (size < PATH_MAX)) {
         cookieInfo = (char *)malloc(size * sizeof(char));
         if (cookieInfo == nullptr) {
-            MEDIA_ERR_LOG("AudioServer::RetrieveCookie: No memory");
+            AUDIO_ERR_LOG("AudioServer::RetrieveCookie: No memory");
             cookieFile.close();
             return cookieInfo;
         }
-        MEDIA_DEBUG_LOG("Reading: %{public}d characters...", size);
+        AUDIO_DEBUG_LOG("Reading: %{public}d characters...", size);
         cookieFile.read(cookieInfo, size);
     }
     cookieFile.close();
@@ -132,13 +132,13 @@ const char *AudioServer::RetrieveCookie(int32_t &size)
 
 int32_t AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
-    MEDIA_DEBUG_LOG("GetMaxVolume server");
+    AUDIO_DEBUG_LOG("GetMaxVolume server");
     return MAX_VOLUME;
 }
 
 int32_t AudioServer::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
-    MEDIA_DEBUG_LOG("GetMinVolume server");
+    AUDIO_DEBUG_LOG("GetMinVolume server");
     return MIN_VOLUME;
 }
 
@@ -147,7 +147,7 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
     if (!audioCapturerSourceInstance->capturerInited_) {
-            MEDIA_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
+            AUDIO_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
             AudioCapturerSource::micMuteState_ = isMute;
             return 0;
     }
@@ -161,12 +161,12 @@ bool AudioServer::IsMicrophoneMute()
     bool isMute = false;
 
     if (!audioCapturerSourceInstance->capturerInited_) {
-        MEDIA_INFO_LOG("Capturer is not initialized. Get the mic mute state flag value!");
+        AUDIO_INFO_LOG("Capturer is not initialized. Get the mic mute state flag value!");
         return AudioCapturerSource::micMuteState_;
     }
 
     if (audioCapturerSourceInstance->GetMute(isMute)) {
-        MEDIA_ERR_LOG("GetMute status in capturer returned Error !");
+        AUDIO_ERR_LOG("GetMute status in capturer returned Error !");
     }
 
     return isMute;
@@ -178,13 +178,13 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene)
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
     if (!audioCapturerSourceInstance->capturerInited_) {
-        MEDIA_WARNING_LOG("Capturer is not initialized.");
+        AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
         audioCapturerSourceInstance->SetAudioScene(audioScene);
     }
 
     if (!audioRendererSinkInstance->rendererInited_) {
-        MEDIA_WARNING_LOG("Renderer is not initialized.");
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         audioRendererSinkInstance->SetAudioScene(audioScene);
     }
@@ -194,7 +194,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene)
 
 int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
-    MEDIA_INFO_LOG("[%{public}s]", __func__);
+    AUDIO_INFO_LOG("[%{public}s]", __func__);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 

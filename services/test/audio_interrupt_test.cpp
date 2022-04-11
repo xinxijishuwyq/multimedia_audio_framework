@@ -14,7 +14,7 @@
  */
 
 #include "audio_interrupt_test.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "pcm2wav.h"
 
 using namespace std;
@@ -23,75 +23,75 @@ namespace OHOS {
 namespace AudioStandard {
 void AudioInterruptTest::OnStateChange(const RendererState state)
 {
-    MEDIA_DEBUG_LOG("AudioInterruptTest:: OnStateChange");
+    AUDIO_DEBUG_LOG("AudioInterruptTest:: OnStateChange");
 
     switch (state) {
         case RENDERER_PREPARED:
-            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_PREPARED");
+            AUDIO_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_PREPARED");
             break;
         case RENDERER_RUNNING:
-            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_RUNNING");
+            AUDIO_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_RUNNING");
             break;
         case RENDERER_STOPPED:
-            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_STOPPED");
+            AUDIO_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_STOPPED");
             break;
         case RENDERER_PAUSED:
-            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_PAUSED");
+            AUDIO_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_PAUSED");
             break;
         case RENDERER_RELEASED:
-            MEDIA_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_RELEASED");
+            AUDIO_DEBUG_LOG("AudioInterruptTest: OnStateChange RENDERER_RELEASED");
             break;
         default:
-            MEDIA_ERR_LOG("AudioInterruptTest: OnStateChange NOT A VALID state");
+            AUDIO_ERR_LOG("AudioInterruptTest: OnStateChange NOT A VALID state");
             break;
     }
 }
 
 void AudioInterruptTest::OnInterrupt(const InterruptEvent &interruptEvent)
 {
-    MEDIA_DEBUG_LOG("AudioInterruptTest:  OnInterrupt");
-    MEDIA_DEBUG_LOG("AudioInterruptTest: interrupt hintType: %{public}d", interruptEvent.hintType);
+    AUDIO_DEBUG_LOG("AudioInterruptTest:  OnInterrupt");
+    AUDIO_DEBUG_LOG("AudioInterruptTest: interrupt hintType: %{public}d", interruptEvent.hintType);
 
     if (interruptEvent.forceType == INTERRUPT_FORCE) {
         switch (interruptEvent.hintType) {
             case INTERRUPT_HINT_PAUSE:
-                MEDIA_DEBUG_LOG("AudioInterruptTest: ForcePaused Pause Writing");
+                AUDIO_DEBUG_LOG("AudioInterruptTest: ForcePaused Pause Writing");
                 isRenderPaused_ = true;
                 break;
             case INTERRUPT_HINT_STOP:
-                MEDIA_DEBUG_LOG("AudioInterruptTest: ForceStopped Stop Writing");
+                AUDIO_DEBUG_LOG("AudioInterruptTest: ForceStopped Stop Writing");
                 isRenderStopped_ = true;
                 break;
             case INTERRUPT_HINT_DUCK:
-                MEDIA_INFO_LOG("AudioInterruptTest: force INTERRUPT_HINT_DUCK received");
+                AUDIO_INFO_LOG("AudioInterruptTest: force INTERRUPT_HINT_DUCK received");
                 break;
             case INTERRUPT_HINT_UNDUCK:
-                MEDIA_INFO_LOG("AudioInterruptTest: force INTERRUPT_HINT_UNDUCK received");
+                AUDIO_INFO_LOG("AudioInterruptTest: force INTERRUPT_HINT_UNDUCK received");
                 break;
             default:
-                MEDIA_ERR_LOG("AudioInterruptTest: OnInterrupt NOT A VALID force HINT");
+                AUDIO_ERR_LOG("AudioInterruptTest: OnInterrupt NOT A VALID force HINT");
                 break;
         }
     } else if  (interruptEvent.forceType == INTERRUPT_SHARE) {
         switch (interruptEvent.hintType) {
             case INTERRUPT_HINT_PAUSE:
-                MEDIA_DEBUG_LOG("AudioInterruptTest: SharePause Hint received, Do pause if required");
+                AUDIO_DEBUG_LOG("AudioInterruptTest: SharePause Hint received, Do pause if required");
                 break;
             case INTERRUPT_HINT_RESUME:
-                MEDIA_DEBUG_LOG("AudioInterruptTest: Do ShareResume");
+                AUDIO_DEBUG_LOG("AudioInterruptTest: Do ShareResume");
                 if (audioRenderer_ == nullptr) {
-                    MEDIA_DEBUG_LOG("AudioInterruptTest: OnInterrupt audioRenderer_ nullptr return");
+                    AUDIO_DEBUG_LOG("AudioInterruptTest: OnInterrupt audioRenderer_ nullptr return");
                     return;
                 }
                 if (audioRenderer_->Start()) {
-                    MEDIA_DEBUG_LOG("AudioInterruptTest: Resume Success");
+                    AUDIO_DEBUG_LOG("AudioInterruptTest: Resume Success");
                     isRenderPaused_ = false;
                 } else {
-                    MEDIA_DEBUG_LOG("AudioInterruptTest: Resume Failed");
+                    AUDIO_DEBUG_LOG("AudioInterruptTest: Resume Failed");
                 }
                 break;
             default:
-                MEDIA_ERR_LOG("AudioInterruptTest: OnInterrupt default share hint case");
+                AUDIO_ERR_LOG("AudioInterruptTest: OnInterrupt default share hint case");
                 break;
         }
     }
@@ -102,7 +102,7 @@ bool AudioInterruptTest::GetBufferLen(size_t &bufferLen) const
     if (audioRenderer_->GetBufferSize(bufferLen)) {
         return false;
     }
-    MEDIA_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
+    AUDIO_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
 
     return true;
 }
@@ -118,7 +118,7 @@ void AudioInterruptTest::WriteBuffer()
     int32_t n = 2;
     auto buffer = std::make_unique<uint8_t[]>(n * bufferLen);
     if (buffer == nullptr) {
-        MEDIA_ERR_LOG("AudioInterruptTest: Failed to allocate buffer");
+        AUDIO_ERR_LOG("AudioInterruptTest: Failed to allocate buffer");
         isRenderingCompleted_ = true;
         return;
     }
@@ -131,20 +131,20 @@ void AudioInterruptTest::WriteBuffer()
                !isRenderPaused_ && !isRenderStopped_ && !isStopInProgress_) {
             bytesToWrite = fread(buffer.get(), 1, bufferLen, wavFile_);
             bytesWritten = 0;
-            MEDIA_INFO_LOG("AudioInterruptTest: Bytes to write: %{public}zu", bytesToWrite);
+            AUDIO_INFO_LOG("AudioInterruptTest: Bytes to write: %{public}zu", bytesToWrite);
 
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
                 int32_t retBytes = audioRenderer_->Write(buffer.get() + bytesWritten,
                                                          bytesToWrite - bytesWritten);
-                MEDIA_INFO_LOG("AudioInterruptTest: Bytes written: %{public}zu", bytesWritten);
+                AUDIO_INFO_LOG("AudioInterruptTest: Bytes written: %{public}zu", bytesWritten);
                 if (retBytes < 0) {
                     if (audioRenderer_->GetStatus() == RENDERER_PAUSED) {
                         isRenderPaused_ = true;
                         int32_t seekPos = bytesWritten - bytesToWrite;
                         if (fseek(wavFile_, seekPos, SEEK_CUR)) {
-                            MEDIA_INFO_LOG("AudioInterruptTest: fseek failed");
+                            AUDIO_INFO_LOG("AudioInterruptTest: fseek failed");
                         }
-                        MEDIA_INFO_LOG("AudioInterruptTest: fseek success");
+                        AUDIO_INFO_LOG("AudioInterruptTest: fseek success");
                     }
                     break;
                 }
@@ -153,13 +153,13 @@ void AudioInterruptTest::WriteBuffer()
         }
 
         if (feof(wavFile_)) {
-            MEDIA_INFO_LOG("AudioInterruptTest: EOF set isRenderingCompleted_ true ");
+            AUDIO_INFO_LOG("AudioInterruptTest: EOF set isRenderingCompleted_ true ");
             isRenderingCompleted_ = true;
             break;
         }
 
         if (isRenderStopped_) {
-            MEDIA_INFO_LOG("AudioInterruptTest: Renderer stopping, complete writing ");
+            AUDIO_INFO_LOG("AudioInterruptTest: Renderer stopping, complete writing ");
             break;
         }
     }
@@ -167,16 +167,16 @@ void AudioInterruptTest::WriteBuffer()
 
 bool AudioInterruptTest::StartRender()
 {
-    MEDIA_INFO_LOG("AudioInterruptTest: Starting renderer");
+    AUDIO_INFO_LOG("AudioInterruptTest: Starting renderer");
     if (!audioRenderer_->Start()) {
-        MEDIA_ERR_LOG("AudioInterruptTest: Start failed");
+        AUDIO_ERR_LOG("AudioInterruptTest: Start failed");
         if (!audioRenderer_->Release()) {
-            MEDIA_ERR_LOG("AudioInterruptTest: Release failed");
+            AUDIO_ERR_LOG("AudioInterruptTest: Release failed");
         }
         isRenderingCompleted_ = true;
         return false;
     }
-    MEDIA_INFO_LOG("AudioInterruptTest: Playback started");
+    AUDIO_INFO_LOG("AudioInterruptTest: Playback started");
     return true;
 }
 
@@ -186,7 +186,7 @@ bool AudioInterruptTest::InitRender()
     size_t headerSize = sizeof(wav_hdr);
     size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile_);
     if (bytesRead != headerSize) {
-        MEDIA_ERR_LOG("AudioInterruptTest: File header reading error");
+        AUDIO_ERR_LOG("AudioInterruptTest: File header reading error");
         return false;
     }
 
@@ -201,17 +201,17 @@ bool AudioInterruptTest::InitRender()
 
     audioRenderer_ = AudioRenderer::Create(rendererOptions);
     if (audioRenderer_ == nullptr) {
-        MEDIA_INFO_LOG("AudioInterruptTest: Renderer create failed");
+        AUDIO_INFO_LOG("AudioInterruptTest: Renderer create failed");
         return false;
     }
-    MEDIA_INFO_LOG("AudioInterruptTest: Playback renderer created");
+    AUDIO_INFO_LOG("AudioInterruptTest: Playback renderer created");
 
     return true;
 }
 
 int32_t AudioInterruptTest::TestPlayback()
 {
-    MEDIA_INFO_LOG("AudioInterruptTest: TestPlayback start ");
+    AUDIO_INFO_LOG("AudioInterruptTest: TestPlayback start ");
     if (!InitRender()) {
         fclose(wavFile_);
         return -1;
@@ -219,9 +219,9 @@ int32_t AudioInterruptTest::TestPlayback()
 
     std::shared_ptr<AudioRendererCallback> audioRendererCB = GetPtr();
     int32_t ret = audioRenderer_->SetRendererCallback(audioRendererCB);
-    MEDIA_DEBUG_LOG("AudioInterruptTest: SetRendererCallback result : %{public}d", ret);
+    AUDIO_DEBUG_LOG("AudioInterruptTest: SetRendererCallback result : %{public}d", ret);
     if (ret) {
-        MEDIA_ERR_LOG("AudioInterruptTest: SetRendererCallback failed : %{public}d", ret);
+        AUDIO_ERR_LOG("AudioInterruptTest: SetRendererCallback failed : %{public}d", ret);
         fclose(wavFile_);
         return -1;
     }
@@ -235,22 +235,22 @@ int32_t AudioInterruptTest::TestPlayback()
     writeThread_->join();
 
     if (audioRenderer_->GetStatus() == RENDERER_RUNNING) {
-        MEDIA_DEBUG_LOG("AudioInterruptTest: StopRender");
+        AUDIO_DEBUG_LOG("AudioInterruptTest: StopRender");
         if (audioRenderer_->Stop()) {
-            MEDIA_ERR_LOG("AudioInterruptTest: Stop Success");
+            AUDIO_ERR_LOG("AudioInterruptTest: Stop Success");
         } else {
-            MEDIA_DEBUG_LOG("AudioInterruptTest: Stop Failed");
+            AUDIO_DEBUG_LOG("AudioInterruptTest: Stop Failed");
         }
     }
 
     if (!audioRenderer_->Release()) {
-        MEDIA_ERR_LOG("AudioInterruptTest: Release failed");
+        AUDIO_ERR_LOG("AudioInterruptTest: Release failed");
     }
 
     fclose(wavFile_);
     wavFile_ = nullptr;
 
-    MEDIA_INFO_LOG("AudioInterruptTest: TestPlayback end");
+    AUDIO_INFO_LOG("AudioInterruptTest: TestPlayback end");
 
     return 0;
 }
@@ -268,38 +268,38 @@ using namespace OHOS::AudioStandard;
 
 int main(int argc, char *argv[])
 {
-    MEDIA_INFO_LOG("AudioInterruptTest: Render test in");
+    AUDIO_INFO_LOG("AudioInterruptTest: Render test in");
     constexpr int32_t minNumOfArgs = 2;
     constexpr int32_t argIndexTwo = 2;
     constexpr int32_t argIndexThree = 3;
 
     if (argv == nullptr) {
-        MEDIA_ERR_LOG("AudioInterruptTest: argv is null");
+        AUDIO_ERR_LOG("AudioInterruptTest: argv is null");
         return 0;
     }
 
     if (argc < minNumOfArgs || argc == minNumOfArgs + 1) {
-        MEDIA_ERR_LOG("AudioInterruptTest: incorrect argc. Enter either 2 or 4 args");
+        AUDIO_ERR_LOG("AudioInterruptTest: incorrect argc. Enter either 2 or 4 args");
         return 0;
     }
 
-    MEDIA_INFO_LOG("AudioInterruptTest: argc=%d", argc);
-    MEDIA_INFO_LOG("AudioInterruptTest: argv[1]=%{public}s", argv[1]);
+    AUDIO_INFO_LOG("AudioInterruptTest: argc=%d", argc);
+    AUDIO_INFO_LOG("AudioInterruptTest: argv[1]=%{public}s", argv[1]);
 
     int numBase = 10;
     char *inputPath = argv[1];
     char path[PATH_MAX + 1] = {0x00};
     if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-        MEDIA_ERR_LOG("AudioInterruptTest: Invalid input filepath");
+        AUDIO_ERR_LOG("AudioInterruptTest: Invalid input filepath");
         return -1;
     }
-    MEDIA_INFO_LOG("AudioInterruptTest: path = %{public}s", path);
+    AUDIO_INFO_LOG("AudioInterruptTest: path = %{public}s", path);
 
     auto audioInterruptTest = std::make_shared<AudioInterruptTest>();
 
     audioInterruptTest->wavFile_ = fopen(path, "rb");
     if (audioInterruptTest->wavFile_ == nullptr) {
-        MEDIA_INFO_LOG("AudioInterruptTest: Unable to open wave file");
+        AUDIO_INFO_LOG("AudioInterruptTest: Unable to open wave file");
         return -1;
     }
 

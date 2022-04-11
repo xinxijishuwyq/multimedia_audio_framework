@@ -18,7 +18,7 @@
 #include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
 #include "iservice_registry.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "system_ability_definition.h"
 
 #include "audio_policy_service.h"
@@ -30,7 +30,7 @@ static sptr<IStandardAudioService> g_sProxy = nullptr;
 
 AudioPolicyService::~AudioPolicyService()
 {
-    MEDIA_ERR_LOG("~AudioPolicyService()");
+    AUDIO_ERR_LOG("~AudioPolicyService()");
     Deinit();
 }
 
@@ -39,11 +39,11 @@ bool AudioPolicyService::Init(void)
     serviceFlag_.reset();
     mAudioPolicyManager.Init();
     if (!mConfigParser.LoadConfiguration()) {
-        MEDIA_ERR_LOG("Audio Config Load Configuration failed");
+        AUDIO_ERR_LOG("Audio Config Load Configuration failed");
         return false;
     }
     if (!mConfigParser.Parse()) {
-        MEDIA_ERR_LOG("Audio Config Parse failed");
+        AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
 
@@ -52,12 +52,12 @@ bool AudioPolicyService::Init(void)
     std::string AUDIO_FOCUS_CONFIG_FILE = "/etc/audio/audio_interrupt_policy_config.xml";
 
     if (audioFocusParser->LoadConfig(focusTable_[0][0])) {
-        MEDIA_ERR_LOG("Audio Interrupt Load Configuration failed");
+        AUDIO_ERR_LOG("Audio Interrupt Load Configuration failed");
         return false;
     }
 
     if (mDeviceStatusListener->RegisterDeviceStatusListener(nullptr)) {
-        MEDIA_ERR_LOG("[Policy Service] Register for device status events failed");
+        AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
         return false;
     }
 
@@ -72,25 +72,25 @@ void AudioPolicyService::InitKVStore()
 bool AudioPolicyService::ConnectServiceAdapter()
 {
     if (!mAudioPolicyManager.ConnectServiceAdapter()) {
-        MEDIA_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
+        AUDIO_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
         return false;
     }
 
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
-        MEDIA_ERR_LOG("[Policy Service] Get samgr failed");
+        AUDIO_ERR_LOG("[Policy Service] Get samgr failed");
         return false;
     }
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        MEDIA_DEBUG_LOG("[Policy Service] audio service remote object is NULL.");
+        AUDIO_DEBUG_LOG("[Policy Service] audio service remote object is NULL.");
         return false;
     }
 
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("[Policy Service] init g_sProxy is NULL.");
+        AUDIO_DEBUG_LOG("[Policy Service] init g_sProxy is NULL.");
         return false;
     }
 
@@ -103,7 +103,7 @@ bool AudioPolicyService::ConnectServiceAdapter()
 
 void AudioPolicyService::Deinit(void)
 {
-    MEDIA_ERR_LOG("Policy service died. closing active ports");
+    AUDIO_ERR_LOG("Policy service died. closing active ports");
     std::for_each(mIOHandles.begin(), mIOHandles.end(), [&](std::pair<std::string, AudioIOHandle> handle) {
         mAudioPolicyManager.CloseAudioPort(handle.second);
     });
@@ -170,11 +170,11 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
 {
-    MEDIA_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
 
     if (deviceFlag < DeviceFlag::OUTPUT_DEVICES_FLAG || deviceFlag > DeviceFlag::ALL_DEVICES_FLAG) {
-        MEDIA_ERR_LOG("Invalid flag provided %{public}d", deviceFlag);
+        AUDIO_ERR_LOG("Invalid flag provided %{public}d", deviceFlag);
         return deviceList;
     }
 
@@ -185,7 +185,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     DeviceRole role = DeviceRole::OUTPUT_DEVICE;
     role = (deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) ? DeviceRole::OUTPUT_DEVICE : DeviceRole::INPUT_DEVICE;
 
-    MEDIA_INFO_LOG("GetDevices mConnectedDevices size = [%{public}zu]", mConnectedDevices.size());
+    AUDIO_INFO_LOG("GetDevices mConnectedDevices size = [%{public}zu]", mConnectedDevices.size());
     for (const auto &device : mConnectedDevices) {
         if (device != nullptr && device->deviceRole_ == role) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(device->deviceType_,
@@ -194,13 +194,13 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
         }
     }
 
-    MEDIA_INFO_LOG("GetDevices list size = [%{public}zu]", deviceList.size());
+    AUDIO_INFO_LOG("GetDevices list size = [%{public}zu]", deviceList.size());
     return deviceList;
 }
 
 DeviceType AudioPolicyService::FetchHighPriorityDevice()
 {
-    MEDIA_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
     DeviceType priorityDevice = DEVICE_TYPE_SPEAKER;
 
     for (const auto &device : priorityList) {
@@ -212,7 +212,7 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice()
         auto itr = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent);
         if (itr != mConnectedDevices.end()) {
             priorityDevice = (*itr)->deviceType_;
-            MEDIA_INFO_LOG("%{public}d is high priority device", priorityDevice);
+            AUDIO_INFO_LOG("%{public}d is high priority device", priorityDevice);
             break;
         }
     }
@@ -260,7 +260,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
             auto moduleInfoList = primaryModulesPos->second;
             for (auto &moduleInfo : moduleInfoList) {
                 if (mIOHandles.find(moduleInfo.name) == mIOHandles.end()) {
-                    MEDIA_INFO_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
+                    AUDIO_INFO_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
                     AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
                     CHECK_AND_RETURN_RET_LOG(ioHandle != ERR_OPERATION_FAILED && ioHandle != ERR_INVALID_HANDLE,
                                              ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", ioHandle);
@@ -268,20 +268,20 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
                 }
 
                 std::string activePort = GetPortName(mCurrentActiveDevice);
-                MEDIA_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), mCurrentActiveDevice);
+                AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), mCurrentActiveDevice);
                 mAudioPolicyManager.SuspendAudioDevice(activePort, true);
             }
         }
     } else if (mCurrentActiveDevice == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string activePort = GetPortName(mCurrentActiveDevice);
-        MEDIA_INFO_LOG("suspend a2dp first %{public}s", activePort.c_str());
+        AUDIO_INFO_LOG("suspend a2dp first %{public}s", activePort.c_str());
         mAudioPolicyManager.SuspendAudioDevice(activePort, true);
     }
 
     AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
     std::string portName = GetPortName(deviceType);
 
-    MEDIA_INFO_LOG("port name is %{public}s", portName.c_str());
+    AUDIO_INFO_LOG("port name is %{public}s", portName.c_str());
     if (portName != PORT_NONE) {
         result = mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, portName, true);
         mAudioPolicyManager.SuspendAudioDevice(portName, false);
@@ -290,7 +290,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
     }
 
     if (result) {
-        MEDIA_ERR_LOG("SetDeviceActive failed %{public}d", result);
+        AUDIO_ERR_LOG("SetDeviceActive failed %{public}d", result);
         return result;
     }
 
@@ -301,7 +301,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
 
 int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
-    MEDIA_DEBUG_LOG("[Policy Service] Device type[%{public}d] status[%{public}d]", deviceType, active);
+    AUDIO_DEBUG_LOG("[Policy Service] Device type[%{public}d] status[%{public}d]", deviceType, active);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     int32_t result = SUCCESS;
@@ -316,7 +316,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     }
 
     if (deviceType == mCurrentActiveDevice) {
-        MEDIA_ERR_LOG("Device already activated %{public}d. No need to activate again", mCurrentActiveDevice);
+        AUDIO_ERR_LOG("Device already activated %{public}d. No need to activate again", mCurrentActiveDevice);
         return SUCCESS;
     }
 
@@ -337,7 +337,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType) const
 {
-    MEDIA_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
     return mCurrentActiveDevice == deviceType;
 }
 
@@ -354,22 +354,22 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
 int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
     if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("AudioPolicyService::SetAudioScene g_sProxy is nullptr");
+        AUDIO_DEBUG_LOG("AudioPolicyService::SetAudioScene g_sProxy is nullptr");
         return ERR_OPERATION_FAILED;
     }
 
     int32_t result = g_sProxy->SetAudioScene(audioScene);
-    MEDIA_INFO_LOG("SetAudioScene return value from audio HAL: %{public}d", result);
+    AUDIO_INFO_LOG("SetAudioScene return value from audio HAL: %{public}d", result);
     // As Audio HAL is stubbed now, we set and return
     mAudioScene = audioScene;
-    MEDIA_INFO_LOG("AudioScene is set as: %{public}d", audioScene);
+    AUDIO_INFO_LOG("AudioScene is set as: %{public}d", audioScene);
 
     return SUCCESS;
 }
 
 AudioScene AudioPolicyService::GetAudioScene() const
 {
-    MEDIA_INFO_LOG("GetAudioScene return value: %{public}d", mAudioScene);
+    AUDIO_INFO_LOG("GetAudioScene return value: %{public}d", mAudioScene);
     return mAudioScene;
 }
 
@@ -389,7 +389,7 @@ void AudioPolicyService::UpdateConnectedDevices(DeviceType devType, vector<sptr<
     sptr<AudioDeviceDescriptor> audioDescriptor = nullptr;
 
     if (std::find(ioDeviceList.begin(), ioDeviceList.end(), devType) != ioDeviceList.end()) {
-        MEDIA_INFO_LOG("Filling io device list for %{public}d", devType);
+        AUDIO_INFO_LOG("Filling io device list for %{public}d", devType);
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, INPUT_DEVICE);
         desc.push_back(audioDescriptor);
         if (isConnected) {
@@ -402,7 +402,7 @@ void AudioPolicyService::UpdateConnectedDevices(DeviceType devType, vector<sptr<
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
     } else {
-        MEDIA_INFO_LOG("Filling non-io device list for %{public}d", devType);
+        AUDIO_INFO_LOG("Filling non-io device list for %{public}d", devType);
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType, GetDeviceRole(devType));
         desc.push_back(audioDescriptor);
         if (isConnected) {
@@ -413,7 +413,7 @@ void AudioPolicyService::UpdateConnectedDevices(DeviceType devType, vector<sptr<
 
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, void *privData)
 {
-    MEDIA_INFO_LOG("=== DEVICE STATUS CHANGED | TYPE[%{public}d] STATUS[%{public}d] ===", devType, isConnected);
+    AUDIO_INFO_LOG("=== DEVICE STATUS CHANGED | TYPE[%{public}d] STATUS[%{public}d] ===", devType, isConnected);
     int32_t result = ERROR;
 
     // fill device change action for callback
@@ -429,17 +429,17 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     // new device found. If connected, add into active device list
     if (isConnected) {
-        MEDIA_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d]", devType);
+        AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d]", devType);
         result = ActivateNewDevice(devType);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device %{public}d", devType);
         mCurrentActiveDevice = devType;
         UpdateConnectedDevices(devType, deviceChangeDescriptor, isConnected);
     } else {
-        MEDIA_INFO_LOG("=== DEVICE DISCONNECTED === TYPE[%{public}d]", devType);
+        AUDIO_INFO_LOG("=== DEVICE DISCONNECTED === TYPE[%{public}d]", devType);
         UpdateConnectedDevices(devType, deviceChangeDescriptor, isConnected);
 
         auto priorityDev = FetchHighPriorityDevice();
-        MEDIA_INFO_LOG("Priority device is [%{public}d]", priorityDev);
+        AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
 
         if (priorityDev == DEVICE_TYPE_SPEAKER) {
             result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
@@ -454,7 +454,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (mIOHandles.find(BLUETOOTH_SPEAKER) != mIOHandles.end()) {
-                MEDIA_INFO_LOG("Closing a2dp device");
+                AUDIO_INFO_LOG("Closing a2dp device");
                 mAudioPolicyManager.CloseAudioPort(mIOHandles[BLUETOOTH_SPEAKER]);
                 mIOHandles.erase(BLUETOOTH_SPEAKER);
             }
@@ -464,31 +464,31 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
-    MEDIA_INFO_LOG("output device list = [%{public}zu]", mConnectedDevices.size());
+    AUDIO_INFO_LOG("output device list = [%{public}zu]", mConnectedDevices.size());
 }
 
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
-    MEDIA_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
+    AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
     CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
 
     // If audio service or hdi service is not ready, donot load default modules
     serviceFlag_.set(serviceIndex, true);
     if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
-        MEDIA_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
+        AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
         return;
     }
 
     int32_t result = ERROR;
-    MEDIA_INFO_LOG("[module_load]::HDI and AUDIO SERVICE is READY. Loading default modules");
+    AUDIO_INFO_LOG("[module_load]::HDI and AUDIO SERVICE is READY. Loading default modules");
     auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_PRIMARY);
     if (primaryModulesPos != deviceClassInfo_.end()) {
         auto moduleInfoList = primaryModulesPos->second;
         for (auto &moduleInfo : moduleInfoList) {
-            MEDIA_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
+            AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
             AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
             if (ioHandle == ERR_OPERATION_FAILED || ioHandle == ERR_INVALID_HANDLE) {
-                MEDIA_INFO_LOG("[module_load]::Open port failed");
+                AUDIO_INFO_LOG("[module_load]::Open port failed");
                 continue;
             }
 
@@ -496,7 +496,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
             if (devType == DeviceType::DEVICE_TYPE_SPEAKER || devType == DeviceType::DEVICE_TYPE_MIC) {
                 result = mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
                 if (result != SUCCESS) {
-                    MEDIA_ERR_LOG("[module_load]::Device failed %{public}d", devType);
+                    AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
                     break;
                 }
             }
@@ -511,7 +511,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     }
 
     if (result == SUCCESS) {
-        MEDIA_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
+        AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
         mCurrentActiveDevice = DEVICE_TYPE_SPEAKER;
     }
 }
@@ -519,9 +519,9 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 // Parser callbacks
 void AudioPolicyService::OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmlData)
 {
-    MEDIA_INFO_LOG("AudioPolicyService::%{public}s, device class num [%{public}zu]", __func__, xmlData.size());
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s, device class num [%{public}zu]", __func__, xmlData.size());
     if (xmlData.empty()) {
-        MEDIA_ERR_LOG("failed to parse xml file. Received data is empty");
+        AUDIO_ERR_LOG("failed to parse xml file. Received data is empty");
         return;
     }
 
@@ -530,7 +530,7 @@ void AudioPolicyService::OnXmlParsingCompleted(const std::unordered_map<ClassTyp
 
 int32_t AudioPolicyService::SetDeviceChangeCallback(const sptr<IRemoteObject> &object)
 {
-    MEDIA_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
 
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
     if (callback != nullptr) {

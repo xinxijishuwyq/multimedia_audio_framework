@@ -15,7 +15,7 @@
 #include <chrono>
 #include <thread>
 
-#include "media_log.h"
+#include "audio_log.h"
 #include "pcm2wav.h"
 
 #include "interrupt_multi_renderer_test.h"
@@ -36,66 +36,66 @@ namespace {
 
 void AudioRendererCallbackTestImpl::OnStateChange(const RendererState state)
 {
-    MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl:: OnStateChange");
+    AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl:: OnStateChange");
 
     switch (state) {
         case RENDERER_PREPARED:
-            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PREPARED");
+            AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PREPARED");
             break;
         case RENDERER_RUNNING:
-            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RUNNING");
+            AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RUNNING");
             break;
         case RENDERER_STOPPED:
-            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_STOPPED");
+            AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_STOPPED");
             break;
         case RENDERER_PAUSED:
-            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PAUSED");
+            AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_PAUSED");
             break;
         case RENDERER_RELEASED:
-            MEDIA_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RELEASED");
+            AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl: OnStateChange RENDERER_RELEASED");
             break;
         default:
-            MEDIA_ERR_LOG("AudioRendererCallbackTestImpl: OnStateChange NOT A VALID state");
+            AUDIO_ERR_LOG("AudioRendererCallbackTestImpl: OnStateChange NOT A VALID state");
             break;
     }
 }
 
 void AudioRendererCallbackTestImpl::OnInterrupt(const InterruptEvent &interruptEvent)
 {
-    MEDIA_DEBUG_LOG("InterruptMultiRendererTest:  OnInterrupt");
-    MEDIA_DEBUG_LOG("InterruptMultiRendererTest: interrupt hintType: %{public}d", interruptEvent.hintType);
+    AUDIO_DEBUG_LOG("InterruptMultiRendererTest:  OnInterrupt");
+    AUDIO_DEBUG_LOG("InterruptMultiRendererTest: interrupt hintType: %{public}d", interruptEvent.hintType);
 
     if (interruptEvent.forceType == INTERRUPT_FORCE) {
         switch (interruptEvent.hintType) {
             case INTERRUPT_HINT_PAUSE:
-                MEDIA_DEBUG_LOG("InterruptMultiRendererTest: ForcePaused Pause Writing");
+                AUDIO_DEBUG_LOG("InterruptMultiRendererTest: ForcePaused Pause Writing");
                 isRendererPaused_ = true;
                 break;
             case INTERRUPT_HINT_STOP:
-                MEDIA_DEBUG_LOG("InterruptMultiRendererTest: ForceStopped Stop Writing");
+                AUDIO_DEBUG_LOG("InterruptMultiRendererTest: ForceStopped Stop Writing");
                 isRendererStopped_ = true;
                 break;
             case INTERRUPT_HINT_DUCK:
-                MEDIA_INFO_LOG("InterruptMultiRendererTest: force INTERRUPT_HINT_DUCK received");
+                AUDIO_INFO_LOG("InterruptMultiRendererTest: force INTERRUPT_HINT_DUCK received");
                 break;
             case INTERRUPT_HINT_UNDUCK:
-                MEDIA_INFO_LOG("InterruptMultiRendererTest: force INTERRUPT_HINT_UNDUCK received");
+                AUDIO_INFO_LOG("InterruptMultiRendererTest: force INTERRUPT_HINT_UNDUCK received");
                 break;
             default:
-                MEDIA_ERR_LOG("InterruptMultiRendererTest: OnInterrupt NOT A VALID force HINT");
+                AUDIO_ERR_LOG("InterruptMultiRendererTest: OnInterrupt NOT A VALID force HINT");
                 break;
         }
     } else if  (interruptEvent.forceType == INTERRUPT_SHARE) {
         switch (interruptEvent.hintType) {
             case INTERRUPT_HINT_PAUSE:
-                MEDIA_DEBUG_LOG("InterruptMultiRendererTest: SharePause Hint received, Do pause if required");
+                AUDIO_DEBUG_LOG("InterruptMultiRendererTest: SharePause Hint received, Do pause if required");
                 break;
             case INTERRUPT_HINT_RESUME:
-                MEDIA_DEBUG_LOG("InterruptMultiRendererTest: Do ShareResume");
+                AUDIO_DEBUG_LOG("InterruptMultiRendererTest: Do ShareResume");
                 isRendererResumed_ = true;
                 break;
             default:
-                MEDIA_ERR_LOG("InterruptMultiRendererTest: OnInterrupt default share hint case");
+                AUDIO_ERR_LOG("InterruptMultiRendererTest: OnInterrupt default share hint case");
                 break;
         }
     }
@@ -129,16 +129,16 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
                 int32_t retBytes = audioRenderer->Write(buffer.get() + bytesWritten,
                                                         bytesToWrite - bytesWritten);
                 if (retBytes < 0) {
-                    MEDIA_ERR_LOG("InterruptMultiRendererTest: Error occured in writing buffer: %{public}d", retBytes);
+                    AUDIO_ERR_LOG("InterruptMultiRendererTest: Error occured in writing buffer: %{public}d", retBytes);
                     if (audioRenderer->GetStatus() == RENDERER_PAUSED) {
                         cb->isRendererPaused_ = true;
                         int32_t seekPos = bytesWritten - bytesToWrite;
                         if (fseek(wavFile, seekPos, SEEK_CUR)) {
-                            MEDIA_INFO_LOG("InterruptMultiRendererTest: fseek failed");
+                            AUDIO_INFO_LOG("InterruptMultiRendererTest: fseek failed");
                         }
-                        MEDIA_INFO_LOG("InterruptMultiRendererTest: fseek success");
+                        AUDIO_INFO_LOG("InterruptMultiRendererTest: fseek success");
                     } else if (audioRenderer->GetStatus() == RENDERER_STOPPED) {
-                        MEDIA_INFO_LOG("InterruptMultiRendererTest: Renderer Stopped");
+                        AUDIO_INFO_LOG("InterruptMultiRendererTest: Renderer Stopped");
                         cb->isRendererStopped_ = true;
                     }
                     break;
@@ -149,7 +149,7 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
 
         if (feof(wavFile) || cb->isRendererStopped_) {
             if (feof(wavFile)) {
-                MEDIA_INFO_LOG("InterruptMultiRendererTest: EOF reached. Complete rendering ");
+                AUDIO_INFO_LOG("InterruptMultiRendererTest: EOF reached. Complete rendering ");
             }
             if (audioRenderer->GetStatus() == RENDERER_RUNNING) {
                 audioRenderer->Stop();
@@ -162,15 +162,15 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
 
 bool InterruptMultiRendererTest::StartRender(const unique_ptr<AudioRenderer> &audioRenderer) const
 {
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: Starting renderer");
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: Starting renderer");
     if (!audioRenderer->Start()) {
-        MEDIA_ERR_LOG("InterruptMultiRendererTest: Start rejected or failed");
+        AUDIO_ERR_LOG("InterruptMultiRendererTest: Start rejected or failed");
         if (!audioRenderer->Release()) {
-            MEDIA_ERR_LOG("InterruptMultiRendererTest: Release failed");
+            AUDIO_ERR_LOG("InterruptMultiRendererTest: Release failed");
         }
         return false;
     }
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: Playback started");
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: Playback started");
     return true;
 }
 
@@ -180,7 +180,7 @@ bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &aud
     size_t headerSize = sizeof(wav_hdr);
     size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
     if (bytesRead != headerSize) {
-        MEDIA_ERR_LOG("InterruptMultiRendererTest: File header reading error");
+        AUDIO_ERR_LOG("InterruptMultiRendererTest: File header reading error");
         return false;
     }
 
@@ -191,13 +191,13 @@ bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &aud
     rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
 
     if (audioRenderer->SetParams(rendererParams)) {
-        MEDIA_ERR_LOG("InterruptMultiRendererTest: Set audio renderer parameters failed");
+        AUDIO_ERR_LOG("InterruptMultiRendererTest: Set audio renderer parameters failed");
         if (!audioRenderer->Release()) {
-            MEDIA_ERR_LOG("InterruptMultiRendererTest: Release failed");
+            AUDIO_ERR_LOG("InterruptMultiRendererTest: Release failed");
         }
         return false;
     }
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: Playback renderer created");
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: Playback renderer created");
 
     return true;
 }
@@ -205,7 +205,7 @@ bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &aud
 int32_t InterruptMultiRendererTest::ValidateFile(char *filePath, char path[]) const
 {
     if ((strlen(filePath) > PATH_MAX) || (realpath(filePath, path) == nullptr)) {
-        MEDIA_ERR_LOG("InterruptMultiRendererTest: Invalid input filepath");
+        AUDIO_ERR_LOG("InterruptMultiRendererTest: Invalid input filepath");
         return -1;
     }
 
@@ -294,21 +294,21 @@ using namespace OHOS::AudioStandard;
 
 int main(int argc, char *argv[])
 {
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: Render test in");
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: Render test in");
 
     if ((argv == nullptr) || (argc < MIN_NO_OF_ARGS)) {
-        MEDIA_ERR_LOG("InterruptMultiRendererTest: argv / argc incorrect");
+        AUDIO_ERR_LOG("InterruptMultiRendererTest: argv / argc incorrect");
         return 0;
     }
 
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: argc=%d", argc);
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: argv[1]=%{public}s", argv[ARG_INDEX_1]);
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: argv[2]=%{public}s", argv[ARG_INDEX_2]);
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: argc=%d", argc);
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: argv[1]=%{public}s", argv[ARG_INDEX_1]);
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: argv[2]=%{public}s", argv[ARG_INDEX_2]);
 
     auto interruptMultiRendererTest = make_unique<InterruptMultiRendererTest>();
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: TestPlayback start ");
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: TestPlayback start ");
     int32_t ret = interruptMultiRendererTest->TestPlayback(argc, argv);
-    MEDIA_INFO_LOG("InterruptMultiRendererTest: TestPlayback end");
+    AUDIO_INFO_LOG("InterruptMultiRendererTest: TestPlayback end");
 
     return ret;
 }

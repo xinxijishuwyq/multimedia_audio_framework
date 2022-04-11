@@ -23,7 +23,7 @@
 #include "distributed_kv_data_manager.h"
 #include "iaudio_policy_interface.h"
 #include "types.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -149,9 +149,9 @@ public:
 
     void OnSessionRemoved(const uint32_t sessionID)
     {
-        MEDIA_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl OnSessionRemoved: Session ID %{public}d", sessionID);
+        AUDIO_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl OnSessionRemoved: Session ID %{public}d", sessionID);
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            MEDIA_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
+            AUDIO_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
                             "not firing OnSessionRemoved");
         } else {
             audioAdapterManager_->sessionCallback_->OnSessionRemoved(sessionID);

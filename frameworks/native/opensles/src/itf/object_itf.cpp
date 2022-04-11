@@ -64,7 +64,7 @@ static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *in
         *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
         return SL_RESULT_SUCCESS;
     } else {
-        MEDIA_ERR_LOG("GetInterface: SLInterfaceID not supported");
+        AUDIO_ERR_LOG("GetInterface: SLInterfaceID not supported");
         return SL_RESULT_FEATURE_UNSUPPORTED;
     }
 }
@@ -113,7 +113,7 @@ void Destroy(SLObjectItf self)
             OutputMixDestroy((void *)self);
             break;
         default:
-            MEDIA_ERR_LOG("objectId not supported");
+            AUDIO_ERR_LOG("objectId not supported");
             break;
     }
     return;

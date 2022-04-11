@@ -17,35 +17,35 @@
 
 #include "audio_errors.h"
 #include "audio_system_manager.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioRingerModeUpdateListenerStub::AudioRingerModeUpdateListenerStub()
 {
-    MEDIA_DEBUG_LOG("AudioRingerModeUpdateListenerStub Instance create");
+    AUDIO_DEBUG_LOG("AudioRingerModeUpdateListenerStub Instance create");
 }
 
 AudioRingerModeUpdateListenerStub::~AudioRingerModeUpdateListenerStub()
 {
-    MEDIA_DEBUG_LOG("AudioRingerModeUpdateListenerStub Instance destroy");
+    AUDIO_DEBUG_LOG("AudioRingerModeUpdateListenerStub Instance destroy");
 }
 
 int AudioRingerModeUpdateListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        MEDIA_ERR_LOG("AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
         case ON_RINGERMODE_UPDATE: {
             AudioRingerMode ringerMode = static_cast<AudioRingerMode>(data.ReadInt32());
             OnRingerModeUpdated(ringerMode);
-            return MEDIA_OK;
+            return AUDIO_OK;
         }
         default: {
-            MEDIA_ERR_LOG("default case, need check AudioListenerStub");
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
@@ -57,7 +57,7 @@ void AudioRingerModeUpdateListenerStub::OnRingerModeUpdated(const AudioRingerMod
     if (cb != nullptr) {
         cb->OnRingerModeUpdated(ringerMode);
     } else {
-        MEDIA_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
     }
 }
 

@@ -22,7 +22,7 @@
 #include "capturer_position_callback_napi.h"
 
 #include "hilog/log.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "securec.h"
 
 using namespace std;
@@ -221,7 +221,7 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
         CHECK_AND_RETURN_RET_LOG(capturerNapi->callbackNapi_ != nullptr, result, "No memory");
         int32_t ret = capturerNapi->audioCapturer_->SetCapturerCallback(capturerNapi->callbackNapi_);
         if (ret) {
-            MEDIA_DEBUG_LOG("AudioCapturerNapi::Construct SetCapturerCallback failed");
+            AUDIO_DEBUG_LOG("AudioCapturerNapi::Construct SetCapturerCallback failed");
         }
     }
 
@@ -957,10 +957,10 @@ napi_value AudioCapturerNapi::RegisterPeriodPositionCallback(napi_env env, napi_
                 std::static_pointer_cast<CapturerPeriodPositionCallbackNapi>(capturerNapi->periodPositionCBNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
         } else {
-            MEDIA_DEBUG_LOG("AudioCapturerNapi: periodReach already subscribed.");
+            AUDIO_DEBUG_LOG("AudioCapturerNapi: periodReach already subscribed.");
         }
     } else {
-        MEDIA_ERR_LOG("AudioCapturerNapi: frameCount value not supported!!");
+        AUDIO_ERR_LOG("AudioCapturerNapi: frameCount value not supported!!");
     }
 
     napi_value result = nullptr;
@@ -986,10 +986,10 @@ napi_value AudioCapturerNapi::RegisterPositionCallback(napi_env env, napi_value*
                 std::static_pointer_cast<CapturerPositionCallbackNapi>(capturerNapi->positionCBNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
         } else {
-            MEDIA_DEBUG_LOG("AudioCapturerNapi: markReach already subscribed.");
+            AUDIO_DEBUG_LOG("AudioCapturerNapi: markReach already subscribed.");
         }
     } else {
-        MEDIA_ERR_LOG("AudioCapturerNapi: Mark Position value not supported!!");
+        AUDIO_ERR_LOG("AudioCapturerNapi: Mark Position value not supported!!");
     }
 
     napi_value result = nullptr;
@@ -1058,7 +1058,7 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, eventType == napi_string, "AudioCapturerNapi:On: type mismatch for event name, parameter 1");
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
-    MEDIA_DEBUG_LOG("AudioCapturerNapi: On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_DEBUG_LOG("AudioCapturerNapi: On callbackName: %{public}s", callbackName.c_str());
 
     napi_valuetype handler = napi_undefined;
     if (argc == requireArgc) {
@@ -1069,7 +1069,7 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
         napi_typeof(env, argv[1], &paramArg1);
         napi_valuetype expectedValType = napi_number;  // Default. Reset it with 'callbackName' if check, if required.
         if (paramArg1 != expectedValType) {
-            MEDIA_ERR_LOG("Type mismatch for param 2!!");
+            AUDIO_ERR_LOG("Type mismatch for param 2!!");
             napi_value result = nullptr;
             napi_get_undefined(env, &result);
             return result;
@@ -1121,7 +1121,7 @@ napi_value AudioCapturerNapi::Off(napi_env env, napi_callback_info info)
     NAPI_ASSERT(env, eventType == napi_string, "AudioCapturerNapi:Off: type mismatch for event name, parameter 1");
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
-    MEDIA_DEBUG_LOG("AudioCapturerNapi: Off callbackName: %{public}s", callbackName.c_str());
+    AUDIO_DEBUG_LOG("AudioCapturerNapi: Off callbackName: %{public}s", callbackName.c_str());
 
     return UnregisterCallback(env, jsThis, callbackName);
 }

@@ -20,7 +20,7 @@
 
 #include "iringtone_sound_manager.h"
 #include "media_data_ability_const.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "audio_errors.h"
 #include "player.h"
 #include "foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context/context.h"
