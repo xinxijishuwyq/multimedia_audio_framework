@@ -82,6 +82,8 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkDeInit = AudioRendererSinkDeInit;
         adapter->RendererSinkStart = AudioRendererSinkStart;
         adapter->RendererSinkStop = AudioRendererSinkStop;
+        adapter->RendererSinkPause = AudioRendererSinkPause;
+        adapter->RendererSinkResume = AudioRendererSinkResume;
         adapter->RendererRenderFrame = AudioRendererRenderFrame;
         adapter->RendererSinkSetVolume = AudioRendererSinkSetVolume;
         adapter->RendererSinkGetLatency = AudioRendererSinkGetLatency;
@@ -92,6 +94,8 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkDeInit = BluetoothRendererSinkDeInit;
         adapter->RendererSinkStart = BluetoothRendererSinkStart;
         adapter->RendererSinkStop = BluetoothRendererSinkStop;
+        adapter->RendererSinkPause = BluetoothRendererSinkPause;
+        adapter->RendererSinkResume = BluetoothRendererSinkResume;
         adapter->RendererRenderFrame = BluetoothRendererRenderFrame;
         adapter->RendererSinkSetVolume = BluetoothRendererSinkSetVolume;
         adapter->RendererSinkGetLatency = BluetoothRendererSinkGetLatency;
@@ -117,6 +121,17 @@ int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter)
     free(sinkAdapter);
 
     return SUCCESS;
+}
+
+const char *GetDeviceClass(void)
+{
+    if (g_deviceClass == CLASS_TYPE_PRIMARY) {
+        return g_deviceClassPrimary;
+    } else if (g_deviceClass == CLASS_TYPE_A2DP) {
+        return g_deviceClassA2Dp;
+    } else {
+        return NULL;
+    }
 }
 #ifdef __cplusplus
 }

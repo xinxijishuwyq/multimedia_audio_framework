@@ -968,10 +968,10 @@ int32_t AudioServiceClient::PauseStream()
     }
 
     if (!streamCmdStatus) {
-        MEDIA_ERR_LOG("Stream Pasue Failed");
+        MEDIA_ERR_LOG("Stream Pause Failed");
         return AUDIO_CLIENT_ERR;
     } else {
-        MEDIA_INFO_LOG("Stream Pasued Successfully");
+        MEDIA_INFO_LOG("Stream Paused Successfully");
         return AUDIO_CLIENT_SUCCESS;
     }
 }

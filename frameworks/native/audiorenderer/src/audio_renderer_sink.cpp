@@ -655,6 +655,26 @@ int32_t AudioRendererSinkStart()
     return ret;
 }
 
+int32_t AudioRendererSinkPause()
+{
+    if (!g_audioRendrSinkInstance->rendererInited_) {
+        MEDIA_ERR_LOG("Renderer pause failed");
+        return ERR_NOT_STARTED;
+    }
+
+    return g_audioRendrSinkInstance->Pause();
+}
+
+int32_t AudioRendererSinkResume()
+{
+    if (!g_audioRendrSinkInstance->rendererInited_) {
+        MEDIA_ERR_LOG("Renderer resume failed");
+        return ERR_NOT_STARTED;
+    }
+
+    return g_audioRendrSinkInstance->Resume();
+}
+
 int32_t AudioRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int32_t ret;

@@ -44,6 +44,8 @@
 #define DEFAULT_BUFFER_SIZE 8192
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
+const char *DEVICE_CLASS_A2DP = "a2dp";
+
 struct Userdata {
     uint32_t buffer_size;
     size_t bytes_dropped;
@@ -270,6 +272,15 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
 
     pa_assert(s);
     pa_assert_se(u = s->userdata);
+
+    MEDIA_INFO_LOG("Sink old state: %{public}d, new state: %{public}d", s->thread_info.state, newState);
+    if (!strcmp(GetDeviceClass(), DEVICE_CLASS_A2DP)) {
+        if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
+            u->sinkAdapter->RendererSinkResume();
+        } else if (s->thread_info.state == PA_SINK_RUNNING && newState == PA_SINK_IDLE) {
+            u->sinkAdapter->RendererSinkPause();
+        }
+    }
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
         if (!PA_SINK_IS_OPENED(newState)) {

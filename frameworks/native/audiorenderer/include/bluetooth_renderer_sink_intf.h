@@ -31,6 +31,8 @@ int32_t BluetoothRendererSinkInit(BluetoothSinkAttr *attr);
 void BluetoothRendererSinkDeInit(void);
 int32_t BluetoothRendererSinkStart(void);
 int32_t BluetoothRendererSinkStop(void);
+int32_t BluetoothRendererSinkPause(void);
+int32_t BluetoothRendererSinkResume(void);
 int32_t BluetoothRendererRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
 int32_t BluetoothRendererSinkSetVolume(float left, float right);
 int32_t BluetoothRendererSinkGetLatency(uint32_t *latency);
