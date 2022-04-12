@@ -18,19 +18,19 @@
 #include <uv.h>
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioManagerCallbackNapi::AudioManagerCallbackNapi(napi_env env)
     : env_(env)
 {
-    MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: instance create");
+    AUDIO_DEBUG_LOG("AudioManagerCallbackNapi: instance create");
 }
 
 AudioManagerCallbackNapi::~AudioManagerCallbackNapi()
 {
-    MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: instance destroy");
+    AUDIO_DEBUG_LOG("AudioManagerCallbackNapi: instance destroy");
 }
 
 void AudioManagerCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
@@ -46,7 +46,7 @@ void AudioManagerCallbackNapi::SaveCallbackReference(const std::string &callback
     if (callbackName == DEVICE_CHANGE_CALLBACK_NAME) {
         deviceChangeCallback_ = cb;
     } else {
-        MEDIA_ERR_LOG("AudioManagerCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("AudioManagerCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
@@ -83,7 +83,7 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
 void AudioManagerCallbackNapi::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_DEBUG_LOG("OnDeviceChange: type[%{public}d]", deviceChangeAction.type);
+    AUDIO_DEBUG_LOG("OnDeviceChange: type[%{public}d]", deviceChangeAction.type);
     CHECK_AND_RETURN_LOG(deviceChangeCallback_ != nullptr, "callback not registered by JS client");
 
     std::unique_ptr<AudioManagerJsCallback> cb = std::make_unique<AudioManagerJsCallback>();
@@ -105,12 +105,12 @@ void AudioManagerCallbackNapi::OnJsCallbackDeviceChange(std::unique_ptr<AudioMan
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        MEDIA_ERR_LOG("AudioManagerCallbackNapi: OnJsCallbackDeviceChange: No memory");
+        AUDIO_ERR_LOG("AudioManagerCallbackNapi: OnJsCallbackDeviceChange: No memory");
         return;
     }
 
     if (jsCb.get() == nullptr) {
-        MEDIA_ERR_LOG("AudioManagerCallbackNapi: OnJsCallbackDeviceChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("AudioManagerCallbackNapi: OnJsCallbackDeviceChange: jsCb.get() is null");
         delete work;
         return;
     }
@@ -123,7 +123,7 @@ void AudioManagerCallbackNapi::OnJsCallbackDeviceChange(std::unique_ptr<AudioMan
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        MEDIA_DEBUG_LOG("AudioManagerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("AudioManagerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
@@ -147,7 +147,7 @@ void AudioManagerCallbackNapi::OnJsCallbackDeviceChange(std::unique_ptr<AudioMan
         delete work;
     });
     if (ret != 0) {
-        MEDIA_ERR_LOG("Failed to execute libuv work queue");
+        AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
     } else {
         jsCb.release();

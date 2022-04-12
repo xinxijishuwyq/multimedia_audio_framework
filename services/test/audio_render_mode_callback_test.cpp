@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "audio_renderer.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "pcm2wav.h"
 
 using namespace std;
@@ -30,7 +30,7 @@ class AudioRenderModeCallbackTest : public AudioRendererWriteCallback,
 public:
     void OnWriteData(size_t length) override
     {
-        MEDIA_INFO_LOG("RenderCallbackTest: OnWriteData is called");
+        AUDIO_INFO_LOG("RenderCallbackTest: OnWriteData is called");
         reqBufLen_ = length;
         isEnqueue_ = true;
     }
@@ -41,7 +41,7 @@ public:
         size_t headerSize = sizeof(wav_hdr);
         size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile_);
         if (bytesRead != headerSize) {
-            MEDIA_ERR_LOG("RenderCallbackTest: File header reading error");
+            AUDIO_ERR_LOG("RenderCallbackTest: File header reading error");
             return false;
         }
 
@@ -56,18 +56,18 @@ public:
 
         audioRenderer_ = AudioRenderer::Create(rendererOptions);
         if (audioRenderer_== nullptr) {
-            MEDIA_ERR_LOG("RenderCallbackTest: Renderer create failed");
+            AUDIO_ERR_LOG("RenderCallbackTest: Renderer create failed");
             return false;
         }
 
-        MEDIA_INFO_LOG("RenderCallbackTest: Playback renderer created");
+        AUDIO_INFO_LOG("RenderCallbackTest: Playback renderer created");
         if (audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK)) {
-            MEDIA_ERR_LOG("RenderCallbackTest: SetRenderMode failed");
+            AUDIO_ERR_LOG("RenderCallbackTest: SetRenderMode failed");
             return false;
         }
 
         if (audioRenderer_->SetRendererWriteCallback(shared_from_this())) {
-            MEDIA_ERR_LOG("RenderCallbackTest: SetRendererWriteCallback failed");
+            AUDIO_ERR_LOG("RenderCallbackTest: SetRendererWriteCallback failed");
             return false;
         }
 
@@ -78,13 +78,13 @@ public:
 
     int32_t TestPlayback(int argc, char *argv[])
     {
-        MEDIA_INFO_LOG("RenderCallbackTest: TestPlayback start");
+        AUDIO_INFO_LOG("RenderCallbackTest: TestPlayback start");
         if (!InitRender()) {
             return -1;
         }
 
         if (!audioRenderer_->Start()) {
-            MEDIA_ERR_LOG("RenderCallbackTest: Start failed");
+            AUDIO_ERR_LOG("RenderCallbackTest: Start failed");
             audioRenderer_->Release();
             return -1;
         }
@@ -95,18 +95,18 @@ public:
         audioRenderer_->Clear();
         audioRenderer_->Stop();
         audioRenderer_->Release();
-        MEDIA_INFO_LOG("RenderCallbackTest: TestPlayback end");
+        AUDIO_INFO_LOG("RenderCallbackTest: TestPlayback end");
 
         return 0;
     }
 
     ~AudioRenderModeCallbackTest()
     {
-        MEDIA_INFO_LOG("RenderCallbackTest: Inside ~AudioRenderModeCallbackTest");
+        AUDIO_INFO_LOG("RenderCallbackTest: Inside ~AudioRenderModeCallbackTest");
         if (fclose(wavFile_)) {
-            MEDIA_INFO_LOG("RenderCallbackTest: wavFile_ failed");
+            AUDIO_INFO_LOG("RenderCallbackTest: wavFile_ failed");
         } else {
-            MEDIA_INFO_LOG("RenderCallbackTest: fclose(wavFile_) success");
+            AUDIO_INFO_LOG("RenderCallbackTest: fclose(wavFile_) success");
         }
         wavFile_ = nullptr;
 
@@ -120,7 +120,7 @@ public:
 private:
     void EnqueueBuffer()
     {
-        MEDIA_INFO_LOG("RenderCallbackTest: EnqueueBuffer thread");
+        AUDIO_INFO_LOG("RenderCallbackTest: EnqueueBuffer thread");
         while (!feof(wavFile_)) {
             if (isEnqueue_) {
                 // Requested length received in callback
@@ -144,7 +144,7 @@ private:
             }
         }
     }
- 
+
     unique_ptr<AudioRenderer> audioRenderer_ = nullptr;
     unique_ptr<thread> enqueueThread_ = nullptr;
     bool isEnqueue_ = true;
@@ -157,15 +157,15 @@ int main(int argc, char *argv[])
     char *inputPath = argv[1];
     char path[PATH_MAX + 1] = {0x00};
     if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-        MEDIA_ERR_LOG("RenderCallbackTest: Invalid input filepath");
+        AUDIO_ERR_LOG("RenderCallbackTest: Invalid input filepath");
         return -1;
     }
-    MEDIA_INFO_LOG("RenderCallbackTest: path = %{public}s", path);
+    AUDIO_INFO_LOG("RenderCallbackTest: path = %{public}s", path);
     auto testObj = std::make_shared<AudioRenderModeCallbackTest>();
 
     testObj->wavFile_ = fopen(path, "rb");
     if (testObj->wavFile_ == nullptr) {
-        MEDIA_ERR_LOG("AudioRendererTest: Unable to open wave file");
+        AUDIO_ERR_LOG("AudioRendererTest: Unable to open wave file");
         return -1;
     }
 

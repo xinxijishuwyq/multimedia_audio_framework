@@ -14,7 +14,7 @@
  */
 
 #include "audio_volume_key_event_callback_stub.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,9 +29,9 @@ AudioVolumeKeyEventCallbackStub::~AudioVolumeKeyEventCallbackStub()
 int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnRemoteRequest");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnRemoteRequest");
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        MEDIA_ERR_LOG("AudioVolumeKeyEventCallbackStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioVolumeKeyEventCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
@@ -53,20 +53,20 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
 
 void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent");
     std::shared_ptr<VolumeKeyEventCallback> cb = callback_.lock();
     if (cb != nullptr) {
-        MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NOT NULL");
+        AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NOT NULL");
         cb->OnVolumeKeyEvent(streamType, volumeLevel, isUpdateUi);
     } else {
-        MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NULL");
+        AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NULL");
     }
 }
 
 void AudioVolumeKeyEventCallbackStub::SetOnVolumeKeyEventCallback(
     const std::weak_ptr<VolumeKeyEventCallback> &callback)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::SetOnVolumeKeyEventCallback");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::SetOnVolumeKeyEventCallback");
     callback_ = callback;
 }
 } // namespace AudioStandard

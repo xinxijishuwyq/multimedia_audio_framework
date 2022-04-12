@@ -15,19 +15,19 @@
 
 #include "audio_ringermode_update_listener_proxy.h"
 #include "audio_system_manager.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioRingerModeUpdateListenerProxy::AudioRingerModeUpdateListenerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardRingerModeUpdateListener>(impl)
 {
-    MEDIA_DEBUG_LOG("Instances create");
+    AUDIO_DEBUG_LOG("Instances create");
 }
 
 AudioRingerModeUpdateListenerProxy::~AudioRingerModeUpdateListenerProxy()
 {
-    MEDIA_DEBUG_LOG("~AudioRingerModeUpdateListenerProxy: Instance destroy");
+    AUDIO_DEBUG_LOG("~AudioRingerModeUpdateListenerProxy: Instance destroy");
 }
 
 void AudioRingerModeUpdateListenerProxy::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
@@ -37,25 +37,25 @@ void AudioRingerModeUpdateListenerProxy::OnRingerModeUpdated(const AudioRingerMo
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioRingerModeListenerCallback: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioRingerModeListenerCallback: WriteInterfaceToken failed");
         return;
     }
     data.WriteInt32(static_cast<int32_t>(ringerMode));
     int error = Remote()->SendRequest(ON_RINGERMODE_UPDATE, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("OnRingerModeUpdated failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("OnRingerModeUpdated failed, error: %{public}d", error);
     }
 }
 
 AudioRingerModeListenerCallback::AudioRingerModeListenerCallback(
     const sptr<IStandardRingerModeUpdateListener> &listener) : listener_(listener)
 {
-        MEDIA_DEBUG_LOG("AudioRingerModeListenerCallback: Instance create");
+        AUDIO_DEBUG_LOG("AudioRingerModeListenerCallback: Instance create");
 }
 
 AudioRingerModeListenerCallback::~AudioRingerModeListenerCallback()
 {
-    MEDIA_DEBUG_LOG("AudioRingerModeListenerCallback: Instance destroy");
+    AUDIO_DEBUG_LOG("AudioRingerModeListenerCallback: Instance destroy");
 }
 
 void AudioRingerModeListenerCallback::OnRingerModeUpdated(const AudioRingerMode &ringerMode)

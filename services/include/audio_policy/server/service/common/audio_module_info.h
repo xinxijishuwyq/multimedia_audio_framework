@@ -20,7 +20,7 @@
 #include <string>
 
 #include "audio_info.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>

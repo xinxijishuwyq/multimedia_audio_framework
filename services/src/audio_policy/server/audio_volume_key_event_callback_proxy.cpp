@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "media_log.h"
+#include "audio_log.h"
 #include "audio_volume_key_event_callback_proxy.h"
 
 namespace OHOS {
@@ -23,13 +23,13 @@ AudioVolumeKeyEventCallbackProxy::AudioVolumeKeyEventCallbackProxy(const sptr<IR
 void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioVolumeKeyEventCallbackProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioVolumeKeyEventCallbackProxy: WriteInterfaceToken failed");
         return;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
@@ -37,7 +37,7 @@ void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamTy
     data.WriteBool(isUpdateUi);
     int error = Remote()->SendRequest(ON_VOLUME_KEY_EVENT, data, reply, option);
     if (error != 0) {
-        MEDIA_DEBUG_LOG("Error while sending volume key event %{public}d", error);
+        AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
     }
     reply.ReadInt32();
 }
@@ -45,17 +45,17 @@ void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamTy
 VolumeKeyEventCallbackListner::VolumeKeyEventCallbackListner(const sptr<IAudioVolumeKeyEventCallback> &listener)
     : listener_(listener)
 {
-    MEDIA_DEBUG_LOG("VolumeKeyEventCallbackListner");
+    AUDIO_DEBUG_LOG("VolumeKeyEventCallbackListner");
 }
 
 VolumeKeyEventCallbackListner::~VolumeKeyEventCallbackListner()
 {
-    MEDIA_DEBUG_LOG("VolumeKeyEventCallbackListner desctrutor");
+    AUDIO_DEBUG_LOG("VolumeKeyEventCallbackListner desctrutor");
 }
 
 void VolumeKeyEventCallbackListner::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy VolumeKeyEventCallbackListner");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy VolumeKeyEventCallbackListner");
     if (listener_ != nullptr) {
         listener_->OnVolumeKeyEvent(streamType, volumeLevel, isUpdateUi);
     }

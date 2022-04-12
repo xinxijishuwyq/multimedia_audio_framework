@@ -24,7 +24,7 @@
 #include <pwd.h>
 #include <map>
 #include "securec.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "nocopyable.h"
 
 namespace OHOS {
@@ -37,7 +37,7 @@ void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
     char buf[STRING_BUFFER_SIZE] = {0};
     int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
     if (len <= 0) {
-        MEDIA_ERR_LOG("snprintf_s error : buffer allocation fails");
+        AUDIO_ERR_LOG("snprintf_s error : buffer allocation fails");
         return;
     }
     out += buf;

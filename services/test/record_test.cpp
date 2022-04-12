@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "audio_service_client.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 using namespace OHOS::AudioStandard;
 
@@ -29,12 +29,12 @@ class RecordTest : public AudioCapturerCallbacks {
 public:
     void OnSourceDeviceUpdatedCb() const
     {
-        MEDIA_INFO_LOG("My custom callback OnSourceDeviceUpdatedCb");
+        AUDIO_INFO_LOG("My custom callback OnSourceDeviceUpdatedCb");
     }
     // Need to check required state changes to update applications
     virtual void OnStreamStateChangeCb() const
     {
-        MEDIA_INFO_LOG("My custom callback OnStreamStateChangeCb");
+        AUDIO_INFO_LOG("My custom callback OnStreamStateChangeCb");
     }
 
     virtual void OnStreamBufferUnderFlowCb() const {}
@@ -50,20 +50,20 @@ static bool InitClient(std::unique_ptr<AudioServiceClient> &client, uint32_t sam
     audioParams.samplingRate = samplingRate;
     audioParams.channels = DEFAULT_CHANNELS;
 
-    MEDIA_INFO_LOG("Initializing of AudioServiceClient");
+    AUDIO_INFO_LOG("Initializing of AudioServiceClient");
     if (client->Initialize(AUDIO_SERVICE_CLIENT_RECORD) < 0)
         return false;
 
     RecordTest customCb;
     client->RegisterAudioCapturerCallbacks(customCb);
 
-    MEDIA_INFO_LOG("Creating Stream");
+    AUDIO_INFO_LOG("Creating Stream");
     if (client->CreateStream(audioParams, STREAM_MUSIC) < 0) {
         client->ReleaseStream();
         return false;
     }
 
-    MEDIA_INFO_LOG("Starting Stream");
+    AUDIO_INFO_LOG("Starting Stream");
     if (client->StartStream() < 0)
         return false;
 
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 
     int32_t rateArgIndex = 2;
     if (!InitClient(client, atoi(argv[rateArgIndex]))) {
-        MEDIA_ERR_LOG("Initialize client failed");
+        AUDIO_ERR_LOG("Initialize client failed");
         return -1;
     }
 
@@ -88,12 +88,12 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    MEDIA_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
+    AUDIO_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
 
     uint8_t* buffer = nullptr;
     buffer = (uint8_t *) malloc(bufferLen);
     if (buffer == nullptr) {
-        MEDIA_ERR_LOG("Failed to allocate buffer");
+        AUDIO_ERR_LOG("Failed to allocate buffer");
         return -1;
     }
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
         if (bytesRead > 0) {
             fwrite(stream.buffer, size, bytesRead, pFile);
             if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                MEDIA_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
+                AUDIO_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
             numBuffersToCapture--;
         }
     }
@@ -127,6 +127,6 @@ int main(int argc, char* argv[])
     client->ReleaseStream();
     free(buffer);
     fclose(pFile);
-    MEDIA_INFO_LOG("Exit from test app");
+    AUDIO_INFO_LOG("Exit from test app");
     return 0;
 }

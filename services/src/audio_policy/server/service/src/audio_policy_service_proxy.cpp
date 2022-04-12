@@ -14,7 +14,7 @@
  */
 
 #include "audio_policy_service_proxy.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 using namespace std;
 
@@ -47,13 +47,13 @@ bool AudioPolicyServiceProxy::IsMicrophoneMute()
 
 int32_t AudioPolicyServiceProxy::SetAudioScene(AudioScene audioScene)
 {
-    MEDIA_DEBUG_LOG("[AudioPolicyServiceProxy] SetAudioScene %{public}d", audioScene);
+    AUDIO_DEBUG_LOG("[AudioPolicyServiceProxy] SetAudioScene %{public}d", audioScene);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
         return -1;
     }
 
@@ -61,24 +61,24 @@ int32_t AudioPolicyServiceProxy::SetAudioScene(AudioScene audioScene)
 
     int32_t error = Remote()->SendRequest(SET_AUDIO_SCENE, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("SetAudioScene failed, error: %d", error);
+        AUDIO_ERR_LOG("SetAudioScene failed, error: %d", error);
         return false;
     }
 
     int32_t result = reply.ReadInt32();
-    MEDIA_DEBUG_LOG("[AudioPolicyServiceProxy] SetAudioScene result %{public}d", result);
+    AUDIO_DEBUG_LOG("[AudioPolicyServiceProxy] SetAudioScene result %{public}d", result);
     return result;
 }
 
 int32_t AudioPolicyServiceProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
-    MEDIA_DEBUG_LOG("[%{public}s]", __func__);
+    AUDIO_DEBUG_LOG("[%{public}s]", __func__);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
         return -1;
     }
     data.WriteInt32(type);
@@ -86,12 +86,12 @@ int32_t AudioPolicyServiceProxy::UpdateActiveDeviceRoute(DeviceType type, Device
 
     auto error = Remote()->SendRequest(UPDATE_ROUTE_REQ, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("UpdateActiveDeviceRoute failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %{public}d", error);
         return false;
     }
 
     auto result = reply.ReadInt32();
-    MEDIA_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
+    AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
     return result;
 }
 
@@ -108,14 +108,14 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(Dev
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyServiceProxy: WriteInterfaceToken failed");
         return deviceInfo;
     }
     data.WriteInt32(static_cast<int32_t>(deviceFlag));
 
     int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("Get devices failed, error: %d", error);
+        AUDIO_ERR_LOG("Get devices failed, error: %d", error);
         return deviceInfo;
     }
 

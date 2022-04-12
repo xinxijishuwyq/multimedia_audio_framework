@@ -17,7 +17,7 @@
 
 #include <uv.h>
 
-#include "media_log.h"
+#include "audio_log.h"
 
 using namespace std;
 namespace {
@@ -28,21 +28,21 @@ namespace AudioStandard {
 AudioVolumeKeyEventNapi::AudioVolumeKeyEventNapi(napi_env env)
     :env_(env)
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventNapi::Constructor");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi::Constructor");
 }
 
 AudioVolumeKeyEventNapi::~AudioVolumeKeyEventNapi()
 {
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventNapi::Destructor");
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi::Destructor");
 }
 
 void AudioVolumeKeyEventNapi::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventNapi: OnVolumeKeyEvent is called volumeLevel=%{public}d", volumeLevel);
-    MEDIA_DEBUG_LOG("AudioVolumeKeyEventNapi: isUpdateUi is called isUpdateUi=%{public}d", isUpdateUi);
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: OnVolumeKeyEvent is called volumeLevel=%{public}d", volumeLevel);
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: isUpdateUi is called isUpdateUi=%{public}d", isUpdateUi);
     if (audioVolumeKeyEventJsCallback_ == nullptr) {
-        MEDIA_DEBUG_LOG("AudioManagerCallbackNapi:No JS callback registered return");
+        AUDIO_DEBUG_LOG("AudioManagerCallbackNapi:No JS callback registered return");
         return;
     }
     std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();
@@ -68,7 +68,7 @@ void AudioVolumeKeyEventNapi::SaveCallbackReference(const std::string &callbackN
     if (callbackName == VOLUME_KEY_EVENT_CALLBACK_NAME) {
         audioVolumeKeyEventJsCallback_ = cb;
     } else {
-        MEDIA_ERR_LOG("AudioVolumeKeyEventNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("AudioVolumeKeyEventNapi: Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
@@ -121,7 +121,7 @@ static void NativeVolumeEventToJsObj(const napi_env& env, napi_value& jsObj,
 
 void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)
 {
-    MEDIA_INFO_LOG("AudioVolumeKeyEventNapi:OnJsCallbackVolumeEvent");
+    AUDIO_INFO_LOG("AudioVolumeKeyEventNapi:OnJsCallbackVolumeEvent");
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);
     if (loop == nullptr) {
@@ -130,11 +130,11 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        MEDIA_ERR_LOG("AudioVolumeKeyEventNapi: OnJsCallBackInterrupt: No memory");
+        AUDIO_ERR_LOG("AudioVolumeKeyEventNapi: OnJsCallBackInterrupt: No memory");
         return;
     }
     if (jsCb.get() == nullptr) {
-        MEDIA_ERR_LOG("AudioVolumeKeyEventNapi: OnJsCallBackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("AudioVolumeKeyEventNapi: OnJsCallBackInterrupt: jsCb.get() is null");
         delete work;
         return;
     }
@@ -146,7 +146,7 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        MEDIA_DEBUG_LOG("AudioVolumeKeyEventNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
@@ -170,7 +170,7 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
         delete work;
     });
     if (ret != 0) {
-        MEDIA_ERR_LOG("Failed to execute libuv work queue");
+        AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
     } else {
         jsCb.release();

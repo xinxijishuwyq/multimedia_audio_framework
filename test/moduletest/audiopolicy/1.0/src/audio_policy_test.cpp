@@ -186,7 +186,7 @@ HWTEST_P(AudioPolicySetVolumeTest, SetVolume, TestSize.Level1)
     AudioSystemManager::AudioVolumeType volumeType
         = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
     float volume = params.volume;
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -207,7 +207,7 @@ HWTEST_P(AudioPolicyGetVolumeTest, GetVolume, TestSize.Level1)
         = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
     float volume = params.volume;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
     EXPECT_EQ(volume, AudioSystemManager::GetInstance()->GetVolume(volumeType));
 }
 
@@ -229,7 +229,7 @@ HWTEST_P(AudioPolicySetMuteTest, SetMute, TestSize.Level1)
         = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
     bool mute = params.mute;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -250,7 +250,7 @@ HWTEST_P(AudioPolicyGetMuteTest, IsStreamMute, TestSize.Level1)
         = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
     bool mute = params.mute;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
     EXPECT_EQ(mute, AudioSystemManager::GetInstance()->IsStreamMute(volumeType));
 }
 
@@ -292,7 +292,7 @@ HWTEST_P(AudioPolicySetDeviceActiveTest, SetDeviceActive, TestSize.Level1)
     ActiveDeviceType deviceType = params.actDeviceType;
     bool active = params.active;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetDeviceActive(deviceType, active));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetDeviceActive(deviceType, active));
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -312,7 +312,7 @@ HWTEST_P(AudioPolicyIsDeviceActiveTest, IsDeviceActive, TestSize.Level1)
     ActiveDeviceType deviceType = params.actDeviceType;
     bool active = params.active;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetDeviceActive(deviceType, active));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetDeviceActive(deviceType, active));
     EXPECT_EQ(active, AudioSystemManager::GetInstance()->IsDeviceActive(deviceType));
 }
 
@@ -332,7 +332,7 @@ HWTEST_P(AudioPolicySetRingerModeTest, SetRingerMode, TestSize.Level1)
     PolicyParam params = GetParam();
     AudioRingerMode ringerMode = params.ringerMode;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetRingerMode(ringerMode));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetRingerMode(ringerMode));
 }
 
 
@@ -352,7 +352,7 @@ HWTEST_P(AudioPolicyGetRingerModeTest, GetRingerMode, TestSize.Level1)
     PolicyParam params = GetParam();
     AudioRingerMode ringerMode = params.ringerMode;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetRingerMode(ringerMode));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetRingerMode(ringerMode));
     EXPECT_EQ(ringerMode, AudioSystemManager::GetInstance()->GetRingerMode());
 }
 
@@ -403,7 +403,7 @@ HWTEST_P(AudioPolicySetMicrophoneMuteTest, SetMicrophoneMute, TestSize.Level1)
     PolicyParam params = GetParam();
     bool mute = params.mute;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetMicrophoneMute(mute));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMicrophoneMute(mute));
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -422,7 +422,7 @@ HWTEST_P(AudioPolicyGetMicrophoneMuteTest, IsMicrophoneMute, TestSize.Level1)
     PolicyParam params = GetParam();
     bool mute = params.mute;
 
-    EXPECT_EQ(MEDIA_OK, AudioSystemManager::GetInstance()->SetMicrophoneMute(mute));
+    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMicrophoneMute(mute));
     EXPECT_EQ(mute, AudioSystemManager::GetInstance()->IsMicrophoneMute());
 }
 

@@ -25,7 +25,7 @@ AudioServiceDump::AudioServiceDump() : mainLoop(nullptr),
                                        isMainLoopStarted(false),
                                        isContextConnected(false)
 {
-    MEDIA_DEBUG_LOG("AudioServiceDump ctor");
+    AUDIO_DEBUG_LOG("AudioServiceDump ctor");
 }
 
 AudioServiceDump::~AudioServiceDump()
@@ -83,16 +83,16 @@ int32_t AudioServiceDump::Initialize()
 
     if (pa_context_connect(context, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
         error = pa_context_errno(context);
-        MEDIA_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
+        AUDIO_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
     }
-    
+
     isContextConnected = true;
     pa_threaded_mainloop_lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
-        MEDIA_ERR_LOG("Audio Service not started");
+        AUDIO_ERR_LOG("Audio Service not started");
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
@@ -107,7 +107,7 @@ int32_t AudioServiceDump::Initialize()
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
             error = pa_context_errno(context);
-            MEDIA_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
+            AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioDump();
             return AUDIO_DUMP_INIT_ERR;
@@ -295,7 +295,7 @@ void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
     dumpString += "Playback Streams\n";
 
     AppendFormat(dumpString, "%d  Playback stream (s) available:\n\n", audioData_.streamData.sinkInputs.size());
-    
+
     for (auto it = audioData_.streamData.sinkInputs.begin(); it != audioData_.streamData.sinkInputs.end(); it++) {
         InputOutputInfo sinkInputInfo = *it;
 
@@ -303,7 +303,7 @@ void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
         AppendFormat(dumpString, "Application Name: %s\n", ((sinkInputInfo.applicationName).c_str()));
         AppendFormat(dumpString, "Process Id: %s\n", (sinkInputInfo.processId).c_str());
         AppendFormat(dumpString, "User Id: %d\n", sinkInputInfo.userId);
-        
+
         char *inputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sinkInputInfo.sampleSpec));
         AppendFormat(dumpString, "Stream Configuration: %s\n", inputSampleSpec);
         dumpString += "Status:";
@@ -318,14 +318,14 @@ void AudioServiceDump::RecordStreamDump(std::string &dumpString)
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
     dumpString += "Record Streams \n";
     AppendFormat(dumpString, "%d  Record stream (s) available:\n\n", audioData_.streamData.sourceOutputs.size());
- 
+
     for (auto it = audioData_.streamData.sourceOutputs.begin(); it != audioData_.streamData.sourceOutputs.end(); it++) {
         InputOutputInfo sourceOutputInfo = *it;
         AppendFormat(dumpString, "Stream Id: %s\n", (sourceOutputInfo.sessionId).c_str());
         AppendFormat(dumpString, "Application Name: %s\n", (sourceOutputInfo.applicationName).c_str());
         AppendFormat(dumpString, "Process Id: %s\n", sourceOutputInfo.processId.c_str());
         AppendFormat(dumpString, "User Id: %d\n", sourceOutputInfo.userId);
-        
+
         char *outputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceOutputInfo.sampleSpec));
         AppendFormat(dumpString, "Stream Configuration: %s\n", outputSampleSpec);
         dumpString += "Status:";
@@ -341,10 +341,10 @@ void AudioServiceDump::HDFModulesDump(std::string &dumpString)
 
     dumpString += "\nHDF Input Modules\n";
     AppendFormat(dumpString, "%d  HDF Input Modules (s) available:\n\n", audioData_.streamData.sourceDevices.size());
-    
+
     for (auto it = audioData_.streamData.sourceDevices.begin(); it != audioData_.streamData.sourceDevices.end(); it++) {
         SinkSourceInfo sourceInfo = *it;
-        
+
         AppendFormat(dumpString, "Module Name: %s\n", (sourceInfo.name).c_str());
         char *hdfOutSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceInfo.sampleSpec));
         AppendFormat(dumpString, "Module Configuration: %s\n\n", hdfOutSampleSpec);
@@ -352,7 +352,7 @@ void AudioServiceDump::HDFModulesDump(std::string &dumpString)
 
     dumpString += "HDF Output Modules\n";
     AppendFormat(dumpString, "%d  HDF Output Modules (s) available:\n\n", audioData_.streamData.sinkDevices.size());
-    
+
     for (auto it = audioData_.streamData.sinkDevices.begin(); it != audioData_.streamData.sinkDevices.end(); it++) {
         SinkSourceInfo sinkInfo = *it;
         AppendFormat(dumpString, "Module Name: %s\n", (sinkInfo.name).c_str());
@@ -417,7 +417,7 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
 
     if (audioData_.policyData.audioFocusInfo.sessionID == invalidSessionID) {
-        MEDIA_DEBUG_LOG("No streams in focus");
+        AUDIO_DEBUG_LOG("No streams in focus");
         dumpString += "Not available\n";
         return;
     }
@@ -445,7 +445,7 @@ void AudioServiceDump::DevicesInfoDump(string &dumpString)
 
     dumpString += "\nOutput Devices:\n";
     AppendFormat(dumpString, "%d  Output Devices (s) available :\n\n", audioData_.policyData.outputDevices.size());
- 
+
     for (auto it = audioData_.policyData.outputDevices.begin(); it != audioData_.policyData.outputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
         AppendFormat(dumpString, "%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
@@ -467,7 +467,7 @@ void AudioServiceDump::DataDump(string &dumpString)
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
 {
     if (mainLoop == nullptr || context == nullptr) {
-        MEDIA_ERR_LOG("Audio Service Not running");
+        AUDIO_ERR_LOG("Audio Service Not running");
         return;
     }
 
@@ -535,14 +535,14 @@ void AudioServiceDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, 
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     if (asDump == nullptr) {
-        MEDIA_ERR_LOG("Failed to get sink information");
+        AUDIO_ERR_LOG("Failed to get sink information");
         return;
     }
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
+        AUDIO_ERR_LOG("Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -567,14 +567,14 @@ void AudioServiceDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_inpu
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     if (asDump == nullptr) {
-        MEDIA_ERR_LOG("Failed to get sink input information");
+        AUDIO_ERR_LOG("Failed to get sink input information");
         return;
     }
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(c)));
+        AUDIO_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -599,12 +599,12 @@ void AudioServiceDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_inpu
             string applicationName(applicationname);
             (sinkInputInfo.applicationName).assign(applicationName);
         }
-        
+
         if (processid != nullptr) {
             string processId(processid);
             (sinkInputInfo.processId).assign(processId);
         }
-      
+
         if (user != nullptr) {
             struct passwd *p;
             if ((p = getpwnam(user)) != nullptr) {
@@ -629,14 +629,14 @@ void AudioServiceDump::PASourceInfoCallback(pa_context *c, const pa_source_info 
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     if (asDump == nullptr) {
-        MEDIA_ERR_LOG("Failed to get source information");
+        AUDIO_ERR_LOG("Failed to get source information");
         return;
     }
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("Failed to get source information: %{public}s", pa_strerror(pa_context_errno(c)));
+        AUDIO_ERR_LOG("Failed to get source information: %{public}s", pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -662,14 +662,14 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
     if (asDump == nullptr) {
-        MEDIA_ERR_LOG("Failed to get source output information");
+        AUDIO_ERR_LOG("Failed to get source output information");
         return;
     }
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
     if (eol < 0) {
-        MEDIA_ERR_LOG("Failed to get source output information: %{public}s", pa_strerror(pa_context_errno(c)));
+        AUDIO_ERR_LOG("Failed to get source output information: %{public}s", pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -688,12 +688,12 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
         const char *user = pa_proplist_gets(i->proplist, "application.process.user");
         const char *sessionid = pa_proplist_gets(i->proplist, "stream.sessionID");
         const char *sessionstarttime = pa_proplist_gets(i->proplist, "stream.startTime");
-        
+
         if (applicationname != nullptr) {
             string applicationName(applicationname);
             (sourceOutputInfo.applicationName).assign(applicationName);
         }
-        
+
         if (processid != nullptr) {
             string processId(processid);
             (sourceOutputInfo.processId).assign(processId);
@@ -705,7 +705,7 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
                 sourceOutputInfo.userId = uint32_t(p->pw_uid);
             }
         }
-        
+
         if (sessionid != nullptr) {
             string sessionId(sessionid);
             (sourceOutputInfo.sessionId).assign(sessionId);

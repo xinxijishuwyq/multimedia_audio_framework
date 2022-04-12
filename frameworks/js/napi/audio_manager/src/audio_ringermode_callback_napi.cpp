@@ -18,7 +18,7 @@
 #include <uv.h>
 
 #include "audio_errors.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace {
     const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
@@ -29,12 +29,12 @@ namespace AudioStandard {
 AudioRingerModeCallbackNapi::AudioRingerModeCallbackNapi(napi_env env)
     : env_(env)
 {
-    MEDIA_DEBUG_LOG("AudioRingerModeCallbackNapi: instance create");
+    AUDIO_DEBUG_LOG("AudioRingerModeCallbackNapi: instance create");
 }
 
 AudioRingerModeCallbackNapi::~AudioRingerModeCallbackNapi()
 {
-    MEDIA_DEBUG_LOG("AudioRingerModeCallbackNapi: instance destroy");
+    AUDIO_DEBUG_LOG("AudioRingerModeCallbackNapi: instance destroy");
 }
 
 void AudioRingerModeCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
@@ -50,15 +50,15 @@ void AudioRingerModeCallbackNapi::SaveCallbackReference(const std::string &callb
     if (callbackName == RINGERMODE_CALLBACK_NAME) {
         ringerModeCallback_ = cb;
     } else {
-        MEDIA_ERR_LOG("AudioRingerModeCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("AudioRingerModeCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
 void AudioRingerModeCallbackNapi::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    MEDIA_DEBUG_LOG("AudioRingerModeCallbackNapi: OnRingerModeUpdated is called");
-    MEDIA_DEBUG_LOG("AudioRingerModeCallbackNapi: ringer mode: %{public}d", ringerMode);
+    AUDIO_DEBUG_LOG("AudioRingerModeCallbackNapi: OnRingerModeUpdated is called");
+    AUDIO_DEBUG_LOG("AudioRingerModeCallbackNapi: ringer mode: %{public}d", ringerMode);
     CHECK_AND_RETURN_LOG(ringerModeCallback_ != nullptr, "Cannot find the reference of ringer mode callback");
 
     std::unique_ptr<AudioRingerModeJsCallback> cb = std::make_unique<AudioRingerModeJsCallback>();
@@ -101,11 +101,11 @@ void AudioRingerModeCallbackNapi::OnJsCallbackRingerMode(std::unique_ptr<AudioRi
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        MEDIA_ERR_LOG("AudioRingerModeCallbackNapi: OnJsCallbackRingerMode: No memory");
+        AUDIO_ERR_LOG("AudioRingerModeCallbackNapi: OnJsCallbackRingerMode: No memory");
         return;
     }
     if (jsCb.get() == nullptr) {
-        MEDIA_ERR_LOG("AudioRingerModeCallbackNapi: OnJsCallbackRingerMode: jsCb.get() is null");
+        AUDIO_ERR_LOG("AudioRingerModeCallbackNapi: OnJsCallbackRingerMode: jsCb.get() is null");
         delete work;
         return;
     }
@@ -117,7 +117,7 @@ void AudioRingerModeCallbackNapi::OnJsCallbackRingerMode(std::unique_ptr<AudioRi
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        MEDIA_DEBUG_LOG("AudioRingerModeCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("AudioRingerModeCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
@@ -141,7 +141,7 @@ void AudioRingerModeCallbackNapi::OnJsCallbackRingerMode(std::unique_ptr<AudioRi
         delete work;
     });
     if (ret != 0) {
-        MEDIA_ERR_LOG("Failed to execute libuv work queue");
+        AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
     } else {
         jsCb.release();

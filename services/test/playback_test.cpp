@@ -17,7 +17,7 @@
 
 #include "audio_service_client.h"
 #include "audio_system_manager.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "pcm2wav.h"
 
 using namespace OHOS::AudioStandard;
@@ -33,11 +33,11 @@ class PlaybackTest : public AudioRendererCallbacks {
 public:
     void OnSinkDeviceUpdatedCb() const
     {
-        MEDIA_INFO_LOG("My custom callback OnSinkDeviceUpdatedCb");
+        AUDIO_INFO_LOG("My custom callback OnSinkDeviceUpdatedCb");
     }
     virtual void OnStreamStateChangeCb() const
     {
-        MEDIA_INFO_LOG("My custom callback OnStreamStateChangeCb");
+        AUDIO_INFO_LOG("My custom callback OnStreamStateChangeCb");
     }
 
     virtual void OnStreamBufferUnderFlowCb() const {}
@@ -49,22 +49,22 @@ public:
 static int32_t InitPlayback(std::unique_ptr<AudioServiceClient> &client, AudioStreamParams &audioParams)
 {
     if (client == nullptr) {
-        MEDIA_ERR_LOG("Create AudioServiceClient instance failed");
+        AUDIO_ERR_LOG("Create AudioServiceClient instance failed");
         return -1;
     }
 
-    MEDIA_INFO_LOG("Initializing of AudioServiceClient");
+    AUDIO_INFO_LOG("Initializing of AudioServiceClient");
     if (client->Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK) < 0)
         return -1;
 
     PlaybackTest customCb;
     client->RegisterAudioRendererCallbacks(customCb);
 
-    MEDIA_INFO_LOG("Creating Stream");
+    AUDIO_INFO_LOG("Creating Stream");
     if (client->CreateStream(audioParams, STREAM_MUSIC) < 0)
         return -1;
 
-    MEDIA_INFO_LOG("Starting Stream");
+    AUDIO_INFO_LOG("Starting Stream");
     if (client->StartStream() < 0)
         return -1;
 
@@ -84,15 +84,15 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
     StreamBuffer stream;
 
     if (client->GetMinimumBufferSize(bufferLen) < 0) {
-        MEDIA_ERR_LOG(" GetMinimumBufferSize failed");
+        AUDIO_ERR_LOG(" GetMinimumBufferSize failed");
         return -1;
     }
 
-    MEDIA_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
+    AUDIO_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
 
     buffer = (uint8_t *) malloc(n * bufferLen);
     if (buffer == nullptr) {
-        MEDIA_ERR_LOG("Failed to allocate buffer");
+        AUDIO_ERR_LOG("Failed to allocate buffer");
         return -1;
     }
 
@@ -105,7 +105,7 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
             stream.bufferLen = bytesToWrite - bytesWritten;
             bytesWritten += client->WriteStream(stream, writeError);
             if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                MEDIA_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
+                AUDIO_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
         }
     }
 
@@ -121,13 +121,13 @@ int main(int argc, char* argv[])
     char *inputPath = argv[1];
     char path[PATH_MAX + 1] = {0x00};
     if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-        MEDIA_ERR_LOG("Invalid path");
+        AUDIO_ERR_LOG("Invalid path");
         return -1;
     }
-    MEDIA_INFO_LOG("path = %{public}s", path);
+    AUDIO_INFO_LOG("path = %{public}s", path);
     FILE* wavFile = fopen(path, "rb");
     if (wavFile == nullptr) {
-        MEDIA_ERR_LOG("Unable to open wave file");
+        AUDIO_ERR_LOG("Unable to open wave file");
         return -1;
     }
 
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     }
 
     size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
-    MEDIA_INFO_LOG("Header Read in bytes %{public}zu", bytesRead);
+    AUDIO_INFO_LOG("Header Read in bytes %{public}zu", bytesRead);
     AudioStreamParams audioParams;
     audioParams.format = DEFAULT_FORMAT;
     audioParams.samplingRate = wavHeader.SamplesPerSec;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
     std::unique_ptr client = std::make_unique<AudioServiceClient>();
     if (InitPlayback(client, audioParams) < 0) {
-        MEDIA_INFO_LOG("Initialize playback failed");
+        AUDIO_INFO_LOG("Initialize playback failed");
         fclose(wavFile);
         return -1;
     }
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
     audioSystemMgr->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, volume);
 
     if (StartPlayback(client, wavFile) < 0) {
-        MEDIA_INFO_LOG("Start playback failed");
+        AUDIO_INFO_LOG("Start playback failed");
         fclose(wavFile);
         return -1;
     }
@@ -163,6 +163,6 @@ int main(int argc, char* argv[])
     client->StopStream();
     client->ReleaseStream();
     fclose(wavFile);
-    MEDIA_INFO_LOG("Exit from test app");
+    AUDIO_INFO_LOG("Exit from test app");
     return 0;
 }

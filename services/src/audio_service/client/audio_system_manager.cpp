@@ -20,7 +20,7 @@
 #include "audio_volume_key_event_callback_stub.h"
 
 #include "iservice_registry.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "system_ability_definition.h"
 
 #include "audio_system_manager.h"
@@ -32,19 +32,19 @@ static sptr<IStandardAudioService> g_sProxy = nullptr;
 
 AudioSystemManager::AudioSystemManager()
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager start");
+    AUDIO_DEBUG_LOG("AudioSystemManager start");
     init();
 }
 
 AudioSystemManager::~AudioSystemManager()
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
+    AUDIO_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
     if (cbClientId_ != -1) {
         UnsetRingerModeCallback(cbClientId_);
     }
 
     if (volumeChangeClientPid_ != -1) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
+        AUDIO_DEBUG_LOG("AudioSystemManager::~AudioSystemManager UnregisterVolumeKeyEventCallback");
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
     }
 }
@@ -59,20 +59,20 @@ void AudioSystemManager::init()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager::init failed");
+        AUDIO_ERR_LOG("AudioSystemManager::init failed");
         return;
     }
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        AUDIO_DEBUG_LOG("AudioSystemManager::object is NULL.");
         return;
     }
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
+        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
     } else {
-        MEDIA_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
+        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
     }
 }
 
@@ -90,7 +90,7 @@ AudioRingerMode AudioSystemManager::GetRingerMode() const
 
 int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
 {
-    MEDIA_DEBUG_LOG("SetAudioScene audioScene_=%{public}d done", scene);
+    AUDIO_DEBUG_LOG("SetAudioScene audioScene_=%{public}d done", scene);
     return AudioPolicyManager::GetInstance().SetAudioScene(scene);
 }
 
@@ -106,7 +106,7 @@ int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool fl
         case BLUETOOTH_SCO:
             break;
         default:
-            MEDIA_ERR_LOG("SetDeviceActive device=%{public}d not supported", deviceType);
+            AUDIO_ERR_LOG("SetDeviceActive device=%{public}d not supported", deviceType);
             return ERR_NOT_SUPPORTED;
     }
 
@@ -121,7 +121,7 @@ bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
         case BLUETOOTH_SCO:
             break;
         default:
-            MEDIA_ERR_LOG("IsDeviceActive device=%{public}d not supported", deviceType);
+            AUDIO_ERR_LOG("IsDeviceActive device=%{public}d not supported", deviceType);
             return false;
     }
 
@@ -138,7 +138,7 @@ bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volu
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
-            MEDIA_ERR_LOG("IsStreamActive volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("IsStreamActive volumeType=%{public}d not supported", volumeType);
             return false;
     }
 
@@ -165,7 +165,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
 {
     /* Validate and return INVALID_PARAMS error */
     if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
-        MEDIA_ERR_LOG("Invalid Volume Input!");
+        AUDIO_ERR_LOG("Invalid Volume Input!");
         return ERR_INVALID_PARAM;
     }
 
@@ -177,7 +177,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
-            MEDIA_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
@@ -197,7 +197,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
-            MEDIA_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
             return (float)ERR_NOT_SUPPORTED;
     }
 
@@ -242,7 +242,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
-            MEDIA_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
@@ -253,7 +253,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
 
 bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager::GetMute Client");
+    AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
 
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -263,7 +263,7 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
         case STREAM_VOICE_ASSISTANT:
             break;
         default:
-            MEDIA_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
             return false;
     }
 
@@ -274,9 +274,9 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
-    MEDIA_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
+        AUDIO_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
@@ -287,7 +287,7 @@ int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager: callback is nullptr");
+        AUDIO_ERR_LOG("AudioSystemManager: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
@@ -319,10 +319,10 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
 int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
                                                            const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager RegisterVolumeKeyEventCallback");
+    AUDIO_DEBUG_LOG("AudioSystemManager RegisterVolumeKeyEventCallback");
 
     if (callback == nullptr) {
-        MEDIA_ERR_LOG("AudioSystemManager::RegisterVolumeKeyEventCallbackcallback is nullptr");
+        AUDIO_ERR_LOG("AudioSystemManager::RegisterVolumeKeyEventCallbackcallback is nullptr");
         return ERR_INVALID_PARAM;
     }
     volumeChangeClientPid_ = clientPid;
@@ -332,10 +332,10 @@ int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientP
 
 int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid)
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback");
+    AUDIO_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback");
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(clientPid);
     if (!ret) {
-        MEDIA_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
+        AUDIO_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
         volumeChangeClientPid_ = -1;
     }
 
@@ -347,25 +347,25 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                                     const std::shared_ptr<AudioManagerCallback> &callback)
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager SetAudioManagerCallback stub implementation");
+    AUDIO_DEBUG_LOG("AudioSystemManager SetAudioManagerCallback stub implementation");
     return SUCCESS;
 }
 
 int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager UnsetAudioManagerCallback stub implementation");
+    AUDIO_DEBUG_LOG("AudioSystemManager UnsetAudioManagerCallback stub implementation");
     return SUCCESS;
 }
 
 int32_t AudioSystemManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager ActivateAudioInterrupt stub implementation");
+    AUDIO_DEBUG_LOG("AudioSystemManager ActivateAudioInterrupt stub implementation");
     return SUCCESS;
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
 {
-    MEDIA_DEBUG_LOG("AudioSystemManager DeactivateAudioInterrupt stub implementation");
+    AUDIO_DEBUG_LOG("AudioSystemManager DeactivateAudioInterrupt stub implementation");
     return SUCCESS;
 }
 } // namespace AudioStandard

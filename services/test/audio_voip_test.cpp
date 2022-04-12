@@ -15,7 +15,7 @@
 
 #include "audio_capturer.h"
 #include "audio_renderer.h"
-#include "media_log.h"
+#include "audio_log.h"
 #include "pcm2wav.h"
 
 #include <thread>
@@ -36,23 +36,23 @@ public:
     bool InitRender(const unique_ptr<AudioRenderer> &audioRenderer, const AudioRendererParams &rendererParams) const
     {
         if (audioRenderer->SetParams(rendererParams) !=  AudioTestConstants::SUCCESS) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Set audio renderer parameters failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Set audio renderer parameters failed");
             if (!audioRenderer->Release()) {
-                MEDIA_ERR_LOG("AudioVoIPTest: Release failed");
+                AUDIO_ERR_LOG("AudioVoIPTest: Release failed");
             }
             return false;
         }
-        MEDIA_INFO_LOG("AudioVoIPTest: Playback renderer created");
+        AUDIO_INFO_LOG("AudioVoIPTest: Playback renderer created");
 
-        MEDIA_INFO_LOG("AudioVoIPTest: Starting renderer");
+        AUDIO_INFO_LOG("AudioVoIPTest: Starting renderer");
         if (!audioRenderer->Start()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Start failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Start failed");
             if (!audioRenderer->Release()) {
-                MEDIA_ERR_LOG("AudioVoIPTest: Release failed");
+                AUDIO_ERR_LOG("AudioVoIPTest: Release failed");
             }
             return false;
         }
-        MEDIA_INFO_LOG("AudioVoIPTest: Playback started");
+        AUDIO_INFO_LOG("AudioVoIPTest: Playback started");
 
         return true;
     }
@@ -63,12 +63,12 @@ public:
         if (audioRenderer->GetBufferSize(bufferLen)) {
             return false;
         }
-        MEDIA_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
+        AUDIO_DEBUG_LOG("minimum buffer length: %{public}zu", bufferLen);
 
         int32_t n = 2;
         auto buffer = std::make_unique<uint8_t[]>(n * bufferLen);
         if (buffer == nullptr) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Failed to allocate buffer");
+            AUDIO_ERR_LOG("AudioVoIPTest: Failed to allocate buffer");
             return false;
         }
 
@@ -79,12 +79,12 @@ public:
         while (!feof(wavFile)) {
             bytesToWrite = fread(buffer.get(), 1, bufferLen, wavFile);
             bytesWritten = 0;
-            MEDIA_INFO_LOG("AudioVoIPTest: Bytes to write: %{public}zu", bytesToWrite);
+            AUDIO_INFO_LOG("AudioVoIPTest: Bytes to write: %{public}zu", bytesToWrite);
 
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
                 bytesWritten += audioRenderer->Write(buffer.get() + bytesWritten,
                                                      bytesToWrite - bytesWritten);
-                MEDIA_INFO_LOG("AudioVoIPTest: Bytes written: %{public}zu", bytesWritten);
+                AUDIO_INFO_LOG("AudioVoIPTest: Bytes written: %{public}zu", bytesWritten);
                 if (bytesWritten < 0) {
                     break;
                 }
@@ -92,7 +92,7 @@ public:
         }
 
         if (!audioRenderer->Drain()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Drain failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Drain failed");
         }
 
         return true;
@@ -100,23 +100,23 @@ public:
 
     bool TestPlayback(char *inputPath) const
     {
-        MEDIA_INFO_LOG("AudioVoIPTest: TestPlayback start ");
+        AUDIO_INFO_LOG("AudioVoIPTest: TestPlayback start ");
 
         wav_hdr wavHeader;
         size_t headerSize = sizeof(wav_hdr);
         char path[PATH_MAX + 1] = {0x00};
         if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
-            MEDIA_ERR_LOG("Invalid path");
+            AUDIO_ERR_LOG("Invalid path");
             return false;
         }
-        MEDIA_INFO_LOG("AudioVoIPTest: path = %{public}s", path);
+        AUDIO_INFO_LOG("AudioVoIPTest: path = %{public}s", path);
         FILE* wavFile = fopen(path, "rb");
         if (wavFile == nullptr) {
-            MEDIA_INFO_LOG("AudioVoIPTest: Unable to open wave file");
+            AUDIO_INFO_LOG("AudioVoIPTest: Unable to open wave file");
             return false;
         }
         size_t bytesRead = fread(&wavHeader, 1, headerSize, wavFile);
-        MEDIA_INFO_LOG("AudioVoIPTest: Header Read in bytes %{public}zu", bytesRead);
+        AUDIO_INFO_LOG("AudioVoIPTest: Header Read in bytes %{public}zu", bytesRead);
 
         AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(streamType);
@@ -127,27 +127,27 @@ public:
         rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
         rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);
         if (!InitRender(audioRenderer, rendererParams)) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Init render failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Init render failed");
             fclose(wavFile);
             return false;
         }
 
         if (!StartRender(audioRenderer, wavFile)) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Start render failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Start render failed");
             fclose(wavFile);
             return false;
         }
 
         if (!audioRenderer->Stop()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Stop failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Stop failed");
         }
 
         if (!audioRenderer->Release()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Release failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Release failed");
         }
 
         fclose(wavFile);
-        MEDIA_INFO_LOG("AudioVoIPTest: TestPlayback end");
+        AUDIO_INFO_LOG("AudioVoIPTest: TestPlayback end");
 
         return true;
     }
@@ -155,19 +155,19 @@ public:
     bool InitCapture(const unique_ptr<AudioCapturer> &audioCapturer, const AudioCapturerParams &capturerParams) const
     {
         if (audioCapturer->SetParams(capturerParams) != AudioTestConstants::SUCCESS) {
-            MEDIA_ERR_LOG("Set audio stream parameters failed");
+            AUDIO_ERR_LOG("Set audio stream parameters failed");
             audioCapturer->Release();
             return false;
         }
-        MEDIA_INFO_LOG("Capture stream created");
+        AUDIO_INFO_LOG("Capture stream created");
 
-        MEDIA_INFO_LOG("Starting Stream");
+        AUDIO_INFO_LOG("Starting Stream");
         if (!audioCapturer->Start()) {
-            MEDIA_ERR_LOG("Start stream failed");
+            AUDIO_ERR_LOG("Start stream failed");
             audioCapturer->Release();
             return false;
         }
-        MEDIA_INFO_LOG("Capturing started");
+        AUDIO_INFO_LOG("Capturing started");
 
         return true;
     }
@@ -176,13 +176,13 @@ public:
     {
         size_t bufferLen;
         if (audioCapturer->GetBufferSize(bufferLen) < 0) {
-            MEDIA_ERR_LOG(" GetMinimumBufferSize failed");
+            AUDIO_ERR_LOG(" GetMinimumBufferSize failed");
             return false;
         }
 
         auto buffer = std::make_unique<uint8_t[]>(bufferLen);
         if (buffer == nullptr) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Failed to allocate buffer");
+            AUDIO_ERR_LOG("AudioVoIPTest: Failed to allocate buffer");
             return false;
         }
 
@@ -200,14 +200,14 @@ public:
                 }
             }
             if (bytesRead < 0) {
-                MEDIA_ERR_LOG("Bytes read failed. error code %{public}zu", bytesRead);
+                AUDIO_ERR_LOG("Bytes read failed. error code %{public}zu", bytesRead);
                 break;
             } else if (bytesRead == 0) {
                 continue;
             }
 
             if (fwrite(buffer.get(), size, bytesRead, pFile) != bytesRead) {
-                MEDIA_ERR_LOG("error occured in fwrite");
+                AUDIO_ERR_LOG("error occured in fwrite");
             }
             numBuffersToCapture--;
         }
@@ -217,7 +217,7 @@ public:
 
     bool TestRecording(char *capturePath) const
     {
-        MEDIA_INFO_LOG("TestCapture start ");
+        AUDIO_INFO_LOG("TestCapture start ");
 
         unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(AudioStreamType::STREAM_VOICE_CALL);
 
@@ -227,37 +227,37 @@ public:
         capturerParams.audioChannel = AudioChannel::STEREO;
         capturerParams.audioEncoding = ENCODING_PCM;
         if (!InitCapture(audioCapturer, capturerParams)) {
-            MEDIA_ERR_LOG("Initialize capturer failed");
+            AUDIO_ERR_LOG("Initialize capturer failed");
             return false;
         }
 
         bool isBlocking = true;
         FILE *pFile = fopen(capturePath, "wb");
         if (pFile == nullptr) {
-            MEDIA_INFO_LOG("AudioVoIPTest: Unable to open file");
+            AUDIO_INFO_LOG("AudioVoIPTest: Unable to open file");
             return false;
         }
 
         if (!StartCapture(audioCapturer, isBlocking, pFile)) {
-            MEDIA_ERR_LOG("Start capturer failed");
+            AUDIO_ERR_LOG("Start capturer failed");
             fclose(pFile);
             return false;
         }
 
         fflush(pFile);
         if (!audioCapturer->Flush()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: flush failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: flush failed");
         }
 
         if (!audioCapturer->Stop()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Stop failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Stop failed");
         }
 
         if (!audioCapturer->Release()) {
-            MEDIA_ERR_LOG("AudioVoIPTest: Release failed");
+            AUDIO_ERR_LOG("AudioVoIPTest: Release failed");
         }
         fclose(pFile);
-        MEDIA_INFO_LOG("TestCapture end");
+        AUDIO_INFO_LOG("TestCapture end");
 
         return true;
     }
@@ -265,28 +265,28 @@ public:
 
 int main(int argc, char *argv[])
 {
-    MEDIA_INFO_LOG("AudioVoIPTest: Render test in");
+    AUDIO_INFO_LOG("AudioVoIPTest: Render test in");
 
     if ((argv == nullptr) || (argc < AudioTestConstants::ARGS_COUNT_THREE)) {
-        MEDIA_ERR_LOG("AudioVoIPTest: argv is null");
+        AUDIO_ERR_LOG("AudioVoIPTest: argv is null");
         return 0;
     }
 
-    MEDIA_INFO_LOG("AudioVoIPTest: argc=%d", argc);
-    MEDIA_INFO_LOG("AudioVoIPTest: renderer test path = %{public}s",
+    AUDIO_INFO_LOG("AudioVoIPTest: argc=%d", argc);
+    AUDIO_INFO_LOG("AudioVoIPTest: renderer test path = %{public}s",
         argv[AudioTestConstants::ARGS_INDEX_RENDERER_TEST_PATH]);
-    MEDIA_INFO_LOG("AudioVoIPTest: capturer test path = %{public}s",
+    AUDIO_INFO_LOG("AudioVoIPTest: capturer test path = %{public}s",
         argv[AudioTestConstants::ARGS_INDEX_CAPTURER_TEST_PATH]);
 
     AudioVoIPTest *renderTestObj = new(std::nothrow) AudioVoIPTest();
     if (!renderTestObj) {
-        MEDIA_ERR_LOG("AudioVoIPTest: create renderer object failed");
+        AUDIO_ERR_LOG("AudioVoIPTest: create renderer object failed");
         return 0;
     }
 
     AudioVoIPTest *captureTestObj = new(std::nothrow) AudioVoIPTest();
     if (!captureTestObj) {
-        MEDIA_ERR_LOG("AudioVoIPTest: create capturer object failed");
+        AUDIO_ERR_LOG("AudioVoIPTest: create capturer object failed");
         delete renderTestObj;
         renderTestObj = nullptr;
         return 0;

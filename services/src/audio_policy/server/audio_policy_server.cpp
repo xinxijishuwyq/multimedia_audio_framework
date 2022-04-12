@@ -28,7 +28,7 @@
 #include "key_event.h"
 #include "key_option.h"
 
-#include "media_log.h"
+#include "audio_log.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -46,7 +46,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       mPolicyService(AudioPolicyService::GetAudioPolicyService())
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
 
     interruptPriorityMap_[STREAM_VOICE_CALL] = THIRD_PRIORITY;
@@ -63,7 +63,7 @@ void AudioPolicyServer::OnStart()
 {
     bool res = Publish(this);
     if (res) {
-        MEDIA_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
+        AUDIO_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
     }
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
@@ -82,34 +82,34 @@ void AudioPolicyServer::OnStop()
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
     switch (systemAbilityId) {
         case MULTIMODAL_INPUT_SERVICE_ID:
-            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility SubscribeKeyEvents");
+            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility SubscribeKeyEvents");
             SubscribeKeyEvents();
             break;
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
-            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility InitKVStore");
+            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility InitKVStore");
             InitKVStore();
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
-            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
+            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
             ConnectServiceAdapter();
             break;
         default:
-            MEDIA_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    MEDIA_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
+    AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
 }
 
 void AudioPolicyServer::RegisterAudioServerDeathRecipient()
 {
-    MEDIA_INFO_LOG("Register audio server death recipient");
+    AUDIO_INFO_LOG("Register audio server death recipient");
     pid_t pid = IPCSkeleton::GetCallingPid();
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
     if (deathRecipient_ != nullptr) {
@@ -121,14 +121,14 @@ void AudioPolicyServer::RegisterAudioServerDeathRecipient()
         deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {
-            MEDIA_ERR_LOG("failed to add deathRecipient");
+            AUDIO_ERR_LOG("failed to add deathRecipient");
         }
     }
 }
 
 void AudioPolicyServer::AudioServerDied(pid_t pid)
 {
-    MEDIA_INFO_LOG("Audio server died: restart policy server pid %{public}d", pid);
+    AUDIO_INFO_LOG("Audio server died: restart policy server pid %{public}d", pid);
     kill(pid, SIGKILL);
 }
 
@@ -156,11 +156,11 @@ void AudioPolicyServer::SubscribeKeyEvents()
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
-                    MEDIA_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                    AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
                     continue;
                 }
 
-                MEDIA_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
                 volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MIN_VOLUME_LEVEL, true);
             }
             return;
@@ -184,11 +184,11 @@ void AudioPolicyServer::SubscribeKeyEvents()
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
-                    MEDIA_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                    AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
                     continue;
                 }
 
-                MEDIA_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
                 volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MAX_VOLUME_LEVEL, true);
             }
             return;
@@ -205,7 +205,7 @@ void AudioPolicyServer::InitKVStore()
 void AudioPolicyServer::ConnectServiceAdapter()
 {
     if (!mPolicyService.ConnectServiceAdapter()) {
-        MEDIA_ERR_LOG("AudioPolicyServer::ConnectServiceAdapter Error in connecting to audio service adapter");
+        AUDIO_ERR_LOG("AudioPolicyServer::ConnectServiceAdapter Error in connecting to audio service adapter");
         return;
     }
 }
@@ -231,11 +231,11 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
-            MEDIA_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
 
-        MEDIA_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
         volumeChangeCb->OnVolumeKeyEvent(streamType, ConvertVolumeToInt(GetStreamVolume(streamType)), isUpdateUi);
     }
 
@@ -274,11 +274,11 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
         for (auto it = ringerModeListenerCbsMap_.begin(); it != ringerModeListenerCbsMap_.end(); ++it) {
             std::shared_ptr<AudioRingerModeCallback> ringerModeListenerCb = it->second;
             if (ringerModeListenerCb == nullptr) {
-                MEDIA_ERR_LOG("ringerModeListenerCbsMap_: nullptr for client : %{public}d", it->first);
+                AUDIO_ERR_LOG("ringerModeListenerCbsMap_: nullptr for client : %{public}d", it->first);
                 continue;
             }
 
-            MEDIA_DEBUG_LOG("ringerModeListenerCbsMap_ :client =  %{public}d", it->first);
+            AUDIO_DEBUG_LOG("ringerModeListenerCbsMap_ :client =  %{public}d", it->first);
             ringerModeListenerCb->OnRingerModeUpdated(ringMode);
         }
     }
@@ -324,10 +324,10 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
 
     if (ringerModeListenerCbsMap_.find(clientId) != ringerModeListenerCbsMap_.end()) {
         ringerModeListenerCbsMap_.erase(clientId);
-        MEDIA_ERR_LOG("AudioPolicyServer: UnsetRingerModeCallback for client %{public}d done", clientId);
+        AUDIO_ERR_LOG("AudioPolicyServer: UnsetRingerModeCallback for client %{public}d done", clientId);
         return SUCCESS;
     } else {
-        MEDIA_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
+        AUDIO_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
         return ERR_INVALID_OPERATION;
     }
 }
@@ -352,7 +352,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
     policyListenerCbsMap_[sessionID] = callback;
-    MEDIA_DEBUG_LOG("AudioPolicyServer: SetAudioInterruptCallback for sessionID %{public}d done", sessionID);
+    AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioInterruptCallback for sessionID %{public}d done", sessionID);
 
     return SUCCESS;
 }
@@ -362,9 +362,9 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
     if (policyListenerCbsMap_.erase(sessionID)) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer:UnsetAudioInterruptCallback for sessionID %{public}d done", sessionID);
+        AUDIO_DEBUG_LOG("AudioPolicyServer:UnsetAudioInterruptCallback for sessionID %{public}d done", sessionID);
     } else {
-        MEDIA_DEBUG_LOG("AudioPolicyServer:UnsetAudioInterruptCallback sessionID %{public}d not present/unset already",
+        AUDIO_DEBUG_LOG("AudioPolicyServer:UnsetAudioInterruptCallback sessionID %{public}d not present/unset already",
                         sessionID);
     }
 
@@ -373,16 +373,16 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
 
 void AudioPolicyServer::PrintOwnersLists()
 {
-    MEDIA_DEBUG_LOG("AudioPolicyServer: Printing active list");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: Printing active list");
     for (auto it = curActiveOwnersList_.begin(); it != curActiveOwnersList_.end(); ++it) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: curActiveOwnersList_: streamType: %{public}d", it->streamType);
-        MEDIA_DEBUG_LOG("AudioPolicyServer: curActiveOwnersList_: sessionID: %{public}u", it->sessionID);
+        AUDIO_DEBUG_LOG("AudioPolicyServer: curActiveOwnersList_: streamType: %{public}d", it->streamType);
+        AUDIO_DEBUG_LOG("AudioPolicyServer: curActiveOwnersList_: sessionID: %{public}u", it->sessionID);
     }
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: Printing pending list");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: Printing pending list");
     for (auto it = pendingOwnersList_.begin(); it != pendingOwnersList_.end(); ++it) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: pendingOwnersList_: streamType: %{public}d", it->streamType);
-        MEDIA_DEBUG_LOG("AudioPolicyServer: pendingOwnersList_: sessionID: %{public}u", it->sessionID);
+        AUDIO_DEBUG_LOG("AudioPolicyServer: pendingOwnersList_: streamType: %{public}d", it->streamType);
+        AUDIO_DEBUG_LOG("AudioPolicyServer: pendingOwnersList_: sessionID: %{public}u", it->sessionID);
     }
 }
 
@@ -410,7 +410,7 @@ bool AudioPolicyServer::ProcessPendingInterrupt(std::list<AudioInterrupt>::itera
         }
 
         if (policyListenerCb == nullptr) {
-            MEDIA_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
+            AUDIO_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
             return iterPendingErased;
         }
         policyListenerCb->OnInterrupt(interruptEvent);
@@ -442,7 +442,7 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
     // focusEntry.forceType == INTERRUPT_SHARE
     if (focusEntry.forceType != INTERRUPT_FORCE) {
         if (policyListenerCb == nullptr) {
-            MEDIA_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
+            AUDIO_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
             return iterActiveErased;
         }
         policyListenerCb->OnInterrupt(interruptEvent);
@@ -450,7 +450,7 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
     }
 
     // focusEntry.forceType == INTERRUPT_FORCE
-    MEDIA_INFO_LOG("AudioPolicyServer: Action is taken on: %{public}d", focusEntry.actionOn);
+    AUDIO_INFO_LOG("AudioPolicyServer: Action is taken on: %{public}d", focusEntry.actionOn);
     float volume = 0.0f;
     if (focusEntry.actionOn == CURRENT) {
         switch (focusEntry.hintType) {
@@ -472,14 +472,14 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
         }
     } else { // INCOMING
         if (focusEntry.hintType == INTERRUPT_HINT_DUCK) {
-            MEDIA_INFO_LOG("AudioPolicyServer: force duck get GetStreamVolume(activeStreamType)");
+            AUDIO_INFO_LOG("AudioPolicyServer: force duck get GetStreamVolume(activeStreamType)");
             volume = GetStreamVolume(activeStreamType);
             interruptEvent.duckVolume = DUCK_FACTOR * volume;
         }
     }
 
     if (policyListenerCb == nullptr) {
-        MEDIA_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
+        AUDIO_WARNING_LOG("AudioPolicyServer: policyListenerCb is null so ignoring to apply focus policy");
         return iterActiveErased;
     }
     policyListenerCb->OnInterrupt(interruptEvent);
@@ -493,7 +493,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     for (auto iterPending = pendingOwnersList_.begin(); iterPending != pendingOwnersList_.end();) {
         bool IsIterPendingErased = ProcessPendingInterrupt(iterPending, incomingInterrupt);
         if (!IsIterPendingErased) {
-            MEDIA_INFO_LOG("AudioPolicyServer: iterPending not erased while processing ++increment it");
+            AUDIO_INFO_LOG("AudioPolicyServer: iterPending not erased while processing ++increment it");
             ++iterPending;
         }
     }
@@ -505,12 +505,12 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         AudioStreamType incomingStreamType = incomingInterrupt.streamType;
         AudioFocusEntry focusEntry = focusTable[activeStreamType][incomingStreamType];
         if (focusEntry.isReject) {
-            MEDIA_INFO_LOG("AudioPolicyServer: focusEntry.isReject : ActivateAudioInterrupt request rejected");
+            AUDIO_INFO_LOG("AudioPolicyServer: focusEntry.isReject : ActivateAudioInterrupt request rejected");
             return ERR_FOCUS_DENIED;
         }
         bool IsIterActiveErased = ProcessCurActiveInterrupt(iterActive, incomingInterrupt);
         if (!IsIterActiveErased) {
-            MEDIA_INFO_LOG("AudioPolicyServer: iterActive not erased while processing ++increment it");
+            AUDIO_INFO_LOG("AudioPolicyServer: iterActive not erased while processing ++increment it");
             ++iterActive;
         }
     }
@@ -546,23 +546,23 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt");
-    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
-    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}u", audioInterrupt.sessionID);
+    AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
+    AUDIO_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}u", audioInterrupt.sessionID);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to ActivateAudioInterrupt");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to ActivateAudioInterrupt");
         AddToCurActiveList(audioInterrupt);
         return SUCCESS;
     }
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt start: print active and pending lists");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt start: print active and pending lists");
     PrintOwnersLists();
 
     // Check if the session is present in pending list, remove and treat it as a new request
     uint32_t incomingSessionID = audioInterrupt.sessionID;
     if (!pendingOwnersList_.empty()) {
-        MEDIA_DEBUG_LOG("If it is present in pending list, remove and treat is as new request");
+        AUDIO_DEBUG_LOG("If it is present in pending list, remove and treat is as new request");
         pendingOwnersList_.remove_if([&incomingSessionID](AudioInterrupt &interrupt) {
             return interrupt.sessionID == incomingSessionID;
         });
@@ -571,7 +571,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     // If active owners list is empty, directly activate interrupt
     if (curActiveOwnersList_.empty()) {
         curActiveOwnersList_.emplace_front(audioInterrupt);
-        MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
         PrintOwnersLists();
         return SUCCESS;
     }
@@ -579,8 +579,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     // If the session is already in active list, return
     for (auto it = curActiveOwnersList_.begin(); it != curActiveOwnersList_.end(); ++it) {
         if (it->sessionID == audioInterrupt.sessionID) {
-            MEDIA_DEBUG_LOG("AudioPolicyServer: sessionID %{public}d is already active", audioInterrupt.sessionID);
-            MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
+            AUDIO_DEBUG_LOG("AudioPolicyServer: sessionID %{public}d is already active", audioInterrupt.sessionID);
+            AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
             PrintOwnersLists();
             return SUCCESS;
         }
@@ -589,8 +589,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     // Process ProcessFocusEntryTable for current active and pending lists
     int32_t ret = ProcessFocusEntry(audioInterrupt);
     if (ret) {
-        MEDIA_ERR_LOG("AudioPolicyServer:  ActivateAudioInterrupt request rejected");
-        MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
+        AUDIO_ERR_LOG("AudioPolicyServer:  ActivateAudioInterrupt request rejected");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
         PrintOwnersLists();
         return ERR_FOCUS_DENIED;
     }
@@ -598,7 +598,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     // Activate request processed and accepted. Add the entry to active list
     AddToCurActiveList(audioInterrupt);
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt end: print active and pending lists");
     PrintOwnersLists();
     return SUCCESS;
 }
@@ -617,7 +617,7 @@ void AudioPolicyServer::UnduckCurActiveList(const AudioInterrupt &exitInterrupt)
         }
         policyListenerCb = policyListenerCbsMap_[activeSessionID];
         if (policyListenerCb == nullptr) {
-            MEDIA_WARNING_LOG("AudioPolicyServer: Cb sessionID: %{public}d null. ignoring to Unduck", activeSessionID);
+            AUDIO_WARNING_LOG("AudioPolicyServer: Cb sessionID: %{public}d null. ignoring to Unduck", activeSessionID);
             return;
         }
         policyListenerCb->OnInterrupt(forcedUnducking);
@@ -641,7 +641,7 @@ void AudioPolicyServer::ResumeUnduckPendingList(const AudioInterrupt &exitInterr
         it = pendingOwnersList_.erase(it);
         policyListenerCb = policyListenerCbsMap_[pendingSessionID];
         if (policyListenerCb == nullptr) {
-            MEDIA_WARNING_LOG("AudioPolicyServer: Cb sessionID: %{public}d null. ignoring resume", pendingSessionID);
+            AUDIO_WARNING_LOG("AudioPolicyServer: Cb sessionID: %{public}d null. ignoring resume", pendingSessionID);
             return;
         }
         policyListenerCb->OnInterrupt(forcedUnducking);
@@ -654,7 +654,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to DeactivateAudioInterrupt");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
         curActiveOwnersList_.remove_if([&exitSessionID](AudioInterrupt &interrupt) {
             return interrupt.sessionID == exitSessionID;
@@ -662,11 +662,11 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         return SUCCESS;
     }
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt");
-    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
-    MEDIA_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}u", audioInterrupt.sessionID);
+    AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: audioInterrupt.streamType: %{public}d", audioInterrupt.streamType);
+    AUDIO_DEBUG_LOG("AudioPolicyServer: audioInterrupt.sessionID: %{public}u", audioInterrupt.sessionID);
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
     PrintOwnersLists();
 
     // Check and remove, its entry from pending first
@@ -694,16 +694,16 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     // If it was not present in both the lists or present only in pending list,
     // No need to take any action on other sessions, just return.
     if (!isInterruptActive) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: Session : %{public}d is not currently active. return success",
+        AUDIO_DEBUG_LOG("AudioPolicyServer: Session : %{public}d is not currently active. return success",
                         audioInterrupt.sessionID);
-        MEDIA_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
         PrintOwnersLists();
         return SUCCESS;
     }
 
     if (curActiveOwnersList_.empty() && pendingOwnersList_.empty()) {
-        MEDIA_DEBUG_LOG("AudioPolicyServer: No ther session active or pending. Deactivate complete, return success");
-        MEDIA_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: No ther session active or pending. Deactivate complete, return success");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
         PrintOwnersLists();
         return SUCCESS;
     }
@@ -714,7 +714,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     // resume and unduck if the session was forced paused
     ResumeUnduckPendingList(audioInterrupt);
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt end: print active and pending lists");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt end: print active and pending lists");
     PrintOwnersLists();
     return SUCCESS;
 }
@@ -727,32 +727,32 @@ void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
         return interrupt.sessionID == removedSessionID;
     };
 
-    MEDIA_DEBUG_LOG("AudioPolicyServer::OnSessionRemoved");
+    AUDIO_DEBUG_LOG("AudioPolicyServer::OnSessionRemoved");
     std::unique_lock<std::mutex> lock(interruptMutex_);
 
     auto iterActive = std::find_if(curActiveOwnersList_.begin(), curActiveOwnersList_.end(), isSessionPresent);
     if (iterActive != curActiveOwnersList_.end()) {
         AudioInterrupt removedInterrupt = *iterActive;
         lock.unlock();
-        MEDIA_DEBUG_LOG("Removed SessionID: %{public}u is present in active list", removedSessionID);
+        AUDIO_DEBUG_LOG("Removed SessionID: %{public}u is present in active list", removedSessionID);
 
         (void)DeactivateAudioInterrupt(removedInterrupt);
         (void)UnsetAudioInterruptCallback(removedSessionID);
         return;
     }
-    MEDIA_DEBUG_LOG("Removed SessionID: %{public}u is not present in active list", removedSessionID);
+    AUDIO_DEBUG_LOG("Removed SessionID: %{public}u is not present in active list", removedSessionID);
 
     auto iterPending = std::find_if(pendingOwnersList_.begin(), pendingOwnersList_.end(), isSessionPresent);
     if (iterPending != pendingOwnersList_.end()) {
         AudioInterrupt removedInterrupt = *iterPending;
         lock.unlock();
-        MEDIA_DEBUG_LOG("Removed SessionID: %{public}u is present in pending list", removedSessionID);
+        AUDIO_DEBUG_LOG("Removed SessionID: %{public}u is present in pending list", removedSessionID);
 
         (void)DeactivateAudioInterrupt(removedInterrupt);
         (void)UnsetAudioInterruptCallback(removedSessionID);
         return;
     }
-    MEDIA_DEBUG_LOG("Removed SessionID: %{public}u not present in pending list either", removedSessionID);
+    AUDIO_DEBUG_LOG("Removed SessionID: %{public}u not present in pending list either", removedSessionID);
 
     // Though it is not present in the owners list, check and clear its entry from callback map
     lock.unlock();
@@ -784,7 +784,7 @@ int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
 int32_t AudioPolicyServer::SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
-    MEDIA_DEBUG_LOG("AudioPolicyServer::SetVolumeKeyEventCallback");
+    AUDIO_DEBUG_LOG("AudioPolicyServer::SetVolumeKeyEventCallback");
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
                              "AudioPolicyServer::SetVolumeKeyEventCallback listener object is nullptr");
 
@@ -806,9 +806,9 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
 
     if (volumeChangeCbsMap_.find(clientPid) != volumeChangeCbsMap_.end()) {
         volumeChangeCbsMap_.erase(clientPid);
-        MEDIA_ERR_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback for clientPid %{public}d done", clientPid);
+        AUDIO_ERR_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback for clientPid %{public}d done", clientPid);
     } else {
-        MEDIA_DEBUG_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback clientPid %{public}d not present/unset already",
+        AUDIO_DEBUG_LOG("AudioPolicyServer::UnsetVolumeKeyEventCallback clientPid %{public}d not present/unset already",
                         clientPid);
     }
 
@@ -877,14 +877,14 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
 
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
-    MEDIA_DEBUG_LOG("AudioPolicyServer: Dump Process Invoked");
+    AUDIO_DEBUG_LOG("AudioPolicyServer: Dump Process Invoked");
 
     std::string dumpString;
     PolicyData policyData;
     AudioServiceDump dumpObj;
 
     if (dumpObj.Initialize() != AUDIO_DUMP_SUCCESS) {
-        MEDIA_ERR_LOG("AudioPolicyServer:: Audio Service Dump Not initialised\n");
+        AUDIO_ERR_LOG("AudioPolicyServer:: Audio Service Dump Not initialised\n");
         return AUDIO_DUMP_INIT_ERR;
     }
 

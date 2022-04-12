@@ -15,19 +15,19 @@
 
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_system_manager.h"
-#include "media_log.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyManagerListenerProxy::AudioPolicyManagerListenerProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardAudioPolicyManagerListener>(impl)
 {
-    MEDIA_DEBUG_LOG("Instances create");
+    AUDIO_DEBUG_LOG("Instances create");
 }
 
 AudioPolicyManagerListenerProxy::~AudioPolicyManagerListenerProxy()
 {
-    MEDIA_DEBUG_LOG("~AudioPolicyManagerListenerProxy: Instance destroy");
+    AUDIO_DEBUG_LOG("~AudioPolicyManagerListenerProxy: Instance destroy");
 }
 
 void AudioPolicyManagerListenerProxy::WriteInterruptEventParams(MessageParcel &data,
@@ -45,26 +45,26 @@ void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
         return;
     }
 
     WriteInterruptEventParams(data, interruptEvent);
     int error = Remote()->SendRequest(ON_INTERRUPT, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("OnInterrupt failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("OnInterrupt failed, error: %{public}d", error);
     }
 }
 
 void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerProxy: OnDeviceChange at listener proxy");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerProxy: OnDeviceChange at listener proxy");
 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        MEDIA_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
         return;
     }
 
@@ -80,19 +80,19 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
 
     int error = Remote()->SendRequest(ON_DEVICE_CHANGED, data, reply, option);
     if (error != ERR_NONE) {
-        MEDIA_ERR_LOG("OnDeviceChange failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("OnDeviceChange failed, error: %{public}d", error);
     }
 }
 
 AudioPolicyManagerListenerCallback::AudioPolicyManagerListenerCallback(
     const sptr<IStandardAudioPolicyManagerListener> &listener) : listener_(listener)
 {
-        MEDIA_DEBUG_LOG("AudioPolicyManagerListenerCallback: Instance create");
+        AUDIO_DEBUG_LOG("AudioPolicyManagerListenerCallback: Instance create");
 }
 
 AudioPolicyManagerListenerCallback::~AudioPolicyManagerListenerCallback()
 {
-    MEDIA_DEBUG_LOG("AudioPolicyManagerListenerCallback: Instance destroy");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerCallback: Instance destroy");
 }
 
 void AudioPolicyManagerListenerCallback::OnInterrupt(const InterruptEventInternal &interruptEvent)

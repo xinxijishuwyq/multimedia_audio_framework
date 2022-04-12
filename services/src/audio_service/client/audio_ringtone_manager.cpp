@@ -41,7 +41,7 @@ RingtoneSoundManager::~RingtoneSoundManager()
 int32_t RingtoneSoundManager::SetSystemRingtoneUri(const shared_ptr<Context> &context, const string &uri,
     RingtoneType type)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(type >= RINGTONE_TYPE_DEFAULT && type <= RINGTONE_TYPE_MULTISIM,
                              ERR_INVALID_PARAM, "invalid type");
 
@@ -54,7 +54,7 @@ int32_t RingtoneSoundManager::SetSystemRingtoneUri(const shared_ptr<Context> &co
 
 int32_t RingtoneSoundManager::SetSystemNotificationUri(const shared_ptr<Context> &context, const string &uri)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
 
     ValuesBucket valuesBucket;
     valuesBucket.PutString(MEDIA_DATA_DB_NOTIFICATION_URI, uri);
@@ -64,7 +64,7 @@ int32_t RingtoneSoundManager::SetSystemNotificationUri(const shared_ptr<Context>
 
 int32_t RingtoneSoundManager::SetSystemAlarmUri(const shared_ptr<Context> &context, const string &uri)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
 
     ValuesBucket valuesBucket;
     valuesBucket.PutString(MEDIA_DATA_DB_ALARM_URI, uri);
@@ -74,7 +74,7 @@ int32_t RingtoneSoundManager::SetSystemAlarmUri(const shared_ptr<Context> &conte
 
 string RingtoneSoundManager::GetSystemRingtoneUri(const shared_ptr<Context> &context, RingtoneType type)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(type >= RINGTONE_TYPE_DEFAULT && type <= RINGTONE_TYPE_MULTISIM, "", "invalid type");
 
     return FetchUri(context, kvstoreOperation[GET_URI_INDEX][RINGTONE_INDEX] + "/" + to_string(type));
@@ -82,14 +82,14 @@ string RingtoneSoundManager::GetSystemRingtoneUri(const shared_ptr<Context> &con
 
 string RingtoneSoundManager::GetSystemNotificationUri(const shared_ptr<Context> &context)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
 
     return FetchUri(context, kvstoreOperation[GET_URI_INDEX][NOTIFICATION_INDEX]);
 }
 
 string RingtoneSoundManager::GetSystemAlarmUri(const shared_ptr<Context> &context)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s", __func__);
 
     return FetchUri(context, kvstoreOperation[GET_URI_INDEX][ALARM_INDEX]);
 }
@@ -97,7 +97,7 @@ string RingtoneSoundManager::GetSystemAlarmUri(const shared_ptr<Context> &contex
 int32_t RingtoneSoundManager::SetUri(const shared_ptr<Context> &context, const ValuesBucket &valueBucket,
     const std::string &operation)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s, operation is %{public}s", __func__, operation.c_str());
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s, operation is %{public}s", __func__, operation.c_str());
 
     CreateDataAbilityHelper(context);
     CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, ERR_INVALID_PARAM, "Helper is null, failed to set uri");
@@ -107,7 +107,7 @@ int32_t RingtoneSoundManager::SetUri(const shared_ptr<Context> &context, const V
     int32_t result = 0;
     result = abilityHelper_->Insert(uri, valueBucket);
     if (result != SUCCESS) {
-        MEDIA_ERR_LOG("RingtoneSoundManager::insert ringtone uri failed");
+        AUDIO_ERR_LOG("RingtoneSoundManager::insert ringtone uri failed");
     }
 
     return result;
@@ -115,7 +115,7 @@ int32_t RingtoneSoundManager::SetUri(const shared_ptr<Context> &context, const V
 
 string RingtoneSoundManager::FetchUri(const shared_ptr<Context> &context, const std::string &operation)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s, operation is %{public}s", __func__, operation.c_str());
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s, operation is %{public}s", __func__, operation.c_str());
 
     CreateDataAbilityHelper(context);
     CHECK_AND_RETURN_RET_LOG(abilityHelper_ != nullptr, "", "Helper is null, failed to retrieve uri");
@@ -139,7 +139,7 @@ void RingtoneSoundManager::CreateDataAbilityHelper(const shared_ptr<Context> &co
 shared_ptr<IRingtonePlayer> RingtoneSoundManager::GetRingtonePlayer(const shared_ptr<Context> &context,
     RingtoneType type)
 {
-    MEDIA_INFO_LOG("RingtoneSoundManager::%{public}s, type %{public}d", __func__, type);
+    AUDIO_INFO_LOG("RingtoneSoundManager::%{public}s, type %{public}d", __func__, type);
     CHECK_AND_RETURN_RET_LOG(type >= RINGTONE_TYPE_DEFAULT && type <= RINGTONE_TYPE_MULTISIM, nullptr, "invalid type");
 
     if (ringtonePlayer_[type] != nullptr && ringtonePlayer_[type]->GetRingtoneState() == STATE_RELEASED) {
@@ -186,7 +186,7 @@ void RingtonePlayer::InitialisePlayer()
 
 int32_t RingtonePlayer::PrepareRingtonePlayer(bool isReInitNeeded)
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(player_ != nullptr, ERR_INVALID_PARAM, "Ringtone player instance is null");
 
     // fetch uri from kvstore
@@ -212,7 +212,7 @@ int32_t RingtonePlayer::PrepareRingtonePlayer(bool isReInitNeeded)
 
 int32_t RingtonePlayer::Configure(const float &volume, const bool &loop)
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
 
     CHECK_AND_RETURN_RET_LOG(volume >= LOW_VOL && volume <= HIGH_VOL, ERR_INVALID_PARAM, "Volume level invalid");
     CHECK_AND_RETURN_RET_LOG(player_ != nullptr && ringtoneState_ != STATE_INVALID, ERR_INVALID_PARAM, "no player_");
@@ -232,12 +232,12 @@ int32_t RingtonePlayer::Configure(const float &volume, const bool &loop)
 
 int32_t RingtonePlayer::Start()
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
 
     CHECK_AND_RETURN_RET_LOG(player_ != nullptr && ringtoneState_ != STATE_INVALID, ERR_INVALID_PARAM, "no player_");
 
     if (player_->IsPlaying() || isStartQueued_) {
-        MEDIA_ERR_LOG("Play in progress, cannot start now");
+        AUDIO_ERR_LOG("Play in progress, cannot start now");
         return ERROR;
     }
 
@@ -249,7 +249,7 @@ int32_t RingtonePlayer::Start()
     }
 
     if (ringtoneState_ == STATE_NEW) {
-        MEDIA_INFO_LOG("Start received before player preparing is finished");
+        AUDIO_INFO_LOG("Start received before player preparing is finished");
         isStartQueued_ = true;
         return SUCCESS;
     }
@@ -264,7 +264,7 @@ int32_t RingtonePlayer::Start()
 
 int32_t RingtonePlayer::Stop()
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(player_ != nullptr && ringtoneState_ != STATE_INVALID, ERR_INVALID_PARAM, "no player_");
 
     if (ringtoneState_ != STATE_STOPPED && player_->IsPlaying()) {
@@ -279,7 +279,7 @@ int32_t RingtonePlayer::Stop()
 
 int32_t RingtonePlayer::Release()
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s player", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s player", __func__);
 
     if (player_ != nullptr) {
         (void)player_->Release();
@@ -294,7 +294,7 @@ int32_t RingtonePlayer::Release()
 
 RingtoneState RingtonePlayer::GetRingtoneState()
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     return ringtoneState_;
 }
 
@@ -307,7 +307,7 @@ void RingtonePlayer::SetPlayerState(RingtoneState ringtoneState)
     }
 
     if (ringtoneState_ == RingtoneState::STATE_PREPARED) {
-        MEDIA_INFO_LOG("Player prepared callback received. loop:%{public}d volume:%{public}f", loop_, volume_);
+        AUDIO_INFO_LOG("Player prepared callback received. loop:%{public}d volume:%{public}f", loop_, volume_);
 
         Media::Format format;
         format.PutIntValue(Media::PlayerKeys::CONTENT_TYPE, CONTENT_TYPE_RINGTONE);
@@ -328,7 +328,7 @@ void RingtonePlayer::SetPlayerState(RingtoneState ringtoneState)
 
 int32_t RingtonePlayer::GetAudioRendererInfo(AudioStandard::AudioRendererInfo &rendererInfo) const
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     rendererInfo.contentType = ContentType::CONTENT_TYPE_RINGTONE;
     rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE;
     rendererInfo.rendererFlags = 0;
@@ -337,7 +337,7 @@ int32_t RingtonePlayer::GetAudioRendererInfo(AudioStandard::AudioRendererInfo &r
 
 std::string RingtonePlayer::GetTitle()
 {
-    MEDIA_INFO_LOG("RingtonePlayer::%{public}s", __func__);
+    AUDIO_INFO_LOG("RingtonePlayer::%{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(context_ != nullptr, "", "context cannot be null");
 
     auto ctxUri = make_unique<Uri>(Media::MEDIALIBRARY_DATA_URI);
@@ -378,7 +378,7 @@ RingtonePlayerCallback::RingtonePlayerCallback(RingtonePlayer &ringtonePlayer) :
 
 void RingtonePlayerCallback::OnError(PlayerErrorType errorType, int32_t errorCode)
 {
-    MEDIA_ERR_LOG("Error reported from media server %{public}d", errorCode);
+    AUDIO_ERR_LOG("Error reported from media server %{public}d", errorCode);
 }
 
 void RingtonePlayerCallback::OnInfo(PlayerOnInfoType type, int32_t extra, const Format &infoBody)
