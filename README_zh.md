@@ -15,7 +15,7 @@
 
 音频组件用于实现音频相关的功能，包括音频播放，录制，音量管理和设备管理。
 
-**图 1**  音频组件架构图<a name="fig483116248288"></a>  
+**图 1**  音频组件架构图<a name="fig483116248288"></a>
 
 
 ![](figures/zh-cn_image_0000001152315135.png)
@@ -83,7 +83,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     rendererParams.sampleRate = SAMPLE_RATE_44100;
     rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
-     
+
     audioRenderer->SetParams(rendererParams);
     ```
 
@@ -223,9 +223,8 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 #### JavaScript 用法:
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。\
-请参考 [**音频管理.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/js-reference/音频管理.md) 来获取音量和设备管理相关JavaScript接口的用法。
+请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
 [multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_standard)
-

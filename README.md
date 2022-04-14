@@ -430,7 +430,7 @@ Please refer **AudioScene** enum in [**audio_info.h**](https://gitee.com/openhar
 
 #### JavaScript Usage:
 JavaScript apps can use the APIs provided by audio manager to control the volume and the device.\
-Please refer [**audio-management.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/js-reference/audio-management.md) for JavaScript usage of audio volume and device management.
+Please refer [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis/js-apis-audio.md#audiomanager) for complete JavaScript APIs available for audio manager.
 
 ### Ringtone Management<a name="ringtone-management"></a>
 You can use the APIs provided in [**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) and [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h) for ringtone playback functions.
