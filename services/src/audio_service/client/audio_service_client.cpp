@@ -17,7 +17,6 @@
 
 #include <fstream>
 
-#include "bundle_mgr_interface.h"
 #include "iservice_registry.h"
 #include "audio_log.h"
 #include "securec.h"
@@ -26,7 +25,6 @@
 
 using namespace std;
 using namespace OHOS::AppExecFwk;
-using namespace OHOS::AAFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,8 +43,8 @@ const uint32_t MAX_LENGTH_FACTOR = 5;
 const uint32_t T_LENGTH_FACTOR = 4;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 
-const string APP_DATA_BASE_PATH = "/data/accounts/account_0/appdata/";
-const string APP_COOKIE_FILE_PATH = "/cache/cookie";
+const string PATH_SEPARATOR = "/";
+const string COOKIE_FILE_NAME = "cookie";
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 {
@@ -442,6 +440,8 @@ AudioServiceClient::AudioServiceClient()
     context  = nullptr;
     api = nullptr;
 
+    abilityContext_ = nullptr;
+
     internalRdBufIndex = 0;
     internalRdBufLen = 0;
     streamCmdStatus = 0;
@@ -565,35 +565,10 @@ void AudioServiceClient::SetEnv()
     }
 }
 
-static std::string GetClientBundle(int uid)
+void AudioServiceClient::SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context)
 {
-    std::string bundleName = "";
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        AUDIO_ERR_LOG("Get ability manager failed");
-        return bundleName;
-    }
-
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (object == nullptr) {
-        AUDIO_DEBUG_LOG("object is nullptr.");
-        return bundleName;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> bms = iface_cast<AppExecFwk::IBundleMgr>(object);
-    if (bms == nullptr) {
-        AUDIO_DEBUG_LOG("bundle manager service is nullptr.");
-        return bundleName;
-    }
-
-    auto result = bms->GetBundleNameForUid(uid, bundleName);
-    if (!result) {
-        AUDIO_ERR_LOG("GetBundleNameForUid fail");
-        return "";
-    }
-    AUDIO_INFO_LOG("bundle name is %{public}s ", bundleName.c_str());
-
-    return bundleName;
+    AUDIO_DEBUG_LOG("SetAbilityContext in");
+    abilityContext_ = context;
 }
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
@@ -628,8 +603,8 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
 
-    string bundleName = GetClientBundle(getuid());
-    if (bundleName.compare("")) {
+    if (abilityContext_ != nullptr) {
+        AUDIO_DEBUG_LOG("abilityContext not null");
         int32_t size = 0;
         const char *cookieData = mAudioSystemMgr->RetrieveCookie(size);
         if (size <= 0) {
@@ -637,9 +612,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
             return AUDIO_CLIENT_INIT_ERR;
         }
 
-        appCookiePath = APP_DATA_BASE_PATH;
-        appCookiePath.append(bundleName);
-        appCookiePath.append(APP_COOKIE_FILE_PATH);
+        appCookiePath = abilityContext_->GetCacheDir() + PATH_SEPARATOR + COOKIE_FILE_NAME;
         AUDIO_DEBUG_LOG("cookie file path: %{public}s", appCookiePath.c_str());
 
         ofstream cookieCache(appCookiePath.c_str(), std::ofstream::binary);
