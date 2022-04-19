@@ -14,6 +14,7 @@
  */
 
 #include "audio_ringtone_manager.h"
+#include "media_data_ability_const.h"
 
 using namespace std;
 using namespace OHOS::AbilityRuntime;

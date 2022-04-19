@@ -19,7 +19,6 @@
 #include <array>
 
 #include "iringtone_sound_manager.h"
-#include "media_data_ability_const.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "player.h"
