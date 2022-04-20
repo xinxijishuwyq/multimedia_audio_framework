@@ -963,6 +963,12 @@ int32_t AudioServiceClient::StopStream()
         return AUDIO_CLIENT_ERR;
     } else {
         AUDIO_INFO_LOG("Stream Stopped Successfully");
+        if (internalRdBufLen) {
+            (void)pa_stream_drop(paStream);
+            internalReadBuffer = nullptr;
+            internalRdBufLen = 0;
+            internalRdBufIndex = 0;
+        }
         return AUDIO_CLIENT_SUCCESS;
     }
 }
@@ -1433,7 +1439,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
-                AUDIO_INFO_LOG("buffer size from PA: %zu", internalRdBufLen);
+                AUDIO_INFO_LOG("buffer size from PA: %{public}zu", internalRdBufLen);
             }
         }
 
