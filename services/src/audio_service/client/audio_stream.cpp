@@ -242,6 +242,11 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
+bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+{
+    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId);
+}
+
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
 {
     AUDIO_INFO_LOG("AudioStream: SetAudioParams");

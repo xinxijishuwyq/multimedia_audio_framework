@@ -49,10 +49,11 @@ public:
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
 
-    explicit AudioCapturerPrivate(AudioStreamType audioStreamType);
+    AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo);
     virtual ~AudioCapturerPrivate();
 private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+    AppInfo appInfo_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

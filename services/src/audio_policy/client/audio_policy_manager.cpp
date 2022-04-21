@@ -316,5 +316,15 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
 {
     return g_sProxy->UnsetVolumeKeyEventCallback(clientPid);
 }
+
+bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName)
+{
+    return VerifyClientPermission(permissionName, 0);
+}
+
+bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+{
+    return g_sProxy->VerifyClientPermission(permissionName, appTokenId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

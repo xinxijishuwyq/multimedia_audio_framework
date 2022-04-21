@@ -97,9 +97,14 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt);
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
-                                      const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const std::shared_ptr<VolumeKeyEventCallback> &callback);
+
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
+
+    bool VerifyClientPermission(const std::string &permissionName);
+
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
+
 private:
     AudioPolicyManager()
     {

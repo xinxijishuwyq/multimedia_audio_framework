@@ -101,25 +101,64 @@ public:
 class AudioCapturer {
 public:
     /**
-     * @brief creater capturer instance.
+     * @brief create capturer instance.
+     *
+     * @param options The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @return Returns unique pointer to the AudioCapturer object
     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
     /**
-     * @brief creater capturer instance.
+     * @brief create capturer instance.
+     *
+     * @param options The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns unique pointer to the AudioCapturer object
     */
-    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &capturerOptions);
+    static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
     /**
      * @brief create capturer instance.
      *
-     * @param cachePath Application cache path
-     * @param capturerOptions The audio capturer configuration to be used while creating capturer instance.
+     * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
     */
-    static std::unique_ptr<AudioCapturer> Create(const std::string cachePath,
-        const AudioCapturerOptions &capturerOptions);
+    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options);
+
+    /**
+     * @brief create capturer instance.
+     *
+     * @param options The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns unique pointer to the AudioCapturer object
+    */
+    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const AppInfo &appInfo);
+
+    /**
+     * @brief create capturer instance.
+     *
+     * @param options The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @param cachePath Application cache path
+     * @return Returns unique pointer to the AudioCapturer object
+    */
+    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath);
+
+    /**
+     * @brief create capturer instance.
+     *
+     * @param capturerOptions The audio capturer configuration to be used while creating capturer instance.
+     * refer AudioCapturerOptions in audio_info.h.
+     * @param cachePath Application cache path
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns unique pointer to the AudioCapturer object
+    */
+    static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
+        const AppInfo &appInfo);
 
     /**
      * @brief Sets audio capture parameters.

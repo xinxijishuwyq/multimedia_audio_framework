@@ -27,16 +27,34 @@ AudioCapturerPrivate::~AudioCapturerPrivate() = default;
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
 {
-    return std::make_unique<AudioCapturerPrivate>(audioStreamType);
+    AppInfo appInfo = {};
+    return Create(audioStreamType, appInfo);
 }
 
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions)
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    return Create("", capturerOptions);
+    return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo);
 }
 
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(const std::string cachePath,
-    const AudioCapturerOptions &capturerOptions)
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options)
+{
+    AppInfo appInfo = {};
+    return Create(options, "", appInfo);
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options, const AppInfo &appInfo)
+{
+    return Create(options, "", appInfo);
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options, const std::string cachePath)
+{
+    AppInfo appInfo = {};
+    return Create(options, cachePath, appInfo);
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions,
+    const std::string cachePath, const AppInfo &appInfo)
 {
     auto sourceType = capturerOptions.capturerInfo.sourceType;
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_VOICE_CALL) {
@@ -54,7 +72,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const std::string cachePath
     params.audioChannel = capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
 
-    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType);
+    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo);
     if (capturer == nullptr) {
         return capturer;
     }
@@ -75,9 +93,10 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const std::string cachePath
     return capturer;
 }
 
-AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType)
+AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
     audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
+    appInfo_ = appInfo;
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -87,6 +106,11 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params) const
 {
+    if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId)) {
+        AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
+        return ERR_PERMISSION_DENIED;
+    }
+
     AudioStreamParams audioStreamParams;
     audioStreamParams.format = params.audioSampleFormat;
     audioStreamParams.samplingRate = params.samplingRate;

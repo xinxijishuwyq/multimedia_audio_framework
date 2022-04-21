@@ -290,6 +290,14 @@ void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string permissionName = data.ReadString();
+    uint32_t appTokenId = data.ReadUint32();
+    bool ret = VerifyClientPermission(permissionName, appTokenId);
+    reply.WriteBool(ret);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -410,16 +418,15 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             GetDevicesInternal(data, reply);
             break;
 
+        case QUERY_PERMISSION:
+            VerifyClientPermissionInternal(data, reply);
+            break;
+
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
     return AUDIO_OK;
-}
-
-bool AudioPolicyManagerStub::IsPermissionValid()
-{
-    return true;
 }
 } // namespace audio_policy
 } // namespace OHOS

@@ -34,6 +34,7 @@
 #include <audio_timer.h>
 
 #include "audio_capturer.h"
+#include "audio_policy_manager.h"
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
 
@@ -486,6 +487,13 @@ public:
      */
     void SetApplicationCachePath(const std::string cachePath);
 
+    /**
+     * @brief Verifies the clients permsiion based on appTokenId
+     *
+     * @return Retruns whether the authentication was success or not
+     */
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
+
     // Audio timer callback
     virtual void OnTimeOut();
 
@@ -585,6 +593,7 @@ private:
     static const int32_t AUDIO_CLIENT_READ_STREAM_ERR = -6;
     static const int32_t AUDIO_CLIENT_WRITE_STREAM_ERR = -7;
     static const int32_t AUDIO_CLIENT_PA_ERR = -8;
+    static const int32_t AUDIO_CLIENT_PERMISSION_ERR = -9;
 
     // Default values
     static const uint32_t MINIMUM_BUFFER_SIZE = 1024;
