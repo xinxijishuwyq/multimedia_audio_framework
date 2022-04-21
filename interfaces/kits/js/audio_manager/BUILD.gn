@@ -29,7 +29,7 @@ ohos_copy("audio_declaration") {
 ohos_shared_library("audio") {
   include_dirs = [
     "//foundation/aafwk/standard/frameworks/kits/ability/native/include",
-    "//foundation/ace/napi/interfaces/kits",
+    "//foundation/arkui/napi/interfaces/kits",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_standard/frameworks/js/napi/audio_capturer/include",
     "//foundation/multimedia/audio_standard/frameworks/js/napi/audio_common/include",
@@ -70,7 +70,7 @@ ohos_shared_library("audio") {
     "//base/global/resmgr_standard/frameworks/resmgr:global_resmgr",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
-    "//foundation/ace/napi:ace_napi",
+    "//foundation/arkui/napi:ace_napi",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer:audio_renderer",
