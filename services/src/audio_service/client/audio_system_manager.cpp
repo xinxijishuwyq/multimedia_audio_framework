@@ -244,10 +244,21 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALL:
             break;
         default:
             AUDIO_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
             return ERR_NOT_SUPPORTED;
+    }
+
+    if (volumeType == STREAM_ALL) {
+        AudioVolumeType audioVolumeTypes[] = { STREAM_MUSIC, STREAM_RING, STREAM_NOTIFICATION, STREAM_VOICE_CALL, STREAM_VOICE_ASSISTANT};
+        for (auto &&audioVolumeType : AudioVolumeTypes) {
+            AudioStreamType StreamVolType = (AudioStreamType)audioVolumeType;
+            float volumeToHdi = MapVolumeToHDI(volume);
+            AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+        }
+        return 0;
     }
 
     /* Call Audio Policy SetStreamVolume */
@@ -264,10 +275,15 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALL:
             break;
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
             return (float)ERR_NOT_SUPPORTED;
+    }
+
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
     }
 
     /* Call Audio Policy SetStreamMute */

@@ -171,7 +171,11 @@ public:
         /**
          * Indicates audio streams used for prompts in terms of accessibility.
          */
-        STREAM_ACCESSIBILITY = 12
+        STREAM_ACCESSIBILITY = 12,
+        /**
+         * Indicates audio streams used for only one volume bar of a device.
+         */
+        STREAM_ALL = 100,
     };
 
     static AudioSystemManager *GetInstance();
