@@ -351,14 +351,14 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioM
         return ERR_INVALID_PARAM;
     }
 
-    int32_t clientId = GetCallingPid();
+    int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, callback);
 }
 
 int32_t AudioSystemManager::UnsetDeviceChangeCallback()
 {
     AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
-    int32_t clientId = GetCallingPid();
+    int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId);
 }
 
