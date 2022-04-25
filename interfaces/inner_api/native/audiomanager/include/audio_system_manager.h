@@ -175,9 +175,13 @@ public:
         /**
          * Indicates audio streams used for only one volume bar of a device.
          */
-        STREAM_ALL = 100,
+        STREAM_ALL = 100
     };
-
+    static AudioVolumeType GetStreamAllVolumeTypes[] = { STREAM_MUSIC, 
+                                                        STREAM_RING, 
+                                                        STREAM_NOTIFICATION, 
+                                                        STREAM_VOICE_CALL, 
+                                                        STREAM_VOICE_ASSISTANT};
     static AudioSystemManager *GetInstance();
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);
