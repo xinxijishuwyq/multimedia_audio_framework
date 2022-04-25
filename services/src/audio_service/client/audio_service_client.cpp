@@ -24,7 +24,6 @@
 #include "unistd.h"
 
 using namespace std;
-using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -440,8 +439,6 @@ AudioServiceClient::AudioServiceClient()
     context  = nullptr;
     api = nullptr;
 
-    abilityContext_ = nullptr;
-
     internalRdBufIndex = 0;
     internalRdBufLen = 0;
     streamCmdStatus = 0;
@@ -565,10 +562,10 @@ void AudioServiceClient::SetEnv()
     }
 }
 
-void AudioServiceClient::SetAbilityContext(const std::shared_ptr<AbilityRuntime::Context> context)
+void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
 {
-    AUDIO_DEBUG_LOG("SetAbilityContext in");
-    abilityContext_ = context;
+    AUDIO_DEBUG_LOG("SetApplicationCachePath in");
+    cachePath_ = cachePath;
 }
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
@@ -603,7 +600,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
 
-    if (abilityContext_ != nullptr) {
+    if (!cachePath_.empty()) {
         AUDIO_DEBUG_LOG("abilityContext not null");
         int32_t size = 0;
         const char *cookieData = mAudioSystemMgr->RetrieveCookie(size);
@@ -612,8 +609,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
             return AUDIO_CLIENT_INIT_ERR;
         }
 
-        appCookiePath = abilityContext_->GetCacheDir() + PATH_SEPARATOR + COOKIE_FILE_NAME;
-        AUDIO_DEBUG_LOG("cookie file path: %{public}s", appCookiePath.c_str());
+        appCookiePath = cachePath_ + PATH_SEPARATOR + COOKIE_FILE_NAME;
 
         ofstream cookieCache(appCookiePath.c_str(), std::ofstream::binary);
         cookieCache.write(cookieData, size);
@@ -963,6 +959,12 @@ int32_t AudioServiceClient::StopStream()
         return AUDIO_CLIENT_ERR;
     } else {
         AUDIO_INFO_LOG("Stream Stopped Successfully");
+        if (internalRdBufLen) {
+            (void)pa_stream_drop(paStream);
+            internalReadBuffer = nullptr;
+            internalRdBufLen = 0;
+            internalRdBufIndex = 0;
+        }
         return AUDIO_CLIENT_SUCCESS;
     }
 }
@@ -1433,7 +1435,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
-                AUDIO_INFO_LOG("buffer size from PA: %zu", internalRdBufLen);
+                AUDIO_INFO_LOG("buffer size from PA: %{public}zu", internalRdBufLen);
             }
         }
 
