@@ -346,7 +346,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     if (volumeType == STREAM_ALL) {
         for (auto &&audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             AudioStreamType StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, mute);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
             if (setResult != SUCCESS) {
                 return ERROR;
             }
