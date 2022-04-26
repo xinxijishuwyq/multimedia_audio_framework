@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 #include <map>
+#include <vector>
 
 #include "parcel.h"
 #include "audio_info.h"
@@ -177,8 +178,12 @@ public:
          */
         STREAM_ALL = 100
     };
-    static AudioVolumeType GetStreamAllVolumeTypes[] = { 
-        STREAM_MUSIC, STREAM_RING, STREAM_NOTIFICATION, STREAM_VOICE_CALL, STREAM_VOICE_ASSISTANT
+    const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
+        STREAM_MUSIC, 
+        STREAM_RING, 
+        STREAM_NOTIFICATION, 
+        STREAM_VOICE_CALL, 
+        STREAM_VOICE_ASSISTANT
     };
     static AudioSystemManager *GetInstance();
     static float MapVolumeToHDI(int32_t volume);
