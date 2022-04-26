@@ -213,9 +213,18 @@ ohos_shared_library("audio_policy_service") {
 
 ohos_prebuilt_etc("audio_policy_config") {
   if ("${product_name}" == "rk3566" || "${product_name}" == "rk3568") {
-    source = "$AUDIO_POLICY_SERVER_DIR/etc/rk3568/audio_policy_config.xml"
+    if (target_cpu == "arm64") {
+      source =
+          "$AUDIO_POLICY_SERVER_DIR/etc/rk3568/arm64/audio_policy_config.xml"
+    } else {
+      source = "$AUDIO_POLICY_SERVER_DIR/etc/rk3568/arm/audio_policy_config.xml"
+    }
   } else if ("${product_name}" == "m40") {
-    source = "$AUDIO_POLICY_SERVER_DIR/etc/m40/audio_policy_config.xml"
+    if (target_cpu == "arm64") {
+      source = "$AUDIO_POLICY_SERVER_DIR/etc/m40/arm64/audio_policy_config.xml"
+    } else {
+      source = "$AUDIO_POLICY_SERVER_DIR/etc/m40/arm/audio_policy_config.xml"
+    }
   } else {
     source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_policy_config.xml"
   }
