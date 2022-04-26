@@ -177,11 +177,9 @@ public:
          */
         STREAM_ALL = 100
     };
-    static AudioVolumeType GetStreamAllVolumeTypes[] = { STREAM_MUSIC, 
-                                                        STREAM_RING, 
-                                                        STREAM_NOTIFICATION, 
-                                                        STREAM_VOICE_CALL, 
-                                                        STREAM_VOICE_ASSISTANT};
+    static AudioVolumeType GetStreamAllVolumeTypes[] = { 
+        STREAM_MUSIC, STREAM_RING, STREAM_NOTIFICATION, STREAM_VOICE_CALL, STREAM_VOICE_ASSISTANT
+    };
     static AudioSystemManager *GetInstance();
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);

@@ -252,16 +252,15 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     }
 
     if (volumeType == STREAM_ALL) {
-        int32_t flag = AUDIO_CLIENT_SUCCESS;
         for (auto &&audioVolumeType : GetAllVolumeTypes) {
             AudioStreamType StreamVolType = (AudioStreamType)audioVolumeType;
             float volumeToHdi = MapVolumeToHDI(volume);
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
-            if (setResult != flat) {
-                flag = setResult;
+            if (setResult != SUCCESS) {
+                return ERROR;
             }
         }
-        return flag;
+        return SUCCESS;
     }
 
     /* Call Audio Policy SetStreamVolume */
@@ -346,16 +345,15 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     }
 
     if (volumeType == STREAM_ALL) {
-        int32_t flag = AUDIO_CLIENT_SUCCESS;
         for (auto &&audioVolumeType : GetAllVolumeTypes) {
             AudioStreamType StreamVolType = (AudioStreamType)audioVolumeType;
             float volumeToHdi = MapVolumeToHDI(volume);
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
-            if (setResult != flat) {
-                flag = setResult;
+            if (setResult != SUCCESS) {
+                return ERROR;
             }
         }
-        return flag;
+        return SUCCESS;
     }
 
     /* Call Audio Policy SetStreamMute */
