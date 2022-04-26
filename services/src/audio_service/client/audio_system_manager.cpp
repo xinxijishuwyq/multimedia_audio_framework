@@ -250,21 +250,21 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
             return ERR_NOT_SUPPORTED;
     }
 
+    /* Call Audio Policy SetStreamVolume */
+    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
+    float volumeToHdi = MapVolumeToHDI(volume);
+
     if (volumeType == STREAM_ALL) {
-        for (auto &&audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
-            AudioStreamType StreamVolType = (AudioStreamType)audioVolumeType;
-            float volumeToHdi = MapVolumeToHDI(volume);
+        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
+            StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
             if (setResult != SUCCESS) {
-                return ERROR;
+                return setResult;
             }
         }
         return SUCCESS;
     }
 
-    /* Call Audio Policy SetStreamVolume */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeToHdi = MapVolumeToHDI(volume);
     return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
 }
 
@@ -343,19 +343,20 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
             return ERR_NOT_SUPPORTED;
     }
 
+    /* Call Audio Policy SetStreamMute */
+    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
+
     if (volumeType == STREAM_ALL) {
-        for (auto &&audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
-            AudioStreamType StreamVolType = (AudioStreamType)audioVolumeType;
+        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
+            StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
             if (setResult != SUCCESS) {
-                return ERROR;
+                return setResult;
             }
         }
         return SUCCESS;
     }
 
-    /* Call Audio Policy SetStreamMute */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
 }
 
