@@ -28,3 +28,9 @@ group("audio_module_test") {
 
   deps = [ "moduletest/audiopolicy:audio_policy_module_test" ]
 }
+
+group("audio_fuzz_test") {
+  testonly = true
+
+  deps = [ "fuzztest/audiomanager_fuzzer:fuzztest" ]
+}

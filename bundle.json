@@ -131,7 +131,8 @@
           ],
           "test": [
             "//foundation/multimedia/audio_standard/test:audio_unit_test",
-            "//foundation/multimedia/audio_standard/test:audio_module_test"
+            "//foundation/multimedia/audio_standard/test:audio_module_test",
+            "//foundation/multimedia/audio_standard/test:audio_fuzz_test"
           ]
         }
     }
