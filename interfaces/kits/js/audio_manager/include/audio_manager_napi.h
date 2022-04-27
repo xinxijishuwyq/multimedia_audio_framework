@@ -38,6 +38,7 @@ public:
         RINGTONE = 2,
         MEDIA = 3,
         VOICE_ASSISTANT = 9,
+        ALL = 100,
         VOLUMETYPE_MAX
     };
 

@@ -134,6 +134,9 @@ static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volu
         case AudioManagerNapi::VOICE_ASSISTANT:
             result = AudioSystemManager::STREAM_VOICE_ASSISTANT;
             break;
+        case AudioManagerNapi::ALL:
+            result = AudioSystemManager::STREAM_ALL;
+            break;
         default:
             result = AudioSystemManager::STREAM_MUSIC;
             HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
