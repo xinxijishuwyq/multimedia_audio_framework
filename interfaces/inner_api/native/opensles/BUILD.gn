@@ -16,10 +16,12 @@ import("//build/ohos.gni")
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
 
-config("audio_renderer_config") {
+config("audio_operation_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiostream/include",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiosession/include",
@@ -52,7 +54,28 @@ ohos_executable("audio_opensles_test") {
 
   configs = [
     ":audio_opensles_config",
-    ":audio_renderer_config",
+    ":audio_operation_config",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_standard:libsl",
+    "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_opensles_capture_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_opensles_capture_test.cpp" ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_operation_config",
   ]
 
   deps = [

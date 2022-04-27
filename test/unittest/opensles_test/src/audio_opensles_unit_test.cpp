@@ -159,7 +159,7 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetVoume_002, TestSize.Level0)
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesUnitTest, Audio_Opensles_CetBufferQueue_001, TestSize.Level0)
+HWTEST(AudioOpenslesUnitTest, Audio_Opensles_GetBufferQueue_001, TestSize.Level0)
 {
     SLresult result = (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
@@ -232,7 +232,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateEngine_001, TestSize.Leve
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
         clock_gettime(CLOCK_REALTIME, &tv1);
@@ -240,7 +240,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateEngine_001, TestSize.Leve
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -249,7 +249,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_DestoryEngine_001, TestSize.Lev
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
         engineObject_ = {};
@@ -259,7 +259,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_DestoryEngine_001, TestSize.Lev
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -268,7 +268,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_Realize_001, TestSize.Level0)
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     engineObject_ = {};
     slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
@@ -278,7 +278,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_Realize_001, TestSize.Level0)
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -287,7 +287,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetInterface_001, TestSize.Leve
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
         clock_gettime(CLOCK_REALTIME, &tv1);
@@ -295,7 +295,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetInterface_001, TestSize.Leve
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -304,7 +304,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateOutputMix_001, TestSize.L
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
         clock_gettime(CLOCK_REALTIME, &tv1);
@@ -312,7 +312,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateOutputMix_001, TestSize.L
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -343,7 +343,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateAudioPlayer_001, TestSize
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
         clock_gettime(CLOCK_REALTIME, &tv1);
@@ -351,7 +351,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_CreateAudioPlayer_001, TestSize
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 10000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -360,7 +360,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetVolumeLevel_001, TestSize.Le
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     SLmillibel level = 0;
     (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_VOLUME, &volumeItf_);
@@ -370,7 +370,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetVolumeLevel_001, TestSize.Le
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 10000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -379,7 +379,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetMaxVolumeLevel_001, TestSize
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     SLmillibel level = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
@@ -388,7 +388,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_GetMaxVolumeLevel_001, TestSize
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
@@ -397,7 +397,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_SetVolumeLevel_001, TestSize.Le
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
     int64_t performanceTestTimes = 10;
-    int64_t usecTimes = 1000000;
+    int64_t usecTimes = 1000000000;
     int64_t totalTime = 0;
     SLmillibel level = 0;
     for (int32_t i = 0; i < performanceTestTimes; i++) {
@@ -406,7 +406,7 @@ HWTEST(AudioOpenslesUnitTest, Prf_Audio_Opensles_SetVolumeLevel_001, TestSize.Le
         clock_gettime(CLOCK_REALTIME, &tv2);
         totalTime += tv2.tv_sec * usecTimes + tv2.tv_nsec - (tv1.tv_sec * usecTimes + tv1.tv_nsec);
     }
-    int64_t expectTime = 1000000;
+    int64_t expectTime = 1000000000;
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 } // namespace AudioStandard

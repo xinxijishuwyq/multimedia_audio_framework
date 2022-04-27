@@ -52,6 +52,9 @@ public:
     int32_t SetRenderMode(AudioRenderMode renderMode);
     AudioRenderMode GetRenderMode();
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback);
+    int32_t SetCaptureMode(AudioCaptureMode captureMode);
+    AudioCaptureMode GetCaptureMode();
+    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback);
     int32_t GetBufferDesc(BufferDesc &bufDesc);
     int32_t Enqueue(const BufferDesc &bufDesc);
     int32_t Clear();
@@ -84,12 +87,16 @@ private:
     uint64_t resetTimestamp_;
     struct timespec baseTimestamp_;
     AudioRenderMode renderMode_;
+    AudioCaptureMode captureMode_;
     std::queue<BufferDesc> freeBufferQ_;
     std::queue<BufferDesc> filledBufferQ_;
     std::array<std::unique_ptr<uint8_t[]>, MAX_NUM_BUFFERS> bufferPool_ = {};
     std::unique_ptr<std::thread> writeThread_ = nullptr;
+    std::unique_ptr<std::thread> readThread_ = nullptr;
     bool isReadyToWrite_;
+    bool isReadyToRead_;
     void WriteBuffers();
+    void ReadBuffers();
 
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();

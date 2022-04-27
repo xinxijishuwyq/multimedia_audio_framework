@@ -17,7 +17,8 @@
 
 using namespace OHOS::AudioStandard;
 
-static SLuint32 audioplayerId = 0;
+static SLuint32 audioPlayerId = 0;
+static SLuint32 audioRecorderId = 0;
 
 static SLresult CreateLEDDevice(
     SLEngineItf self, SLObjectItf *pDevice, SLuint32 deviceID, SLuint32 numInterfaces,
@@ -45,23 +46,38 @@ static SLresult CreateAudioPlayer(
     if (thiz == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
     }
-    thiz->mId = audioplayerId;
+    thiz->mId = audioPlayerId;
     IObjectInit(&thiz->mObject);
-    IPlayInit(&thiz->mPlay, audioplayerId);
-    IVolumeInit(&thiz->mVolume, audioplayerId);
-    IOHBufferQueueInit(&thiz->mBufferQueue, audioplayerId);
+    IPlayInit(&thiz->mPlay, audioPlayerId);
+    IVolumeInit(&thiz->mVolume, audioPlayerId);
+    IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_PLAY, audioPlayerId);
     *pPlayer = &thiz->mObject.mItf;
     AudioPlayerAdapter::GetInstance()->
-        CreateAudioPlayerAdapter(audioplayerId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
-    audioplayerId++;
+        CreateAudioPlayerAdapter(audioPlayerId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
+    audioPlayerId++;
+
     return SL_RESULT_SUCCESS;
 }
- 
+
 static SLresult CreateAudioRecorder(
     SLEngineItf self, SLObjectItf *pRecorder, SLDataSource *pAudioSrc, SLDataSink *pAudioSnk, SLuint32 numInterfaces,
     const SLInterfaceID *pInterfaceIds, const SLboolean *pInterfaceRequired)
 {
-    return SL_RESULT_FEATURE_UNSUPPORTED;
+    if (pRecorder == nullptr) {
+        return SL_RESULT_PARAMETER_INVALID;
+    }
+    ClassTable *audioRecorderClass = ObjectIdToClass(SL_OBJECTID_AUDIORECORDER);
+    CAudioRecorder *thiz = (CAudioRecorder *) Construct(audioRecorderClass, self);
+    thiz->mId = audioRecorderId;
+    IObjectInit(&thiz->mObject);
+    IRecordInit(&thiz->mRecord, audioRecorderId);
+    IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_RECORD, audioRecorderId);
+    *pRecorder = &thiz->mObject.mItf;
+    AudioCapturerAdapter::GetInstance()->
+        CreateAudioCapturerAdapter(audioRecorderId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
+    audioRecorderId++;
+
+    return SL_RESULT_SUCCESS;
 }
 
 static SLresult CreateMidiPlayer(

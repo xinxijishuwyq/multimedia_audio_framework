@@ -217,6 +217,11 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
     return audioStream_->GetAudioTime(timestamp, base);
 }
 
+bool AudioCapturerPrivate::Pause() const
+{
+    return audioStream_->PauseAudioStream();
+}
+
 bool AudioCapturerPrivate::Stop() const
 {
     return audioStream_->StopAudioStream();
@@ -285,6 +290,41 @@ std::vector<AudioEncodingType> AudioCapturer::GetSupportedEncodingTypes()
 std::vector<AudioSamplingRate> AudioCapturer::GetSupportedSamplingRates()
 {
     return AUDIO_SUPPORTED_SAMPLING_RATES;
+}
+
+int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode) const
+{
+    return audioStream_->SetCaptureMode(captureMode);
+}
+
+AudioCaptureMode AudioCapturerPrivate::GetCaptureMode() const
+{
+    return audioStream_->GetCaptureMode();
+}
+
+int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
+{
+    return audioStream_->SetCapturerReadCallback(callback);
+}
+
+int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc) const
+{
+    return audioStream_->GetBufferDesc(bufDesc);
+}
+
+int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc) const
+{
+    return audioStream_->Enqueue(bufDesc);
+}
+
+int32_t AudioCapturerPrivate::Clear() const
+{
+    return audioStream_->Clear();
+}
+
+int32_t AudioCapturerPrivate::GetBufQueueState(BufferQueueState &bufState) const
+{
+    return SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

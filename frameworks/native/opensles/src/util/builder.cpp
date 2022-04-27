@@ -40,6 +40,8 @@ ClassTable *ObjectIdToClass(SLuint32 objectId)
         classTable = (ClassTable *) &EngineTab;
     } else if (objectId == SL_OBJECTID_AUDIOPLAYER) {
         classTable = (ClassTable *) &AudioPlayerTab;
+    } else if (objectId == SL_OBJECTID_AUDIORECORDER) {
+        classTable = (ClassTable *) &AudioRecorderTab;
     } else if (objectId == SL_OBJECTID_OUTPUTMIX) {
         classTable = (ClassTable *) &OutputMixTab;
     }
