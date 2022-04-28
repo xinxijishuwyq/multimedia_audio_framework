@@ -383,6 +383,9 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
                 case AudioManagerNapi::VOICE_ASSISTANT:
                     propName = "VOICE_ASSISTANT";
                     break;
+                case AudioManagerNapi::ALL:
+                    propName = "ALL";
+                    break;
                 default:
                     HiLog::Error(LABEL, "CreateAudioVolumeTypeObject: No prob with this value try next value!");
                     continue;
