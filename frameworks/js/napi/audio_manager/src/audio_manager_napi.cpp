@@ -400,7 +400,7 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
             if (status == napi_ok) {
                 return result;
             }
-        }else{
+        } else {
             HiLog::Error(LABEL, "Failed to add named prop for AudioManagerNapi.ALL!");
         }
     }
