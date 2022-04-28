@@ -198,6 +198,7 @@ enum AudioSampleFormat {
     SAMPLE_S16LE = 16,
     SAMPLE_S24LE = 24,
     SAMPLE_S32LE = 32,
+    SAMPLE_F32LE = 32, // used only for audio codec
     INVALID_WIDTH = -1
 };
 

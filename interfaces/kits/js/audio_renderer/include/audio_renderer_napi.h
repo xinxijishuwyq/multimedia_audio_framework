@@ -44,7 +44,8 @@ public:
         SAMPLE_FORMAT_U8 = 0,
         SAMPLE_FORMAT_S16LE = 1,
         SAMPLE_FORMAT_S24LE = 2,
-        SAMPLE_FORMAT_S32LE = 3
+        SAMPLE_FORMAT_S32LE = 3,
+        SAMPLE_FORMAT_F32LE = 4 // used only for audio codec
     };
 
     static napi_value Init(napi_env env, napi_value exports);
