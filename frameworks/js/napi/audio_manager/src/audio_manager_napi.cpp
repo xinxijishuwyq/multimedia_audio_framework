@@ -383,9 +383,6 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
                 case AudioManagerNapi::VOICE_ASSISTANT:
                     propName = "VOICE_ASSISTANT";
                     break;
-                case AudioManagerNapi::ALL:
-                    propName = "ALL";
-                    break;
                 default:
                     HiLog::Error(LABEL, "CreateAudioVolumeTypeObject: No prob with this value try next value!");
                     continue;
@@ -397,11 +394,14 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
             }
             propName.clear();
         }
+        status = AddNamedProperty(env, result, "ALL", AudioManagerNapi::ALL);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &audioVolumeTypeRef_);
             if (status == napi_ok) {
                 return result;
             }
+        }else{
+            HiLog::Error(LABEL, "Failed to add named prop for AudioManagerNapi.ALL!");
         }
     }
     HiLog::Error(LABEL, "CreateAudioVolumeTypeObject is Failed!");
