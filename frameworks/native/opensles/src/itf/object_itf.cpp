@@ -60,8 +60,20 @@ static SLresult GetInterface(SLObjectItf self, const SLInterfaceID iid, void *in
         *(void **)interface = (void *)&(cAudioPlayer->mVolume.mItf);
         return SL_RESULT_SUCCESS;
     } else if (iid == SL_IID_OH_BUFFERQUEUE) {
-        CAudioPlayer *cAudioPlayer = (CAudioPlayer *)self;
-        *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
+        IObject *iObject = (IObject *)self;
+        if (iObject->mClass->mObjectId == SL_OBJECTID_AUDIOPLAYER) {
+            CAudioPlayer *cAudioPlayer = (CAudioPlayer *)iObject;
+            *(void **)interface = (void *)&(cAudioPlayer->mBufferQueue.mItf);
+        } else if (iObject->mClass->mObjectId == SL_OBJECTID_AUDIORECORDER) {
+            CAudioRecorder *cAudioRecorder = (CAudioRecorder *)iObject;
+            *(void **)interface = (void *)&(cAudioRecorder->mBufferQueue.mItf);
+        } else {
+            return SL_RESULT_FEATURE_UNSUPPORTED;
+        }
+        return SL_RESULT_SUCCESS;
+    } else if (iid == SL_IID_RECORD) {
+        CAudioRecorder *cAudioRecorder = (CAudioRecorder *)self;
+        *(void **)interface = (void *)&(cAudioRecorder->mRecord.mItf);
         return SL_RESULT_SUCCESS;
     } else {
         AUDIO_ERR_LOG("GetInterface: SLInterfaceID not supported");
@@ -111,6 +123,9 @@ void Destroy(SLObjectItf self)
             break;
         case SL_OBJECTID_OUTPUTMIX:
             OutputMixDestroy((void *)self);
+            break;
+        case SL_OBJECTID_AUDIORECORDER:
+            AudioRecorderDestroy((void *)self);
             break;
         default:
             AUDIO_ERR_LOG("objectId not supported");

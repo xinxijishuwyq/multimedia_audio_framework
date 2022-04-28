@@ -17,7 +17,7 @@ module_output_path = "audio_standard/audio_opensles"
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
 
-config("audio_renderer_config") {
+config("audio_capture_config") {
   include_dirs = [
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
@@ -49,23 +49,18 @@ config("audio_opensles_config") {
   ]
 }
 
-ohos_unittest("audio_opensles_unit_test") {
+ohos_unittest("audio_opensles_capture_unit_test") {
   module_out_path = module_output_path
-  include_dirs = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
-    "./include",
-  ]
+  include_dirs = [ "./include" ]
 
   configs = [
     ":audio_opensles_config",
-    ":audio_renderer_config",
+    ":audio_capture_config",
   ]
 
-  sources = [ "src/audio_opensles_unit_test.cpp" ]
+  sources = [ "src/audio_opensles_capture_unit_test.cpp" ]
 
   deps = [ "//foundation/multimedia/audio_standard/frameworks/native/opensles:opensles" ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-  resource_config_file = "//foundation/multimedia/audio_standard/test/resource/audio_renderer/ohos_test.xml"
 }

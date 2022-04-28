@@ -33,6 +33,7 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t READ_WRITE_WAIT_TIME_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_US = 500;
+constexpr int32_t CB_READ_BUFFERS_WAIT_IN_US = 500;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::streamTypeMap_ = AudioStream::CreateStreamMap();
 
@@ -87,7 +88,9 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStream
                                                                          resetTime_(false),
                                                                          resetTimestamp_(0),
                                                                          renderMode_(RENDER_MODE_NORMAL),
+                                                                         captureMode_(CAPTURE_MODE_NORMAL),
                                                                          isReadyToWrite_(false),
+                                                                         isReadyToRead_(false),
                                                                          isFirstRead_(false)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor");
@@ -96,8 +99,14 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode) : eStream
 AudioStream::~AudioStream()
 {
     isReadyToWrite_ = false;
+    isReadyToRead_ = false;
+
     if (writeThread_ && writeThread_->joinable()) {
         writeThread_->join();
+    }
+
+    if (readThread_ && readThread_->joinable()) {
+        readThread_->join();
     }
 
     if (state_ != RELEASED && state_ != NEW) {
@@ -313,6 +322,9 @@ bool AudioStream::StartAudioStream()
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = true;
         writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteBuffers, this);
+    } else if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        isReadyToRead_ = true;
+        readThread_ = std::make_unique<std::thread>(&AudioStream::ReadBuffers, this);
     }
 
     isFirstRead_ = true;
@@ -393,6 +405,12 @@ bool AudioStream::PauseAudioStream()
     }
     State oldState = state_;
     state_ = PAUSED; // Set it before stopping as Read/Write and Stop can be called from different threads
+    if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        isReadyToRead_ = false;
+        if (readThread_ && readThread_->joinable()) {
+            readThread_->join();
+        }
+    }
     while (isReadInProgress_ || isWriteInProgress_) {
         std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
@@ -429,6 +447,12 @@ bool AudioStream::StopAudioStream()
     }
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
+    if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        isReadyToRead_ = false;
+        if (readThread_ && readThread_->joinable()) {
+            readThread_->join();
+        }
+    }
     while (isReadInProgress_ || isWriteInProgress_) {
         std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
@@ -588,6 +612,40 @@ AudioRenderMode AudioStream::GetRenderMode()
     return GetAudioRenderMode();
 }
 
+int32_t AudioStream::SetCaptureMode(AudioCaptureMode captureMode)
+{
+    int32_t ret = SetAudioCaptureMode(captureMode);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioStream::SetCaptureMode: captureMode: %{public}d failed", captureMode);
+        return ERR_OPERATION_FAILED;
+    }
+    captureMode_ = captureMode;
+
+    for (int32_t i = 0; i < MAX_NUM_BUFFERS; ++i) {
+        size_t length;
+        GetMinimumBufferSize(length);
+        AUDIO_INFO_LOG("AudioStream::SetCaptureMode: length %{public}zu", length);
+
+        bufferPool_[i] = std::make_unique<uint8_t[]>(length);
+        if (bufferPool_[i] == nullptr) {
+            AUDIO_INFO_LOG("AudioStream::SetCaptureMode bufferPool_[i]==nullptr. Allocate memory failed.");
+            return ERR_OPERATION_FAILED;
+        }
+
+        BufferDesc bufDesc {};
+        bufDesc.buffer = bufferPool_[i].get();
+        bufDesc.bufLength = length;
+        freeBufferQ_.emplace(bufDesc);
+    }
+
+    return SUCCESS;
+}
+
+AudioCaptureMode AudioStream::GetCaptureMode()
+{
+    return GetAudioCaptureMode();
+}
+
 int32_t AudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
     if (renderMode_ != RENDER_MODE_CALLBACK) {
@@ -604,37 +662,64 @@ int32_t AudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRendere
     return SUCCESS;
 }
 
+int32_t AudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
+{
+    if (captureMode_ != CAPTURE_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("AudioStream::SetCapturerReadCallback not supported. Capture mode is not callback.");
+        return ERR_INCORRECT_MODE;
+    }
+
+    int32_t ret = SaveReadCallback(callback);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioStream::SetCapturerReadCallback: failed.");
+        return ERR_INVALID_PARAM;
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
 {
-    if (renderMode_ != RENDER_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("AudioStream::GetBufferDesc not supported. Render mode is not callback.");
+    if ((renderMode_ != RENDER_MODE_CALLBACK) && (captureMode_ != CAPTURE_MODE_CALLBACK)) {
+        AUDIO_ERR_LOG("AudioStream::GetBufferDesc not supported. Render or Capture mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
 
     AUDIO_INFO_LOG("AudioStream::freeBufferQ_ count %{public}zu", freeBufferQ_.size());
     AUDIO_INFO_LOG("AudioStream::filledBufferQ_ count %{public}zu", filledBufferQ_.size());
 
-    if (!freeBufferQ_.empty()) {
-        bufDesc.buffer = freeBufferQ_.front().buffer;
-        bufDesc.bufLength = freeBufferQ_.front().bufLength;
-        freeBufferQ_.pop();
-    } else {
-        bufDesc.buffer = nullptr;
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        if (!freeBufferQ_.empty()) {
+            bufDesc.buffer = freeBufferQ_.front().buffer;
+            bufDesc.bufLength = freeBufferQ_.front().bufLength;
+            freeBufferQ_.pop();
+        } else {
+            bufDesc.buffer = nullptr;
+            AUDIO_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
+            return ERR_OPERATION_FAILED;
+        }
     }
 
-    if (bufDesc.buffer == nullptr) {
-        AUDIO_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
-        return ERR_OPERATION_FAILED;
+    if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        if (!filledBufferQ_.empty()) {
+            bufDesc.buffer = filledBufferQ_.front().buffer;
+            bufDesc.bufLength = filledBufferQ_.front().bufLength;
+            bufDesc.dataLength = filledBufferQ_.front().dataLength;
+            filledBufferQ_.pop();
+        } else {
+            bufDesc.buffer = nullptr;
+            AUDIO_INFO_LOG("AudioStream::GetBufferDesc filledBufferQ_.empty()");
+            return ERR_OPERATION_FAILED;
+        }
     }
-
     return SUCCESS;
 }
 
 int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
 {
     AUDIO_INFO_LOG("AudioStream::Enqueue");
-    if (renderMode_ != RENDER_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("AudioStream::Enqueue not supported. Render mode is not callback.");
+    if ((renderMode_ != RENDER_MODE_CALLBACK) && (captureMode_ != CAPTURE_MODE_CALLBACK)) {
+        AUDIO_ERR_LOG("AudioStream::Enqueue not supported. Render or capture mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
 
@@ -642,15 +727,24 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
         AUDIO_ERR_LOG("AudioStream::Enqueue: failed. bufDesc.buffer == nullptr.");
         return ERR_INVALID_PARAM;
     }
-    filledBufferQ_.emplace(bufDesc);
+
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        AUDIO_INFO_LOG("AudioStream::Enqueue: filledBuffer length: %{public}zu.", bufDesc.bufLength);
+        filledBufferQ_.emplace(bufDesc);
+    }
+
+    if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        AUDIO_INFO_LOG("AudioStream::Enqueue: freeBuffer length: %{public}zu.", bufDesc.bufLength);
+        freeBufferQ_.emplace(bufDesc);
+    }
 
     return SUCCESS;
 }
 
 int32_t AudioStream::Clear()
 {
-    if (renderMode_ != RENDER_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("AudioStream::Clear not supported. Render mode is not callback.");
+    if ((renderMode_ != RENDER_MODE_CALLBACK) && (captureMode_ != CAPTURE_MODE_CALLBACK)) {
+        AUDIO_ERR_LOG("AudioStream::Clear not supported. Render or capture mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
 
@@ -680,20 +774,60 @@ void AudioStream::WriteBuffers()
             stream.buffer = filledBufferQ_.front().buffer;
             stream.bufferLen = filledBufferQ_.front().dataLength;
             AUDIO_DEBUG_LOG("AudioStream::WriteBuffers stream.bufferLen:%{public}d", stream.bufferLen);
-            freeBufferQ_.emplace(filledBufferQ_.front());
-            filledBufferQ_.pop();
             if (stream.buffer == nullptr) {
-                continue;
+                AUDIO_ERR_LOG("AudioStream::WriteBuffers stream.buffer == nullptr return");
+                return;
             }
             bytesWritten = WriteStreamInCb(stream, writeError);
             if (writeError != 0) {
                 AUDIO_ERR_LOG("AudioStream::WriteStreamInCb fail, writeError:%{public}d", writeError);
+            } else {
+                AUDIO_INFO_LOG("AudioStream::WriteBuffers WriteStream, bytesWritten:%{public}zu", bytesWritten);
+                freeBufferQ_.emplace(filledBufferQ_.front());
+                filledBufferQ_.pop();
             }
-            AUDIO_INFO_LOG("AudioStream::WriteBuffers WriteStream, bytesWritten:%{public}zu", bytesWritten);
         }
         std::this_thread::sleep_for(std::chrono::microseconds(CB_WRITE_BUFFERS_WAIT_IN_US));
     }
     AUDIO_INFO_LOG("AudioStream::WriteBuffers thread end");
+}
+
+void AudioStream::ReadBuffers()
+{
+    AUDIO_INFO_LOG("AudioStream::ReadBuffers thread start");
+    StreamBuffer stream;
+    int32_t readLen;
+    bool isBlockingRead = true;
+
+    while (isReadyToRead_) {
+        while (!freeBufferQ_.empty()) {
+            if (state_ != RUNNING) {
+                AUDIO_ERR_LOG("AudioStream::ReadBuffers Read: Illegal  state:%{public}u", state_);
+                isReadyToRead_ = false;
+                return;
+            }
+            AUDIO_DEBUG_LOG("AudioStream::ReadBuffers !freeBufferQ_.empty()");
+            stream.buffer = freeBufferQ_.front().buffer;
+            stream.bufferLen = freeBufferQ_.front().bufLength;
+            AUDIO_DEBUG_LOG("AudioStream::ReadBuffers requested stream.bufferLen:%{public}d", stream.bufferLen);
+            if (stream.buffer == nullptr) {
+                AUDIO_ERR_LOG("AudioStream::ReadBuffers stream.buffer == nullptr return");
+                return;
+            }
+            readLen = ReadStream(stream, isBlockingRead);
+            if (readLen < 0) {
+                AUDIO_ERR_LOG("AudioStream::ReadBuffers ReadStream fail, ret: %{public}d", readLen);
+            } else {
+                AUDIO_INFO_LOG("AudioStream::ReadBuffers ReadStream, bytesRead:%{public}d", readLen);
+                freeBufferQ_.front().dataLength = readLen;
+                filledBufferQ_.emplace(freeBufferQ_.front());
+                freeBufferQ_.pop();
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::microseconds(CB_READ_BUFFERS_WAIT_IN_US));
+    }
+
+    AUDIO_INFO_LOG("AudioStream::ReadBuffers thread end");
 }
 } // namespace AudioStandard
 } // namespace OHOS
