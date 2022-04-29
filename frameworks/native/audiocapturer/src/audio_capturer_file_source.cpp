@@ -55,7 +55,7 @@ void AudioCapturerFileSource::DeInit()
 
 int32_t AudioCapturerFileSource::Init(const char *filePath)
 {
-    AUDIO_ERR_LOG("AudioCapturerFileSource %{public}s filePath is %{public}s", __func__, filePath);
+    AUDIO_ERR_LOG("AudioCapturerFileSource Init");
     filePtr = fopen(filePath, "rb");
     if (filePtr == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");

@@ -67,6 +67,9 @@ bool XMLParser::ParseInternal(xmlNode &node)
                 case UPDATE_ROUTE_SUPPORT:
                     ParseUpdateRouteSupport(*currNode);
                     break;
+                case AUDIO_LATENCY:
+                    ParseAudioLatency(*currNode);
+                    break;
                 default:
                     ParseInternal(*(currNode->children));
                     break;
@@ -174,6 +177,21 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
                 moduleInfo.bufferSize = value;
             }
 
+            value = ExtractPropertyValue("fixed_latency", *portNode);
+            if (!value.empty()) {
+                moduleInfo.fixedLatency = value;
+            }
+
+            value = ExtractPropertyValue("render_in_idle_state", *portNode);
+            if (!value.empty()) {
+                moduleInfo.renderInIdleState = value;
+            }
+
+            value = ExtractPropertyValue("open_mic_speaker", *portNode);
+            if (!value.empty()) {
+                moduleInfo.OpenMicSpeaker = value;
+            }
+
             value = ExtractPropertyValue("file", *portNode);
             if (!value.empty()) {
                 moduleInfo.fileName = value;
@@ -195,6 +213,8 @@ NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
         return AUDIO_INTERRUPT_ENABLE;
     } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("UpdateRouteSupport"))) {
         return UPDATE_ROUTE_SUPPORT;
+    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioLatency"))) {
+        return AUDIO_LATENCY;
     } else {
         return UNKNOWN;
     }
@@ -257,6 +277,16 @@ std::string XMLParser::ExtractPropertyValue(const std::string &propName, xmlNode
     }
 
     return propValue;
+}
+
+void XMLParser::ParseAudioLatency(xmlNode &node)
+{
+    xmlNode *child = node.children;
+    xmlChar *audioLatency = xmlNodeGetContent(child);
+    std::string sAudioLatency(reinterpret_cast<char *>(audioLatency));
+    mPortObserver.OnAudioLatencyParsed((uint64_t)std::stoi(sAudioLatency));
+
+    xmlFree(audioLatency);
 }
 } // namespace AudioStandard
 } // namespace OHOS

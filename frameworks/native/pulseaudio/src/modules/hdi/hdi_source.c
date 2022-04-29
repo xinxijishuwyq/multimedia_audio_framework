@@ -44,6 +44,7 @@
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_AUDIO_DEVICE_NAME "Internal Mic"
+#define DEFAULT_DEVICE_CLASS "primary"
 
 #define DEFAULT_BUFFER_SIZE (1024 * 16)
 #define MAX_VOLUME_VALUE 15.0
@@ -62,6 +63,7 @@ struct Userdata {
     pa_thread_mq thread_mq;
     pa_rtpoll *rtpoll;
     uint32_t buffer_size;
+    uint32_t open_mic_speaker;
     pa_usec_t block_usec;
     pa_usec_t timestamp;
     SourceAttr attrs;
@@ -300,7 +302,6 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
         AUDIO_INFO_LOG("Failed to parse buffer_size argument.");
         u->buffer_size = DEFAULT_BUFFER_SIZE;
     }
-
     pa_source_new_data_init(&data);
     data.driver = __FILE__;
     data.module = m;
@@ -428,7 +429,11 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     u->attrs.sampleRate = ss.rate;
     u->attrs.filePath = pa_modargs_get_value(ma, "file_path", "");
-// The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
+   // The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
+    if (pa_modargs_get_value_u32(ma, "open_mic_speaker", &u->open_mic_speaker) < 0) {
+        AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument");
+        goto fail;
+    }
 #ifdef PRODUCT_RK3568
     int32_t channelCount = 2;
     u->attrs.channel = channelCount;
@@ -439,6 +444,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->attrs.format = ConvertToHDIAudioFormat(ss.format);
     u->attrs.isBigEndian = GetEndianInfo(ss.format);
 #endif
+    u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
 
     AUDIO_INFO_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
@@ -449,6 +455,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     u->attrs.bufferSize = u->buffer_size;
+    u->attrs.open_mic_speaker = u->open_mic_speaker;
 
     ret = pa_capturer_init(u);
     if (ret != 0) {

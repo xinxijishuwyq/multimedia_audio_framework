@@ -61,7 +61,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 
 int32_t AudioRendererFileSink::Init(const char *filePath)
 {
-    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s filePath is %{public}s", __func__, filePath);
+    AUDIO_ERR_LOG("AudioRendererFileSink Init");
     filePath_.assign(filePath);
 
     return SUCCESS;

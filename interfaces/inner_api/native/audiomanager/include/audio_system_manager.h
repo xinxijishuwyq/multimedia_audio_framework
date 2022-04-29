@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 #include <map>
+#include <mutex>
 #include <vector>
 
 #include "parcel.h"
@@ -190,12 +191,12 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
     int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
-    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const;
-    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType);
+    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType);
     int32_t SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const;
     bool IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const;
-    int32_t SetMicrophoneMute(bool isMute) const;
-    bool IsMicrophoneMute(void) const;
+    int32_t SetMicrophoneMute(bool isMute);
+    bool IsMicrophoneMute(void);
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key) const;
     void SetAudioParameter(const std::string &key, const std::string &value) const;
@@ -228,10 +229,12 @@ public:
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
+    int32_t GetAudioLatencyFromXml() const;
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
     void init();
+    bool IsAlived();
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
@@ -244,6 +247,7 @@ private:
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
 
     uint32_t GetCallingPid();
+    std::mutex mutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 typedef struct {
+    const char *adapterName;
+    uint32_t open_mic_speaker;
     enum AudioFormat format;
     uint32_t sampleFmt;
     uint32_t sampleRate;

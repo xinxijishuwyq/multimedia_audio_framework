@@ -106,6 +106,8 @@ public:
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
+
+    int32_t GetAudioLatencyFromXml() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

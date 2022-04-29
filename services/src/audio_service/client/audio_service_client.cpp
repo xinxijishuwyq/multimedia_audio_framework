@@ -29,16 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
-
-#ifdef PRODUCT_M40
-#ifdef __aarch64__
-const uint64_t LATENCY_IN_MSEC = 140UL;
-#else
-const uint64_t LATENCY_IN_MSEC = 70UL;
-#endif
-#else
-const uint64_t LATENCY_IN_MSEC = 50UL;
-#endif
+const uint64_t LATENCY_IN_MSEC = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
