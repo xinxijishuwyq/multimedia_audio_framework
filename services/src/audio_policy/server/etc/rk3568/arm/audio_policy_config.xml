@@ -48,4 +48,5 @@
         </modules>
     </deviceclass>
     <AudioInterruptEnable>false</AudioInterruptEnable>
+    <UpdateRouteSupport>false</UpdateRouteSupport>
 </audioPolicyConfiguration>

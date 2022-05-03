@@ -64,6 +64,9 @@ bool XMLParser::ParseInternal(xmlNode &node)
                 case AUDIO_INTERRUPT_ENABLE:
                     ParseAudioInterrupt(*currNode);
                     break;
+                case UPDATE_ROUTE_SUPPORT:
+                    ParseUpdateRouteSupport(*currNode);
+                    break;
                 default:
                     ParseInternal(*(currNode->children));
                     break;
@@ -190,9 +193,25 @@ NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
         return DEVICE_CLASS;
     } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioInterruptEnable"))) {
         return AUDIO_INTERRUPT_ENABLE;
+    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("UpdateRouteSupport"))) {
+        return UPDATE_ROUTE_SUPPORT;
     } else {
         return UNKNOWN;
     }
+}
+
+void XMLParser::ParseUpdateRouteSupport(xmlNode &node)
+{
+    xmlNode *child = node.children;
+    xmlChar *supportFlag = xmlNodeGetContent(child);
+
+    if (!xmlStrcmp(supportFlag, reinterpret_cast<const xmlChar*>("true"))) {
+        mPortObserver.OnUpdateRouteSupport(true);
+    } else {
+        mPortObserver.OnUpdateRouteSupport(false);
+    }
+
+    xmlFree(supportFlag);
 }
 
 void XMLParser::ParseAudioInterrupt(xmlNode &node)

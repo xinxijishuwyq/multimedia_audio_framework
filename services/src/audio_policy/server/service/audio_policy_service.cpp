@@ -16,7 +16,6 @@
 #include "audio_errors.h"
 #include "audio_focus_parser.h"
 #include "audio_manager_base.h"
-#include "audio_manager_proxy.h"
 #include "iservice_registry.h"
 #include "audio_log.h"
 #include "system_ability_definition.h"
@@ -294,6 +293,11 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
         return result;
     }
 
+    if (!isUpdateRouteSupported_) {
+        AUDIO_INFO_LOG("Update route not supported for this device");
+        return SUCCESS;
+    }
+
     UpdateActiveDeviceRoute(deviceType);
 
     return SUCCESS;
@@ -381,6 +385,11 @@ bool AudioPolicyService::IsAudioInterruptEnabled() const
 void AudioPolicyService::OnAudioInterruptEnable(bool enable)
 {
     interruptEnabled_ = enable;
+}
+
+void AudioPolicyService::OnUpdateRouteSupport(bool isSupported)
+{
+    isUpdateRouteSupported_ = isSupported;
 }
 
 void AudioPolicyService::UpdateConnectedDevices(DeviceType devType, vector<sptr<AudioDeviceDescriptor>> &desc,

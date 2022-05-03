@@ -53,6 +53,7 @@ private:
     void ParsePorts(xmlNode &node, AudioModuleInfo &moduleInfo);
     void ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo);
     void ParseAudioInterrupt(xmlNode &node);
+    void ParseUpdateRouteSupport(xmlNode &node);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     ClassType GetDeviceClassType(const std::string &deviceClass);
 

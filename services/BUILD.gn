@@ -179,7 +179,7 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/config/xml_parser.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/listener/device_status_listener.cpp",
     "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/manager/audio_adapter_manager.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_manager_proxy.cpp",
+    "//foundation/multimedia/audio_standard/services/src/audio_policy/server/service/src/audio_policy_service_proxy.cpp",
   ]
 
   public_configs = [ ":audio_policy_public_config" ]
