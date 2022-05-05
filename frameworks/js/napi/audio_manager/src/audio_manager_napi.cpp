@@ -134,6 +134,9 @@ static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volu
         case AudioManagerNapi::VOICE_ASSISTANT:
             result = AudioSystemManager::STREAM_VOICE_ASSISTANT;
             break;
+        case AudioManagerNapi::ALL:
+            result = AudioSystemManager::STREAM_ALL;
+            break;
         default:
             result = AudioSystemManager::STREAM_MUSIC;
             HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
@@ -391,11 +394,14 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
             }
             propName.clear();
         }
+        status = AddNamedProperty(env, result, "ALL", AudioManagerNapi::ALL);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &audioVolumeTypeRef_);
             if (status == napi_ok) {
                 return result;
             }
+        } else {
+            HiLog::Error(LABEL, "Failed to add named prop for AudioManagerNapi.ALL!");
         }
     }
     HiLog::Error(LABEL, "CreateAudioVolumeTypeObject is Failed!");

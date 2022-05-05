@@ -120,7 +120,6 @@ AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, Strea
     return streamType;
 }
 
-
 void AudioSystemManager::init()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -244,6 +243,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALL:
             break;
         default:
             AUDIO_ERR_LOG("SetVolume volumeType=%{public}d not supported", volumeType);
@@ -253,6 +253,18 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     float volumeToHdi = MapVolumeToHDI(volume);
+
+    if (volumeType == STREAM_ALL) {
+        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
+            StreamVolType = (AudioStreamType)audioVolumeType;
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+            if (setResult != SUCCESS) {
+                return setResult;
+            }
+        }
+        return SUCCESS;
+    }
+
     return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
 }
 
@@ -264,10 +276,15 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALL:
             break;
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
             return (float)ERR_NOT_SUPPORTED;
+    }
+
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
     }
 
     /* Call Audio Policy SetStreamMute */
@@ -294,12 +311,20 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
 int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const
 {
     CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume::Audio service unavailable");
+    
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
+    }
     return g_sProxy->GetMaxVolume(volumeType);
 }
 
 int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const
 {
     CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume::Audio service unavailable");
+
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
+    }
     return g_sProxy->GetMinVolume(volumeType);
 }
 
@@ -311,6 +336,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALL:
             break;
         default:
             AUDIO_ERR_LOG("SetMute volumeType=%{public}d not supported", volumeType);
@@ -319,6 +345,18 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
 
     /* Call Audio Policy SetStreamMute */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
+
+    if (volumeType == STREAM_ALL) {
+        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
+            StreamVolType = (AudioStreamType)audioVolumeType;
+            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+            if (setResult != SUCCESS) {
+                return setResult;
+            }
+        }
+        return SUCCESS;
+    }
+
     return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
 }
 
@@ -332,10 +370,15 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALL:
             break;
         default:
             AUDIO_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
             return false;
+    }
+
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
     }
 
     /* Call Audio Policy SetStreamVolume */

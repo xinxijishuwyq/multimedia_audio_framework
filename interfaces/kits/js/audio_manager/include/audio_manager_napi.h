@@ -38,7 +38,8 @@ public:
         RINGTONE = 2,
         MEDIA = 3,
         VOICE_ASSISTANT = 9,
-        VOLUMETYPE_MAX
+        VOLUMETYPE_MAX,
+        ALL = 100
     };
 
     enum AudioRingMode {
