@@ -468,5 +468,25 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_004, TestSize.Level0)
     ret = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test AudioVolume API
+* @tc.number: AudioVolume_001
+* @tc.desc  : Test AudioVolume manager interface multiple requests
+*/
+HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
+{
+    int32_t volume = 10;
+    bool mute = true;
+    AudioSystemManager::AudioVolumeType audioStreamType = AudioSystemManager::AudioVolumeType.STREAM_ALL;
+    auto ret = AudioSystemManager::GetInstance()-> SetVolume(audioStreamType,volume);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()-> GetVolume(audioStreamType);
+    EXPECT_EQ(volume, ret);
+    ret = AudioSystemManager::GetInstance()-> SetMute(audioStreamType,mute);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()-> IsStreamMute(audioStreamType);
+    EXPECT_EQ(mute, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
