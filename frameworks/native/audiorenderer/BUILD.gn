@@ -105,11 +105,11 @@ ohos_shared_library("audio_bluetooth_client") {
   ]
 
   include_dirs = [
-    "//foundation/communication/bluetooth/services/bluetooth_standard/ipc/include",
-    "//foundation/communication/bluetooth/services/bluetooth_standard/common/",
-    "//foundation/communication/bluetooth/interfaces/innerkits/native_cpp/include",
-    "//foundation/communication/bluetooth/interfaces/innerkits/native_cpp/framework/common",
-    "//foundation/communication/bluetooth/interfaces/innerkits/native_c/include",
+    "//foundation/communication/bluetooth/frameworks/inner/common",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
+    "//foundation/communication/bluetooth/services/bluetooth/common/",
+    "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
     "//foundation/multimedia/audio_standard/services/include/audio_policy/server/service/interface",
     "//foundation/multimedia/audio_standard/services/include/audio_bluetooth/client",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
@@ -126,7 +126,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/communication/bluetooth/services/bluetooth_standard/ipc:btipc_static",
+    "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:bluetooth_renderer_sink",
     "//utils/native/base:utils",
