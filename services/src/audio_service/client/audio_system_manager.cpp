@@ -231,6 +231,7 @@ const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
 
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
+    AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
     /* Validate and return INVALID_PARAMS error */
     if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
         AUDIO_ERR_LOG("Invalid Volume Input!");
@@ -258,6 +259,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
+            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL for volumeType=%{public}d  ret=%{result}d", StreamVolType, setResult);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -285,6 +287,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
 
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
+        AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType=%{public}d ", volumeType);
     }
 
     /* Call Audio Policy SetStreamMute */
@@ -330,6 +333,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType vol
 
 int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const
 {
+    AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d ", volumeType);
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -350,6 +354,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
+            AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d  ret=%{result}d", StreamVolType, mute);
             if (setResult != SUCCESS) {
                 return setResult;
             }
