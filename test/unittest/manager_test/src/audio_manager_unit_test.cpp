@@ -478,14 +478,13 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
     int32_t volume = 10;
     bool mute = true;
-    AudioSystemManager::AudioVolumeType audioStreamType = AudioSystemManager::AudioVolumeType.STREAM_ALL;
-    auto ret = AudioSystemManager::GetInstance()-> SetVolume(audioStreamType,volume);
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType.STREAM_ALL, volume);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()-> GetVolume(audioStreamType);
+    ret = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType.STREAM_ALL);
     EXPECT_EQ(volume, ret);
-    ret = AudioSystemManager::GetInstance()-> SetMute(audioStreamType,mute);
+    ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType.STREAM_ALL, mute);
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()-> IsStreamMute(audioStreamType);
+    ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioSystemManager::AudioVolumeType.STREAM_ALL);
     EXPECT_EQ(mute, ret);
 }
 } // namespace AudioStandard
