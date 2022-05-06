@@ -16,9 +16,9 @@
 <audioPolicyConfiguration version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
     <deviceclass name="primary">
         <modules>
-            <module name="Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="44100"  buffer_size="16384">
+            <module name="Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="44100"  buffer_size="8192">
                 <Ports>
-                    <Port adapter_name="internal" id="0" channels="2" rate="44100" buffer_size="16384"/>
+                    <Port adapter_name="internal" id="0" channels="2" rate="44100" buffer_size="8192"/>
                 </Ports>
             </module>
             <module name="Built_in_mic" lib="libmodule-hdi-source.z.so" role="source" channels="1" rate="44100" format="s32be" buffer_size="8192">
