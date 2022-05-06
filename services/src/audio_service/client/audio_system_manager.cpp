@@ -251,7 +251,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
             return ERR_PERMISSION_DENIED;
         }
     }
-    
+
     /* Validate and return INVALID_PARAMS error */
     if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
         AUDIO_ERR_LOG("Invalid Volume Input!");
@@ -279,7 +279,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
-            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL for volumeType=%{public}d  ret=%{result}d", StreamVolType, setResult);
+            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ret=%{result}d", StreamVolType, setResult);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -353,8 +353,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType vol
 
 int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const
 {
-
-    AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d ", volumeType);
+    AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
     if (volumeType == AudioVolumeType::STREAM_RING) {
         if (!AudioPolicyManager::GetInstance().VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", volumeType);
