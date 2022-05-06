@@ -47,6 +47,7 @@ enum NodeName {
     PORTS,
     PORT,
     AUDIO_INTERRUPT_ENABLE,
+    UPDATE_ROUTE_SUPPORT,
     UNKNOWN
 };
 
