@@ -85,6 +85,8 @@ public:
     virtual int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) = 0;
+
+    virtual bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

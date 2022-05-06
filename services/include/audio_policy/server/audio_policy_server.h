@@ -102,6 +102,8 @@ public:
     void OnSessionRemoved(const uint32_t sessionID) override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
+
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -148,6 +150,8 @@ private:
     static constexpr int32_t SECOND_PRIORITY = 2;
     static constexpr int32_t THIRD_PRIORITY = 3;
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
+    static constexpr int32_t ROOT_UID = 0;
+    static constexpr int32_t MEDIA_SERVICE_UID = 1013;
 };
 } // namespace AudioStandard
 } // namespace OHOS

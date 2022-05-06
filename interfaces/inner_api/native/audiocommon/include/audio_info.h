@@ -33,6 +33,10 @@ constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 
+const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
+const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -450,6 +454,11 @@ enum AudioScene {
 struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
+};
+
+struct AppInfo {
+    int32_t appUid { 0 };
+    uint32_t appTokenId { 0 };
 };
 
 // Supported audio parameters for both renderer and capturer

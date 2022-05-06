@@ -118,6 +118,9 @@ const int32_t  ERR_FOCUS_DENIED = BASE_AUDIO_ERR_OFFSET - 18;
 /** incorrect render/capture mode */
 const int32_t  ERR_INCORRECT_MODE = BASE_AUDIO_ERR_OFFSET - 19;
 
+/** incorrect render/capture mode */
+const int32_t  ERR_PERMISSION_DENIED = BASE_AUDIO_ERR_OFFSET - 20;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard
