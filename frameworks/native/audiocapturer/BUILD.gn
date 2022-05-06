@@ -30,7 +30,6 @@ ohos_shared_library("audio_capturer_source") {
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
     "//third_party/bounds_checking_function/include",
   ]
   public_configs = [ ":audio_external_library_config" ]
