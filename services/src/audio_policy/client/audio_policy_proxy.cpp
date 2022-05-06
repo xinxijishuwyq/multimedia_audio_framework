@@ -634,5 +634,30 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
 
     return reply.ReadInt32();
 }
+
+bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+{
+    AUDIO_ERR_LOG("VerifyClientPermission [permission : %{public}s] | [tid : %{public}d]",
+        permissionName.c_str(), appTokenId);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("VerifyClientPermission: WriteInterfaceToken failed");
+        return false;
+    }
+
+    data.WriteString(permissionName);
+    data.WriteUint32(appTokenId);
+
+    int result = Remote()->SendRequest(QUERY_PERMISSION, data, reply, option);
+    if (result != ERR_NONE) {
+        AUDIO_ERR_LOG("VerifyClientPermission failed, result: %{public}d", result);
+        return false;
+    }
+
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

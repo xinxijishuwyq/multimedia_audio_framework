@@ -28,6 +28,7 @@
 #include "key_event.h"
 #include "key_option.h"
 
+#include "accesstoken_kit.h"
 #include "audio_log.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -936,6 +937,38 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     }
 
     return SUCCESS;
+}
+
+bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("==[%{public}s] [tid:%{public}d] [uid:%{public}d]==", permissionName.c_str(), appTokenId, callerUid);
+
+    // Root users should be whitelisted
+    if (callerUid == ROOT_UID) {
+        AUDIO_INFO_LOG("Root user. Permission GRANTED!!!");
+        return true;
+    }
+
+    Security::AccessToken::AccessTokenID clientTokenId = 0;
+    // Special handling required for media service
+    if (callerUid == MEDIA_SERVICE_UID) {
+        if (appTokenId == 0) {
+            AUDIO_ERR_LOG("Invalid token received. Permission rejected");
+            return false;
+        }
+        clientTokenId = appTokenId;
+    } else {
+        clientTokenId = IPCSkeleton::GetCallingTokenID();
+    }
+
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
+    if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
+        return false;
+    }
+
+    return true;
 }
 
 float AudioPolicyServer::MapVolumeToHDI(int32_t volume)

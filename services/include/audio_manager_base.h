@@ -112,7 +112,7 @@ public:
         IS_MICROPHONE_MUTE = 6,
         SET_AUDIO_SCENE = 7,
         UPDATE_ROUTE_REQ = 8,
-        RETRIEVE_COOKIE = 9,
+        RETRIEVE_COOKIE = 9
     };
 
 public:
@@ -123,7 +123,6 @@ class AudioManagerStub : public IRemoteStub<IStandardAudioService> {
 public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
-    bool IsPermissionValid();
 };
 } // namespace AudioStandard
 } // namespace OHOS

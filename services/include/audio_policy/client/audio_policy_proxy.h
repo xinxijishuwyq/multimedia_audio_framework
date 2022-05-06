@@ -81,6 +81,8 @@ public:
     AudioStreamType GetStreamInFocus() override;
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
+
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

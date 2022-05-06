@@ -33,6 +33,10 @@ constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 
+const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
+const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -198,6 +202,7 @@ enum AudioSampleFormat {
     SAMPLE_S16LE = 16,
     SAMPLE_S24LE = 24,
     SAMPLE_S32LE = 32,
+    SAMPLE_F32LE = 32,
     INVALID_WIDTH = -1
 };
 
@@ -451,6 +456,11 @@ struct AudioCapturerOptions {
     AudioCapturerInfo capturerInfo;
 };
 
+struct AppInfo {
+    int32_t appUid { 0 };
+    uint32_t appTokenId { 0 };
+};
+
 // Supported audio parameters for both renderer and capturer
 const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
@@ -496,6 +506,11 @@ struct BufferQueueState {
 enum AudioRenderMode {
     RENDER_MODE_NORMAL,
     RENDER_MODE_CALLBACK
+};
+
+enum AudioCaptureMode {
+    CAPTURE_MODE_NORMAL,
+    CAPTURE_MODE_CALLBACK
 };
 
 typedef uint32_t AudioIOHandle;

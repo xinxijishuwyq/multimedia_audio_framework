@@ -225,12 +225,6 @@ void AudioServiceClient::PAStreamFlushSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
-void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
-{
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
-    pa_threaded_mainloop_signal(mainLoop, 0);
-}
-
 void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     if (!userdata) {
@@ -287,6 +281,19 @@ AudioRenderMode AudioServiceClient::GetAudioRenderMode()
     return renderMode_;
 }
 
+int32_t AudioServiceClient::SetAudioCaptureMode(AudioCaptureMode captureMode)
+{
+    AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode.");
+    captureMode_ = captureMode;
+    
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+AudioCaptureMode AudioServiceClient::GetAudioCaptureMode()
+{
+    return captureMode_;
+}
+
 int32_t AudioServiceClient::SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback)
 {
     if (callback.lock() == nullptr) {
@@ -294,6 +301,17 @@ int32_t AudioServiceClient::SaveWriteCallback(const std::weak_ptr<AudioRendererW
         return AUDIO_CLIENT_INIT_ERR;
     }
     writeCallback_ = callback;
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback)
+{
+    if (callback.lock() == nullptr) {
+        AUDIO_ERR_LOG("AudioServiceClient::SaveReadCallback callback == nullptr");
+        return AUDIO_CLIENT_INIT_ERR;
+    }
+    readCallback_ = callback;
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -323,6 +341,33 @@ void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void 
         cb->OnWriteData(requestSize);
     } else {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamWriteCb: cb == nullptr not firing OnWriteData");
+    }
+}
+
+void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
+{
+    AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
+    if (!userdata) {
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: userdata is null");
+        return;
+    }
+    auto asClient = static_cast<AudioServiceClient *>(userdata);
+    auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
+    pa_threaded_mainloop_signal(mainLoop, 0);
+
+    if (asClient->captureMode_ != CAPTURE_MODE_CALLBACK) {
+        return;
+    }
+
+    std::shared_ptr<AudioCapturerReadCallback> cb = asClient->readCallback_.lock();
+    if (cb != nullptr) {
+        size_t requestSize;
+        asClient->GetMinimumBufferSize(requestSize);
+        AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb: cb != nullptr firing OnReadData");
+        AUDIO_INFO_LOG("AudioServiceClient::OnReadData requestSize : %{public}zu", requestSize);
+        cb->OnReadData(requestSize);
+    } else {
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: cb == nullptr not firing OnReadData");
     }
 }
 
@@ -416,6 +461,8 @@ AudioServiceClient::AudioServiceClient()
 
     renderRate = RENDER_RATE_NORMAL;
     renderMode_ = RENDER_MODE_NORMAL;
+
+    captureMode_ = CAPTURE_MODE_NORMAL;
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
 
@@ -566,6 +613,16 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
 {
     AUDIO_DEBUG_LOG("SetApplicationCachePath in");
     cachePath_ = cachePath;
+}
+
+bool AudioServiceClient::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+{   // for capturer check for MICROPHONE PERMISSION
+    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId)) {
+        AUDIO_DEBUG_LOG("Client doesn't have MICROPHONE permission");
+        return false;
+    }
+
+    return true;
 }
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
@@ -838,7 +895,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
     pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
-    pa_stream_set_read_callback(paStream, PAStreamReadCb, mainLoop);
+    pa_stream_set_read_callback(paStream, PAStreamReadCb, (void *)this);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
 

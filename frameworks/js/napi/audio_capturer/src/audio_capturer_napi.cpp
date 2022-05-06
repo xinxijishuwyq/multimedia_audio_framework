@@ -234,7 +234,7 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerNapi->capturerFlags_ = sAudioCapturerOptions_->capturerInfo.capturerFlags;
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
     if (abilityContext != nullptr) {
-        capturerNapi->audioCapturer_ = AudioCapturer::Create(abilityContext->GetCacheDir(), *sAudioCapturerOptions_);
+        capturerNapi->audioCapturer_ = AudioCapturer::Create(*sAudioCapturerOptions_, abilityContext->GetCacheDir());
     } else {
         capturerNapi->audioCapturer_ = AudioCapturer::Create(*sAudioCapturerOptions_);
     }

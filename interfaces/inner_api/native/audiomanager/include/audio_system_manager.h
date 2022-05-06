@@ -203,7 +203,7 @@ public:
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
-    bool SetRingerMode(AudioRingerMode ringMode) const;
+    int32_t SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
     int32_t SetAudioScene(const AudioScene &scene);
     AudioScene GetAudioScene() const;

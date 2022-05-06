@@ -22,7 +22,7 @@
 #include <map>
 #include <audio_renderer.h>
 #include <audio_system_manager.h>
-#include <writecallback_adapter.h>
+#include <readorwritecallback_adapter.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,8 +49,8 @@ private:
     ~AudioPlayerAdapter();
     const float MAGNIFICATION = 2000;
     std::map<SLuint32, AudioRenderer*> renderMap_;
-    std::shared_ptr<WriteCallbackAdapter> callbackPtr_;
-    std::map<SLuint32, std::shared_ptr<WriteCallbackAdapter>> callbackMap_;
+    std::shared_ptr<ReadOrWriteCallbackAdapter> callbackPtr_;
+    std::map<SLuint32, std::shared_ptr<ReadOrWriteCallbackAdapter>> callbackMap_;
 
     void ConvertPcmFormat(SLDataFormat_PCM *slFormat, AudioRendererParams *rendererParams);
     AudioSampleFormat SlToOhosSampelFormat(SLDataFormat_PCM *pcmFormat);

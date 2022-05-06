@@ -29,10 +29,6 @@ int AudioManagerStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
         return -1;
     }
-    if (!IsPermissionValid()) {
-        AUDIO_ERR_LOG("caller app not acquired audio permission");
-        return AUDIO_PERMISSION_DENIED;
-    }
 
     switch (code) {
         case GET_MAX_VOLUME: {
@@ -122,11 +118,6 @@ int AudioManagerStub::OnRemoteRequest(
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
-}
-
-bool AudioManagerStub::IsPermissionValid()
-{
-    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

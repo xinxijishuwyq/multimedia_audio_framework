@@ -24,7 +24,6 @@ class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
-    bool IsPermissionValid();
 
 private:
     void SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
@@ -58,6 +57,7 @@ private:
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

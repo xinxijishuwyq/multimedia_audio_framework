@@ -20,6 +20,7 @@
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
 #include <audioplayer_adapter.h>
+#include<audiocapturer_adapter.h>
 #include <iostream>
 #include <cstdlib>
 #include <stddef.h>
@@ -49,9 +50,16 @@ struct IPlay {
     SLuint8 mId;
 };
 
+struct IRecord {
+    const struct SLRecordItf_ *mItf;
+    SLuint32 mState;
+    SLuint8 mId;
+};
+
 struct IOHBufferQueue {
     const struct SLOHBufferQueueItf_ *mItf;
     SLuint32 mState;
+    SLInterfaceID mIid;
     SLuint8 mId;
 };
 
@@ -75,6 +83,13 @@ struct CAudioPlayer {
     SLuint32 mId;
 };
 
+struct CAudioRecorder {
+    IObject mObject;
+    IRecord mRecord;
+    IOHBufferQueue mBufferQueue;
+    SLuint32 mId;
+};
+
 struct COutputMix {
     IObject mObject;
 };
@@ -88,13 +103,15 @@ extern ClassTable EngineTab;
 
 extern ClassTable AudioPlayerTab;
 
+extern ClassTable AudioRecorderTab;
+
 extern ClassTable OutputMixTab;
 
 ClassTable *ObjectIdToClass(SLuint32 objectId);
 
 IObject *Construct(const ClassTable *classTable, SLEngineItf itf);
 
-void IOHBufferQueueInit(void *self, SLuint32 id);
+void IOHBufferQueueInit(void *self, const SLInterfaceID iid, SLuint32 id);
 
 void IEngineInit(void *self);
 
@@ -104,9 +121,13 @@ void IPlayInit(void *self, SLuint32 id);
 
 void IVolumeInit(void *self, SLuint32 id);
 
+void IRecordInit(void *self, SLuint32 id);
+
 SLresult EngineDestory(void* self);
 
 SLresult AudioPlayerDestroy(void* self);
 
 SLresult OutputMixDestroy(void* self);
+
+SLresult AudioRecorderDestroy(void *self);
 #endif
