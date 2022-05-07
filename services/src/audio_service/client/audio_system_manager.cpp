@@ -279,7 +279,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
-            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ret=%{result}d", StreamVolType, setResult);
+            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -381,7 +381,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
             int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
-            AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d  ret=%{result}d", StreamVolType, mute);
+            AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
             }
