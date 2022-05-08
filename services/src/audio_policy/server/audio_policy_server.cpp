@@ -228,11 +228,28 @@ float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
 
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
 {
+    if (streamType == AudioStreamType::STREAM_RING) {
+        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+            AUDIO_ERR_LOG("SetStreamMute permission denied for stream type : %{public}d", streamType);
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+
     return mPolicyService.SetStreamMute(streamType, mute);
 }
 
 int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi)
 {
+    if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
+        float currentRingVolume = GetStreamVolume(AudioStreamType::STREAM_RING);
+        if ((currentRingVolume > 0.0f && volume == 0.0f) || (currentRingVolume == 0.0f && volume > 0.0f)) {
+            if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+                AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
+                return ERR_PERMISSION_DENIED;
+            }
+        }
+    }
+
     int ret = mPolicyService.SetStreamVolume(streamType, volume);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
@@ -250,6 +267,13 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
 
 bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 {
+    if (streamType == AudioStreamType::STREAM_RING) {
+        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+            AUDIO_ERR_LOG("GetStreamMute permission denied for stream type : %{public}d", streamType);
+            return false;
+        }
+    }
+
     return mPolicyService.GetStreamMute(streamType);
 }
 
@@ -275,6 +299,24 @@ bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
 
 int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
 {
+    bool isPermissionRequired = false;
+
+    if (ringMode == AudioRingerMode::RINGER_MODE_SILENT) {
+        isPermissionRequired = true;
+    } else {
+        AudioRingerMode currentRingerMode = GetRingerMode();
+        if (currentRingerMode == AudioRingerMode::RINGER_MODE_SILENT) {
+            isPermissionRequired = true;
+        }
+    }
+
+    if (isPermissionRequired) {
+        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+            AUDIO_ERR_LOG("Access policy permission denied for ringerMode : %{public}d", ringMode);
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+
     int32_t ret = mPolicyService.SetRingerMode(ringMode);
     if (ret == SUCCESS) {
         for (auto it = ringerModeListenerCbsMap_.begin(); it != ringerModeListenerCbsMap_.end(); ++it) {
