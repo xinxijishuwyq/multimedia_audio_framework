@@ -19,6 +19,8 @@
 #include <mutex>
 #include <unordered_map>
 #include <pthread.h>
+#include "accesstoken_kit.h"
+#include "ipc_skeleton.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
 #include "audio_system_manager.h"
@@ -46,7 +48,10 @@ public:
     const std::string GetAudioParameter(const std::string &key) override;
     const char *RetrieveCookie(int32_t &size) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+
 private:
+    bool VerifyClientPermission(const std::string &permissionName);
+
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;

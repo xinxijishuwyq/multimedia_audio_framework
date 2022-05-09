@@ -150,7 +150,6 @@ private:
     static constexpr int32_t SECOND_PRIORITY = 2;
     static constexpr int32_t THIRD_PRIORITY = 3;
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
-    static constexpr int32_t ROOT_UID = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
 };
 } // namespace AudioStandard
