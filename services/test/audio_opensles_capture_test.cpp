@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <securec.h>
 #include <iostream>
 #include <unistd.h>
 #include <OpenSLES.h>
@@ -23,50 +27,73 @@
 
 using namespace std;
 
-static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
+
+static void CaptureOption(void);
+
+static void OperationTime(uint64_t time);
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
 
-static void CaptureStop(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf);
+static void CapturePause(SLRecordItf recordItf);
 
-static void OpenSLCaptureTest();
+static void CaptureStop(SLRecordItf recordItf);
 
-const int PARAMETERS = 2;
+static void OpenSLESCaptureTest();
+
+const int PARAMETERS = 8;
 FILE *wavFile_ = nullptr;
 SLObjectItf engineObject = nullptr;
 SLRecordItf  recordItf;
 SLOHBufferQueueItf bufferQueueItf;
 SLObjectItf pcmCapturerObject = nullptr;
+struct timespec tv1 = {0};
+struct timespec tv2 = {0};
 
 int main(int argc, char *argv[])
 {
-    AUDIO_INFO_LOG("opensl es capture test in");
-    if (argc != PARAMETERS) {
-        AUDIO_ERR_LOG("Incorrect number of parameters.");
+    AUDIO_INFO_LOG("OpenSL ES capture test in");
+    if (argc > PARAMETERS) {
+        AUDIO_ERR_LOG("Incorrect number(%{public}d) of parameters", argc);
         return -1;
     }
     
-    string filePath = argv[1];
+    int opt = 0;
+    string filePath = "/data/test.pcm";
     wavFile_ = fopen(filePath.c_str(), "wb");
     if (wavFile_ == nullptr) {
-        AUDIO_INFO_LOG("OpenSLES record: Unable to open file");
+        AUDIO_INFO_LOG("OpenSL ES capture: Unable to open file");
         return -1;
     }
 
-    OpenSLCaptureTest();
-    while (wavFile_ != nullptr) {
-        sleep(1);
+    OpenSLESCaptureTest();
+    while ((opt = getopt(argc, argv, "s:p:S")) != -1) {
+        switch (opt) {
+            case 's':
+                CaptureOption();
+                break;
+            case 'p':
+                CapturePause(recordItf);
+                break;
+            case 'S':
+            default:
+                CaptureStop(recordItf);
+                break;
+        }
     }
-    fflush(wavFile_);
-    CaptureStop(recordItf, bufferQueueItf);
-    (*pcmCapturerObject)->Destroy(pcmCapturerObject);
-    fclose(wavFile_);
-    wavFile_ = nullptr;
 }
 
-static void OpenSLCaptureTest()
+static void CaptureOption(void)
 {
-    AUDIO_ERR_LOG("OpenSLCaptureTest");
+    AUDIO_INFO_LOG("Enter CaptureOption.");
+    uint64_t totalTime = strtoull(optarg, nullptr, 10);
+    CaptureStart(recordItf, bufferQueueItf, wavFile_);
+    OperationTime(totalTime);
+}
+
+static void OpenSLESCaptureTest()
+{
+    AUDIO_INFO_LOG("Enter OpenSLESCaptureTest");
     engineObject = nullptr;
     SLEngineItf engineItf = nullptr;
 
@@ -111,28 +138,26 @@ static void OpenSLCaptureTest()
     
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_RECORD, &recordItf);
     (*pcmCapturerObject)->GetInterface(pcmCapturerObject, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
-    (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BuqqerQueueCallback, wavFile_);
-    
-    CaptureStart(recordItf, bufferQueueItf, wavFile_);
+    (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BufferQueueCallback, wavFile_);
 
     return;
 }
 
-static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
-    AUDIO_INFO_LOG("BuqqerQueueCallback");
+    AUDIO_INFO_LOG("Enter BufferQueueCallback");
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
         SLuint32 pSize = 0;
         (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
         if (buffer != nullptr) {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, length, pSize:%{public}lu, size: %{public}lu.",
+            AUDIO_INFO_LOG("BufferQueueCallback, length, pSize:%{public}lu, size: %{public}lu.",
                            pSize, size);
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         } else {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or pSize: %{public}lu, size: %{public}lu.",
+            AUDIO_INFO_LOG("BufferQueueCallback, buffer is null or pSize: %{public}lu, size: %{public}lu.",
                            pSize, size);
         }
     }
@@ -142,7 +167,7 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
 
 static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
 {
-    AUDIO_INFO_LOG("CaptureStart");
+    AUDIO_INFO_LOG("Enter CaptureStart");
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
     if (wavFile != nullptr) {
         SLuint8* buffer = nullptr;
@@ -153,16 +178,44 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
             fwrite(buffer, 1, pSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
         } else {
-            AUDIO_INFO_LOG("BuqqerQueueCallback, buffer is null or pSize: %{public}lu.", pSize);
+            AUDIO_INFO_LOG("CaptureStart, buffer is null or pSize: %{public}lu.", pSize);
         }
     }
 
     return;
 }
 
-static void CaptureStop(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueItf)
+static void CapturePause(SLRecordItf recordItf)
 {
-    AUDIO_INFO_LOG("CaptureStop");
+    AUDIO_INFO_LOG("Enter CapturePause");
+    uint64_t totalTime = strtoull(optarg, nullptr, 10);
+    (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_PAUSED);
+    OperationTime(totalTime);
+
+    return;
+}
+
+static void CaptureStop(SLRecordItf recordItf)
+{
+    AUDIO_INFO_LOG("Enter CaptureStop");
+    fflush(wavFile_);
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
+    (*pcmCapturerObject)->Destroy(pcmCapturerObject);
+    fclose(wavFile_);
+    wavFile_ = nullptr;
+    return;
+}
+
+static void OperationTime(uint64_t time)
+{
+    uint64_t usecTimes = 1000000000;
+    time *= usecTimes;
+    clock_gettime(CLOCK_REALTIME, &tv1);
+    clock_gettime(CLOCK_REALTIME, &tv2);
+    while (((tv2.tv_sec * usecTimes + tv2.tv_nsec) - (tv1.tv_sec * usecTimes + tv1.tv_nsec)) <= time) {
+        sleep(1);
+        clock_gettime(CLOCK_REALTIME, &tv2);
+    }
+
     return;
 }

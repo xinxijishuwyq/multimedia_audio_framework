@@ -161,6 +161,13 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_001, TestSize.Level0
     }
 }
 
+HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetState_001, TestSize.Level0)
+{
+    SLOHBufferQueueState state;
+    SLresult result = (*bufferQueueItf_)->GetState(bufferQueueItf_, &state);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
 HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_002, TestSize.Level0)
 {
     SLresult result = (*captureItf_)->SetRecordState(captureItf_, SL_RECORDSTATE_PAUSED);
@@ -177,6 +184,12 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetRecordState_001, 
 {
     SLuint32 state;
     SLresult result = (*captureItf_)->GetRecordState(captureItf_, &state);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_clear_001, TestSize.Level0)
+{
+    SLresult result = (*bufferQueueItf_)->Clear(bufferQueueItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
