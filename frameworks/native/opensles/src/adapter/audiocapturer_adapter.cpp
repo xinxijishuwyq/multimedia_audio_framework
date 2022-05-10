@@ -63,6 +63,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
 
 SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 state)
 {
+    AUDIO_INFO_LOG("AudioCapturerAdapter::SetCaptureStateAdapter state: %{public}lu.", state);
     AudioCapturer *audioCapturer = GetAudioCapturerById(id);
     SLresult slResult = SL_RESULT_SUCCESS;
     bool reseult = false;
@@ -105,6 +106,7 @@ SLresult AudioCapturerAdapter::GetCaptureStateAdapter(SLuint32 id, SLuint32 *sta
             *state = -1;
             break;
     }
+    AUDIO_INFO_LOG("AudioCapturerAdapter::GetCaptureStateAdapter state: %{public}lu.", *state);
     return SL_RESULT_SUCCESS;
 }
 
