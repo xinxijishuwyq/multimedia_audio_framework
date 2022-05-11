@@ -143,13 +143,6 @@ void AudioSystemManager::init()
 
 int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode) const
 {
-    if (ringMode == AudioRingerMode::RINGER_MODE_SILENT) {
-        if (!AudioPolicyManager::GetInstance().VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-            AUDIO_ERR_LOG("Access policy permission denied for ringerMode : %{public}d", ringMode);
-            return ERR_PERMISSION_DENIED;
-        }
-    }
-
     /* Call Audio Policy SetRingerMode */
     return AudioPolicyManager::GetInstance().SetRingerMode(ringMode);
 }
@@ -227,11 +220,6 @@ const std::string AudioSystemManager::GetAudioParameter(const std::string key) c
 void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value) const
 {
     CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioParameter::Audio service unavailable");
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
-        AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
-        return;
-    }
-
     g_sProxy->SetAudioParameter(key, value);
 }
 
@@ -244,7 +232,6 @@ const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
-
     if (volumeType == AudioVolumeType::STREAM_RING) {
         if (!AudioPolicyManager::GetInstance().VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", volumeType);
@@ -334,7 +321,7 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
 int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const
 {
     CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume::Audio service unavailable");
-    
+
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
@@ -360,7 +347,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
             return ERR_PERMISSION_DENIED;
         }
     }
-
+    
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -395,12 +382,6 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
 bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
-    if (volumeType == AudioVolumeType::STREAM_RING) {
-        if (!AudioPolicyManager::GetInstance().VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-            AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", volumeType);
-            return false;
-        }
-    }
 
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -464,22 +445,12 @@ int32_t AudioSystemManager::UnsetRingerModeCallback(const int32_t clientId) cons
 int32_t AudioSystemManager::SetMicrophoneMute(bool isMute) const
 {
     CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "SetMicrophoneMute::Audio service unavailable");
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
-        return ERR_PERMISSION_DENIED;
-    }
-
     return g_sProxy->SetMicrophoneMute(isMute);
 }
 
 bool AudioSystemManager::IsMicrophoneMute() const
 {
     CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "IsMicrophoneMute::Audio service unavailable");
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
-        return false;
-    }
-
     return g_sProxy->IsMicrophoneMute();
 }
 

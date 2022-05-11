@@ -89,6 +89,11 @@ void AudioServer::OnStop()
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     AUDIO_DEBUG_LOG("server: set audio parameter");
+    if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
+        AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
+        return;
+    }
+
     AudioServer::audioParameters[key] = value;
 }
 
@@ -144,6 +149,11 @@ int32_t AudioServer::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
     if (!audioCapturerSourceInstance->capturerInited_) {
@@ -157,6 +167,11 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 
 bool AudioServer::IsMicrophoneMute()
 {
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
+        return false;
+    }
+
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 
@@ -217,6 +232,27 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
     }
 
     return SUCCESS;
+}
+
+bool AudioServer::VerifyClientPermission(const std::string &permissionName)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("AudioServer: ==[%{public}s] [uid:%{public}d]==", permissionName.c_str(), callerUid);
+
+    // Root users should be whitelisted
+    if (callerUid == ROOT_UID) {
+        AUDIO_INFO_LOG("Root user. Permission GRANTED!!!");
+        return true;
+    }
+
+    Security::AccessToken::AccessTokenID clientTokenId = IPCSkeleton::GetCallingTokenID();
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
+    if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
+        return false;
+    }
+
+    return true;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)

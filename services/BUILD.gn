@@ -62,6 +62,7 @@ ohos_shared_library("audio_service") {
   ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
@@ -123,11 +124,11 @@ config("audio_policy_public_config") {
     "//third_party/bounds_checking_function/include",
     "//third_party/cJSON",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
-    "//foundation/communication/bluetooth/services/bluetooth_standard/ipc/include",
-    "//foundation/communication/bluetooth/services/bluetooth_standard/common/",
-    "//foundation/communication/bluetooth/interfaces/innerkits/native_cpp/include",
-    "//foundation/communication/bluetooth/interfaces/innerkits/native_cpp/framework/common",
-    "//foundation/communication/bluetooth/interfaces/innerkits/native_c/include",
+    "//foundation/communication/bluetooth/interfaces/frameworks/inner/common",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
+    "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
+    "//foundation/communication/bluetooth/services/bluetooth/common/",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
   ]
 
@@ -189,7 +190,7 @@ ohos_shared_library("audio_policy_service") {
     "$hdf_uhdf_path/host:libhdf_host",
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
     "$hdf_uhdf_path/utils:libhdf_utils",
-    "//foundation/communication/bluetooth/services/bluetooth_standard/ipc:btipc_static",
+    "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
