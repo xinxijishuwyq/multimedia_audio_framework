@@ -33,6 +33,8 @@ namespace {
     constexpr uint32_t CONTENT_TYPE_LOWER_INVALID = -1;
     constexpr uint32_t STREAM_USAGE_LOWER_INVALID = -1;
     constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
+    constexpr int32_t MAX_VOL = 15;
+    constexpr int32_t MIN_VOL = 0;
 }
 
 void AudioManagerUnitTest::SetUpTestCase(void) {}
@@ -486,6 +488,165 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioSystemManager::AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(mute, ret);
+}
+
+/**
+* @tc.name  : Test SetVolume API
+* @tc.number: SetVolumeTest_001
+* @tc.desc  : Test setting volume of ringtone stream with max volume
+*/
+HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING, MAX_VOL);
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    EXPECT_EQ(MAX_VOL, volume);
+}
+
+/**
+* @tc.name  : Test SetVolume API
+* @tc.number: SetVolumeTest_002
+* @tc.desc  : Test setting volume of ringtone stream with min volume
+*/
+HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING, MIN_VOL);
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    EXPECT_EQ(MIN_VOL, volume);
+}
+
+/**
+* @tc.name  : Test SetVolume API
+* @tc.number: SetVolumeTest_003
+* @tc.desc  : Test setting volume of media stream with max volume
+*/
+HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, MAX_VOL);
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t mediaVol = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
+    EXPECT_EQ(MAX_VOL, mediaVol);
+
+    int32_t ringVolume = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_RING);
+    EXPECT_EQ(MIN_VOL, ringVolume);
+}
+
+/**
+* @tc.name  : Test SetRingerMode API
+* @tc.number: SetRingerModeTest_001
+* @tc.desc  : Test setting of ringer mode to SILENT
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_001, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_SILENT);
+}
+
+/**
+* @tc.name  : Test SetRingerMode API
+* @tc.number: SetRingerModeTest_002
+* @tc.desc  : Test setting of ringer mode to NORMAL
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_002, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_NORMAL);
+}
+
+/**
+* @tc.name  : Test SetRingerMode API
+* @tc.number: SetRingerModeTest_003
+* @tc.desc  : Test setting of ringer mode to VIBRATE
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_003, TestSize.Level0)
+{
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_VIBRATE);
+}
+
+/**
+* @tc.name  : Test SetMicrophoneMute API
+* @tc.number: SetMicrophoneMute_001
+* @tc.desc  : Test muting of microphone to true
+*/
+HWTEST(AudioManagerUnitTest, SetMicrophoneMute_001, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMicrophoneMute(true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isMicrophoneMuted = AudioSystemManager::GetInstance()->IsMicrophoneMute();
+    EXPECT_EQ(isMicrophoneMuted, true);
+}
+
+/**
+* @tc.name  : Test SetMicrophoneMute API
+* @tc.number: SetMicrophoneMute_002
+* @tc.desc  : Test muting of microphone to false
+*/
+HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMicrophoneMute(false);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isMicrophoneMuted = AudioSystemManager::GetInstance()->IsMicrophoneMute();
+    EXPECT_EQ(isMicrophoneMuted, false);
+}
+
+/**
+* @tc.name  : Test SetMute API
+* @tc.number: SetMute_001
+* @tc.desc  : Test mute functionality of ringtone stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_RING, true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetMute API
+* @tc.number: SetMute_001
+* @tc.desc  : Test unmute functionality of ringtone stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_RING, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetMute API
+* @tc.number: SetMute_001
+* @tc.desc  : Test mute functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetMute API
+* @tc.number: SetMute_001
+* @tc.desc  : Test unmute functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, false);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
