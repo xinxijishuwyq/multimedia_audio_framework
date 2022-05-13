@@ -13,6 +13,9 @@
 
 import("//build/ohos.gni")
 
+aainnerkits_path = "//foundation/aafwk/standard/interfaces/innerkits"
+aakits_path = "//foundation/aafwk/standard/frameworks/kits"
+
 ohos_shared_library("audio_ringtone_client") {
   install_enable = true
   sources = [ "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_ringtone_manager.cpp" ]
@@ -30,10 +33,10 @@ ohos_shared_library("audio_ringtone_client") {
   ]
 
   deps = [
-    "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
-    "//foundation/aafwk/standard/frameworks/kits/appkit:appkit_native",
-    "//foundation/aafwk/standard/interfaces/innerkits/uri:zuri",
-    "//foundation/aafwk/standard/interfaces/innerkits/want:want",
+    "${aainnerkits_path}/uri:zuri",
+    "${aainnerkits_path}/want:want",
+    "${aakits_path}/ability/native:abilitykit_native",
+    "${aakits_path}/appkit:appkit_native",
     "//foundation/graphic/graphic/frameworks/surface:surface",
     "//foundation/multimedia/media_standard/interfaces/inner_api/native:media_client",
   ]
