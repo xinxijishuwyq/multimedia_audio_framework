@@ -232,12 +232,6 @@ const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
-    if (volumeType == AudioVolumeType::STREAM_RING) {
-        if (!AudioPolicyManager::GetInstance().VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-            AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", volumeType);
-            return ERR_PERMISSION_DENIED;
-        }
-    }
 
     /* Validate and return INVALID_PARAMS error */
     if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
@@ -341,13 +335,6 @@ int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType vol
 int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
-    if (volumeType == AudioVolumeType::STREAM_RING) {
-        if (!AudioPolicyManager::GetInstance().VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-            AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", volumeType);
-            return ERR_PERMISSION_DENIED;
-        }
-    }
-    
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
