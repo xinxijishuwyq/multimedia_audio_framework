@@ -31,15 +31,16 @@ const int32_t  ERROR = -1;
 
 const int32_t CLASS_TYPE_PRIMARY = 0;
 const int32_t CLASS_TYPE_A2DP = 1;
+const int32_t CLASS_TYPE_FILE = 2;
 
 const char *g_deviceClassPrimary = "primary";
 const char *g_deviceClassA2Dp = "a2dp";
+const char *g_deviceClassFile = "file_io";
 
 int32_t g_deviceClass = -1;
 
 static int32_t RendererSinkInitInner(const SinkAttr *attr)
 {
-    AUDIO_INFO_LOG("%{public}s: RendererSinkInitInner", __func__);
     if (attr == NULL) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
         return ERROR;
@@ -56,6 +57,9 @@ static int32_t RendererSinkInitInner(const SinkAttr *attr)
     } else if (g_deviceClass == CLASS_TYPE_A2DP) {
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_A2DP", __func__);
         return BluetoothRendererSinkInit((BluetoothSinkAttr *)attr);
+    } else if (g_deviceClass == CLASS_TYPE_FILE) {
+        AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_FILE", __func__);
+        return AudioRendererFileSinkInit(attr->filePath);
     } else {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         return ERROR;
@@ -77,7 +81,6 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
     }
 
     if (!strcmp(device, g_deviceClassPrimary)) {
-        AUDIO_INFO_LOG("%{public}s: primary device", __func__);
         adapter->RendererSinkInit = RendererSinkInitInner;
         adapter->RendererSinkDeInit = AudioRendererSinkDeInit;
         adapter->RendererSinkStart = AudioRendererSinkStart;
@@ -89,7 +92,6 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkGetLatency = AudioRendererSinkGetLatency;
         g_deviceClass = CLASS_TYPE_PRIMARY;
     } else if (!strcmp(device, g_deviceClassA2Dp)) {
-        AUDIO_INFO_LOG("%{public}s: a2dp device", __func__);
         adapter->RendererSinkInit = RendererSinkInitInner;
         adapter->RendererSinkDeInit = BluetoothRendererSinkDeInit;
         adapter->RendererSinkStart = BluetoothRendererSinkStart;
@@ -100,6 +102,17 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkSetVolume = BluetoothRendererSinkSetVolume;
         adapter->RendererSinkGetLatency = BluetoothRendererSinkGetLatency;
         g_deviceClass = CLASS_TYPE_A2DP;
+    } else if (!strcmp(device, g_deviceClassFile)) {
+        adapter->RendererSinkInit = RendererSinkInitInner;
+        adapter->RendererSinkDeInit = AudioRendererFileSinkDeInit;
+        adapter->RendererSinkStart = AudioRendererFileSinkStart;
+        adapter->RendererSinkStop = AudioRendererFileSinkStop;
+        adapter->RendererSinkPause = AudioRendererFileSinkPause;
+        adapter->RendererSinkResume = AudioRendererFileSinkResume;
+        adapter->RendererRenderFrame = AudioRendererFileSinkRenderFrame;
+        adapter->RendererSinkSetVolume = AudioRendererFileSinkSetVolume;
+        adapter->RendererSinkGetLatency = AudioRendererFileSinkGetLatency;
+        g_deviceClass = CLASS_TYPE_FILE;
     } else {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         free(adapter);
@@ -129,6 +142,8 @@ const char *GetDeviceClass(void)
         return g_deviceClassPrimary;
     } else if (g_deviceClass == CLASS_TYPE_A2DP) {
         return g_deviceClassA2Dp;
+    } else if (g_deviceClass == CLASS_TYPE_FILE) {
+        return g_deviceClassFile;
     } else {
         return NULL;
     }

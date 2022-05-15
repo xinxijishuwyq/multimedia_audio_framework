@@ -298,6 +298,14 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     reply.WriteBool(ret);
 }
 
+void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t count = data.ReadUint32();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int32_t ret = ReconfigureAudioChannel(count, deviceType);
+    reply.WriteInt32(ret);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -420,6 +428,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case QUERY_PERMISSION:
             VerifyClientPermissionInternal(data, reply);
+            break;
+
+        case RECONFIGURE_CHANNEL:
+            ReconfigureAudioChannelInternal(data, reply);
             break;
 
         default:

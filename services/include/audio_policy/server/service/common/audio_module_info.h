@@ -30,9 +30,12 @@ namespace AudioStandard {
 static const std::string PRIMARY_CLASS = "primary";
 static const std::string A2DP_CLASS = "a2dp";
 static const std::string USB_CLASS = "usb";
+static const std::string FILE_CLASS = "file_io";
 static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const std::string PRIMARY_SPEAKER = "Speaker";
 static const std::string PRIMARY_MIC = "Built_in_mic";
+static const std::string FILE_SINK = "file_sink";
+static const std::string FILE_SOURCE = "file_source";
 static const std::string PIPE_SINK = "fifo_output";
 static const std::string PIPE_SOURCE = "fifo_input";
 static const std::string INTERNAL_PORT = "internal";
@@ -55,6 +58,7 @@ enum ClassType {
     TYPE_PRIMARY,
     TYPE_A2DP,
     TYPE_USB,
+    TYPE_FILE_IO,
     TYPE_INVALID
 };
 

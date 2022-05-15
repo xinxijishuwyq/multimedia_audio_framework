@@ -227,6 +227,7 @@ public:
     int32_t UnsetAudioManagerInterruptCallback();
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

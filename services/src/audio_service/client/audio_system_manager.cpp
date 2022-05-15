@@ -169,6 +169,7 @@ int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool fl
     switch (deviceType) {
         case SPEAKER:
         case BLUETOOTH_SCO:
+        case FILE_SINK_DEVICE:
             break;
         default:
             AUDIO_ERR_LOG("SetDeviceActive device=%{public}d not supported", deviceType);
@@ -578,6 +579,11 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
                              && audioInterrupt.streamType <= AudioStreamType::STREAM_ACCESSIBILITY,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
+}
+
+int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
+{
+    return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
 }
 
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()

@@ -91,6 +91,8 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),

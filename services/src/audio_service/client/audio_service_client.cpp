@@ -289,7 +289,7 @@ int32_t AudioServiceClient::SetAudioCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode.");
     captureMode_ = captureMode;
-    
+
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -405,7 +405,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
     if (asClient->mAudioRendererCallbacks)
         asClient->mAudioRendererCallbacks->OnStreamStateChangeCb();
 
-    AUDIO_INFO_LOG("Current Stream State: %d", pa_stream_get_state(stream));
+    AUDIO_INFO_LOG("Current Stream State: %{private}d", pa_stream_get_state(stream));
 
     switch (pa_stream_get_state(stream)) {
         case PA_STREAM_READY:
@@ -424,8 +424,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
-
-    AUDIO_INFO_LOG("Current Context State: %d", pa_context_get_state(context));
+    AUDIO_INFO_LOG("Current Context State: %{private}d", pa_context_get_state(context));
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
@@ -641,6 +640,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     mFramePeriodRead = 0;
 
     SetEnv();
+
     mAudioSystemMgr = AudioSystemManager::GetInstance();
 
     mainLoop = pa_threaded_mainloop_new();
@@ -664,6 +664,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     if (!cachePath_.empty()) {
         AUDIO_DEBUG_LOG("abilityContext not null");
         int32_t size = 0;
+
         const char *cookieData = mAudioSystemMgr->RetrieveCookie(size);
         if (size <= 0) {
             AUDIO_ERR_LOG("Error retrieving cookie");
@@ -888,11 +889,39 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
-    if (!(paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, nullptr, propList))) {
+    AUDIO_ERR_LOG("Creating stream fo channels %{public}d", audioParams.channels);
+    pa_channel_map map;
+    if (audioParams.channels > CHANNEL_6) {
+        pa_channel_map_init(&map);
+        map.channels = audioParams.channels;
+        switch (audioParams.channels) {
+            case CHANNEL_8:
+                map.map[CHANNEL8_IDX] = PA_CHANNEL_POSITION_AUX1;
+            case CHANNEL_7:
+                map.map[CHANNEL1_IDX] = PA_CHANNEL_POSITION_FRONT_LEFT;
+                map.map[CHANNEL2_IDX] = PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER;
+                map.map[CHANNEL3_IDX] = PA_CHANNEL_POSITION_FRONT_CENTER;
+                map.map[CHANNEL4_IDX] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+                map.map[CHANNEL5_IDX] = PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER;
+                map.map[CHANNEL6_IDX] = PA_CHANNEL_POSITION_REAR_CENTER;
+                map.map[CHANNEL7_IDX] = PA_CHANNEL_POSITION_AUX0;
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid channel count");
+                return AUDIO_CLIENT_CREATE_STREAM_ERR;
+        }
+
+        paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, &map, propList);
+    } else {
+        paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, nullptr, propList);
+    }
+
+    if (!paStream) {
         error = pa_context_errno(context);
         pa_proplist_free(propList);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
+        AUDIO_ERR_LOG("pa_stream_new_with_proplist failed, error: %{public}d", error);
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
@@ -1602,7 +1631,7 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount) const
     }
 
     frameCount = minBufferSize / bytesPerSample;
-    AUDIO_INFO_LOG("frame count: %d", frameCount);
+    AUDIO_INFO_LOG("frame count: %{private}d", frameCount);
     return AUDIO_CLIENT_SUCCESS;
 }
 

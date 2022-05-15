@@ -55,6 +55,65 @@ ohos_shared_library("audio_capturer_source") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("audio_capturer_file_source") {
+  install_enable = true
+
+  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/src/audio_capturer_file_source.cpp" ]
+
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+
+  cflags_cc = cflags
+
+  include_dirs = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//utils/native/base/include",
+  ]
+
+  public_configs = [ ":audio_external_library_config" ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//utils/native/base:utils",
+  ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
+ohos_shared_library("capturer_source_adapter") {
+  install_enable = true
+
+  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/src/capturer_source_adapter.c" ]
+
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+
+  cflags_cc = cflags
+
+  include_dirs = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//drivers/peripheral/audio/interfaces/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//third_party/bounds_checking_function:libsec_static",
+    "//utils/native/base:utils",
+  ]
+
+  public_configs = [ ":audio_external_library_config" ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:audio_capturer_file_source",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:audio_capturer_source",
+  ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
 config("audio_external_library_config") {
   include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include" ]
 }

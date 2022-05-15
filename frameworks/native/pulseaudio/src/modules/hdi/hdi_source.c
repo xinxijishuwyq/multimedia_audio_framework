@@ -38,10 +38,11 @@
 
 #include <signal.h>
 
-#include "audio_capturer_source_intf.h"
+#include "capturer_source_adapter.h"
 #include "audio_log.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
+#define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_AUDIO_DEVICE_NAME "Internal Mic"
 
 #define DEFAULT_BUFFER_SIZE (1024 * 16)
@@ -63,12 +64,13 @@ struct Userdata {
     uint32_t buffer_size;
     pa_usec_t block_usec;
     pa_usec_t timestamp;
-    AudioSourceAttr attrs;
+    SourceAttr attrs;
     bool IsCapturerStarted;
+    struct CapturerSourceAdapter *sourceAdapter;
 };
 
 static int pa_capturer_init(struct Userdata *u);
-static void pa_capturer_exit(void);
+static void pa_capturer_exit(struct Userdata *u);
 
 static void userdata_free(struct Userdata *u)
 {
@@ -89,8 +91,12 @@ static void userdata_free(struct Userdata *u)
     if (u->rtpoll)
         pa_rtpoll_free(u->rtpoll);
 
-    AudioCapturerSourceStop();
-    AudioCapturerSourceDeInit();
+    if (u->sourceAdapter) {
+        u->sourceAdapter->CapturerSourceStop();
+        u->sourceAdapter->CapturerSourceDeInit();
+        UnLoadSourceAdapter(u->sourceAdapter);
+    }
+
     pa_xfree(u);
 }
 
@@ -127,7 +133,7 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newS
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
         if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
-            if (AudioCapturerSourceStart()) {
+            if (u->sourceAdapter->CapturerSourceStart()) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
@@ -137,13 +143,13 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newS
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
         if (newState == PA_SOURCE_SUSPENDED) {
             if (u->IsCapturerStarted) {
-                AudioCapturerSourceStop();
+                u->sourceAdapter->CapturerSourceStop();
                 u->IsCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
             }
         } else if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
-            if (AudioCapturerSourceStart()) {
+            if (u->sourceAdapter->CapturerSourceStart()) {
                 AUDIO_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
             }
@@ -169,7 +175,7 @@ static int get_capturer_frame_from_hdi(pa_memchunk *chunk, const struct Userdata
     pa_assert(p);
 
     requestBytes = pa_memblock_get_length(chunk->memblock);
-    AudioCapturerSourceFrame((char *)p, (uint64_t)requestBytes, &replyBytes);
+    u->sourceAdapter->CapturerSourceFrame((char *)p, (uint64_t)requestBytes, &replyBytes);
 
     pa_memblock_release(chunk->memblock);
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
@@ -259,13 +265,13 @@ static int pa_capturer_init(struct Userdata *u)
 {
     int ret;
 
-    ret = AudioCapturerSourceInit(&u->attrs);
+    ret = u->sourceAdapter->CapturerSourceInit(&u->attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("Audio capturer init failed!");
         return ret;
     }
 
-    ret = AudioCapturerSourceStart();
+    ret = u->sourceAdapter->CapturerSourceStart();
     if (ret != 0) {
         AUDIO_ERR_LOG("Audio capturer start failed!");
         goto fail;
@@ -275,14 +281,14 @@ static int pa_capturer_init(struct Userdata *u)
     return ret;
 
 fail:
-    pa_capturer_exit();
+    pa_capturer_exit(u);
     return ret;
 }
 
-static void pa_capturer_exit(void)
+static void pa_capturer_exit(struct Userdata *u)
 {
-    AudioCapturerSourceStop();
-    AudioCapturerSourceDeInit();
+    u->sourceAdapter->CapturerSourceStop();
+    u->sourceAdapter->CapturerSourceDeInit();
 }
 
 static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sample_spec *ss, const pa_channel_map *map,
@@ -413,8 +419,15 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
+    ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS), &u->sourceAdapter);
+    if (ret) {
+        AUDIO_ERR_LOG("Load adapter failed");
+        goto fail;
+    }
+
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     u->attrs.sampleRate = ss.rate;
+    u->attrs.filePath = pa_modargs_get_value(ma, "file_path", "");
 // The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
 #ifdef PRODUCT_RK3568
     int32_t channelCount = 2;
@@ -454,7 +467,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 fail:
 
     if (u->IsCapturerStarted) {
-        pa_capturer_exit();
+        pa_capturer_exit(u);
     }
     userdata_free(u);
 

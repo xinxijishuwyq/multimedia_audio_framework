@@ -30,6 +30,7 @@ typedef struct {
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
+    const char *filePath;
 } AudioSinkAttr;
 
 class AudioRendererSink {

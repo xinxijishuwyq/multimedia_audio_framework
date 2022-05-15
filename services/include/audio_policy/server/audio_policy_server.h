@@ -104,6 +104,8 @@ public:
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
+
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
