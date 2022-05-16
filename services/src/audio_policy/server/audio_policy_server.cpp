@@ -467,6 +467,7 @@ int32_t AudioPolicyServer::RequestAudioFocus(const uint32_t clientID, const Audi
     if (focussedAudioInterruptInfo_ != nullptr) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: Existing stream: %{public}d, incoming stream: %{public}d",
                         focussedAudioInterruptInfo_->streamType, audioInterrupt.streamType);
+        NotifyFocusAbandoned(clientOnFocus_, *focussedAudioInterruptInfo_);
         AbandonAudioFocus(clientOnFocus_, *focussedAudioInterruptInfo_);
     }
 
@@ -480,15 +481,14 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const uint32_t clientID, const Audi
 {
     AUDIO_INFO_LOG("AudioPolicyServer: AbandonAudioFocus in");
 
-    int32_t ret = NotifyFocusAbandoned(clientID, audioInterrupt);
-    if ((ret == SUCCESS) && (clientID == clientOnFocus_)) {
+    if (clientID == clientOnFocus_) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: remove app focus");
         focussedAudioInterruptInfo_.reset();
         focussedAudioInterruptInfo_ = nullptr;
         clientOnFocus_ = 0;
     }
 
-    return ret;
+    return SUCCESS;
 }
 
 void AudioPolicyServer::NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt)
