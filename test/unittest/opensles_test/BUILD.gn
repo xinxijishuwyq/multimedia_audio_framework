@@ -13,7 +13,7 @@
 
 import("//build/test.gni")
 
-module_output_path = "audio_standard/audio_opensles"
+module_output_path = "multimedia_audio_standard/audio_opensles"
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
 
