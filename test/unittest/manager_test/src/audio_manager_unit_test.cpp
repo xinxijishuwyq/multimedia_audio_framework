@@ -474,7 +474,7 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_004, TestSize.Level0)
 * @tc.number: AudioVolume_001
 * @tc.desc  : Test AudioVolume manager interface multiple requests
 */
-HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level0)
+HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
     int32_t volume = 10;
     bool mute = true;
