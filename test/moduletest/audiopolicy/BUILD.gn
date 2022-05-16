@@ -13,7 +13,7 @@
 
 import("//build/test.gni")
 
-module_output_path = "audio_standard/audio_policy"
+module_output_path = "multimedia_audio_standard/audio_policy"
 
 group("moduletest") {
   testonly = true
