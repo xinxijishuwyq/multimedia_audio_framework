@@ -165,8 +165,11 @@ ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
     "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_device_descriptor.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_interrupt_group_info.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_volume_group_info.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_capturer_state_change_listener_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_client_tracker_callback_proxy.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_group_handle.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_policy_manager_listener_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_policy_manager_stub.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_policy_server.cpp",

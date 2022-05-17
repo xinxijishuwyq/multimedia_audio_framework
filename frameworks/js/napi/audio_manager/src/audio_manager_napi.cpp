@@ -2358,7 +2358,8 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
             managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
         }
-        int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(managerNapi->deviceChangeCallbackNapi_);
+        int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
+            managerNapi->deviceChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
             return undefinedResult;

@@ -28,7 +28,9 @@ namespace AudioStandard {
 const std::string AUDIO_HDI_SERVICE_NAME = "audio_hdi_service";
 const std::string AUDIO_BLUETOOTH_HDI_SERVICE_NAME = "audio_bluetooth_hdi_service";
 
+const std::string DAUDIO_HDI_SERVICE_NAME = "daudio_primary_service";
 const uint8_t EVENT_PARAMS = 2;
+const uint8_t D_EVENT_PARAMS = 5;
 
 static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
 {
@@ -49,16 +51,37 @@ static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
     return internalDeviceType;
 }
 
+static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
+    DeviceStatusListener * devListener)
+{
+    if (serviceStatus->status == SERVIE_STATUS_START) {
+        AUDIO_DEBUG_LOG("distributed service online");
+    } else if (serviceStatus->status == SERVIE_STATUS_CHANGE && !info.empty()) {
+        DStatusInfo statusInfo;
+        statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
+        AudioEventType hdiEventType = HDF_AUDIO_EVENT_UNKOWN;
+        if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &hdiEventType,
+            statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
+            &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS) {
+            AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
+            return;
+        }
+
+        statusInfo.isConnected = (hdiEventType == HDF_AUDIO_DEVICE_ADD) ? true : false;
+        devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+    }
+}
+
 static void OnServiceStatusReceived(struct ServiceStatusListener *listener, struct ServiceStatus *serviceStatus)
 {
     CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "Invalid ServiceStatus");
     std::string info = serviceStatus->info;
     AUDIO_DEBUG_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d] [info:%{public}s]",
                     serviceStatus->serviceName, serviceStatus->status, info.c_str());
-    if (serviceStatus->serviceName == AUDIO_HDI_SERVICE_NAME) {
-        DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
-        CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");
 
+    DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
+    CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");
+    if (serviceStatus->serviceName == AUDIO_HDI_SERVICE_NAME) {
         if (serviceStatus->status == SERVIE_STATUS_START) {
             devListener->deviceObserver_.OnServiceConnected(AudioServiceIndex::HDI_SERVICE_INDEX);
         } else if (serviceStatus->status == SERVIE_STATUS_CHANGE && !info.empty()) {
@@ -77,8 +100,6 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", "", streamInfo);
         }
     } else if (serviceStatus->serviceName == AUDIO_BLUETOOTH_HDI_SERVICE_NAME) {
-        DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
-        CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");
         if (serviceStatus->status == SERVIE_STATUS_START) {
             AUDIO_INFO_LOG("Bluetooth hdi service started");
             Bluetooth::RegisterObserver(devListener->deviceObserver_);
@@ -88,6 +109,10 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             OHOS::Bluetooth::DeRegisterObserver();
             Bluetooth::HandsFreeAudioGatewayManager::UnregisterBluetoothScoAgListener();
         }
+    } else if (serviceStatus->serviceName == DAUDIO_HDI_SERVICE_NAME) {
+        ReceviceDistributedInfo(serviceStatus, info, devListener);
+    } else {
+        AUDIO_DEBUG_LOG("unkown service name.");
     }
 }
 

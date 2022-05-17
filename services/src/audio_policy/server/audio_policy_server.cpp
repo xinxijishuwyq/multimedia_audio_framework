@@ -66,6 +66,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
+    AUDIO_DEBUG_LOG("AudioPolicyService OnStart");
     bool res = Publish(this);
     if (res) {
         AUDIO_DEBUG_LOG("AudioPolicyService OnStart res=%d", res);
@@ -439,11 +440,12 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
     }
 }
 
-int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
 
-    return mPolicyService.SetDeviceChangeCallback(clientId, object);
+    return mPolicyService.SetDeviceChangeCallback(clientId, flag, object);
 }
 
 int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t clientId)
@@ -1293,6 +1295,11 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
     mPolicyService.RegisteredStreamListenerClientDied(pid);
+}
+
+std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeGroupInfos()
+{
+    return  mPolicyService.GetVolumeGroupInfos();
 }
 } // namespace AudioStandard
 } // namespace OHOS

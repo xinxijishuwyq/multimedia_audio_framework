@@ -44,6 +44,8 @@ public:
     std::string networkId_;
     AudioStreamInfo audioStreamInfo_ = {};
     AudioDeviceDescriptor();
+    AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,
+        std::string networkId);
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
     virtual ~AudioDeviceDescriptor();
@@ -52,6 +54,40 @@ public:
 
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
     void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
+};
+
+class InterruptGroupInfo;
+class InterruptGroupInfo : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    int32_t interruptGroupId_;
+    int32_t mappingId_;
+    std::string groupName_;
+    std::string networkId_;
+    ConnectType connectType_;
+    InterruptGroupInfo();
+    InterruptGroupInfo(int32_t interruptGroupId, int32_t mappingId, std::string groupName, std::string networkId,
+        ConnectType type);
+    virtual ~InterruptGroupInfo();
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<InterruptGroupInfo> Unmarshalling(Parcel &parcel);
+};
+
+class VolumeGroupInfo;
+class VolumeGroupInfo : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    int32_t volumeGroupId_;
+    int32_t mappingId_;
+    std::string groupName_;
+    std::string networkId_;
+    ConnectType connectType_;
+    VolumeGroupInfo();
+    VolumeGroupInfo(int32_t volumeGroupId, int32_t mappingId, std::string groupName, std::string networkId,
+        ConnectType type);
+    virtual ~VolumeGroupInfo();
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
 };
 
 struct DeviceChangeAction {
@@ -225,7 +261,8 @@ public:
     AudioRingerMode GetRingerMode() const;
     int32_t SetAudioScene(const AudioScene &scene);
     AudioScene GetAudioScene() const;
-    int32_t SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
+    int32_t SetDeviceChangeCallback(const DeviceFlag flag, const std::shared_ptr<AudioManagerDeviceChangeCallback>
+        &callback);
     int32_t UnsetDeviceChangeCallback();
     int32_t SetRingerModeCallback(const int32_t clientId,
                                   const std::shared_ptr<AudioRingerModeCallback> &callback);

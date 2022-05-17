@@ -390,7 +390,8 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -406,6 +407,7 @@ int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const 
     }
 
     data.WriteInt32(clientId);
+    data.WriteInt32(flag);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_DEVICE_CHANGE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
