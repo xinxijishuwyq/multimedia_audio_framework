@@ -485,9 +485,9 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     ret = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(volume, ret);
     ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_ALL, mute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(false, ret);
     ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioSystemManager::AudioVolumeType::STREAM_ALL);
-    EXPECT_EQ(mute, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
