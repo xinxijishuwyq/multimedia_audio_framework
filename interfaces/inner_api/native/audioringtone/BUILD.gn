@@ -13,7 +13,6 @@
 
 import("//build/ohos.gni")
 
-aainnerkits_path = "//foundation/aafwk/standard/interfaces/innerkits"
 aakits_path = "//foundation/aafwk/standard/frameworks/kits"
 
 ohos_shared_library("audio_ringtone_client") {
@@ -33,8 +32,6 @@ ohos_shared_library("audio_ringtone_client") {
   ]
 
   deps = [
-    "${aainnerkits_path}/uri:zuri",
-    "${aainnerkits_path}/want:want",
     "${aakits_path}/ability/native:abilitykit_native",
     "${aakits_path}/appkit:appkit_native",
     "//foundation/graphic/graphic/frameworks/surface:surface",
@@ -42,6 +39,8 @@ ohos_shared_library("audio_ringtone_client") {
   ]
 
   external_deps = [
+    "ability_base:want",
+    "ability_base:zuri",
     "ability_runtime:ability_manager",
     "bundle_framework:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
