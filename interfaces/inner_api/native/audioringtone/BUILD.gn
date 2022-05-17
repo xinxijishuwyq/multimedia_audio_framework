@@ -45,8 +45,8 @@ ohos_shared_library("audio_ringtone_client") {
     "ability_runtime:ability_manager",
     "bundle_framework:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
-    "native_appdatamgr:native_dataability",
-    "native_appdatamgr:native_rdb",
+    "dataability:native_dataability",
+    "relational_store:native_rdb",
   ]
 
   cflags = [
