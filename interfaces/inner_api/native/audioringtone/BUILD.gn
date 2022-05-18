@@ -12,8 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-
-aakits_path = "//foundation/aafwk/standard/frameworks/kits"
+import("//foundation/multimedia/audio_standard/multimedia_aafwk.gni")
 
 ohos_shared_library("audio_ringtone_client") {
   install_enable = true
@@ -32,8 +31,8 @@ ohos_shared_library("audio_ringtone_client") {
   ]
 
   deps = [
-    "${aakits_path}/ability/native:abilitykit_native",
-    "${aakits_path}/appkit:appkit_native",
+    "${aafwk_kits_path}/ability/native:abilitykit_native",
+    "${aafwk_kits_path}/appkit:appkit_native",
     "//foundation/graphic/graphic/frameworks/surface:surface",
     "//foundation/multimedia/media_standard/interfaces/inner_api/native:media_client",
   ]
