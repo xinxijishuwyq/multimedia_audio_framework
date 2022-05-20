@@ -25,14 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-#ifdef PRODUCT_M40
-    const std::string AUDIO_HDI_SERVICE_NAME = "audio_adapter_service";
-#else
-    const std::string AUDIO_HDI_SERVICE_NAME = "audio_hdi_service";
-#endif
-}
-
+const std::string AUDIO_HDI_SERVICE_NAME = "audio_hdi_service";
 const uint8_t EVENT_PARAMS = 2;
 
 static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
