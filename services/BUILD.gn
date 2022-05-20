@@ -35,7 +35,6 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
   ]
 
   if (target_cpu == "arm") {

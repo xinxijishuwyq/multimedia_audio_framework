@@ -17,7 +17,7 @@
 #define AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "audio_proxy_manager.h"
+#include "audio_manager.h"
 
 #include <cstdio>
 #include <list>

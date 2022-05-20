@@ -33,7 +33,6 @@ ohos_shared_library("audio_renderer_sink") {
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
     "//utils/native/base/include",
   ]
 
