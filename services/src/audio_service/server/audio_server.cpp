@@ -13,16 +13,18 @@
  * limitations under the License.
  */
 
+#include <cinttypes>
+#include <fstream>
+#include <sstream>
+
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_renderer_sink.h"
 #include "iservice_registry.h"
 #include "audio_log.h"
 #include "system_ability_definition.h"
-#include "audio_server.h"
 
-#include <fstream>
-#include <sstream>
+#include "audio_server.h"
 
 #define PA
 #ifdef PA
@@ -133,6 +135,27 @@ const char *AudioServer::RetrieveCookie(int32_t &size)
     }
     cookieFile.close();
     return cookieInfo;
+}
+
+uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
+{
+    uint64_t transactionId = 0;
+    AUDIO_INFO_LOG("GetTransactionId in: device type: %{public}d, device role: %{public}d", deviceType, deviceRole);
+
+    if (deviceRole == OUTPUT_DEVICE) {
+        AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+        if (audioRendererSinkInstance) {
+            transactionId = audioRendererSinkInstance->GetTransactionId();
+        }
+    } else if (deviceRole == INPUT_DEVICE) {
+        AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+        if (audioCapturerSourceInstance) {
+            transactionId = audioCapturerSourceInstance->GetTransactionId();
+        }
+    }
+
+    AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
+    return transactionId;
 }
 
 int32_t AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)

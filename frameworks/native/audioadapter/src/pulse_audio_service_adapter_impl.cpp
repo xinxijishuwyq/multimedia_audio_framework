@@ -23,6 +23,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "hisysevent.h"
 
 using namespace std;
 
@@ -362,6 +363,70 @@ bool PulseAudioServiceAdapterImpl::IsStreamActive(AudioStreamType streamType)
     return (userData->isCorked) ? false : true;
 }
 
+vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
+{
+    lock_guard<mutex> lock(mMutex);
+
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] GetAllSinkInputs mContext is nullptr");
+        return userData->sinkInputList;
+    }
+
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
+        PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb, reinterpret_cast<void*>(userData.get()));
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[GetAllSinkInputs] pa_context_get_sink_input_info_list returned nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return userData->sinkInputList;
+    }
+
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    return userData->sinkInputList;
+}
+
+vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
+{
+    lock_guard<mutex> lock(mMutex);
+
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] GetAllSourceOutputs mContext is nullptr");
+        return userData->sourceOutputList;
+    }
+
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    pa_operation *operation = pa_context_get_source_output_info_list(mContext,
+        PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb, reinterpret_cast<void*>(userData.get()));
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[GetAllSourceOutputs] pa_context_get_source_output_info_list returned nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return userData->sourceOutputList;
+    }
+
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    return userData->sourceOutputList;
+}
+
 void PulseAudioServiceAdapterImpl::Disconnect()
 {
     if (mContext != nullptr) {
@@ -613,6 +678,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     }
     AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume : %{public}f for stream : %{public}s, volumeInt%{public}d",
         vol, i->name, volume);
+    HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "ISOUTPUT", 1, "STREAMID", sessionID, "STREAMTYPE", streamID, "VOLUME", vol);
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -649,6 +716,86 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
         AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] corked : %{public}d for stream : %{public}s",
             userData->isCorked, i->name);
     }
+}
+
+void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
+    void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData *>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
+
+    if (eol < 0) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
+            pa_strerror(pa_context_errno(c)));
+        return;
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+        return;
+    }
+
+    if (i->proplist == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Proplist for sink input (%{public}d).", i->index);
+        return;
+    }
+
+    uint32_t sessionID = 0;
+    const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
+    if (sessionCStr != nullptr) {
+        std::stringstream sessionStr;
+        sessionStr << sessionCStr;
+        sessionStr >> sessionID;
+    }
+
+    AudioStreamType audioStreamType = STREAM_DEFAULT;
+    const char *streamType = pa_proplist_gets(i->proplist, "stream.type");
+    if (streamType != nullptr) {
+        audioStreamType = thiz->GetIdByStreamType(streamType);
+    }
+
+    SinkInput sinkInput = {sessionID, audioStreamType};
+    userData->sinkInputList.push_back(sinkInput);
+}
+
+void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol,
+    void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData *>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
+
+    if (eol < 0) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get source output information: %{public}s",
+            pa_strerror(pa_context_errno(c)));
+        return;
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+        return;
+    }
+
+    if (i->proplist == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Proplist for source output (%{public}d).", i->index);
+        return;
+    }
+
+    uint32_t sessionID = 0;
+    const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
+    if (sessionCStr != nullptr) {
+        std::stringstream sessionStr;
+        sessionStr << sessionCStr;
+        sessionStr >> sessionID;
+    }
+
+    AudioStreamType audioStreamType = STREAM_DEFAULT;
+    const char *streamType = pa_proplist_gets(i->proplist, "stream.type");
+    if (streamType != nullptr) {
+        audioStreamType = thiz->GetIdByStreamType(streamType);
+    }
+
+    SourceOutput sourceOutput = {sessionID, audioStreamType};
+    userData->sourceOutputList.push_back(sourceOutput);
 }
 
 void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_event_type_t t, uint32_t idx,

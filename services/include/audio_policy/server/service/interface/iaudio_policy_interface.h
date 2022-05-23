@@ -47,6 +47,10 @@ public:
 
     virtual bool IsStreamActive(AudioStreamType streamType) = 0;
 
+    virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
+
+    virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
+
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
 
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle) = 0;

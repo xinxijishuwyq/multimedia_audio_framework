@@ -17,6 +17,7 @@
         "adapted_system_type": [ "standard" ],
         "rom": "",
         "ram": "",
+        "hisysevent_config": [ "//foundation/multimedia/audio_standard/hisysevent.yaml" ],
         "deps": {
           "components": [
               "ability_manager",

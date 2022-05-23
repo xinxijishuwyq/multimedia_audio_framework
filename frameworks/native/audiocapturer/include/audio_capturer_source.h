@@ -66,6 +66,7 @@ public:
     int32_t GetMute(bool &isMute);
     int32_t SetAudioScene(AudioScene audioScene);
     int32_t OpenInput(DeviceType deviceType);
+    uint64_t GetTransactionId();
 
     static AudioCapturerSource *GetInstance(void);
     bool capturerInited_;

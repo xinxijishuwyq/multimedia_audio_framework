@@ -102,6 +102,16 @@ public:
      */
     virtual const char *RetrieveCookie(int32_t &size) = 0;
 
+    /**
+     * Get the transaction Id
+     *
+     * @return Returns transaction id.
+     */
+    virtual uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
+    {
+        return 0;
+    }
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -112,7 +122,8 @@ public:
         IS_MICROPHONE_MUTE = 6,
         SET_AUDIO_SCENE = 7,
         UPDATE_ROUTE_REQ = 8,
-        RETRIEVE_COOKIE = 9
+        RETRIEVE_COOKIE = 9,
+        GET_TRANSACTION_ID = 10
     };
 
 public:

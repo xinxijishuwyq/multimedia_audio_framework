@@ -474,6 +474,12 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
+uint64_t AudioRendererSink::GetTransactionId()
+{
+    AUDIO_INFO_LOG("AudioRendererSink::GetTransactionId in");
+    return reinterpret_cast<uint64_t>(audioRender_);
+}
+
 int32_t AudioRendererSink::Stop(void)
 {
     int32_t ret;

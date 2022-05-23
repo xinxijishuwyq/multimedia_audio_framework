@@ -392,6 +392,12 @@ int32_t BluetoothRendererSink::GetLatency(uint32_t *latency)
     }
 }
 
+uint64_t BluetoothRendererSink::GetTransactionId()
+{
+    AUDIO_INFO_LOG("BluetoothRendererSink::GetTransactionId in");
+    return reinterpret_cast<uint64_t>(audioRender_);
+}
+
 int32_t BluetoothRendererSink::Stop(void)
 {
     AUDIO_INFO_LOG("BluetoothRendererSink::Stop in");

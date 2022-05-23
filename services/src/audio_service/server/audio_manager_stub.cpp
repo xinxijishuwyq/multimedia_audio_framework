@@ -84,6 +84,16 @@ int AudioManagerStub::OnRemoteRequest(
 
             return AUDIO_OK;
         }
+        case GET_TRANSACTION_ID: {
+            AUDIO_DEBUG_LOG("GET_TRANSACTION_ID AudioManagerStub");
+            DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
+            DeviceRole deviceRole = (static_cast<DeviceRole>(data.ReadInt32()));
+            uint64_t transactionId = GetTransactionId(deviceType, deviceRole);
+
+            reply.WriteUint64(transactionId);
+
+            return AUDIO_OK;
+        }
         case SET_MICROPHONE_MUTE: {
             AUDIO_DEBUG_LOG("SET_MICROPHONE_MUTE AudioManagerStub");
             bool isMute = data.ReadBool();
