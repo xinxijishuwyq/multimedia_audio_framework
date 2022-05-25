@@ -32,22 +32,26 @@ PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_LOAD_ONCE(false);
 PA_MODULE_USAGE(
         "source_name=<name for the source> "
+        "device_class=<name for the device class> "
         "source_properties=<properties for the source> "
         "format=<sample format> "
         "rate=<sample rate> "
         "channels=<number of channels> "
         "channel_map=<channel map>"
         "buffer_size=<custom buffer size>"
+        "file_path=<file path for data reading>"
     );
 
 static const char * const VALID_MODARGS[] = {
     "source_name",
+    "device_class",
     "source_properties",
     "format",
     "rate",
     "channels",
     "channel_map",
     "buffer_size",
+    "file_path",
     NULL
 };
 

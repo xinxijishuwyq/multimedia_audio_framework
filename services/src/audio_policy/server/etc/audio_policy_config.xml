@@ -47,6 +47,20 @@
             </module>
         </modules>
     </deviceclass>
+    <deviceclass name="file_io">
+        <modules>
+            <module name="file_sink" lib="libmodule-hdi-sink.z.so" role="sink" channels="8" rate="48000" buffer_size="3840" file="/data/data/.pulse_dir/file_sink.pcm">
+                <Ports>
+                    <Port id="0" channels="8" rate="48000" buffer_size="3840"/>
+                </Ports>
+            </module>
+            <module name="file_source" lib="libmodule-hdi-source.z.so" role="source" channels="6" rate="48000" buffer_size="3840" file="/data/data/.pulse_dir/file_source.pcm">
+                <Ports>
+                    <Port id="0" channels="6" rate="48000" buffer_size="3840"/>
+                </Ports>
+            </module>
+        </modules>
+    </deviceclass>
     <AudioInterruptEnable>false</AudioInterruptEnable>
     <UpdateRouteSupport>false</UpdateRouteSupport>
 </audioPolicyConfiguration>

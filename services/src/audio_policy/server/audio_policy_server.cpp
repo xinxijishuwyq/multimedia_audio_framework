@@ -1013,6 +1013,17 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
     return true;
 }
 
+int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
+{
+    // Only root users should have access to this api
+    if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
+        AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return mPolicyService.ReconfigureAudioChannel(count, deviceType);
+}
+
 float AudioPolicyServer::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;

@@ -539,7 +539,7 @@ std::vector<AudioSamplingRate> AudioRenderer::GetSupportedSamplingRates()
 
 std::vector<AudioChannel> AudioRenderer::GetSupportedChannels()
 {
-    return AUDIO_SUPPORTED_CHANNELS;
+    return RENDERER_SUPPORTED_CHANNELS;
 }
 
 std::vector<AudioEncodingType> AudioRenderer::GetSupportedEncodingTypes()

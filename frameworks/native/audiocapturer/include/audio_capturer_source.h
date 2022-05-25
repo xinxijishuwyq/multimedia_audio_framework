@@ -43,6 +43,7 @@ typedef struct {
     float volume;
     uint32_t bufferSize;
     bool isBigEndian;
+    const char *filePath;
 } AudioSourceAttr;
 
 class AudioCapturerSource {

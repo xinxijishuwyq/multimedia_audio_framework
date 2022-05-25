@@ -114,6 +114,14 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_HEADSET = 22,
     /**
+     * Indicates a debug sink device
+     */
+    DEVICE_TYPE_FILE_SINK = 50,
+    /**
+     * Indicates a debug source device
+     */
+    DEVICE_TYPE_FILE_SOURCE = 51,
+    /**
      * Indicates device type max count.
      */
     DEVICE_TYPE_MAX
@@ -123,6 +131,7 @@ enum ActiveDeviceType {
     ACTIVE_DEVICE_TYPE_NONE = -1,
     SPEAKER = 2,
     BLUETOOTH_SCO = 7,
+    FILE_SINK_DEVICE = 50,
     ACTIVE_DEVICE_TYPE_MAX
 };
 
@@ -210,7 +219,13 @@ enum AudioSampleFormat {
 // channel
 enum AudioChannel {
     MONO = 1,
-    STEREO = 2
+    STEREO = 2,
+    CHANNEL_3 = 3,
+    CHANNEL_4 = 4,
+    CHANNEL_5 = 5,
+    CHANNEL_6 = 6,
+    CHANNEL_7 = 7,
+    CHANNEL_8 = 8
 };
 
 // sampling rate
@@ -470,9 +485,24 @@ const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_S32LE
 };
 
-const std::vector<AudioChannel> AUDIO_SUPPORTED_CHANNELS {
+const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
     MONO,
-    STEREO
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8
+};
+
+const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6
 };
 
 const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {

@@ -94,7 +94,7 @@ ohos_shared_library("module-hdi-source") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:audio_capturer_source",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:capturer_source_adapter",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 

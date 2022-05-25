@@ -65,7 +65,7 @@ struct Userdata {
 };
 
 static void UserdataFree(struct Userdata *u);
-static int32_t PrepareDevice(struct Userdata *u);
+static int32_t PrepareDevice(struct Userdata *u, const char* filePath);
 
 static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
 {
@@ -346,7 +346,7 @@ static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
     return hdiAudioFormat;
 }
 
-static int32_t PrepareDevice(struct Userdata *u)
+static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 {
     SinkAttr sample_attrs;
     int32_t ret;
@@ -359,6 +359,7 @@ static int32_t PrepareDevice(struct Userdata *u)
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
+    sample_attrs.filePath = filePath;
 
     ret = u->sinkAdapter->RendererSinkInit(&sample_attrs);
     if (ret != 0) {
@@ -391,7 +392,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     }
 
     AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
-    if (PrepareDevice(u) < 0)
+    if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
     u->isHDISinkStarted = true;

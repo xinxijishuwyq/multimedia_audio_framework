@@ -162,6 +162,12 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_MIC:
             portName = PRIMARY_MIC;
             break;
+        case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
+            portName = FILE_SINK;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
+            portName = FILE_SOURCE;
+            break;
         default:
             portName = PORT_NONE;
             break;
@@ -360,6 +366,12 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 
         result = ActivateNewDevice(DEVICE_TYPE_MIC);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for MIC %{public}d", result);
+    } else if (deviceType == DEVICE_TYPE_FILE_SINK) {
+        result = ActivateNewDevice(DEVICE_TYPE_FILE_SINK);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for FILE_SINK %{public}d", result);
+
+        result = ActivateNewDevice(DEVICE_TYPE_FILE_SOURCE);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for FILE_SOURCE %{public}d", result);
     } else {
         result = ActivateNewDevice(deviceType);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Activate failed %{public}d", result);
@@ -618,32 +630,36 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 
     int32_t result = ERROR;
     AUDIO_INFO_LOG("[module_load]::HDI and AUDIO SERVICE is READY. Loading default modules");
-    auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_PRIMARY);
-    if (primaryModulesPos != deviceClassInfo_.end()) {
-        auto moduleInfoList = primaryModulesPos->second;
-        for (auto &moduleInfo : moduleInfoList) {
-            AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
-            AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
-            if (ioHandle == ERR_OPERATION_FAILED || ioHandle == ERR_INVALID_HANDLE) {
-                AUDIO_INFO_LOG("[module_load]::Open port failed");
-                continue;
-            }
-
-            auto devType = GetDeviceType(moduleInfo.name);
-            if (devType == DeviceType::DEVICE_TYPE_SPEAKER || devType == DeviceType::DEVICE_TYPE_MIC) {
-                result = mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
-                if (result != SUCCESS) {
-                    AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
-                    break;
+    for (const auto &device : deviceClassInfo_) {
+        if (device.first == ClassType::TYPE_PRIMARY || device.first == ClassType::TYPE_FILE_IO) {
+            auto moduleInfoList = device.second;
+            for (auto &moduleInfo : moduleInfoList) {
+                AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
+                AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
+                if (ioHandle == ERR_OPERATION_FAILED || ioHandle == ERR_INVALID_HANDLE) {
+                    AUDIO_INFO_LOG("[module_load]::Open port failed");
+                    continue;
                 }
-            }
+                mIOHandles[moduleInfo.name] = ioHandle;
 
-            // add new device into active device list
-            sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
-                GetDeviceRole(moduleInfo.role));
-            mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
-            mDefaultDeviceCount++;
-            mIOHandles[moduleInfo.name] = ioHandle;
+                auto devType = GetDeviceType(moduleInfo.name);
+                if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
+                    result = mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+                    if (result != SUCCESS) {
+                        AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
+                        continue;
+                    }
+                } else if (devType == DEVICE_TYPE_FILE_SOURCE || devType == DEVICE_TYPE_FILE_SINK) {
+                    // in case of file sink and source, no need to fill connected device list
+                    continue;
+                }
+
+                // add new device into active device list
+                sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
+                    GetDeviceRole(moduleInfo.role));
+                mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
+                mDefaultDeviceCount++;
+            }
         }
     }
 
@@ -691,6 +707,47 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId)
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
+{
+    if (mCurrentActiveDevice != DEVICE_TYPE_FILE_SINK) {
+        AUDIO_INFO_LOG("FILE_SINK_DEVICE is not active. Cannot reconfigure now");
+        return ERROR;
+    }
+
+    std::string module = FILE_SINK;
+
+    if (deviceType == DeviceType::DEVICE_TYPE_FILE_SINK) {
+        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_8 && channelCount >= MONO, ERROR, "Invalid sink channel");
+        module = FILE_SINK;
+    } else if (deviceType == DeviceType::DEVICE_TYPE_FILE_SOURCE) {
+        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_6 && channelCount >= MONO, ERROR, "Invalid src channel");
+        module = FILE_SOURCE;
+    } else {
+        AUDIO_INFO_LOG("Invalid DeviceType");
+        return ERROR;
+    }
+
+    if (mIOHandles.find(module) != mIOHandles.end()) {
+        mAudioPolicyManager.CloseAudioPort(mIOHandles[module]);
+        mIOHandles.erase(module);
+    }
+
+    auto fileClass = deviceClassInfo_.find(ClassType::TYPE_FILE_IO);
+    if (fileClass != deviceClassInfo_.end()) {
+        auto moduleInfoList = fileClass->second;
+        for (auto &moduleInfo : moduleInfoList) {
+            if (module == moduleInfo.name) {
+                moduleInfo.channels = to_string(channelCount);
+                AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
+                mIOHandles[moduleInfo.name] = ioHandle;
+                mAudioPolicyManager.SetDeviceActive(ioHandle, deviceType, module, true);
+            }
+        }
+    }
+
+    return SUCCESS;
+}
+
 // private methods
 AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType)
 {
@@ -710,6 +767,12 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
         case InternalDeviceType::DEVICE_TYPE_MIC:
             ioHandle = mIOHandles[PRIMARY_MIC];
             break;
+        case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
+            ioHandle = mIOHandles[FILE_SINK];
+            break;
+        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
+            ioHandle = mIOHandles[FILE_SOURCE];
+            break;
         default:
             ioHandle = mIOHandles[PRIMARY_MIC];
             break;
@@ -726,6 +789,10 @@ InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceNa
         devType = InternalDeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "fifo_output" || deviceName == "fifo_input") {
         devType = DEVICE_TYPE_BLUETOOTH_SCO;
+    } else if (deviceName == "file_sink") {
+        devType = DEVICE_TYPE_FILE_SINK;
+    } else if (deviceName == "file_source") {
+        devType = DEVICE_TYPE_FILE_SOURCE;
     }
 
     return devType;

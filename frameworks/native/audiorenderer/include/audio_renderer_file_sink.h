@@ -13,29 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef BLUETOOTH_RENDERER_SINK_H
-#define BLUETOOTH_RENDERER_SINK_H
+#ifndef AUDIO_RENDERER_FILE_SINK_H
+#define AUDIO_RENDERER_FILE_SINK_H
 
 #include "audio_info.h"
-#include "audio_proxy_manager.h"
 
 #include <cstdio>
 #include <list>
+#include <iostream>
+#include <string>
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct {
-    HDI::Audio_Bluetooth::AudioFormat format;
-    uint32_t sampleFmt;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-    const char *filePath;
-} AudioSinkAttr;
-
-class BluetoothRendererSink {
+class AudioRendererFileSink {
 public:
-    int32_t Init(AudioSinkAttr &atrr);
+    int32_t Init(const char *filePath);
     void DeInit(void);
     int32_t Start(void);
     int32_t Stop(void);
@@ -45,30 +37,14 @@ public:
     int32_t Resume(void);
     int32_t RenderFrame(char &frame, uint64_t len, uint64_t &writeLen);
     int32_t SetVolume(float left, float right);
-    int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
-    static BluetoothRendererSink *GetInstance(void);
-    bool rendererInited_;
+    static AudioRendererFileSink *GetInstance(void);
 private:
-    BluetoothRendererSink();
-    ~BluetoothRendererSink();
-    AudioSinkAttr attr_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
-    struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
-    struct HDI::Audio_Bluetooth::AudioAdapter *audioAdapter_;
-    struct HDI::Audio_Bluetooth::AudioRender *audioRender_;
-    struct HDI::Audio_Bluetooth::AudioPort audioPort;
-    void *handle_;
-
-    int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
-    int32_t InitAudioManager();
-#ifdef BT_DUMPFILE
-    FILE *pfd;
-#endif // DUMPFILE
+    AudioRendererFileSink();
+    ~AudioRendererFileSink();
+    FILE *filePtr_ = nullptr;
+    std::string filePath_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // BLUETOOTH_RENDERER_SINK_H
+#endif // AUDIO_RENDERER_FILE_SINK_H

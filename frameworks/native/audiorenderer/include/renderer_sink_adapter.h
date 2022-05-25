@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include <audio_renderer_sink_intf.h>
+#include <audio_renderer_file_sink_intf.h>
 #include <bluetooth_renderer_sink_intf.h>
 
 #ifdef __cplusplus
@@ -30,6 +31,7 @@ typedef struct {
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
+    const char *filePath;
 } SinkAttr;
 
 struct RendererSinkAdapter {

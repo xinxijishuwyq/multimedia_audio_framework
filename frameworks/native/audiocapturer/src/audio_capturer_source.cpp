@@ -591,7 +591,6 @@ int32_t AudioCapturerSourceStart()
 int32_t AudioCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     int32_t ret;
-
     if (!g_audioCaptureSourceInstance->capturerInited_) {
         AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
         return ERR_DEVICE_INIT;

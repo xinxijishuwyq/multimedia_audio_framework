@@ -61,7 +61,6 @@ public:
     int32_t Clear();
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
-    std::vector<AudioChannel> GetSupportedChannels() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;
     std::vector<AudioSamplingRate> GetSupportedSamplingRates() const;
 

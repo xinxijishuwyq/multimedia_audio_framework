@@ -95,6 +95,34 @@ ohos_shared_library("bluetooth_renderer_sink") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("audio_renderer_file_sink") {
+  install_enable = true
+
+  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/audio_renderer_file_sink.cpp" ]
+
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+
+  cflags_cc = cflags
+
+  include_dirs = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//utils/native/base/include",
+  ]
+
+  public_configs = [ ":audio_external_library_config" ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//utils/native/base:utils",
+  ]
+
+  part_name = "multimedia_audio_standard"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("audio_bluetooth_client") {
   install_enable = true
   sources = [
@@ -165,6 +193,7 @@ ohos_shared_library("renderer_sink_adapter") {
 
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_file_sink",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_sink",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:bluetooth_renderer_sink",
   ]

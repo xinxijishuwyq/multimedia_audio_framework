@@ -136,7 +136,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSupportedFormats_001, TestSize.L
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSupportedChannels_001, TestSize.Level0)
 {
     vector<AudioChannel> supportedChannelList = AudioRenderer::GetSupportedChannels();
-    EXPECT_EQ(AUDIO_SUPPORTED_CHANNELS.size(), supportedChannelList.size());
+    EXPECT_EQ(RENDERER_SUPPORTED_CHANNELS.size(), supportedChannelList.size());
 }
 
 /**

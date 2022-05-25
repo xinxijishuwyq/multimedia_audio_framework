@@ -190,11 +190,6 @@ vector<AudioSampleFormat> AudioStream::GetSupportedFormats() const
     return AUDIO_SUPPORTED_FORMATS;
 }
 
-vector<AudioChannel> AudioStream::GetSupportedChannels() const
-{
-    return AUDIO_SUPPORTED_CHANNELS;
-}
-
 vector<AudioEncodingType> AudioStream::GetSupportedEncodingTypes() const
 {
     return AUDIO_SUPPORTED_ENCODING_TYPES;
@@ -213,10 +208,18 @@ bool IsFormatValid(uint8_t format)
     return isValidFormat;
 }
 
-bool IsChannelValid(uint8_t channel)
+bool IsRendererChannelValid(uint8_t channel)
 {
-    bool isValidChannel = (find(AUDIO_SUPPORTED_CHANNELS.begin(), AUDIO_SUPPORTED_CHANNELS.end(), channel)
-                           != AUDIO_SUPPORTED_CHANNELS.end());
+    bool isValidChannel = (find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(), channel)
+                           != RENDERER_SUPPORTED_CHANNELS.end());
+    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
+    return isValidChannel;
+}
+
+bool IsCapturerChannelValid(uint8_t channel)
+{
+    bool isValidChannel = (find(CAPTURER_SUPPORTED_CHANNELS.begin(), CAPTURER_SUPPORTED_CHANNELS.end(), channel)
+                           != CAPTURER_SUPPORTED_CHANNELS.end());
     AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
     return isValidChannel;
 }
@@ -265,8 +268,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
     AUDIO_DEBUG_LOG("AudioStream: format: %{public}d", info.format);
     AUDIO_DEBUG_LOG("AudioStream: stream type: %{public}d", eStreamType_);
 
-    if (!IsFormatValid(info.format) || !IsChannelValid(info.channels)
-        || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
+    if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
@@ -280,10 +282,18 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
     switch (eMode_) {
         case AUDIO_MODE_PLAYBACK:
             AUDIO_DEBUG_LOG("AudioStream: Initialize playback");
+            if (!IsRendererChannelValid(info.channels)) {
+                AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", info.channels);
+                return ERR_NOT_SUPPORTED;
+            }
             ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
             break;
         case AUDIO_MODE_RECORD:
             AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
+            if (!IsCapturerChannelValid(info.channels)) {
+                AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", info.channels);
+                return ERR_NOT_SUPPORTED;
+            }
             ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
             break;
         default:

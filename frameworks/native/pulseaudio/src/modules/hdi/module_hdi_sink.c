@@ -37,6 +37,7 @@ PA_MODULE_USAGE(
         "channels=<number of channels> "
         "channel_map=<channel map> "
         "buffer_size=<custom buffer size>"
+        "file_path=<file path for data writing>"
         );
 
 static const char * const VALID_MODARGS[] = {
@@ -48,6 +49,7 @@ static const char * const VALID_MODARGS[] = {
     "channels",
     "channel_map",
     "buffer_size",
+    "file_path",
     NULL
 };
 
