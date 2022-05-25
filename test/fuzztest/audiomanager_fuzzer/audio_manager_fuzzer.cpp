@@ -24,7 +24,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-void AudioManagerSetVolumeFuzzTest(const uint8_t* data, size_t size)
+void AudioManagerFuzzTest(const uint8_t* data, size_t size)
 {
     if ((data == nullptr) || (size <= 0)) {
         std::cout << "Invalid data" << std::endl;
@@ -34,26 +34,17 @@ void AudioManagerSetVolumeFuzzTest(const uint8_t* data, size_t size)
     AudioSystemManager::AudioVolumeType type = *reinterpret_cast<const AudioSystemManager::AudioVolumeType *>(data);
     int32_t volume = *reinterpret_cast<const int32_t *>(data);
     AudioSystemManager::GetInstance()->SetVolume(type, volume);
-}
-
-void AudioManagerSetDeviceActiveFuzzTest(const uint8_t* data, size_t size)
-{
-    if ((data == nullptr) || (size <= 0)) {
-        std::cout << "Invalid data" << std::endl;
-        return;
-    }
-
-    AudioSystemManager::GetInstance()->SetDeviceActive(*reinterpret_cast<const ActiveDeviceType *>(data), true);
-}
-
-void AudioManagerSetRingerModeFuzzTest(const uint8_t* data, size_t size)
-{
-    if ((data == nullptr) || (size <= 0)) {
-        std::cout << "Invalid data" << std::endl;
-        return;
-    }
-
+    AudioSystemManager::GetInstance()->GetVolume(type);
+    AudioSystemManager::GetInstance()->GetMinVolume(type);
+    AudioSystemManager::GetInstance()->GetMaxVolume(type);
+    AudioSystemManager::GetInstance()->SetMute(type, true);
+    AudioSystemManager::GetInstance()->IsStreamMute(type);
     AudioSystemManager::GetInstance()->SetRingerMode(*reinterpret_cast<const AudioRingerMode *>(data));
+    AudioSystemManager::GetInstance()->SetAudioScene(*reinterpret_cast<const AudioScene *>(data));
+
+    std::string key(reinterpret_cast<const char*>(data), size);
+    std::string value(reinterpret_cast<const char*>(data), size);
+    AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -62,8 +53,6 @@ void AudioManagerSetRingerModeFuzzTest(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerSetVolumeFuzzTest(data, size);
-    OHOS::AudioStandard::AudioManagerSetDeviceActiveFuzzTest(data, size);
-    OHOS::AudioStandard::AudioManagerSetRingerModeFuzzTest(data, size);
+    OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
     return 0;
 }
