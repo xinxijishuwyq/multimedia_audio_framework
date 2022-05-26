@@ -298,6 +298,12 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     reply.WriteBool(ret);
 }
 
+void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int ret = GetAudioLatencyFromXml();
+    reply.WriteInt32(ret);
+}
+
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t count = data.ReadUint32();
@@ -432,6 +438,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case RECONFIGURE_CHANNEL:
             ReconfigureAudioChannelInternal(data, reply);
+            break;
+
+        case GET_AUDIO_LATENCY:
+            GetAudioLatencyFromXmlInternal(data, reply);
             break;
 
         default:

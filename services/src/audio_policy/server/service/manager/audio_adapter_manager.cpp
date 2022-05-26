@@ -238,6 +238,21 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(audioModuleInfo.format);
         AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
+
+    if (!audioModuleInfo.fixedLatency.empty()) {
+        args.append(" fixed_latency=");
+        args.append(audioModuleInfo.fixedLatency);
+    }
+
+    if (!audioModuleInfo.renderInIdleState.empty()) {
+        args.append(" render_in_idle_state=");
+        args.append(audioModuleInfo.renderInIdleState);
+    }
+
+    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+        args.append(" open_mic_speaker=");
+        args.append(audioModuleInfo.OpenMicSpeaker);
+    }
 }
 
 // Private Members
@@ -250,6 +265,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.name.empty()) {
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);
+        }
+ 
+        if (!audioModuleInfo.adapterName.empty()) {
+            args.append(" adapter_name=");
+            args.append(audioModuleInfo.adapterName);
         }
 
         if (!audioModuleInfo.className.empty()) {
@@ -266,6 +286,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.name.empty()) {
             args.append(" source_name=");
             args.append(audioModuleInfo.name);
+        }
+       
+        if (!audioModuleInfo.adapterName.empty()) {
+            args.append(" adapter_name=");
+            args.append(audioModuleInfo.adapterName);
         }
 
         if (!audioModuleInfo.className.empty()) {

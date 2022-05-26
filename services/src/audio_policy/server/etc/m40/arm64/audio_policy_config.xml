@@ -18,12 +18,12 @@
         <modules>
             <module name="Speaker" lib="libmodule-hdi-sink.z.so" role="sink" channels="2" rate="48000" format="s32" buffer_size="7680">
                 <Ports>
-                    <Port adapter_name="internal" id="0" channels="2" rate="48000" buffer_size="7680"/>
+                    <Port adapter_name="primary" id="0" channels="2" rate="48000" buffer_size="7680" fixed_latency="0" render_in_idle_state="0" open_mic_speaker="1"/>
                 </Ports>
             </module>
             <module name="Built_in_mic" lib="libmodule-hdi-source.z.so" role="source" channels="2" rate="44100" buffer_size="3584">
                 <Ports>
-                    <Port adapter_name="internal" id="0" channels="2" rate="44100" buffer_size="3584"/>
+                    <Port adapter_name="primary" id="0" channels="2" rate="44100" buffer_size="3584" open_mic_speaker="1"/>
                 </Ports>
             </module>
             <module name="fifo_output" lib="libmodule-pipe-sink.z.so" role="sink" file="/data/data/.pulse_dir/pipe_sink.pcm">
@@ -63,4 +63,5 @@
     </deviceclass>
     <AudioInterruptEnable>false</AudioInterruptEnable>
     <UpdateRouteSupport>true</UpdateRouteSupport>
+    <AudioLatency>140</AudioLatency>
 </audioPolicyConfiguration>

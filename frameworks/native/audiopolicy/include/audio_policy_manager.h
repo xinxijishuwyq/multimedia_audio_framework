@@ -107,6 +107,7 @@ public:
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
+    int32_t GetAudioLatencyFromXml();
 private:
     AudioPolicyManager()
     {

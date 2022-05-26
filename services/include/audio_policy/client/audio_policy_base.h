@@ -89,6 +89,8 @@ public:
     virtual bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) = 0;
 
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
+
+    virtual int32_t GetAudioLatencyFromXml() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

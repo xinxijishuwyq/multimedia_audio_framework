@@ -459,7 +459,7 @@ int32_t AudioPolicyServer::RequestAudioFocus(const uint32_t clientID, const Audi
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer: RequestAudioFocus in");
     if (clientOnFocus_ == clientID) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: client already has focus..");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: client already has focus");
         NotifyFocusGranted(clientID, audioInterrupt);
         return SUCCESS;
     }
@@ -1101,6 +1101,11 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
     dumpObj.AudioDataDump(policyData, dumpString);
 
     return write(fd, dumpString.c_str(), dumpString.size());
+}
+
+int32_t AudioPolicyServer::GetAudioLatencyFromXml()
+{
+    return mPolicyService.GetAudioLatencyFromXml();
 }
 } // namespace AudioStandard
 } // namespace OHOS

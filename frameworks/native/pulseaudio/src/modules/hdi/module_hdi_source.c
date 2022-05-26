@@ -40,6 +40,8 @@ PA_MODULE_USAGE(
         "channel_map=<channel map>"
         "buffer_size=<custom buffer size>"
         "file_path=<file path for data reading>"
+        "adapter_name=<primary1>"
+        "open_mic_speaker<open mic>"
     );
 
 static const char * const VALID_MODARGS[] = {
@@ -52,6 +54,8 @@ static const char * const VALID_MODARGS[] = {
     "channel_map",
     "buffer_size",
     "file_path",
+    "adapter_name",
+    "open_mic_speaker",
     NULL
 };
 

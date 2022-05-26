@@ -55,7 +55,6 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
     std::string info = serviceStatus->info;
     AUDIO_DEBUG_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d] [info:%{public}s]",
                     serviceStatus->serviceName, serviceStatus->status, info.c_str());
-
     if (serviceStatus->serviceName == AUDIO_HDI_SERVICE_NAME) {
         DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
         CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");

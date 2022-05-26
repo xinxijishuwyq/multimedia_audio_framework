@@ -51,6 +51,7 @@ enum NodeName {
     PORT,
     AUDIO_INTERRUPT_ENABLE,
     UPDATE_ROUTE_SUPPORT,
+    AUDIO_LATENCY,
     UNKNOWN
 };
 
@@ -77,6 +78,9 @@ public:
     std::string format;
     std::string channels;
     std::string bufferSize;
+    std::string fixedLatency;
+    std::string renderInIdleState;
+    std::string OpenMicSpeaker;
     std::string fileName;
     std::list<AudioModuleInfo> ports;
 };
