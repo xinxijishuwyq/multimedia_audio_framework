@@ -13,8 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/ohos/ace/ace.gni")
-
-aakits_path = "//foundation/aafwk/standard/frameworks/kits"
+import("//foundation/multimedia/audio_standard/multimedia_aafwk.gni")
 
 js_declaration("audio_js") {
   part_name = "multimedia_audio_standard"
@@ -30,7 +29,7 @@ ohos_copy("audio_declaration") {
 
 ohos_shared_library("audio") {
   include_dirs = [
-    "${aakits_path}/ability/native/include",
+    "${aafwk_kits_path}/ability/native/include",
     "//foundation/arkui/napi/interfaces/kits",
     "//foundation/multimedia/audio_standard/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_standard/frameworks/js/napi/audio_capturer/include",
@@ -70,7 +69,7 @@ ohos_shared_library("audio") {
   ]
 
   deps = [
-    "${aakits_path}/ability/native:abilitykit_native",
+    "${aafwk_kits_path}/ability/native:abilitykit_native",
     "//base/global/resource_management/frameworks/resmgr:global_resmgr",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/arkui/napi:ace_napi",
