@@ -782,7 +782,6 @@ int32_t AudioServiceClient::ConnectStreamToPA()
                                             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
                                             | PA_STREAM_INTERPOLATE_TIMING
                                             | PA_STREAM_START_CORKED
-                                            | PA_STREAM_AUTO_TIMING_UPDATE
                                             | PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
     else
         result = pa_stream_connect_record(paStream, nullptr, nullptr,
@@ -1716,6 +1715,14 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
+
+    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    }
+
     while (!getPALatency) {
         if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
             if (negative) {
