@@ -13,21 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_PORT_OBSERVER_H
-#define ST_AUDIO_PORT_OBSERVER_H
+#ifndef AUDIO_CAPTURER_FILE_SOURCE_H
+#define AUDIO_CAPTURER_FILE_SOURCE_H
 
 #include "audio_info.h"
-#include "iaudio_policy_interface.h"
+
+#include <cstdio>
+#include <list>
 
 namespace OHOS {
 namespace AudioStandard {
-class IPortObserver {
+class AudioCapturerFileSource {
 public:
-    virtual void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata) = 0;
-    virtual void OnAudioInterruptEnable(bool enable) = 0;
-    virtual void OnUpdateRouteSupport(bool isSupported) = 0;
-    virtual void OnAudioLatencyParsed(uint64_t latency) = 0;
+    int32_t Init(const char *filePath);
+    void DeInit(void);
+    int32_t Start(void);
+    int32_t Stop(void);
+    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes);
+    static AudioCapturerFileSource *GetInstance(void);
+private:
+    AudioCapturerFileSource();
+    ~AudioCapturerFileSource();
+    FILE *filePtr = nullptr;
 };
-} // namespace AudioStandard
-} // namespace OHOS
-#endif
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif // AUDIO_CAPTURER_FILE_SOURCE_H

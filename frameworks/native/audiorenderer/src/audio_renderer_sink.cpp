@@ -95,13 +95,6 @@ void AudioRendererSink::DeInit()
 void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
-#ifdef PRODUCT_M40
-    attrs.format = AUDIO_FORMAT_PCM_32_BIT;
-    attrs.frameSize = PCM_32_BIT * attrs.channelCount / PCM_8_BIT;
-#else
-    attrs.format = AUDIO_FORMAT_PCM_16_BIT;
-    attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
-#endif
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
@@ -110,7 +103,6 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
-    attrs.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (attrs.frameSize);
     attrs.stopThreshold = INT_32_MAX;
     attrs.silenceThreshold = 0;
 }
@@ -146,7 +138,7 @@ int32_t AudioRendererSink::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioProxyManagerFuncs();
+    audioManager_ = GetAudioManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -198,11 +190,8 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
 int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 {
     attr_ = attr;
-#ifdef PRODUCT_M40
-    string adapterNameCase = "internal";  // Set sound card information
-#else
-    string adapterNameCase = "primary";  // Set sound card information
-#endif
+    adapterNameCase_ = attr_.adapterName;  // Set sound card information
+    openSpeaker_ = attr_.openMicSpeaker;
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     if (InitAudioManager() != 0) {
@@ -220,7 +209,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     }
 
     // Get qualified sound card and port
-    int32_t index = SwitchAdapterRender(descs, adapterNameCase, port, audioPort_, size);
+    int32_t index = SwitchAdapterRender(descs, adapterNameCase_, port, audioPort_, size);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;
@@ -247,14 +236,12 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
         return ERR_NOT_STARTED;
     }
-
-#ifdef PRODUCT_M40
-    ret = OpenOutput(DEVICE_TYPE_SPEAKER);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+    if (openSpeaker_) {
+        ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+        }
     }
-#endif
-
     rendererInited_ = true;
 
 #ifdef DUMPFILE
@@ -365,7 +352,6 @@ int32_t AudioRendererSink::GetLatency(uint32_t *latency)
     }
 }
 
-#ifdef PRODUCT_M40
 static AudioCategory GetAudioCategory(AudioScene audioScene)
 {
     AudioCategory audioCategory;
@@ -390,7 +376,6 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
 
     return audioCategory;
 }
-#endif
 
 static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 {
@@ -465,27 +450,25 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
         AUDIO_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;
     }
+    if (openSpeaker_) {
+        int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+        }
+        struct AudioSceneDescriptor scene;
+        scene.scene.id = GetAudioCategory(audioScene);
+        scene.desc.pins = PIN_OUT_SPEAKER;
+        if (audioRender_->scene.SelectScene == nullptr) {
+            AUDIO_ERR_LOG("AudioRendererSink: Select scene nullptr");
+            return ERR_OPERATION_FAILED;
+        }
 
-#ifdef PRODUCT_M40
-    int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+        ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
+            return ERR_OPERATION_FAILED;
+        }
     }
-
-    struct AudioSceneDescriptor scene;
-    scene.scene.id = GetAudioCategory(audioScene);
-    scene.desc.pins = PIN_OUT_SPEAKER;
-    if (audioRender_->scene.SelectScene == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink: Select scene nullptr");
-        return ERR_OPERATION_FAILED;
-    }
-
-    ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
-        return ERR_OPERATION_FAILED;
-    }
-#endif
 
     AUDIO_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
@@ -617,7 +600,6 @@ AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
 int32_t AudioRendererSinkInit(AudioSinkAttr *attr)
 {
     int32_t ret;
-
     if (g_audioRendrSinkInstance->rendererInited_)
         return SUCCESS;
 

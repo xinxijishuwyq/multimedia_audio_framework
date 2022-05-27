@@ -105,6 +105,9 @@ public:
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
 
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
+
+    int32_t GetAudioLatencyFromXml();
 private:
     AudioPolicyManager()
     {

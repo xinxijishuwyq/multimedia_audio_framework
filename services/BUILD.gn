@@ -35,7 +35,6 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//drivers/peripheral/audio/hal/hdi_binder/proxy/include",
   ]
 
   if (target_cpu == "arm") {
@@ -232,7 +231,8 @@ ohos_prebuilt_etc("audio_policy_config") {
   }
 
   subsystem_name = "multimedia"
-  module_install_dir = "etc/audio"
+  relative_install_dir = "audio"
+  install_images = [ chipset_base_dir ]
   part_name = "multimedia_audio_standard"
 }
 
@@ -240,6 +240,7 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
   source = "$AUDIO_POLICY_SERVER_DIR/etc/audio_interrupt_policy_config.xml"
 
   subsystem_name = "multimedia"
-  module_install_dir = "etc/audio"
+  relative_install_dir = "audio"
+  install_images = [ chipset_base_dir ]
   part_name = "multimedia_audio_standard"
 }

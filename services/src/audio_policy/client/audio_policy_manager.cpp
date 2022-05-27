@@ -325,5 +325,15 @@ bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionNam
 {
     return g_sProxy->VerifyClientPermission(permissionName, appTokenId);
 }
+
+int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
+{
+    return g_sProxy->ReconfigureAudioChannel(count, deviceType);
+}
+
+int32_t AudioPolicyManager::GetAudioLatencyFromXml()
+{
+    return g_sProxy->GetAudioLatencyFromXml();
+}
 } // namespace AudioStandard
 } // namespace OHOS

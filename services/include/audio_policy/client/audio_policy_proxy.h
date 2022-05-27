@@ -83,6 +83,10 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
+
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
+
+    int32_t GetAudioLatencyFromXml() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

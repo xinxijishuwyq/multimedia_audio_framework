@@ -17,7 +17,7 @@
 #define AUDIO_CAPTURER_SOURCE_H
 
 #include "audio_info.h"
-#include "audio_proxy_manager.h"
+#include "audio_manager.h"
 
 #include <cstdio>
 #include <list>
@@ -36,6 +36,8 @@ namespace AudioStandard {
 #define INTERNAL_INPUT_STREAM_ID 1
 
 typedef struct {
+    const char *adapterName;
+    uint32_t open_mic_speaker;
     AudioFormat format;
     uint32_t sampleFmt;
     uint32_t sampleRate;
@@ -43,6 +45,7 @@ typedef struct {
     float volume;
     uint32_t bufferSize;
     bool isBigEndian;
+    const char *filePath;
 } AudioSourceAttr;
 
 class AudioCapturerSource {
@@ -80,7 +83,8 @@ private:
     float rightVolume_;
 
     int32_t routeHandle_ = -1;
-
+    int32_t openMic_;
+    std::string adapterNameCase_;
     struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioCapture *audioCapture_;

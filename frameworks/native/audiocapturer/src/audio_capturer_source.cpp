@@ -28,7 +28,6 @@ namespace AudioStandard {
 #ifdef CAPTURE_DUMP
 const char *g_audioOutTestFilePath = "/data/local/tmp/audio_capture.pcm";
 #endif // CAPTURE_DUMP
-
 bool AudioCapturerSource::micMuteState_ = false;
 
 AudioCapturerSource::AudioCapturerSource()
@@ -128,7 +127,7 @@ int32_t AudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioCapturerSource: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioProxyManagerFuncs();
+    audioManager_ = GetAudioManagerFuncs();
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -171,7 +170,6 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     int32_t index;
     int32_t size = 0;
     struct AudioAdapterDescriptor *descs = nullptr;
-
     if (InitAudioManager() != 0) {
         AUDIO_ERR_LOG("Init audio manager Fail");
         return ERR_INVALID_HANDLE;
@@ -185,12 +183,9 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
     }
 
     // Get qualified sound card and port
-#ifdef PRODUCT_M40
-    string adapterNameCase = "internal";
-#else
-    string adapterNameCase = "primary1";
-#endif
-    index = SwitchAdapterCapture(descs, size, adapterNameCase, PORT_IN, audioPort);
+    adapterNameCase_ = attr_.adapterName;
+    openMic_ = attr_.open_mic_speaker;
+    index = SwitchAdapterCapture(descs, size, adapterNameCase_, PORT_IN, audioPort);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Capture Fail");
         return ERR_NOT_STARTED;
@@ -217,14 +212,12 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         AUDIO_ERR_LOG("Create capture failed");
         return ERR_NOT_STARTED;
     }
-
-#ifdef PRODUCT_M40
-    ret = OpenInput(DEVICE_TYPE_MIC);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioRendererSink: update route FAILED: %{public}d", ret);
+    if (openMic_) {
+        ret = OpenInput(DEVICE_TYPE_MIC);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("AudioCapturerSource:update route FAILED: %{public}d", ret);
+        }
     }
-#endif
-
     capturerInited_ = true;
 
 #ifdef CAPTURE_DUMP
@@ -345,7 +338,6 @@ int32_t AudioCapturerSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-#ifdef PRODUCT_M40
 static AudioCategory GetAudioCategory(AudioScene audioScene)
 {
     AudioCategory audioCategory;
@@ -370,7 +362,6 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
 
     return audioCategory;
 }
-#endif
 
 static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
@@ -445,28 +436,25 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
         AUDIO_ERR_LOG("AudioCapturerSource::SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
+    if (openMic_) {
+        int32_t ret = OpenInput(DEVICE_TYPE_MIC);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("AudioCapturerSource: Update route FAILED: %{public}d", ret);
+        }
+        struct AudioSceneDescriptor scene;
+        scene.scene.id = GetAudioCategory(audioScene);
+        scene.desc.pins = PIN_IN_MIC;
+        if (audioCapture_->scene.SelectScene == nullptr) {
+            AUDIO_ERR_LOG("AudioCapturerSource: Select scene nullptr");
+            return ERR_OPERATION_FAILED;
+        }
 
-#ifdef PRODUCT_M40
-    int32_t ret = OpenInput(DEVICE_TYPE_MIC);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioCapturerSource: Update route FAILED: %{public}d", ret);
+        ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("AudioCapturerSource: Select scene FAILED: %{public}d", ret);
+            return ERR_OPERATION_FAILED;
+        }
     }
-
-    struct AudioSceneDescriptor scene;
-    scene.scene.id = GetAudioCategory(audioScene);
-    scene.desc.pins = PIN_IN_MIC;
-    if (audioCapture_->scene.SelectScene == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSource: Select scene nullptr");
-        return ERR_OPERATION_FAILED;
-    }
-
-    ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioCapturerSource: Select scene FAILED: %{public}d", ret);
-        return ERR_OPERATION_FAILED;
-    }
-#endif
-
     AUDIO_INFO_LOG("AudioCapturerSource::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }
@@ -591,7 +579,6 @@ int32_t AudioCapturerSourceStart()
 int32_t AudioCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     int32_t ret;
-
     if (!g_audioCaptureSourceInstance->capturerInited_) {
         AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
         return ERR_DEVICE_INIT;

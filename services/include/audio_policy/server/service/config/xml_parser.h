@@ -20,6 +20,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <unordered_map>
+#include <string>
 
 #include "audio_module_info.h"
 #include "iport_observer.h"
@@ -29,7 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 class XMLParser : public Parser {
 public:
-    static constexpr char CONFIG_FILE[] = "/etc/audio/audio_policy_config.xml";
+    static constexpr char CONFIG_FILE[] = "vendor/etc/audio/audio_policy_config.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;
@@ -54,6 +55,7 @@ private:
     void ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo);
     void ParseAudioInterrupt(xmlNode &node);
     void ParseUpdateRouteSupport(xmlNode &node);
+    void ParseAudioLatency(xmlNode &node);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     ClassType GetDeviceClassType(const std::string &deviceClass);
 

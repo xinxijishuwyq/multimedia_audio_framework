@@ -57,7 +57,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
-        AUDIO_DEBUG_LOG("Set application cache path");
+        AUDIO_INFO_LOG("Set application cache path");
         audioRenderer->SetApplicationCachePath(cachePath);
     }
 
@@ -539,7 +539,7 @@ std::vector<AudioSamplingRate> AudioRenderer::GetSupportedSamplingRates()
 
 std::vector<AudioChannel> AudioRenderer::GetSupportedChannels()
 {
-    return AUDIO_SUPPORTED_CHANNELS;
+    return RENDERER_SUPPORTED_CHANNELS;
 }
 
 std::vector<AudioEncodingType> AudioRenderer::GetSupportedEncodingTypes()

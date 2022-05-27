@@ -154,6 +154,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
+        case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -161,6 +162,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
+        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
         case InternalDeviceType::DEVICE_TYPE_MIC: {
             AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSource(name);
@@ -236,6 +238,21 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(audioModuleInfo.format);
         AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
+
+    if (!audioModuleInfo.fixedLatency.empty()) {
+        args.append(" fixed_latency=");
+        args.append(audioModuleInfo.fixedLatency);
+    }
+
+    if (!audioModuleInfo.renderInIdleState.empty()) {
+        args.append(" render_in_idle_state=");
+        args.append(audioModuleInfo.renderInIdleState);
+    }
+
+    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+        args.append(" open_mic_speaker=");
+        args.append(audioModuleInfo.OpenMicSpeaker);
+    }
 }
 
 // Private Members
@@ -245,20 +262,45 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
     if (audioModuleInfo.lib == HDI_SINK) {
         UpdateCommonArgs(audioModuleInfo, args);
-        if (!audioModuleInfo.adapterName.empty()) {
+        if (!audioModuleInfo.name.empty()) {
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);
+        }
+ 
+        if (!audioModuleInfo.adapterName.empty()) {
+            args.append(" adapter_name=");
+            args.append(audioModuleInfo.adapterName);
         }
 
         if (!audioModuleInfo.className.empty()) {
             args.append(" device_class=");
             args.append(audioModuleInfo.className);
         }
+
+        if (!audioModuleInfo.fileName.empty()) {
+            args.append(" file_path=");
+            args.append(audioModuleInfo.fileName);
+        }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
-        if (!audioModuleInfo.adapterName.empty()) {
+        if (!audioModuleInfo.name.empty()) {
             args.append(" source_name=");
             args.append(audioModuleInfo.name);
+        }
+       
+        if (!audioModuleInfo.adapterName.empty()) {
+            args.append(" adapter_name=");
+            args.append(audioModuleInfo.adapterName);
+        }
+
+        if (!audioModuleInfo.className.empty()) {
+            args.append(" device_class=");
+            args.append(audioModuleInfo.className);
+        }
+
+        if (!audioModuleInfo.fileName.empty()) {
+            args.append(" file_path=");
+            args.append(audioModuleInfo.fileName);
         }
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
@@ -271,7 +313,6 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(audioModuleInfo.fileName);
         }
     }
-
     return args;
 }
 

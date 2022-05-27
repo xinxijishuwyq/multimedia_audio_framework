@@ -47,7 +47,11 @@
 const char *DEVICE_CLASS_A2DP = "a2dp";
 
 struct Userdata {
+    const char *adapterName;
     uint32_t buffer_size;
+    uint32_t fixed_latency;
+    uint32_t render_in_idle_state;
+    uint32_t open_mic_speaker;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;
@@ -65,7 +69,7 @@ struct Userdata {
 };
 
 static void UserdataFree(struct Userdata *u);
-static int32_t PrepareDevice(struct Userdata *u);
+static int32_t PrepareDevice(struct Userdata *u, const char* filePath);
 
 static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
 {
@@ -169,12 +173,14 @@ static void ThreadFuncUseTiming(void *userdata)
         pa_usec_t now = 0;
         int ret;
 
-#ifdef PRODUCT_RK3568
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
-#else
-        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
-#endif
-            now = pa_rtclock_now();
+        if (u->render_in_idle_state) {
+            if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+                now = pa_rtclock_now();
+            }
+        } else {
+            if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+                now = pa_rtclock_now();
+            }
         }
 
         if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
@@ -182,19 +188,17 @@ static void ThreadFuncUseTiming(void *userdata)
         }
 
         // Render some data and drop it immediately
-#ifdef PRODUCT_RK3568
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
-#else
-        if (PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
-#endif
+        if (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
             if (u->timestamp <= now)
                 ProcessRenderUseTiming(u, now);
-
+            pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp);
+        } else if (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+            if (u->timestamp <= now)
+                ProcessRenderUseTiming(u, now);
             pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp);
         } else {
             pa_rtpoll_set_timer_disabled(u->rtpoll);
         }
-
         // Hmm, nothing to do. Let's sleep
         if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
             goto fail;
@@ -216,7 +220,6 @@ finish:
     AUDIO_INFO_LOG("Thread (use timing) shutting down");
 }
 
-#ifdef PRODUCT_M40
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 {
     struct Userdata *u = NULL;
@@ -233,9 +236,7 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     nbytes = pa_usec_to_bytes(u->block_usec, &s->sample_spec);
     pa_sink_set_max_request_within_thread(s, nbytes);
 }
-#endif
 
-// Called from IO context
 static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                           pa_memchunk *chunk)
 {
@@ -346,7 +347,7 @@ static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
     return hdiAudioFormat;
 }
 
-static int32_t PrepareDevice(struct Userdata *u)
+static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 {
     SinkAttr sample_attrs;
     int32_t ret;
@@ -355,10 +356,12 @@ static int32_t PrepareDevice(struct Userdata *u)
     sample_attrs.format = format;
     sample_attrs.sampleFmt = format;
     AUDIO_INFO_LOG("audiorenderer format: %d", sample_attrs.format);
-
+    sample_attrs.adapterName = u->adapterName;
+    sample_attrs.open_mic_speaker = u->open_mic_speaker;
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
+    sample_attrs.filePath = filePath;
 
     ret = u->sinkAdapter->RendererSinkInit(&sample_attrs);
     if (ret != 0) {
@@ -391,7 +394,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     }
 
     AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
-    if (PrepareDevice(u) < 0)
+    if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
     u->isHDISinkStarted = true;
@@ -450,6 +453,22 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
     }
+    if (pa_modargs_get_value_u32(ma, "fixed_latency", &u->fixed_latency) < 0) {
+        AUDIO_ERR_LOG("Failed to parse fixed latency argument.");
+        goto fail;
+    }
+
+    u->adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
+
+    if (pa_modargs_get_value_u32(ma, "render_in_idle_state", &u->render_in_idle_state) < 0) {
+        AUDIO_ERR_LOG("Failed to parse render_in_idle_state  argument.");
+        goto fail;
+    }
+
+    if (pa_modargs_get_value_u32(ma, "open_mic_speaker", &u->open_mic_speaker) < 0) {
+        AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument.");
+        goto fail;
+    }
 
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {
@@ -459,9 +478,9 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     u->sink->parent.process_msg = SinkProcessMsg;
     u->sink->set_state_in_io_thread = SinkSetStateInIoThreadCb;
-#ifdef PRODUCT_M40
-    u->sink->update_requested_latency = SinkUpdateRequestedLatencyCb;
-#endif
+    if (!u->fixed_latency) {
+        u->sink->update_requested_latency = SinkUpdateRequestedLatencyCb;
+    }
     u->sink->userdata = u;
 
     pa_sink_set_asyncmsgq(u->sink, u->thread_mq.inq);
@@ -475,11 +494,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
-#ifdef PRODUCT_M40
-    pa_sink_set_latency_range(u->sink, 0, u->block_usec);
-#else
-    pa_sink_set_fixed_latency(u->sink, u->block_usec);
-#endif
+
+    if (u->fixed_latency) {
+        pa_sink_set_fixed_latency(u->sink, u->block_usec);
+    } else {
+        pa_sink_set_latency_range(u->sink, 0, u->block_usec);
+    }
+
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
     threadName = "hdi-sink-playback";

@@ -508,6 +508,10 @@ private:
 
     std::mutex dataMutex;
     std::mutex ctrlMutex;
+    std::mutex capturerMarkReachedMutex_;
+    std::mutex capturerPeriodReachedMutex_;
+    std::mutex rendererMarkReachedMutex_;
+    std::mutex rendererPeriodReachedMutex_;
 
     AudioCache acache;
     const void *internalReadBuffer;
@@ -611,6 +615,16 @@ private:
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
+
+    // audio channel index
+    static const uint8_t CHANNEL1_IDX = 0;
+    static const uint8_t CHANNEL2_IDX = 1;
+    static const uint8_t CHANNEL3_IDX = 2;
+    static const uint8_t CHANNEL4_IDX = 3;
+    static const uint8_t CHANNEL5_IDX = 4;
+    static const uint8_t CHANNEL6_IDX = 5;
+    static const uint8_t CHANNEL7_IDX = 6;
+    static const uint8_t CHANNEL8_IDX = 7;
 
     // Resets PA audio client and free up resources if any with this API
     void ResetPAAudioClient();

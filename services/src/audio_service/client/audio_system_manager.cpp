@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-static sptr<IStandardAudioService> g_sProxy = nullptr;
+sptr<IStandardAudioService> g_sProxy = nullptr;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 
@@ -169,6 +169,7 @@ int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool fl
     switch (deviceType) {
         case SPEAKER:
         case BLUETOOTH_SCO:
+        case FILE_SINK_DEVICE:
             break;
         default:
             AUDIO_ERR_LOG("SetDeviceActive device=%{public}d not supported", deviceType);
@@ -312,20 +313,22 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
     return nearbyint(value);
 }
 
-int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume::Audio service unavailable");
-
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume service unavailable");
+    }
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
     return g_sProxy->GetMaxVolume(volumeType);
 }
 
-int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume::Audio service unavailable");
-
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume service unavailable");
+    }
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
@@ -429,15 +432,29 @@ int32_t AudioSystemManager::UnsetRingerModeCallback(const int32_t clientId) cons
     return AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId);
 }
 
-int32_t AudioSystemManager::SetMicrophoneMute(bool isMute) const
+bool AudioSystemManager::IsAlived()
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "SetMicrophoneMute::Audio service unavailable");
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (g_sProxy == nullptr) {
+        init();
+    }
+
+    return (g_sProxy != nullptr) ? true : false;
+}
+
+int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "SetMicrophoneMute service unavailable");
+    }
     return g_sProxy->SetMicrophoneMute(isMute);
 }
 
-bool AudioSystemManager::IsMicrophoneMute() const
+bool AudioSystemManager::IsMicrophoneMute()
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "IsMicrophoneMute::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, false, "IsMicrophoneMute service unavailable");
+    }
     return g_sProxy->IsMicrophoneMute();
 }
 
@@ -580,6 +597,11 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
 }
 
+int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
+{
+    return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
+}
+
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");
@@ -612,6 +634,11 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
     }
 
     return;
+}
+
+int32_t AudioSystemManager::GetAudioLatencyFromXml() const
+{
+    return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -58,6 +58,8 @@ private:
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
+    void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

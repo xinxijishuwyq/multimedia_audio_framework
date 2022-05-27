@@ -17,7 +17,7 @@
 #define AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "audio_proxy_manager.h"
+#include "audio_manager.h"
 
 #include <cstdio>
 #include <list>
@@ -25,11 +25,14 @@
 namespace OHOS {
 namespace AudioStandard {
 typedef struct {
+    const char *adapterName;
+    uint32_t openMicSpeaker;
     AudioFormat format;
     uint32_t sampleFmt;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
+    const char *filePath;
 } AudioSinkAttr;
 
 class AudioRendererSink {
@@ -59,6 +62,8 @@ private:
     float leftVolume_;
     float rightVolume_;
     int32_t routeHandle_ = -1;
+    int32_t openSpeaker_;
+    std::string adapterNameCase_;
     struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;

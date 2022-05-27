@@ -74,6 +74,8 @@ public:
 
     AudioScene GetAudioScene() const;
 
+    int32_t GetAudioLatencyFromXml() const;
+
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
@@ -81,7 +83,11 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData);
+    void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData,
+        const std::string &macAddress, const AudioStreamInfo &streamInfo);
+
+    void OnDeviceConfigurationChanged(DeviceType deviceType,
+        const std::string &macAddress, const AudioStreamInfo &streamInfo);
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
@@ -91,6 +97,9 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
+    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
+
+    void OnAudioLatencyParsed(uint64_t latency);
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -117,12 +126,18 @@ private:
 
     DeviceType FetchHighPriorityDevice();
 
-    void UpdateConnectedDevices(DeviceType deviceType, std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status);
+    void UpdateConnectedDevices(DeviceType deviceType, std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status,
+        const std::string &macAddress, const AudioStreamInfo &streamInfo);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
 
+    bool GetActiveDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
+
+    bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
+    uint64_t audioLatencyInMsec_ = 50;
     int32_t mDefaultDeviceCount = 0;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     DeviceType mCurrentActiveDevice = DEVICE_TYPE_NONE;
@@ -130,6 +145,8 @@ private:
     Parser& mConfigParser;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
+    std::unordered_map<std::string, AudioStreamInfo> connectedBTDeviceMap_;
+    std::string activeBTDevice_;
     std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCallbackMap_;
     AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
     AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];

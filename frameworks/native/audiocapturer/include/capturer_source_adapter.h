@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef RENDERER_SINK_ADAPTER_H
-#define RENDERER_SINK_ADAPTER_H
+#ifndef CAPTURER_SOURCE_ADAPTER_H
+#define CAPTURER_SOURCE_ADAPTER_H
 
 #include <stdio.h>
 
-#include <audio_renderer_sink_intf.h>
-#include <audio_renderer_file_sink_intf.h>
-#include <bluetooth_renderer_sink_intf.h>
+#include "audio_capturer_source_intf.h"
+#include "audio_capturer_file_source_intf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,25 +32,27 @@ typedef struct {
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
+    uint32_t bufferSize;
+    bool isBigEndian;
     const char *filePath;
-} SinkAttr;
+} SourceAttr;
 
-struct RendererSinkAdapter {
-    int32_t (*RendererSinkInit)(const SinkAttr *attr);
-    void (*RendererSinkDeInit)(void);
-    int32_t (*RendererSinkStart)(void);
-    int32_t (*RendererSinkPause)(void);
-    int32_t (*RendererSinkResume)(void);
-    int32_t (*RendererSinkStop)(void);
-    int32_t (*RendererRenderFrame)(char *data, uint64_t len, uint64_t *writeLen);
-    int32_t (*RendererSinkSetVolume)(float left, float right);
-    int32_t (*RendererSinkGetLatency)(uint32_t *latency);
+struct CapturerSourceAdapter {
+    int32_t (*CapturerSourceInit)(const SourceAttr *attr);
+    void (*CapturerSourceDeInit)(void);
+    int32_t (*CapturerSourceStart)(void);
+    int32_t (*CapturerSourceSetMute)(bool isMute);
+    bool (*CapturerSourceIsMuteRequired)(void);
+    int32_t (*CapturerSourceStop)(void);
+    int32_t (*CapturerSourceFrame)(char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+    int32_t (*CapturerSourceSetVolume)(float left, float right);
+    int32_t (*CapturerSourceGetVolume)(float *left, float *right);
 };
 
-int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);
-int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
+int32_t LoadSourceAdapter(const char *device, struct CapturerSourceAdapter **sourceAdapter);
+int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
 const char *GetDeviceClass(void);
 #ifdef __cplusplus
 }
 #endif
-#endif // RENDERER_SINK_ADAPTER_H
+#endif // CAPTURER_SOURCE_ADAPTER_H

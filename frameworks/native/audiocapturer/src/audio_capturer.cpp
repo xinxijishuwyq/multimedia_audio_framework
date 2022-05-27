@@ -303,7 +303,7 @@ std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()
 
 std::vector<AudioChannel> AudioCapturer::GetSupportedChannels()
 {
-    return AUDIO_SUPPORTED_CHANNELS;
+    return CAPTURER_SUPPORTED_CHANNELS;
 }
 
 std::vector<AudioEncodingType> AudioCapturer::GetSupportedEncodingTypes()

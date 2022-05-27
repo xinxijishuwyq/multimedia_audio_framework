@@ -29,16 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
-
-#ifdef PRODUCT_M40
-#ifdef __aarch64__
-const uint64_t LATENCY_IN_MSEC = 90UL;
-#else
-const uint64_t LATENCY_IN_MSEC = 45UL;
-#endif
-#else
-const uint64_t LATENCY_IN_MSEC = 50UL;
-#endif
+const uint64_t LATENCY_IN_MSEC = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
@@ -289,7 +280,7 @@ int32_t AudioServiceClient::SetAudioCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::SetAudioCaptureMode.");
     captureMode_ = captureMode;
-    
+
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -405,7 +396,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
     if (asClient->mAudioRendererCallbacks)
         asClient->mAudioRendererCallbacks->OnStreamStateChangeCb();
 
-    AUDIO_INFO_LOG("Current Stream State: %d", pa_stream_get_state(stream));
+    AUDIO_INFO_LOG("Current Stream State: %{private}d", pa_stream_get_state(stream));
 
     switch (pa_stream_get_state(stream)) {
         case PA_STREAM_READY:
@@ -424,8 +415,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
-
-    AUDIO_INFO_LOG("Current Context State: %d", pa_context_get_state(context));
+    AUDIO_INFO_LOG("Current Context State: %{private}d", pa_context_get_state(context));
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
@@ -641,6 +631,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     mFramePeriodRead = 0;
 
     SetEnv();
+
     mAudioSystemMgr = AudioSystemManager::GetInstance();
 
     mainLoop = pa_threaded_mainloop_new();
@@ -664,6 +655,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     if (!cachePath_.empty()) {
         AUDIO_DEBUG_LOG("abilityContext not null");
         int32_t size = 0;
+
         const char *cookieData = mAudioSystemMgr->RetrieveCookie(size);
         if (size <= 0) {
             AUDIO_ERR_LOG("Error retrieving cookie");
@@ -888,11 +880,39 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
-    if (!(paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, nullptr, propList))) {
+    AUDIO_ERR_LOG("Creating stream fo channels %{public}d", audioParams.channels);
+    pa_channel_map map;
+    if (audioParams.channels > CHANNEL_6) {
+        pa_channel_map_init(&map);
+        map.channels = audioParams.channels;
+        switch (audioParams.channels) {
+            case CHANNEL_8:
+                map.map[CHANNEL8_IDX] = PA_CHANNEL_POSITION_AUX1;
+            case CHANNEL_7:
+                map.map[CHANNEL1_IDX] = PA_CHANNEL_POSITION_FRONT_LEFT;
+                map.map[CHANNEL2_IDX] = PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER;
+                map.map[CHANNEL3_IDX] = PA_CHANNEL_POSITION_FRONT_CENTER;
+                map.map[CHANNEL4_IDX] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+                map.map[CHANNEL5_IDX] = PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER;
+                map.map[CHANNEL6_IDX] = PA_CHANNEL_POSITION_REAR_CENTER;
+                map.map[CHANNEL7_IDX] = PA_CHANNEL_POSITION_AUX0;
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid channel count");
+                return AUDIO_CLIENT_CREATE_STREAM_ERR;
+        }
+
+        paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, &map, propList);
+    } else {
+        paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, nullptr, propList);
+    }
+
+    if (!paStream) {
         error = pa_context_errno(context);
         pa_proplist_free(propList);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
+        AUDIO_ERR_LOG("pa_stream_new_with_proplist failed, error: %{public}d", error);
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
@@ -1217,27 +1237,34 @@ void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
 
     uint64_t writtenFrameNumber = mTotalBytesWritten / mFrameSize;
     AUDIO_DEBUG_LOG("frame size: %{public}d", mFrameSize);
-    if (!mMarkReached && mRenderPositionCb) {
-        AUDIO_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
-            static_cast<uint64_t>(mFrameMarkPosition), static_cast<uint64_t>(writtenFrameNumber));
-        if (writtenFrameNumber >= mFrameMarkPosition) {
-            AUDIO_DEBUG_LOG("audio service client OnMarkReached");
-            mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&RendererPositionCallback::OnMarkReached,
-                                            mRenderPositionCb, mFrameMarkPosition));
-            mMarkReached = true;
+
+    {
+        std::lock_guard<std::mutex> lock(rendererMarkReachedMutex_);
+        if (!mMarkReached && mRenderPositionCb) {
+            AUDIO_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
+                static_cast<uint64_t>(mFrameMarkPosition), static_cast<uint64_t>(writtenFrameNumber));
+            if (writtenFrameNumber >= mFrameMarkPosition) {
+                AUDIO_DEBUG_LOG("audio service client OnMarkReached");
+                mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&RendererPositionCallback::OnMarkReached,
+                                                mRenderPositionCb, mFrameMarkPosition));
+                mMarkReached = true;
+            }
         }
     }
 
-    if (mRenderPeriodPositionCb) {
-        mFramePeriodWritten += (bytesWritten / mFrameSize);
-        AUDIO_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
-            static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(writtenFrameNumber));
-        if (mFramePeriodWritten >= mFramePeriodNumber) {
-            mFramePeriodWritten %= mFramePeriodNumber;
-            AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRIu64,
-                static_cast<uint64_t>(mFramePeriodWritten));
-            mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
-                &RendererPeriodPositionCallback::OnPeriodReached, mRenderPeriodPositionCb, mFramePeriodNumber));
+    {
+        std::lock_guard<std::mutex> lock(rendererPeriodReachedMutex_);
+        if (mRenderPeriodPositionCb) {
+            mFramePeriodWritten += (bytesWritten / mFrameSize);
+            AUDIO_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
+                static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(writtenFrameNumber));
+            if (mFramePeriodWritten >= mFramePeriodNumber) {
+                mFramePeriodWritten %= mFramePeriodNumber;
+                AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRIu64,
+                    static_cast<uint64_t>(mFramePeriodWritten));
+                mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
+                    &RendererPeriodPositionCallback::OnPeriodReached, mRenderPeriodPositionCb, mFramePeriodNumber));
+            }
         }
     }
 }
@@ -1427,27 +1454,33 @@ void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
 
     uint64_t readFrameNumber = mTotalBytesRead / mFrameSize;
     AUDIO_DEBUG_LOG("frame size: %{public}d", mFrameSize);
-    if (!mMarkReached && mCapturePositionCb) {
-        AUDIO_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
-            static_cast<uint64_t>(mFrameMarkPosition), static_cast<uint64_t>(readFrameNumber));
-        if (readFrameNumber >= mFrameMarkPosition) {
-            AUDIO_DEBUG_LOG("audio service client capturer OnMarkReached");
-            mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&CapturerPositionCallback::OnMarkReached,
-                                            mCapturePositionCb, mFrameMarkPosition));
-            mMarkReached = true;
+    {
+        std::lock_guard<std::mutex> lock(capturerMarkReachedMutex_);
+        if (!mMarkReached && mCapturePositionCb) {
+            AUDIO_DEBUG_LOG("frame mark position: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
+                static_cast<uint64_t>(mFrameMarkPosition), static_cast<uint64_t>(readFrameNumber));
+            if (readFrameNumber >= mFrameMarkPosition) {
+                AUDIO_DEBUG_LOG("audio service client capturer OnMarkReached");
+                mPositionCBThreads.emplace_back(std::make_unique<std::thread>(&CapturerPositionCallback::OnMarkReached,
+                                                mCapturePositionCb, mFrameMarkPosition));
+                mMarkReached = true;
+            }
         }
     }
 
-    if (mCapturePeriodPositionCb) {
-        mFramePeriodRead += (bytesRead / mFrameSize);
-        AUDIO_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
-            static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(readFrameNumber));
-        if (mFramePeriodRead >= mFramePeriodNumber) {
-            mFramePeriodRead %= mFramePeriodNumber;
-            AUDIO_DEBUG_LOG("audio service client OnPeriodReached, remaining frames: %{public}" PRIu64,
-                static_cast<uint64_t>(mFramePeriodRead));
-            mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
-                &CapturerPeriodPositionCallback::OnPeriodReached, mCapturePeriodPositionCb, mFramePeriodNumber));
+    {
+        std::lock_guard<std::mutex> lock(capturerPeriodReachedMutex_);
+        if (mCapturePeriodPositionCb) {
+            mFramePeriodRead += (bytesRead / mFrameSize);
+            AUDIO_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
+                static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(readFrameNumber));
+            if (mFramePeriodRead >= mFramePeriodNumber) {
+                mFramePeriodRead %= mFramePeriodNumber;
+                AUDIO_DEBUG_LOG("audio service client OnPeriodReached, remaining frames: %{public}" PRIu64,
+                    static_cast<uint64_t>(mFramePeriodRead));
+                mPeriodPositionCBThreads.emplace_back(std::make_unique<std::thread>(
+                    &CapturerPeriodPositionCallback::OnPeriodReached, mCapturePeriodPositionCb, mFramePeriodNumber));
+            }
         }
     }
 }
@@ -1602,7 +1635,7 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount) const
     }
 
     frameCount = minBufferSize / bytesPerSample;
-    AUDIO_INFO_LOG("frame count: %d", frameCount);
+    AUDIO_INFO_LOG("frame count: %{private}d", frameCount);
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -1742,6 +1775,7 @@ void AudioServiceClient::SetRendererPositionCallback(int64_t markPosition,
 void AudioServiceClient::UnsetRendererPositionCallback()
 {
     AUDIO_INFO_LOG("Unregistering render frame position callback");
+    std::lock_guard<std::mutex> lock(rendererMarkReachedMutex_);
     mRenderPositionCb = nullptr;
     mMarkReached = false;
     mFrameMarkPosition = 0;
@@ -1764,6 +1798,7 @@ void AudioServiceClient::SetRendererPeriodPositionCallback(int64_t periodPositio
 void AudioServiceClient::UnsetRendererPeriodPositionCallback()
 {
     AUDIO_INFO_LOG("Unregistering render period position callback");
+    std::lock_guard<std::mutex> lock(rendererPeriodReachedMutex_);
     mRenderPeriodPositionCb = nullptr;
     mFramePeriodWritten = 0;
     mFramePeriodNumber = 0;
@@ -1781,6 +1816,7 @@ void AudioServiceClient::SetCapturerPositionCallback(int64_t markPosition,
 void AudioServiceClient::UnsetCapturerPositionCallback()
 {
     AUDIO_INFO_LOG("Unregistering capture frame position callback");
+    std::lock_guard<std::mutex> lock(capturerMarkReachedMutex_);
     mCapturePositionCb = nullptr;
     mMarkReached = false;
     mFrameMarkPosition = 0;
@@ -1803,6 +1839,7 @@ void AudioServiceClient::SetCapturerPeriodPositionCallback(int64_t periodPositio
 void AudioServiceClient::UnsetCapturerPeriodPositionCallback()
 {
     AUDIO_INFO_LOG("Unregistering period position callback");
+    std::lock_guard<std::mutex> lock(capturerPeriodReachedMutex_);
     mCapturePeriodPositionCb = nullptr;
     mFramePeriodRead = 0;
     mFramePeriodNumber = 0;
