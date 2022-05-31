@@ -207,7 +207,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
 
 DeviceType AudioPolicyService::FetchHighPriorityDevice()
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_DEBUG_LOG("Entered AudioPolicyService::%{public}s", __func__);
     DeviceType priorityDevice = DEVICE_TYPE_SPEAKER;
 
     for (const auto &device : priorityList) {
@@ -219,7 +219,6 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice()
         auto itr = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent);
         if (itr != mConnectedDevices.end()) {
             priorityDevice = (*itr)->deviceType_;
-            AUDIO_INFO_LOG("%{public}d is high priority device", priorityDevice);
             break;
         }
     }
@@ -501,7 +500,7 @@ void AudioPolicyService::UpdateConnectedDevices(DeviceType devType, vector<sptr<
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, void *privData,
     const std::string &macAddress, const AudioStreamInfo &streamInfo)
 {
-    AUDIO_INFO_LOG("=== DEVICE STATUS CHANGED | TYPE[%{public}d] STATUS[%{public}d] ===", devType, isConnected);
+    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
     int32_t result = ERROR;
 
     // fill device change action for callback
@@ -527,13 +526,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     // new device found. If connected, add into active device list
     if (isConnected) {
-        AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d]", devType);
         result = ActivateNewDevice(devType);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device %{public}d", devType);
         mCurrentActiveDevice = devType;
         UpdateConnectedDevices(devType, deviceChangeDescriptor, isConnected, macAddress, streamInfo);
     } else {
-        AUDIO_INFO_LOG("=== DEVICE DISCONNECTED === TYPE[%{public}d]", devType);
         UpdateConnectedDevices(devType, deviceChangeDescriptor, isConnected, macAddress, streamInfo);
 
         auto priorityDev = FetchHighPriorityDevice();
@@ -552,7 +549,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (mIOHandles.find(BLUETOOTH_SPEAKER) != mIOHandles.end()) {
-                AUDIO_INFO_LOG("Closing a2dp device");
                 mAudioPolicyManager.CloseAudioPort(mIOHandles[BLUETOOTH_SPEAKER]);
                 mIOHandles.erase(BLUETOOTH_SPEAKER);
             }
@@ -562,13 +558,12 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
-    AUDIO_INFO_LOG("output device list = [%{public}zu]", mConnectedDevices.size());
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType,
     const std::string &macAddress, const AudioStreamInfo &streamInfo)
 {
-    AUDIO_INFO_LOG("OnDeviceConfigurationChanged in");
+    AUDIO_DEBUG_LOG("OnDeviceConfigurationChanged in");
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
         if (!IsConfigurationUpdated(deviceType, streamInfo)) {
