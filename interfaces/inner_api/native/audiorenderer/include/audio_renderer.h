@@ -503,6 +503,14 @@ public:
      */
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
 
+    /**
+     * @brief Set interrupt mode.
+     *
+     * @param mode The interrupt mode.
+     * @return none
+     */
+    virtual void SetInterruptMode(InterruptMode mode) = 0;
+    
     virtual ~AudioRenderer();
 };
 }  // namespace AudioStandard

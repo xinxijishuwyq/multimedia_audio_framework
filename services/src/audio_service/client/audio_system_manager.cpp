@@ -636,6 +636,29 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
     return;
 }
 
+int32_t AudioSystemManager::requestIndependentInterrupt(FocusType focusType)
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager: requestIndependentInterrupt : foncusType");
+    AudioInterrupt audioInterrupt;
+    uint32_t clientID = GetCallingPid();
+    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.sessionID = clientID;
+    int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
+    AUDIO_DEBUG_LOG("AudioSystemManager: requestIndependentInterrupt : reuslt -> %{public}d",result);
+    return result;
+}
+int32_t AudioSystemManager::abandonIndependentInterrupt(FocusType focusType)
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager: abandonIndependentInterrupt : foncusType");
+    AudioInterrupt audioInterrupt;
+    uint32_t clientID = GetCallingPid();
+    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.sessionID = clientID;
+    int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
+    AUDIO_DEBUG_LOG("AudioSystemManager: abandonIndependentInterrupt : reuslt -> %{public}d",result);
+    return result;
+}
+
 int32_t AudioSystemManager::GetAudioLatencyFromXml() const
 {
     return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();

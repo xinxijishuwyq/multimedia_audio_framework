@@ -64,6 +64,7 @@ public:
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
     void SetApplicationCachePath(const std::string cachePath) override;
+    void SetInterruptMode(InterruptMode mode) override;
 
     AudioRendererInfo rendererInfo_ = {};
 
@@ -71,12 +72,16 @@ public:
     ~AudioRendererPrivate();
 
 private:
+    static std::map<pid_t, std::map<AudioStreamType, AudioInterrupt>> sharedInterrupts_;
     std::shared_ptr<AudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AudioInterrupt audioInterrupt_ =
         {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
+     AudioInterrupt sharedInterrupt_ =
+        {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0}; 
     uint32_t sessionID_ = INVALID_SESSION_ID;
+    InterruptMode mode_ = InterruptMode::SHARE_MODE;
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {

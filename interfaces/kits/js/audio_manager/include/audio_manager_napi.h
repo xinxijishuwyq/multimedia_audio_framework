@@ -87,6 +87,8 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value CreateDeviceChangeTypeObject(napi_env env);
     static napi_value CreateAudioSceneObject(napi_env env);
+    static napi_value RequestIndependentInterrupt(napi_env env, napi_callback_info info);
+    static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
 
     static napi_ref audioVolumeTypeRef_;
     static napi_ref deviceFlagRef_;
