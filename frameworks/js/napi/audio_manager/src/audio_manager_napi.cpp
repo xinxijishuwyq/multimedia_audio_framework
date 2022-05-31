@@ -147,6 +147,21 @@ static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volu
     return result;
 }
 
+static AudioStandard::FocusType GetNativeFocusType(int32_t focusType)
+{
+    AudioStandard::FocusType result = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
+    switch (focusType) {
+        case AudioManagerNapi::FocusType::FOCUS_TYPE_RECORDING:
+            result =  AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
+            break;
+        default:
+            HiLog::Error(LABEL, "Unknown focusType type, Set it to default FOCUS_TYPE_RECORDING!");
+            break;
+    }
+    
+    return result;
+}
+
 static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode)
 {
     AudioRingerMode result = RINGER_MODE_NORMAL;
@@ -666,7 +681,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
-        DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt ),
+        DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -913,7 +928,8 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
-                context->intValue = context->objectInfo->audioMngr_->requestIndependentInterrupt(GetNativeFocusType(context->focusType));
+                context->intValue = 
+                    context->objectInfo->audioMngr_->requestIndependentInterrupt(GetNativeFocusType(context->focusType));
                 context->status = SUCCESS;
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -970,7 +986,8 @@ napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_call
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
-                context->intValue = context->objectInfo->audioMngr_->abandonIndependentInterrupt(GetNativeFocusType(context->focusType));
+                context->intValue = 
+                    context->objectInfo->audioMngr_->abandonIndependentInterrupt(GetNativeFocusType(context->focusType));
                 context->status = SUCCESS;
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
