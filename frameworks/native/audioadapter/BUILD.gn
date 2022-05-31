@@ -15,15 +15,15 @@ import("//build/ohos.gni")
 
 ohos_shared_library("pulse_audio_service_adapter") {
   install_enable = true
-  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audioadapter/src/pulse_audio_service_adapter_impl.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/src/pulse_audio_service_adapter_impl.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audioadapter/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
@@ -34,7 +34,7 @@ ohos_shared_library("pulse_audio_service_adapter") {
   public_configs = [ ":audio_external_library_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio/src/pulse:pulse",
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//third_party/libxml2:xml2",
     "//utils/native/base:utils",
   ]
@@ -43,10 +43,10 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
   ]
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
 }

@@ -15,10 +15,10 @@ import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio"
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
 libsndfile_dir = "//third_party/libsnd"
 libsndfile_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/libsnd"
+    "//foundation/multimedia/audio_framework/frameworks/native/libsnd"
 
 config("pulseutils_config") {
   visibility = [ ":*" ]
@@ -53,7 +53,7 @@ ohos_executable("pacat") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_executable("pactl") {
@@ -67,7 +67,7 @@ ohos_executable("pactl") {
     "$pulseaudio_build_path/src/pulse:pulse",
   ]
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_executable("pacmd") {
@@ -83,5 +83,5 @@ ohos_executable("pacmd") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }

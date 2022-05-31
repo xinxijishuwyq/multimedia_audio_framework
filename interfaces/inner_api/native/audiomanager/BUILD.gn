@@ -16,7 +16,7 @@ import("//drivers/adapter/uhdf2/uhdf.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio"
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
 
 group("audio_client_test_packages") {
   deps = [
@@ -27,17 +27,17 @@ group("audio_client_test_packages") {
 
 config("audio_client_public_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
-    "//foundation/multimedia/audio_standard/services/include/audio_policy/client",
-    "//foundation/multimedia/audio_standard/services/include/audio_policy/common",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/services/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/include/audio_policy/client",
+    "//foundation/multimedia/audio_framework/services/include/audio_policy/common",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//utils/system/safwk/native/include",
     "//utils/native/base/include",
@@ -61,18 +61,18 @@ config("audio_client_public_config") {
 ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
-    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_manager_proxy.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_service_client.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_session.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_stream.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_service/client/audio_system_manager.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_manager_proxy.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_service_client.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_session.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_stream.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_system_manager.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy:audio_policy_client",
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio/src/pulse:pulse",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_static",
     "//utils/native/base:utils",
   ]
@@ -84,14 +84,14 @@ ohos_shared_library("audio_client") {
     "samgr_standard:samgr_proxy",
   ]
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_executable("playback_test") {
   install_enable = false
 
   sources = [
-    "//foundation/multimedia/audio_standard/services/test/playback_test.cpp",
+    "//foundation/multimedia/audio_framework/services/test/playback_test.cpp",
   ]
 
   configs = [ ":audio_client_public_config" ]
@@ -100,15 +100,16 @@ ohos_executable("playback_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_executable("record_test") {
   install_enable = false
 
-  sources =
-      [ "//foundation/multimedia/audio_standard/services/test/record_test.cpp" ]
+  sources = [
+    "//foundation/multimedia/audio_framework/services/test/record_test.cpp",
+  ]
 
   configs = [ ":audio_client_public_config" ]
 
@@ -116,14 +117,14 @@ ohos_executable("record_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_multichannel_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_multichannel_test.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_multichannel_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
 
@@ -131,6 +132,6 @@ ohos_executable("audio_multichannel_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
