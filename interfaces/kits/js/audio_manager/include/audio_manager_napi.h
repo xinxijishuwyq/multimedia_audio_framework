@@ -48,6 +48,15 @@ public:
         RINGER_MODE_NORMAL
     };
 
+    enum InterruptMode{
+        SHARE_MODE = 0, 
+        INDEPENDENT_MODE = 1
+    };
+
+    enum FocusType {
+        FOCUS_TYPE_RECORDING
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
 
 private:
