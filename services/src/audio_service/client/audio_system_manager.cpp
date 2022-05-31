@@ -576,7 +576,7 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_ACCESSIBILITY,
+                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().RequestAudioFocus(clientID, audioInterrupt);
 }
@@ -592,7 +592,7 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_ACCESSIBILITY,
+                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
 }
