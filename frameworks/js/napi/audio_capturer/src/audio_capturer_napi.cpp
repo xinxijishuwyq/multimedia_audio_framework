@@ -78,58 +78,6 @@ void AudioCapturerNapi::Destructor(napi_env env, void *nativeObject, void *final
     }
 }
 
-static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
-{
-    AudioSampleFormat format = INVALID_WIDTH;
-
-    switch (napiSampleFormat) {
-        case AudioCapturerNapi::SAMPLE_FORMAT_U8:
-            format = SAMPLE_U8;
-            break;
-        case AudioCapturerNapi::SAMPLE_FORMAT_S16LE:
-            format = SAMPLE_S16LE;
-            break;
-        case AudioCapturerNapi::SAMPLE_FORMAT_S24LE:
-            format = SAMPLE_S24LE;
-            break;
-        case AudioCapturerNapi::SAMPLE_FORMAT_S32LE:
-            format = SAMPLE_S32LE;
-            break;
-        default:
-            format = INVALID_WIDTH;
-            HiLog::Error(LABEL, "Unknown sample format requested by JS, Set it to default INVALID_WIDTH!");
-            break;
-    }
-
-    return format;
-}
-
-static AudioCapturerNapi::AudioSampleFormat GetJsAudioSampleFormat(int32_t nativeSampleFormat)
-{
-    AudioCapturerNapi::AudioSampleFormat format = AudioCapturerNapi::SAMPLE_FORMAT_INVALID;
-
-    switch (nativeSampleFormat) {
-        case SAMPLE_U8:
-            format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_U8;
-            break;
-        case SAMPLE_S16LE:
-            format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_S16LE;
-            break;
-        case SAMPLE_S24LE:
-            format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_S24LE;
-            break;
-        case SAMPLE_S32LE:
-            format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE;
-            break;
-        default:
-            format = AudioCapturerNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
-            HiLog::Error(LABEL, "Unknown sample format returned from native, Set it to default SAMPLE_FORMAT_INVALID!");
-            break;
-    }
-
-    return format;
-}
-
 napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
 {
     napi_status status;
@@ -637,7 +585,7 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                 AudioStreamInfo streamInfo;
                 context->status = context->objectInfo->audioCapturer_->GetStreamInfo(streamInfo);
                 if (context->status == SUCCESS) {
-                    context->audioSampleFormat = GetJsAudioSampleFormat(streamInfo.format);
+                    context->audioSampleFormat = static_cast<AudioSampleFormat>(streamInfo.format);
                     context->samplingRate = streamInfo.samplingRate;
                     context->audioChannel = streamInfo.channels;
                     context->audioEncoding = streamInfo.encoding;
@@ -1308,7 +1256,7 @@ bool AudioCapturerNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->format = GetNativeAudioSampleFormat(intValue);
+        streamInfo->format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(intValue);
     }
 
     if (napi_get_named_property(env, root, "encodingType", &tempValue) == napi_ok) {

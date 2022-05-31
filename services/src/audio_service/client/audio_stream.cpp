@@ -229,8 +229,7 @@ bool IsEncodingTypeValid(uint8_t encodingType)
     bool isValidEncodingType
             = (find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(), encodingType)
                != AUDIO_SUPPORTED_ENCODING_TYPES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s",
-                    isValidEncodingType ? "true" : "false");
+    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s", isValidEncodingType ? "true" : "false");
     return isValidEncodingType;
 }
 
@@ -239,8 +238,7 @@ bool IsSamplingRateValid(uint32_t samplingRate)
     bool isValidSamplingRate
             = (find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(), samplingRate)
                != AUDIO_SUPPORTED_SAMPLING_RATES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s",
-                    isValidSamplingRate ? "true" : "false");
+    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
     return isValidSamplingRate;
 }
 
@@ -262,7 +260,6 @@ bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info)
 {
     AUDIO_INFO_LOG("AudioStream: SetAudioParams");
-
     AUDIO_DEBUG_LOG("AudioStream: Sampling rate: %{public}d", info.samplingRate);
     AUDIO_DEBUG_LOG("AudioStream: channels: %{public}d", info.channels);
     AUDIO_DEBUG_LOG("AudioStream: format: %{public}d", info.format);

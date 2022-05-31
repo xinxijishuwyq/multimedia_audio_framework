@@ -125,58 +125,6 @@ static AudioStandard::InterruptMode  GetNativeInterruptMode(int32_t interruptMod
     return result;
 }
 
-static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
-{
-    AudioSampleFormat format = INVALID_WIDTH;
-
-    switch (napiSampleFormat) {
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_U8:
-            format = SAMPLE_U8;
-            break;
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S16LE:
-            format = SAMPLE_S16LE;
-            break;
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S24LE:
-            format = SAMPLE_S24LE;
-            break;
-        case AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE:
-            format = SAMPLE_S32LE;
-            break;
-        default:
-            format = INVALID_WIDTH;
-            HiLog::Error(LABEL, "Unknown sample format requested by JS, Set it to default INVALID_WIDTH!");
-            break;
-    }
-
-    return format;
-}
-
-static AudioRendererNapi::AudioSampleFormat GetJsAudioSampleFormat(int32_t nativeSampleFormat)
-{
-    AudioRendererNapi::AudioSampleFormat format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
-
-    switch (nativeSampleFormat) {
-        case SAMPLE_U8:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_U8;
-            break;
-        case SAMPLE_S16LE:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S16LE;
-            break;
-        case SAMPLE_S24LE:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S24LE;
-            break;
-        case SAMPLE_S32LE:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_S32LE;
-            break;
-        default:
-            format = AudioRendererNapi::AudioSampleFormat::SAMPLE_FORMAT_INVALID;
-            HiLog::Error(LABEL, "Unknown sample format returned from native, Set it to default SAMPLE_FORMAT_INVALID!");
-            break;
-    }
-
-    return format;
-}
-
 napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
 {
     napi_value result = nullptr;
@@ -1676,7 +1624,7 @@ napi_value AudioRendererNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                 AudioStreamInfo streamInfo;
                 context->status = context->objectInfo->audioRenderer_->GetStreamInfo(streamInfo);
                 if (context->status == SUCCESS) {
-                    context->sampleFormat = GetJsAudioSampleFormat(streamInfo.format);
+                    context->sampleFormat = static_cast<AudioSampleFormat>(streamInfo.format);
                     context->samplingRate = streamInfo.samplingRate;
                     context->channelCount = streamInfo.channels;
                     context->encodingType = streamInfo.encoding;
@@ -1968,7 +1916,7 @@ bool AudioRendererNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->format = GetNativeAudioSampleFormat(intValue);
+        streamInfo->format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(intValue);
     }
 
     if (napi_get_named_property(env, root, "encodingType", &tempValue) == napi_ok) {

@@ -32,6 +32,11 @@ namespace {
     constexpr int32_t ARG_INDEX_3 = 3;
     constexpr int32_t ARG_INDEX_4 = 4;
     constexpr int32_t NUM_BASE = 10;
+    
+    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
+    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
+    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
+    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 }
 
 void AudioRendererCallbackTestImpl::OnStateChange(const RendererState state)
@@ -174,6 +179,22 @@ bool InterruptMultiRendererTest::StartRender(const unique_ptr<AudioRenderer> &au
     return true;
 }
 
+AudioSampleFormat InterruptMultiRendererTest::GetSampleFormat(int32_t wavSampleFormat) const
+{
+    switch (wavSampleFormat) {
+        case SAMPLE_FORMAT_U8:
+            return AudioSampleFormat::SAMPLE_U8;
+        case SAMPLE_FORMAT_S16LE:
+            return AudioSampleFormat::SAMPLE_S16LE;
+        case SAMPLE_FORMAT_S24LE:
+            return AudioSampleFormat::SAMPLE_S24LE;
+        case SAMPLE_FORMAT_S32LE:
+            return AudioSampleFormat::SAMPLE_S32LE;
+        default:
+            return AudioSampleFormat::INVALID_WIDTH;
+    }
+}
+
 bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &audioRenderer, FILE* &wavFile) const
 {
     wav_hdr wavHeader;
@@ -185,7 +206,7 @@ bool InterruptMultiRendererTest::InitRender(const unique_ptr<AudioRenderer> &aud
     }
 
     AudioRendererParams rendererParams;
-    rendererParams.sampleFormat = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
+    rendererParams.sampleFormat = GetSampleFormat(wavHeader.bitsPerSample);
     rendererParams.sampleRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
     rendererParams.channelCount = static_cast<AudioChannel>(wavHeader.NumOfChan);
     rendererParams.encodingType = static_cast<AudioEncodingType>(ENCODING_PCM);

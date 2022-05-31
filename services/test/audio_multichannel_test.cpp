@@ -29,6 +29,11 @@ namespace {
     constexpr uint8_t CHANNEL_INDEX = 2;
     constexpr uint8_t SLEEP_TIME = 2;
     constexpr uint8_t MAX_FRAME_COUNT = 10;
+    
+    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
+    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
+    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
+    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 } // namespace
 
 static bool InitClient(std::unique_ptr<AudioServiceClient> &client, uint32_t samplingRate, uint32_t channelCount)
@@ -184,6 +189,22 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
     return 0;
 }
 
+AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
+{
+    switch (wavSampleFormat) {
+        case SAMPLE_FORMAT_U8:
+            return AudioSampleFormat::SAMPLE_U8;
+        case SAMPLE_FORMAT_S16LE:
+            return AudioSampleFormat::SAMPLE_S16LE;
+        case SAMPLE_FORMAT_S24LE:
+            return AudioSampleFormat::SAMPLE_S24LE;
+        case SAMPLE_FORMAT_S32LE:
+            return AudioSampleFormat::SAMPLE_S32LE;
+        default:
+            return AudioSampleFormat::INVALID_WIDTH;
+    }
+}
+
 int32_t StartRendererPlayback(char *inputPath)
 {
     AUDIO_INFO_LOG("================PLAYBACK STARTED==================");
@@ -204,7 +225,7 @@ int32_t StartRendererPlayback(char *inputPath)
     float volume = 1.0f;
     (void)fread(&wavHeader, 1, headerSize, wavFile);
     AudioStreamParams audioParams;
-    audioParams.format = wavHeader.bitsPerSample;
+    audioParams.format = GetSampleFormat(wavHeader.bitsPerSample);
     audioParams.samplingRate = wavHeader.SamplesPerSec;
     audioParams.channels = wavHeader.NumOfChan;
 

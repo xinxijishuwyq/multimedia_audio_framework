@@ -40,6 +40,7 @@ private:
     bool StartRender();
     bool GetBufferLen(size_t &bufferLen) const;
     void WriteBuffer();
+    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat);
 
     std::unique_ptr<AudioRenderer> audioRenderer_ = nullptr;
     bool isRenderPaused_ = false;
