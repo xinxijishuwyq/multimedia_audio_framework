@@ -107,6 +107,24 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static AudioStandard::InterruptMode  GetNativeInterruptMode(int32_t interruptMode)
+{
+    AudioStandard::InterruptMode result;
+    switch (interruptMode) {
+        case AudioManagerNapi::InterruptMode::SHARE_MODE:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            break;
+        case AudioManagerNapi::InterruptMode::INDEPENDENT_MODE:
+            result = AudioStandard::InterruptMode::INDEPENDENT_MODE;
+            break;
+        default:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            HiLog::Error(LABEL, "Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
+}
+
 static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
 {
     AudioSampleFormat format = INVALID_WIDTH;
@@ -2000,7 +2018,6 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
-
         if (i == PARAM0 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
         } else if (i == PARAM1 && valueType == napi_function) {

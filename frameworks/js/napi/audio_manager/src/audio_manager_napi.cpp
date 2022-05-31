@@ -962,7 +962,6 @@ napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_call
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
-
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->focusType);
             } else if (i == PARAM1 && valueType == napi_function) {

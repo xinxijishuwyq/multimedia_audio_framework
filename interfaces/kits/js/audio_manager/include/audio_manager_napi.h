@@ -48,8 +48,8 @@ public:
         RINGER_MODE_NORMAL
     };
 
-    enum InterruptMode{
-        SHARE_MODE = 0, 
+    enum InterruptMode {
+        SHARE_MODE = 0,
         INDEPENDENT_MODE = 1
     };
 
