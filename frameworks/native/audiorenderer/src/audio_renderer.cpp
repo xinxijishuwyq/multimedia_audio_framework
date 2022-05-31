@@ -108,8 +108,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType)
             if (audioStream_->GetAudioSessionID(interruptId) != 0) {
                 AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID interruptId Failed");
             }
-            AudioInterrupt interrupt =
-                {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, audioStreamType, interruptId};
+            AudioInterrupt interrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, audioStreamType, interruptId};
             interrupts.insert(std::make_pair(type, interrupt));   
         }
         AudioRendererPrivate::sharedInterrupts_.insert(std::make_pair(getpid(), interrupts));

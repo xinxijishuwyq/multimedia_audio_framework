@@ -644,7 +644,7 @@ int32_t AudioSystemManager::requestIndependentInterrupt(FocusType focusType)
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
-    AUDIO_DEBUG_LOG("AudioSystemManager: requestIndependentInterrupt : reuslt -> %{public}d",result);
+    AUDIO_DEBUG_LOG("AudioSystemManager: requestIndependentInterrupt : reuslt -> %{public}d", result);
     return result;
 }
 int32_t AudioSystemManager::abandonIndependentInterrupt(FocusType focusType)
@@ -655,7 +655,7 @@ int32_t AudioSystemManager::abandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
-    AUDIO_DEBUG_LOG("AudioSystemManager: abandonIndependentInterrupt : reuslt -> %{public}d",result);
+    AUDIO_DEBUG_LOG("AudioSystemManager: abandonIndependentInterrupt : reuslt -> %{public}d", result);
     return result;
 }
 

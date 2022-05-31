@@ -77,6 +77,7 @@ struct AudioManagerAsyncContext {
     int32_t deviceFlag;
     int32_t intValue;
     int32_t status;
+    int32_t focusType;
     bool isMute;
     bool isActive;
     bool isTrue;
@@ -664,6 +665,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioScene", GetAudioScene),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+        DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
+        DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt ),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -883,7 +886,6 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
     unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        AUDIO_DEBUG_LOG("AudioManagerNapi: RequestIndependentInterrupt -> asyncContext");
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -907,8 +909,6 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "RequestIndependentInterrupt", NAPI_AUTO_LENGTH, &resource);
 
-        AUDIO_DEBUG_LOG("AudioManagerNapi: RequestIndependentInterrupt -> asyncContext -> napi_create_async_work");
-        
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {

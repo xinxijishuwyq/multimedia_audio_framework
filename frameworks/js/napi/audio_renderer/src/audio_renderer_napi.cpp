@@ -1997,8 +1997,6 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
     unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioRendererAsyncContext object creation failed");
 
-    AUDIO_DEBUG_LOG("AudioRendererNapi: SetInterruptMode");
-
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
@@ -2022,8 +2020,6 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
     napi_value resource = nullptr;
     napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
 
-    AUDIO_DEBUG_LOG("AudioRendererNapi: SetInterruptMode -> audioRenderer -> napi_create_async_work %{public}d",asyncContext->interruptMode);
-    
     status = napi_create_async_work(
         env, nullptr, resource,
         [](napi_env env, void *data) {
