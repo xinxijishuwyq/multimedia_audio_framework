@@ -380,7 +380,7 @@ napi_value AudioRendererNapi::CreateInterruptHintTypeObject(napi_env env)
     return result;
 }
 
-napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
+napi_value AudioRendererNapi::Init(napi_env env, napi_value expts)
 {
     napi_status status;
     napi_value constructor;
@@ -426,12 +426,12 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
 
     status = napi_create_reference(env, constructor, refCount, &g_rendererConstructor);
     if (status == napi_ok) {
-        status = napi_set_named_property(env, exports, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), constructor);
+        status = napi_set_named_property(env, expts, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), constructor);
         if (status == napi_ok) {
-            status = napi_define_properties(env, exports,
+            status = napi_define_properties(env, expts,
                                             sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
             if (status == napi_ok) {
-                return exports;
+                return expts;
             }
         }
     }
