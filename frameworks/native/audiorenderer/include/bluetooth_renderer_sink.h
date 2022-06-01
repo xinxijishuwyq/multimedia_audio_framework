@@ -30,12 +30,11 @@ typedef struct {
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
-    const char *filePath;
-} AudioSinkAttr;
+} BluetoothSinkAttr;
 
 class BluetoothRendererSink {
 public:
-    int32_t Init(AudioSinkAttr &atrr);
+    int32_t Init(const BluetoothSinkAttr &atrr);
     void DeInit(void);
     int32_t Start(void);
     int32_t Stop(void);
@@ -52,7 +51,7 @@ public:
 private:
     BluetoothRendererSink();
     ~BluetoothRendererSink();
-    AudioSinkAttr attr_;
+    BluetoothSinkAttr attr_;
     bool started_;
     bool paused_;
     float leftVolume_;
