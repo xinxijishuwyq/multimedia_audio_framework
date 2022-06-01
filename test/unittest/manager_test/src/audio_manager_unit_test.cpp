@@ -348,7 +348,7 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_004, TestSize.Level0)
 HWTEST(AudioManagerUnitTest, RequestIndependentInterrupt_001, TestSize.Level0)
 {
     AudioStandard::FocusType focusType = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
-    ret = AudioSystemManager::GetInstance()->RequestIndependentInterrupt(focusType);
+    int32_t ret = AudioSystemManager::GetInstance()->RequestIndependentInterrupt(focusType);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->AbandonIndependentInterrupt(focusType);
     EXPECT_EQ(SUCCESS, ret);
