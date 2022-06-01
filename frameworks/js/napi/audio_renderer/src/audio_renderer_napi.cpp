@@ -420,20 +420,22 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
     status = napi_define_class(env, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
         sizeof(audio_renderer_properties) / sizeof(audio_renderer_properties[PARAM0]),
         audio_renderer_properties, &constructor);
+    if (status != napi_ok) {
+        return result;
+    }
+
+    status = napi_create_reference(env, constructor, refCount, &g_rendererConstructor);
     if (status == napi_ok) {
-        status = napi_create_reference(env, constructor, refCount, &g_rendererConstructor);
+        status = napi_set_named_property(env, exports, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), constructor);
         if (status == napi_ok) {
-            status = napi_set_named_property(env, exports, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), constructor);
+            status = napi_define_properties(env, exports,
+                                            sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
             if (status == napi_ok) {
-                status = napi_define_properties(env, exports,
-                                                sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
-                if (status == napi_ok) {
-                    return exports;
-                }
+                return exports;
             }
         }
     }
-
+    
     HiLog::Error(LABEL, "Failure in AudioRendererNapi::Init()");
     return result;
 }
