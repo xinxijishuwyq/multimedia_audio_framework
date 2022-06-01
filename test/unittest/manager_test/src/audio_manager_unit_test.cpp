@@ -341,20 +341,6 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test RequestIndependentInterrupt API
-* @tc.number: RequestIndependentInterrupt_001
-* @tc.desc  : Test RequestIndependentInterrupt interface with back to back requests
-*/
-HWTEST(AudioManagerUnitTest, RequestIndependentInterrupt_001, TestSize.Level0)
-{
-    AudioStandard::FocusType focusType = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
-    int32_t ret = AudioSystemManager::GetInstance()->RequestIndependentInterrupt(focusType);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->AbandonIndependentInterrupt(focusType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
 * @tc.name  : Test AbandonAudioFocus API
 * @tc.number: AbandonAudioFocus_001
 * @tc.desc  : Test AbandonAudioFocus interface with valid parameters
