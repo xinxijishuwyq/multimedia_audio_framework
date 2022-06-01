@@ -928,8 +928,9 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
+                AudioStandard::FocusType focusType_ = GetNativeFocusType(context->focusType);
                 context->intValue =
-                    context->objectInfo->audioMngr_->requestIndependentInterrupt(GetNativeFocusType(context->focusType));
+                    context->objectInfo->audioMngr_->requestIndependentInterrupt(focusType_);
                 context->status = SUCCESS;
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -985,8 +986,9 @@ napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_call
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
+                AudioStandard::FocusType focusType_ = GetNativeFocusType(context->focusType);
                 context->intValue =
-                    context->objectInfo->audioMngr_->abandonIndependentInterrupt(GetNativeFocusType(context->focusType));
+                    context->objectInfo->audioMngr_->abandonIndependentInterrupt(focusType_);
                 context->status = SUCCESS;
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
