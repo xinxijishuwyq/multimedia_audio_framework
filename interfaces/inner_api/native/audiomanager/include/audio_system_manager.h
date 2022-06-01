@@ -229,8 +229,8 @@ public:
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-    int32_t requestIndependentInterrupt(FocusType focusType);
-    int32_t abandonIndependentInterrupt(FocusType focusType);
+    int32_t RequestIndependentInterrupt(FocusType focusType);
+    int32_t AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
 private:
     AudioSystemManager();

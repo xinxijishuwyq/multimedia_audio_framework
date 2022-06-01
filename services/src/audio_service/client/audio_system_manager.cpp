@@ -636,7 +636,7 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
     return;
 }
 
-int32_t AudioSystemManager::requestIndependentInterrupt(FocusType focusType)
+int32_t AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager: requestIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
@@ -647,7 +647,7 @@ int32_t AudioSystemManager::requestIndependentInterrupt(FocusType focusType)
     AUDIO_DEBUG_LOG("AudioSystemManager: requestIndependentInterrupt : reuslt -> %{public}d", result);
     return result;
 }
-int32_t AudioSystemManager::abandonIndependentInterrupt(FocusType focusType)
+int32_t AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager: abandonIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;

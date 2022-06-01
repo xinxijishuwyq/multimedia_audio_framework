@@ -29,7 +29,7 @@ namespace {
     constexpr uint32_t MIN_OUTPUT_DEVICE_COUNT = 1;
     constexpr uint32_t CONTENT_TYPE_UPPER_INVALID = 6;
     constexpr uint32_t STREAM_USAGE_UPPER_INVALID = 7;
-    constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 13;
+    constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 100;
     constexpr uint32_t CONTENT_TYPE_LOWER_INVALID = -1;
     constexpr uint32_t STREAM_USAGE_LOWER_INVALID = -1;
     constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
@@ -340,6 +340,19 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_004, TestSize.Level0)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+/**
+* @tc.name  : Test RequestIndependentInterrupt API
+* @tc.number: RequestIndependentInterrupt_001
+* @tc.desc  : Test RequestIndependentInterrupt interface with back to back requests
+*/
+HWTEST(AudioManagerUnitTest, RequestIndependentInterrupt_001, TestSize.Level0)
+{
+    AudioStandard::FocusType focusType = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
+    ret = AudioSystemManager::GetInstance()->requestIndependentInterrupt(focusType);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioSystemManager::GetInstance()->abandonIndependentInterrupt(focusType);
+    EXPECT_EQ(SUCCESS, ret);
+}
 
 /**
 * @tc.name  : Test AbandonAudioFocus API
