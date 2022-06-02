@@ -107,6 +107,24 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static AudioStandard::InterruptMode  GetNativeInterruptMode(int32_t interruptMode)
+{
+    AudioStandard::InterruptMode result;
+    switch (interruptMode) {
+        case AudioManagerNapi::InterruptMode::SHARE_MODE:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            break;
+        case AudioManagerNapi::InterruptMode::INDEPENDENT_MODE:
+            result = AudioStandard::InterruptMode::INDEPENDENT_MODE;
+            break;
+        default:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            HiLog::Error(LABEL, "Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
+}
+
 static AudioSampleFormat GetNativeAudioSampleFormat(int32_t napiSampleFormat)
 {
     AudioSampleFormat format = INVALID_WIDTH;
@@ -385,6 +403,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getRendererInfo", GetRendererInfo),
         DECLARE_NAPI_FUNCTION("getStreamInfo", GetStreamInfo),
+        DECLARE_NAPI_FUNCTION("setInterruptMode", SetInterruptMode),
         DECLARE_NAPI_GETTER("state", GetState)
     };
 
@@ -416,7 +435,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
             }
         }
     }
-
+    
     HiLog::Error(LABEL, "Failure in AudioRendererNapi::Init()");
     return result;
 }
@@ -1981,6 +2000,62 @@ napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_pt
 
     napi_get_undefined(env, &result);
 
+    return result;
+}
+
+napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
+
+    unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
+    CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioRendererAsyncContext object creation failed");
+
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
+        } else if (i == PARAM1 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
+        } else {
+            NAPI_ASSERT(env, false, "type mismatch");
+        }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioRendererAsyncContext*>(data);
+            context->objectInfo->audioRenderer_->SetInterruptMode(GetNativeInterruptMode(context->interruptMode));
+            context->status = SUCCESS;
+            context->intValue = SUCCESS;
+        },
+        GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
     return result;
 }
 } // namespace AudioStandard

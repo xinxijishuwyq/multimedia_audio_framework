@@ -23,6 +23,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+std::map<pid_t, std::map<AudioStreamType, AudioInterrupt>> AudioRendererPrivate::sharedInterrupts_;
+
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
@@ -84,6 +86,34 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType)
 {
     audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK);
     audioInterrupt_.streamType = audioStreamType;
+    if (AudioRendererPrivate::sharedInterrupts_.find(getpid()) == AudioRendererPrivate::sharedInterrupts_.end()) {
+        std::map<AudioStreamType, AudioInterrupt> interrupts;
+        std::vector<AudioStreamType> types;
+        types.push_back(AudioStreamType::STREAM_DEFAULT);
+        types.push_back(AudioStreamType::STREAM_VOICE_CALL);
+        types.push_back(AudioStreamType::STREAM_MUSIC);
+        types.push_back(AudioStreamType::STREAM_RING);
+        types.push_back(AudioStreamType::STREAM_MEDIA);
+        types.push_back(AudioStreamType::STREAM_VOICE_ASSISTANT);
+        types.push_back(AudioStreamType::STREAM_SYSTEM);
+        types.push_back(AudioStreamType::STREAM_ALARM);
+        types.push_back(AudioStreamType::STREAM_NOTIFICATION);
+        types.push_back(AudioStreamType::STREAM_BLUETOOTH_SCO);
+        types.push_back(AudioStreamType::STREAM_ENFORCED_AUDIBLE);
+        types.push_back(AudioStreamType::STREAM_DTMF);
+        types.push_back(AudioStreamType::STREAM_TTS);
+        types.push_back(AudioStreamType::STREAM_ACCESSIBILITY);
+        for (auto type : types) {
+            uint32_t interruptId;
+            if (audioStream_->GetAudioSessionID(interruptId) != 0) {
+                AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID interruptId Failed");
+            }
+            AudioInterrupt interrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, audioStreamType, interruptId};
+            interrupts.insert(std::make_pair(type, interrupt));
+        }
+        AudioRendererPrivate::sharedInterrupts_.insert(std::make_pair(getpid(), interrupts));
+    }
+    sharedInterrupt_ = AudioRendererPrivate::sharedInterrupts_.find(getpid())->second.find(audioStreamType)->second;
 }
 
 int32_t AudioRendererPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -246,6 +276,17 @@ bool AudioRendererPrivate::Start()
         AUDIO_ERR_LOG("AudioRendererPrivate::Start() Illegal state:%{public}u, Start failed", state);
         return false;
     }
+    AudioInterrupt audioInterrupt;
+    switch (mode_) {
+        case InterruptMode::SHARE_MODE:
+            audioInterrupt = sharedInterrupt_;
+            break;
+        case InterruptMode::INDEPENDENT_MODE:
+            audioInterrupt = audioInterrupt_;
+            break;
+        default:
+            break;
+    }
 
     if (audioInterrupt_.streamType == STREAM_DEFAULT || audioInterrupt_.sessionID == INVALID_SESSION_ID) {
         return false;
@@ -288,9 +329,19 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::Pause() const
 {
     bool result = audioStream_->PauseAudioStream();
-
+    AudioInterrupt audioInterrupt;
+    switch (mode_) {
+        case InterruptMode::SHARE_MODE:
+            audioInterrupt = sharedInterrupt_;
+            break;
+        case InterruptMode::INDEPENDENT_MODE:
+            audioInterrupt = audioInterrupt_;
+            break;
+        default:
+            break;
+    }
     // When user is intentionally pausing , Deactivate to remove from active/pending owners list
-    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRenderer: DeactivateAudioInterrupt Failed");
     }
@@ -301,8 +352,18 @@ bool AudioRendererPrivate::Pause() const
 bool AudioRendererPrivate::Stop() const
 {
     bool result = audioStream_->StopAudioStream();
-
-    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    AudioInterrupt audioInterrupt;
+    switch (mode_) {
+        case InterruptMode::SHARE_MODE:
+            audioInterrupt = sharedInterrupt_;
+            break;
+        case InterruptMode::INDEPENDENT_MODE:
+            audioInterrupt = audioInterrupt_;
+            break;
+        default:
+            break;
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRenderer: DeactivateAudioInterrupt Failed");
     }
@@ -585,6 +646,11 @@ void AudioRendererPrivate::SetApplicationCachePath(const std::string cachePath)
 int32_t AudioRendererPrivate::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
     return audioStream_->SetRendererWriteCallback(callback);
+}
+
+void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
+{
+    mode_ = mode;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -191,7 +191,23 @@ enum AudioStreamType {
     /**
      * Indicates audio streams used for prompts in terms of accessibility.
      */
-    STREAM_ACCESSIBILITY = 12
+    STREAM_ACCESSIBILITY = 12,
+    /**
+     * Indicates special scene used for recording.
+     */
+    STREAM_RECORDING = 13
+};
+
+enum FocusType {
+    /**
+     * Recording type.
+     */
+    FOCUS_TYPE_RECORDING = 0,
+};
+
+enum InterruptMode {
+    SHARE_MODE = 0,
+    INDEPENDENT_MODE = 1
 };
 
 enum AudioEncodingType {

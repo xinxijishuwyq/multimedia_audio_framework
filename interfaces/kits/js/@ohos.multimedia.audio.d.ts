@@ -533,6 +533,20 @@ declare namespace audio {
      * @since 8
      */
     on(type: 'ringerModeChange', callback: Callback<AudioRingMode>): void;
+
+
+    setInterruptMode(mode:InterruptMode):void;
+    requestIndependentInterrupt(focusType:FocusType, callback:AsyncCallback<Boolean>);
+    abandonIndependentInterrupt(focusType:FocusType): Promise<Boolean>;
+  }
+
+  enum InterruptMode{
+    SHARE_MODE = 0, 
+    INDEPENDENT_MODE = 1
+  }
+
+  enum FocusType {
+      FOCUS_TYPE_RECORDING
   }
 
   /**

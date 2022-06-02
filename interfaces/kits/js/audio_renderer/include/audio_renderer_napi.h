@@ -59,6 +59,7 @@ private:
         int32_t intValue;
         int32_t audioRendererRate;
         int32_t rendererFlags;
+        int32_t interruptMode;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -96,6 +97,7 @@ private:
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRendererWrapper(napi_env env, std::unique_ptr<AudioRendererOptions> &renderOptions);
+    static napi_value SetInterruptMode(napi_env env, napi_callback_info info);
 
     static bool ParseRendererOptions(napi_env env, napi_value root, AudioRendererOptions *opts);
     static bool ParseRendererInfo(napi_env env, napi_value root, AudioRendererInfo *rendererInfo);
