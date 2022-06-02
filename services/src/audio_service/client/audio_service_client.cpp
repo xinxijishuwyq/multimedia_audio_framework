@@ -313,7 +313,7 @@ int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerRe
 
 void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_INFO_LOG("AudioServiceClient::Inside PA write callback");
+    AUDIO_DEBUG_LOG("AudioServiceClient::Inside PA write callback");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamWriteCb: userdata is null");
         return;
@@ -341,7 +341,7 @@ void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void 
 
 void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamReadCb Inside PA read callback");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: userdata is null");
         return;
@@ -1195,8 +1195,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             pa_threaded_mainloop_wait(mainLoop);
         }
 
-        AUDIO_INFO_LOG("Write stream: writable size = %{public}zu, length = %{public}zu",
-                       writableSize, length);
+        AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
         if (writableSize > length) {
             writableSize = length;
         }
@@ -1216,8 +1215,8 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             break;
         }
 
-        AUDIO_INFO_LOG("Writable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
-                       writableSize, length, error);
+        AUDIO_DEBUG_LOG("Writable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
+                        writableSize, length, error);
         buffer = buffer + writableSize;
         length -= writableSize;
 
@@ -1399,7 +1398,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
             StreamBuffer str;
             str.buffer = stream.buffer + cachedLen;
             str.bufferLen = stream.bufferLen - cachedLen;
-            AUDIO_INFO_LOG("writing pending data to audio cache: %{public}d", str.bufferLen);
+            AUDIO_DEBUG_LOG("writing pending data to audio cache: %{public}d", str.bufferLen);
             cachedLen += WriteToAudioCache(str);
         }
     }
@@ -1529,7 +1528,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                 }
             } else {
                 internalRdBufIndex = 0;
-                AUDIO_INFO_LOG("buffer size from PA: %{public}zu", internalRdBufLen);
+                AUDIO_DEBUG_LOG("buffer size from PA: %{public}zu", internalRdBufLen);
             }
         }
 
