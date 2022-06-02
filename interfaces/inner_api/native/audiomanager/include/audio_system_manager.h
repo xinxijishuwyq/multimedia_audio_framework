@@ -198,9 +198,9 @@ public:
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(void);
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    const std::string GetAudioParameter(const std::string key) const;
-    void SetAudioParameter(const std::string &key, const std::string &value) const;
-    const char *RetrieveCookie(int32_t &size) const;
+    const std::string GetAudioParameter(const std::string key);
+    void SetAudioParameter(const std::string &key, const std::string &value);
+    const char *RetrieveCookie(int32_t &size);
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
