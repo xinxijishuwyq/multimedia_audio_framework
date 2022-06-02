@@ -212,21 +212,30 @@ bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volu
     return AudioPolicyManager::GetInstance().IsStreamActive(StreamVolType);
 }
 
-const std::string AudioSystemManager::GetAudioParameter(const std::string key) const
+const std::string AudioSystemManager::GetAudioParameter(const std::string key)
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, "", "GetAudioParameter::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, "", "GetAudioParameter::Audio service unavailable");
+    }
+
     return g_sProxy->GetAudioParameter(key);
 }
 
-void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value) const
+void AudioSystemManager::SetAudioParameter(const std::string &key, const std::string &value)
 {
-    CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioParameter::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioParameter::Audio service unavailable");
+    }
+
     g_sProxy->SetAudioParameter(key, value);
 }
 
-const char *AudioSystemManager::RetrieveCookie(int32_t &size) const
+const char *AudioSystemManager::RetrieveCookie(int32_t &size)
 {
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, nullptr, "RetrieveCookie::Audio service unavailable");
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, nullptr, "RetrieveCookie::Audio service unavailable");
+    }
+
     return g_sProxy->RetrieveCookie(size);
 }
 
