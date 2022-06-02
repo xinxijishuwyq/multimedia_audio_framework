@@ -205,6 +205,32 @@ const char *AudioManagerProxy::RetrieveCookie(int32_t &size)
     return cookieInfo;
 }
 
+uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t transactionId = 0;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return transactionId;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteInt32(static_cast<int32_t>(deviceRole));
+
+    int32_t error = Remote()->SendRequest(GET_TRANSACTION_ID, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get transaction id failed, error: %d", error);
+        return transactionId;
+    }
+
+    transactionId = reply.ReadUint64();
+
+    return transactionId;
+}
+
 int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     return ERR_NONE;

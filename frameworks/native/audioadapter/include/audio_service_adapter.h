@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <unistd.h>
+#include <vector>
 
 #include "audio_info.h"
 
@@ -139,6 +140,20 @@ public:
      * @return Returns true: If streamType is active; else returns false
      */
     virtual bool IsStreamActive(AudioStreamType streamType);
+
+    /**
+     * @brief returns the list of all sink inputs
+     *
+     * @return Returns : List of all sink inputs
+     */
+    virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
+
+    /**
+     * @brief returns the list of all source outputs
+     *
+     * @return Returns : List of all source outputs
+     */
+    virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
 
     /**
      * @brief Disconnects the connected audio server

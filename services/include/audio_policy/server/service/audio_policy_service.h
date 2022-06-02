@@ -131,6 +131,8 @@ private:
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
 
+    void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+
     bool GetActiveDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
 
     bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);

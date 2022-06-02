@@ -21,6 +21,8 @@
 
 #include "audio_adapter_manager.h"
 
+using namespace std;
+
 namespace OHOS {
 namespace AudioStandard {
 bool AudioAdapterManager::Init()
@@ -132,6 +134,28 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
     }
 
     return mAudioServiceAdapter->IsStreamActive(streamType);
+}
+
+vector<SinkInput> AudioAdapterManager::GetAllSinkInputs()
+{
+    if (!mAudioServiceAdapter) {
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        vector<SinkInput> sinkInputList;
+        return sinkInputList;
+    }
+
+    return mAudioServiceAdapter->GetAllSinkInputs();
+}
+
+vector<SourceOutput> AudioAdapterManager::GetAllSourceOutputs()
+{
+    if (!mAudioServiceAdapter) {
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        vector<SourceOutput> sourceOutputList;
+        return sourceOutputList;
+    }
+
+    return mAudioServiceAdapter->GetAllSourceOutputs();
 }
 
 int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSuspend)

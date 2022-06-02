@@ -18,6 +18,7 @@
 #include "audio_manager_base.h"
 #include "iservice_registry.h"
 #include "audio_log.h"
+#include "hisysevent.h"
 #include "system_ability_definition.h"
 
 #include "audio_policy_service.h"
@@ -793,11 +794,54 @@ InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceNa
     return devType;
 }
 
+void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
+{
+    for (auto deviceDescriptor : desc) {
+        if (deviceDescriptor != nullptr) {
+            if (deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) {
+                HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_HEADSET_CHANGE",
+                    HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                    "ISCONNECT", isConnected ? 1 : 0,
+                    "HASMIC", 1,
+                    "DEVICETYPE", DEVICE_TYPE_WIRED_HEADSET);
+            }
+
+            if (!isConnected) {
+                continue;
+            }
+
+            if (deviceDescriptor->deviceRole_ == OUTPUT_DEVICE) {
+                vector<SinkInput> sinkInputs = mAudioPolicyManager.GetAllSinkInputs();
+                for (SinkInput sinkInput : sinkInputs) {
+                    HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_DEVICE_CHANGE",
+                        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                        "ISOUTPUT", 1,
+                        "STREAMID", sinkInput.streamId,
+                        "STREAMTYPE", sinkInput.streamType,
+                        "DEVICETYPE", deviceDescriptor->deviceType_);
+                }
+            } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
+                vector<SourceOutput> sourceOutputs = mAudioPolicyManager.GetAllSourceOutputs();
+                for (SourceOutput sourceOutput : sourceOutputs) {
+                    HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_DEVICE_CHANGE",
+                        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                        "ISOUTPUT", 0,
+                        "STREAMID", sourceOutput.streamId,
+                        "STREAMTYPE", sourceOutput.streamType,
+                        "DEVICETYPE", deviceDescriptor->deviceType_);
+                }
+            }
+        }
+    }
+}
+
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     DeviceChangeAction deviceChangeAction;
     deviceChangeAction.deviceDescriptors = desc;
     deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
+
+    WriteDeviceChangedSysEvents(desc, isConnected);
 
     for (auto it = deviceChangeCallbackMap_.begin(); it != deviceChangeCallbackMap_.end(); ++it) {
         if (it->second) {

@@ -459,6 +459,12 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
+uint64_t AudioCapturerSource::GetTransactionId()
+{
+    AUDIO_INFO_LOG("AudioCapturerSource::GetTransactionId in");
+    return reinterpret_cast<uint64_t>(audioCapture_);
+}
+
 int32_t AudioCapturerSource::Stop(void)
 {
     int32_t ret;

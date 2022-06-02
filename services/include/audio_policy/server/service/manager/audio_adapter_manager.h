@@ -63,6 +63,10 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType);
 
+    std::vector<SinkInput> GetAllSinkInputs();
+
+    std::vector<SourceOutput> GetAllSourceOutputs();
+
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle);

@@ -19,6 +19,7 @@
 #include <mutex>
 
 #include <pulse/pulseaudio.h>
+#include <vector>
 
 #include "audio_service_adapter.h"
 
@@ -39,6 +40,8 @@ public:
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     bool IsMute(AudioStreamType streamType) override;
     bool IsStreamActive(AudioStreamType streamType) override;
+    std::vector<SinkInput> GetAllSinkInputs() override;
+    std::vector<SourceOutput> GetAllSourceOutputs() override;
     void Disconnect() override;
 
     // Static Member functions
@@ -49,6 +52,8 @@ public:
     static void PaGetSinkInputInfoMuteCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetSinkInputInfoMuteStatusCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
 private:
     struct UserData {
         PulseAudioServiceAdapterImpl *thiz;
@@ -57,6 +62,8 @@ private:
         bool mute;
         bool isCorked;
         uint32_t idx;
+        std::vector<SinkInput> sinkInputList;
+        std::vector<SourceOutput> sourceOutputList;
     };
 
     bool ConnectToPulseAudio();

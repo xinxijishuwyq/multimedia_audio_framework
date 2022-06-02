@@ -560,6 +560,16 @@ enum AudioCaptureMode {
     CAPTURE_MODE_CALLBACK
 };
 
+struct SinkInput {
+    int32_t streamId;
+    AudioStreamType streamType;
+};
+
+struct SourceOutput {
+    int32_t streamId;
+    AudioStreamType streamType;
+};
+
 typedef uint32_t AudioIOHandle;
 
 static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)

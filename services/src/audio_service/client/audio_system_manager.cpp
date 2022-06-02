@@ -239,6 +239,14 @@ const char *AudioSystemManager::RetrieveCookie(int32_t &size)
     return g_sProxy->RetrieveCookie(size);
 }
 
+uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, 0, "GetTransactionId::Audio service unavailable");
+    }
+    return g_sProxy->GetTransactionId(deviceType, deviceRole);
+}
+
 int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
