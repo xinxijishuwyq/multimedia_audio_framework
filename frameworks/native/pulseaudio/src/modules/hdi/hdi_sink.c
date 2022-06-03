@@ -46,6 +46,15 @@
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
 
+enum {
+    HDI_INIT,
+    HDI_DEINIT,
+    HDI_START,
+    HDI_STOP,
+    HDI_RENDER,
+    QUIT
+};
+
 struct Userdata {
     const char *adapterName;
     uint32_t buffer_size;
@@ -58,6 +67,7 @@ struct Userdata {
     pa_usec_t block_usec;
     pa_usec_t timestamp;
     pa_thread *thread;
+    pa_thread *thread_hdi;
     pa_rtpoll *rtpoll;
     pa_core *core;
     pa_module *module;
@@ -66,6 +76,8 @@ struct Userdata {
     pa_channel_map map;
     bool isHDISinkStarted;
     struct RendererSinkAdapter *sinkAdapter;
+    pa_asyncmsgq *dq;
+    pa_atomic_t dflag;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -109,53 +121,24 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
         }
     }
     pa_memblock_release(pchunk->memblock);
+    pa_memblock_unref(pchunk->memblock);
 
     return count;
 }
 
 static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 {
-    size_t dropped;
-    size_t consumed = 0;
-
     pa_assert(u);
 
     // Fill the buffer up the latency size
-    while (u->timestamp < now + u->block_usec) {
-        ssize_t written = 0;
-        pa_memchunk chunk;
-        // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
-        pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
+    pa_memchunk chunk;
 
-        pa_assert(chunk.length > 0);
+    // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
+    pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
+    pa_assert(chunk.length > 0);
 
-        if ((written = RenderWrite(u, &chunk)) < 0) {
-            pa_memblock_unref(chunk.memblock);
-            break;
-        }
-
-        pa_memblock_unref(chunk.memblock);
-
-        u->timestamp += pa_bytes_to_usec(written, &u->sink->sample_spec);
-
-        dropped = chunk.length - written;
-
-        if (u->bytes_dropped != 0 && dropped != chunk.length) {
-            AUDIO_INFO_LOG("HDI-sink continuously dropped %zu bytes", u->bytes_dropped);
-            u->bytes_dropped = 0;
-        }
-
-        if (u->bytes_dropped == 0 && dropped != 0) {
-            AUDIO_INFO_LOG("HDI-sink just dropped %zu bytes", dropped);
-        }
-
-        u->bytes_dropped += dropped;
-
-        consumed += written;
-
-        if (consumed >= u->sink->thread_info.max_request)
-            break;
-    }
+    pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);
+    u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
 
 static void ThreadFuncUseTiming(void *userdata)
@@ -193,8 +176,11 @@ static void ThreadFuncUseTiming(void *userdata)
                 ProcessRenderUseTiming(u, now);
             pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp);
         } else if (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
-            if (u->timestamp <= now)
+            if (u->timestamp <= now && pa_atomic_load(&u->dflag) == 0) {
+                pa_atomic_add(&u->dflag, 1);
                 ProcessRenderUseTiming(u, now);
+            }
+
             pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp);
         } else {
             pa_rtpoll_set_timer_disabled(u->rtpoll);
@@ -220,6 +206,38 @@ finish:
     AUDIO_INFO_LOG("Thread (use timing) shutting down");
 }
 
+static void ThreadFuncWriteHDI(void *userdata)
+{
+    struct Userdata *u = userdata;
+    pa_assert(u);
+
+    int quit = 0;
+
+    do {
+        int code = 0;
+        pa_memchunk chunk;
+
+        pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
+
+        switch (code) {
+            case HDI_RENDER:
+                if (RenderWrite(u, &chunk) < 0) {
+                    u->bytes_dropped += chunk.length;
+                    AUDIO_ERR_LOG("RenderWrite failed");
+                }
+                if (pa_atomic_load(&u->dflag) == 1) {
+                    pa_atomic_sub(&u->dflag, 1);
+                }
+                break;
+            case QUIT:
+                quit = 1;
+                break;
+            default:
+                break;
+        }
+        pa_asyncmsgq_done(u->dq, 0);
+    } while (!quit);
+}
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 {
     struct Userdata *u = NULL;
@@ -242,6 +260,8 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
 {
     struct Userdata *u = PA_SINK(o)->userdata;
     pa_assert(u);
+
+    AUDIO_INFO_LOG("SinkProcessMsg: code: %{public}d", code);
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
             uint64_t latency;
@@ -429,7 +449,8 @@ fail:
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
-    char *threadName = NULL;
+    char *paThreadName = NULL;
+    char *hdiThreadName = NULL;
 
     pa_assert(m);
     pa_assert(ma);
@@ -470,6 +491,9 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
+    pa_atomic_store(&u->dflag, 0);
+    u->dq = pa_asyncmsgq_new(0);
+
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {
         AUDIO_ERR_LOG("Failed to create sink object");
@@ -503,11 +527,18 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
-    threadName = "hdi-sink-playback";
-    if (!(u->thread = pa_thread_new(threadName, ThreadFuncUseTiming, u))) {
-        AUDIO_ERR_LOG("Failed to create thread.");
+    paThreadName = "write-pa";
+    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncUseTiming, u))) {
+        AUDIO_ERR_LOG("Failed to write-pa thread.");
         goto fail;
     }
+
+    hdiThreadName = "write-hdi";
+    if (!(u->thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
+        AUDIO_ERR_LOG("Failed to write-hdi thread.");
+        goto fail;
+    }
+
     pa_sink_put(u->sink);
 
     return u->sink;
@@ -527,6 +558,11 @@ static void UserdataFree(struct Userdata *u)
     if (u->thread) {
         pa_asyncmsgq_send(u->thread_mq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
         pa_thread_free(u->thread);
+    }
+
+    if (u->thread_hdi) {
+        pa_asyncmsgq_post(u->dq, NULL, QUIT, NULL, 0, NULL, NULL);
+        pa_thread_free(u->thread_hdi);
     }
 
     pa_thread_mq_done(&u->thread_mq);
