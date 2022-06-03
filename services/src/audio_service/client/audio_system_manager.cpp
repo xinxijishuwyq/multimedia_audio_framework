@@ -185,6 +185,7 @@ bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
     switch (deviceType) {
         case SPEAKER:
         case BLUETOOTH_SCO:
+        case FILE_SINK_DEVICE:
             break;
         default:
             AUDIO_ERR_LOG("IsDeviceActive device=%{public}d not supported", deviceType);
