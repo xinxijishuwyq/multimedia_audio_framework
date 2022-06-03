@@ -335,7 +335,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
 
         if (u->isHDISinkStarted) {
             u->sinkAdapter->RendererSinkStop();
-            AUDIO_INFO_LOG("Stopped HDI renderer");
+            AUDIO_DEBUG_LOG("Stopped HDI renderer");
             u->isHDISinkStarted = false;
         }
     }
@@ -418,7 +418,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         goto fail;
 
     u->isHDISinkStarted = true;
-    AUDIO_INFO_LOG("Initialization of HDI rendering device completed");
+    AUDIO_DEBUG_LOG("Initialization of HDI rendering device completed");
     pa_sink_new_data_init(&data);
     data.driver = driver;
     data.module = m;
@@ -468,7 +468,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    AUDIO_INFO_LOG("Load sink adapter");
+    AUDIO_DEBUG_LOG("Load sink adapter");
     int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS), &u->sinkAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
