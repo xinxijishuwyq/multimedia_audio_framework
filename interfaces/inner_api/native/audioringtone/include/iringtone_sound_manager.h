@@ -21,7 +21,7 @@
 #include <string>
 
 #include "iringtone_player.h"
-#include "foundation/aafwk/standard/frameworks/kits/appkit/native/ability_runtime/context/context.h"
+#include "foundation/ability/ability_runtime/frameworks/kits/appkit/native/ability_runtime/context/context.h"
 
 namespace OHOS {
 namespace AudioStandard {
