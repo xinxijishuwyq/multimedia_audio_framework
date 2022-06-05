@@ -2005,57 +2005,64 @@ napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_pt
 
 napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("AudioRendererNapi: SetInterruptMode");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
-
+    
     GET_PARAMS(env, info, ARGS_TWO);
     NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
-
+    
     unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioRendererAsyncContext object creation failed");
 
-    for (size_t i = PARAM0; i < argc; i++) {
-        napi_valuetype valueType = napi_undefined;
-        napi_typeof(env, argv[i], &valueType);
-        if (i == PARAM0 && valueType == napi_number) {
-            napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
-        } else if (i == PARAM1 && valueType == napi_function) {
-            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-            break;
-        } else {
-            NAPI_ASSERT(env, false, "type mismatch");
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+            if (i == PARAM0 && valueType == napi_number) {
+                napi_get_value_int32(env, argv[i], &asyncContext->interruptMode);
+            } else if (i == PARAM1 && valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                break;
+            } else {
+                NAPI_ASSERT(env, false, "type mismatch");
+            }
         }
-    }
 
-    if (asyncContext->callbackRef == nullptr) {
-        napi_create_promise(env, &asyncContext->deferred, &result);
-    } else {
-        napi_get_undefined(env, &result);
-    }
-
-    napi_value resource = nullptr;
-    napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
-
-    status = napi_create_async_work(
-        env, nullptr, resource,
-        [](napi_env env, void *data) {
-            auto context = static_cast<AudioRendererAsyncContext*>(data);
-            context->objectInfo->audioRenderer_->SetInterruptMode(GetNativeInterruptMode(context->interruptMode));
-            context->status = SUCCESS;
-            context->intValue = SUCCESS;
-        },
-        GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-    if (status != napi_ok) {
-        result = nullptr;
-    } else {
-        status = napi_queue_async_work(env, asyncContext->work);
-        if (status == napi_ok) {
-            asyncContext.release();
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
         } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioRendererAsyncContext*>(data);
+                AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
+                AUDIO_INFO_LOG("AudioRendererNapi::SetInterruptMode::napi_create_async_work::interruptMode %{public}d", interruptMode_);
+                context->objectInfo->audioRenderer_->SetInterruptMode(interruptMode_);
+                context->status = SUCCESS;
+                context->intValue = SUCCESS;
+            },
+            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
             result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
         }
     }
+
     return result;
 }
 } // namespace AudioStandard

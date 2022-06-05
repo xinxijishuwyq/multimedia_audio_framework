@@ -647,5 +647,6 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

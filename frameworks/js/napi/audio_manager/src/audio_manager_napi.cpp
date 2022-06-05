@@ -889,11 +889,10 @@ static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, v
 
 napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("AudioManagerNapi: RequestIndependentInterrupt");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
-
-    AUDIO_DEBUG_LOG("AudioManagerNapi: RequestIndependentInterrupt ");
 
     GET_PARAMS(env, info, ARGS_TWO);
     NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
@@ -950,6 +949,7 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
 
 napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_callback_info info)
 {
+    AUDIO_INFO_LOG("AudioManagerNapi: AbandonIndependentInterrupt");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
