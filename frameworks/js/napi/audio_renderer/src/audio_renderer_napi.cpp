@@ -2005,7 +2005,6 @@ napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_pt
 
 napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioRendererNapi: SetInterruptMode");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2045,7 +2044,6 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext*>(data);
                 AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
-                AUDIO_INFO_LOG("AudioRendererNapi::SetInterruptMode::napi_create_async_work::interruptMode %{public}d", interruptMode_);
                 context->objectInfo->audioRenderer_->SetInterruptMode(interruptMode_);
                 context->status = SUCCESS;
                 context->intValue = SUCCESS;
