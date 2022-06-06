@@ -579,7 +579,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType,
         connectedBTDeviceMap_[macAddress] = streamInfo;
 
         auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
-        if (a2dpModulesPos == deviceClassInfo_.end()) {
+        if (a2dpModulesPos != deviceClassInfo_.end()) {
             auto moduleInfoList = a2dpModulesPos->second;
             for (auto &moduleInfo : moduleInfoList) {
                 if (mIOHandles.find(moduleInfo.name) != mIOHandles.end()) {
