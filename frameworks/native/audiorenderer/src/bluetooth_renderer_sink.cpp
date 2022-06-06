@@ -49,8 +49,8 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_bt.pcm";
 
 BluetoothRendererSink::BluetoothRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr),
-      handle_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr),
+      audioRender_(nullptr), handle_(nullptr)
 {
     attr_ = {};
 #ifdef BT_DUMPFILE
