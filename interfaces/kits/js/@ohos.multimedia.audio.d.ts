@@ -534,10 +534,45 @@ declare namespace audio {
      */
     on(type: 'ringerModeChange', callback: Callback<AudioRingMode>): void;
 
+     /**
+     * Request independent interrupt event.
+     * @param focusType The focus type.
+     * @param callback Callback used to return the result.
+     * @since 9
+     * @syscap SystemCapability.Multimedia.Audio.Renderer
+     * @systemapi
+     */
+      requestIndependentInterrupt(focusType: FocusType, callback: AsyncCallback<boolean>): void;
 
-    setInterruptMode(mode:InterruptMode):void;
-    requestIndependentInterrupt(focusType:FocusType, callback:AsyncCallback<Boolean>);
-    abandonIndependentInterrupt(focusType:FocusType): Promise<Boolean>;
+      /**
+       * Request independent interrupt event.
+       * @param focusType The focus type.
+       * @return Promise used to return the result.
+       * @since 9
+       * @syscap SystemCapability.Multimedia.Audio.Renderer
+       * @systemapi
+       */
+      requestIndependentInterrupt(focusType: FocusType): Promise<boolean>;
+  
+      /**
+       * Abandon the requested independent interrupt event.
+       * @param focusType The focus type.
+       * @param callback Callback used to return the result.
+       * @since 9
+       * @syscap SystemCapability.Multimedia.Audio.Renderer
+       * @systemapi
+       */
+      abandonIndependentInterrupt(focusType: FocusType, callback: AsyncCallback<boolean>): void;
+  
+      /**
+       * Abandon the requested independent interrupt event.
+       * @param focusType The focus type.
+       * @return Promise used to return the result.
+       * @since 9
+       * @syscap SystemCapability.Multimedia.Audio.Renderer
+       * @systemapi
+       */
+      abandonIndependentInterrupt(focusType: FocusType): Promise<void>;
   }
 
   enum InterruptMode{
@@ -1113,6 +1148,23 @@ declare namespace audio {
      * @since 8
      */
     off(type: "periodReach"): void;
+
+    /**
+     * Set interrupt mode.
+     * @param mode The interrupt mode.
+     * @param callback Callback used to return the result.
+     * @since 9
+     * @syscap SystemCapability.Multimedia.Audio.Renderer
+     */
+     setInterruptMode(mode: InterruptMode, callback: AsyncCallback<void>): void;
+     /**
+      * Set interrupt mode.
+      * @param mode The interrupt mode.
+      * @return Promise used to return the result.
+      * @since 9
+      * @syscap SystemCapability.Multimedia.Audio.Renderer
+      */
+     setInterruptMode(mode: InterruptMode): Promise<void>;
   }
 
   /**

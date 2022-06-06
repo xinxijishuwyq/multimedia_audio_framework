@@ -650,6 +650,7 @@ int32_t AudioRendererPrivate::SetRendererWriteCallback(const std::shared_ptr<Aud
 
 void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 {
+    AUDIO_INFO_LOG("AudioRendererPrivate: SetInterruptMode : InterruptMode %{pubilc}d", mode);
     mode_ = mode;
 }
 }  // namespace AudioStandard
