@@ -99,8 +99,8 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
-    attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
+    attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.type = AUDIO_IN_MEDIA;

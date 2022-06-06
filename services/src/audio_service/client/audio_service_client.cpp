@@ -912,6 +912,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     if (!paStream) {
         error = pa_context_errno(context);
+        AUDIO_ERR_LOG("create stream Failed, error: %{public}d", error);
         pa_proplist_free(propList);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
@@ -1085,8 +1086,6 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
-    int error;
-
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
@@ -1098,7 +1097,7 @@ int32_t AudioServiceClient::FlushStream()
 
     pa_stream_state_t state = pa_stream_get_state(paStream);
     if (state != PA_STREAM_READY) {
-        error = pa_context_errno(context);
+        int error = pa_context_errno(context);
         pa_threaded_mainloop_unlock(mainLoop);
         AUDIO_ERR_LOG("Stream Flush Failed, error: %{public}d", error);
         return AUDIO_CLIENT_ERR;
@@ -1715,8 +1714,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
     pa_usec_t paLatency;
     pa_usec_t cacheLatency;
     int32_t retVal = AUDIO_CLIENT_SUCCESS;
-    int negative;
-    bool getPALatency = false;
+    int negative = 0;
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
@@ -1728,14 +1726,13 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
 
-    while (!getPALatency) {
+    while (true) {
         if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
             if (negative) {
                 latency = 0;
                 retVal = AUDIO_CLIENT_ERR;
                 return retVal;
             }
-            getPALatency = true;
             break;
         }
         AUDIO_INFO_LOG("waiting for audio latency information");
