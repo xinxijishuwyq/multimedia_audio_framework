@@ -59,6 +59,10 @@ public:
 
     bool IsDeviceActive(InternalDeviceType deviceType) const;
 
+    DeviceType GetActiveOutputDevice() const;
+
+    DeviceType GetActiveInputDevice() const;
+
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
     bool IsAudioInterruptEnabled() const;
@@ -143,6 +147,7 @@ private:
     int32_t mDefaultDeviceCount = 0;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     DeviceType mCurrentActiveDevice = DEVICE_TYPE_NONE;
+    DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;

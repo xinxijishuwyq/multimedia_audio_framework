@@ -146,6 +146,18 @@ void AudioPolicyManagerStub::IsDeviceActiveInternal(MessageParcel &data, Message
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    InternalDeviceType deviceType = GetActiveOutputDevice();
+    reply.WriteInt32(static_cast<int>(deviceType));
+}
+
+void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    InternalDeviceType deviceType = GetActiveInputDevice();
+    reply.WriteInt32(static_cast<int>(deviceType));
+}
+
 void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
@@ -362,6 +374,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case IS_DEVICE_ACTIVE:
             IsDeviceActiveInternal(data, reply);
+            break;
+
+        case GET_ACTIVE_OUTPUT_DEVICE:
+            GetActiveOutputDeviceInternal(data, reply);
+            break;
+
+        case GET_ACTIVE_INPUT_DEVICE:
+            GetActiveInputDeviceInternal(data, reply);
             break;
 
         case SET_RINGERMODE_CALLBACK:

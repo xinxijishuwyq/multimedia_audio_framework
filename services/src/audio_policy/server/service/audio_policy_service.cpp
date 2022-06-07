@@ -366,15 +366,22 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 
         result = ActivateNewDevice(DEVICE_TYPE_MIC);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for MIC %{public}d", result);
+        mActiveInputDevice_ = DEVICE_TYPE_MIC;
     } else if (deviceType == DEVICE_TYPE_FILE_SINK) {
         result = ActivateNewDevice(DEVICE_TYPE_FILE_SINK);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for FILE_SINK %{public}d", result);
 
         result = ActivateNewDevice(DEVICE_TYPE_FILE_SOURCE);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Failed for FILE_SOURCE %{public}d", result);
+        mActiveInputDevice_ = DEVICE_TYPE_FILE_SOURCE;
     } else {
         result = ActivateNewDevice(deviceType);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Activate failed %{public}d", result);
+        if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
+            mActiveInputDevice_ = DEVICE_TYPE_WIRED_HEADSET;
+        } else if (deviceType == DEVICE_TYPE_USB_HEADSET) {
+            mActiveInputDevice_ = DEVICE_TYPE_USB_HEADSET;
+        }
     }
 
     mCurrentActiveDevice = deviceType;
@@ -385,6 +392,16 @@ bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType) const
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
     return mCurrentActiveDevice == deviceType;
+}
+
+DeviceType AudioPolicyService::GetActiveOutputDevice() const
+{
+    return mCurrentActiveDevice;
+}
+
+DeviceType AudioPolicyService::GetActiveInputDevice() const
+{
+    return mActiveInputDevice_;
 }
 
 int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
@@ -530,6 +547,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         result = ActivateNewDevice(devType);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device %{public}d", devType);
         mCurrentActiveDevice = devType;
+        if ((devType == DEVICE_TYPE_WIRED_HEADSET) || (devType == DEVICE_TYPE_USB_HEADSET)) {
+            mActiveInputDevice_ = devType;
+        }
         UpdateConnectedDevices(devType, deviceChangeDescriptor, isConnected, macAddress, streamInfo);
     } else {
         UpdateConnectedDevices(devType, deviceChangeDescriptor, isConnected, macAddress, streamInfo);
@@ -543,9 +563,15 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
             result = ActivateNewDevice(DEVICE_TYPE_MIC);
             CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+            mActiveInputDevice_ = DEVICE_TYPE_MIC;
         } else {
             result = ActivateNewDevice(priorityDev);
             CHECK_AND_RETURN_LOG(result == SUCCESS, "Failed to activate new device [%{public}d]", result);
+            if (priorityDev == DEVICE_TYPE_WIRED_HEADSET) {
+                mActiveInputDevice_ = DEVICE_TYPE_WIRED_HEADSET;
+            } else if (priorityDev == DEVICE_TYPE_USB_HEADSET) {
+                mActiveInputDevice_ = DEVICE_TYPE_USB_HEADSET;
+            }
         }
 
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -662,6 +688,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     if (result == SUCCESS) {
         AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
         mCurrentActiveDevice = DEVICE_TYPE_SPEAKER;
+        mActiveInputDevice_ = DEVICE_TYPE_MIC;
     }
 }
 
@@ -798,12 +825,13 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
 {
     for (auto deviceDescriptor : desc) {
         if (deviceDescriptor != nullptr) {
-            if (deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) {
+            if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
+                || (deviceDescriptor->deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
                 HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_HEADSET_CHANGE",
                     HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
                     "ISCONNECT", isConnected ? 1 : 0,
                     "HASMIC", 1,
-                    "DEVICETYPE", DEVICE_TYPE_WIRED_HEADSET);
+                    "DEVICETYPE", deviceDescriptor->deviceType_);
             }
 
             if (!isConnected) {

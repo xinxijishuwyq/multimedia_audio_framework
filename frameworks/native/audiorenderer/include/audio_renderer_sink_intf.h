@@ -37,6 +37,7 @@ int32_t AudioRendererSinkResume(void);
 int32_t AudioRendererRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
 int32_t AudioRendererSinkSetVolume(float left, float right);
 int32_t AudioRendererSinkGetLatency(uint32_t *latency);
+int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId);
 #ifdef __cplusplus
 }
 #endif

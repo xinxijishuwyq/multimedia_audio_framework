@@ -182,7 +182,7 @@ public:
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t SetParams(const AudioCapturerParams params) const = 0;
+    virtual int32_t SetParams(const AudioCapturerParams params) = 0;
 
     /**
      * @brief Registers the capturer callback listener.

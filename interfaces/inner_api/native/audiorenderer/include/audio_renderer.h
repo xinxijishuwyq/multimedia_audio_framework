@@ -130,6 +130,16 @@ public:
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType);
 
     /**
+     * @brief create renderer instance.
+     *
+     * @param audioStreamType The audio streamtype to be created.
+     * refer AudioStreamType in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns unique pointer to the AudioRenderer object
+    */
+    static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
+
+    /**
      * @brief creater renderer instance.
      *
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
@@ -137,6 +147,16 @@ public:
      * @return Returns unique pointer to the AudioRenderer object
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
+
+    /**
+     * @brief creater renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns unique pointer to the AudioRenderer object
+    */
+    static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &options, const AppInfo &appInfo);
 
     /**
      * @brief create renderer instance.
@@ -148,6 +168,18 @@ public:
     */
     static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions);
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param cachePath Application cache path
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns unique pointer to the AudioRenderer object
+    */
+    static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
+        const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
 
     /**
      * @brief Sets audio renderer parameters.

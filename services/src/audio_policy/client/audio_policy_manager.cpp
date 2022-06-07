@@ -130,6 +130,16 @@ bool AudioPolicyManager::IsDeviceActive(InternalDeviceType deviceType)
     return g_sProxy->IsDeviceActive(deviceType);
 }
 
+DeviceType AudioPolicyManager::GetActiveOutputDevice()
+{
+    return g_sProxy->GetActiveOutputDevice();
+}
+
+DeviceType AudioPolicyManager::GetActiveInputDevice()
+{
+    return g_sProxy->GetActiveInputDevice();
+}
+
 int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {

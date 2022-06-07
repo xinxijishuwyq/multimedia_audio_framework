@@ -42,6 +42,10 @@ public:
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
+    DeviceType GetActiveOutputDevice() override;
+
+    DeviceType GetActiveInputDevice() override;
+
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
     AudioRingerMode GetRingerMode() override;

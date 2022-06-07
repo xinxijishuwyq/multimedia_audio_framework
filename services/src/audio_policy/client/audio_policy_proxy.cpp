@@ -284,6 +284,46 @@ bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
     return reply.ReadBool();
 }
 
+DeviceType AudioPolicyProxy::GetActiveOutputDevice()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return DEVICE_TYPE_INVALID;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_ACTIVE_OUTPUT_DEVICE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get active output device failed, error: %d", error);
+        return DEVICE_TYPE_INVALID;
+    }
+
+    return static_cast<DeviceType>(reply.ReadInt32());
+}
+
+DeviceType AudioPolicyProxy::GetActiveInputDevice()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return DEVICE_TYPE_INVALID;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_ACTIVE_INPUT_DEVICE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get active input device failed, error: %d", error);
+        return DEVICE_TYPE_INVALID;
+    }
+
+    return static_cast<DeviceType>(reply.ReadInt32());
+}
+
 int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;

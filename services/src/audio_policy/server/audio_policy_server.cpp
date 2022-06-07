@@ -297,6 +297,16 @@ bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
     return mPolicyService.IsDeviceActive(deviceType);
 }
 
+InternalDeviceType AudioPolicyServer::GetActiveOutputDevice()
+{
+    return mPolicyService.GetActiveOutputDevice();
+}
+
+InternalDeviceType AudioPolicyServer::GetActiveInputDevice()
+{
+    return mPolicyService.GetActiveInputDevice();
+}
+
 int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
 {
     bool isPermissionRequired = false;
