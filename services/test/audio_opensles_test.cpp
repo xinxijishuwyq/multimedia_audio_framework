@@ -33,6 +33,7 @@ static void OpenSlTest();
 
 static void OpenSlTestConcurrent();
 
+const SLuint32 number = 3;
 FILE *wavFile_ = nullptr;
 FILE *wavFile1_ = nullptr;
 FILE *wavFile2_ = nullptr;
@@ -154,13 +155,12 @@ static void OpenSlTest()
     AUDIO_INFO_LOG("OpenSlTest");
     engineObject = nullptr;
     SLEngineItf engineEngine = nullptr;
-    SLresult result;
-    result = slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
-    result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
-    result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+    slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
+    (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
 
     outputMixObject = nullptr;
-    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, nullptr, nullptr);
+    (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, nullptr, nullptr);
     (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
 
     SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
@@ -179,7 +179,7 @@ static void OpenSlTest()
         0
     };
     SLDataSource slSource = {&slBufferQueue, &pcmFormat};
-    result = (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slSource, &slSink, 3, nullptr, nullptr);
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slSource, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject)->Realize(pcmPlayerObject, SL_BOOLEAN_FALSE);
 
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_PLAY, &playItf);
@@ -198,14 +198,13 @@ static void OpenSlTestConcurrent()
     AUDIO_INFO_LOG("OpenSlTestConcurrent");
     engineObject = nullptr;
     SLEngineItf engineEngine = nullptr;
-    SLresult result;
 
-    result = slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
-    result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
-    result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+    slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
+    (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
 
     outputMixObject = nullptr;
-    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, nullptr, nullptr);
+    (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, nullptr, nullptr);
     (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
 
     SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
@@ -235,10 +234,10 @@ static void OpenSlTestConcurrent()
     SLDataSource slSource1 = {&slBufferQueue, &pcmFormat1};
     SLDataSource slSource2 = {&slBufferQueue, &pcmFormat2};
 
-    result = (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject1, &slSource1, &slSink, 3, nullptr, nullptr);
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject1, &slSource1, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject1)->Realize(pcmPlayerObject1, SL_BOOLEAN_FALSE);
 
-    result = (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject2, &slSource2, &slSink, 3, nullptr, nullptr);
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject2, &slSource2, &slSink, number, nullptr, nullptr);
     (*pcmPlayerObject2)->Realize(pcmPlayerObject2, SL_BOOLEAN_FALSE);
 
     (*pcmPlayerObject1)->GetInterface(pcmPlayerObject1, SL_IID_PLAY, &playItf1);

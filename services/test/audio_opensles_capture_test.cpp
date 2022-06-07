@@ -97,9 +97,9 @@ static void OpenSLESCaptureTest()
     engineObject = nullptr;
     SLEngineItf engineItf = nullptr;
 
-    SLresult result = slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
-    result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
-    result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineItf);
+    slCreateEngine(&engineObject, 0, nullptr, 0, nullptr, nullptr);
+    (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineItf);
 
     SLDataLocator_IODevice io_device = {
         SL_DATALOCATOR_IODEVICE,
@@ -132,7 +132,7 @@ static void OpenSLESCaptureTest()
         &format_pcm
     };
 
-    result = (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,
+    (*engineItf)->CreateAudioRecorder(engineItf, &pcmCapturerObject,
         &audioSource, &audioSink, 0, nullptr, nullptr);
     (*pcmCapturerObject)->Realize(pcmCapturerObject, SL_BOOLEAN_FALSE);
     
