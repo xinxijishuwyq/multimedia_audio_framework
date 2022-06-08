@@ -56,6 +56,8 @@ napi_ref AudioManagerNapi::interruptActionType_ = nullptr;
 napi_ref AudioManagerNapi::interruptHint_ = nullptr;
 napi_ref AudioManagerNapi::interruptType_ = nullptr;
 napi_ref AudioManagerNapi::audioScene_ = nullptr;
+napi_ref AudioManagerNapi::interruptMode_ = nullptr;
+napi_ref AudioManagerNapi::focusType_ = nullptr;
 
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
@@ -652,6 +654,37 @@ napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
     return result;
 }
 
+template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env env, T& t_map, napi_ref ref)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+    int32_t refCount = 1;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: t_map) {
+            propName = iter.first;
+            status = AddNamedProperty(env, result, propName, iter.second);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to add named prop in CreatePropertyBase!");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, refCount, &ref);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreatePropertyBase is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
 napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
 {
     napi_status status;
@@ -696,7 +729,9 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateDeviceChangeTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptActionType", CreateInterruptActionTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env))
+        DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env)),
+        DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env, interruptModeMap, interruptMode_)),
+        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_))
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
