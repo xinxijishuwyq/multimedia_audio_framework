@@ -654,7 +654,7 @@ napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
     return result;
 }
 
-template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env env, T& t_map, napi_ref ref) 
+template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env env, T& t_map, napi_ref ref)
 {
     napi_value result = nullptr;
     napi_status status;
