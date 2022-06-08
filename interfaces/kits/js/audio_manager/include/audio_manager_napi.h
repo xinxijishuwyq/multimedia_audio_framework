@@ -100,7 +100,7 @@ private:
     static napi_value RequestIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
 
-    template<typename T> static napi_value CreatePropertyBase(napi_env env,T& t_map,napi_ref ref);
+    template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
 
     static napi_ref audioVolumeTypeRef_;
     static napi_ref deviceFlagRef_;

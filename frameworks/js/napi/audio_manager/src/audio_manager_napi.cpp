@@ -654,7 +654,7 @@ napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
     return result;
 }
 
-template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env env,T& t_map,napi_ref ref) 
+template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env env, T& t_map, napi_ref ref) 
 {
     napi_value result = nullptr;
     napi_status status;
@@ -730,8 +730,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("InterruptActionType", CreateInterruptActionTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env)),
-        DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env,interruptModeMap,interruptMode_)),
-        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env,focusTypeMap,focusType_))
+        DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env, interruptModeMap, interruptMode_)),
+        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_))
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
