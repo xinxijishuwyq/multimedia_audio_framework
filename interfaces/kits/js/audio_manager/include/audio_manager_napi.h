@@ -60,6 +60,7 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
 
 private:
+    
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioManagerWrapper(napi_env env);
@@ -99,6 +100,8 @@ private:
     static napi_value RequestIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
 
+    template<typename T> static napi_value CreatePropertyBase(napi_env env,T& t_map,napi_ref ref);
+
     static napi_ref audioVolumeTypeRef_;
     static napi_ref deviceFlagRef_;
     static napi_ref deviceRoleRef_;
@@ -110,6 +113,8 @@ private:
     static napi_ref interruptHint_;
     static napi_ref interruptType_;
     static napi_ref audioScene_;
+    static napi_ref interruptMode_;
+    static napi_ref focusType_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId = -1;
@@ -149,6 +154,13 @@ static const std::map<std::string, InterruptHint> interruptHintMap = {
 static const std::map<std::string, InterruptActionType> interruptActionTypeMap = {
     {"TYPE_ACTIVATED", TYPE_ACTIVATED},
     {"TYPE_INTERRUPT", TYPE_INTERRUPT}
+};
+static const std::map<std::string, AudioStandard::InterruptMode> interruptModeMap = {
+    {"SHARE_MODE", SHARE_MODE},
+    {"INDEPENDENT_MODE", INDEPENDENT_MODE}
+};
+static const std::map<std::string, AudioStandard::FocusType> focusTypeMap = {
+    {"FOCUS_TYPE_RECORDING", FOCUS_TYPE_RECORDING}
 };
 } // namespace AudioStandard
 } // namespace OHOS
