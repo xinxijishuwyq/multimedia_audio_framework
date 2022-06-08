@@ -25,7 +25,7 @@ ohos_shared_library("audio_ringtone_client") {
     "//foundation/multimedia/audio_standard/frameworks/native/ringtoneplayer/include",
     "//foundation/multimedia/audio_standard/services/include/audio_service/client",
     "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/medialibrary_standard/interfaces/inner_api/media_library_helper/include",
+    "//foundation/multimedia/media_library/interfaces/inner_api/media_library_helper/include",
     "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/rdb/include",
     "//foundation/distributeddatamgr/appdatamgr/frameworks/native/rdb/include",
   ]
