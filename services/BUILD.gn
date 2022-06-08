@@ -139,10 +139,6 @@ config("audio_policy_public_config") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
-  if ("${product_name}" == "m40") {
-    cflags += [ "-DPRODUCT_M40" ]
-  }
-
   ldflags = [ "-Wl" ]
 }
 
