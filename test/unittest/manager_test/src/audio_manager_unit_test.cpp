@@ -105,6 +105,102 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_004
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_004, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_005
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_005, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_006
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_006, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_007
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_007, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_008
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_008, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
+* @tc.name  : Test GetDevices API
+* @tc.number: GetConnectedDevicesList_009
+* @tc.desc  : Test GetDevices interface. Returns list of output devices
+*/
+HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_009, TestSize.Level0)
+{
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto deviceCount = audioDeviceDescriptors.size();
+    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+
+    for (const auto &device : audioDeviceDescriptors) {
+        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    }
+}
+
+/**
 * @tc.name  : Test SetDeviceActive API
 * @tc.number: SetDeviceActive_001
 * @tc.desc  : Test SetDeviceActive interface. Activate bluetooth sco device by deactivating speaker

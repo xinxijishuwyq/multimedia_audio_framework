@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 #include "audio_group_manager_napi.h"
-
 #include "audio_common_napi.h"
 #include "audio_errors.h"
-
 
 #include "hilog/log.h"
 #include "audio_log.h"
@@ -25,13 +23,9 @@ using namespace std;
 using OHOS::HiviewDFX::HiLog;
 using OHOS::HiviewDFX::HiLogLabel;
 
-
-
 namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_groupmanagerConstructor = nullptr;
-
-
 
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
@@ -62,23 +56,20 @@ struct AudioGroupManagerAsyncContext {
     int32_t networkId;
     AudioGroupManagerNapi *objectInfo;
 
-    
 };
 
 namespace {
     const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
     const int ARGS_THREE = 3;
-    // const int ARGS_FOUR = 4;
     const int PARAM0 = 0;
     const int PARAM1 = 1;
     const int PARAM2 = 2;
-    // const int PARAM3 = 3;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioGroupManagerNapi"};
 }
 
-
 static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
+
 {
     AudioVolumeType result = STREAM_MUSIC;
 
@@ -193,7 +184,6 @@ napi_value AudioGroupManagerNapi::Construct(napi_env env, napi_callback_info inf
    
     napi_status status;
     napi_value jsThis;
-
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
     size_t argCount = 1;
@@ -202,15 +192,14 @@ napi_value AudioGroupManagerNapi::Construct(napi_env env, napi_callback_info inf
     napi_value args[1] = { nullptr};
     status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     napi_get_value_int32(env, args[0], &valueParam);
-    HiLog::Info(LABEL, "AudioGroupManagerNapi::Construct()!-- %{public}d",valueParam);
-
+    HiLog::Info(LABEL, "Construct() %{public}d",valueParam);
 
     if (status == napi_ok) {
         unique_ptr<AudioGroupManagerNapi> groupmanagerNapi = make_unique<AudioGroupManagerNapi>();
         if (groupmanagerNapi != nullptr) {
 
-            groupmanagerNapi->audioGroupMngr_ = new AudioGroupManager(valueParam);
-
+            // groupmanagerNapi->audioGroupMngr_ = new AudioGroupManager(valueParam);
+            groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()-> GetGroupManager(valueParam);
             status = napi_wrap(env, jsThis, static_cast<void*>(groupmanagerNapi.get()),
                                AudioGroupManagerNapi::Destructor, nullptr, &(groupmanagerNapi->wrapper_));                
             if (status == napi_ok) {
@@ -236,7 +225,7 @@ void AudioGroupManagerNapi::Destructor(napi_env env, void *nativeObject, void *f
     }
 }
 
-napi_value AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(napi_env env,int32_t groupId)
+napi_value CreateAudioGroupManagerWrapper(napi_env env,int32_t groupId)
 {
     napi_status status;
     napi_value result = nullptr;
@@ -261,10 +250,8 @@ napi_value AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(napi_env env,in
     return result;
 }
 
-void AudioGroupManagerNapi::GetGroupManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+void GetGroupManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
-
-
     napi_value valueParam = nullptr;
     auto asyncContext = static_cast<AudioGroupManagerAsyncContext *>(data);
 
@@ -282,23 +269,19 @@ void AudioGroupManagerNapi::GetGroupManagerAsyncCallbackComplete(napi_env env, n
 }
 
 
-napi_value AudioGroupManagerNapi::GetGroupManager(napi_env env, napi_callback_info info)
+napi_value AudioManagerNapi::GetGroupManager(napi_env env, napi_callback_info info)
 {
 
     napi_status status;
     napi_value exports;
     napi_value constructor;
     napi_value result = nullptr;
-
     const int32_t refCount = 1;
-
     GET_PARAMS(env, info, ARGS_TWO);
     NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameters minimum");
 
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioGroupManagerAsyncContext object creation failed");
-
-    
 
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
@@ -332,12 +315,12 @@ napi_value AudioGroupManagerNapi::GetGroupManager(napi_env env, napi_callback_in
     napi_property_descriptor audio_svc_group_mngr_properties[] = {
 
         
-        DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
-        DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
-        DECLARE_NAPI_FUNCTION("getMaxVolume", GetMaxVolume),
-        DECLARE_NAPI_FUNCTION("getMinVolume", GetMinVolume),
-        DECLARE_NAPI_FUNCTION("Mute", SetMute),
-        DECLARE_NAPI_FUNCTION("isMute", IsStreamMute),
+        DECLARE_NAPI_FUNCTION("setVolume", AudioGroupManagerNapi::SetVolume),
+        DECLARE_NAPI_FUNCTION("getVolume", AudioGroupManagerNapi::GetVolume),
+        DECLARE_NAPI_FUNCTION("getMaxVolume", AudioGroupManagerNapi::GetMaxVolume),
+        DECLARE_NAPI_FUNCTION("getMinVolume", AudioGroupManagerNapi::GetMinVolume),
+        DECLARE_NAPI_FUNCTION("mute", AudioGroupManagerNapi::SetMute),
+        DECLARE_NAPI_FUNCTION("isMute", AudioGroupManagerNapi::IsStreamMute),
 
     
     };
@@ -407,6 +390,7 @@ napi_value AudioGroupManagerNapi::GetVolume(napi_env env, napi_callback_info inf
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
+                HiLog::Info(LABEL, " GetVolume volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -471,8 +455,10 @@ napi_value AudioGroupManagerNapi::SetVolume(napi_env env, napi_callback_info inf
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
+                HiLog::Info(LABEL, " SetVolume volType = %{public}d", asyncContext->volType);
             }else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
+                HiLog::Info(LABEL, " SetVolume volLevel = %{public}d", asyncContext->volLevel);
             }else if (i == PARAM2 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -532,6 +518,7 @@ napi_value AudioGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback_info 
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
+                HiLog::Info(LABEL, " GetMaxVolume volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -593,6 +580,7 @@ napi_value AudioGroupManagerNapi::GetMinVolume(napi_env env, napi_callback_info 
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
+                HiLog::Info(LABEL, " GetMinVolume volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -654,6 +642,7 @@ napi_value AudioGroupManagerNapi::SetMute(napi_env env, napi_callback_info info)
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
+                HiLog::Info(LABEL, " SetMute volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_boolean) {
                 napi_get_value_bool(env, argv[i], &asyncContext->isMute);
             } else if (i == PARAM2 && valueType == napi_function) {
@@ -715,6 +704,7 @@ napi_value AudioGroupManagerNapi::IsStreamMute(napi_env env, napi_callback_info 
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
+                HiLog::Info(LABEL, " IsStreamMute volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
