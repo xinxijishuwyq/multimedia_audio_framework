@@ -41,7 +41,7 @@ public:
     int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
-    int32_t SetAudioScene(AudioScene audioScene) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     static void *paDaemonThread(void *arg);
     void SetAudioParameter(const std::string &key, const std::string &value) override;
@@ -58,6 +58,7 @@ private:
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
     pthread_t m_paDaemonThread;
+    AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

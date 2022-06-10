@@ -64,8 +64,9 @@ public:
     int32_t GetVolume(float &left, float &right);
     int32_t SetMute(bool isMute);
     int32_t GetMute(bool &isMute);
-    int32_t SetAudioScene(AudioScene audioScene);
-    int32_t OpenInput(DeviceType deviceType);
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
+    int32_t SetInputRoute(DeviceType deviceType, AudioPortPin &inputPortPin);
+    int32_t SetInputRoute(DeviceType deviceType);
     uint64_t GetTransactionId();
 
     static AudioCapturerSource *GetInstance(void);

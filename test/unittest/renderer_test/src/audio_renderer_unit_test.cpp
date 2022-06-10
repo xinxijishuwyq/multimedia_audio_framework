@@ -79,7 +79,7 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
-    
+
     return;
 }
 

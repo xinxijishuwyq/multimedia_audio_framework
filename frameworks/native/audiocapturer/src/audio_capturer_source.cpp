@@ -210,7 +210,7 @@ int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
         return ERR_NOT_STARTED;
     }
     if (openMic_) {
-        ret = OpenInput(DEVICE_TYPE_MIC);
+        ret = SetInputRoute(DEVICE_TYPE_MIC);
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioCapturerSource:update route FAILED: %{public}d", ret);
         }
@@ -366,6 +366,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_SPEAKER:
             source.ext.device.type = PIN_IN_MIC;
             source.ext.device.desc = "pin_in_mic";
             break;
@@ -377,6 +378,10 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
             source.ext.device.type = PIN_IN_USB_EXT;
             source.ext.device.desc = "pin_in_usb_ext";
             break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
+            source.ext.device.desc = "pin_in_bluetooth_sco_headset";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -385,17 +390,25 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
     return ret;
 }
 
-int32_t AudioCapturerSource::OpenInput(DeviceType inputDevice)
+int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice)
+{
+    AudioPortPin inputPortPin = PIN_IN_MIC;
+    return SetInputRoute(inputDevice, inputPortPin);
+}
+
+int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetInputPortPin(inputDevice, source);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioCapturerSource: OpenOutput FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioCapturerSource: SetOutputRoute FAILED: %{public}d", ret);
         return ret;
     }
 
+    inputPortPin = source.ext.device.type;
+    AUDIO_DEBUG_LOG("AudioCapturerSource: Input PIN is: %{public}d", inputPortPin);
     source.portId = audioPort.portId;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
@@ -415,7 +428,6 @@ int32_t AudioCapturerSource::OpenInput(DeviceType inputDevice)
     };
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
-    AUDIO_DEBUG_LOG("AudioCapturerSource: UpdateAudioRoute returns: %{public}d", ret);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioCapturerSource: UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;
@@ -424,7 +436,7 @@ int32_t AudioCapturerSource::OpenInput(DeviceType inputDevice)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
+int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     AUDIO_INFO_LOG("AudioCapturerSource::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
@@ -434,13 +446,15 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene)
         return ERR_INVALID_HANDLE;
     }
     if (openMic_) {
-        int32_t ret = OpenInput(DEVICE_TYPE_MIC);
+        AudioPortPin audioSceneInPort = PIN_IN_MIC;
+        int32_t ret = SetInputRoute(activeDevice, audioSceneInPort);
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioCapturerSource: Update route FAILED: %{public}d", ret);
         }
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = PIN_IN_MIC;
+        scene.desc.pins = audioSceneInPort;
+        scene.desc.desc = nullptr;
         if (audioCapture_->scene.SelectScene == nullptr) {
             AUDIO_ERR_LOG("AudioCapturerSource: Select scene nullptr");
             return ERR_OPERATION_FAILED;

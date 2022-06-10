@@ -26,8 +26,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     constexpr uint32_t MIN_DEVICE_COUNT = 2;
-    constexpr uint32_t MIN_INPUT_DEVICE_COUNT = 1;
-    constexpr uint32_t MIN_OUTPUT_DEVICE_COUNT = 1;
     constexpr uint32_t CONTENT_TYPE_UPPER_INVALID = 6;
     constexpr uint32_t STREAM_USAGE_UPPER_INVALID = 7;
     constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 100;
@@ -65,12 +63,10 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_001, TestSize.Level0)
 HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level0)
 {
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    auto deviceCount = audioDeviceDescriptors.size();
-    EXPECT_GE(deviceCount, MIN_INPUT_DEVICE_COUNT);
+    auto inputDevice = audioDeviceDescriptors[0];
 
-    for (const auto &device : audioDeviceDescriptors) {
-        EXPECT_EQ(device->deviceRole_, DeviceRole::INPUT_DEVICE);
-    }
+    EXPECT_EQ(inputDevice->deviceRole_, DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(inputDevice->deviceType_, DeviceType::DEVICE_TYPE_MIC);
 }
 
 /**
@@ -81,12 +77,10 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level0)
 HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level0)
 {
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
-    auto deviceCount = audioDeviceDescriptors.size();
-    EXPECT_GE(deviceCount, MIN_OUTPUT_DEVICE_COUNT);
+    auto outputDevice =  audioDeviceDescriptors[0];
 
-    for (const auto &device : audioDeviceDescriptors) {
-        EXPECT_EQ(device->deviceRole_, DeviceRole::OUTPUT_DEVICE);
-    }
+    EXPECT_EQ(outputDevice->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(outputDevice->deviceType_, DeviceType::DEVICE_TYPE_SPEAKER);
 }
 
 /**
@@ -98,84 +92,38 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level0)
 {
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
     EXPECT_TRUE(isActive);
-
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::BLUETOOTH_SCO);
-    EXPECT_TRUE(isActive);
 }
 
 /**
 * @tc.name  : Test SetDeviceActive API
 * @tc.number: SetDeviceActive_002
-* @tc.desc  : Test SetDeviceActive interface. Activate speaker device
+* @tc.desc  : Test SetDeviceActive interface. Speaker should not be disable since its the only active device
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_002, TestSize.Level0)
-{
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::BLUETOOTH_SCO);
-    EXPECT_TRUE(isActive);
-
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
-    EXPECT_TRUE(isActive);
-}
-
-/**
-* @tc.name  : Test SetDeviceActive API
-* @tc.number: SetDeviceActive_003
-* @tc.desc  : Test SetDeviceActive interface. Switch between SPEAKER and BT SCO automatically
-*/
-HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level0)
 {
     auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::SPEAKER, false);
     EXPECT_EQ(SUCCESS, ret);
 
     auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
-    EXPECT_FALSE(isActive);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::BLUETOOTH_SCO);
     EXPECT_TRUE(isActive);
-
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, false);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
-    EXPECT_TRUE(isActive);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::BLUETOOTH_SCO);
-    EXPECT_FALSE(isActive);
 }
 
 /**
 * @tc.name  : Test SetDeviceActive API
 * @tc.number: SetDeviceActive_004
-* @tc.desc  : Test SetDeviceActive interface. Switch between SPEAKER and FILE_SINK automatically
+* @tc.desc  : Test SetDeviceActive interface. Actiavting invalid device should fail
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_004, TestSize.Level0)
 {
-    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, true);
-    EXPECT_EQ(SUCCESS, ret);
+    auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::ACTIVE_DEVICE_TYPE_NONE, true);
+    EXPECT_NE(SUCCESS, ret);
 
-    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE);
+    // On bootup sco wont be connected. Hence activation should fail
+    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true);
+    EXPECT_NE(SUCCESS, ret);
+
+    auto isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
     EXPECT_TRUE(isActive);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::BLUETOOTH_SCO);
-    EXPECT_FALSE(isActive);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
-    EXPECT_FALSE(isActive);
-
-    ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::FILE_SINK_DEVICE, false);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::SPEAKER);
-    EXPECT_TRUE(isActive);
-
-    isActive = AudioSystemManager::GetInstance()->IsDeviceActive(ActiveDeviceType::BLUETOOTH_SCO);
-    EXPECT_FALSE(isActive);
 }
 
 /**

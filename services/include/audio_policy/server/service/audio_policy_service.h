@@ -87,8 +87,8 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, void *privData,
-        const std::string &macAddress, const AudioStreamInfo &streamInfo);
+    void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, const std::string &macAddress,
+        const AudioStreamInfo &streamInfo);
 
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const AudioStreamInfo &streamInfo);
@@ -126,12 +126,11 @@ private:
 
     DeviceRole GetDeviceRole(const std::string &role);
 
-    int32_t ActivateNewDevice(DeviceType deviceType);
+    int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     DeviceType FetchHighPriorityDevice();
 
-    void UpdateConnectedDevices(DeviceType deviceType, std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status,
-        const std::string &macAddress, const AudioStreamInfo &streamInfo);
+    void UpdateConnectedDevices(DeviceType deviceType, std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
 
@@ -141,18 +140,19 @@ private:
 
     bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
 
+    void UpdateInputDeviceInfo(DeviceType deviceType);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     uint64_t audioLatencyInMsec_ = 50;
-    int32_t mDefaultDeviceCount = 0;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
-    DeviceType mCurrentActiveDevice = DEVICE_TYPE_NONE;
+    DeviceType mCurrentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
-    std::unordered_map<std::string, AudioStreamInfo> connectedBTDeviceMap_;
+    std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
     std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCallbackMap_;
     AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
@@ -161,10 +161,12 @@ private:
     std::unordered_map<std::string, AudioIOHandle> mIOHandles = {};
     std::vector<DeviceType> ioDeviceList = {
         DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET
     };
     std::vector<DeviceType> priorityList = {
+        DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,

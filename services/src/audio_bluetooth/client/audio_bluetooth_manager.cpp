@@ -37,6 +37,8 @@ static sptr<BluetoothA2dpSrcObserver> g_btA2dpSrcObserverCallbacks = nullptr;
 int g_playState = false;
 RawAddress g_device;
 IDeviceStatusObserver *g_deviceObserver = nullptr;
+HandsFreeAudioGateway *HandsFreeAudioGatewayManager::handsFreeAgInstance_;
+HandsFreeGatewayListener HandsFreeAudioGatewayManager::hfpAgObserver_;
 
 static bool GetAudioStreamInfo(BluetoothA2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -118,19 +120,17 @@ static void AudioOnConnectionChanged(const RawAddress &device, int state)
     AUDIO_DEBUG_LOG("BluetoothA2dpCodecStatus: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
         codecStatus.codecInfo.sampleRate, codecStatus.codecInfo.channelMode, codecStatus.codecInfo.bitsPerSample);
 
-    AudioStreamInfo audioStreamInfo = {};
+    AudioStreamInfo streamInfo = {};
 
     if (state == STATE_TURN_ON) {
-        if (!GetAudioStreamInfo(codecStatus.codecInfo, audioStreamInfo)) {
+        if (!GetAudioStreamInfo(codecStatus.codecInfo, streamInfo)) {
             AUDIO_ERR_LOG("AudioOnConnectionChanged: Unsupported a2dp codec info");
             return;
         }
 
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true, nullptr, device.GetAddress(),
-            audioStreamInfo);
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true, device.GetAddress(), streamInfo);
     } else if (state == STATE_TURN_OFF) {
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false, nullptr, device.GetAddress(),
-            audioStreamInfo);
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false, device.GetAddress(), streamInfo);
     }
 }
 
@@ -208,6 +208,36 @@ void DeRegisterObserver()
         AUDIO_INFO_LOG("DeRegisterObserver start");
         g_deviceObserver = nullptr;
         g_proxy->DeregisterObserver(g_btA2dpSrcObserverCallbacks);
+    }
+}
+
+// Handsfree Gateway feature support
+void HandsFreeAudioGatewayManager::RegisterBluetoothScoAgListener()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    handsFreeAgInstance_ = HandsFreeAudioGateway::GetProfile();
+    CHECK_AND_RETURN_LOG(handsFreeAgInstance_ != nullptr, "Failed to obtain HFP AG profile instance");
+
+    handsFreeAgInstance_->RegisterObserver(&hfpAgObserver_);
+}
+
+void HandsFreeAudioGatewayManager::UnregisterBluetoothScoAgListener()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    CHECK_AND_RETURN_LOG(handsFreeAgInstance_ != nullptr, "HFP AG profile instance unavailable");
+
+    handsFreeAgInstance_->DeregisterObserver(&hfpAgObserver_);
+    handsFreeAgInstance_ = nullptr;
+}
+
+void HandsFreeGatewayListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
+{
+    AUDIO_INFO_LOG("Entered %{public}s [%{public}d]", __func__, state);
+    HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
+    if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+        AudioStreamInfo info = {};
+        bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_SCO, isConnected, device.GetDeviceAddr(), info);
     }
 }
 }

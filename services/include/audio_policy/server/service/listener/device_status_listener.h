@@ -29,11 +29,10 @@ public:
     DeviceStatusListener(IDeviceStatusObserver &observer);
     ~DeviceStatusListener();
 
-    int32_t RegisterDeviceStatusListener(void *privData);
+    int32_t RegisterDeviceStatusListener();
     int32_t UnRegisterDeviceStatusListener();
 
     IDeviceStatusObserver &deviceObserver_;
-    void *privData_;
 
 private:
     struct HDIServiceManager *hdiServiceManager_;

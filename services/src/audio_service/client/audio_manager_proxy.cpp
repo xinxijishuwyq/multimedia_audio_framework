@@ -109,7 +109,7 @@ bool AudioManagerProxy::IsMicrophoneMute()
     return isMute;
 }
 
-int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
+int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -121,6 +121,7 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene)
     }
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
+    data.WriteInt32(static_cast<int32_t>(activeDevice));
 
     int32_t error = Remote()->SendRequest(SET_AUDIO_SCENE, data, reply, option);
     if (error != ERR_NONE) {

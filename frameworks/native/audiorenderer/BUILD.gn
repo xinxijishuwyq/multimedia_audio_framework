@@ -152,6 +152,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/communication/bluetooth/frameworks/inner:btframework",
     "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:bluetooth_renderer_sink",
