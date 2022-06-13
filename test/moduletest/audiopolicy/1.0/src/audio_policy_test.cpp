@@ -238,49 +238,6 @@ INSTANTIATE_TEST_CASE_P(
     ValuesIn(MUTE_PARAMS));
 
 /*
- * Is Mute
- *
- */
-class AudioPolicyGetMuteTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicyGetMuteTest, IsStreamMute, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
-    bool mute = params.mute;
-
-    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
-    EXPECT_EQ(mute, AudioSystemManager::GetInstance()->IsStreamMute(volumeType));
-}
-
-INSTANTIATE_TEST_CASE_P(
-    IsStreamMute,
-    AudioPolicyGetMuteTest,
-    ValuesIn(MUTE_PARAMS));
-
-/*
- * Is Stream Active
- *
- */
-class AudioPolicyIsStreamActiveTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicyIsStreamActiveTest, IsStreamActive, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
-
-    // review this code
-    EXPECT_EQ(params.active, AudioSystemManager::GetInstance()->IsStreamActive(volumeType));
-}
-
-INSTANTIATE_TEST_CASE_P(
-    IsStreamActive,
-    AudioPolicyIsStreamActiveTest,
-    ValuesIn(STREAM_PARAMS));
-
-/*
  * Set Device Active
  *
  */
@@ -492,30 +449,6 @@ INSTANTIATE_TEST_CASE_P(
     GetAudioParameter,
     AudioPolicyAudioParameterTest,
     ValuesIn(AUDIO_PARAMS));
-
-/*
- * Check volume range
- *
- */
-class AudioPolicyGetDevicesTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicyGetDevicesTest, GetDevices, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-    DeviceFlag deviceFlag = params.deviceFlag;
-    DeviceType deviceType = params.deviceType;
-    DeviceRole deviceRole = params.deviceRole;
-    vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors
-        = AudioSystemManager::GetInstance()->GetDevices(deviceFlag);
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = audioDeviceDescriptors[0];
-    EXPECT_EQ(deviceType, audioDeviceDescriptor->deviceType_);
-    EXPECT_EQ(deviceRole, audioDeviceDescriptor->deviceRole_);
-}
-
-INSTANTIATE_TEST_CASE_P(
-    GetDevices,
-    AudioPolicyGetDevicesTest,
-    ValuesIn(DEVICES_PARAMS));
 
 /*
  * Check set audio scene

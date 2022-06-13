@@ -17,6 +17,7 @@
 
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "audio_renderer.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -587,6 +588,19 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
     int32_t volume = 10;
     bool mute = true;
+
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
     auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL, volume);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->GetVolume(AudioSystemManager::AudioVolumeType::STREAM_ALL);
@@ -595,6 +609,8 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->IsStreamMute(AudioSystemManager::AudioVolumeType::STREAM_ALL);
     EXPECT_EQ(true, ret);
+
+    audioRenderer->Release();
 }
 
 /**
