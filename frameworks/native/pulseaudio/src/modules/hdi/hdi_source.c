@@ -339,7 +339,6 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     return 0;
 }
 
-#ifndef PRODUCT_RK3568
 static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
 {
     enum AudioFormat hdiAudioFormat;
@@ -385,7 +384,6 @@ static bool GetEndianInfo(pa_sample_format_t format)
 
     return isBigEndian;
 }
-#endif // #ifndef PRODUCT_RK3568
 
 pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 {
@@ -428,21 +426,13 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->buffer_size = DEFAULT_BUFFER_SIZE;
     u->attrs.sampleRate = ss.rate;
     u->attrs.filePath = pa_modargs_get_value(ma, "file_path", "");
-   // The values for rk are hardcoded due to config mismatch in hdi. To be removed once hdi issue is fixed.
     if (pa_modargs_get_value_u32(ma, "open_mic_speaker", &u->open_mic_speaker) < 0) {
         AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument");
         goto fail;
     }
-#ifdef PRODUCT_RK3568
-    int32_t channelCount = 2;
-    u->attrs.channel = channelCount;
-    u->attrs.format = AUDIO_FORMAT_PCM_16_BIT;
-    u->attrs.isBigEndian = false;
-#else
     u->attrs.channel = ss.channels;
     u->attrs.format = ConvertToHDIAudioFormat(ss.format);
     u->attrs.isBigEndian = GetEndianInfo(ss.format);
-#endif
     u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
 
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
