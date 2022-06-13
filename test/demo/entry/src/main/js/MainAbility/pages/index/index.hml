@@ -1,0 +1,23 @@
+<div class="div-button">
+    <text class="title">功能区一</text>
+    <div class="button-container">
+        <button class="buttons" type="capsule" onclick="toPlayer">Player</button>
+        <button class="buttons" type="capsule" onclick="toNative">Native API</button>
+    </div>
+    <div class="button-container">
+        <button class="buttons" type="capsule" waiting="true">Under dev</button>
+        <button class="buttons" type="capsule" waiting="true">Under dev</button>
+    </div>
+    <div class="button-container">
+        <button class="buttons" type="capsule" waiting="true">Under dev</button>
+        <button class="buttons" type="capsule" waiting="true">Under dev</button>
+    </div>
+
+    <text class="title">功能区二</text>
+    <div class="sec-button-container">
+        <button class="circle-button" type="circle" icon="/common/images/icon.png">Under dev</button>
+        <button class="circle-button" type="circle" icon="/common/images/icon.png">Under dev</button>
+        <button class="circle-button" type="circle" icon="/common/images/icon.png">Under dev</button>
+        <button class="circle-button" type="circle" icon="/common/images/icon.png">Under dev</button>
+    </div>
+</div>

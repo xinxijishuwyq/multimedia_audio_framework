@@ -1,0 +1,4 @@
+{
+  "name": "libnative.so",
+  "types": "./index.d.ts"
+}

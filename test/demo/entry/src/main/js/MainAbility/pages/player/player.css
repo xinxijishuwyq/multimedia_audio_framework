@@ -1,0 +1,175 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.div-image {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 50%;
+}
+
+.image {
+    width: 300px;
+    height: 300px;
+    object-fit: contain;
+    align-items: center;
+}
+
+.title {
+    font-size: 42px;
+    text-align: center;
+    width: 100%;
+    height: 40%;
+    margin: 10px;
+}
+
+.bottom-buttons {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    margin-bottom: 20%;
+    align-items: center;
+}
+
+
+.medium-buttons {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    margin-top: 10%;
+    align-items: center;
+}
+
+.top-buttons {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+
+}
+
+.btn {
+    width: 60px;
+    height: 60px;
+}
+
+.big-btn {
+    width: 80px;
+    height: 80px;
+}
+
+.back-btn {
+    width: 60px;
+    height: 60px;
+    margin-left: 5%;
+}
+
+.info-btn {
+    width: 60px;
+    height: 60px;
+    margin-right: 5%;
+}
+
+.muteBtn {
+    width: 60px;
+    height: 60px;
+}
+
+.rateBtn {
+    width: 80px;
+    height: 160px;
+}
+
+.btn-image {
+    object-fit: contain;
+}
+
+.image-div {
+    width: 100%;
+    height: 80px;
+    align-items: center;
+}
+
+.image-panel {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    margin-left: 20px;
+    margin-top: 20px;
+}
+
+.text {
+    width: 100%;
+    height: 48px;
+    margin-left: 30px;
+    margin-top: 10px;
+    font-size: 25px;
+}
+
+.bell-div {
+    width: 100%;
+    height: 100px;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.slider-value {
+    font-size: 30px;
+    height: 80px;
+}
+
+.slider {
+    width: 70%;
+    height: 80px;
+    selected-color: mediumblue;
+    color: darkgrey;
+}
+
+.title-panel {
+    width: 50%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.music-panel {
+    width: 100%;
+    height: 100%;
+    background-color: #e9fcfbfb;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-panel {
+    width: 100%;
+    height: 50px;
+    margin-top: 10%;
+    justify-content: center;
+    align-items: center;
+}
+
+.panel-btn {
+    width: 150px;
+}
+
+.progress-container {
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+}
+
+.min-progress {
+    width: 600px;
+    height: 100px;
+    align-items: center;
+}

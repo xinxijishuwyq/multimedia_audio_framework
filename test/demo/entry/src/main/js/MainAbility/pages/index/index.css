@@ -1,0 +1,46 @@
+.button-container {
+    width: 90%;
+    flex-direction: row;
+    justify-content: space-around;
+    margin-left: 4%;
+    padding-top: 50px;
+}
+
+.sec-button-container {
+    flex-direction: row;
+    padding-top: 50px;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.circle-button {
+    radius: 50px;
+    icon-width: 30px;
+    icon-height: 30px;
+    margin-left: 50px;
+    margin-top: 20px;
+    background-color: #317aff;
+}
+
+.div-button {
+    flex-direction: column;
+    width: 100%;
+}
+
+.buttons {
+    margin-top: 15px;
+    width: 45%;
+    height: 90px;
+    text-align: center;
+    font-size: 25px;
+    border-radius: 10px;
+    background-color: #317aff;
+}
+
+.title {
+    font-size: 50px;
+    margin-top: 60px;
+    margin-left: 20px;
+    color: grey;
+    padding-top: 50px;
+}

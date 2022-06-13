@@ -1,0 +1,21 @@
+<div class="container">
+    <div class="top-buttons">
+        <div class="back-btn">
+            <image class="btn-image" id="rateId" src="/common/images/back.png" on:click="backToIndex"></image>
+        </div>
+    </div>
+    <div class="text-div">
+        <text class="words">
+            {{ introduction }}
+        </text>
+        <text class="title">
+            {{ title }}
+        </text>
+        <button class="buttons" type="capsule" waiting="false" on:click="onButtonClick">Call API</button>
+    </div>
+    <div class="slider-div">
+        <text class="slider-value">0</text>
+        <slider class="slider" min="0" max="10" value="{{ value }}" mode="inset" on:change="onSliderChange"></slider>
+        <text class="slider-value">10</text>
+    </div>
+</div>
