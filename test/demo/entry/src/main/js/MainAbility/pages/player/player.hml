@@ -1,0 +1,100 @@
+<div class="container" onswipe="touchMove">
+    <div class="top-buttons">
+        <div class="back-btn">
+            <image class="btn-image" id="rateId" src="/common/images/back.png" on:click="backToIndex"></image>
+        </div>
+        <div class="title-panel">
+            <text class="title">
+                {{ title }}
+            </text>
+        </div>
+        <div class="info-btn">
+            <image class="btn-image" id="muteId" src="/common/images/info.png" on:click="showInfo"></image>
+        </div>
+    </div>
+
+    <div class="div-image">
+        <image class="image" src="common/images/background.jpg"></image>
+    </div>
+
+    <div class="medium-buttons">
+        <div class="muteBtn">
+            <image class="btn-image" id="muteId" src="{{ muteImageUrl }}" on:click="onMuteAndUnmute"></image>
+        </div>
+        <div class="rateBtn">
+            <image class="btn-image" id="rateId" src="{{ rateImageUrl }}" on:click="onChangeRate"></image>
+        </div>
+    </div>
+
+    <progress class="min-progress" type="horizontal" percent="{{ musicProgress }}"></progress>
+
+    <div class="bottom-buttons">
+        <div class="btn">
+            <image class="btn-image" id="volumeId" src="{{ volumeImageUrl }}" on:click="showPanel"></image>
+        </div>
+        <div class="btn">
+            <image class="btn-image" src="common/images/previous.png" on:click="onPreviousClick"></image>
+        </div>
+        <div class="big-btn">
+            <image class="btn-image" id="pauseId" src="{{ audioUrl }}" on:click="onPlayClick"></image>
+        </div>
+        <div class="btn">
+            <image class="btn-image" src="common/images/next.png" on:click="onNextClick"></image>
+        </div>
+        <div class="btn">
+            <image class="btn-image" src="common/images/replay.png" on:click="onReplay"></image>
+        </div>
+    </div>
+    <panel id="showPanel" type="temporary" mode="full">
+        <div class="music-panel">
+            <div class="image-div">
+                <image class="image-panel" src="common/images/music.png"></image>
+                <text class="text">{{ $t('strings.media') }} {{ volume }}</text>
+            </div>
+            <div class="bell-div">
+                <text class="slider-value">0</text>
+                <slider class="slider" min="0" max="15" value="{{ volume }}" mode="inset" on:change="media"></slider>
+                <text class="slider-value">15</text>
+            </div>
+            <div class="close-panel">
+                <button class="panel-btn" type="capsule" value="{{ $t('strings.close') }}" onclick="closePanel">
+                </button>
+            </div>
+        </div>
+    </panel>
+    <panel id="showInfo" type="temporary" mode="full">
+        <div class="music-panel">
+            <text>
+                {{ "" }}
+                {{ "*****Info from APIs*****" }}
+                {{ "*Audio Renderer*" }}
+                {{ "Renderer state: " + state }}
+                {{ "Renderer content: " + rendererContent }}
+                {{ "usage: " + rendererUsage }}
+                {{ "flags: " + rendererFlags }}
+                {{ "Steam samplingRate: " + steamSamplingRate }}
+                {{ "channels: " + steamChannels }}
+                {{ "sampleFormat: " + steamSampleFormat }}
+                {{ "encodingType: " + steamEncodingType }}
+                {{ "Audio time: " + audioTime }}
+                {{ "Buffer size: " + bufferSize }}
+                {{ "Render rate: " + renderRate }}
+                {{ "*AudioManager*" }}
+                {{ "Volume: " + volume }}
+                {{ "Min volume: " + minVolume }}
+                {{ "Max volume: " + maxVolume }}
+                {{ "Is mute: " + isMute }}
+                {{ "Is active: " + isActive }}
+                {{ "Ring mode: " + ringMode }}
+                {{ "Audio parameter: " + audioParameter }}
+                {{ "Get devices: " + devices }}
+                {{ "Is device active: " + deviceActive }}
+                {{ "Is MIC muted: " + isMicrophoneMuted }}
+            </text>
+            <div class="close-panel">
+                <button class="panel-btn" type="capsule" value="{{ $t('strings.close') }}" onclick="closeInfo">
+                </button>
+            </div>
+        </div>
+    </panel>
+</div>
