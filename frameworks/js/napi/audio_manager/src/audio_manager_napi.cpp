@@ -687,6 +687,7 @@ template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env en
 
 napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
 {
+    AUDIO_INFO_LOG("AudioManagerNapi::Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
@@ -715,6 +716,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
+        DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -2409,6 +2411,75 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
     return undefinedResult;
 }
 
+napi_value AudioManagerNapi::GetStreamManager(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, "%{public}s IN", __func__);
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+    CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioManagerAsyncContext object creation failed");
+
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
+        } else {
+            NAPI_ASSERT(env, false, "type mismatch");
+        }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "GetStreamManager", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioManagerAsyncContext *>(data);
+            context->status = SUCCESS;
+        },
+        GetStreamMgrAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
+
+    return result;
+}
+
+void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    napi_value valueParam = nullptr;
+    auto asyncContext = static_cast<AudioManagerAsyncContext *>(data);
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            valueParam = AudioStreamMgrNapi::CreateStreamManagerWrapper(env);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: GetStreamMgrAsyncCallbackComplete asyncContext is Null!");
+    }
+}
+
 static napi_value Init(napi_env env, napi_value exports)
 {
     AudioManagerNapi::Init(env, exports);
@@ -2419,6 +2490,7 @@ static napi_value Init(napi_env env, napi_value exports)
     SystemSoundManagerNapi::Init(env, exports);
     RingtoneOptionsNapi::Init(env, exports);
     AudioRendererInfoNapi::Init(env, exports);
+    AudioStreamMgrNapi::Init(env, exports);
 
     return exports;
 }

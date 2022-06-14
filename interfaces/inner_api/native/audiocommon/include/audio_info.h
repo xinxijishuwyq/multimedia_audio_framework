@@ -596,6 +596,70 @@ enum AudioServiceIndex {
     HDI_SERVICE_INDEX = 0,
     AUDIO_SERVICE_INDEX
 };
+
+/**
+ * @brief Enumerates the rendering states of the current device.
+ */
+enum RendererState {
+    /** INVALID state */
+    RENDERER_INVALID = -1,
+    /** Create New Renderer instance */
+    RENDERER_NEW,
+    /** Reneder Prepared state */
+    RENDERER_PREPARED,
+    /** Rendere Running state */
+    RENDERER_RUNNING,
+    /** Renderer Stopped state */
+    RENDERER_STOPPED,
+    /** Renderer Released state */
+    RENDERER_RELEASED,
+    /** Renderer Paused state */
+    RENDERER_PAUSED
+};
+
+/**
+ * @brief Enumerates the capturing states of the current device.
+ */
+enum CapturerState {
+    /** Capturer INVALID state */
+    CAPTURER_INVALID = -1,
+    /** Create new capturer instance */
+    CAPTURER_NEW,
+    /** Capturer Prepared state */
+    CAPTURER_PREPARED,
+    /** Capturer Running state */
+    CAPTURER_RUNNING,
+    /** Capturer Stopped state */
+    CAPTURER_STOPPED,
+    /** Capturer Released state */
+    CAPTURER_RELEASED,
+    /** Capturer Paused state */
+    CAPTURER_PAUSED
+};
+
+enum AudioMode {
+    AUDIO_MODE_PLAYBACK,
+    AUDIO_MODE_RECORD
+};
+
+struct AudioRendererChangeInfo {
+    int32_t clientUID;
+    int32_t sessionId;
+    AudioRendererInfo rendererInfo;
+    RendererState rendererState;
+};
+
+struct AudioCapturerChangeInfo {
+    int32_t clientUID;
+    int32_t sessionId;
+    AudioCapturerInfo capturerInfo;
+    CapturerState capturerState;
+};
+
+struct AudioStreamChangeInfo {
+    AudioRendererChangeInfo audioRendererChangeInfo;
+    AudioCapturerChangeInfo audioCapturerChangeInfo;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

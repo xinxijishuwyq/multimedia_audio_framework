@@ -165,10 +165,15 @@ ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
     "//foundation/multimedia/audio_framework/services/src/audio_policy/client/audio_device_descriptor.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_capturer_state_change_listener_proxy.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_client_tracker_callback_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_policy_manager_listener_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_policy_manager_stub.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_policy_server.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_renderer_state_change_listener_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_ringermode_update_listener_proxy.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_stream_collector.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_stream_event_dispatcher.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/audio_volume_key_event_callback_proxy.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/audio_policy_service.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_policy/server/service/config/audio_focus_parser.cpp",

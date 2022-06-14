@@ -23,6 +23,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+using namespace std;
+
 static sptr<IAudioPolicy> g_sProxy = nullptr;
 bool AudioPolicyManager::serverConnected = false;
 
@@ -326,6 +328,104 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return g_sProxy->UnsetVolumeKeyEventCallback(clientPid);
 }
 
+int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientUID,
+    const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::RegisterAudioRendererEventListener");
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: RendererEvent Listener callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(stateChangelistenerStubMutex_);
+    rendererStateChangelistenerStub_ = new(std::nothrow) AudioRendererStateChangeListenerStub();
+    if (rendererStateChangelistenerStub_ == nullptr || g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: object null");
+        return ERROR;
+    }
+
+    rendererStateChangelistenerStub_->SetCallback(callback);
+
+    sptr<IRemoteObject> object = rendererStateChangelistenerStub_->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager:RenderStateChangeListener IPC object creation failed");
+        return ERROR;
+    }
+    lock.unlock();
+
+    return g_sProxy->RegisterAudioRendererEventListener(clientUID, object);
+}
+
+int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
+    return g_sProxy->UnregisterAudioRendererEventListener(clientUID);
+}
+
+int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t clientUID,
+    const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::RegisterAudioCapturerEventListener");
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: Capturer Event Listener callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(stateChangelistenerStubMutex_);
+    capturerStateChangelistenerStub_ = new(std::nothrow) AudioCapturerStateChangeListenerStub();
+    if (capturerStateChangelistenerStub_ == nullptr || g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: object null");
+        return ERROR;
+    }
+
+    capturerStateChangelistenerStub_->SetCallback(callback);
+
+    sptr<IRemoteObject> object = capturerStateChangelistenerStub_->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager:CapturerStateChangeListener IPC object creation failed");
+        return ERROR;
+    }
+    lock.unlock();
+
+    return g_sProxy->RegisterAudioCapturerEventListener(clientUID, object);
+}
+
+int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
+    return g_sProxy->UnregisterAudioCapturerEventListener(clientUID);
+}
+
+int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
+    const std::shared_ptr<AudioClientTracker> &clientTrackerObj)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::RegisterTracker");
+
+    std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
+    clientTrackerCbStub_ = new(std::nothrow) AudioClientTrackerCallbackStub();
+    if (clientTrackerCbStub_ == nullptr || g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("clientTrackerCbStub: memory allocation failed");
+        return ERROR;
+    }
+
+    clientTrackerCbStub_->SetClientTrackerCallback(clientTrackerObj);
+
+    sptr<IRemoteObject> object = clientTrackerCbStub_->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("clientTrackerCbStub: IPC object creation failed");
+        return ERROR;
+    }
+    lock.unlock();
+
+    return g_sProxy->RegisterTracker(mode, streamChangeInfo, object);
+}
+
+int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::UpdateTracker");
+    return g_sProxy->UpdateTracker(mode, streamChangeInfo);
+}
+
 bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName)
 {
     return VerifyClientPermission(permissionName, 0);
@@ -344,6 +444,22 @@ int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, Devic
 int32_t AudioPolicyManager::GetAudioLatencyFromXml()
 {
     return g_sProxy->GetAudioLatencyFromXml();
+}
+
+int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
+    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::GetCurrentRendererChangeInfos");
+
+    return g_sProxy->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+}
+
+int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
+    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::GetCurrentCapturerChangeInfos");
+
+    return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -21,6 +21,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+using namespace std;
+
 void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt)
 {
     audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
@@ -43,6 +45,27 @@ void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, cons
     reply.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
     reply.WriteInt32(static_cast<int32_t>(audioInterrupt.streamType));
     reply.WriteUint32(audioInterrupt.sessionID);
+}
+
+void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
+    AudioStreamChangeInfo &streamChangeInfo)
+{
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        streamChangeInfo.audioRendererChangeInfo.sessionId = data.ReadInt32();
+        streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(data.ReadInt32());
+        streamChangeInfo.audioRendererChangeInfo.clientUID = data.ReadInt32();
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType = static_cast<ContentType>(data.ReadInt32());
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.rendererFlags = data.ReadInt32();
+        return;
+    } else {
+        // mode == AUDIO_MODE_RECORDING
+        streamChangeInfo.audioCapturerChangeInfo.sessionId = data.ReadInt32();
+        streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(data.ReadInt32());
+        streamChangeInfo.audioCapturerChangeInfo.clientUID = data.ReadInt32();
+        streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
+        streamChangeInfo.audioCapturerChangeInfo.capturerInfo.capturerFlags = data.ReadInt32();
+    }
 }
 
 void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -324,6 +347,141 @@ void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register event listener entered");
+    int32_t clientUID =  data.ReadInt32();
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioRendererStateCallback obj is null");
+        return;
+    }
+    int ret = RegisterAudioRendererEventListener(clientUID, remoteObject);
+    reply.WriteInt32(ret);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register event listener exit");
+}
+
+void AudioPolicyManagerStub::UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:unregister event listener entered");
+    int32_t clientUID = data.ReadInt32();
+    int ret = UnregisterAudioRendererEventListener(clientUID);
+    reply.WriteInt32(ret);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:unregister event listener exit");
+}
+
+void AudioPolicyManagerStub::RegisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap register event listener entered");
+    int32_t clientUID =  data.ReadInt32();
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioCapturerStateCallback obj is null");
+        return;
+    }
+    int ret = RegisterAudioCapturerEventListener(clientUID, remoteObject);
+    reply.WriteInt32(ret);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap register event listener exit");
+}
+
+void AudioPolicyManagerStub::UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap unnregister event listener entered");
+    int32_t clientUID = data.ReadInt32();
+    int ret = UnregisterAudioCapturerEventListener(clientUID);
+    reply.WriteInt32(ret);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap unregister event listener exit");
+}
+
+void AudioPolicyManagerStub::RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register tracker internal entered");
+
+    AudioStreamChangeInfo streamChangeInfo = {};
+    AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
+    ReadStreamChangeInfo(data, mode, streamChangeInfo);
+    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: Client Tracker obj is null");
+        return;
+    }
+    
+    int ret = RegisterTracker(mode, streamChangeInfo, remoteObject);
+    reply.WriteInt32(ret);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register tracker internal ret = %{public}d", ret);
+}
+
+void AudioPolicyManagerStub::UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:update tracker internal entered");
+
+    AudioStreamChangeInfo streamChangeInfo = {};
+    AudioMode mode = static_cast<AudioMode> (data.ReadInt32());
+    ReadStreamChangeInfo(data, mode, streamChangeInfo);
+    int ret = UpdateTracker(mode, streamChangeInfo);
+    reply.WriteInt32(ret);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:update tracker internal ret = %{public}d", ret);
+}
+
+void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal entered");
+
+    size_t size = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    int ret = GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub:GetRendererChangeInfos Error!!");
+        reply.WriteInt32(size);
+        return;
+    }
+
+    size = audioRendererChangeInfos.size();
+    reply.WriteInt32(size);
+    for (const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+        if (!rendererChangeInfo) {
+            AUDIO_ERR_LOG("AudioPolicyManagerStub:Renderer change info null, something wrong!!");
+            continue;
+        }
+        reply.WriteInt32(rendererChangeInfo->sessionId);
+        reply.WriteInt32(rendererChangeInfo->rendererState);
+        reply.WriteInt32(rendererChangeInfo->clientUID);
+        reply.WriteInt32(rendererChangeInfo->rendererInfo.contentType);
+        reply.WriteInt32(rendererChangeInfo->rendererInfo.streamUsage);
+        reply.WriteInt32(rendererChangeInfo->rendererInfo.rendererFlags);
+    }
+
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
+}
+
+void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal entered");
+    size_t size = 0;
+    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    int32_t ret = GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub:GetCapturerChangeInfos Error!!");
+        reply.WriteInt32(size);
+        return;
+    }
+
+    size = audioCapturerChangeInfos.size();
+    reply.WriteInt32(size);
+    for (const unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
+        if (!capturerChangeInfo) {
+            AUDIO_ERR_LOG("AudioPolicyManagerStub:Capturer change info null, something wrong!!");
+            continue;
+        }
+        reply.WriteInt32(capturerChangeInfo->sessionId);
+        reply.WriteInt32(capturerChangeInfo->capturerState);
+        reply.WriteInt32(capturerChangeInfo->clientUID);
+        reply.WriteInt32(capturerChangeInfo->capturerInfo.sourceType);
+        reply.WriteInt32(capturerChangeInfo->capturerInfo.capturerFlags);
+    }
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -462,6 +620,38 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_AUDIO_LATENCY:
             GetAudioLatencyFromXmlInternal(data, reply);
+            break;
+
+        case REGISTER_PLAYBACK_EVENT:
+            RegisterAudioRendererEventListenerInternal(data, reply);
+            break;
+
+        case UNREGISTER_PLAYBACK_EVENT:
+            UnregisterAudioRendererEventListenerInternal(data, reply);
+            break;
+        
+        case REGISTER_RECORDING_EVENT:
+            RegisterAudioCapturerEventListenerInternal(data, reply);
+            break;
+
+        case UNREGISTER_RECORDING_EVENT:
+            UnregisterAudioCapturerEventListenerInternal(data, reply);
+            break;
+        
+        case REGISTER_TRACKER:
+            RegisterTrackerInternal(data, reply);
+            break;
+
+        case UPDATE_TRACKER:
+            UpdateTrackerInternal(data, reply);
+            break;
+
+        case GET_RENDERER_CHANGE_INFOS:
+            GetRendererChangeInfosInternal(data, reply);
+            break;
+
+        case GET_CAPTURER_CHANGE_INFOS:
+            GetCapturerChangeInfosInternal(data, reply);
             break;
 
         default:

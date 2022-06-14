@@ -16,8 +16,8 @@
 #ifndef AUDIO_CAPTURER_PRIVATE_H
 #define AUDIO_CAPTURER_PRIVATE_H
 
-#include "audio_capturer.h"
 #include "audio_stream.h"
+#include "audio_capturer_proxy_obj.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,6 +62,7 @@ public:
 private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AppInfo appInfo_ = {};
+    std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

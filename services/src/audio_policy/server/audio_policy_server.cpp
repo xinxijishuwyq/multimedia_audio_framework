@@ -20,7 +20,6 @@
 #include "audio_errors.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_ringermode_update_listener_proxy.h"
-#include "audio_server_death_recipient.h"
 #include "audio_volume_key_event_callback_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
@@ -46,7 +45,8 @@ REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      mPolicyService(AudioPolicyService::GetAudioPolicyService())
+      mPolicyService(AudioPolicyService::GetAudioPolicyService()),
+      mStreamCollector(AudioStreamCollector::GetAudioStreamCollector())
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
@@ -1116,6 +1116,115 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
 int32_t AudioPolicyServer::GetAudioLatencyFromXml()
 {
     return mPolicyService.GetAudioLatencyFromXml();
+}
+
+int32_t AudioPolicyServer::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+{
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
+    return mStreamCollector.RegisterAudioRendererEventListener(clientUID, object);
+}
+
+int32_t AudioPolicyServer::UnregisterAudioRendererEventListener(int32_t clientUID)
+{
+    return mStreamCollector.UnregisterAudioRendererEventListener(clientUID);
+}
+
+int32_t AudioPolicyServer::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+{
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
+    return mStreamCollector.RegisterAudioCapturerEventListener(clientUID, object);
+}
+
+int32_t AudioPolicyServer::UnregisterAudioCapturerEventListener(int32_t clientUID)
+{
+    return mStreamCollector.UnregisterAudioCapturerEventListener(clientUID);
+}
+
+int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
+    const sptr<IRemoteObject> &object)
+{
+    // update the clientUID
+    auto callerUid =  IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("  AudioPolicyServer::RegisterTracker : [caller uid:%{public}d]==", callerUid);
+    if (callerUid != MEDIA_SERVICE_UID) {
+        if (mode == AUDIO_MODE_PLAYBACK) {
+            streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
+            AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
+                streamChangeInfo.audioRendererChangeInfo.clientUID);
+        } else {
+            streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+            AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
+                streamChangeInfo.audioCapturerChangeInfo.clientUID);
+        }
+    }
+    RegisterClientDeathRecipient(object, TRACKER_CLIENT);
+    return mStreamCollector.RegisterTracker(mode, streamChangeInfo, object);
+}
+
+int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+{
+    // update the clientUID
+    auto callerUid =  IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("  AudioPolicyServer::UpdateTracker : [caller uid:%{public}d]==", callerUid);
+    if (callerUid != MEDIA_SERVICE_UID) {
+        if (mode == AUDIO_MODE_PLAYBACK) {
+            streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
+            AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
+                streamChangeInfo.audioRendererChangeInfo.clientUID);
+        } else {
+            streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+            AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
+                streamChangeInfo.audioCapturerChangeInfo.clientUID);
+        }
+    }
+    return mStreamCollector.UpdateTracker(mode, streamChangeInfo);
+}
+
+int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
+    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    return mStreamCollector.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+}
+
+int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
+    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    return mStreamCollector.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
+{
+    AUDIO_INFO_LOG("Register clients death recipient");
+    CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
+
+    // Deliberately casting UID to pid_t
+    pid_t uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
+    if (deathRecipient_ != nullptr) {
+        if (id == TRACKER_CLIENT) {
+            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredTrackerClientDied,
+                this, std::placeholders::_1));
+        } else {
+            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredStreamListenerClientDied,
+                this, std::placeholders::_1));
+        }
+        bool result = object->AddDeathRecipient(deathRecipient_);
+        if (!result) {
+            AUDIO_ERR_LOG("failed to add deathRecipient");
+        }
+    }
+}
+
+void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
+{
+    AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
+    mStreamCollector.RegisteredTrackerClientDied(static_cast<int32_t>(pid));
+}
+
+void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
+{
+    AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
+    mStreamCollector.RegisteredStreamListenerClientDied(static_cast<int32_t>(pid));
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -18,6 +18,8 @@
 
 #include "iremote_proxy.h"
 #include "audio_policy_base.h"
+#include "audio_info.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,11 +93,37 @@ public:
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
     int32_t GetAudioLatencyFromXml() override;
+
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
+
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) override;
+
+    int32_t RegisterTracker(AudioMode &mode,
+        AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;
+
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
+
+    int32_t GetCurrentRendererChangeInfos(
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+ 
+    int32_t GetCurrentCapturerChangeInfos(
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
     void WriteAudioManagerInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
     void ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt);
+    void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
+        const AudioStreamChangeInfo &streamChangeInfo);
+    void ReadAudioRendererChangeInfo(MessageParcel &reply,
+        std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+    void ReadAudioCapturerChangeInfo(MessageParcel &reply,
+        std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
 };
 } // namespace AudioStandard
 } // namespace OHOS

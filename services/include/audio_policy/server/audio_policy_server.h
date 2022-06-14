@@ -22,11 +22,14 @@
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_stub.h"
 #include "audio_policy_service.h"
+#include "audio_server_death_recipient.h"
 #include "audio_session_callback.h"
+#include "audio_stream_collector.h"
 #include "i_audio_volume_key_event_callback.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
 #include "audio_service_dump.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +37,11 @@ class AudioPolicyServer : public SystemAbility, public AudioPolicyManagerStub, p
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioPolicyServer);
+
+    enum DeathRecipientId {
+        TRACKER_CLIENT = 0,
+        LISTENER_CLIENT
+    };
 
     explicit AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate = true);
 
@@ -112,6 +120,32 @@ public:
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
     int32_t GetAudioLatencyFromXml() override;
+
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
+
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) override;
+
+    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) override;
+
+    int32_t GetCurrentRendererChangeInfos(
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+ 
+    int32_t GetCurrentCapturerChangeInfos(
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+
+    void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
+
+    void RegisteredTrackerClientDied(int pid);
+
+    void RegisteredStreamListenerClientDied(int pid);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -137,6 +171,7 @@ private:
     static int32_t ConvertVolumeToInt(float volume);
 
     AudioPolicyService& mPolicyService;
+    AudioStreamCollector& mStreamCollector;
     std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;

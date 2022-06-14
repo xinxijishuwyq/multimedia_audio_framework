@@ -41,26 +41,6 @@ struct AudioCapturerParams {
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
 };
 
-/**
- * @brief Enumerates the capturing states of the current device.
- */
-enum CapturerState {
-    /** Capturer INVALID state */
-    CAPTURER_INVALID = -1,
-    /** Create new capturer instance */
-    CAPTURER_NEW,
-    /** Capturer Prepared state */
-    CAPTURER_PREPARED,
-    /** Capturer Running state */
-    CAPTURER_RUNNING,
-    /** Capturer Stopped state */
-    CAPTURER_STOPPED,
-    /** Capturer Released state */
-    CAPTURER_RELEASED,
-    /** Capturer Paused state */
-    CAPTURER_PAUSED
-};
-
 class AudioCapturerCallback {
 public:
     virtual ~AudioCapturerCallback() = default;

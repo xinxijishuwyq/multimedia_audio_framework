@@ -43,7 +43,10 @@ ohos_shared_library("audio_capturer") {
 
   configs = [ ":audio_capturer_config" ]
 
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/src/audio_capturer.cpp" ]
+  sources = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/src/audio_capturer.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/src/audio_capturer_proxy_obj.cpp",
+  ]
 
   deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client" ]
 
