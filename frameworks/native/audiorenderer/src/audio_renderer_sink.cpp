@@ -47,7 +47,8 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 
 AudioRendererSink::AudioRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
+      audioRender_(nullptr)
 {
     attr_ = {};
 #ifdef DUMPFILE
