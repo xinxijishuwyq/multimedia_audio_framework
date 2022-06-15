@@ -25,6 +25,12 @@ using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
+namespace {
+    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
+    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
+    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
+    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
+}
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback,
     public enable_shared_from_this<AudioRenderModeCallbackTest> {
 public:
@@ -33,6 +39,22 @@ public:
         AUDIO_INFO_LOG("RenderCallbackTest: OnWriteData is called");
         reqBufLen_ = length;
         isEnqueue_ = true;
+    }
+    
+    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
+    {
+        switch (wavSampleFormat) {
+            case SAMPLE_FORMAT_U8:
+                return AudioSampleFormat::SAMPLE_U8;
+            case SAMPLE_FORMAT_S16LE:
+                return AudioSampleFormat::SAMPLE_S16LE;
+            case SAMPLE_FORMAT_S24LE:
+                return AudioSampleFormat::SAMPLE_S24LE;
+            case SAMPLE_FORMAT_S32LE:
+                return AudioSampleFormat::SAMPLE_S32LE;
+            default:
+                return AudioSampleFormat::INVALID_WIDTH;
+        }
     }
 
     bool InitRender()
@@ -48,7 +70,7 @@ public:
         AudioRendererOptions rendererOptions = {};
         rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
         rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
-        rendererOptions.streamInfo.format = static_cast<AudioSampleFormat>(wavHeader.bitsPerSample);
+        rendererOptions.streamInfo.format = GetSampleFormat(wavHeader.bitsPerSample);
         rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
         rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
         rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;

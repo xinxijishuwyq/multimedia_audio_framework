@@ -224,11 +224,11 @@ enum AudioRingerMode {
 
 // format
 enum AudioSampleFormat {
-    SAMPLE_U8 = 8,
-    SAMPLE_S16LE = 16,
-    SAMPLE_S24LE = 24,
-    SAMPLE_S32LE = 32,
-    SAMPLE_F32LE = 32,
+    SAMPLE_U8 = 0,
+    SAMPLE_S16LE = 1,
+    SAMPLE_S24LE = 2,
+    SAMPLE_S32LE = 3,
+    SAMPLE_F32LE = 4,
     INVALID_WIDTH = -1
 };
 

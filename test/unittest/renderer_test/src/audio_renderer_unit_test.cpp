@@ -79,6 +79,7 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    
     return;
 }
 
@@ -463,7 +464,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_014, TestSize.Level0)
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Playback_001, TestSize.Level0)
 {
     AudioRendererOptions rendererOptions;
-
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
