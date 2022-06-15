@@ -45,7 +45,7 @@ Pulse code modulation \(PCM\) is a method used to digitally represent sampled an
 The structure of the repository directory is as follows:
 
 ```
-/foundation/multimedia/audio_standard  # Audio code
+/foundation/multimedia/audio_framework  # Audio code
 ├── frameworks                         # Framework code
 │   ├── native                         # Internal Native API Implementation.
 |   |                                    Pulseaudio, libsndfile build configuration and pulseaudio-hdi modules
@@ -202,7 +202,7 @@ Interrupt aware applications will have more details accessible via AudioRenderer
 
 Provided the basic playback usecase above.
 
-Please refer [**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for more such useful APIs.
+Please refer [**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for more such useful APIs.
 
 
 ### Audio Recording<a name="audio-recording"></a>
@@ -298,10 +298,10 @@ You can use the APIs provided in this repository for your application to record 
 11. Call the audioCapturer->**Stop**() function on the AudioCapturer instance to stop the recording.
 12. After the recording task is complete, call the audioCapturer->**Release**() function on the AudioCapturer instance to release the stream resources.
 
-Provided the basic recording usecase above. Please refer [**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for more APIs.
+Provided the basic recording usecase above. Please refer [**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h) and [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for more APIs.
 
 ### Audio Management<a name="audio-management"></a>
-You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) to control volume and device.
+You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) to control volume and device.
 1. Use **GetInstance** API to get **AudioSystemManager** instance.
     ```
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -322,7 +322,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     ```
     int32_t result = audioSystemMgr->SetMute(streamType, true);
     bool isMute = audioSystemMgr->IsStreamMute(streamType);
-5. Use **SetRingerMode** and **GetRingerMode** APIs to set and get ringer modes. Refer **AudioRingerMode** enum in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for supported ringer modes.
+5. Use **SetRingerMode** and **GetRingerMode** APIs to set and get ringer modes. Refer **AudioRingerMode** enum in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for supported ringer modes.
     ```
     int32_t result = audioSystemMgr->SetRingerMode(RINGER_MODE_SILENT);
     AudioRingerMode ringMode = audioSystemMgr->GetRingerMode();
@@ -333,7 +333,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     bool isMicMute = audioSystemMgr->IsMicrophoneMute();
     ```
 #### Device control
-7. Use **GetDevices**, **deviceType_** and **deviceRole_** APIs to get audio I/O devices information. For DeviceFlag, DeviceType and DeviceRole enums refer [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
+7. Use **GetDevices**, **deviceType_** and **deviceRole_** APIs to get audio I/O devices information. For DeviceFlag, DeviceType and DeviceRole enums refer [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h).
     ```
     DeviceFlag deviceFlag = ALL_DEVICES_FLAG;
     vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = audioSystemMgr->GetDevices(deviceFlag);
@@ -400,7 +400,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     audioSystemMgr->SetDeviceChangeCallback(callback);
     ```
 
-10. Other useful APIs such as **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter** are also provided. Please refer [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) for more details
+10. Other useful APIs such as **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter** are also provided. Please refer [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) for more details
 
 11. Applications can register for change in system volume using **AudioManagerNapi::On**. Here when an application registers to volume change event, whenever there is change in volume, the application is notified with following parameters:
 volumeType : The AudioVolumeType for which volume is updated
@@ -426,14 +426,14 @@ updateUi : Whether the volume change details need to be shown or not. (If volume
     int32_t result = audioSystemMgr->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
     AudioScene audioScene = audioSystemMgr->GetAudioScene();
     ```
-Please refer **AudioScene** enum in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for supported audio scenes.
+Please refer **AudioScene** enum in [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) for supported audio scenes.
 
 #### JavaScript Usage:
 JavaScript apps can use the APIs provided by audio manager to control the volume and the device.\
 Please refer [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis/js-apis-audio.md#audiomanager) for complete JavaScript APIs available for audio manager.
 
 ### Ringtone Management<a name="ringtone-management"></a>
-You can use the APIs provided in [**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) and [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h) for ringtone playback functions.
+You can use the APIs provided in [**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) and [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h) for ringtone playback functions.
 1. Use **CreateRingtoneManager** API to get **IRingtoneSoundManager** instance.
     ```
     std::shared_ptr<IRingtoneSoundManager> ringtoneManagerClient = RingtoneFactory::CreateRingtoneManager();
@@ -479,4 +479,4 @@ Currently following are the list of device types supported by audio subsystem.
 
 ## Repositories Involved<a name="repositories-involved"></a>
 
-[multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_standard)
+[multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_framework)

@@ -17,15 +17,15 @@ pulseaudio_dir = "//third_party/pulseaudio"
 
 config("audio_renderer_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
-    "//foundation/multimedia/audio_standard/services/test",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/test",
     "//utils/native/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
@@ -42,11 +42,11 @@ ohos_shared_library("audio_renderer") {
 
   configs = [ ":audio_renderer_config" ]
 
-  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/audio_renderer.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer.cpp" ]
 
   deps = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audiopolicy:audio_policy_client",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//utils/native/base:utils",
   ]
 
@@ -54,14 +54,14 @@ ohos_shared_library("audio_renderer") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_renderer_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_renderer_test.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_renderer_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -69,14 +69,14 @@ ohos_executable("audio_renderer_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_render_mode_callback_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_render_mode_callback_test.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_render_mode_callback_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -84,7 +84,7 @@ ohos_executable("audio_render_mode_callback_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -92,19 +92,19 @@ ohos_executable("audio_voip_test") {
   install_enable = false
 
   sources = [
-    "//foundation/multimedia/audio_standard/services/test/audio_voip_test.cpp",
+    "//foundation/multimedia/audio_framework/services/test/audio_voip_test.cpp",
   ]
 
   include_dirs = [
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiosession/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/services/include",
-    "//foundation/multimedia/audio_standard/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/services/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
     "//utils/native/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
@@ -119,37 +119,37 @@ ohos_executable("audio_voip_test") {
 
   deps = [
     ":audio_renderer",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_interrupt_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_standard/services/test/audio_interrupt_test.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_interrupt_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
   deps = [
     ":audio_renderer",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_executable("interrupt_multi_renderer_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_standard/services/test/interrupt_multi_renderer_test.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/services/test/interrupt_multi_renderer_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -157,10 +157,10 @@ ohos_executable("interrupt_multi_renderer_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiorenderer/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include" ]
 }

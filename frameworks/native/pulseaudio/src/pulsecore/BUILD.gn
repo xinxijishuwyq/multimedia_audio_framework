@@ -15,10 +15,10 @@ import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio"
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
 libsndfile_dir = "//third_party/libsnd"
 libsndfile_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/libsnd"
+    "//foundation/multimedia/audio_framework/frameworks/native/libsnd"
 
 config("pulsecore_config") {
   visibility = [ ":*" ]
@@ -113,7 +113,7 @@ ohos_source_set("pulsecore_sources") {
   configs = [ ":pulsecore_config" ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_shared_library("pulsecore") {
@@ -124,7 +124,7 @@ ohos_shared_library("pulsecore") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 config("modules_internal_lib_config") {
@@ -159,7 +159,7 @@ ohos_shared_library("cli") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_shared_library("protocol-cli") {
@@ -174,7 +174,7 @@ ohos_shared_library("protocol-cli") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_shared_library("protocol-native") {
@@ -188,5 +188,5 @@ ohos_shared_library("protocol-native") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }

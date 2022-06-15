@@ -13,14 +13,14 @@
 
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_standard/audio_capturer"
+module_output_path = "multimedia_audio_framework/audio_capturer"
 
 ohos_unittest("audio_capturer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/common/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/common/include",
   ]
 
   cflags = [
@@ -30,5 +30,5 @@ ohos_unittest("audio_capturer_unit_test") {
 
   sources = [ "src/audio_capturer_unit_test.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
+  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
 }

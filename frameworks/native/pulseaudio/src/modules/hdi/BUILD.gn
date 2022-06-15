@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio"
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
 
 config("hdi_config") {
   visibility = [ ":*" ]
@@ -27,9 +27,9 @@ config("hdi_config") {
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//utils/native/base/include",
   ]
 
@@ -61,13 +61,13 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:renderer_sink_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_shared_library("module-hdi-source") {
@@ -84,12 +84,12 @@ ohos_shared_library("module-hdi-source") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiocapturer:capturer_source_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:capturer_source_adapter",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
 }

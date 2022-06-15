@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 
 pulseaudio_build_path =
-    "//foundation/multimedia/audio_standard/frameworks/native/pulseaudio"
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
 pulseaudio_dir = "//third_party/pulseaudio"
 
 config("daemon_config") {
@@ -48,7 +48,7 @@ ohos_source_set("pulseaudio_sources") {
 
   configs = [ ":daemon_config" ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -61,6 +61,6 @@ ohos_shared_library("pulseaudio") {
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
   ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }

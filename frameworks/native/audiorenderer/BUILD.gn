@@ -17,7 +17,7 @@ import("//drivers/adapter/uhdf2/uhdf.gni")
 ohos_shared_library("audio_renderer_sink") {
   install_enable = true
 
-  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/audio_renderer_sink.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_sink.cpp" ]
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
@@ -27,8 +27,8 @@ ohos_shared_library("audio_renderer_sink") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
@@ -54,14 +54,14 @@ ohos_shared_library("audio_renderer_sink") {
         [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
   }
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("bluetooth_renderer_sink") {
   install_enable = true
 
-  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/bluetooth_renderer_sink.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/bluetooth_renderer_sink.cpp" ]
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
@@ -69,8 +69,8 @@ ohos_shared_library("bluetooth_renderer_sink") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
@@ -90,14 +90,14 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "//utils/native/base:utils",
   ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("audio_renderer_file_sink") {
   install_enable = true
 
-  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/audio_renderer_file_sink.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_file_sink.cpp" ]
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
@@ -106,8 +106,8 @@ ohos_shared_library("audio_renderer_file_sink") {
 
   include_dirs = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//utils/native/base/include",
   ]
 
@@ -118,16 +118,16 @@ ohos_shared_library("audio_renderer_file_sink") {
     "//utils/native/base:utils",
   ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("audio_bluetooth_client") {
   install_enable = true
   sources = [
-    "//foundation/multimedia/audio_standard/services/src/audio_bluetooth/client/audio_bluetooth_manager.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_bluetooth/client/bluetooth_a2dp_audio_src_observer_stub.cpp",
-    "//foundation/multimedia/audio_standard/services/src/audio_bluetooth/client/bluetooth_a2dp_src_observer.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_bluetooth/client/audio_bluetooth_manager.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_bluetooth/client/bluetooth_a2dp_audio_src_observer_stub.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_bluetooth/client/bluetooth_a2dp_src_observer.cpp",
   ]
 
   include_dirs = [
@@ -136,10 +136,10 @@ ohos_shared_library("audio_bluetooth_client") {
     "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
     "//foundation/communication/bluetooth/services/bluetooth/common/",
     "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
-    "//foundation/multimedia/audio_standard/services/include/audio_policy/server/service/interface",
-    "//foundation/multimedia/audio_standard/services/include/audio_bluetooth/client",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_policy/server/service/interface",
+    "//foundation/multimedia/audio_framework/services/include/audio_bluetooth/client",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//utils/native/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
@@ -154,7 +154,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:bluetooth_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:bluetooth_renderer_sink",
     "//utils/native/base:utils",
   ]
 
@@ -165,14 +165,14 @@ ohos_shared_library("audio_bluetooth_client") {
     "samgr_standard:samgr_proxy",
   ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 ohos_shared_library("renderer_sink_adapter") {
   install_enable = true
 
-  sources = [ "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/src/renderer_sink_adapter.c" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/renderer_sink_adapter.c" ]
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
@@ -182,8 +182,8 @@ ohos_shared_library("renderer_sink_adapter") {
   include_dirs = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//third_party/bounds_checking_function:libsec_static",
     "//utils/native/base:utils",
   ]
@@ -192,15 +192,15 @@ ohos_shared_library("renderer_sink_adapter") {
 
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_file_sink",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:audio_renderer_sink",
-    "//foundation/multimedia/audio_standard/frameworks/native/audiorenderer:bluetooth_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_file_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:bluetooth_renderer_sink",
   ]
 
-  part_name = "multimedia_audio_standard"
+  part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
 }
