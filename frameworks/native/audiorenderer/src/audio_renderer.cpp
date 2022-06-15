@@ -276,6 +276,8 @@ bool AudioRendererPrivate::Start()
         AUDIO_ERR_LOG("AudioRendererPrivate::Start() Illegal state:%{public}u, Start failed", state);
         return false;
     }
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::mode_::%{public}d", mode_);
+    
     AudioInterrupt audioInterrupt;
     switch (mode_) {
         case InterruptMode::SHARE_MODE:
@@ -287,12 +289,15 @@ bool AudioRendererPrivate::Start()
         default:
             break;
     }
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::streamType::%{public}d", audioInterrupt.streamType);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::contentType::%{public}d", audioInterrupt.contentType);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::sessionID::%{public}d", audioInterrupt.sessionID);
 
-    if (audioInterrupt_.streamType == STREAM_DEFAULT || audioInterrupt_.sessionID == INVALID_SESSION_ID) {
+    if (audioInterrupt.streamType == STREAM_DEFAULT || audioInterrupt.sessionID == INVALID_SESSION_ID) {
         return false;
     }
 
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::ActivateAudioInterrupt Failed");
         return false;
