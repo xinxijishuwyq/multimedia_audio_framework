@@ -98,7 +98,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
-    attrs.interleaved = 0;
+    attrs.interleaved = true;
     attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
@@ -117,7 +117,7 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
 
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr) {
+        if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {

@@ -84,7 +84,7 @@ void InitAttrsCapture(struct AudioSampleAttributes &attrs)
     attrs.format = AUDIO_FORMAT_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
-    attrs.interleaved = 0;
+    attrs.interleaved = true;
     attrs.streamId = INTERNAL_INPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
@@ -106,7 +106,7 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size,
 
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr) {
+        if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
         if (!adapterNameCase.compare(desc->adapterName)) {
