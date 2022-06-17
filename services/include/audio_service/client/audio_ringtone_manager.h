@@ -22,7 +22,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "player.h"
-#include "foundation/ability/ability_runtime/frameworks/kits/appkit/native/ability_runtime/context/context.h"
+#include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/ability_runtime/context/context.h"
 #include "abs_shared_result_set.h"
 #include "data_ability_helper.h"
 #include "data_ability_predicates.h"
