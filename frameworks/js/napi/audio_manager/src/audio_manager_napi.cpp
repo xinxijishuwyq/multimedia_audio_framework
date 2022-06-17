@@ -941,7 +941,7 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->focusType);
-            } else if (i == PARAM2 && valueType == napi_function) {
+            } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
             } else {
