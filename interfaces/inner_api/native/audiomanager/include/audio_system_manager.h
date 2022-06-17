@@ -175,6 +175,10 @@ public:
          */
         STREAM_ACCESSIBILITY = 12,
         /**
+         * Indicates special scene used for recording.
+         */
+        STREAM_RECORDING = 13,
+        /**
          * Indicates audio streams used for only one volume bar of a device.
          */
         STREAM_ALL = 100
@@ -230,8 +234,8 @@ public:
     int32_t RequestAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-    int32_t RequestIndependentInterrupt(FocusType focusType);
-    int32_t AbandonIndependentInterrupt(FocusType focusType);
+    bool RequestIndependentInterrupt(FocusType focusType);
+    bool AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
 private:
     AudioSystemManager();
