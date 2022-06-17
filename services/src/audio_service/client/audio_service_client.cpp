@@ -1446,6 +1446,13 @@ void AudioServiceClient::OnTimeOut()
     pa_threaded_mainloop_unlock(mainLoop);
 }
 
+void AudioServiceClient::SetClientID(int32_t clientPid, int32_t clientUid)
+{
+    AUDIO_DEBUG_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
+    clientPid_ = clientPid;
+    clientUid_ = clientUid;
+}
+
 void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
 {
     mTotalBytesRead += bytesRead;
@@ -2084,14 +2091,15 @@ void AudioServiceClient::WriteStateChangedSysEvents()
 {
     uint32_t sessionID = 0;
     uint64_t transactionId = 0;
-    int32_t callingPid = getpid();
-    int32_t callingUid = getuid();
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
 
     bool isOutput = true;
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        transactionId = mAudioSystemMgr->GetTransactionId(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+        deviceType = mAudioSystemMgr->GetActiveOutputDevice();
+        transactionId = mAudioSystemMgr->GetTransactionId(deviceType, OUTPUT_DEVICE);
     } else {
-        transactionId = mAudioSystemMgr->GetTransactionId(DEVICE_TYPE_MIC, INPUT_DEVICE);
+        deviceType = mAudioSystemMgr->GetActiveInputDevice();
+        transactionId = mAudioSystemMgr->GetTransactionId(deviceType, INPUT_DEVICE);
         isOutput = false;
     }
 
@@ -2101,12 +2109,12 @@ void AudioServiceClient::WriteStateChangedSysEvents()
         HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", isOutput ? 1 : 0,
         "STREAMID", sessionID,
-        "UID", callingUid,
-        "PID", callingPid,
+        "UID", clientUid_,
+        "PID", clientPid_,
         "TRANSACTIONID", transactionId,
         "STREAMTYPE", mStreamType,
         "STATE", state_,
-        "DEVICETYPE", DEVICE_TYPE_INVALID);
+        "DEVICETYPE", deviceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

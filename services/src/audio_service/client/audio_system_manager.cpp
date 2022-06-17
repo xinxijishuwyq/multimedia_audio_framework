@@ -196,6 +196,16 @@ bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
     return (AudioPolicyManager::GetInstance().IsDeviceActive(static_cast<InternalDeviceType>(deviceType)));
 }
 
+DeviceType AudioSystemManager::GetActiveOutputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+}
+
+DeviceType AudioSystemManager::GetActiveInputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetActiveInputDevice();
+}
+
 bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const
 {
     switch (volumeType) {

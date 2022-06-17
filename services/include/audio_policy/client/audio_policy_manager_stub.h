@@ -36,6 +36,8 @@ private:
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);

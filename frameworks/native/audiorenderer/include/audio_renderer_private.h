@@ -68,7 +68,7 @@ public:
 
     AudioRendererInfo rendererInfo_ = {};
 
-    explicit AudioRendererPrivate(AudioStreamType audioStreamType);
+    explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo);
     ~AudioRendererPrivate();
 
 private:
@@ -76,6 +76,7 @@ private:
     std::shared_ptr<AudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+    AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ =
         {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
      AudioInterrupt sharedInterrupt_ =

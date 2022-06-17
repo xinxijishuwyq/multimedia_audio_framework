@@ -57,6 +57,10 @@ public:
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
+    DeviceType GetActiveOutputDevice();
+
+    DeviceType GetActiveInputDevice();
+
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
     AudioRingerMode GetRingerMode();

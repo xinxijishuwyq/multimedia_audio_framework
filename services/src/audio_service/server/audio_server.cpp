@@ -26,6 +26,12 @@
 
 #include "audio_server.h"
 
+extern "C" {
+#include "renderer_sink_adapter.h"
+    extern int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);
+    extern int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
+}
+
 #define PA
 #ifdef PA
 extern "C" {
@@ -143,10 +149,21 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     AUDIO_INFO_LOG("GetTransactionId in: device type: %{public}d, device role: %{public}d", deviceType, deviceRole);
 
     if (deviceRole == OUTPUT_DEVICE) {
-        AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
-        if (audioRendererSinkInstance) {
-            transactionId = audioRendererSinkInstance->GetTransactionId();
+        struct RendererSinkAdapter *sinkAdapter;
+        int32_t ret = SUCCESS;
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            ret = LoadSinkAdapter("a2dp", &sinkAdapter);
+        } else {
+            ret = LoadSinkAdapter("primary", &sinkAdapter);
         }
+
+        if (ret) {
+            AUDIO_ERR_LOG("Load adapter failed");
+            return transactionId;
+        }
+
+        sinkAdapter->RendererSinkGetTransactionId(&transactionId);
+        UnLoadSinkAdapter(sinkAdapter);
     } else if (deviceRole == INPUT_DEVICE) {
         AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
         if (audioCapturerSourceInstance) {

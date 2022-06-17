@@ -208,6 +208,8 @@ public:
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole);
     int32_t SetDeviceActive(ActiveDeviceType deviceType, bool flag) const;
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
+    DeviceType GetActiveOutputDevice();
+    DeviceType GetActiveInputDevice();
     bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
     int32_t SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;

@@ -392,10 +392,22 @@ int32_t BluetoothRendererSink::GetLatency(uint32_t *latency)
     }
 }
 
-uint64_t BluetoothRendererSink::GetTransactionId()
+int32_t BluetoothRendererSink::GetTransactionId(uint64_t *transactionId)
 {
     AUDIO_INFO_LOG("BluetoothRendererSink::GetTransactionId in");
-    return reinterpret_cast<uint64_t>(audioRender_);
+
+    if (audioRender_ == nullptr) {
+        AUDIO_ERR_LOG("BluetoothRendererSink: GetTransactionId failed audio render null");
+        return ERR_INVALID_HANDLE;
+    }
+
+    if (!transactionId) {
+        AUDIO_ERR_LOG("BluetoothRendererSink: GetTransactionId failed transactionId null");
+        return ERR_INVALID_PARAM;
+    }
+
+    *transactionId = reinterpret_cast<uint64_t>(audioRender_);
+    return SUCCESS;
 }
 
 int32_t BluetoothRendererSink::Stop(void)
@@ -628,6 +640,21 @@ int32_t BluetoothRendererSinkGetLatency(uint32_t *latency)
 
     ret = g_bluetoothRendrSinkInstance->GetLatency(latency);
     return ret;
+}
+
+int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId)
+{
+    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first");
+        return ERR_NOT_STARTED;
+    }
+
+    if (!transactionId) {
+        AUDIO_ERR_LOG("BluetoothRendererSinkGetTransactionId failed transacion id null");
+        return ERR_INVALID_PARAM;
+    }
+
+    return g_bluetoothRendrSinkInstance->GetTransactionId(transactionId);
 }
 #ifdef __cplusplus
 }

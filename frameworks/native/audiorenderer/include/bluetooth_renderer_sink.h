@@ -46,7 +46,7 @@ public:
     int32_t SetVolume(float left, float right);
     int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
-    uint64_t GetTransactionId();
+    int32_t GetTransactionId(uint64_t *transactionId);
     static BluetoothRendererSink *GetInstance(void);
     bool rendererInited_;
 private:

@@ -36,6 +36,7 @@ int32_t BluetoothRendererSinkResume(void);
 int32_t BluetoothRendererRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
 int32_t BluetoothRendererSinkSetVolume(float left, float right);
 int32_t BluetoothRendererSinkGetLatency(uint32_t *latency);
+int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId);
 #ifdef __cplusplus
 }
 #endif

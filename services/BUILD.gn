@@ -55,6 +55,7 @@ ohos_shared_library("audio_service") {
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_source",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//utils/native/base:utils",

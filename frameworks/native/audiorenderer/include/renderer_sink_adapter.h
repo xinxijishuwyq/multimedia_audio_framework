@@ -46,6 +46,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererRenderFrame)(char *data, uint64_t len, uint64_t *writeLen);
     int32_t (*RendererSinkSetVolume)(float left, float right);
     int32_t (*RendererSinkGetLatency)(uint32_t *latency);
+    int32_t (*RendererSinkGetTransactionId)(uint64_t *transactionId);
 };
 
 int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);

@@ -146,6 +146,12 @@ int32_t AudioRendererFileSink::GetLatency(uint32_t *latency)
 {
     return ERR_NOT_SUPPORTED;
 }
+
+int32_t AudioRendererFileSink::GetTransactionId(uint64_t *transactionId)
+{
+    AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -200,6 +206,11 @@ int32_t AudioRendererFileSinkSetVolume(float left, float right)
 int32_t AudioRendererFileSinkGetLatency(uint32_t *latency)
 {
     return g_fileSinkInstance->GetLatency(latency);
+}
+
+int32_t AudioRendererFileSinkGetTransactionId(uint64_t *transactionId)
+{
+    return g_fileSinkInstance->GetTransactionId(transactionId);
 }
 #ifdef __cplusplus
 }

@@ -46,6 +46,10 @@ public:
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
+    virtual DeviceType GetActiveOutputDevice() = 0;
+
+    virtual DeviceType GetActiveInputDevice() = 0;
+
     virtual int32_t SetRingerMode(AudioRingerMode ringMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
