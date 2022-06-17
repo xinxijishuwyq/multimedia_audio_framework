@@ -105,6 +105,14 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
     appInfo_ = appInfo;
+    if (!(appInfo_.appPid)) {
+        appInfo_.appPid = getpid();
+    }
+
+    if (!(appInfo_.appUid)) {
+        appInfo_.appUid = getuid();
+    }
+
     audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
     if (audioStream_) {
         AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
@@ -171,13 +179,6 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     audioStreamParams.channels = params.channelCount;
     audioStreamParams.encoding = params.encodingType;
 
-    if (!(appInfo_.appPid)) {
-        appInfo_.appPid = getpid();
-    }
-
-    if (!(appInfo_.appUid)) {
-        appInfo_.appUid = getuid();
-    }
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);

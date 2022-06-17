@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_stream_collector.h"
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
@@ -87,11 +88,13 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    void OnDeviceStatusUpdated(DeviceType deviceType, bool connected, const std::string &macAddress,
+    void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
+        const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
     void OnDeviceConfigurationChanged(DeviceType deviceType,
-        const std::string &macAddress, const AudioStreamInfo &streamInfo);
+        const std::string &macAddress, const std::string &deviceName,
+        const AudioStreamInfo &streamInfo);
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
@@ -101,13 +104,39 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
+
+    int32_t UnregisterAudioRendererEventListener(int32_t clientUID);
+
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
+
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
+
+    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
+        const sptr<IRemoteObject> &object);
+
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+
+    int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
+        bool hasBTPermission);
+
+    int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+        bool hasBTPermission);
+
+    void RegisteredTrackerClientDied(pid_t pid);
+
+    void RegisteredStreamListenerClientDied(pid_t pid);
+
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     void OnAudioLatencyParsed(uint64_t latency);
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-          mConfigParser(ParserFactory::GetInstance().CreateParser(*this))
+          mConfigParser(ParserFactory::GetInstance().CreateParser(*this)),
+          mStreamCollector(AudioStreamCollector::GetAudioStreamCollector())
     {
         mDeviceStatusListener = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -130,7 +159,8 @@ private:
 
     DeviceType FetchHighPriorityDevice();
 
-    void UpdateConnectedDevices(DeviceType deviceType, std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status);
+    void UpdateConnectedDevices(const AudioDeviceDescriptor &deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc, bool status);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
 
@@ -142,6 +172,10 @@ private:
 
     void UpdateInputDeviceInfo(DeviceType deviceType);
 
+    void UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+
+    void UpdateTrackerDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     uint64_t audioLatencyInMsec_ = 50;
@@ -150,6 +184,7 @@ private:
     DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
+    AudioStreamCollector& mStreamCollector;
     std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
     std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;

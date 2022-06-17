@@ -24,7 +24,6 @@
 #include "audio_policy_service.h"
 #include "audio_server_death_recipient.h"
 #include "audio_session_callback.h"
-#include "audio_stream_collector.h"
 #include "i_audio_volume_key_event_callback.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
@@ -171,7 +170,6 @@ private:
     static int32_t ConvertVolumeToInt(float volume);
 
     AudioPolicyService& mPolicyService;
-    AudioStreamCollector& mStreamCollector;
     std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;

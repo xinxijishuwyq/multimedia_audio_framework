@@ -35,11 +35,20 @@ public:
     DeviceRole getRole();
     DeviceType deviceType_;
     DeviceRole deviceRole_;
+    int32_t deviceId_;
+    int32_t channelMasks_;
+    std::string deviceName_;
+    std::string macAddress_;
+    AudioStreamInfo audioStreamInfo_ = {};
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
+    AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
     virtual ~AudioDeviceDescriptor();
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
+
+    void SetDeviceInfo(std::string deviceName, std::string macAddress);
+    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
 };
 
 struct DeviceChangeAction {

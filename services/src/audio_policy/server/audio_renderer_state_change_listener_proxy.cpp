@@ -53,6 +53,17 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteInt32(rendererChangeInfo->rendererInfo.contentType);
     data.WriteInt32(rendererChangeInfo->rendererInfo.streamUsage);
     data.WriteInt32(rendererChangeInfo->rendererInfo.rendererFlags);
+
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceType);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceRole);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceId);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelMasks);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels);
+    data.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
+    data.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
 }
 
 void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
@@ -84,7 +95,8 @@ void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
 }
 
 AudioRendererStateChangeListenerCallback::AudioRendererStateChangeListenerCallback(
-    const sptr<IStandardRendererStateChangeListener> &listener) : listener_(listener)
+    const sptr<IStandardRendererStateChangeListener> &listener, bool hasBTPermission)
+    : listener_(listener), hasBTPermission_(hasBTPermission)
 {
         AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerCallback: Instance create");
 }
@@ -94,11 +106,27 @@ AudioRendererStateChangeListenerCallback::~AudioRendererStateChangeListenerCallb
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerCallback: Instance destroy");
 }
 
+void AudioRendererStateChangeListenerCallback::UpdateDeviceInfo(
+    const vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    if (!hasBTPermission_) {
+        size_t rendererChangeInfoLength = audioRendererChangeInfos.size();
+        for (size_t i = 0; i < rendererChangeInfoLength; i++) {
+            if ((audioRendererChangeInfos[i]->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)
+                || (audioRendererChangeInfos[i]->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+                audioRendererChangeInfos[i]->outputDeviceInfo.deviceName = "";
+                audioRendererChangeInfos[i]->outputDeviceInfo.macAddress = "";
+            }
+        }
+    }
+}
+
 void AudioRendererStateChangeListenerCallback::OnRendererStateChange(
     const vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerCallback OnRendererStateChange entered");
     if (listener_ != nullptr) {
+        UpdateDeviceInfo(audioRendererChangeInfos);
         listener_->OnRendererStateChange(audioRendererChangeInfos);
     }
 }

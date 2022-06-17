@@ -44,6 +44,19 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     rendererChangeInfo->rendererInfo.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     rendererChangeInfo->rendererInfo.rendererFlags = data.ReadInt32();
 
+    rendererChangeInfo->outputDeviceInfo.deviceType = static_cast<DeviceType>(data.ReadInt32());
+    rendererChangeInfo->outputDeviceInfo.deviceRole = static_cast<DeviceRole>(data.ReadInt32());
+    rendererChangeInfo->outputDeviceInfo.deviceId = data.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.channelMasks = data.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate
+        = static_cast<AudioSamplingRate>(data.ReadInt32());
+    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding
+        = static_cast<AudioEncodingType>(data.ReadInt32());
+    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(data.ReadInt32());
+    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
+    rendererChangeInfo->outputDeviceInfo.deviceName = data.ReadString();
+    rendererChangeInfo->outputDeviceInfo.macAddress = data.ReadString();
+
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, sessionid = %{public}d", rendererChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererState = %{public}d",
         rendererChangeInfo->rendererState);

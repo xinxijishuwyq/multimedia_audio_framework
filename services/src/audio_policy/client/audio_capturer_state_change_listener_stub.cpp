@@ -43,6 +43,19 @@ void AudioCapturerStateChangeListenerStub::ReadAudioCapturerChangeInfo(MessagePa
     capturerChangeInfo->capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
     capturerChangeInfo->capturerInfo.capturerFlags = data.ReadInt32();
 
+    capturerChangeInfo->inputDeviceInfo.deviceType = static_cast<DeviceType>(data.ReadInt32());
+    capturerChangeInfo->inputDeviceInfo.deviceRole = static_cast<DeviceRole>(data.ReadInt32());
+    capturerChangeInfo->inputDeviceInfo.deviceId = data.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.channelMasks = data.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate
+        = static_cast<AudioSamplingRate>(data.ReadInt32());
+    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding
+        = static_cast<AudioEncodingType>(data.ReadInt32());
+    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(data.ReadInt32());
+    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
+    capturerChangeInfo->inputDeviceInfo.deviceName = data.ReadString();
+    capturerChangeInfo->inputDeviceInfo.macAddress = data.ReadString();
+
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, sessionid = %{public}d", capturerChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, capturerState = %{public}d",
         capturerChangeInfo->capturerState);

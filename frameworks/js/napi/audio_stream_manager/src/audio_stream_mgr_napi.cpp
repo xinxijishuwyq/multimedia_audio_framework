@@ -90,6 +90,50 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void SetValueString(const napi_env &env, const std::string &fieldStr, const std::string stringValue,
+    napi_value &result)
+{
+    napi_value value = nullptr;
+    napi_create_string_utf8(env, stringValue.c_str(), NAPI_AUTO_LENGTH, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
+static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoObj, const DeviceInfo &deviceInfo)
+{
+    napi_value jsDeviceDescriptorsObj = nullptr;
+    napi_value valueParam = nullptr;
+    napi_create_array_with_length(env, 1, &jsDeviceDescriptorsObj);
+
+    (void)napi_create_object(env, &valueParam);
+    SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole), valueParam);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType), valueParam);
+    SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.deviceId), valueParam);
+    SetValueString(env, "name", deviceInfo.deviceName, valueParam);
+    SetValueString(env, "address", deviceInfo.macAddress, valueParam);
+
+    napi_value value = nullptr;
+    napi_value sampleRates;
+    napi_create_array_with_length(env, 1, &sampleRates);
+    napi_create_int32(env, deviceInfo.audioStreamInfo.samplingRate, &value);
+    napi_set_element(env, sampleRates, 0, value);
+    napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
+
+    napi_value channelCounts;
+    napi_create_array_with_length(env, 1, &channelCounts);
+    napi_create_int32(env, deviceInfo.audioStreamInfo.channels, &value);
+    napi_set_element(env, channelCounts, 0, value);
+    napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
+
+    napi_value channelMasks;
+    napi_create_array_with_length(env, 1, &channelMasks);
+    napi_create_int32(env, deviceInfo.channelMasks, &value);
+    napi_set_element(env, channelMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
+
+    napi_set_element(env, jsDeviceDescriptorsObj, 0, valueParam);
+    napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", jsDeviceDescriptorsObj);
+}
+
 static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioStreamMgrAsyncContext*>(data);
@@ -118,6 +162,7 @@ static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_sta
         SetValueInt32(env, "usage", static_cast<int32_t>(changeInfo->rendererInfo.streamUsage), jsRenInfoObj);
         SetValueInt32(env, "rendererFlags", changeInfo->rendererInfo.rendererFlags, jsRenInfoObj);
         napi_set_named_property(env, jsChangeInfoObj, "rendererInfo", jsRenInfoObj);
+        SetDeviceDescriptors(env, jsChangeInfoObj, changeInfo->outputDeviceInfo);
 
         napi_set_element(env, result[PARAM1], position, jsChangeInfoObj);
         position++;
@@ -165,6 +210,7 @@ static void GetCurrentCapturerChangeInfosCallbackComplete(napi_env env, napi_sta
         SetValueInt32(env, "source", static_cast<int32_t>(changeInfo->capturerInfo.sourceType), jsCapInfoObj);
         SetValueInt32(env, "capturerFlags", changeInfo->capturerInfo.capturerFlags, jsCapInfoObj);
         napi_set_named_property(env, jsChangeInfoObj, "capturerInfo", jsCapInfoObj);
+        SetDeviceDescriptors(env, jsChangeInfoObj, changeInfo->inputDeviceInfo);
 
         napi_set_element(env, result[PARAM1], position, jsChangeInfoObj);
         position++;

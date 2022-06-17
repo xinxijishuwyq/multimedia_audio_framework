@@ -23,18 +23,57 @@ namespace AudioStandard {
  *         different sets of audio devices and their roles
  */
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
-{}
+{
+    if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
+        || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) && (deviceRole_ == INPUT_DEVICE)) {
+        deviceId_ = deviceType_ + DEVICE_TYPE_MAX;
+    } else {
+        deviceId_ = deviceType_;
+    }
+
+    audioStreamInfo_ = {};
+    channelMasks_ = 0;
+    deviceName_ = "";
+    macAddress_ = "";
+}
 
 AudioDeviceDescriptor::AudioDeviceDescriptor()
     : AudioDeviceDescriptor(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE)
 {}
+
+AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
+{
+    deviceId_ = deviceDescriptor.deviceId_;
+    deviceName_ = deviceDescriptor.deviceName_;
+    macAddress_ = deviceDescriptor.macAddress_;
+    deviceType_ = deviceDescriptor.deviceType_;
+    deviceRole_ = deviceDescriptor.deviceRole_;
+    audioStreamInfo_.channels = deviceDescriptor.audioStreamInfo_.channels;
+    audioStreamInfo_.encoding = deviceDescriptor.audioStreamInfo_.encoding;
+    audioStreamInfo_.format = deviceDescriptor.audioStreamInfo_.format;
+    audioStreamInfo_.samplingRate = deviceDescriptor.audioStreamInfo_.samplingRate;
+    channelMasks_ = deviceDescriptor.channelMasks_;
+}
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
 {}
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
-    return parcel.WriteInt32(deviceType_) && parcel.WriteInt32(deviceRole_);
+    parcel.WriteInt32(deviceType_);
+    parcel.WriteInt32(deviceRole_);
+    parcel.WriteInt32(deviceId_);
+
+    parcel.WriteInt32(audioStreamInfo_.channels);
+    parcel.WriteInt32(audioStreamInfo_.encoding);
+    parcel.WriteInt32(audioStreamInfo_.format);
+    parcel.WriteInt32(audioStreamInfo_.samplingRate);
+    parcel.WriteInt32(channelMasks_);
+
+    parcel.WriteString(deviceName_);
+    parcel.WriteString(macAddress_);
+
+    return true;
 }
 
 sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
@@ -46,7 +85,33 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
 
     audioDeviceDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());
     audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(in.ReadInt32());
+    audioDeviceDescriptor->deviceId_ = in.ReadInt32();
+
+    audioDeviceDescriptor->audioStreamInfo_.channels = static_cast<AudioChannel>(in.ReadInt32());
+    audioDeviceDescriptor->audioStreamInfo_.encoding = static_cast<AudioEncodingType>(in.ReadInt32());
+    audioDeviceDescriptor->audioStreamInfo_.format = static_cast<AudioSampleFormat>(in.ReadInt32());
+    audioDeviceDescriptor->audioStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(in.ReadInt32());
+    audioDeviceDescriptor->channelMasks_ = in.ReadInt32();
+
+    audioDeviceDescriptor->deviceName_ = in.ReadString();
+    audioDeviceDescriptor->macAddress_ = in.ReadString();
+
     return audioDeviceDescriptor;
+}
+
+void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
+{
+    deviceName_ = deviceName;
+    macAddress_ = macAddress;
+}
+
+void AudioDeviceDescriptor::SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask)
+{
+    audioStreamInfo_.channels = audioStreamInfo.channels;
+    audioStreamInfo_.encoding = audioStreamInfo.encoding;
+    audioStreamInfo_.format = audioStreamInfo.format;
+    audioStreamInfo_.samplingRate = audioStreamInfo.samplingRate;
+    channelMasks_ = channelMask;
 }
 } // namespace AudioStandard
 } // namespace OHOS
