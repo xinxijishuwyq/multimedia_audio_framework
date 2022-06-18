@@ -659,6 +659,8 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
     uint32_t clientID = GetCallingPid();
+    audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
+    audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
@@ -670,6 +672,8 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
     uint32_t clientID = GetCallingPid();
+    audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
+    audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
