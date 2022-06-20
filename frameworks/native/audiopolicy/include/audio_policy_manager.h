@@ -17,13 +17,20 @@
 #define ST_AUDIO_POLICY_MANAGER_H
 
 #include <cstdint>
+#include "audio_capturer_state_change_listener_stub.h"
+#include "audio_client_tracker_callback_stub.h"
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_listener_stub.h"
+#include "audio_renderer_state_change_listener_stub.h"
 #include "audio_ringermode_update_listener_stub.h"
 #include "audio_system_manager.h"
 #include "audio_volume_key_event_callback_stub.h"
+#include "audio_system_manager.h"
 #include "i_audio_volume_key_event_callback.h"
+#include "i_standard_renderer_state_change_listener.h"
+#include "i_standard_capturer_state_change_listener.h"
+#include "i_standard_client_tracker.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -112,6 +119,27 @@ public:
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     int32_t GetAudioLatencyFromXml();
+
+    int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+        const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+
+    int32_t RegisterAudioCapturerEventListener(const int32_t clientUID,
+        const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
+
+    int32_t UnregisterAudioCapturerEventListener(const int32_t clientUID);
+
+    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
+        const std::shared_ptr<AudioClientTracker> &clientTrackerObj);
+
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+
+    int32_t GetCurrentRendererChangeInfos(
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+
+    int32_t GetCurrentCapturerChangeInfos(
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 private:
     AudioPolicyManager()
     {
@@ -123,9 +151,13 @@ private:
     sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
     std::mutex volumeCallbackMutex_;
-
+    std::mutex stateChangelistenerStubMutex_;
+    std::mutex clientTrackerStubMutex_;
     sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
+    sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
+    sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
+    sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static bool serverConnected;
     void RegisterAudioPolicyServerDeathRecipient();
     void AudioPolicyServerDied(pid_t pid);

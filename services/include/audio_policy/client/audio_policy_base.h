@@ -95,6 +95,26 @@ public:
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
 
     virtual int32_t GetAudioLatencyFromXml() = 0;
+
+    virtual int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnregisterAudioRendererEventListener(int32_t clientUID) = 0;
+
+    virtual int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) = 0;
+
+    virtual int32_t RegisterTracker(AudioMode &mode,
+        AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo) = 0;
+
+    virtual int32_t GetCurrentRendererChangeInfos(
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+
+    virtual int32_t GetCurrentCapturerChangeInfos(
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

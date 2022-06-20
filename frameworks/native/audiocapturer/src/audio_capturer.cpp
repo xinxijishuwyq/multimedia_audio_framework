@@ -82,21 +82,25 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->SetApplicationCachePath(cachePath);
     }
 
-    if (capturer->SetParams(params) != SUCCESS) {
-        capturer = nullptr;
-        return nullptr;
-    }
-
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
-
+    if (capturer->SetParams(params) != SUCCESS) {
+        capturer = nullptr;
+    }
     return capturer;
 }
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD);
     appInfo_ = appInfo;
+    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD, appInfo_.appUid);
+    if (audioStream_) {
+        AUDIO_DEBUG_LOG("AudioCapturerPrivate::Audio stream created");
+    }
+    capturerProxyObj_ = std::make_shared<AudioCapturerProxyObj>();
+    if (!capturerProxyObj_) {
+        AUDIO_ERR_LOG("AudioCapturerProxyObj Memory Allocation Failed !!");
+    }
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -110,6 +114,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }
+    const AudioCapturer *capturer = this;
+    capturerProxyObj_->SaveCapturerObj(capturer);
+
+    audioStream_->SetCapturerInfo(capturerInfo_);
 
     AudioStreamParams audioStreamParams;
     audioStreamParams.format = params.audioSampleFormat;
@@ -126,7 +134,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     }
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
-    return audioStream_->SetAudioStreamInfo(audioStreamParams);
+    return audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
 }
 
 int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback)

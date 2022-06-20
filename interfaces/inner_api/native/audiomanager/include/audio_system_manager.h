@@ -239,6 +239,7 @@ public:
     bool RequestIndependentInterrupt(FocusType focusType);
     bool AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
+
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

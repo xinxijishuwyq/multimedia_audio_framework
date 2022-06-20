@@ -15,29 +15,27 @@
 #ifndef AUDIO_STREAM_H
 #define AUDIO_STREAM_H
 
-#include "audio_renderer.h"
 #include "audio_session.h"
 #include "timestamp.h"
+#include "audio_stream_tracker.h"
 
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t MAX_NUM_BUFFERS = 3;
 
-enum AudioMode {
-    AUDIO_MODE_PLAYBACK,
-    AUDIO_MODE_RECORD
-};
-
 class AudioStream : public AudioSession {
 public:
-    AudioStream(AudioStreamType eStreamType, AudioMode eMode);
+    AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid);
     virtual ~AudioStream();
 
-    int32_t SetAudioStreamInfo(const AudioStreamParams info);
+    void SetRendererInfo(const AudioRendererInfo &rendererInfo);
+    void SetCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
 
-    int32_t GetAudioSessionID(uint32_t &sessionID) const;
+    int32_t GetAudioSessionID(uint32_t &sessionID);
     State GetState();
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
     int32_t GetBufferSize(size_t &bufferSize) const;
@@ -97,6 +95,10 @@ private:
     bool isReadyToRead_;
     void WriteBuffers();
     void ReadBuffers();
+    std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
+    AudioRendererInfo rendererInfo_;
+    AudioCapturerInfo capturerInfo_;
+    uint32_t sessionId_;
 
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();

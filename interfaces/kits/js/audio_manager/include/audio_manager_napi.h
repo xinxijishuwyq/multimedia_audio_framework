@@ -22,6 +22,7 @@
 #include "audio_system_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_stream_mgr_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,6 +100,8 @@ private:
     static napi_value CreateAudioSceneObject(napi_env env);
     static napi_value RequestIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
+    static napi_value GetStreamManager(napi_env env, napi_callback_info info);
+    static void GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
 

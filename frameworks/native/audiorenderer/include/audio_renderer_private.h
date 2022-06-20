@@ -19,6 +19,7 @@
 #include "audio_interrupt_callback.h"
 #include "audio_renderer.h"
 #include "audio_stream.h"
+#include "audio_renderer_proxy_obj.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -83,6 +84,7 @@ private:
         {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
     uint32_t sessionID_ = INVALID_SESSION_ID;
     AudioStandard::InterruptMode mode_ = AudioStandard::InterruptMode::SHARE_MODE;
+    std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {

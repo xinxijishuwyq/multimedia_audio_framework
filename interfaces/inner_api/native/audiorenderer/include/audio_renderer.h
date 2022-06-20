@@ -38,26 +38,6 @@ struct AudioRendererParams {
     AudioEncodingType encodingType = ENCODING_PCM;
 };
 
-/**
- * @brief Enumerates the rendering states of the current device.
- */
-enum RendererState {
-    /** INVALID state */
-    RENDERER_INVALID = -1,
-    /** Create New Renderer instance */
-    RENDERER_NEW,
-    /** Reneder Prepared state */
-    RENDERER_PREPARED,
-    /** Rendere Running state */
-    RENDERER_RUNNING,
-    /** Renderer Stopped state */
-    RENDERER_STOPPED,
-    /** Renderer Released state */
-    RENDERER_RELEASED,
-    /** Renderer Paused state */
-    RENDERER_PAUSED
-};
-
 class AudioRendererCallback {
 public:
     virtual ~AudioRendererCallback() = default;

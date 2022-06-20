@@ -104,8 +104,20 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
 AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK);
     appInfo_ = appInfo;
+    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
+    if (audioStream_) {
+        AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
+        // Initializing with default values
+        rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
+        rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    }
+
+    rendererProxyObj_ = std::make_shared<AudioRendererProxyObj>();
+    if (!rendererProxyObj_) {
+        AUDIO_ERR_LOG("AudioRendererProxyObj Memory Allocation Failed !!");
+    }
+
     audioInterrupt_.streamType = audioStreamType;
     if (AudioRendererPrivate::sharedInterrupts_.find(getpid()) == AudioRendererPrivate::sharedInterrupts_.end()) {
         std::map<AudioStreamType, AudioInterrupt> interrupts;
@@ -150,6 +162,10 @@ int32_t AudioRendererPrivate::GetLatency(uint64_t &latency) const
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     AudioStreamParams audioStreamParams;
+    AudioRenderer *renderer = this;
+    rendererProxyObj_->SaveRendererObj(renderer);
+    audioStream_->SetRendererInfo(rendererInfo_);
+
     audioStreamParams.format = params.sampleFormat;
     audioStreamParams.samplingRate = params.sampleRate;
     audioStreamParams.channels = params.channelCount;
@@ -164,7 +180,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
-    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams);
+    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
 
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Success");
     if (ret) {

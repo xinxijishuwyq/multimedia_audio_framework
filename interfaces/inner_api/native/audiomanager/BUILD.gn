@@ -65,6 +65,8 @@ ohos_shared_library("audio_client") {
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_service_client.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_session.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_stream.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_stream_manager.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_stream_tracker.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_system_manager.cpp",
   ]
 

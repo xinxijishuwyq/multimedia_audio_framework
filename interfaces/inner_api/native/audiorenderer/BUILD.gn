@@ -42,7 +42,10 @@ ohos_shared_library("audio_renderer") {
 
   configs = [ ":audio_renderer_config" ]
 
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer.cpp" ]
+  sources = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_proxy_obj.cpp",
+  ]
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
