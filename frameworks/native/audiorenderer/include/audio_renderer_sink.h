@@ -68,7 +68,7 @@ private:
     struct AudioManager *audioManager_;
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
-    struct AudioPort audioPort_;
+    struct AudioPort audioPort_ = {};
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();
