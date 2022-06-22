@@ -71,6 +71,10 @@ private:
     static napi_value GetMaxVolume(napi_env env, napi_callback_info info);
     static napi_value GetMinVolume(napi_env env, napi_callback_info info);
     static napi_value GetDevices(napi_env env, napi_callback_info info);
+    static napi_value SelectOutputDevice(napi_env env, napi_callback_info info);
+    static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
+    static napi_value SelectOutputDeviceByFilter(napi_env env, napi_callback_info info);
+    static napi_value SelectInputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value SetStreamMute(napi_env env, napi_callback_info info);
     static napi_value IsStreamMute(napi_env env, napi_callback_info info);
     static napi_value IsStreamActive(napi_env env, napi_callback_info info);

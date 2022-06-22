@@ -80,6 +80,8 @@ ohos_executable("audio_policy_test") {
 
   deps = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
+    "//utils/native/base:utils",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 
