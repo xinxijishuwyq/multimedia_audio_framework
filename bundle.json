@@ -70,6 +70,7 @@
               "header": {
                 "header_files": [
                   "audio_system_manager.h",
+                  "audio_stream_manager.h",
                   "audio_info.h"
                 ],
                 "header_base": [
