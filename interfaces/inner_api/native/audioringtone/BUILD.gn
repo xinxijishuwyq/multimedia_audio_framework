@@ -26,8 +26,8 @@ ohos_shared_library("audio_ringtone_client") {
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/media_library/interfaces/inner_api/media_library_helper/include",
-    "//foundation/distributeddatamgr/appdatamgr/interfaces/inner_api/native/rdb/include",
-    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/rdb/include",
+    "//foundation/distributeddatamgr/appdatamgr/relational_store/interfaces/inner_api/rdb/include",
+    "//foundation/distributeddatamgr/appdatamgr/relational_store/frameworks/native/rdb/include",
   ]
 
   deps = [
@@ -42,8 +42,8 @@ ohos_shared_library("audio_ringtone_client") {
     "ability_base:zuri",
     "ability_runtime:ability_manager",
     "bundle_framework:appexecfwk_base",
-    "dataability:native_dataability",
     "hiviewdfx_hilog_native:libhilog",
+    "relational_store:native_dataability",
     "relational_store:native_rdb",
   ]
 
