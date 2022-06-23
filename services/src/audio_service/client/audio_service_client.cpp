@@ -920,8 +920,8 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     }
 
     // for remote audio device router filter.
-    pa_proplist_sets(propList, "stream.client.uid", std::to_string(getuid()).c_str());
-    pa_proplist_sets(propList, "stream.client.pid", std::to_string(getpid()).c_str());
+    pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
+    pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());

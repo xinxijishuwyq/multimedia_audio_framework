@@ -132,9 +132,9 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return g_sProxy->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
-int32_t AudioPolicyManager::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    return g_sProxy->SelectIntputDevice(audioCapturerFilter, audioDeviceDescriptors);
+    return g_sProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)

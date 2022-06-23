@@ -16,13 +16,14 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
+#include <sstream>
 #include <unistd.h>
 
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "remote_audio_renderer_sink.h"
 
-#define DUMPFILE
+#define DEBUG_DUMP_FILE
 
 using namespace std;
 
@@ -51,9 +52,9 @@ RemoteAudioRendererSink::RemoteAudioRendererSink()
 {
     attr_ = {};
     audioManager_ = GetAudioManager();
-#ifdef DUMPFILE
+#ifdef DEBUG_DUMP_FILE
     pfd = nullptr;
-#endif // DUMPFILE
+#endif // DEBUG_DUMP_FILE
 }
 
 RemoteAudioRendererSink::~RemoteAudioRendererSink()
@@ -96,12 +97,12 @@ void RemoteAudioRendererSink::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-#ifdef DUMPFILE
+#ifdef DEBUG_DUMP_FILE
     if (pfd) {
         fclose(pfd);
         pfd = nullptr;
     }
-#endif // DUMPFILE
+#endif // DEBUG_DUMP_FILE
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -169,8 +170,23 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
     return 0;
 }
 
+inline std::string printRemoteAttr(RemoteAudioSinkAttr attr_){
+    std::stringstream value;
+    value << "adapterName[" << attr_.adapterName << "] ";
+    value << "openMicSpeaker[" << attr_.openMicSpeaker << "] ";
+    value << "format[" << static_cast<int32_t>(attr_.format) << "] ";
+    value << "sampleFmt[" << attr_.sampleFmt << "] ";
+    value << "sampleRate[" << attr_.sampleRate << "] ";
+    value << "channel[" << attr_.channel << "] ";
+    value << "volume[" << attr_.volume << "] ";
+    value << "filePath[" << attr_.filePath << "] ";
+    value << "deviceNetworkId[" << attr_.deviceNetworkId << "]";
+    return value.str();
+}
+
 int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
 {
+#ifndef DEBUG_DUMP_FILE
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information
     openSpeaker_ = attr_.openMicSpeaker;
@@ -211,43 +227,53 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
     // }
     rendererInited_ = true;
 
-#ifdef DUMPFILE
-    const char *g_audioOutTestFilePath = "/data/local/tmp/remote_aduio_out_test.pcm";
-    pfd = fopen(g_audioOutTestFilePath, "wb+");
+#else
+    (void)openSpeaker_;
+    attr_ = attr;
+    AUDIO_ERR_LOG("dump RemoteAudioSinkAttr:%{public}s", printRemoteAttr(attr_).c_str());
+    std::string fileName = attr_.filePath;
+    std::string filePath = "/data/local/tmp/" + fileName + ".pcm";
+    const char *g_audioOutTestFilePath = filePath.c_str();
+    pfd = fopen(g_audioOutTestFilePath, "a+"); // here will not create a file if not exit.
+    AUDIO_ERR_LOG("init dump file[%{public}s]", g_audioOutTestFilePath);
     if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
+        AUDIO_ERR_LOG("Error opening remote pcm file[%{public}s]", g_audioOutTestFilePath);
+        return ERR_NOT_STARTED;
     }
-#endif // DUMPFILE
+    rendererInited_ = true;
+#endif // DEBUG_DUMP_FILE
 
     return SUCCESS;
 }
 
 int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+#ifndef DEBUG_DUMP_FILE
     int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
         return ERR_INVALID_HANDLE;
     }
 
-#ifdef DUMPFILE
-    size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-    if (writeResult != len) {
-        AUDIO_ERR_LOG("Failed to write the file.");
-    }
-#endif // DUMPFILE
-
     ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
     if (ret != 0) {
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
+#else
+    size_t writeResult = fwrite((void*)&data, 1, len, pfd);
+    if (writeResult != len) {
+        AUDIO_ERR_LOG("Failed to write the file.");
+    }
+    writeLen = writeResult;
+#endif // DEBUG_DUMP_FILE
 
     return SUCCESS;
 }
 
 int32_t RemoteAudioRendererSink::Start(void)
 {
+#ifndef DEBUG_DUMP_FILE
     int32_t ret;
 
     if (!started_) {
@@ -260,7 +286,8 @@ int32_t RemoteAudioRendererSink::Start(void)
             return ERR_NOT_STARTED;
         }
     }
-
+#endif // DEBUG_DUMP_FILE
+    started_ = true;
     return SUCCESS;
 }
 
@@ -301,6 +328,7 @@ int32_t RemoteAudioRendererSink::GetVolume(float &left, float &right)
 
 int32_t RemoteAudioRendererSink::GetLatency(uint32_t *latency)
 {
+#ifndef DEBUG_DUMP_FILE
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink: GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
@@ -318,6 +346,10 @@ int32_t RemoteAudioRendererSink::GetLatency(uint32_t *latency)
     } else {
         return ERR_OPERATION_FAILED;
     }
+#else
+    *latency = 20; // millisecond, for debug
+    return SUCCESS;
+#endif // DEBUG_DUMP_FILE
 }
 
 static AudioCategory GetAudioCategory(AudioScene audioScene)
@@ -446,6 +478,7 @@ int32_t RemoteAudioRendererSink::SetAudioScene(AudioScene audioScene)
 
 int32_t RemoteAudioRendererSink::Stop(void)
 {
+#ifndef DEBUG_DUMP_FILE
     int32_t ret;
 
     if (audioRender_ == nullptr) {
@@ -463,12 +496,15 @@ int32_t RemoteAudioRendererSink::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+#else
+    started_ = false;
     return SUCCESS;
+#endif // DEBUG_DUMP_FILE
 }
 
 int32_t RemoteAudioRendererSink::Pause(void)
 {
+#ifndef DEBUG_DUMP_FILE
     int32_t ret;
 
     if (audioRender_ == nullptr) {
@@ -491,12 +527,14 @@ int32_t RemoteAudioRendererSink::Pause(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+#endif // DEBUG_DUMP_FILE
+    (void)paused_;
     return SUCCESS;
 }
 
 int32_t RemoteAudioRendererSink::Resume(void)
 {
+#ifndef DEBUG_DUMP_FILE
     int32_t ret;
 
     if (audioRender_ == nullptr) {
@@ -519,7 +557,7 @@ int32_t RemoteAudioRendererSink::Resume(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+#endif // DEBUG_DUMP_FILE
     return SUCCESS;
 }
 
@@ -542,6 +580,7 @@ int32_t RemoteAudioRendererSink::Reset(void)
 
 int32_t RemoteAudioRendererSink::Flush(void)
 {
+#ifndef DEBUG_DUMP_FILE
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
@@ -553,7 +592,7 @@ int32_t RemoteAudioRendererSink::Flush(void)
             return ERR_OPERATION_FAILED;
         }
     }
-
+#endif // DEBUG_DUMP_FILE
     return ERR_OPERATION_FAILED;
 }
 } // namespace AudioStandard

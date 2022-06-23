@@ -179,28 +179,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return ERR_INVALID_OPERATION;
     }
 
-    std::string localDevice = "LocalDevice";
-    // find sink-id with audioDeviceDescriptors
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
-    if (localDevice == networkId) {
-        AUDIO_ERR_LOG("local devices are not supported");
-        return ERR_INVALID_OPERATION;
-        // networkId = GetPortName(audioDeviceDescriptors[0]->deviceType_); //TODO select device support
-    }
-    uint32_t sinkId = -1; // uint32 max
-    if (mIOHandles.count(networkId)) {
-        mIOHandles[networkId]; // mIOHandle is for module, may not equal to sink id.
-    } else {
-        AUDIO_ERR_LOG("no such device.");
-        // return ERR_INVALID_OPERATION;
-        //TODO here we open the device just for test. we should open it when device online.
-        AudioModuleInfo remoteDeviceInfo = ConstructRemoteAudioModuleInfo(networkId, DeviceRole::OUTPUT_DEVICE, DeviceType::DEVICE_TYPE_SPEAKER);
-        AudioIOHandle remoteIOIdx = mAudioPolicyManager.OpenAudioPort(remoteDeviceInfo);
-        CHECK_AND_RETURN_RET_LOG(remoteIOIdx != ERR_OPERATION_FAILED && remoteIOIdx != ERR_INVALID_HANDLE,
-                                             ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d", remoteIOIdx);
-        mIOHandles[remoteDeviceInfo.name] = remoteIOIdx;
-    }
-
     int32_t targetUid = audioRendererFilter->uid;
     AudioStreamType targetStreamType = audioRendererFilter->streamType;
     // move all sink-input.
@@ -220,17 +198,89 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         }
     }
 
+    int32_t ret = SUCCESS;
+    std::string localDevice = "LocalDevice";
+    std::string networkId = audioDeviceDescriptors[0]->networkId_;
+    if (localDevice == networkId) {
+        ret = MoveToLocalOutputDevice(targetSinkInputIds, audioDeviceDescriptors[0]);
+    } else {
+        ret = MoveToRemoteOutputDevice(targetSinkInputIds, audioDeviceDescriptors[0]);
+    }
+
+    AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
+    return ret;
+
+}
+
+int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor)
+{
+    AUDIO_INFO_LOG("MoveToLocalOutputDevice start");
+    // check
+    std::string localDevice = "LocalDevice";
+    if (localDevice != localDeviceDescriptor->networkId_) {
+        AUDIO_ERR_LOG("MoveToLocalOutputDevice failed: not a local device.");
+        return ERR_INVALID_OPERATION;
+    }
+
+    DeviceType localDeviceType = localDeviceDescriptor->deviceType_;
+    if (localDeviceType != mCurrentActiveDevice_) {
+        AUDIO_WARNING_LOG("MoveToLocalOutputDevice: device[%{public}d] not active, use device[%{public}d] instead.",
+                            static_cast<int32_t>(localDeviceType),
+                            static_cast<int32_t>(mCurrentActiveDevice_));
+    }
+
     // start move.
-    for (int i = 0; i < targetSinkInputIds.size(); i++) {
-        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(targetSinkInputIds[i], sinkId, networkId) != SUCCESS) {
-            AUDIO_DEBUG_LOG("move [%{public}d] failed", targetSinkInputIds[i]);
+    uint32_t sinkId = -1; // invalid sink id, use sink name instead.
+    std::string sinkName = GetPortName(mCurrentActiveDevice_);
+    for (int i = 0; i < sinkInputIds.size(); i++) {
+        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i], sinkId, sinkName) != SUCCESS) {
+            AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sinkInputIds[i]);
             return ERROR;
         }
     }
 
-    // choose target port on the selected device.
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
+{
+    AUDIO_INFO_LOG("MoveToRemoteOutputDevice start");
+
+    // check: networkid
+    std::string networkId = remoteDeviceDescriptor->networkId_;
+    DeviceRole deviceRole = remoteDeviceDescriptor->deviceRole_;
+    DeviceType deviceType = remoteDeviceDescriptor->deviceType_;
+
+    std::string localDevice = "LocalDevice";
+    if (networkId == localDevice) {
+        AUDIO_ERR_LOG("MoveToRemoteOutputDevice failed: not a remote device.");
+        return ERR_INVALID_OPERATION;
+    }
+
+    uint32_t sinkId = -1; // invalid sink id, use sink name instead.
+    if (mIOHandles.count(networkId)) {
+        mIOHandles[networkId]; // mIOHandle is module id, not equal to sink id.
+    } else {
+        AUDIO_ERR_LOG("no such device.");
+        // return ERR_INVALID_OPERATION;
+        //TODO here we open the device just for test. we should open it when device online.
+        AudioModuleInfo remoteDeviceInfo = ConstructRemoteAudioModuleInfo(networkId, deviceRole, deviceType);
+        AudioIOHandle remoteIOIdx = mAudioPolicyManager.OpenAudioPort(remoteDeviceInfo);
+        CHECK_AND_RETURN_RET_LOG(remoteIOIdx != ERR_OPERATION_FAILED && remoteIOIdx != ERR_INVALID_HANDLE,
+                                             ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d", remoteIOIdx);
+        mIOHandles[remoteDeviceInfo.name] = remoteIOIdx;
+    }
+
+    // start move.
+    for (int i = 0; i < sinkInputIds.size(); i++) {
+        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i], sinkId, networkId) != SUCCESS) {
+            AUDIO_DEBUG_LOG("move [%{public}d] failed", sinkInputIds[i]);
+            return ERROR;
+        }
+    }
+
+    // TODO: Choose target port on the selected device.
     // We should use UpdateActiveDeviceRoute like fuc. UpdateRemoteDevicePort --ipc--> AudioServer
-    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
         AUDIO_DEBUG_LOG("UpdateRemoteDevicePort:change to type[%{public}d] on device:[%{public}s]",
                         deviceType,
@@ -240,7 +290,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     (void)audioCapturerFilter;
     (void)audioDeviceDescriptors;
@@ -314,6 +364,7 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
+    audioModuleInfo.format = "s16le"; // 16bit little endian
     audioModuleInfo.bufferSize = "4096";
 
     return audioModuleInfo;

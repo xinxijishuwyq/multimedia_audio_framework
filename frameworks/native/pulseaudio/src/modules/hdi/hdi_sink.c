@@ -41,6 +41,7 @@
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
 #define DEFAULT_DEVICE_CLASS "primary"
+#define DEFAULT_DEVICE_NETWORKID "LocalDevice"
 #define DEFAULT_BUFFER_SIZE 8192
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
@@ -62,6 +63,7 @@ struct Userdata {
     uint32_t sink_latency;
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
+    const char *deviceNetworkId;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;
@@ -111,7 +113,7 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
             break;
         }
         if (writeLen == 0) {
-            AUDIO_ERR_LOG("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+            AUDIO_ERR_LOG("Failed to render Length: %{public}zu, Written: %{public}" PRIu64 " bytes, %{public}d ret",
                          length, writeLen, ret);
             count = -1 - count;
             break;
@@ -408,7 +410,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             return 0;
         }
 
-        AUDIO_INFO_LOG("Restarting HDI rendering device with rate:%d,channels:%d", u->ss.rate, u->ss.channels);
+        AUDIO_INFO_LOG("Restarting HDI rendering device with rate:%{public}d,channels:%{public}d", u->ss.rate, u->ss.channels);
         if (u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper)) {
             AUDIO_ERR_LOG("audiorenderer control start failed!");
             u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter->wapper);
@@ -479,6 +481,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
     sample_attrs.channel = u->ss.channels;
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     sample_attrs.filePath = filePath;
+    sample_attrs.deviceNetworkId = u->deviceNetworkId;
 
     ret = u->sinkAdapter->RendererSinkInit(u->sinkAdapter->wapper, &sample_attrs);
     if (ret != 0) {
@@ -510,12 +513,14 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         goto fail;
     }
 
-    AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %d, channels: %d", u->ss.rate, u->ss.channels);
+    AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d",
+                    u->ss.rate,
+                    u->ss.channels);
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
     u->isHDISinkStarted = true;
-    AUDIO_DEBUG_LOG("Initialization of HDI rendering device completed");
+    AUDIO_DEBUG_LOG("Initialization of HDI rendering device[%{public}s] completed", u->adapterName);
     pa_sink_new_data_init(&data);
     data.driver = driver;
     data.module = m;
@@ -581,6 +586,8 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     if (pa_modargs_get_value_u32(ma, "sink_latency", &u->sink_latency) < 0) {
         AUDIO_ERR_LOG("No sink_latency argument.");
     }
+
+    u->deviceNetworkId = pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID);
 
     if (pa_modargs_get_value_u32(ma, "render_in_idle_state", &u->render_in_idle_state) < 0) {
         AUDIO_ERR_LOG("Failed to parse render_in_idle_state  argument.");

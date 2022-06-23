@@ -2516,7 +2516,7 @@ napi_value AudioManagerNapi::SelectInputDevice(napi_env env, napi_callback_info 
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
-                context->intValue = context->objectInfo->audioMngr_->SelectIntputDevice(context->deviceDescriptors);
+                context->intValue = context->objectInfo->audioMngr_->SelectInputDevice(context->deviceDescriptors);
                 context->status = SUCCESS;
             },
             SelectInputDeviceAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -2577,7 +2577,7 @@ napi_value AudioManagerNapi::SelectInputDeviceByFilter(napi_env env, napi_callba
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
-                context->intValue = context->objectInfo->audioMngr_->SelectIntputDevice(
+                context->intValue = context->objectInfo->audioMngr_->SelectInputDevice(
                     context->audioCapturerFilter,context->deviceDescriptors);
                 context->status = SUCCESS;
             },

@@ -69,7 +69,7 @@ static int32_t RendererSinkInitInner(void *wapper, const SinkAttr *attr)
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_FILE", __func__);
         return AudioRendererFileSinkInit(wapper, attr->filePath);
     } else if (g_deviceClass == CLASS_TYPE_REMOTE) {
-        AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_FILE", attr->deviceNetworkId);
+        AUDIO_INFO_LOG("init [%{public}s]: CLASS_TYPE_REMOTE", attr->deviceNetworkId);
         RemoteAudioSinkAttr remoteAudioSinkAttr;
         remoteAudioSinkAttr.adapterName = attr->adapterName;
         remoteAudioSinkAttr.openMicSpeaker = attr->open_mic_speaker;
@@ -89,7 +89,7 @@ static int32_t RendererSinkInitInner(void *wapper, const SinkAttr *attr)
 
 int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter)
 {
-    AUDIO_INFO_LOG("%{public}s: LoadSinkAdapter: %{public}s", __func__, device);
+    AUDIO_INFO_LOG("%{public}s: device:[%{public}s]", __func__, device);
     if ((device == NULL) || (sinkAdapter == NULL)) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
         return ERROR;

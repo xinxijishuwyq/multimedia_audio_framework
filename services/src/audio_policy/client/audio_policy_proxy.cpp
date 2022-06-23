@@ -420,7 +420,7 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -437,7 +437,7 @@ int32_t AudioPolicyProxy::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapt
     int size = audioDeviceDescriptors.size();
     int validSize = 20; // Use this value temporarily.
     if (size <=0 || size > validSize) {
-        AUDIO_ERR_LOG("SelectIntputDevice get invalid device size.");
+        AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
         return -1;
     }
     data.WriteInt32(size);
@@ -449,7 +449,7 @@ int32_t AudioPolicyProxy::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapt
     }
     int error = Remote()->SendRequest(SELECT_INPUT_DEVICE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SelectIntputDevice failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SelectInputDevice failed, error: %{public}d", error);
         return error;
     }
 
