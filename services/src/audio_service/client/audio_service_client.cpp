@@ -1695,12 +1695,13 @@ uint32_t AudioServiceClient::GetStreamVolume(uint32_t sessionID)
     return DEFAULT_STREAM_VOLUME;
 }
 
-int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp) const
+int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
+    lock_guard<mutex> lock(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
