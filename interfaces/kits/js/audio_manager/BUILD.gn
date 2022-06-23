@@ -29,7 +29,7 @@ ohos_copy("audio_declaration") {
 
 ohos_shared_library("audio") {
   include_dirs = [
-    "${aafwk_kits_path}/ability/native/include",
+    "${ability_runtime_kits_path}/ability/native/include",
     "//foundation/arkui/napi/interfaces/kits",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_capturer/include",
@@ -74,7 +74,7 @@ ohos_shared_library("audio") {
   ]
 
   deps = [
-    "${aafwk_kits_path}/ability/native:abilitykit_native",
+    "${ability_runtime_kits_path}/ability/native:abilitykit_native",
     "//base/global/resource_management/frameworks/resmgr:global_resmgr",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/arkui/napi:ace_napi",
