@@ -91,9 +91,9 @@ static void ShowAudioDeviceDescriptorsVector(std::vector<sptr<AudioDeviceDescrip
         cout << "------------show Audio Device Descriptors Vector------------" << endl;
         cout << "deviceRole: "       << audioDeviceDescriptorsVector[i]->deviceRole_ << endl;
         cout << "deviceType: "       << audioDeviceDescriptorsVector[i]->deviceType_ << endl;
-        cout << "networkId: "        << audioDeviceDescriptorsVector[i]->networkId_ << endl;
         cout << "interruptGroupId: " << audioDeviceDescriptorsVector[i]->interruptGroupId_ << endl;
         cout << "volumeGroupId: "    << audioDeviceDescriptorsVector[i]->volumeGroupId_ << endl;
+        cout << "networkId: "        << audioDeviceDescriptorsVector[i]->networkId_ << endl;
     }
 }
 
@@ -145,44 +145,37 @@ static void CallSelectOutputDevice(char option,std::vector<sptr<AudioDeviceDescr
     }
 }
 
+static void CreateAudioDeviceDescriptorVector(char* argv[],std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
+{
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    int32_t intValue;
+    intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
+    intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
+    audioDeviceDescriptor->deviceType_  = static_cast<DeviceType>(intValue);
+    intValue = atoi(argv[AudioPolicyTest::FOURTH_ARG]);
+    audioDeviceDescriptor->interruptGroupId_ = intValue;
+    intValue = atoi(argv[AudioPolicyTest::FIFTH_ARG]);
+    audioDeviceDescriptor->volumeGroupId_   = intValue;
+    audioDeviceDescriptor->networkId_   = std::string(argv[AudioPolicyTest::SIXTH_ARG]);
+    audioDeviceDescriptorsVector.push_back(audioDeviceDescriptor);
+    ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
+}
+
 static void HandleSelectOutputDevice(int argc, char* argv[], char opt)
 {
     if (argc == AudioPolicyTest::SEVENTH_ARG)
     {
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
 
-        int32_t intValue;
-        intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
-        audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
-        intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
-        audioDeviceDescriptor->deviceType_  = static_cast<DeviceType>(intValue);
-        audioDeviceDescriptor->networkId_   = std::string(argv[AudioPolicyTest::FOURTH_ARG]);
-        intValue = atoi(argv[AudioPolicyTest::FIFTH_ARG]);
-        audioDeviceDescriptor->interruptGroupId_ = intValue;
-        intValue = atoi(argv[AudioPolicyTest::SIXTH_ARG]);
-        audioDeviceDescriptor->volumeGroupId_   = intValue;
-        audioDeviceDescriptorsVector.push_back(audioDeviceDescriptor);
-        ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
         CallSelectOutputDevice(opt,audioDeviceDescriptorsVector,nullptr);
     }
     else if (argc == AudioPolicyTest::TWELFTH_ARG)
     {
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-
         int32_t intValue;
-        intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
-        audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
-        intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
-        audioDeviceDescriptor->deviceType_  = static_cast<DeviceType>(intValue);
-        audioDeviceDescriptor->networkId_   = std::string(argv[AudioPolicyTest::FOURTH_ARG]);
-        intValue = atoi(argv[AudioPolicyTest::FIFTH_ARG]);
-        audioDeviceDescriptor->interruptGroupId_ = intValue;
-        intValue = atoi(argv[AudioPolicyTest::SIXTH_ARG]);
-        audioDeviceDescriptor->volumeGroupId_   = intValue;
-        audioDeviceDescriptorsVector.push_back(audioDeviceDescriptor);
-        ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
 
         sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
         intValue = atoi(argv[AudioPolicyTest::SEVENTH_ARG]);
@@ -222,44 +215,21 @@ static void CallSelectInputDevice(char option,std::vector<sptr<AudioDeviceDescri
     }
 }
 
+
 static void HandleSelectInputDevice(int argc, char* argv[], char opt)
 {
     if (argc == AudioPolicyTest::SEVENTH_ARG)
     {
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
 
-        int32_t intValue;
-        intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
-        audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
-        intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
-        audioDeviceDescriptor->deviceType_  = static_cast<DeviceType>(intValue);
-        audioDeviceDescriptor->networkId_   = std::string(argv[AudioPolicyTest::FOURTH_ARG]);
-        intValue = atoi(argv[AudioPolicyTest::FIFTH_ARG]);
-        audioDeviceDescriptor->interruptGroupId_ = intValue;
-        intValue = atoi(argv[AudioPolicyTest::SIXTH_ARG]);
-        audioDeviceDescriptor->volumeGroupId_   = intValue;
-        audioDeviceDescriptorsVector.push_back(audioDeviceDescriptor);
-        ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
         CallSelectInputDevice(opt,audioDeviceDescriptorsVector,nullptr);
     }
     else if (argc == AudioPolicyTest::EIGHTH_ARG)
     {
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-
         int32_t intValue;
-        intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
-        audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
-        intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
-        audioDeviceDescriptor->deviceType_  = static_cast<DeviceType>(intValue);
-        audioDeviceDescriptor->networkId_   = std::string(argv[AudioPolicyTest::FOURTH_ARG]);
-        intValue = atoi(argv[AudioPolicyTest::FIFTH_ARG]);
-        audioDeviceDescriptor->interruptGroupId_ = intValue;
-        intValue = atoi(argv[AudioPolicyTest::SIXTH_ARG]);
-        audioDeviceDescriptor->volumeGroupId_   = intValue;
-        audioDeviceDescriptorsVector.push_back(audioDeviceDescriptor);
-        ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
 
         sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
         intValue = atoi(argv[AudioPolicyTest::SEVENTH_ARG]);
