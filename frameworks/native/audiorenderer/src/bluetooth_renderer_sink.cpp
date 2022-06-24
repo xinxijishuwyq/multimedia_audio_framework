@@ -283,7 +283,6 @@ int32_t BluetoothRendererSink::Init(const BluetoothSinkAttr &attr)
 
 int32_t BluetoothRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    AUDIO_INFO_LOG("Bluetooth Render: RenderFrame in");
     int32_t ret = SUCCESS;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Bluetooth Render Handle is nullptr!");
