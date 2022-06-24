@@ -27,6 +27,9 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 const uint32_t PCM_8_BIT = 8;
+const uint32_t PCM_16_BIT = 16;
+const uint32_t PCM_24_BIT = 24;
+const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static sptr<IStandardAudioService> g_sProxy = nullptr;
 
@@ -269,6 +272,22 @@ static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
     }
 }
 
+static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
+{
+    switch (sampleFormat) {
+        case SAMPLE_U8:
+            return PCM_8_BIT;
+        case SAMPLE_S16LE:
+            return PCM_16_BIT;
+        case SAMPLE_S24LE:
+            return PCM_24_BIT;
+        case SAMPLE_S32LE:
+            return PCM_32_BIT;
+        default:
+            return PCM_16_BIT;
+    }
+}
+
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
 {
     int32_t result = SUCCESS;
@@ -287,8 +306,8 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType)
                     AudioStreamInfo audioStreamInfo = {};
                     GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);
                     uint32_t bufferSize
-                        = (audioStreamInfo.samplingRate * audioStreamInfo.format * audioStreamInfo.channels)
-                            / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+                        = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format)
+                            * audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
                     AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
                         audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
                     moduleInfo.channels = to_string(audioStreamInfo.channels);
@@ -599,8 +618,8 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType,
         }
 
         uint32_t bufferSize
-            = (streamInfo.samplingRate * streamInfo.format * streamInfo.channels)
-                / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+            = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
+                * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
         AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
         connectedBTDeviceMap_[macAddress] = streamInfo;
 
