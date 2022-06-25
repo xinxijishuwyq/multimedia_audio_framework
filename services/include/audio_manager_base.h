@@ -59,10 +59,10 @@ public:
      * Sets Audio modes.
      *
      * @param audioScene Audio scene type.
-     * @param activeDeviceList List of active device types.
+     * @param activeDevice Currently active priority device
      * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t SetAudioScene(AudioScene audioScene) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
 
     /**
      * Obtains device array.

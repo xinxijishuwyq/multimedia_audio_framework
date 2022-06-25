@@ -227,7 +227,7 @@ bool AudioServer::IsMicrophoneMute()
     return isMute;
 }
 
-int32_t AudioServer::SetAudioScene(AudioScene audioScene)
+int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
@@ -235,14 +235,16 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene)
     if (!audioCapturerSourceInstance->capturerInited_) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
-        audioCapturerSourceInstance->SetAudioScene(audioScene);
+        audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);
     }
 
     if (!audioRendererSinkInstance->rendererInited_) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
-        audioRendererSinkInstance->SetAudioScene(audioScene);
+        audioRendererSinkInstance->SetAudioScene(audioScene, activeDevice);
     }
+
+    audioScene_ = audioScene;
 
     return SUCCESS;
 }
@@ -255,16 +257,28 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
     switch (flag) {
         case DeviceFlag::INPUT_DEVICES_FLAG: {
-            audioCapturerSourceInstance->OpenInput(type);
+            if (audioScene_ != AUDIO_SCENE_DEFAULT) {
+                audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+            } else {
+                audioCapturerSourceInstance->SetInputRoute(type);
+            }
             break;
         }
         case DeviceFlag::OUTPUT_DEVICES_FLAG: {
-            audioRendererSinkInstance->OpenOutput(type);
+            if (audioScene_ != AUDIO_SCENE_DEFAULT) {
+                audioRendererSinkInstance->SetAudioScene(audioScene_, type);
+            } else {
+                audioRendererSinkInstance->SetOutputRoute(type);
+            }
             break;
         }
         case DeviceFlag::ALL_DEVICES_FLAG: {
-            audioCapturerSourceInstance->OpenInput(type);
-            audioRendererSinkInstance->OpenOutput(type);
+            if (audioScene_ != AUDIO_SCENE_DEFAULT) {
+                SetAudioScene(audioScene_, type);
+            } else {
+                audioCapturerSourceInstance->SetInputRoute(type);
+                audioRendererSinkInstance->SetOutputRoute(type);
+            }
             break;
         }
         default:

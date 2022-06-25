@@ -238,7 +238,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
     if (openSpeaker_) {
-        ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+        ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
         }
@@ -395,6 +395,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_USB_EXT;
             sink.ext.device.desc = "pin_out_usb_ext";
             break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
+            sink.ext.device.desc = "pin_out_bluetooth_sco";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -403,17 +407,25 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
+int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice)
+{
+    AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
+    return SetOutputRoute(outputDevice, outputPortPin);
+}
+
+int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetOutputPortPin(outputDevice, sink);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioRendererSink: OpenOutput FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute FAILED: %{public}d", ret);
         return ret;
     }
 
+    outputPortPin = sink.ext.device.type;
+    AUDIO_DEBUG_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
@@ -433,7 +445,6 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
     };
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
-    AUDIO_DEBUG_LOG("AudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;
@@ -442,7 +453,7 @@ int32_t AudioRendererSink::OpenOutput(DeviceType outputDevice)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
+int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
@@ -452,13 +463,17 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene)
         return ERR_INVALID_HANDLE;
     }
     if (openSpeaker_) {
-        int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+        AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
+        int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
         }
+
+        AUDIO_DEBUG_LOG("AudioRendererSink::OUTPUT port is %{public}d", audioSceneOutPort);
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = PIN_OUT_SPEAKER;
+        scene.desc.pins = audioSceneOutPort;
+        scene.desc.desc = nullptr;
         if (audioRender_->scene.SelectScene == nullptr) {
             AUDIO_ERR_LOG("AudioRendererSink: Select scene nullptr");
             return ERR_OPERATION_FAILED;
