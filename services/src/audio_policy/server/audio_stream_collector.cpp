@@ -186,9 +186,6 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             rendererStatequeue_[make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
                 streamChangeInfo.audioRendererChangeInfo.sessionId)]) {
             // Renderer state not changed
-            AUDIO_DEBUG_LOG("UpdateRendererStream playback state no change clientid %{public}d sessionId %{public}d",
-                streamChangeInfo.audioRendererChangeInfo.clientUID,
-                streamChangeInfo.audioRendererChangeInfo.sessionId);
             return SUCCESS;
         }
     } else {
@@ -224,6 +221,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                     streamChangeInfo.audioRendererChangeInfo.sessionId);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
                     audioRendererChangeInfo.sessionId));
+                clientTracker_.erase(audioRendererChangeInfo.clientUID);
             }
             return SUCCESS;
         }
@@ -245,9 +243,6 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             capturerStatequeue_[make_pair(streamChangeInfo.audioCapturerChangeInfo.clientUID,
                 streamChangeInfo.audioCapturerChangeInfo.sessionId)]) {
             // Capturer state not changed
-            AUDIO_DEBUG_LOG("UpdateCapturerStream recorder state no change clientid %{public}d sessionId %{public}d",
-                streamChangeInfo.audioCapturerChangeInfo.clientUID,
-                streamChangeInfo.audioCapturerChangeInfo.sessionId);
             return SUCCESS;
         }
     } else {
@@ -273,7 +268,6 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             CapturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
             CapturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
             *it = move(CapturerChangeInfo);
-            AUDIO_DEBUG_LOG("AudioStreamCollector: Recorder details updated");
 
             mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
                 audioCapturerChangeInfos_);
@@ -284,6 +278,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                     streamChangeInfo.audioCapturerChangeInfo.sessionId);
                 capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo.clientUID,
                     audioCapturerChangeInfo.sessionId));
+                clientTracker_.erase(audioCapturerChangeInfo.clientUID);
             }
         return SUCCESS;
         }
@@ -400,7 +395,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         }
     }
     if (clientTracker_.erase(uid)) {
-        AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d done", uid);
+        AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", uid);
         return;
     }
     AUDIO_INFO_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d not present", uid);
