@@ -74,37 +74,6 @@ const PolicyParam STREAM_PARAMS[] = {
     }
 };
 
-const PolicyParam ACTIVE_DEVICE_PARAMS[] = {
-    {
-        .actDeviceType = SPEAKER,
-        .active = true
-    },
-    {
-        .actDeviceType = BLUETOOTH_SCO,
-        .active = true
-    },
-    {
-        .actDeviceType = BLUETOOTH_SCO,
-        .active = false
-    },
-    {
-        .actDeviceType = SPEAKER,
-        .active = true
-    },
-    {
-        .actDeviceType = BLUETOOTH_SCO,
-        .active = true
-    },
-    {
-        .actDeviceType = SPEAKER,
-        .active = false
-    },
-    {
-        .actDeviceType = SPEAKER,
-        .active = true
-    },
-};
-
 const PolicyParam RINGER_MODE_PARAMS[] = {
     {
         .ringerMode = RINGER_MODE_NORMAL
@@ -236,47 +205,6 @@ INSTANTIATE_TEST_CASE_P(
     SetMute,
     AudioPolicySetMuteTest,
     ValuesIn(MUTE_PARAMS));
-
-/*
- * Set Device Active
- *
- */
-class AudioPolicySetDeviceActiveTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicySetDeviceActiveTest, SetDeviceActive, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-    ActiveDeviceType deviceType = params.actDeviceType;
-    bool active = params.active;
-
-    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetDeviceActive(deviceType, active));
-}
-
-INSTANTIATE_TEST_CASE_P(
-    SetDeviceActive,
-    AudioPolicySetDeviceActiveTest,
-    ValuesIn(ACTIVE_DEVICE_PARAMS));
-
-/*
- * Is Device Active
- *
- */
-class AudioPolicyIsDeviceActiveTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicyIsDeviceActiveTest, IsDeviceActive, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-    ActiveDeviceType deviceType = params.actDeviceType;
-    bool active = params.active;
-
-    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetDeviceActive(deviceType, active));
-    EXPECT_EQ(active, AudioSystemManager::GetInstance()->IsDeviceActive(deviceType));
-}
-
-INSTANTIATE_TEST_CASE_P(
-    IsDeviceActive,
-    AudioPolicyIsDeviceActiveTest,
-    ValuesIn(ACTIVE_DEVICE_PARAMS));
 
 /*
  * Set Ringer Mode
