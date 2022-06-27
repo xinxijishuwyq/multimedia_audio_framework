@@ -43,6 +43,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int MODULE_AUDIO = 1;
 constexpr int SUBSYS_AUDIO = 30;
+constexpr uint32_t OPEN_PORT_FAILURE = (uint32_t) -1;
 
 using ErrCode = int32_t;
 constexpr int SUBSYSTEM_BIT_NUM = 21;

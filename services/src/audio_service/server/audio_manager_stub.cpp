@@ -111,7 +111,8 @@ int AudioManagerStub::OnRemoteRequest(
         case SET_AUDIO_SCENE: {
             AUDIO_DEBUG_LOG("SET_AUDIO_SCENE AudioManagerStub");
             AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
-            int32_t result = SetAudioScene(audioScene);
+            DeviceType activeDevice = (static_cast<DeviceType>(data.ReadInt32()));
+            int32_t result = SetAudioScene(audioScene, activeDevice);
             reply.WriteInt32(result);
             return AUDIO_OK;
         }

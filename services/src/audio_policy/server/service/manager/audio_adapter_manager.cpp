@@ -226,15 +226,6 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
     AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
-    if (audioModuleInfo.lib == PIPE_SOURCE || audioModuleInfo.lib == PIPE_SINK) {
-        if (!audioModuleInfo.fileName.empty() && access(audioModuleInfo.fileName.c_str(), F_OK) == 0) {
-            int32_t ret = std::remove(audioModuleInfo.fileName.c_str());
-            if (ret) {
-                AUDIO_ERR_LOG("Removing pipe file failed!. Ret val: %{public}d", ret);
-                return ERR_OPERATION_FAILED;
-            }
-        }
-    }
 
     CHECK_AND_RETURN_RET_LOG(mAudioServiceAdapter != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return mAudioServiceAdapter->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
@@ -296,7 +287,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);
         }
- 
+
         if (!audioModuleInfo.adapterName.empty()) {
             args.append(" adapter_name=");
             args.append(audioModuleInfo.adapterName);
@@ -317,7 +308,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(" source_name=");
             args.append(audioModuleInfo.name);
         }
-       
+
         if (!audioModuleInfo.adapterName.empty()) {
             args.append(" adapter_name=");
             args.append(audioModuleInfo.adapterName);

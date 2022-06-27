@@ -139,7 +139,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     if (operation == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_load_module returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
-        return ERR_INVALID_HANDLE;
+        return PA_INVALID_INDEX;
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
@@ -151,7 +151,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 
     if (userData->idx == PA_INVALID_INDEX) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] OpenAudioPort returned invalid index");
-        return ERR_OPERATION_FAILED;
+        return PA_INVALID_INDEX;
     }
 
     return userData->idx;

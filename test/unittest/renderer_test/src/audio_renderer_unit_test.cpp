@@ -79,7 +79,7 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
-    
+
     return;
 }
 
@@ -1933,39 +1933,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_006, TestSize.Level1)
     EXPECT_EQ(true, getAudioTime);
 
     audioRenderer->Release();
-}
-
-/**
-* @tc.name  : Test GetAudioTime API stability.
-* @tc.number: Audio_Renderer_GetAudioTime_Stability_001
-* @tc.desc  : Test GetAudioTime interface stability.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_Stability_001, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    thread renderThread(StartRenderThread, audioRenderer.get(), 0);
-
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
-        Timestamp timeStamp;
-        bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
-        EXPECT_EQ(true, getAudioTime);
-    }
-
-    renderThread.join();
-
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(true, isStopped);
-
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
 }
 
 /**

@@ -49,9 +49,10 @@ public:
     int32_t SetVolume(float left, float right);
     int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
-    int32_t SetAudioScene(AudioScene audioScene);
-    int32_t OpenOutput(DeviceType deviceType);
     int32_t GetTransactionId(uint64_t *transactionId);
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
+    int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
+    int32_t SetOutputRoute(DeviceType deviceType);
     static AudioRendererSink *GetInstance(void);
     bool rendererInited_;
 private:

@@ -18,12 +18,19 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_system_manager.h"
+#include "audio_stream_manager.h"
 #include "audio_manager_fuzzer.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+void AudioRendererStateCallbackFuzz::OnRendererStateChange(
+    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
+
+void AudioCapturerStateCallbackFuzz::OnCapturerStateChange(
+    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
+
 void AudioManagerFuzzTest(const uint8_t* data, size_t size)
 {
     if ((data == nullptr) || (size <= 0)) {
@@ -46,6 +53,30 @@ void AudioManagerFuzzTest(const uint8_t* data, size_t size)
     std::string value(reinterpret_cast<const char*>(data), size);
     AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
 }
+
+void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
+{
+    if ((data == nullptr) || (size <= 0)) {
+        std::cout << "Invalid data" << std::endl;
+        return;
+    }
+
+    int32_t clientUID = *reinterpret_cast<const int32_t *>(data);
+    shared_ptr<AudioRendererStateCallbackFuzz> audioRendererStateCallbackFuzz =
+        std::make_shared<AudioRendererStateCallbackFuzz>();
+    shared_ptr<AudioCapturerStateCallbackFuzz> audioCapturerStateCallbackFuzz =
+        std::make_shared<AudioCapturerStateCallbackFuzz>();
+    AudioStreamManager::GetInstance()->RegisterAudioRendererEventListener(clientUID, audioRendererStateCallbackFuzz);
+    AudioStreamManager::GetInstance()->UnregisterAudioRendererEventListener(clientUID);
+    AudioStreamManager::GetInstance()->RegisterAudioCapturerEventListener(clientUID, audioCapturerStateCallbackFuzz);
+    AudioStreamManager::GetInstance()->UnregisterAudioCapturerEventListener(clientUID);
+
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -54,5 +85,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
+    OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
     return 0;
 }

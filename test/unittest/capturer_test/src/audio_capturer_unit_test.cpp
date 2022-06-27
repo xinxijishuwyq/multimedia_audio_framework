@@ -253,7 +253,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_008, TestSize.Level0)
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    EXPECT_NE(nullptr, audioCapturer);
+    ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
 }
 
@@ -280,7 +280,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_009, TestSize.Level0)
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    EXPECT_NE(nullptr, audioCapturer);
+    ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
 }
 
@@ -307,7 +307,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_010, TestSize.Level0)
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    EXPECT_NE(nullptr, audioCapturer);
+    ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
 }
 
@@ -334,7 +334,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_011, TestSize.Level0)
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    EXPECT_NE(nullptr, audioCapturer);
+    ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
 }
 
@@ -361,7 +361,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_012, TestSize.Level0)
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    EXPECT_NE(nullptr, audioCapturer);
+    ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
 }
 

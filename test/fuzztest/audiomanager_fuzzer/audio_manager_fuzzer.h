@@ -18,4 +18,24 @@
 
 #define FUZZ_PROJECT_NAME "audiomanager_fuzzer"
 
+namespace OHOS {
+namespace AudioStandard {
+class AudioRendererStateCallbackFuzz : public AudioRendererStateChangeCallback {
+public:
+    explicit AudioRendererStateCallbackFuzz() = default;
+    virtual ~AudioRendererStateCallbackFuzz() = default;
+    void OnRendererStateChange(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+};
+
+class AudioCapturerStateCallbackFuzz : public AudioCapturerStateChangeCallback {
+public:
+    explicit AudioCapturerStateCallbackFuzz() = default;
+    virtual ~AudioCapturerStateCallbackFuzz() = default;
+    void OnCapturerStateChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+};
+} // namespace AudioStandard
+} // namesapce OHOS
+
 #endif // AUDIO_MANAGER_FUZZER_H

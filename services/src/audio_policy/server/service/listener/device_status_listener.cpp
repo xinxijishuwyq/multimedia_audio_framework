@@ -65,25 +65,28 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             AudioDeviceType hdiDeviceType = HDF_AUDIO_DEVICE_UNKOWN;
             AudioEventType hdiEventType = HDF_AUDIO_EVENT_UNKOWN;
             if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d", &hdiEventType, &hdiDeviceType) < EVENT_PARAMS) {
-                AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
+                AUDIO_WARNING_LOG("[DeviceStatusListener]: Failed to scan info string %{public}s", info.c_str());
                 return;
             }
 
             DeviceType internalDevice = GetInternalDeviceType(hdiDeviceType);
+            CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
+
             bool isConnected = (hdiEventType == HDF_AUDIO_DEVICE_ADD) ? true : false;
             AudioStreamInfo streamInfo = {};
-            devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, devListener->privData_,
-                "", streamInfo);
+            devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", streamInfo);
         }
     } else if (serviceStatus->serviceName == AUDIO_BLUETOOTH_HDI_SERVICE_NAME) {
         DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
         CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");
         if (serviceStatus->status == SERVIE_STATUS_START) {
             AUDIO_INFO_LOG("Bluetooth hdi service started");
-            OHOS::Bluetooth::RegisterObserver(devListener->deviceObserver_);
+            Bluetooth::RegisterObserver(devListener->deviceObserver_);
+            Bluetooth::HandsFreeAudioGatewayManager::RegisterBluetoothScoAgListener();
         } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
             AUDIO_INFO_LOG("Bluetooth hdi service stopped");
             OHOS::Bluetooth::DeRegisterObserver();
+            Bluetooth::HandsFreeAudioGatewayManager::UnregisterBluetoothScoAgListener();
         }
     }
 }
@@ -93,7 +96,7 @@ DeviceStatusListener::DeviceStatusListener(IDeviceStatusObserver &observer)
 
 DeviceStatusListener::~DeviceStatusListener() = default;
 
-int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
+int32_t DeviceStatusListener::RegisterDeviceStatusListener()
 {
     hdiServiceManager_ = HDIServiceManagerGet();
     if (hdiServiceManager_ == nullptr) {
@@ -101,7 +104,6 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener(void *privData)
         return ERR_OPERATION_FAILED;
     }
 
-    privData_ = privData;
     listener_ = HdiServiceStatusListenerNewInstance();
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
@@ -129,7 +131,6 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
 
     hdiServiceManager_ = nullptr;
     listener_ = nullptr;
-    privData_ = nullptr;
 
     return SUCCESS;
 }
