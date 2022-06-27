@@ -1194,24 +1194,11 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 
 void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
 {
-    AUDIO_INFO_LOG("Register clients death recipient");
+    AUDIO_INFO_LOG("Register clients death recipient..");
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
-    // Deliberately casting UID to pid_t
-    pid_t uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
-    if (deathRecipient_ != nullptr) {
-        if (id == TRACKER_CLIENT) {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredTrackerClientDied,
-                this, std::placeholders::_1));
-        } else {
-            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredStreamListenerClientDied,
-                this, std::placeholders::_1));
-        }
-        bool result = object->AddDeathRecipient(deathRecipient_);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add deathRecipient");
-        }
+    if (id == 0) {
+        AUDIO_ERR_LOG("Invalid deathRecipient is received");
     }
 }
 
