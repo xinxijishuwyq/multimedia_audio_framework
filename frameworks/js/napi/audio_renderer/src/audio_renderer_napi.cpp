@@ -643,7 +643,7 @@ void AudioRendererNapi::PauseAsyncCallbackComplete(napi_env env, napi_status sta
             napi_delete_reference(env, asyncContext->callbackRef);
         }
         napi_delete_async_work(env, asyncContext->work);
-        // Pause failed . Contine Write
+        // Pause failed . Continue Write
         if (!asyncContext->isTrue) {
             HiLog::Info(LABEL, "PauseAsyncCallbackComplete: Pasue failed, Continue Write");
             if (!asyncContext->objectInfo->writeRequestQ_.empty()) {

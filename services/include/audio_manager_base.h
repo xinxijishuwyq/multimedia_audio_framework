@@ -44,7 +44,7 @@ public:
      * Sets Microphone Mute status.
      *
      * @param isMute Mute status true or false to be set.
-     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t SetMicrophoneMute(bool isMute) = 0;
 
@@ -60,7 +60,7 @@ public:
      *
      * @param audioScene Audio scene type.
      * @param activeDevice Currently active priority device
-     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
 
@@ -91,7 +91,7 @@ public:
     /**
      * Update the audio route after device is detected and route is decided
      *
-     * @return Returns 0 if success. Otherise returns Errocode defined in audio_errors.h.
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
 

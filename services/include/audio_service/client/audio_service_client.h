@@ -492,7 +492,7 @@ public:
     /**
      * @brief Verifies the clients permsiion based on appTokenId
      *
-     * @return Retruns whether the authentication was success or not
+     * @return Returns whether the authentication was success or not
      */
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
 

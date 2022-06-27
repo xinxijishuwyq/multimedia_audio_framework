@@ -741,7 +741,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
     g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
 }
 
-// Capturer Listner Unit Cases
+// Capturer Listener Unit Cases
 /**
 * @tc.name  : Test RegisterAudioCapturerEventListener API
 * @tc.number: Audio_Stream_Change_Listner_RegisterAudioCapturerEventListener_001

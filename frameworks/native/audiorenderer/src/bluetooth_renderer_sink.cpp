@@ -265,7 +265,7 @@ int32_t BluetoothRendererSink::Init(const BluetoothSinkAttr &attr)
     }
 
     if (CreateRender(audioPort) != 0) {
-        AUDIO_ERR_LOG("Create render faied");
+        AUDIO_ERR_LOG("Create render failed");
         return ERR_NOT_STARTED;
     }
 
@@ -649,7 +649,7 @@ int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId)
     }
 
     if (!transactionId) {
-        AUDIO_ERR_LOG("BluetoothRendererSinkGetTransactionId failed transacion id null");
+        AUDIO_ERR_LOG("BluetoothRendererSinkGetTransactionId failed transaction id null");
         return ERR_INVALID_PARAM;
     }
 

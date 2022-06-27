@@ -745,7 +745,7 @@ int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId)
     }
 
     if (!transactionId) {
-        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transacion id null");
+        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transaction id null");
         return ERR_INVALID_PARAM;
     }
 

@@ -60,7 +60,7 @@ public:
      * @param volume Configures the volume at which the ringtone has to be played
      * @param loop Boolean parameter indicating whether to enable or disable looping
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
-     * retuns an error code defined in {@link media_errors.h} otherwise.
+     * returns an error code defined in {@link media_errors.h} otherwise.
      * @since 1.0
      * @version 1.0
      */
@@ -70,7 +70,7 @@ public:
      * @brief Start playing ringtone
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
-     * retuns an error code defined in {@link media_errors.h} otherwise.
+     * returns an error code defined in {@link media_errors.h} otherwise.
      * @since 1.0
      * @version 1.0
      */
@@ -80,7 +80,7 @@ public:
      * @brief Stop playing ringtone
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
-     * retuns an error code defined in {@link media_errors.h} otherwise.
+     * returns an error code defined in {@link media_errors.h} otherwise.
      * @since 1.0
      * @version 1.0
      */
@@ -90,7 +90,7 @@ public:
      * @brief Returns the audio contetnt type and stream uage details to the clients
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
-     * retuns an error code defined in {@link media_errors.h} otherwise.
+     * returns an error code defined in {@link media_errors.h} otherwise.
      * @since 1.0
      * @version 1.0
      */
@@ -100,7 +100,7 @@ public:
      * @brief Returns the title of the uri set.
      *
      * @return Returns title as string if the title is obtained successfully from media library.
-     * retuns an empty string otherwise.
+     * returns an empty string otherwise.
      * @since 1.0
      * @version 1.0
      */
@@ -110,7 +110,7 @@ public:
      * @brief Releases the ringtone client resources
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
-     * retuns an error code defined in {@link media_errors.h} otherwise.
+     * returns an error code defined in {@link media_errors.h} otherwise.
      * @since 1.0
      * @version 1.0
      */

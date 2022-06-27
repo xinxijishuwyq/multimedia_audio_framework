@@ -159,7 +159,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
         if (bytesRead < 0) {
             break;
         } else if (bytesRead > 0) {
-            fwrite(buffer, size, bytesRead, recFile); // example shows writes the recored data into a file
+            fwrite(buffer, size, bytesRead, recFile); // example shows writes the recorded data into a file
             numBuffersToCapture--;
         }
     }

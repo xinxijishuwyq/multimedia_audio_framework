@@ -48,7 +48,7 @@ struct DeviceChangeAction {
 };
 
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
-// Once call manager adapt to new interrupt APIs, this will be rmeoved
+// Once call manager adapt to new interrupt APIs, this will be removed
 class AudioManagerCallback {
 public:
     virtual ~AudioManagerCallback() = default;
@@ -225,7 +225,7 @@ public:
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
 
     // Below APIs are added to handle compilation error in call manager
-    // Once call manager adapt to new interrupt APIs, this will be rmeoved
+    // Once call manager adapt to new interrupt APIs, this will be removed
     int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
     int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;

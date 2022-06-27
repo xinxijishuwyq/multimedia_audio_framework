@@ -878,7 +878,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     if (curActiveOwnersList_.empty() && pendingOwnersList_.empty()) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: No ther session active or pending. Deactivate complete, return success");
+        AUDIO_DEBUG_LOG("AudioPolicyServer: No other session active or pending. Deactivate complete, return success");
         AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt start: print active and pending lists");
         PrintOwnersLists();
         return SUCCESS;
