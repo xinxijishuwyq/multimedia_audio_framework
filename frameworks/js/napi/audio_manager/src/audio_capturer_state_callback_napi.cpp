@@ -64,17 +64,6 @@ void AudioCapturerStateCallbackNapi::OnCapturerStateChange(
         capturerChangeInfos.push_back(std::make_unique<AudioCapturerChangeInfo>(*changeInfo));
     }
 
-    AUDIO_DEBUG_LOG("AudioCapturerStateCallbackNapi::capturerChangeInfos Number of entries %{public}u",
-        static_cast<uint32_t>(capturerChangeInfos.size()));
-    int index = 0;
-    for (auto it = capturerChangeInfos.begin(); it != capturerChangeInfos.end(); it++) {
-        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
-        AUDIO_DEBUG_LOG("audioCapturerChangeInfos_[%{public}d]", index++);
-        AUDIO_DEBUG_LOG("clientUID = %{public}d", audioCapturerChangeInfo.clientUID);
-        AUDIO_DEBUG_LOG("sessionId = %{public}d", audioCapturerChangeInfo.sessionId);
-        AUDIO_DEBUG_LOG("capturerState = %{public}d", audioCapturerChangeInfo.capturerState);
-    }
-
     cb->callback = capturerStateCallback_;
     cb->changeInfos = move(capturerChangeInfos);
 

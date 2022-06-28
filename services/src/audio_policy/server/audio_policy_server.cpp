@@ -1197,8 +1197,13 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
     AUDIO_INFO_LOG("Register clients death recipient!!");
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
-    // Deliberately casting UID to pid_t
-    pid_t uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
+    pid_t uid = 0;
+    if (id == TRACKER_CLIENT) {
+        // Deliberately casting UID to pid_t
+        uid = static_cast<pid_t>(IPCSkeleton::GetCallingUid());
+    } else {
+        uid = IPCSkeleton::GetCallingPid();
+    }
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
     if (deathRecipient_ != nullptr) {
         if (id == TRACKER_CLIENT) {
@@ -1206,6 +1211,8 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
                 this, std::placeholders::_1));
         } else {
             AUDIO_INFO_LOG("RegisteredStreamListenerClientDied register!!");
+            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredStreamListenerClientDied,
+                this, std::placeholders::_1));
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (!result) {

@@ -63,7 +63,8 @@ public:
     void DispatcherEvent();
 
 private:
-
+    std::mutex rendererStateChangeListnerMutex_;
+    std::mutex capturerStateChangeListnerMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRendererStateChangeCallback>> rendererCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioCapturerStateChangeCallback>> capturerCBMap_;
     std::queue<unique_ptr<StreamStateChangeRequest>> streamStateChangeQueue_;

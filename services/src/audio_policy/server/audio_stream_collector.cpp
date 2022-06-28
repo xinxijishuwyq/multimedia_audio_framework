@@ -41,7 +41,6 @@ AudioStreamCollector::~AudioStreamCollector()
 int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientUID);
-    std::lock_guard<std::mutex> lock(rendererStateChangeEventMutex_);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector:set renderer state change event listner object is nullptr");
@@ -68,7 +67,6 @@ int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clien
 int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientUID);
-    std::lock_guard<std::mutex> lock(capturerStateChangeEventMutex_);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector:set capturer event listner object is nullptr");
@@ -151,8 +149,8 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterTracker mode %{public}d", mode);
 
-    DisplayInternalStreamInfo();
     int32_t clientUID;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     if (mode == AUDIO_MODE_PLAYBACK) {
         AddRendererStream(streamChangeInfo);
         clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
@@ -161,8 +159,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
         AddCapturerStream(streamChangeInfo);
         clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     }
-    DisplayInternalStreamInfo();
-	
+
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr,
         ERR_INVALID_PARAM, "AudioStreamCollector: client tracker obj cast failed");
@@ -290,7 +287,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
 
 int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    DisplayInternalStreamInfo();
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // update the stream change info
     if (mode == AUDIO_MODE_PLAYBACK) {
         UpdateRendererStream(streamChangeInfo);
@@ -298,51 +295,13 @@ int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeIn
     // mode = AUDIO_MODE_RECORD
         UpdateCapturerStream(streamChangeInfo);
     }
-    DisplayInternalStreamInfo();
     return SUCCESS;
-}
-
-void AudioStreamCollector::DisplayInternalStreamInfo()
-{
-    AUDIO_DEBUG_LOG("AudioStreamCollector: Display audioRendererChangeInfos_ Number of entries %{public}u",
-        static_cast<uint32_t>(audioRendererChangeInfos_.size()));
-    int index = 0;
-    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        AudioRendererChangeInfo audioRendererChangeInfo = **it;
-        AUDIO_DEBUG_LOG("audioRendererChangeInfos_[%{public}d]", index++);
-        AUDIO_DEBUG_LOG("clientUID = %{public}d", audioRendererChangeInfo.clientUID);
-        AUDIO_DEBUG_LOG("sessionId = %{public}d", audioRendererChangeInfo.sessionId);
-        AUDIO_DEBUG_LOG("rendererState = %{public}d", audioRendererChangeInfo.rendererState);
-    }
-
-    AUDIO_DEBUG_LOG("rendererStatequeue_");
-    for (auto const &pair: rendererStatequeue_) {
-        AUDIO_DEBUG_LOG("clientUID: %{public}d:sessionId %{public}d :: RendererState : %{public}d",
-            pair.first.first, pair.first.second, pair.second);
-    }
-
-    AUDIO_DEBUG_LOG("AudioStreamCollector: Display audioCapturerChangeInfos_ Number of entries %{public}u",
-        static_cast<uint32_t>(audioCapturerChangeInfos_.size()));
-    index = 0;
-    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
-        AUDIO_DEBUG_LOG("audioCapturerChangeInfos_[%{public}d]", index++);
-        AUDIO_DEBUG_LOG("clientUID = %{public}d", audioCapturerChangeInfo.clientUID);
-        AUDIO_DEBUG_LOG("sessionId = %{public}d", audioCapturerChangeInfo.sessionId);
-        AUDIO_DEBUG_LOG("capturerState = %{public}d", audioCapturerChangeInfo.capturerState);
-    }
-
-    AUDIO_DEBUG_LOG("capturerStatequeue_");
-    for (auto const &pair: capturerStatequeue_) {
-        AUDIO_DEBUG_LOG("clientUID: %{public}d sessionId %{public}d :: CapturerState : %{public}d",
-            pair.first.first, pair.first.second, pair.second);
-    }
 }
 
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
-    DisplayInternalStreamInfo();
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         rendererChangeInfos.push_back(make_unique<AudioRendererChangeInfo>(*changeInfo));
     }
@@ -355,7 +314,7 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentCapturerChangeInfos");
-    DisplayInternalStreamInfo();
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
         capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
     AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentCapturerChangeInfos returned");
@@ -371,6 +330,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     // Send the release state event notification for all streams of died client to registered app
     bool checkActiveStreams = true;
     uint32_t activeStreams = 0;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
     while (checkActiveStreams) {
         checkActiveStreams = false;

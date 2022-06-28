@@ -65,17 +65,6 @@ void AudioRendererStateCallbackNapi::OnRendererStateChange(
         rendererChangeInfos.push_back(std::make_unique<AudioRendererChangeInfo>(*changeInfo));
     }
 
-    AUDIO_DEBUG_LOG("AudioRendererStateCallbackNapi::OnRendererStateChange Number of entries %{public}u",
-        static_cast<uint32_t>(rendererChangeInfos.size()));
-    int index = 0;
-    for (auto it = rendererChangeInfos.begin(); it != rendererChangeInfos.end(); it++) {
-        AudioRendererChangeInfo audioRendererChangeInfo = **it;
-        AUDIO_DEBUG_LOG("audioRendererChangeInfos_[%{public}d]", index++);
-        AUDIO_DEBUG_LOG("clientUID = %{public}d", audioRendererChangeInfo.clientUID);
-        AUDIO_DEBUG_LOG("sessionId = %{public}d", audioRendererChangeInfo.sessionId);
-        AUDIO_DEBUG_LOG("rendererState = %{public}d", audioRendererChangeInfo.rendererState);
-    }
-
     cb->callback = rendererStateCallback_;
     cb->changeInfos = move(rendererChangeInfos);
 
