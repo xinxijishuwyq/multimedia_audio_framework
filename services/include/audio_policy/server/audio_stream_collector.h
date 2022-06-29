@@ -45,8 +45,7 @@ public:
 
 private:
     AudioStreamEventDispatcher &mDispatcherService;
-    std::mutex rendererStateChangeEventMutex_;
-    std::mutex capturerStateChangeEventMutex_;
+    std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
     std::map<std::pair<int32_t, int32_t>, int32_t> capturerStatequeue_;
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos_;
@@ -56,7 +55,6 @@ private:
     int32_t AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
-    void DisplayInternalStreamInfo();
 };
 } // namespace AudioStandard
 } // namespace OHOS

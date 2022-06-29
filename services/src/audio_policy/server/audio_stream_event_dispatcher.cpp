@@ -33,12 +33,14 @@ AudioStreamEventDispatcher::~AudioStreamEventDispatcher()
 void AudioStreamEventDispatcher::addRendererListener(int32_t clientUID,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
     rendererCBMap_[clientUID] = callback;
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addRendererListener:client %{public}d added", clientUID);
 }
 
 void AudioStreamEventDispatcher::removeRendererListener(int32_t clientUID)
 {
+    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
     if (rendererCBMap_.erase(clientUID)) {
         AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d done", clientUID);
         return;
@@ -49,12 +51,14 @@ void AudioStreamEventDispatcher::removeRendererListener(int32_t clientUID)
 void AudioStreamEventDispatcher::addCapturerListener(int32_t clientUID,
     const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
     capturerCBMap_[clientUID] = callback;
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addCapturerListener:client %{public}d added", clientUID);
 }
 
 void AudioStreamEventDispatcher::removeCapturerListener(int32_t clientUID)
 {
+    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
     if (capturerCBMap_.erase(clientUID)) {
         AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d done", clientUID);
         return;
@@ -107,6 +111,7 @@ void AudioStreamEventDispatcher::SendCapturerInfoEventToDispatcher(AudioMode mod
 void AudioStreamEventDispatcher::HandleRendererStreamStateChange(
     const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest)
 {
+    std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
         std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCb = it->second;
         if (rendererStateChangeCb == nullptr) {
@@ -122,6 +127,7 @@ void AudioStreamEventDispatcher::HandleRendererStreamStateChange(
 void AudioStreamEventDispatcher::HandleCapturerStreamStateChange(
     const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest)
 {
+    std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
     for (auto it = capturerCBMap_.begin(); it != capturerCBMap_.end(); ++it) {
         std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCb = it->second;
         if (capturerStateChangeCb == nullptr) {
