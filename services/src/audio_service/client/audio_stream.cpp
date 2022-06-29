@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "audio_errors.h"
-#include "audio_info.h"
 #include "audio_log.h"
 
 #include "audio_stream.h"
@@ -768,6 +767,24 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             return ERR_OPERATION_FAILED;
         }
     }
+    return SUCCESS;
+}
+
+int32_t AudioStream::GetBufQueueState(BufferQueueState &bufState)
+{
+    if ((renderMode_ != RENDER_MODE_CALLBACK) && (captureMode_ != CAPTURE_MODE_CALLBACK)) {
+        AUDIO_ERR_LOG("AudioStream::GetBufQueueState not supported. Render or Capture mode is not callback.");
+        return ERR_INCORRECT_MODE;
+    }
+
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        bufState.numBuffers = filledBufferQ_.size();
+    }
+
+    if (captureMode_ == CAPTURE_MODE_CALLBACK) {
+        bufState.numBuffers = freeBufferQ_.size();
+    }
+
     return SUCCESS;
 }
 

@@ -365,7 +365,7 @@ int32_t AudioCapturerPrivate::Clear() const
 
 int32_t AudioCapturerPrivate::GetBufQueueState(BufferQueueState &bufState) const
 {
-    return SUCCESS;
+    return audioStream_->GetBufQueueState(bufState);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

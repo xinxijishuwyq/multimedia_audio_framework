@@ -686,7 +686,7 @@ int32_t AudioRendererPrivate::Clear() const
 
 int32_t AudioRendererPrivate::GetBufQueueState(BufferQueueState &bufState) const
 {
-    return SUCCESS;
+    return audioStream_->GetBufQueueState(bufState);
 }
 
 void AudioRendererPrivate::SetApplicationCachePath(const std::string cachePath)

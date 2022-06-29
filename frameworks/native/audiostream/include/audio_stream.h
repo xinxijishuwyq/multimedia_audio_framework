@@ -15,6 +15,7 @@
 #ifndef AUDIO_STREAM_H
 #define AUDIO_STREAM_H
 
+#include "audio_info.h"
 #include "audio_session.h"
 #include "timestamp.h"
 #include "audio_stream_tracker.h"
@@ -55,6 +56,7 @@ public:
     AudioCaptureMode GetCaptureMode();
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback);
     int32_t GetBufferDesc(BufferDesc &bufDesc);
+    int32_t GetBufQueueState(BufferQueueState &bufState);
     int32_t Enqueue(const BufferDesc &bufDesc);
     int32_t Clear();
 
