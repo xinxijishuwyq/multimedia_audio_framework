@@ -677,6 +677,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
             auto moduleInfoList = device.second;
             for (auto &moduleInfo : moduleInfoList) {
                 AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
+                moduleInfo.sinkLatency = sinkLatencyInMsec_ != 0 ? to_string(sinkLatencyInMsec_) : "";
                 AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
                 if (ioHandle == OPEN_PORT_FAILURE) {
                     AUDIO_INFO_LOG("[module_load]::Open port failed");
@@ -926,6 +927,16 @@ void AudioPolicyService::OnAudioLatencyParsed(uint64_t latency)
 int32_t AudioPolicyService::GetAudioLatencyFromXml() const
 {
     return audioLatencyInMsec_;
+}
+
+void AudioPolicyService::OnSinkLatencyParsed(uint32_t latency)
+{
+    sinkLatencyInMsec_ = latency;
+}
+
+uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
+{
+    return sinkLatencyInMsec_;
 }
 
 void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)

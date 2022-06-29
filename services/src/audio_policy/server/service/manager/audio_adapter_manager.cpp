@@ -302,6 +302,10 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(" file_path=");
             args.append(audioModuleInfo.fileName);
         }
+        if (!audioModuleInfo.sinkLatency.empty()) {
+            args.append(" sink_latency=");
+            args.append(audioModuleInfo.sinkLatency);
+        }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
         if (!audioModuleInfo.name.empty()) {

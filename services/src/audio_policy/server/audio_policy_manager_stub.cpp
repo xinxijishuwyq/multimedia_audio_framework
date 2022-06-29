@@ -339,6 +339,12 @@ void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data,
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t ret = GetSinkLatencyFromXml();
+    reply.WriteUint32(ret);
+}
+
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t count = data.ReadUint32();
@@ -620,6 +626,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_AUDIO_LATENCY:
             GetAudioLatencyFromXmlInternal(data, reply);
+            break;
+
+        case GET_SINK_LATENCY:
+            GetSinkLatencyFromXmlInternal(data, reply);
             break;
 
         case REGISTER_PLAYBACK_EVENT:

@@ -36,6 +36,9 @@ const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
 const uint32_t T_LENGTH_FACTOR = 4;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
+const uint32_t LATENCY_THRESHOLD = 35;
+const int32_t NO_OF_PREBUF_TIMES = 6;
+
 
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
@@ -780,29 +783,42 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         return AUDIO_CLIENT_ERR;
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
+    sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    if (latency_in_msec <= LATENCY_THRESHOLD) {
+        bufferAttr.prebuf = AlignToAudioFrameSize(pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC, &sampleSpec),
+                                                  sampleSpec);
+        bufferAttr.maxlength =  NO_OF_PREBUF_TIMES * bufferAttr.prebuf;
+        bufferAttr.tlength = static_cast<uint32_t>(-1);
+    } else {
+        bufferAttr.prebuf = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC, &sampleSpec);
+        bufferAttr.maxlength = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC * MAX_LENGTH_FACTOR, &sampleSpec);
+        bufferAttr.tlength = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC * T_LENGTH_FACTOR, &sampleSpec);
+    }
+    bufferAttr.minreq = bufferAttr.prebuf;
 
-    bufferAttr.prebuf = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC, &sampleSpec);
-    bufferAttr.maxlength = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC * MAX_LENGTH_FACTOR, &sampleSpec);
-    bufferAttr.tlength = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC * T_LENGTH_FACTOR, &sampleSpec);
-    bufferAttr.minreq = pa_usec_to_bytes(latency_in_msec * PA_USEC_PER_MSEC, &sampleSpec);
-
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK)
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
                                             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
                                             | PA_STREAM_INTERPOLATE_TIMING
                                             | PA_STREAM_START_CORKED
                                             | PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
-    else
+        preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
+        if (preBuf_ == nullptr) {
+            AUDIO_ERR_LOG("Allocate memory for buffer failed.");
+            return AUDIO_CLIENT_INIT_ERR;
+        }
+        memset_s(preBuf_.get(), bufferAttr.maxlength, 0, bufferAttr.maxlength);
+    } else {
         result = pa_stream_connect_record(paStream, nullptr, nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
                                           | PA_STREAM_START_CORKED
                                           | PA_STREAM_AUTO_TIMING_UPDATE));
-
+    }
     if (result < 0) {
         error = pa_context_errno(context);
         AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
@@ -1447,6 +1463,52 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
     return 0;
 }
 
+int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
+{
+    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
+    if (bufferAttr == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
+        return AUDIO_CLIENT_ERR;
+    }
+
+    size_t diff = bufferAttr->maxlength - writeLen;
+    if (diff <= 0) {
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
+    int32_t writeError;
+    StreamBuffer prebufStream;
+    prebufStream.buffer = preBuf_.get();
+    uint32_t extra {0};
+    if (writeLen == 0) {
+        return AUDIO_CLIENT_SUCCESS;
+    } else if (writeLen > diff) {
+        prebufStream.bufferLen = diff;
+    } else {
+        prebufStream.bufferLen = writeLen;
+        extra = diff % writeLen;
+    }
+
+    size_t bytesWritten {0};
+    while (true) {
+        bytesWritten += WriteStream(prebufStream, writeError);
+        if (writeError) {
+            AUDIO_ERR_LOG("RenderPrebuf failed: %{public}d", writeError);
+            return AUDIO_CLIENT_ERR;
+        }
+
+        if ((diff - bytesWritten) <= 0) {
+            break;
+        }
+
+        if ((diff - bytesWritten) == extra) {
+            prebufStream.bufferLen = extra;
+        }
+    }
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 void AudioServiceClient::OnTimeOut()
 {
     AUDIO_ERR_LOG("Inside read timeout callback");
@@ -1742,27 +1804,24 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
         return AUDIO_CLIENT_PA_ERR;
     }
 
-    pa_usec_t paLatency;
-    pa_usec_t cacheLatency;
-    int32_t retVal = AUDIO_CLIENT_SUCCESS;
-    int negative = 0;
+    pa_usec_t paLatency {0};
+    pa_usec_t cacheLatency {0};
+    int negative {0};
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
-
-    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-    if (operation != nullptr) {
-        pa_operation_unref(operation);
-    } else {
-        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-    }
-
     while (true) {
+        pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
+        if (operation != nullptr) {
+            pa_operation_unref(operation);
+        } else {
+            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+        }
         if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
             if (negative) {
                 latency = 0;
-                retVal = AUDIO_CLIENT_ERR;
-                return retVal;
+                pa_threaded_mainloop_unlock(mainLoop);
+                return AUDIO_CLIENT_ERR;
             }
             break;
         }
@@ -1776,7 +1835,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
         cacheLatency = pa_bytes_to_usec((acache.totalCacheSize - acache.writeIndex), &sampleSpec);
 
         // Total latency will be sum of audio write cache latency + PA latency
-        latency = paLatency + cacheLatency;
+        latency = paLatency + cacheLatency - (sinkLatencyInMsec_ * PA_USEC_PER_MSEC);
         AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
             PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
@@ -1788,7 +1847,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
         AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
     }
 
-    return retVal;
+    return AUDIO_CLIENT_SUCCESS;
 }
 
 void AudioServiceClient::RegisterAudioRendererCallbacks(const AudioRendererCallbacks &cb)

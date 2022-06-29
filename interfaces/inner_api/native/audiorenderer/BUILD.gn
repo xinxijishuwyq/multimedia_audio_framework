@@ -76,6 +76,22 @@ ohos_executable("audio_renderer_test") {
   subsystem_name = "multimedia"
 }
 
+ohos_executable("audio_latency_accuracy_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_renderer_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+  cflags = [ "-DLATENCY_ACCURACY_TEST" ]
+
+  deps = [ ":audio_renderer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_executable("audio_render_mode_callback_test") {
   install_enable = false
 

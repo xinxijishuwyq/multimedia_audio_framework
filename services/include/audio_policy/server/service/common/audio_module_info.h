@@ -52,6 +52,7 @@ enum NodeName {
     AUDIO_INTERRUPT_ENABLE,
     UPDATE_ROUTE_SUPPORT,
     AUDIO_LATENCY,
+    SINK_LATENCY,
     UNKNOWN
 };
 
@@ -79,6 +80,7 @@ public:
     std::string channels;
     std::string bufferSize;
     std::string fixedLatency;
+    std::string sinkLatency;
     std::string renderInIdleState;
     std::string OpenMicSpeaker;
     std::string fileName;

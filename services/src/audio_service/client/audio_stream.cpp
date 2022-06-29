@@ -91,7 +91,8 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       captureMode_(CAPTURE_MODE_NORMAL),
       isReadyToWrite_(false),
       isReadyToRead_(false),
-      isFirstRead_(false)
+      isFirstRead_(false),
+      isFirstWrite_(false)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -366,6 +367,7 @@ bool AudioStream::StartAudioStream()
     }
 
     isFirstRead_ = true;
+    isFirstWrite_ = true;
     state_ = RUNNING;
     AUDIO_INFO_LOG("StartAudioStream SUCCESS");
 
@@ -431,6 +433,12 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     stream.buffer = buffer;
     stream.bufferLen = buffer_size;
     isWriteInProgress_ = true;
+    if (isFirstWrite_) {
+        if (RenderPrebuf(stream.bufferLen)) {
+            return ERR_WRITE_FAILED;
+        }
+        isFirstWrite_ = false;
+    }
     size_t bytesWritten = WriteStream(stream, writeError);
     isWriteInProgress_ = false;
     if (writeError != 0) {

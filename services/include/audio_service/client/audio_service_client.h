@@ -230,6 +230,7 @@ public:
     * @return returns size of audio data written in bytes.
     */
     size_t WriteStream(const StreamBuffer &stream, int32_t &pError);
+    int32_t RenderPrebuf(uint32_t writeLen);
 
     /**
     * Writes audio data of the stream created using CreateStream to active sink device
@@ -526,6 +527,9 @@ private:
     bool isMainLoopStarted;
     bool isContextConnected;
     bool isStreamConnected;
+
+    std::unique_ptr<uint8_t[]> preBuf_ {nullptr};
+    uint32_t sinkLatencyInMsec_ {0};
 
     int32_t clientPid_ = 0;
     int32_t clientUid_ = 0;

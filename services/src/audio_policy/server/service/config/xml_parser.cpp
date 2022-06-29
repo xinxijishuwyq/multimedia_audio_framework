@@ -70,6 +70,9 @@ bool XMLParser::ParseInternal(xmlNode &node)
                 case AUDIO_LATENCY:
                     ParseAudioLatency(*currNode);
                     break;
+                case SINK_LATENCY:
+                    ParseSinkLatency(*currNode);
+                    break;
                 default:
                     ParseInternal(*(currNode->children));
                     break;
@@ -215,6 +218,8 @@ NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
         return UPDATE_ROUTE_SUPPORT;
     } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioLatency"))) {
         return AUDIO_LATENCY;
+    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("SinkLatency"))) {
+        return SINK_LATENCY;
     } else {
         return UNKNOWN;
     }
@@ -287,6 +292,16 @@ void XMLParser::ParseAudioLatency(xmlNode &node)
     mPortObserver.OnAudioLatencyParsed((uint64_t)std::stoi(sAudioLatency));
 
     xmlFree(audioLatency);
+}
+
+void XMLParser::ParseSinkLatency(xmlNode &node)
+{
+    xmlNode *child = node.children;
+    xmlChar *latency = xmlNodeGetContent(child);
+    std::string sLatency(reinterpret_cast<char *>(latency));
+    mPortObserver.OnSinkLatencyParsed((uint64_t)std::stoi(sLatency));
+
+    xmlFree(latency);
 }
 } // namespace AudioStandard
 } // namespace OHOS

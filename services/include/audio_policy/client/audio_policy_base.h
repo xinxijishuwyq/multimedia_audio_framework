@@ -96,6 +96,8 @@ public:
 
     virtual int32_t GetAudioLatencyFromXml() = 0;
 
+    virtual uint32_t GetSinkLatencyFromXml() = 0;
+
     virtual int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnregisterAudioRendererEventListener(int32_t clientUID) = 0;

@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef LATENCY_ACCURACY_TEST
+#include <cinttypes>
+#endif // LATENCY_ACCURACY_TEST
 #include <vector>
 
 #include "audio_renderer.h"
@@ -29,11 +32,13 @@ namespace {
     constexpr int32_t ARGS_COUNT_THREE = 3;
     constexpr int32_t ARGS_COUNT_FOUR = 4;
     constexpr int32_t SUCCESS = 0;
+#ifndef LATENCY_ACCURACY_TEST
     constexpr int32_t STOP_BUFFER_POSITION = 700000;
     constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
     constexpr int32_t STOP_RENDER_TIME_SECONDS = 1;
     constexpr float TRACK_VOLUME = 0.2f;
+#endif // LATENCY_ACCURACY_TEST
     
     constexpr int32_t SAMPLE_FORMAT_U8 = 8;
     constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
@@ -135,14 +140,16 @@ public:
             return false;
         }
         AUDIO_INFO_LOG("AudioRendererTest: Playback started");
-
+#ifndef LATENCY_ACCURACY_TEST
         if (audioRenderer->SetVolume(TRACK_VOLUME) == SUCCESS) {
             AUDIO_INFO_LOG("AudioRendererTest: volume set to: %{public}f", audioRenderer->GetVolume());
         }
+#endif // LATENCY_ACCURACY_TEST
 
         return true;
     }
 
+#ifndef LATENCY_ACCURACY_TEST
     bool TestPauseStop(const unique_ptr<AudioRenderer> &audioRenderer, bool &pauseTested, bool &stopTested,
                        FILE &wavFile) const
     {
@@ -176,6 +183,7 @@ public:
 
         return true;
     }
+#endif // LATENCY_ACCURACY_TEST
 
     bool GetBufferLen(const unique_ptr<AudioRenderer> &audioRenderer, size_t &bufferLen) const
     {
@@ -210,23 +218,27 @@ public:
         size_t bytesWritten = 0;
         size_t minBytes = 4;
         uint64_t latency;
+#ifndef LATENCY_ACCURACY_TEST
         bool stopTested = false;
         bool pauseTested = false;
+#endif // LATENCY_ACCURACY_TEST
+#ifdef LATENCY_ACCURACY_TEST
+        uint32_t writeCount {0};
+#endif // LATENCY_ACCURACY_TEST
 
         while (!feof(wavFile)) {
             bytesToWrite = fread(buffer.get(), 1, bufferLen, wavFile);
             bytesWritten = 0;
             AUDIO_INFO_LOG("AudioRendererTest: Bytes to write: %{public}zu", bytesToWrite);
 
+#ifndef LATENCY_ACCURACY_TEST
             if (!TestPauseStop(audioRenderer, pauseTested, stopTested, *wavFile)) {
                 break;
             }
-
-            if (audioRenderer->GetLatency(latency)) {
-                AUDIO_ERR_LOG("AudioRendererTest: GetLatency failed");
-                break;
-            }
-
+#endif // LATENCY_ACCURACY_TEST
+#ifdef LATENCY_ACCURACY_TEST
+            AUDIO_DEBUG_LOG("start: %{public}d", ++writeCount);
+#endif // LATENCY_ACCURACY_TEST
             while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
                 bytesWritten += audioRenderer->Write(buffer.get() + bytesWritten,
                                                      bytesToWrite - bytesWritten);
@@ -234,6 +246,18 @@ public:
                 if (bytesWritten < 0) {
                     break;
                 }
+            }
+#ifdef LATENCY_ACCURACY_TEST
+            AUDIO_DEBUG_LOG("complete: %{public}d", writeCount);
+#endif // LATENCY_ACCURACY_TEST
+
+            if (audioRenderer->GetLatency(latency)) {
+                AUDIO_ERR_LOG("AudioRendererTest: GetLatency failed");
+                break;
+#if LATENCY_ACCURACY_TEST
+            } else {
+                AUDIO_DEBUG_LOG("GetLatency: %{public}" PRIu64, latency);
+#endif // LATENCY_ACCURACY_TEST
             }
         }
 

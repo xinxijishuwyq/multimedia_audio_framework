@@ -121,6 +121,8 @@ public:
 
     int32_t GetAudioLatencyFromXml() override;
 
+    uint32_t GetSinkLatencyFromXml() override;
+
     int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
 
     int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
