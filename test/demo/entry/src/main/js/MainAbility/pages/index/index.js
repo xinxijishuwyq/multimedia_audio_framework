@@ -15,5 +15,11 @@ export default {
         router.push({
             uri: 'pages/native/native',
         })
+    },
+	
+	toStreamer() {
+        router.push({
+            uri: 'pages/streamer/streamer',
+        })
     }
 }
