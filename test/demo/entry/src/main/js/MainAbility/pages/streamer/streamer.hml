@@ -1,0 +1,16 @@
+<div class="container">
+	<input type="button" value="Get Permissions" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="getPermission()"></input>
+    <input type="button" value="On Renderer Change & Play" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="onRendererChangeWithPlay()"></input>
+    <input type="button" value="Off Renderer Change" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="offRendererChange()"></input>
+    <input type="button" value="Get Renderer Change-Promise" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="getRendererChangePromise()"></input>
+	<input type="button" value="On Capturer Change With Record" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="onCapturerChangeRecord()"></input>
+    <input type="button" value="Off Capturer Change" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="offCapturerChange()"></input>
+	<input type="button" value="Get Capturer Change-Promise" style="width: 400px;height: 50px;margin-right: 100px;background-color: blue;border-color: black;"
+           onclick="getCapturerChangePromise()"></input>
+</div>
