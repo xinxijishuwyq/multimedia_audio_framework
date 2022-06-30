@@ -108,25 +108,20 @@ static void ShowAudioRendererFilter(sptr<AudioRendererFilter> audioRendererFilte
 }
 
 
-static void HandleGetDevices(char option)
+static void HandleGetDevices(int argc, char *argv[], char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    if (option == 'g')
+    if ((option != 'g' && option != 'G') || argc != AudioPolicyTest::THIRD_ARG)
     {
-        DeviceFlag deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        audioDeviceDescriptorsVector = audioSystemMgr->GetDevices(deviceFlag);
-        cout << "GetDevices(Output Devices) Result: " << endl;
-        ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
+        cout << "GetDevices invalid argv["<< argc <<"] "<< endl;
     }
-    else
-    {
-        DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        audioDeviceDescriptorsVector = audioSystemMgr->GetDevices(deviceFlag);
-        cout << "GetDevices(Input Devices) Result: " << endl;
-        ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
-    }
+    cout << "GetDevices() flag: " << argv[AudioPolicyTest::SECOND_ARG] << endl;
+    int32_t intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    DeviceFlag deviceFlag = static_cast<DeviceFlag>(intValue);
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
+    audioDeviceDescriptorsVector = audioSystemMgr->GetDevices(deviceFlag);
+    cout << "GetDevices(Output Devices) Result: " << endl;
+    ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
 }
 
 
@@ -450,7 +445,7 @@ int main(int argc, char* argv[])
         switch (opt) {
             case 'G':
             case 'g':
-                HandleGetDevices(opt);
+                HandleGetDevices(argc,argv,opt);
                 break;
             case 'O':
             case 'o':
