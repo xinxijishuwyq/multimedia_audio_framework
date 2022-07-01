@@ -573,7 +573,9 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     AUDIO_DEBUG_LOG("Load sink adapter");
-    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS), &u->sinkAdapter);
+    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
+                                  pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
+                                  &u->sinkAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;

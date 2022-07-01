@@ -53,7 +53,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkGetTransactionId)(uint64_t *transactionId);
 };
 
-int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);
+int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter);
 int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
 const char *GetDeviceClass(void);
 #ifdef __cplusplus

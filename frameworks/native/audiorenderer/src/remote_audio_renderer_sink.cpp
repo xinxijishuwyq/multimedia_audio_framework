@@ -46,11 +46,12 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 
 std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;
 
-RemoteAudioRendererSink::RemoteAudioRendererSink()
+RemoteAudioRendererSink::RemoteAudioRendererSink(std::string deviceNetworkId)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL),audioAdapter_(nullptr), audioRender_(nullptr)
 {
     attr_ = {};
+    this->deviceNetworkId_ = deviceNetworkId;
     audioManager_ = GetAudioManager();
 #ifdef DEBUG_DUMP_FILE
     pfd = nullptr;
@@ -59,7 +60,11 @@ RemoteAudioRendererSink::RemoteAudioRendererSink()
 
 RemoteAudioRendererSink::~RemoteAudioRendererSink()
 {
-    DeInit();
+    if (rendererInited_ == true) {
+        DeInit();
+    } else {
+        AUDIO_INFO_LOG("RemoteAudioRendererSink has already DeInit.");
+    }
 }
 
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *deviceNetworkId)
@@ -69,14 +74,15 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
         return audioRenderer_;
     }
     // check if it is in our map
-    std::string deviceName(deviceNetworkId);
+    std::string deviceName = deviceNetworkId;
     if (allsinks.count(deviceName)) {
         return allsinks[deviceName];
     } else {
-        audioRenderer_ = new(std::nothrow) RemoteAudioRendererSink();
+        audioRenderer_ = new(std::nothrow) RemoteAudioRendererSink(deviceName);
         AUDIO_DEBUG_LOG("new Daudio device sink:[%{public}s]", deviceNetworkId);
         allsinks[deviceName] = audioRenderer_;
     }
+    CHECK_AND_RETURN_RET_LOG((audioRenderer_ != nullptr), nullptr, "null audioRenderer!");
     return audioRenderer_;
 }
 
@@ -103,6 +109,13 @@ void RemoteAudioRendererSink::DeInit()
         pfd = nullptr;
     }
 #endif // DEBUG_DUMP_FILE
+    // remove map recorder.
+    RemoteAudioRendererSink *temp = allsinks[this->deviceNetworkId_];
+    if (temp != nullptr) {
+        delete temp;
+        temp = nullptr;
+        allsinks.erase(this->deviceNetworkId_);
+    }
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)

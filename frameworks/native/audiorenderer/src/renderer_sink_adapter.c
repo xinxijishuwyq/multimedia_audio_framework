@@ -88,7 +88,7 @@ static int32_t RendererSinkInitInner(void *wapper, const SinkAttr *attr)
     }
 }
 
-int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter)
+int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter)
 {
     AUDIO_INFO_LOG("%{public}s: device:[%{public}s]", __func__, device);
     if ((device == NULL) || (sinkAdapter == NULL)) {
@@ -145,7 +145,7 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         g_deviceClass = CLASS_TYPE_FILE;
     } else if (!strcmp(device, g_deviceClassRemote)) {
         AUDIO_DEBUG_LOG("%{public}s: remote device", __func__);
-        FillinRemoteAudioRenderSinkWapper(device, &adapter->wapper);
+        FillinRemoteAudioRenderSinkWapper(deviceNetworkId, &adapter->wapper);
         adapter->RendererSinkInit = RendererSinkInitInner;
         adapter->RendererSinkDeInit = RemoteAudioRendererSinkDeInit;
         adapter->RendererSinkStart = RemoteAudioRendererSinkStart;

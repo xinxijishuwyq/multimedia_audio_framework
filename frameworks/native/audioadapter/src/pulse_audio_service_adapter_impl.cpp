@@ -313,7 +313,7 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 
 int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
-    lock_guard<mutex> lock(routerMutex);
+    lock_guard<mutex> lock(mMutex);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -357,7 +357,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
 
 int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
 {
-    lock_guard<mutex> lock(routerMutex);
+    lock_guard<mutex> lock(mMutex);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;

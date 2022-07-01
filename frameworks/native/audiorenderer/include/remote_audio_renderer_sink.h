@@ -59,9 +59,10 @@ public:
     bool rendererInited_;
 private:
     static std::map<std::string, RemoteAudioRendererSink *> allsinks;
-    RemoteAudioRendererSink();
+    RemoteAudioRendererSink(std::string deviceNetworkId);
     ~RemoteAudioRendererSink();
     RemoteAudioSinkAttr attr_;
+    std::string deviceNetworkId_;
     bool started_;
     bool paused_;
     float leftVolume_;
@@ -75,7 +76,7 @@ private:
     struct AudioPort audioPort_;
 
     int32_t CreateRender(struct AudioPort &renderPort);
-    static struct AudioManager *GetAudioManager();
+    struct AudioManager *GetAudioManager();
 #define DUMPFILE
 #ifdef DUMPFILE
     FILE *pfd;
