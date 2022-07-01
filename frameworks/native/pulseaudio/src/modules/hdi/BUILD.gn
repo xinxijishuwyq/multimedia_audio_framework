@@ -51,6 +51,7 @@ ohos_shared_library("module-hdi-sink") {
   configs = [ ":hdi_config" ]
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_sink_z_so" ]
+  cflags += [ "-DTEST_MODE" ]
 
   ldflags = [
     "-Wl",

@@ -695,5 +695,10 @@ int32_t AudioSystemManager::GetAudioLatencyFromXml() const
 {
     return AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
 }
+
+uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
+{
+    return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
+}
 } // namespace AudioStandard
 } // namespace OHOS

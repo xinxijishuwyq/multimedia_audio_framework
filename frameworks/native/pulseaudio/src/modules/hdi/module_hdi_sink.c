@@ -40,6 +40,7 @@ PA_MODULE_USAGE(
         "file_path=<file path for data writing>"
         "adapter_name=<primary>"
         "fixed_latency=<latency measure>"
+        "sink_latency=<hdi latency>"
         "render_in_idle_state<renderer state>"
         "open_mic_speaker<open mic and speaker>"
         );
@@ -56,6 +57,7 @@ static const char * const VALID_MODARGS[] = {
     "file_path",
     "adapter_name",
     "fixed_latency",
+    "sink_latency",
     "render_in_idle_state",
     "open_mic_speaker",
     NULL

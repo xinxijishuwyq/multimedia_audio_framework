@@ -814,6 +814,26 @@ int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
     return reply.ReadInt32();
 }
 
+uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetSinkLatencyFromXml WriteInterfaceToken failed");
+        return 0;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_SINK_LATENCY, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetSinkLatencyFromXml, error: %d", error);
+        return 0;
+    }
+
+    return reply.ReadUint32();
+}
+
 int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;

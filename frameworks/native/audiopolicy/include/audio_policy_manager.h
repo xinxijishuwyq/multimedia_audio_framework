@@ -120,6 +120,8 @@ public:
 
     int32_t GetAudioLatencyFromXml();
 
+    uint32_t GetSinkLatencyFromXml();
+
     int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
         const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 

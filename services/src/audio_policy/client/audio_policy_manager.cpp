@@ -446,6 +446,11 @@ int32_t AudioPolicyManager::GetAudioLatencyFromXml()
     return g_sProxy->GetAudioLatencyFromXml();
 }
 
+uint32_t AudioPolicyManager::GetSinkLatencyFromXml()
+{
+    return g_sProxy->GetSinkLatencyFromXml();
+}
+
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {

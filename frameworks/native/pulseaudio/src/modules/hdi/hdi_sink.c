@@ -59,6 +59,7 @@ struct Userdata {
     const char *adapterName;
     uint32_t buffer_size;
     uint32_t fixed_latency;
+    uint32_t sink_latency;
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
     size_t bytes_dropped;
@@ -78,6 +79,10 @@ struct Userdata {
     struct RendererSinkAdapter *sinkAdapter;
     pa_asyncmsgq *dq;
     pa_atomic_t dflag;
+#ifdef TEST_MODE
+    uint32_t writeCount;
+    uint32_t renderCount;
+#endif // TEST_MODE
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -95,6 +100,13 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     length = pchunk->length;
     p = pa_memblock_acquire(pchunk->memblock);
     pa_assert(p);
+
+#ifdef TEST_MODE
+    if (*((int*)p) > 0) {
+        AUDIO_DEBUG_LOG("RenderWrite Write: %{public}d", ++u->writeCount);
+    }
+    AUDIO_DEBUG_LOG("RenderWrite Write renderCount: %{public}d", ++u->renderCount);
+#endif // TEST_MODE
 
     while (true) {
         uint64_t writeLen = 0;
@@ -263,25 +275,29 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                           pa_memchunk *chunk)
 {
+    AUDIO_INFO_LOG("SinkProcessMsg: code: %{public}d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
     pa_assert(u);
 
-    AUDIO_INFO_LOG("SinkProcessMsg: code: %{public}d", code);
     switch (code) {
         case PA_SINK_MESSAGE_GET_LATENCY: {
-            uint64_t latency;
-            uint32_t hdiLatency;
-
-            // Tries to fetch latency from HDI else will make an estimate based
-            // on samples to be rendered based on the timestamp and current time
-            if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
-                latency = (PA_USEC_PER_MSEC * hdiLatency);
+            if (u->sink_latency) {
+                *((uint64_t *)data) = u->sink_latency * PA_USEC_PER_MSEC;
             } else {
-                pa_usec_t now = pa_rtclock_now();
-                latency = (now - u->timestamp);
-            }
+                uint64_t latency;
+                uint32_t hdiLatency;
 
-            *((uint64_t *)data) = latency;
+                // Tries to fetch latency from HDI else will make an estimate based
+                // on samples to be rendered based on the timestamp and current time
+                if (u->sinkAdapter->RendererSinkGetLatency(&hdiLatency) == 0) {
+                    latency = (PA_USEC_PER_MSEC * hdiLatency);
+                } else {
+                    pa_usec_t now = pa_rtclock_now();
+                    latency = (now - u->timestamp);
+                }
+
+                *((uint64_t *)data) = latency;
+            }
             return 0;
         }
         default:
@@ -325,6 +341,10 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             pa_core_exit(u->core, true, 0);
         } else {
             u->isHDISinkStarted = true;
+#ifdef TEST_MODE
+            u->writeCount = 0;
+            u->renderCount = 0;
+#endif // TEST_MODE
             AUDIO_INFO_LOG("Successfully restarted HDI renderer");
         }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
@@ -485,6 +505,10 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     u->adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
+    u->sink_latency = 0;
+    if (pa_modargs_get_value_u32(ma, "sink_latency", &u->sink_latency) < 0) {
+        AUDIO_ERR_LOG("No sink_latency argument.");
+    }
 
     if (pa_modargs_get_value_u32(ma, "render_in_idle_state", &u->render_in_idle_state) < 0) {
         AUDIO_ERR_LOG("Failed to parse render_in_idle_state  argument.");
@@ -498,6 +522,10 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     pa_atomic_store(&u->dflag, 0);
     u->dq = pa_asyncmsgq_new(0);
+#ifdef TEST_MODE
+            u->writeCount = 0;
+            u->renderCount = 0;
+#endif // TEST_MODE
 
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {

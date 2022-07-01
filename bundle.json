@@ -47,6 +47,7 @@
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer_test_packages",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_multichannel_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer_test",
+            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_latency_accuracy_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_render_mode_callback_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_voip_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_interrupt_test",

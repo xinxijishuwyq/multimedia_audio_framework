@@ -62,6 +62,7 @@ private:
     void VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);

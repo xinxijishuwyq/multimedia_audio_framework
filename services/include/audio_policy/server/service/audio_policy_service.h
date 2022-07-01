@@ -80,6 +80,8 @@ public:
 
     int32_t GetAudioLatencyFromXml() const;
 
+    uint32_t GetSinkLatencyFromXml() const;
+
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 
@@ -104,6 +106,8 @@ public:
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     void OnAudioLatencyParsed(uint64_t latency);
+
+    void OnSinkLatencyParsed(uint32_t latency);
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -145,6 +149,7 @@ private:
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     uint64_t audioLatencyInMsec_ = 50;
+    uint32_t sinkLatencyInMsec_ {0};
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     DeviceType mCurrentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;

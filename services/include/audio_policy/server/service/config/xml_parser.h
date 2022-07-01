@@ -56,6 +56,7 @@ private:
     void ParseAudioInterrupt(xmlNode &node);
     void ParseUpdateRouteSupport(xmlNode &node);
     void ParseAudioLatency(xmlNode &node);
+    void ParseSinkLatency(xmlNode &node);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     ClassType GetDeviceClassType(const std::string &deviceClass);
 

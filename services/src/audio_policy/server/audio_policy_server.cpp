@@ -1118,6 +1118,11 @@ int32_t AudioPolicyServer::GetAudioLatencyFromXml()
     return mPolicyService.GetAudioLatencyFromXml();
 }
 
+uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
+{
+    return mPolicyService.GetSinkLatencyFromXml();
+}
+
 int32_t AudioPolicyServer::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);

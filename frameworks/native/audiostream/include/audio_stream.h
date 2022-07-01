@@ -105,6 +105,7 @@ private:
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     bool isFirstRead_;
+    bool isFirstWrite_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
