@@ -47,10 +47,12 @@ public:
     std::vector<uint32_t> getTargetSinks(std::string adapterName) override;
     int32_t SetLocalDefaultSink(std::string name) override;
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
+    int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName) override;
 
     // Static Member functions
     static void PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
     static void PaMoveSinkInputCb(pa_context *c, int success, void *userdata);
+    static void PaMoveSourceOutputCb(pa_context *c, int success, void *userdata);
     static void PaContextStateCb(pa_context *c, void *userdata);
     static void PaModuleLoadCb(pa_context *c, uint32_t idx, void *userdata);
     static void PaGetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);

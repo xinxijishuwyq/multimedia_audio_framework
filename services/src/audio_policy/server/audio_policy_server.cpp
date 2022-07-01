@@ -337,6 +337,10 @@ int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRen
 
 int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
+    // todo check the call client is a system hap.
+    int uid = IPCSkeleton::GetCallingUid();
+    (void)uid;
+
     int32_t ret = mPolicyService.SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
     return ret;
 }

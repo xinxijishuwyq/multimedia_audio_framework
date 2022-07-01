@@ -181,6 +181,7 @@ inline std::string printRemoteAttr(RemoteAudioSinkAttr attr_){
     value << "volume[" << attr_.volume << "] ";
     value << "filePath[" << attr_.filePath << "] ";
     value << "deviceNetworkId[" << attr_.deviceNetworkId << "]";
+    value << "device_type[" << attr_.device_type << "]";
     return value.str();
 }
 

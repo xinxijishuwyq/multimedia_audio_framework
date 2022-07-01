@@ -45,6 +45,7 @@ PA_MODULE_USAGE(
         "open_mic_speaker<open mic and speaker>"
         "test_mode_on<is test mode on>"
         "network_id<device network id>"
+        "device_type<device type or port>"
         );
 
 static const char * const VALID_MODARGS[] = {
@@ -64,6 +65,7 @@ static const char * const VALID_MODARGS[] = {
     "open_mic_speaker",
     "test_mode_on",
     "network_id",
+    "device_type",
     NULL
 };
 

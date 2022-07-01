@@ -171,11 +171,15 @@ private:
 
     std::string GetPortName(InternalDeviceType deviceType);
 
+    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+
+    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
+    int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+
+    int32_t MoveToRemoteInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole, DeviceType deviceType);
-
-    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> localDevice);
-
-    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDevice);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 

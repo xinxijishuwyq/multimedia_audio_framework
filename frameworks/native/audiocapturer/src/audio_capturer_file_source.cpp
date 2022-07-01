@@ -37,11 +37,65 @@ AudioCapturerFileSource::~AudioCapturerFileSource()
     DeInit();
 }
 
-AudioCapturerFileSource *AudioCapturerFileSource::GetInstance()
+int32_t AudioCapturerFileSource::SetVolume(float left, float right)
 {
-    static AudioCapturerFileSource audioCapturer;
+    return SUCCESS;
+}
 
-    return &audioCapturer;
+int32_t AudioCapturerFileSource::GetVolume(float &left, float &right)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::SetMute(bool isMute)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::GetMute(bool &isMute)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+{
+    return SUCCESS;
+}
+
+uint64_t AudioCapturerFileSource::GetTransactionId(void)
+{
+    uint64_t res = -1L;
+    return res;
+}
+
+int32_t AudioCapturerFileSource::Pause(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::Resume(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::Reset(void)
+{
+    return SUCCESS;
+}
+
+int32_t AudioCapturerFileSource::Flush(void)
+{
+    return SUCCESS;
+}
+
+bool AudioCapturerFileSource::IsInited(void)
+{
+    return capturerInited_;
 }
 
 void AudioCapturerFileSource::DeInit()
@@ -50,10 +104,12 @@ void AudioCapturerFileSource::DeInit()
         fclose(filePtr);
         filePtr = nullptr;
     }
+    capturerInited_ = false;
 }
 
-int32_t AudioCapturerFileSource::Init(const char *filePath)
+int32_t AudioCapturerFileSource::Init(IAudioSourceAttr &attr)
 {
+    const char *filePath = attr.filePath;
     char realPath[PATH_MAX + 1] = {0x00};
     std::string sourceFilePath(filePath);
     std::string rootPath;
@@ -77,6 +133,7 @@ int32_t AudioCapturerFileSource::Init(const char *filePath)
         return ERROR;
     }
 
+    capturerInited_ = true;
     return SUCCESS;
 }
 
@@ -112,59 +169,3 @@ int32_t AudioCapturerFileSource::Stop(void)
 }
 } // namespace AudioStandard
 } // namespace OHOS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-using namespace OHOS::AudioStandard;
-
-AudioCapturerFileSource *g_fileSourceInstance = AudioCapturerFileSource::GetInstance();
-
-int32_t AudioCapturerFileSourceInit(const char *filePath)
-{
-    return g_fileSourceInstance->Init(filePath);
-}
-
-void AudioCapturerFileSourceDeInit()
-{
-    g_fileSourceInstance->DeInit();
-}
-
-int32_t AudioCapturerFileSourceStop()
-{
-    return SUCCESS;
-}
-
-int32_t AudioCapturerFileSourceStart()
-{
-    return SUCCESS;
-}
-
-int32_t AudioCapturerFileSourceSetMute()
-{
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t AudioCapturerFileSourceIsMuteRequired()
-{
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t AudioCapturerFileSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
-{
-    return g_fileSourceInstance->CaptureFrame(frame, requestBytes, replyBytes);
-}
-
-int32_t AudioCapturerFileSourceSetVolume(float left, float right)
-{
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t AudioCapturerFileSourceGetVolume(float *left, float *right)
-{
-    return ERR_NOT_SUPPORTED;
-}
-#ifdef __cplusplus
-}
-#endif

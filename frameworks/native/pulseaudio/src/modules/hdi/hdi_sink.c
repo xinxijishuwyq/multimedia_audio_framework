@@ -64,6 +64,7 @@ struct Userdata {
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
     const char *deviceNetworkId;
+    int32_t device_type;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;
@@ -482,6 +483,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
     sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     sample_attrs.filePath = filePath;
     sample_attrs.deviceNetworkId = u->deviceNetworkId;
+    sample_attrs.device_type =  u->device_type;
 
     ret = u->sinkAdapter->RendererSinkInit(u->sinkAdapter->wapper, &sample_attrs);
     if (ret != 0) {
@@ -578,6 +580,10 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
     if (pa_modargs_get_value_u32(ma, "fixed_latency", &u->fixed_latency) < 0) {
         AUDIO_ERR_LOG("Failed to parse fixed latency argument.");
+        goto fail;
+    }
+    if (pa_modargs_get_value_s32(ma, "device_type", &u->device_type) < 0) {
+        AUDIO_ERR_LOG("Failed to parse device_type argument.");
         goto fail;
     }
 

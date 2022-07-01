@@ -355,6 +355,50 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
     return SUCCESS;
 }
 
+int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
+{
+    lock_guard<mutex> lock(routerMutex);
+
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[MoveSourceOutputByIndexOrName] SetVolume mContext is nullptr");
+        return ERROR;
+    }
+    pa_threaded_mainloop_lock(mMainLoop);
+    pa_operation *operation = nullptr;
+    if (sourceName.empty()) {
+        operation = pa_context_move_source_output_by_index(mContext,
+                                                        sourceOutputId,
+                                                        sourceIndex,
+                                                        PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb,
+                                                        reinterpret_cast<void *>(userData.get()));
+    } else {
+        operation = pa_context_move_source_output_by_name(mContext,
+                                                       sourceOutputId,
+                                                       sourceName.c_str(),
+                                                       PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb,
+                                                       reinterpret_cast<void *>(userData.get()));
+    }
+
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[MoveSourceOutputByIndexOrName] pa_context_get_sink_input_info_list nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    int result = userData->moveResult;
+    AUDIO_DEBUG_LOG("move result:[%{public}d]", result); // todo: return the result
+
+    return SUCCESS;
+}
+
 int32_t PulseAudioServiceAdapterImpl::SetVolume(AudioStreamType streamType, float volume)
 {
     lock_guard<mutex> lock(mMutex);
@@ -704,7 +748,19 @@ void PulseAudioServiceAdapterImpl::PaMoveSinkInputCb(pa_context *c, int success,
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
 
-    AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failure: %{public}s", pa_strerror(pa_context_errno(c)));
+    AUDIO_INFO_LOG("[PaMoveSinkInputCb] result[%{public}d]", success);
+    userData->moveResult = success;
+
+    pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
+
+    return;
+}
+
+void PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb(pa_context *c, int success, void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData *>(userdata);
+
+    AUDIO_INFO_LOG("[PaMoveSourceOutputCb] result[%{public}d]", success);
     userData->moveResult = success;
 
     pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
@@ -879,6 +935,7 @@ inline void castValue(T &a, const char *raw)
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
     void *userdata)
 {
+    AUDIO_INFO_LOG("[PaGetAllSinkInputsCb] in eol[%{public}d]", eol);
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
@@ -928,12 +985,13 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
 void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol,
     void *userdata)
 {
+    AUDIO_INFO_LOG("[PaGetAllSourceOutputsCb] in eol[%{public}d]", eol);
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
     if (eol < 0) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get source output information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
+        AUDIO_ERR_LOG("[PaGetAllSourceOutputsCb] Failed to get source output information: %{public}s",
+                        pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -943,7 +1001,7 @@ void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const 
     }
 
     if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Proplist for source output (%{public}d).", i->index);
+        AUDIO_ERR_LOG("[PaGetAllSourceOutputsCb] Invalid Proplist for source output (%{public}d).", i->index);
         return;
     }
 
@@ -961,7 +1019,15 @@ void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const 
         audioStreamType = thiz->GetIdByStreamType(streamType);
     }
 
-    SourceOutput sourceOutput = {sessionID, audioStreamType};
+    SourceOutput sourceOutput = {};
+    sourceOutput.streamId = sessionID;
+    sourceOutput.streamType = audioStreamType;
+
+    sourceOutput.paStreamId = i->index;
+    sourceOutput.deviceSourceId = i->source;
+    castValue<int32_t>(sourceOutput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
+    castValue<int32_t>(sourceOutput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
+    castValue<uint64_t>(sourceOutput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));
     userData->sourceOutputList.push_back(sourceOutput);
 }
 

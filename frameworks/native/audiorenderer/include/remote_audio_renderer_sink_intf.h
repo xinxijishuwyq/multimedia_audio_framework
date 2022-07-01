@@ -29,6 +29,7 @@ typedef struct {
     float volume;
     const char *filePath;
     const char *deviceNetworkId;
+    int32_t device_type;
 } RemoteAudioSinkAttr;
 
 int32_t FillinRemoteAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper);

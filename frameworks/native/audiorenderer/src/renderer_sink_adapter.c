@@ -80,6 +80,7 @@ static int32_t RendererSinkInitInner(void *wapper, const SinkAttr *attr)
         remoteAudioSinkAttr.volume = attr->volume;
         remoteAudioSinkAttr.filePath = attr->filePath;
         remoteAudioSinkAttr.deviceNetworkId = attr->deviceNetworkId;
+        remoteAudioSinkAttr.device_type = attr->device_type;
         return RemoteAudioRendererSinkInit(wapper, &remoteAudioSinkAttr);
     } else {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);

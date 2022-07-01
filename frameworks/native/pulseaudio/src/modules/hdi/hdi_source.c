@@ -45,6 +45,7 @@
 #define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_AUDIO_DEVICE_NAME "Internal Mic"
 #define DEFAULT_DEVICE_CLASS "primary"
+#define DEFAULT_DEVICE_NETWORKID "LocalDevice"
 
 #define DEFAULT_BUFFER_SIZE (1024 * 16)
 #define MAX_VOLUME_VALUE 15.0
@@ -94,8 +95,8 @@ static void userdata_free(struct Userdata *u)
         pa_rtpoll_free(u->rtpoll);
 
     if (u->sourceAdapter) {
-        u->sourceAdapter->CapturerSourceStop();
-        u->sourceAdapter->CapturerSourceDeInit();
+        u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
+        u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
         UnLoadSourceAdapter(u->sourceAdapter);
     }
 
@@ -134,7 +135,7 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newS
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
         if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
-            if (u->sourceAdapter->CapturerSourceStart()) {
+            if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
                 return -PA_ERR_IO;
             }
@@ -144,13 +145,13 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newS
     } else if (s->thread_info.state == PA_SOURCE_IDLE) {
         if (newState == PA_SOURCE_SUSPENDED) {
             if (u->IsCapturerStarted) {
-                u->sourceAdapter->CapturerSourceStop();
+                u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
                 u->IsCapturerStarted = false;
                 AUDIO_DEBUG_LOG("Stopped HDI capturer");
             }
         } else if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
             AUDIO_DEBUG_LOG("Idle to Running starting HDI capturing device");
-            if (u->sourceAdapter->CapturerSourceStart()) {
+            if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("Idle to Running HDI capturer start failed");
                 return -PA_ERR_IO;
             }
@@ -176,7 +177,7 @@ static int get_capturer_frame_from_hdi(pa_memchunk *chunk, const struct Userdata
     pa_assert(p);
 
     requestBytes = pa_memblock_get_length(chunk->memblock);
-    u->sourceAdapter->CapturerSourceFrame((char *)p, (uint64_t)requestBytes, &replyBytes);
+    u->sourceAdapter->CapturerSourceFrame(u->sourceAdapter->wapper, (char *)p, (uint64_t)requestBytes, &replyBytes);
 
     pa_memblock_release(chunk->memblock);
     AUDIO_DEBUG_LOG("HDI Source: request bytes: %{public}" PRIu64 ", replyBytes: %{public}" PRIu64,
@@ -269,13 +270,13 @@ static int pa_capturer_init(struct Userdata *u)
 {
     int ret;
 
-    ret = u->sourceAdapter->CapturerSourceInit(&u->attrs);
+    ret = u->sourceAdapter->CapturerSourceInit(u->sourceAdapter->wapper, &u->attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("Audio capturer init failed!");
         return ret;
     }
 
-    ret = u->sourceAdapter->CapturerSourceStart();
+    ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
     if (ret != 0) {
         AUDIO_ERR_LOG("Audio capturer start failed!");
         goto fail;
@@ -291,8 +292,8 @@ fail:
 
 static void pa_capturer_exit(struct Userdata *u)
 {
-    u->sourceAdapter->CapturerSourceStop();
-    u->sourceAdapter->CapturerSourceDeInit();
+    u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
+    u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
 }
 
 static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sample_spec *ss, const pa_channel_map *map,
@@ -308,8 +309,10 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     data.driver = __FILE__;
     data.module = m;
     pa_source_new_data_set_name(&data, pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME));
-    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, DEFAULT_AUDIO_DEVICE_NAME);
-    pa_proplist_setf(data.proplist, PA_PROP_DEVICE_DESCRIPTION, "HDI source %s", DEFAULT_AUDIO_DEVICE_NAME);
+    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING,
+                    (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
+    pa_proplist_setf(data.proplist, PA_PROP_DEVICE_DESCRIPTION, "HDI source is %s",
+                    (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
     pa_source_new_data_set_sample_spec(&data, ss);
     pa_source_new_data_set_channel_map(&data, map);
     pa_proplist_setf(data.proplist, PA_PROP_DEVICE_BUFFERING_BUFFER_SIZE, "%lu", (unsigned long)u->buffer_size);
@@ -420,7 +423,9 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS), &u->sourceAdapter);
+    ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
+                            pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
+                            &u->sourceAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
@@ -437,12 +442,17 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     u->attrs.format = ConvertToHDIAudioFormat(ss.format);
     u->attrs.isBigEndian = GetEndianInfo(ss.format);
     u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
+    u->attrs.deviceNetworkId = pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID);
+    if (pa_modargs_get_value_s32(ma, "device_type", &u->attrs.device_type) < 0) {
+        AUDIO_ERR_LOG("Failed to parse device_type argument");
+    }
 
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
     ret = pa_set_source_properties(m, ma, &ss, &map, u);
     if (ret != 0) {
+        AUDIO_ERR_LOG("Failed to pa_set_source_properties");
         goto fail;
     }
 
@@ -451,6 +461,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 
     ret = pa_capturer_init(u);
     if (ret != 0) {
+        AUDIO_ERR_LOG("Failed to pa_capturer_init");
         goto fail;
     }
 

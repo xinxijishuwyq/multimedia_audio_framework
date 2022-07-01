@@ -218,6 +218,11 @@ int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, ui
     return mAudioServiceAdapter->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
+int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
+{
+    return mAudioServiceAdapter->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
+}
+
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
     mRingerMode = ringerMode;
@@ -328,6 +333,13 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.networkId.empty()) {
             args.append(" network_id=");
             args.append(audioModuleInfo.networkId);
+        } else {
+            args.append(" network_id=LocalDevice");
+        }
+
+        if (!audioModuleInfo.deviceType.empty()) {
+            args.append(" device_type=");
+            args.append(audioModuleInfo.deviceType);
         }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
@@ -354,6 +366,13 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.networkId.empty()) {
             args.append(" network_id=");
             args.append(audioModuleInfo.networkId);
+        } else {
+            args.append(" network_id=LocalDevice");
+        }
+
+        if (!audioModuleInfo.deviceType.empty()) {
+            args.append(" device_type=");
+            args.append(audioModuleInfo.deviceType);
         }
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {

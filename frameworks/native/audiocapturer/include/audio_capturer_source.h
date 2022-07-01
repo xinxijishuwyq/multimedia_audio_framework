@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_manager.h"
+#include "i_audio_capturer_source.h"
 
 #include <cstdio>
 #include <list>
@@ -35,39 +36,31 @@ namespace AudioStandard {
 #define PCM_16_BIT 16
 #define INTERNAL_INPUT_STREAM_ID 1
 
-typedef struct {
-    const char *adapterName;
-    uint32_t open_mic_speaker;
-    AudioFormat format;
-    uint32_t sampleFmt;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-    uint32_t bufferSize;
-    bool isBigEndian;
-    const char *filePath;
-} AudioSourceAttr;
-
-class AudioCapturerSource {
+class AudioCapturerSource : public IAudioCapturerSource {
 public:
-    int32_t Init(AudioSourceAttr &atrr);
-    void DeInit(void);
+    int32_t Init(IAudioSourceAttr &atrr) override;
+    bool IsInited(void) override;
+    void DeInit(void) override;
 
-    int32_t Start(void);
-    int32_t Stop(void);
-    int32_t Flush(void);
-    int32_t Reset(void);
-    int32_t Pause(void);
-    int32_t Resume(void);
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes);
-    int32_t SetVolume(float left, float right);
-    int32_t GetVolume(float &left, float &right);
-    int32_t SetMute(bool isMute);
-    int32_t GetMute(bool &isMute);
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+    int32_t Flush(void) override;
+    int32_t Reset(void) override;
+    int32_t Pause(void) override;
+    int32_t Resume(void) override;
+    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
+    int32_t SetVolume(float left, float right) override;
+    int32_t GetVolume(float &left, float &right) override;
+    int32_t SetMute(bool isMute) override;
+    int32_t GetMute(bool &isMute) override;
+
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+
     int32_t SetInputRoute(DeviceType deviceType, AudioPortPin &inputPortPin);
-    int32_t SetInputRoute(DeviceType deviceType);
-    uint64_t GetTransactionId();
+
+    int32_t SetInputRoute(DeviceType deviceType) override;
+
+    uint64_t GetTransactionId() override;
 
     static AudioCapturerSource *GetInstance(void);
     bool capturerInited_;
@@ -78,7 +71,7 @@ private:
     const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
     const float MAX_VOLUME_LEVEL = 15.0f;
 
-    AudioSourceAttr attr_;
+    IAudioSourceAttr attr_;
     bool started_;
     bool paused_;
     float leftVolume_;

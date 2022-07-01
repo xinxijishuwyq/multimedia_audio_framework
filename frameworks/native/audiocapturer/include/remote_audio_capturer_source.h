@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License") override;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,21 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_CAPTURER_FILE_SOURCE_H
-#define AUDIO_CAPTURER_FILE_SOURCE_H
+#ifndef REMOTE_AUDIO_CAPTURER_SOURCE_H
+#define REMOTE_AUDIO_CAPTURER_SOURCE_H
 
 #include "audio_info.h"
+#include "audio_manager.h"
 #include "i_audio_capturer_source.h"
 
 #include <cstdio>
 #include <list>
+#include <map>
 
+#define DEBUG_CAPTURE_DUMP
 namespace OHOS {
 namespace AudioStandard {
-class AudioCapturerFileSource : public IAudioCapturerSource {
+
+class RemoteAudioCapturerSource : public IAudioCapturerSource {
 public:
-    AudioCapturerFileSource();
-    ~AudioCapturerFileSource();
+    static RemoteAudioCapturerSource *GetInstance(std::string deviceNetworkId);
+
     int32_t Init(IAudioSourceAttr &atrr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
@@ -47,9 +51,35 @@ public:
     int32_t SetInputRoute(DeviceType deviceType) override;
     uint64_t GetTransactionId() override;
 private:
-    bool capturerInited_ = false;
-    FILE *filePtr = nullptr;
+    static std::map<std::string, RemoteAudioCapturerSource *> allRemoteSources;
+
+    const uint32_t maxInt32 = 0x7fffffff;
+    const uint32_t audioBufferSize = 16 * 1024;
+    const uint32_t internalInputStreamId = 1;
+    const uint32_t deepBufferCapturePeriodSize = 4096;
+
+    RemoteAudioCapturerSource(std::string deviceNetworkId);
+    ~RemoteAudioCapturerSource();
+
+    IAudioSourceAttr attr_;
+    std::string deviceNetworkId_;
+    bool capturerInited_;
+    bool started_;
+    bool paused_;
+    bool micMuteState_ = false;
+
+    int32_t routeHandle_ = -1;
+    struct AudioManager *audioManager_;
+    struct AudioAdapter *audioAdapter_;
+    struct AudioCapture *audioCapture_;
+    struct AudioPort audioPort;
+
+    int32_t CreateCapture(struct AudioPort &capturePort);
+    int32_t InitAudioManager();
+#ifdef DEBUG_CAPTURE_DUMP
+    FILE *pfd;
+#endif // DEBUG_CAPTURE_DUMP
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_CAPTURER_FILE_SOURCE_H
+#endif  // AUDIO_CAPTURER_SOURCE_H
