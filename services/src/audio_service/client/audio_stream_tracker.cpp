@@ -34,11 +34,6 @@ void AudioStreamTracker::RegisterTracker(const int32_t sessionId, const State st
     AUDIO_DEBUG_LOG("AudioStreamtracker:Register tracker entered");
     AudioStreamChangeInfo streamChangeInfo;
 
-    if (state_ != INVALID) {
-        AUDIO_DEBUG_LOG("AudioStreamtracker:Register tracker is called in wrong state");
-        return;
-    }
-
     state_ = state;
 
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
