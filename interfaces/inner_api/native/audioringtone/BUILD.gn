@@ -31,9 +31,9 @@ ohos_shared_library("audio_ringtone_client") {
   ]
 
   deps = [
-    "${aafwk_path}/frameworks/native/ability/native:abilitykit_native",
-    "${aafwk_path}/frameworks/native/ability/native:data_ability_helper",
-    "${aafwk_path}/frameworks/native/appkit:appkit_native",
+    "${ability_runtime_path}/frameworks/native/ability/native:abilitykit_native",
+    "${ability_runtime_path}/frameworks/native/ability/native:data_ability_helper",
+    "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
     "//foundation/graphic/graphic_2d/frameworks/surface:surface",
     "//foundation/multimedia/media_standard/interfaces/inner_api/native:media_client",
   ]
