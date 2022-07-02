@@ -19,6 +19,7 @@
 #include "audio_info.h"
 #include "bluetooth_a2dp_src_observer.h"
 #include "bluetooth_def.h"
+#include "bluetooth_host.h"
 #include "bluetooth_types.h"
 #include "bt_def.h"
 #include "i_bluetooth_a2dp_src.h"
@@ -84,6 +85,8 @@ static bool GetAudioStreamInfo(BluetoothA2dpCodecInfo codecInfo, AudioStreamInfo
             return false;
     }
 
+    audioStreamInfo.encoding = ENCODING_PCM;
+
     return true;
 }
 
@@ -103,7 +106,11 @@ static void AudioOnConfigurationChanged(const RawAddress &device, const Bluetoot
         return;
     }
 
-    g_deviceObserver->OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetAddress(), audioStreamInfo);
+    std::string deviceName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetAddress(),
+        BT_TRANSPORT_BREDR).GetDeviceName();
+
+    g_deviceObserver->OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetAddress(), deviceName,
+        audioStreamInfo);
 }
 
 static void AudioOnConnectionChanged(const RawAddress &device, int state)
@@ -121,16 +128,19 @@ static void AudioOnConnectionChanged(const RawAddress &device, int state)
         codecStatus.codecInfo.sampleRate, codecStatus.codecInfo.channelMode, codecStatus.codecInfo.bitsPerSample);
 
     AudioStreamInfo streamInfo = {};
-
+    std::string deviceName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetAddress(),
+        BT_TRANSPORT_BREDR).GetDeviceName();
     if (state == STATE_TURN_ON) {
         if (!GetAudioStreamInfo(codecStatus.codecInfo, streamInfo)) {
             AUDIO_ERR_LOG("AudioOnConnectionChanged: Unsupported a2dp codec info");
             return;
         }
 
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true, device.GetAddress(), streamInfo);
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true, device.GetAddress(), deviceName,
+            streamInfo);
     } else if (state == STATE_TURN_OFF) {
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false, device.GetAddress(), streamInfo);
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false, device.GetAddress(), deviceName,
+            streamInfo);
     }
 }
 
@@ -236,8 +246,11 @@ void HandsFreeGatewayListener::OnScoStateChanged(const BluetoothRemoteDevice &de
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         AudioStreamInfo info = {};
+        std::string deviceName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetDeviceAddr(),
+            BT_TRANSPORT_BREDR).GetDeviceName();
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_SCO, isConnected, device.GetDeviceAddr(), info);
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_SCO, isConnected, device.GetDeviceAddr(),
+            deviceName, info);
     }
 }
 }

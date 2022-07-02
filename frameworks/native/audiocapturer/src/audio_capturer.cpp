@@ -93,6 +93,14 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
     appInfo_ = appInfo;
+    if (!(appInfo_.appPid)) {
+        appInfo_.appPid = getpid();
+    }
+
+    if (!(appInfo_.appUid)) {
+        appInfo_.appUid = getuid();
+    }
+
     audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD, appInfo_.appUid);
     if (audioStream_) {
         AUDIO_DEBUG_LOG("AudioCapturerPrivate::Audio stream created");
@@ -125,13 +133,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     audioStreamParams.channels = params.audioChannel;
     audioStreamParams.encoding = params.audioEncoding;
 
-    if (!(appInfo_.appPid)) {
-        appInfo_.appPid = getpid();
-    }
-
-    if (!(appInfo_.appUid)) {
-        appInfo_.appUid = getuid();
-    }
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
     return audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);

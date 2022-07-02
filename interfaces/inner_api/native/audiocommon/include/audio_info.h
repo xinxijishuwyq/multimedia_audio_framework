@@ -37,6 +37,7 @@ constexpr int32_t ROOT_UID = 0;
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
+const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 
 enum DeviceFlag {
     /**
@@ -642,11 +643,22 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+struct DeviceInfo {
+    DeviceType deviceType;
+    DeviceRole deviceRole;
+    int32_t deviceId;
+    int32_t channelMasks;
+    std::string deviceName;
+    std::string macAddress;
+    AudioStreamInfo audioStreamInfo;
+};
+
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
+    DeviceInfo outputDeviceInfo;
 };
 
 struct AudioCapturerChangeInfo {
@@ -654,6 +666,7 @@ struct AudioCapturerChangeInfo {
     int32_t sessionId;
     AudioCapturerInfo capturerInfo;
     CapturerState capturerState;
+    DeviceInfo inputDeviceInfo;
 };
 
 struct AudioStreamChangeInfo {

@@ -45,8 +45,7 @@ REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      mPolicyService(AudioPolicyService::GetAudioPolicyService()),
-      mStreamCollector(AudioStreamCollector::GetAudioStreamCollector())
+      mPolicyService(AudioPolicyService::GetAudioPolicyService())
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
@@ -279,7 +278,19 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
-    return mPolicyService.GetDevices(deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = mPolicyService.GetDevices(deviceFlag);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, 0);
+    if (!hasBTPermission) {
+        for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
+            if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
+                || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
+                desc->deviceName_ = "";
+                desc->macAddress_ = "";
+            }
+        }
+    }
+
+    return deviceDescs;
 }
 
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
@@ -1126,23 +1137,27 @@ uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
 int32_t AudioPolicyServer::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);
-    return mStreamCollector.RegisterAudioRendererEventListener(clientUID, object);
+    uint32_t clientTokenId = IPCSkeleton::GetCallingTokenID();
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, clientTokenId);
+    return mPolicyService.RegisterAudioRendererEventListener(clientUID, object, hasBTPermission);
 }
 
 int32_t AudioPolicyServer::UnregisterAudioRendererEventListener(int32_t clientUID)
 {
-    return mStreamCollector.UnregisterAudioRendererEventListener(clientUID);
+    return mPolicyService.UnregisterAudioRendererEventListener(clientUID);
 }
 
 int32_t AudioPolicyServer::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
 {
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);
-    return mStreamCollector.RegisterAudioCapturerEventListener(clientUID, object);
+    uint32_t clientTokenId = IPCSkeleton::GetCallingTokenID();
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, clientTokenId);
+    return mPolicyService.RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission);
 }
 
 int32_t AudioPolicyServer::UnregisterAudioCapturerEventListener(int32_t clientUID)
 {
-    return mStreamCollector.UnregisterAudioCapturerEventListener(clientUID);
+    return mPolicyService.UnregisterAudioCapturerEventListener(clientUID);
 }
 
 int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -1163,7 +1178,7 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
         }
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
-    return mStreamCollector.RegisterTracker(mode, streamChangeInfo, object);
+    return mPolicyService.RegisterTracker(mode, streamChangeInfo, object);
 }
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
@@ -1182,19 +1197,23 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
-    return mStreamCollector.UpdateTracker(mode, streamChangeInfo);
+    return mPolicyService.UpdateTracker(mode, streamChangeInfo);
 }
 
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    return mStreamCollector.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, 0);
+    AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
+    return mPolicyService.GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission);
 }
 
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    return mStreamCollector.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, 0);
+    AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
+    return mPolicyService.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, hasBTPermission);
 }
 
 void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
@@ -1229,13 +1248,13 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
 void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
-    mStreamCollector.RegisteredTrackerClientDied(static_cast<int32_t>(pid));
+    mPolicyService.RegisteredTrackerClientDied(pid);
 }
 
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, uid %{public}d", pid);
-    mStreamCollector.RegisteredStreamListenerClientDied(static_cast<int32_t>(pid));
+    mPolicyService.RegisteredStreamListenerClientDied(pid);
 }
 } // namespace AudioStandard
 } // namespace OHOS

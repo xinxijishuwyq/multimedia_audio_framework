@@ -46,6 +46,17 @@ void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParce
     data.WriteInt32(capturerChangeInfo->clientUID);
     data.WriteInt32(capturerChangeInfo->capturerInfo.sourceType);
     data.WriteInt32(capturerChangeInfo->capturerInfo.capturerFlags);
+
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceType);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceRole);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceId);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelMasks);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels);
+    data.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
+    data.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
 }
 
 void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
@@ -77,7 +88,8 @@ void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
 }
 
 AudioCapturerStateChangeListenerCallback::AudioCapturerStateChangeListenerCallback(
-    const sptr<IStandardCapturerStateChangeListener> &listener) : listener_(listener)
+    const sptr<IStandardCapturerStateChangeListener> &listener, bool hasBTPermission)
+    : listener_(listener), hasBTPermission_(hasBTPermission)
 {
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerCallback: Instance create");
 }
@@ -87,11 +99,27 @@ AudioCapturerStateChangeListenerCallback::~AudioCapturerStateChangeListenerCallb
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerCallback: Instance destroy");
 }
 
+void AudioCapturerStateChangeListenerCallback::UpdateDeviceInfo(
+    const vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    if (!hasBTPermission_) {
+        size_t capturerChangeInfoLength = audioCapturerChangeInfos.size();
+        for (size_t i = 0; i < capturerChangeInfoLength; i++) {
+            if ((audioCapturerChangeInfos[i]->inputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)
+                || (audioCapturerChangeInfos[i]->inputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+                audioCapturerChangeInfos[i]->inputDeviceInfo.deviceName = "";
+                audioCapturerChangeInfos[i]->inputDeviceInfo.macAddress = "";
+            }
+        }
+    }
+}
+
 void AudioCapturerStateChangeListenerCallback::OnCapturerStateChange(
     const vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerCallback OnCapturerStateChange entered");
     if (listener_ != nullptr) {
+        UpdateDeviceInfo(audioCapturerChangeInfos);
         listener_->OnCapturerStateChange(audioCapturerChangeInfos);
     }
 }

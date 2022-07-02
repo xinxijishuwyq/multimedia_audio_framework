@@ -37,13 +37,16 @@ private:
 
 class AudioCapturerStateChangeListenerCallback : public AudioCapturerStateChangeCallback {
 public:
-    AudioCapturerStateChangeListenerCallback(const sptr<IStandardCapturerStateChangeListener> &listener);
+    AudioCapturerStateChangeListenerCallback(const sptr<IStandardCapturerStateChangeListener> &listener,
+        bool hasBTPermission);
     virtual ~AudioCapturerStateChangeListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioCapturerStateChangeListenerCallback);
     void OnCapturerStateChange(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>>
         &audioCapturerChangeInfos) override;
 private:
     sptr<IStandardCapturerStateChangeListener> listener_ = nullptr;
+    bool hasBTPermission_ = true;
+    void UpdateDeviceInfo(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 };
 } // namespace AudioStandard
 } // namespace OHOS

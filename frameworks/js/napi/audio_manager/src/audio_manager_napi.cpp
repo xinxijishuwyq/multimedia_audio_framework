@@ -2069,6 +2069,14 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void SetValueString(const napi_env &env, const std::string &fieldStr, const std::string stringValue,
+    napi_value &result)
+{
+    napi_value value = nullptr;
+    napi_create_string_utf8(env, stringValue.c_str(), NAPI_AUTO_LENGTH, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
 static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioManagerAsyncContext*>(data);
@@ -2086,6 +2094,30 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
                 asyncContext->deviceDescriptors[i]->deviceRole_), valueParam);
             SetValueInt32(env, "deviceType", static_cast<int32_t>(
                 asyncContext->deviceDescriptors[i]->deviceType_), valueParam);
+            SetValueInt32(env, "id", static_cast<int32_t>(
+                asyncContext->deviceDescriptors[i]->deviceId_), valueParam);
+            SetValueString(env, "name", asyncContext->deviceDescriptors[i]->deviceName_, valueParam);
+            SetValueString(env, "address", asyncContext->deviceDescriptors[i]->macAddress_, valueParam);
+
+            napi_value value = nullptr;
+            napi_value sampleRates;
+            napi_create_array_with_length(env, 1, &sampleRates);
+            napi_create_int32(env, asyncContext->deviceDescriptors[i]->audioStreamInfo_.samplingRate, &value);
+            napi_set_element(env, sampleRates, 0, value);
+            napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
+
+            napi_value channelCounts;
+            napi_create_array_with_length(env, 1, &channelCounts);
+            napi_create_int32(env, asyncContext->deviceDescriptors[i]->audioStreamInfo_.channels, &value);
+            napi_set_element(env, channelCounts, 0, value);
+            napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
+
+            napi_value channelMasks;
+            napi_create_array_with_length(env, 1, &channelMasks);
+            napi_create_int32(env, asyncContext->deviceDescriptors[i]->channelMasks_, &value);
+            napi_set_element(env, channelMasks, 0, value);
+            napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
+
             napi_set_element(env, result[PARAM1], i, valueParam);
         }
     }

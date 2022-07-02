@@ -38,7 +38,8 @@ AudioStreamCollector::~AudioStreamCollector()
     AUDIO_INFO_LOG("AudioStreamCollector::~AudioStreamCollector()");
 }
 
-int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    bool hasBTPermission)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientUID);
 
@@ -50,7 +51,7 @@ int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientU
         "AudioStreamCollector: renderer listener obj cast failed");
 
     std::shared_ptr<AudioRendererStateChangeCallback> callback =
-         std::make_shared<AudioRendererStateChangeListenerCallback>(listener);
+         std::make_shared<AudioRendererStateChangeListenerCallback>(listener, hasBTPermission);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: failed to  create cb obj");
 
     mDispatcherService.addRendererListener(clientUID, callback);
@@ -64,7 +65,8 @@ int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clien
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object)
+int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    bool hasBTPermission)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientUID);
 
@@ -75,7 +77,7 @@ int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientU
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: capturer obj cast failed");
 
     std::shared_ptr<AudioCapturerStateChangeCallback> callback =
-        std::make_shared<AudioCapturerStateChangeListenerCallback>(listener);
+        std::make_shared<AudioCapturerStateChangeListenerCallback>(listener, hasBTPermission);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector: failed to create capturer cb obj");
 
@@ -108,6 +110,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
+    rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     AUDIO_DEBUG_LOG("AudioStreamCollector: audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
@@ -135,6 +138,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
+    capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
     audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
 
     AUDIO_DEBUG_LOG("AudioStreamCollector: audioCapturerChangeInfos_: Added for client %{public}d session %{public}d",
@@ -205,6 +209,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             RendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
             RendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
             RendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
+            RendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
             *it = move(RendererChangeInfo);
             AUDIO_DEBUG_LOG("AudioStreamCollector: Playback details updated, to be dispatched");
 
@@ -264,6 +269,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             CapturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
             CapturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
             CapturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
+            CapturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
             *it = move(CapturerChangeInfo);
 
             mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
@@ -282,6 +288,60 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
     }
     AUDIO_INFO_LOG("AudioStreamCollector:UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID);
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo)
+{
+    bool deviceInfoUpdated = false;
+
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        if ((*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
+            AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
+                (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
+            (*it)->outputDeviceInfo = outputDeviceInfo;
+            deviceInfoUpdated = true;
+        }
+    }
+
+    if (deviceInfoUpdated) {
+        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
+            audioRendererChangeInfos_);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo)
+{
+    bool deviceInfoUpdated = false;
+
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        if ((*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
+            AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo: old device: %{public}d new device: %{public}d",
+                (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
+            (*it)->inputDeviceInfo = inputDeviceInfo;
+            deviceInfoUpdated = true;
+        }
+    }
+
+    if (deviceInfoUpdated) {
+        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
+            audioRendererChangeInfos_);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        UpdateRendererDeviceInfo(deviceInfo);
+    } else {
+        UpdateCapturerDeviceInfo(deviceInfo);
+    }
+
     return SUCCESS;
 }
 

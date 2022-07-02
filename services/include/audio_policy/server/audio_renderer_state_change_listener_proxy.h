@@ -37,13 +37,16 @@ private:
 
 class AudioRendererStateChangeListenerCallback : public AudioRendererStateChangeCallback {
 public:
-    AudioRendererStateChangeListenerCallback(const sptr<IStandardRendererStateChangeListener> &listener);
+    AudioRendererStateChangeListenerCallback(const sptr<IStandardRendererStateChangeListener> &listener,
+        bool hasBTPermission);
     virtual ~AudioRendererStateChangeListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioRendererStateChangeListenerCallback);
     void OnRendererStateChange(
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
 private:
     sptr<IStandardRendererStateChangeListener> listener_ = nullptr;
+    bool hasBTPermission_ = true;
+    void UpdateDeviceInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 };
 } // namespace AudioStandard
 } // namespace OHOS

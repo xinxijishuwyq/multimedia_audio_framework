@@ -74,7 +74,7 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
 
             bool isConnected = (hdiEventType == HDF_AUDIO_DEVICE_ADD) ? true : false;
             AudioStreamInfo streamInfo = {};
-            devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", streamInfo);
+            devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", "", streamInfo);
         }
     } else if (serviceStatus->serviceName == AUDIO_BLUETOOTH_HDI_SERVICE_NAME) {
         DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);

@@ -31,13 +31,16 @@ public:
 
     AudioStreamCollector();
     ~AudioStreamCollector();
-    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object);
+    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
     int32_t UnregisterAudioRendererEventListener(int32_t clientUID);
-    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object);
+    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
     int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
@@ -55,6 +58,8 @@ private:
     int32_t AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
+    int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
+    int32_t UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceInfo);
 };
 } // namespace AudioStandard
 } // namespace OHOS
