@@ -63,6 +63,8 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
     static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
         void *cookie);
+    std::string GetNetworkId();
+    ISinkParameterCallback* GetParamCallback();
 private:
     static std::map<std::string, RemoteAudioRendererSink *> allsinks;
     RemoteAudioRendererSink(std::string deviceNetworkId);

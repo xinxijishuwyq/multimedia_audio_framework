@@ -102,6 +102,18 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     }
 
     AudioServer::audioParameters[key] = value;
+#if PRODUCT_M40
+    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("has no valid sink");
+        return;
+    }
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+        parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+    }
+    audioRendererSinkInstance->SetAudioParameter(AudioParamKey(parmKey), "", value);
+#endif
 }
 
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
@@ -119,12 +131,21 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
     AUDIO_DEBUG_LOG("server: get audio parameter");
-
-    if (AudioServer::audioParameters.count(key)) {
-        return AudioServer::audioParameters[key];
-    } else {
-        return "";
+#if PRODUCT_M40
+    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (audioRendererSinkInstance != nullptr) {
+        AudioParamKey parmKey = AudioParamKey::NONE;
+        if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+            parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+        }
+        return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
     }
+#endif
+     if (AudioServer::audioParameters.count(key)) {
+         return AudioServer::audioParameters[key];
+     } else {
+         return "";
+     }
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
@@ -312,14 +333,17 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
+    AUDIO_INFO_LOG("notify device info: networkId(%s), connected(%d)", networkId.c_str(), connected);
     RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
-    audioRendererSinkInstance->RegisterParameterCallback(this);
+    if (audioRendererSinkInstance != nullptr && connected) {
+        audioRendererSinkInstance->RegisterParameterCallback(this);
+    }
 }
 
 void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
     const std::string value)
 {
-    AUDIO_INFO_LOG("OnAudioParameterChange Callback");
+    AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
 
     if (callback_ != nullptr) {
         callback_->OnAudioParameterChange(key, condition, value);

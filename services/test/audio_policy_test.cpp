@@ -307,6 +307,29 @@ static void IsDeviceActive()
     cout << "GetDevice Active : " << devActiveStatus << endl;
 }
 
+static void SetAudioParamter(int argc, char* argv[])
+{
+    std::string key = "";
+    std::string value= "";
+    if (argc == AudioPolicyTest::FOURTH_ARG) {
+        key = argv[AudioPolicyTest::SECOND_ARG];
+        value = argv[AudioPolicyTest::THIRD_ARG];
+        AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
+        audioSystemMgr->SetAudioParameter(key, value);
+        cout << "SetAudioParameter for key "<< key <<"; value: "<< value << endl; 
+    }
+}
+
+static void GetAudioParamter(int argc, char* argv[])
+{
+    std::string key = "";
+    if (argc == AudioPolicyTest::THIRD_ARG) {
+        key = argv[AudioPolicyTest::SECOND_ARG];
+        AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
+        std::string value = audioSystemMgr->GetAudioParameter(key);
+        cout << "GetAudioParameter for key "<< key <<"; result: "<< value << endl; }
+}
+
 static void HandleRingerMode(char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -425,7 +448,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:vmrucOoIiGgNn")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:vmrucOoIiGgNnt")) != -1) {
         switch (opt) {
             case 'G':
             case 'g':
@@ -487,6 +510,13 @@ int main(int argc, char* argv[])
             case '?':
                 UnknownOptionError();
                 break;
+            case 't':
+                SetAudioParamter(argc, argv);
+                break;
+            case 'T':
+                GetAudioParamter(argc, argv);
+                break;
+
             default:
                 break;
         }

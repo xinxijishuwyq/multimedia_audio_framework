@@ -35,6 +35,7 @@ constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t LOCAL_VOLUME_GROUP_ID = 0;
+constexpr int32_t NETWORK_ID_SIZE = 80;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
@@ -766,11 +767,12 @@ enum AudioParamKey {
     NONE = 0,
     VOLUME = 1,
     INTERRUPT = 2,
-    RENDER_STATE
+    RENDER_STATE = 5,
+    PARAM_KEY_LOWPOWER = 1000,
 };
 
 struct DStatusInfo {
-    char networkId[80];
+    char networkId[NETWORK_ID_SIZE];
     AudioPin hdiPin = AUDIO_PIN_NONE;
     int32_t mappingVolumeId = 0;
     int32_t mappingInterruptId = 0;
