@@ -34,6 +34,7 @@ namespace AudioStandard {
 namespace {
     AudioStreamManager *g_audioManagerInstance = nullptr;
     int g_isCallbackReceived = false;
+    constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr int32_t VALUE_NEGATIVE = -1;
     constexpr int32_t RENDERER_FLAG = 0;
     constexpr int32_t CAPTURER_FLAG = 0;
@@ -523,6 +524,56 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
         EXPECT_EQ(SUCCESS, ret);
         EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
         EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
+        audioRendererChangeInfos.clear();
+    }
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+    audioRendererChangeInfos.clear();
+    std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
+    ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+}
+
+/**
+* @tc.name  : Test GetCurrentRendererChangeInfos API
+* @tc.number: Audio_Stream_Change_Listner_GetCurrentRendererChangeDeviceInfos_001
+* @tc.desc  : Test GetCurrentRendererChangeInfos interface for getting device information for current stream
+*/
+HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendererChangeDeviceInfos_001,
+    TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+
+    AudioStreamManagerUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    for (int32_t i = 0; i < VALUE_HUNDRED; i++) {
+        ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
+        EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
+        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceRole, DeviceRole::OUTPUT_DEVICE);
+        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceType, DeviceType::DEVICE_TYPE_SPEAKER);
+        EXPECT_GE(audioRendererChangeInfos[0]->outputDeviceInfo.deviceId, MIN_DEVICE_ID);
+        EXPECT_EQ(true, (audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate >= SAMPLE_RATE_8000)
+            || ((audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate <= SAMPLE_RATE_96000)));
+        EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.encoding,
+            AudioEncodingType::ENCODING_PCM);
+        EXPECT_EQ(true, (audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.channels >= MONO)
+            && ((audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.channels <= CHANNEL_8)));
+        EXPECT_EQ(true, (audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.format >= SAMPLE_U8)
+            && ((audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.format <= SAMPLE_F32LE)));
         audioRendererChangeInfos.clear();
     }
 
@@ -1187,6 +1238,50 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
         EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
         audioCapturerChangeInfos.clear();
     }
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+    audioCapturerChangeInfos.clear();
+    std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
+    ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(0, static_cast<int32_t>(audioCapturerChangeInfos.size()));
+}
+
+/**
+* @tc.name  : Test GetCurrentCapturerChangeInfos API
+* @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeDeviceInfos_001
+* @tc.desc  : Test GetCurrentCapturerChangeInfos interface for getting device information for current stream
+*/
+HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeDeviceInfos_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerOptions capturerOptions;
+    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+
+    AudioStreamManagerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+    ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(1, static_cast<int32_t>(audioCapturerChangeInfos.size()));
+    EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceRole, DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceType, DeviceType::DEVICE_TYPE_MIC);
+    EXPECT_GE(audioCapturerChangeInfos[0]->inputDeviceInfo.deviceId, MIN_DEVICE_ID);
+    EXPECT_EQ(true, (audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.samplingRate >= SAMPLE_RATE_8000)
+        || ((audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.samplingRate <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.encoding, AudioEncodingType::ENCODING_PCM);
+    EXPECT_EQ(true, (audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.channels >= MONO)
+        && ((audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.channels <= CHANNEL_8)));
+    EXPECT_EQ(true, (audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.format >= SAMPLE_U8)
+        && ((audioCapturerChangeInfos[0]->inputDeviceInfo.audioStreamInfo.format <= SAMPLE_F32LE)));
 
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
