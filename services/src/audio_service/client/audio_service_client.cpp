@@ -908,7 +908,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
-    AUDIO_ERR_LOG("Creating stream fo channels %{public}d", audioParams.channels);
+    AUDIO_ERR_LOG("Creating stream of channels %{public}d", audioParams.channels);
     pa_channel_map map;
     if (audioParams.channels > CHANNEL_6) {
         pa_channel_map_init(&map);

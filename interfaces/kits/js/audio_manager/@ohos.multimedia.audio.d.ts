@@ -353,7 +353,7 @@ declare namespace audio {
    */
   enum StreamUsage {
     /**
-     * Unkown usage.
+     * Unknown usage.
      * @since 7
      */
     STREAM_USAGE_UNKNOWN = 0,
@@ -1591,8 +1591,8 @@ declare namespace audio {
     /**
      * Sets the ringtone uri.
      * @param context Indicates the Context object on OHOS
-     * @param uri Indicated which uri to be set for the tone type
-     * @param type Indicats the type of the tone
+     * @param uri Indicates which uri to be set for the tone type
+     * @param type Indicates the type of the tone
      * @param callback Callback object to be passed along with request
      * @since 1.0
      * @version 1.0
@@ -1602,7 +1602,7 @@ declare namespace audio {
     /**
      * Sets the ringtone uri.
      * @param context Indicates the Context object on OHOS
-     * @param type Indicats the type of the tone
+     * @param type Indicates the type of the tone
      * @param callback Callback object to be passed along with request
      * @return Returns uri of the ringtone
      * @since 1.0
@@ -1613,7 +1613,7 @@ declare namespace audio {
     /**
      * Gets the ringtone player.
      * @param context Indicates the Context object on OHOS
-     * @param type Indicats the type of the tone
+     * @param type Indicates the type of the tone
      * @param callback Callback object to be passed along with request
      * @return Returns ringtone player object
      * @since 1.0
@@ -1624,7 +1624,7 @@ declare namespace audio {
     /**
      * Sets the notification uri.
      * @param context Indicates the Context object on OHOS
-     * @param uri Indicats the uri of the notification
+     * @param uri Indicates the uri of the notification
      * @param callback Callback object to be passed along with request
      * @since 1.0
      * @version 1.0
@@ -1644,7 +1644,7 @@ declare namespace audio {
     /**
      * Sets the alarm uri.
      * @param context Indicates the Context object on OHOS
-     * @param uri Indicats the uri of the alarm
+     * @param uri Indicates the uri of the alarm
      * @param callback Callback object to be passed along with request
      * @since 1.0
      * @version 1.0

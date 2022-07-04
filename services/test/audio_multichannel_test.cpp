@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
                 PrintUsage();
                 break;
             default:
-                cout << "Unsuported option. Exiting!!!" << endl;
+                cout << "Unsupported option. Exiting!!!" << endl;
                 exit(0);
                 break;
         }

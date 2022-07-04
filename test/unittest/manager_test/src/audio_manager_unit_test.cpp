@@ -118,7 +118,7 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_004, TestSize.Level0)
     auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::ACTIVE_DEVICE_TYPE_NONE, true);
     EXPECT_NE(SUCCESS, ret);
 
-    // On bootup sco wont be connected. Hence activation should fail
+    // On bootup sco won't be connected. Hence activation should fail
     ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true);
     EXPECT_NE(SUCCESS, ret);
 

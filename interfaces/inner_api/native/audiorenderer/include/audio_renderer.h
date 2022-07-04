@@ -101,7 +101,7 @@ public:
 class AudioRenderer {
 public:
     /**
-     * @brief creater renderer instance.
+     * @brief create renderer instance.
      *
      * @param audioStreamType The audio streamtype to be created.
      * refer AudioStreamType in audio_info.h.
@@ -120,7 +120,7 @@ public:
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
     /**
-     * @brief creater renderer instance.
+     * @brief create renderer instance.
      *
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
@@ -129,7 +129,7 @@ public:
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
 
     /**
-     * @brief creater renderer instance.
+     * @brief create renderer instance.
      *
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
@@ -174,9 +174,9 @@ public:
     /**
      * @brief Registers the renderer callback listener.
      * (1)If using old SetParams(const AudioCapturerParams params) API,
-     *    this API must be called immediatley after SetParams.
+     *    this API must be called immediately after SetParams.
      * (2) Else if using Create(const AudioRendererOptions &rendererOptions),
-     *    this API must be called immediatley after Create.
+     *    this API must be called immediately after Create.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -306,7 +306,7 @@ public:
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can
      *        accept other write sizes as well.
      *
-     * @param bufferSize Indicates the reference variable into which buffer size value wil be written.
+     * @param bufferSize Indicates the reference variable into which buffer size value will be written.
      * @return Returns {@link SUCCESS} if bufferSize is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */

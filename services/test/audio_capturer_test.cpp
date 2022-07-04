@@ -153,7 +153,7 @@ public:
             }
 
             if (fwrite(buffer.get(), size, bytesRead, pFile) != bytesRead) {
-                AUDIO_ERR_LOG("error occured in fwrite");
+                AUDIO_ERR_LOG("error occurred in fwrite");
             }
             numBuffersToCapture--;
             if ((numBuffersToCapture == AudioTestConstants::PAUSE_BUFFER_POSITION)

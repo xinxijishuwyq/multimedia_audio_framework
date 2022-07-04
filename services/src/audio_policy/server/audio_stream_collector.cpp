@@ -44,7 +44,7 @@ int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientU
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientUID);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "AudioStreamCollector:set renderer state change event listner object is nullptr");
+        "AudioStreamCollector:set renderer state change event listener object is nullptr");
 
     sptr<IStandardRendererStateChangeListener> listener = iface_cast<IStandardRendererStateChangeListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
@@ -71,7 +71,7 @@ int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientU
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientUID);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "AudioStreamCollector:set capturer event listner object is nullptr");
+        "AudioStreamCollector:set capturer event listener object is nullptr");
 
     sptr<IStandardCapturerStateChangeListener> listener = iface_cast<IStandardCapturerStateChangeListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: capturer obj cast failed");

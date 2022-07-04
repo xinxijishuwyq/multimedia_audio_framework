@@ -765,7 +765,7 @@ int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clien
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(REGISTER_PLAYBACK_EVENT, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener register playback event faild , error: %d", error);
+        AUDIO_ERR_LOG("RegisterAudioRendererEventListener register playback event failed , error: %d", error);
         return ERROR;
     }
 
@@ -855,7 +855,7 @@ int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clien
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(REGISTER_RECORDING_EVENT, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener recording event faild , error: %d", error);
+        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener recording event failed , error: %d", error);
         return ERROR;
     }
 
@@ -878,7 +878,7 @@ int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t cli
     data.WriteInt32(clientUID);
     int32_t error = Remote() ->SendRequest(UNREGISTER_RECORDING_EVENT, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener recording event faild , error: %d", error);
+        AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener recording event failed , error: %d", error);
         return ERROR;
     }
 
