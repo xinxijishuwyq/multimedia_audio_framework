@@ -39,6 +39,9 @@ public:
     int32_t channelMasks_;
     std::string deviceName_;
     std::string macAddress_;
+    int32_t interruptGroupId_;
+    int32_t volumeGroupId_;
+    std::string networkId_;
     AudioStreamInfo audioStreamInfo_ = {};
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
@@ -249,6 +252,8 @@ public:
     bool AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
+    AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
+    DeviceType GetTypeValueFromPin(AudioPin pin) const;
 
 private:
     AudioSystemManager();

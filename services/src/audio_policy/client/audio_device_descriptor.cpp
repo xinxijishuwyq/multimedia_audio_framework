@@ -35,6 +35,10 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) :
     channelMasks_ = 0;
     deviceName_ = "";
     macAddress_ = "";
+
+    volumeGroupId_ = 0;
+    interruptGroupId_ = 0;
+    networkId_ = LOCAL_NETWORK_ID;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor()
@@ -53,6 +57,9 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     audioStreamInfo_.format = deviceDescriptor.audioStreamInfo_.format;
     audioStreamInfo_.samplingRate = deviceDescriptor.audioStreamInfo_.samplingRate;
     channelMasks_ = deviceDescriptor.channelMasks_;
+    volumeGroupId_ = deviceDescriptor.volumeGroupId_;
+    interruptGroupId_ = deviceDescriptor.interruptGroupId_;
+    networkId_ = deviceDescriptor.networkId_;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -73,6 +80,9 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
     parcel.WriteString(deviceName_);
     parcel.WriteString(macAddress_);
 
+    parcel.WriteInt32(interruptGroupId_);
+    parcel.WriteInt32(volumeGroupId_);
+    parcel.WriteString(networkId_);
     return true;
 }
 
@@ -95,6 +105,10 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
 
     audioDeviceDescriptor->deviceName_ = in.ReadString();
     audioDeviceDescriptor->macAddress_ = in.ReadString();
+
+    audioDeviceDescriptor->interruptGroupId_ = in.ReadInt32();
+    audioDeviceDescriptor->volumeGroupId_ = in.ReadInt32();
+    audioDeviceDescriptor->networkId_ = in.ReadString();
 
     return audioDeviceDescriptor;
 }
