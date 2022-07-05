@@ -168,6 +168,8 @@ private:
     void RegisterAudioServerDeathRecipient();
     void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
+    void GetDeviceInfo(PolicyData &policyData);
+    void GetGroupInfo(PolicyData &policyData);
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
