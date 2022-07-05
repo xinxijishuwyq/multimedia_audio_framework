@@ -700,5 +700,91 @@ uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
 {
     return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
 }
+
+AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
+{
+    AudioPin pin = AUDIO_PIN_NONE;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_NONE:
+        case OHOS::AudioStandard::DEVICE_TYPE_INVALID:
+            pin = AUDIO_PIN_NONE;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_DEFAULT:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_DAUDIO_DEFAULT;
+            } else {
+                pin = AUDIO_PIN_OUT_DAUDIO_DEFAULT;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_SPEAKER:
+            pin = AUDIO_PIN_OUT_SPEAKER;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_MIC:
+            pin = AUDIO_PIN_IN_MIC;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_HS_MIC;
+            } else {
+                pin = AUDIO_PIN_OUT_HEADSET;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
+        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
+        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
+        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case OHOS::AudioStandard::DEVICE_TYPE_MAX:
+            AUDIO_INFO_LOG("AudioSystemManager: GetPinValueFromType :don't supported the device type");
+            break;
+        default:
+            AUDIO_INFO_LOG("AudioSystemManager: GetPinValueFromType : invalid input parameter");
+            break;
+    }
+    return pin;
+}
+
+DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
+{
+    DeviceType type = DEVICE_TYPE_NONE;
+    switch (pin) {
+        case OHOS::AudioStandard::AUDIO_PIN_NONE:
+            type = DEVICE_TYPE_NONE;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
+            type = DEVICE_TYPE_SPEAKER;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_DAUDIO_DEFAULT:
+            type = DEVICE_TYPE_DEFAULT;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
+            type = DEVICE_TYPE_MIC;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
+            type = DEVICE_TYPE_WIRED_HEADSET;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+            type = DEVICE_TYPE_DEFAULT;
+            break;
+        default:
+            AUDIO_INFO_LOG("AudioSystemManager: GetTypeValueFromPin : invalid input parameter");
+            break;
+    }
+    return type;
+}
 } // namespace AudioStandard
 } // namespace OHOS
