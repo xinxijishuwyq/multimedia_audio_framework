@@ -409,7 +409,7 @@ int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice, AudioPortPin 
 
     inputPortPin = source.ext.device.type;
     AUDIO_DEBUG_LOG("AudioCapturerSource: Input PIN is: %{public}d", inputPortPin);
-    source.portId = audioPort.portId;
+    source.portId = static_cast<int32_t>(audioPort.portId);
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;

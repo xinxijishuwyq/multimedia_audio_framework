@@ -1009,7 +1009,7 @@ int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
         return ERROR;
     }
 
-    size_t size = reply.ReadInt32();
+    int32_t size = reply.ReadInt32();
     while (size > 0) {
         unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
         CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
@@ -1041,7 +1041,7 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
         return ERROR;
     }
 
-    size_t size = reply.ReadInt32();
+    int32_t size = reply.ReadInt32();
     while (size > 0) {
         unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
         CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
