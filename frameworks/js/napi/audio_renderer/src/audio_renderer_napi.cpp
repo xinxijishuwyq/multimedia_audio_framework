@@ -43,6 +43,7 @@ napi_ref AudioRendererNapi::interruptHintType_ = nullptr;
 napi_ref AudioRendererNapi::interruptForceType_ = nullptr;
 napi_ref AudioRendererNapi::audioState_ = nullptr;
 napi_ref AudioRendererNapi::sampleFormat_ = nullptr;
+mutex AudioRendererNapi::createMutex_;
 
 namespace {
     const int ARGS_ONE = 1;
@@ -1929,6 +1930,7 @@ bool AudioRendererNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
 napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_ptr<AudioRendererOptions> &renderOptions)
 {
+    lock_guard<mutex> lock(createMutex_);
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;

@@ -146,6 +146,7 @@ private:
     static napi_ref sampleFormat_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
+    static std::mutex createMutex_;
 
     std::unique_ptr<AudioRenderer> audioRenderer_;
     ContentType contentType_;
