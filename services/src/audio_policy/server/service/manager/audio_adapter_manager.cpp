@@ -18,6 +18,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "parameter.h"
 
 #include "audio_adapter_manager.h"
 
@@ -27,6 +28,13 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioAdapterManager::Init()
 {
+    char testMode[10] = {0}; // 10 for system parameter usage
+    auto res = GetParameter("debug.audio_service.testmodeon", "0", testMode, sizeof(testMode));
+    if (res == 1 && testMode[0] == '1') {
+        AUDIO_DEBUG_LOG("testMode on");
+        testModeOn_ = true;
+    }
+
     return true;
 }
 
@@ -305,6 +313,10 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.sinkLatency.empty()) {
             args.append(" sink_latency=");
             args.append(audioModuleInfo.sinkLatency);
+        }
+        if (testModeOn_) {
+            args.append(" test_mode_on=");
+            args.append("1");
         }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
