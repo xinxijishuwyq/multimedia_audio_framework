@@ -103,7 +103,7 @@ public:
         return true;
     }
 	
-    AudioSampleFormat GetSampleFormat (int32_t wavSampleFormat) const
+    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const
     {
         switch (wavSampleFormat) {
             case AudioTestConstants::SAMPLE_FORMAT_U8:

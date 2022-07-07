@@ -76,7 +76,7 @@ int AudioCapturerStateChangeListenerStub::OnRemoteRequest(
     switch (code) {
         case ON_CAPTURERSTATE_CHANGE: {
             vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-            size_t size = data.ReadInt32();
+            int32_t size = data.ReadInt32();
             while (size > 0) {
                 unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
                 CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");

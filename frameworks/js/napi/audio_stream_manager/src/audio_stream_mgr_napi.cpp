@@ -65,7 +65,7 @@ struct AudioStreamMgrAsyncContext {
 };
 
 AudioStreamMgrNapi::AudioStreamMgrNapi()
-    : env_(nullptr), wrapper_(nullptr) {}
+    : env_(nullptr), wrapper_(nullptr), audioStreamMngr_(nullptr) {}
 
 AudioStreamMgrNapi::~AudioStreamMgrNapi()
 {
@@ -299,7 +299,7 @@ napi_value AudioStreamMgrNapi::Construct(napi_env env, napi_callback_info info)
 
     streamMgrNapi->env_ = env;
     streamMgrNapi->audioStreamMngr_ = AudioStreamManager::GetInstance();
-    streamMgrNapi->cachedClientId = getpid();
+    streamMgrNapi->cachedClientId_ = getpid();
 
     status = napi_wrap(env, thisVar, static_cast<void*>(streamMgrNapi.get()),
                        AudioStreamMgrNapi::Destructor, nullptr, &(streamMgrNapi->wrapper_));
@@ -322,7 +322,8 @@ void AudioStreamMgrNapi::RegisterRendererStateChangeCallback(napi_env env, napi_
             return;
         }
 
-        int32_t ret = streamMgrNapi->audioStreamMngr_->RegisterAudioRendererEventListener(streamMgrNapi->cachedClientId,
+        int32_t ret =
+            streamMgrNapi->audioStreamMngr_->RegisterAudioRendererEventListener(streamMgrNapi->cachedClientId_,
             streamMgrNapi->rendererStateChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioStreamMgrNapi: Registering of Renderer State Change Callback Failed");
@@ -347,7 +348,8 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
             return;
         }
 
-        int32_t ret = streamMgrNapi->audioStreamMngr_->RegisterAudioCapturerEventListener(streamMgrNapi->cachedClientId,
+        int32_t ret =
+            streamMgrNapi->audioStreamMngr_->RegisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_,
             streamMgrNapi->capturerStateChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioStreamMgrNapi: Registering of Capturer State Change Callback Failed");
@@ -423,7 +425,7 @@ void AudioStreamMgrNapi::UnregisterCallback(napi_env env, napi_value jsThis, con
 
     if (!cbName.compare(RENDERERCHANGE_CALLBACK_NAME)) {
         int32_t ret = streamMgrNapi->audioStreamMngr_->
-            UnregisterAudioRendererEventListener(streamMgrNapi->cachedClientId);
+            UnregisterAudioRendererEventListener(streamMgrNapi->cachedClientId_);
         if (ret) {
             AUDIO_ERR_LOG("AudioStreamMgrNapi:UnRegistering of Renderer State Change Callback Failed");
             return;
@@ -435,7 +437,7 @@ void AudioStreamMgrNapi::UnregisterCallback(napi_env env, napi_value jsThis, con
         AUDIO_INFO_LOG("AudioStreamMgrNapi:UnRegistering of renderer State Change Callback successful");
     } else if (!cbName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
         int32_t ret = streamMgrNapi->audioStreamMngr_->
-            UnregisterAudioCapturerEventListener(streamMgrNapi->cachedClientId);
+            UnregisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_);
         if (ret) {
             AUDIO_ERR_LOG("AudioStreamMgrNapi:UnRegistering of capturer State Change Callback Failed");
             return;
@@ -489,7 +491,8 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioRendererInfos(napi_env env, napi_c
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+    if ((status == napi_ok && asyncContext->objectInfo != nullptr)
+        && (asyncContext->objectInfo->audioStreamMngr_ != nullptr)) {
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -549,7 +552,8 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioCapturerInfos(napi_env env, napi_c
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+    if ((status == napi_ok && asyncContext->objectInfo != nullptr)
+        && (asyncContext->objectInfo->audioStreamMngr_ != nullptr)) {
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);

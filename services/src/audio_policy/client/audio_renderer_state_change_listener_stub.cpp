@@ -80,7 +80,7 @@ int AudioRendererStateChangeListenerStub::OnRemoteRequest(
     switch (code) {
         case ON_RENDERERSTATE_CHANGE: {
             vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-            size_t size = data.ReadInt32();
+            int32_t size = data.ReadInt32();
             while (size > 0) {
                 unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
                 CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
