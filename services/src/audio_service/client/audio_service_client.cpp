@@ -1982,9 +1982,9 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     lock_guard<mutex> lock(ctrlMutex);
     AUDIO_INFO_LOG("SetVolume volume: %{public}f", volume);
 
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("context is null");
-        return AUDIO_CLIENT_ERR;
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("set stream volume: invalid stream state");
+        return AUDIO_CLIENT_PA_ERR;
     }
 
     /* Validate and return INVALID_PARAMS error */
