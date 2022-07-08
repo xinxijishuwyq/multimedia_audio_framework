@@ -87,7 +87,7 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
         return ERR_OPERATION_FAILED;
     }
 
-    // Incase if KvStore didnot connect during  bootup
+    // In case if KvStore didnot connect during  bootup
     if (mAudioPolicyKvStore == nullptr) {
         bool isFirstBoot = false;
         InitAudioPolicyKvStore(isFirstBoot);
@@ -207,7 +207,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
     mRingerMode = ringerMode;
 
-    // Incase if KvStore didnot connect during  bootup
+    // In case if KvStore didnot connect during  bootup
     if (mAudioPolicyKvStore == nullptr) {
         bool isFirstBoot = false;
         InitAudioPolicyKvStore(isFirstBoot);

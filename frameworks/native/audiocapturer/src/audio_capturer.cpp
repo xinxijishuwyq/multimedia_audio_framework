@@ -98,7 +98,7 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     }
 
     if (!(appInfo_.appUid)) {
-        appInfo_.appUid = getuid();
+        appInfo_.appUid = static_cast<int32_t>(getuid());
     }
 
     audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD, appInfo_.appUid);

@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     constexpr uint32_t MIN_DEVICE_COUNT = 2;
+    constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr uint32_t CONTENT_TYPE_UPPER_INVALID = 6;
     constexpr uint32_t STREAM_USAGE_UPPER_INVALID = 7;
     constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 100;
@@ -67,6 +68,14 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level0)
 
     EXPECT_EQ(inputDevice->deviceRole_, DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(inputDevice->deviceType_, DeviceType::DEVICE_TYPE_MIC);
+    EXPECT_GE(inputDevice->deviceId_, MIN_DEVICE_ID);
+    EXPECT_EQ(true, (inputDevice->audioStreamInfo_.samplingRate >= SAMPLE_RATE_8000)
+        || ((inputDevice->audioStreamInfo_.samplingRate <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(inputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
+    EXPECT_EQ(true, (inputDevice->audioStreamInfo_.channels >= MONO)
+        && ((inputDevice->audioStreamInfo_.channels <= CHANNEL_8)));
+    EXPECT_EQ(true, (inputDevice->audioStreamInfo_.format >= SAMPLE_U8)
+        && ((inputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
 }
 
 /**
@@ -81,6 +90,14 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level0)
 
     EXPECT_EQ(outputDevice->deviceRole_, DeviceRole::OUTPUT_DEVICE);
     EXPECT_EQ(outputDevice->deviceType_, DeviceType::DEVICE_TYPE_SPEAKER);
+    EXPECT_GE(outputDevice->deviceId_, MIN_DEVICE_ID);
+    EXPECT_EQ(true, (outputDevice->audioStreamInfo_.samplingRate >= SAMPLE_RATE_8000)
+        && ((outputDevice->audioStreamInfo_.samplingRate <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
+    EXPECT_EQ(true, (outputDevice->audioStreamInfo_.channels >= MONO)
+        && ((outputDevice->audioStreamInfo_.channels <= CHANNEL_8)));
+    EXPECT_EQ(true, (outputDevice->audioStreamInfo_.format >= SAMPLE_U8)
+        && ((outputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
 }
 
 /**
@@ -118,7 +135,7 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_004, TestSize.Level0)
     auto ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::ACTIVE_DEVICE_TYPE_NONE, true);
     EXPECT_NE(SUCCESS, ret);
 
-    // On bootup sco wont be connected. Hence activation should fail
+    // On bootup sco won't be connected. Hence activation should fail
     ret = AudioSystemManager::GetInstance()->SetDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true);
     EXPECT_NE(SUCCESS, ret);
 

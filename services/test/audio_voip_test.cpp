@@ -103,7 +103,7 @@ public:
         return true;
     }
 	
-    AudioSampleFormat GetSampleFormat (int32_t wavSampleFormat) const
+    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const
     {
         switch (wavSampleFormat) {
             case AudioTestConstants::SAMPLE_FORMAT_U8:
@@ -228,7 +228,7 @@ public:
             }
 
             if (fwrite(buffer.get(), size, bytesRead, pFile) != bytesRead) {
-                AUDIO_ERR_LOG("error occured in fwrite");
+                AUDIO_ERR_LOG("error occurred in fwrite");
             }
             numBuffersToCapture--;
         }

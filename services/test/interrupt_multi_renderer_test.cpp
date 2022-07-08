@@ -134,7 +134,7 @@ void InterruptMultiRendererTest::WriteBuffer(AudioRenderer* audioRenderer, FILE*
                 int32_t retBytes = audioRenderer->Write(buffer.get() + bytesWritten,
                                                         bytesToWrite - bytesWritten);
                 if (retBytes < 0) {
-                    AUDIO_ERR_LOG("InterruptMultiRendererTest: Error occured in writing buffer: %{public}d", retBytes);
+                    AUDIO_ERR_LOG("InterruptMultiRendererTest: Error occurred in writing buffer: %{public}d", retBytes);
                     if (audioRenderer->GetStatus() == RENDERER_PAUSED) {
                         cb->isRendererPaused_ = true;
                         int32_t seekPos = bytesWritten - bytesToWrite;

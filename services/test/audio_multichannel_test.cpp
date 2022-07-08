@@ -97,6 +97,7 @@ int32_t StartRecording(char *recPath, int samplingRate, size_t frames, uint32_t 
     }
 
     if ((strlen(sourceFilePath.c_str()) >= PATH_MAX) || (realpath(rootPath.c_str(), realPath) == nullptr)) {
+        free(buffer);
         AUDIO_ERR_LOG("StartRecording:: Invalid path errno = %{public}d", errno);
         return AUDIO_ERR;
     }
@@ -104,6 +105,7 @@ int32_t StartRecording(char *recPath, int samplingRate, size_t frames, uint32_t 
     std::string verifiedPath(realPath);
     FILE *pFile = fopen(verifiedPath.append(fileName).c_str(), "wb");
     if (pFile == nullptr) {
+        free(buffer);
         AUDIO_ERR_LOG("StartRecording:: Failed to open file errno = %{public}d", errno);
         return AUDIO_ERR;
     }
@@ -341,7 +343,7 @@ int main(int argc, char* argv[])
                 PrintUsage();
                 break;
             default:
-                cout << "Unsuported option. Exiting!!!" << endl;
+                cout << "Unsupported option. Exiting!!!" << endl;
                 exit(0);
                 break;
         }

@@ -39,6 +39,9 @@ public:
     int32_t channelMasks_;
     std::string deviceName_;
     std::string macAddress_;
+    int32_t interruptGroupId_;
+    int32_t volumeGroupId_;
+    std::string networkId_;
     AudioStreamInfo audioStreamInfo_ = {};
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
@@ -57,7 +60,7 @@ struct DeviceChangeAction {
 };
 
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
-// Once call manager adapt to new interrupt APIs, this will be rmeoved
+// Once call manager adapt to new interrupt APIs, this will be removed
 class AudioManagerCallback {
 public:
     virtual ~AudioManagerCallback() = default;
@@ -234,7 +237,7 @@ public:
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
 
     // Below APIs are added to handle compilation error in call manager
-    // Once call manager adapt to new interrupt APIs, this will be rmeoved
+    // Once call manager adapt to new interrupt APIs, this will be removed
     int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
     int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
@@ -251,6 +254,8 @@ public:
     uint32_t GetSinkLatencyFromXml() const;
     int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
+    AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
+    DeviceType GetTypeValueFromPin(AudioPin pin) const;
 
 private:
     AudioSystemManager();

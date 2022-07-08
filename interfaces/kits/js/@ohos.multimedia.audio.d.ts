@@ -803,7 +803,7 @@ declare namespace audio {
    */
   enum StreamUsage {
     /**
-     * Unkown usage.
+     * Unknown usage.
      * @since 8
      */
     STREAM_USAGE_UNKNOWN = 0,

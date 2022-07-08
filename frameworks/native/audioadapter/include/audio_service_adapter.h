@@ -43,7 +43,7 @@ public:
 class AudioServiceAdapter {
 public:
     /**
-     * @brief creater audioserviceadapter instance
+     * @brief create audioserviceadapter instance
      *
      * @param cb callback reference for AudioServiceAdapterCallback class
      * @return Returns instance of class that extends AudioServiceAdapter

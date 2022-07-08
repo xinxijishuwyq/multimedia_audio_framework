@@ -24,7 +24,7 @@ struct WAV_HEADER {
     uint8_t fmt[4] = {'f', 'm', 't', ' '}; // FMT header
     uint32_t Subchunk1Size = 16; // Size of the fmt chunk
     uint16_t AudioFormat = 1; // Audio format 1=PCM
-    uint16_t NumOfChan = 2; // Number of channels 1=Mono 2=Sterio
+    uint16_t NumOfChan = 2; // Number of channels 1=Mono 2=Stereo
     uint32_t SamplesPerSec = 44100; // Sampling Frequency in Hz
     uint32_t bytesPerSec = 176400; // bytes per second
     uint16_t blockAlign = 2; // 2=16-bit mono, 4=16-bit stereo

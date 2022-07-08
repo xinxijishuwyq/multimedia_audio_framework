@@ -432,7 +432,7 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     source.ext.mix.moduleId = 0;
     source.ext.mix.streamId = INTERNAL_OUTPUT_STREAM_ID;
 
-    sink.portId = audioPort_.portId;
+    sink.portId = static_cast<int32_t>(audioPort_.portId);
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
@@ -745,7 +745,7 @@ int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId)
     }
 
     if (!transactionId) {
-        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transacion id null");
+        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transaction id null");
         return ERR_INVALID_PARAM;
     }
 

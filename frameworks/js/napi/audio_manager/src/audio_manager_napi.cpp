@@ -437,7 +437,7 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = DEVICE_FLAG_NONE + 1; i < DEVICE_FLAG_MAX; i++) {
+        for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
             switch (i) {
                 case OUTPUT_DEVICES_FLAG:
                     propName = "OUTPUT_DEVICES_FLAG";

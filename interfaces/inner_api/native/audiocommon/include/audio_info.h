@@ -38,12 +38,13 @@ const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
+const std::string LOCAL_NETWORK_ID = "LocalDevice";
 
 enum DeviceFlag {
     /**
      * Device flag none.
      */
-    DEVICE_FLAG_NONE = -1,
+    DEVICE_FLAG_NONE = 0,
     /**
      * Indicates all output audio devices.
      */
@@ -56,6 +57,22 @@ enum DeviceFlag {
      * Indicates all audio devices.
      */
     ALL_DEVICES_FLAG = 3,
+    /**
+     * Indicates all distributed output audio devices.
+     */
+    DISTRIBUTED_OUTPUT_DEVICES_FLAG = 4,
+    /**
+     * Indicates all distributed input audio devices.
+     */
+    DISTRIBUTED_INPUT_DEVICES_FLAG = 8,
+    /**
+     * Indicates all distributed audio devices.
+     */
+    ALL_DISTRIBUTED_DEVICES_FLAG = 12,
+    /**
+     * Indicates all local and distributed audio devices.
+     */
+    ALL_L_D_DEVICES_FLAG = 15,
     /**
      * Device flag max count.
      */
@@ -122,6 +139,10 @@ enum DeviceType {
      * Indicates a debug source device
      */
     DEVICE_TYPE_FILE_SOURCE = 51,
+    /**
+     * Indicates default device
+     */
+    DEVICE_TYPE_DEFAULT = 1000,
     /**
      * Indicates device type max count.
      */
@@ -682,6 +703,22 @@ struct AudioCapturerChangeInfo {
 struct AudioStreamChangeInfo {
     AudioRendererChangeInfo audioRendererChangeInfo;
     AudioCapturerChangeInfo audioCapturerChangeInfo;
+};
+
+enum AudioPin {
+    AUDIO_PIN_NONE = 0,
+    AUDIO_PIN_OUT_SPEAKER = 1,
+    AUDIO_PIN_OUT_HEADSET = 2,
+    AUDIO_PIN_OUT_LINEOUT = 4,
+    AUDIO_PIN_OUT_HDMI = 8,
+    AUDIO_PIN_OUT_USB = 16,
+    AUDIO_PIN_OUT_USB_EXT = 32,
+    AUDIO_PIN_OUT_DAUDIO_DEFAULT = 64,
+    AUDIO_PIN_IN_MIC = 134217729,
+    AUDIO_PIN_IN_HS_MIC = 134217730,
+    AUDIO_PIN_IN_LINEIN = 134217732,
+    AUDIO_PIN_IN_USB_EXT = 134217736,
+    AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
 };
 } // namespace AudioStandard
 } // namespace OHOS

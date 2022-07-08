@@ -908,7 +908,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
-    AUDIO_ERR_LOG("Creating stream fo channels %{public}d", audioParams.channels);
+    AUDIO_ERR_LOG("Creating stream of channels %{public}d", audioParams.channels);
     pa_channel_map map;
     if (audioParams.channels > CHANNEL_6) {
         pa_channel_map_init(&map);
@@ -1982,9 +1982,9 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     lock_guard<mutex> lock(ctrlMutex);
     AUDIO_INFO_LOG("SetVolume volume: %{public}f", volume);
 
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("context is null");
-        return AUDIO_CLIENT_ERR;
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("set stream volume: invalid stream state");
+        return AUDIO_CLIENT_PA_ERR;
     }
 
     /* Validate and return INVALID_PARAMS error */

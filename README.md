@@ -177,12 +177,12 @@ You can use APIs provided in this repository to convert audio data into audible 
         bytesWritten += retBytes;
     }
     ```
-9. Incase of audio interrupts, application can encounter write failures. Interrupt unaware applications can check the renderer state using **GetStatus** API before writing audio data further.
+9. In case of audio interrupts, application can encounter write failures. Interrupt unaware applications can check the renderer state using **GetStatus** API before writing audio data further.
 Interrupt aware applications will have more details accessible via AudioRendererCallback..
     ```
     while ((bytesWritten < bytesToWrite) && ((bytesToWrite - bytesWritten) > minBytes)) {
         int32_t retBytes = audioRenderer->Write(buffer.get() + bytesWritten, bytesToWrite - bytesWritten);
-        if (retBytes < 0) { // Error occured
+        if (retBytes < 0) { // Error occurred
             if (audioRenderer_->GetStatus() == RENDERER_PAUSED) { // Query the state and take appropriate action
                 isRenderPaused_ = true;
                 int32_t seekPos = bytesWritten - bytesToWrite;
@@ -349,7 +349,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
 
-9. Use **SetDeviceChangeCallback** API to register for device change events. Clients will recieve callback when a device is connected/disconnected. Currently audio subsystem supports sending device change events for WIRED_HEADSET, USB_HEADSET and BLUETOOTH_A2DP device.
+9. Use **SetDeviceChangeCallback** API to register for device change events. Clients will receive callback when a device is connected/disconnected. Currently audio subsystem supports sending device change events for WIRED_HEADSET, USB_HEADSET and BLUETOOTH_A2DP device.
 **OnDeviceChange** function will be called and client will receive **DeviceChangeAction** object, which will contain following parameters:\
 *type* : **DeviceChangeType** which specifies whether device is connected or disconnected.\
 *deviceDescriptors* : Array of **AudioDeviceDescriptor** object which specifies the type of device and its role(input/output device).

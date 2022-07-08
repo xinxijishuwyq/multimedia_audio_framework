@@ -518,6 +518,19 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         AUDIO_INFO_LOG("Filling io device list for %{public}d", deviceDescriptor.deviceType_);
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
         audioDescriptor->deviceRole_ = INPUT_DEVICE;
+        if ((deviceDescriptor.deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
+            || (deviceDescriptor.deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+            auto isBuiltInMicPresent = [](const sptr<AudioDeviceDescriptor> &devDesc) {
+                CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+                return (DEVICE_TYPE_MIC == devDesc->deviceType_);
+            };
+
+            auto itr = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), isBuiltInMicPresent);
+            if (itr != mConnectedDevices.end()) {
+                audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+            }
+        }
+
         desc.push_back(audioDescriptor);
         if (isConnected) {
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
@@ -525,6 +538,18 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
         audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
+        if ((deviceDescriptor.deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
+            || (deviceDescriptor.deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+            auto isSpeakerPresent = [](const sptr<AudioDeviceDescriptor> &devDesc) {
+                CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+                return (DEVICE_TYPE_SPEAKER == devDesc->deviceType_);
+            };
+
+            auto itr = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), isSpeakerPresent);
+            if (itr != mConnectedDevices.end()) {
+                audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+            }
+        }
         desc.push_back(audioDescriptor);
         if (isConnected) {
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);

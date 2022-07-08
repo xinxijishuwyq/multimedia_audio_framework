@@ -52,7 +52,7 @@ private:
     napi_env env_;
     napi_ref wrapper_;
     AudioStreamManager *audioStreamMngr_;
-    int32_t cachedClientId = -1;
+    int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCallbackNapi_ = nullptr;
 };
