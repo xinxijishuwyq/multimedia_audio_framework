@@ -316,7 +316,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     audioStream_->UnsetRendererPeriodPositionCallback();
 }
 
-bool AudioRendererPrivate::Start()
+bool AudioRendererPrivate::Start() const
 {
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
@@ -380,6 +380,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::Pause() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Pause");
     bool result = audioStream_->PauseAudioStream();
     AudioInterrupt audioInterrupt;
     switch (mode_) {

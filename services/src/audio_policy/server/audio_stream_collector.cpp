@@ -440,5 +440,15 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
     mDispatcherService.removeRendererListener(uid);
     mDispatcherService.removeCapturerListener(uid);
 }
+
+int32_t AudioStreamCollector::PausedOrRecoveryStream(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    std::shared_ptr<AudioClientTracker> callback = clientTracker_[clientUid];
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        ERR_INVALID_PARAM, "AudioStreamCollector:PausedOrRecoveryStream callback failed");
+
+    callback->PausedOrRecoveryStreamImpl(streamSetStateEventInternal);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

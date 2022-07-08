@@ -249,6 +249,8 @@ public:
     bool AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
+    int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                    AudioStreamType audioStreamType);
 
 private:
     AudioSystemManager();
@@ -262,6 +264,7 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
 
     int32_t cbClientId_ = -1;
+    
     int32_t volumeChangeClientPid_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

@@ -142,6 +142,9 @@ public:
 
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
+    int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                    AudioStreamType audioStreamType);
 private:
     AudioPolicyManager()
     {

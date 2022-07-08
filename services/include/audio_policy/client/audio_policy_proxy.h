@@ -115,6 +115,8 @@ public:
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
+    int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                    AudioStreamType audioStreamType) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

@@ -26,10 +26,11 @@ namespace AudioStandard {
 class IStandardClientTracker : public IRemoteBroker {
 public:
     virtual ~IStandardClientTracker() = default;
-
+    virtual void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
     enum AudioClientTrackerMsg {
         ON_ERROR = 0,
         ON_INIT,
+        PAUSEDORRECOVERYSTREAM
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardClientTracker");

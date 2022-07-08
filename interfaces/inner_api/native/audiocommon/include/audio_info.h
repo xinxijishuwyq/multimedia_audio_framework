@@ -653,6 +653,16 @@ struct DeviceInfo {
     AudioStreamInfo audioStreamInfo;
 };
 
+enum StreamSetState {
+    Stream_Pause,
+    Stream_Recovery
+};
+
+struct StreamSetStateEventInternal {
+    StreamSetState streamSetState;
+    AudioStreamType audioStreamType;
+};
+
 struct AudioRendererChangeInfo {
     int32_t clientUID;
     int32_t sessionId;

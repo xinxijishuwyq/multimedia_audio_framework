@@ -20,6 +20,26 @@ namespace AudioStandard {
 AudioClientTrackerCallbackProxy::AudioClientTrackerCallbackProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardClientTracker>(impl) { }
 
+void AudioClientTrackerCallbackProxy::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
+    data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
+
+    int error = Remote()->SendRequest(PAUSEDORRECOVERYSTREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("PAUSEDORRECOVERYSTREAM failed, error: %{public}d", error);
+    }
+}
+
+
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)
     : listener_(listener)
 {
@@ -29,6 +49,13 @@ ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandar
 ClientTrackerCallbackListener::~ClientTrackerCallbackListener()
 {
     AUDIO_DEBUG_LOG("ClientTrackerCallbackListener destructor");
+}
+
+void ClientTrackerCallbackListener::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    if (listener_ != nullptr) {
+        listener_->PausedOrRecoveryStreamImpl(streamSetStateEventInternal);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

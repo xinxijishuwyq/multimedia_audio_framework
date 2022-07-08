@@ -34,6 +34,21 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
+
+    switch (code) {
+        case PAUSEDORRECOVERYSTREAM: {
+            StreamSetStateEventInternal sreamSetStateEventInternal = {};
+            sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
+            sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
+            PausedOrRecoveryStreamImpl(sreamSetStateEventInternal);
+            return AUDIO_OK;
+        }
+        default: {
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+
     return 0;
 }
 
@@ -42,6 +57,20 @@ void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub::SetClientTrackerCallback");
     callback_ = callback;
+}
+
+void AudioClientTrackerCallbackStub::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedOrRecoveryStreamImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        //std::shared_ptr<AudioRendererProxyObj> cb_ = std::make_shared<AudioRendererProxyObj>(cb);
+        // if (cb_ != nullptr) {
+        cb->PausedOrRecoveryStreamImpl(streamSetStateEventInternal);
+        // }
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

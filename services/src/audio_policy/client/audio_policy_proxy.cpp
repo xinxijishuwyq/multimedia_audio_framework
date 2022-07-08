@@ -1052,5 +1052,32 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 
     return SUCCESS;
 }
+
+int32_t AudioPolicyProxy::PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                                AudioStreamType audioStreamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::PausedOrRecoveryStream");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("PausedOrRecoveryStream: WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(clientUid));
+    data.WriteInt32(static_cast<int32_t>(streamSetState));
+    data.WriteInt32(static_cast<int32_t>(audioStreamType));
+
+    int32_t error = Remote()->SendRequest(PAUSED_OR_RECOVERY_STREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Paused or RECOVERY stream changed info event failed , error: %d", error);
+        return ERROR;
+    }
+
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

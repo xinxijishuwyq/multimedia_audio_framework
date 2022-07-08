@@ -700,5 +700,15 @@ uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
 {
     return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
 }
+
+int32_t AudioSystemManager::PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                                    AudioStreamType audioStreamType)
+{
+    AUDIO_INFO_LOG("AudioSystemManager::PausedOrRecoveryStream::clientUid:%{public}d ", clientUid);
+    int32_t result = 0;
+    
+    result = AudioPolicyManager::GetInstance().PausedOrRecoveryStream(clientUid,streamSetState, audioStreamType);
+    return result;
+}
 } // namespace AudioStandard
 } // namespace OHOS

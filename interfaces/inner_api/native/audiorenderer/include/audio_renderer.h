@@ -224,7 +224,7 @@ public:
      *
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      */
-    virtual bool Start() = 0;
+    virtual bool Start() const = 0;
 
     /**
      * @brief Writes audio data.

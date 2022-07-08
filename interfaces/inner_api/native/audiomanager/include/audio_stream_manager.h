@@ -49,6 +49,12 @@ public:
 class AudioClientTracker {
 public:
     virtual ~AudioClientTracker() = default;
+    /**
+     * Paused Or Recovery Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
 };
 
 class AudioStreamManager {

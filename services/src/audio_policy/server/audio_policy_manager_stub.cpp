@@ -510,6 +510,20 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
+void AudioPolicyManagerStub::PausedOrRecoveryStreamInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrRecoveryStream change info internal entered");
+
+    int32_t clientUid = data.ReadInt32();    
+    StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
+    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+
+    int32_t result = PausedOrRecoveryStream(clientUid,streamSetState,streamType);
+    reply.WriteInt32(result);
+
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrRecoveryStream change info internal exit");
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -685,7 +699,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_CAPTURER_CHANGE_INFOS:
             GetCapturerChangeInfosInternal(data, reply);
             break;
-
+            
+        case PAUSED_OR_RECOVERY_STREAM:
+            PausedOrRecoveryStreamInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

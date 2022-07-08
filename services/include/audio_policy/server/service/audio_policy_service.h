@@ -136,6 +136,8 @@ public:
     void OnAudioLatencyParsed(uint64_t latency);
 
     void OnSinkLatencyParsed(uint32_t latency);
+
+    int32_t PausedOrRecoveryStream(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),

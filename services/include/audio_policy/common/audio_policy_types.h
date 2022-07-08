@@ -63,6 +63,7 @@ enum AudioPolicyCommand {
     UPDATE_TRACKER,
     GET_RENDERER_CHANGE_INFOS,
     GET_CAPTURER_CHANGE_INFOS,
+    PAUSED_OR_RECOVERY_STREAM,
 };
 } // namespace AudioStandard
 } // namespace OHOS

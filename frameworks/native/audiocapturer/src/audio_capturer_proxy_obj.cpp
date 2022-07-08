@@ -25,5 +25,15 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 {
     capturer = capturerObj;
 }
+
+void AudioCapturerProxyObj::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
+        capturer->Pause();
+    }
+    else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Recovery) {
+        capturer->Start();
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

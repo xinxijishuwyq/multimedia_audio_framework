@@ -466,5 +466,13 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+
+int32_t AudioPolicyManager::PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                                    AudioStreamType audioStreamType)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::PausedOrRecoveryStream");
+    
+    return  g_sProxy->PausedOrRecoveryStream(clientUid, streamSetState, audioStreamType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

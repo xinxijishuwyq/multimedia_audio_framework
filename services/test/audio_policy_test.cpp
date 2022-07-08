@@ -200,8 +200,32 @@ static void UnknownOptionError()
         cout << "unknown option: snprintf_s error : buffer allocation fails";
         return;
     }
-    cout << "unknown option: " << option << endl << endl;
+    cout << "unknown option: " << option << endl;
     PrintUsage();
+}
+
+static void HandlePausedOrRecoveryStream(int type)
+{
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    cout << "HandlePausedOrRecoveryStream : Runing " << endl;
+
+    const int32_t uid = static_cast<int32_t>(20010035);
+    cout << "HandlePausedOrRecoveryStream : uid : " << uid << endl;
+    if (uid == 0){
+        return;
+    }
+
+    int32_t result = 0;
+    if (type == 0) {
+        cout << "type :: Stream_Pause :: " << type << endl;
+        result = audioSystemMgr->PausedOrRecoveryStream(uid, StreamSetState::Stream_Pause, AudioStreamType::STREAM_MEDIA);
+    } 
+    else{
+         cout << "type :: Stream_Recovery :: " << type << endl;
+        result = audioSystemMgr->PausedOrRecoveryStream(uid, StreamSetState::Stream_Recovery, AudioStreamType::STREAM_MEDIA);
+    }
+
+    cout << "result :  " << result << endl;
 }
 
 int main(int argc, char* argv[])
@@ -214,7 +238,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:vmruc")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:vmruc")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -247,6 +271,12 @@ int main(int argc, char* argv[])
             case 'C':
             case 'c':
                 HandleAudioScene(opt);
+                break;
+            case 'X':
+                HandlePausedOrRecoveryStream(0);
+                break;
+            case 'Z':
+                HandlePausedOrRecoveryStream(1);
                 break;
             case ':':
                 NoValueError();

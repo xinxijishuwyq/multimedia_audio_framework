@@ -147,6 +147,9 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+                                    AudioStreamType audioStreamType) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
