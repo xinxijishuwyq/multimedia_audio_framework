@@ -254,7 +254,7 @@ public:
             if (audioRenderer->GetLatency(latency)) {
                 AUDIO_ERR_LOG("AudioRendererTest: GetLatency failed");
                 break;
-#if LATENCY_ACCURACY_TEST
+#ifdef LATENCY_ACCURACY_TEST
             } else {
                 AUDIO_DEBUG_LOG("GetLatency: %{public}" PRIu64, latency);
 #endif // LATENCY_ACCURACY_TEST

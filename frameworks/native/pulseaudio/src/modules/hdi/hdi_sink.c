@@ -79,10 +79,9 @@ struct Userdata {
     struct RendererSinkAdapter *sinkAdapter;
     pa_asyncmsgq *dq;
     pa_atomic_t dflag;
-#ifdef TEST_MODE
+    bool test_mode_on;
     uint32_t writeCount;
     uint32_t renderCount;
-#endif // TEST_MODE
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -101,12 +100,53 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     p = pa_memblock_acquire(pchunk->memblock);
     pa_assert(p);
 
-#ifdef TEST_MODE
+    while (true) {
+        uint64_t writeLen = 0;
+
+        int32_t ret = u->sinkAdapter->RendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
+        if (writeLen > length) {
+            AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+                         length, writeLen, ret);
+            count = -1 - count;
+            break;
+        }
+        if (writeLen == 0) {
+            AUDIO_ERR_LOG("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+                         length, writeLen, ret);
+            count = -1 - count;
+            break;
+        } else {
+            count += writeLen;
+            index += writeLen;
+            length -= writeLen;
+            if (length <= 0) {
+                break;
+            }
+        }
+    }
+    pa_memblock_release(pchunk->memblock);
+    pa_memblock_unref(pchunk->memblock);
+
+    return count;
+}
+
+static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
+{
+    size_t index, length;
+    ssize_t count = 0;
+    void *p = NULL;
+
+    pa_assert(pchunk);
+
+    index = pchunk->index;
+    length = pchunk->length;
+    p = pa_memblock_acquire(pchunk->memblock);
+    pa_assert(p);
+
     if (*((int*)p) > 0) {
         AUDIO_DEBUG_LOG("RenderWrite Write: %{public}d", ++u->writeCount);
     }
     AUDIO_DEBUG_LOG("RenderWrite Write renderCount: %{public}d", ++u->renderCount);
-#endif // TEST_MODE
 
     while (true) {
         uint64_t writeLen = 0;
@@ -255,6 +295,40 @@ static void ThreadFuncWriteHDI(void *userdata)
         pa_asyncmsgq_done(u->dq, 0);
     } while (!quit);
 }
+
+static void TestModeThreadFuncWriteHDI(void *userdata)
+{
+    struct Userdata *u = userdata;
+    pa_assert(u);
+
+    int quit = 0;
+
+    do {
+        int code = 0;
+        pa_memchunk chunk;
+
+        pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
+
+        switch (code) {
+            case HDI_RENDER:
+                if (TestModeRenderWrite(u, &chunk) < 0) {
+                    u->bytes_dropped += chunk.length;
+                    AUDIO_ERR_LOG("TestModeRenderWrite failed");
+                }
+                if (pa_atomic_load(&u->dflag) == 1) {
+                    pa_atomic_sub(&u->dflag, 1);
+                }
+                break;
+            case QUIT:
+                quit = 1;
+                break;
+            default:
+                break;
+        }
+        pa_asyncmsgq_done(u->dq, 0);
+    } while (!quit);
+}
+
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 {
     struct Userdata *u = NULL;
@@ -341,10 +415,8 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             pa_core_exit(u->core, true, 0);
         } else {
             u->isHDISinkStarted = true;
-#ifdef TEST_MODE
             u->writeCount = 0;
             u->renderCount = 0;
-#endif // TEST_MODE
             AUDIO_INFO_LOG("Successfully restarted HDI renderer");
         }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
@@ -520,12 +592,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
+    u->test_mode_on = false;
+    if (pa_modargs_get_value_boolean(ma, "test_mode_on", &u->test_mode_on) < 0) {
+        AUDIO_INFO_LOG("No test_mode_on arg. Normal mode it is.");
+    }
+
     pa_atomic_store(&u->dflag, 0);
     u->dq = pa_asyncmsgq_new(0);
-#ifdef TEST_MODE
-            u->writeCount = 0;
-            u->renderCount = 0;
-#endif // TEST_MODE
 
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {
@@ -566,10 +639,20 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    hdiThreadName = "write-hdi";
-    if (!(u->thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
-        AUDIO_ERR_LOG("Failed to write-hdi thread.");
-        goto fail;
+    if (u->test_mode_on) {
+        u->writeCount = 0;
+        u->renderCount = 0;
+        hdiThreadName = "test-mode-write-hdi";
+        if (!(u->thread_hdi = pa_thread_new(hdiThreadName, TestModeThreadFuncWriteHDI, u))) {
+            AUDIO_ERR_LOG("Failed to test-mode-write-hdi thread.");
+            goto fail;
+        }
+    } else {
+        hdiThreadName = "write-hdi";
+        if (!(u->thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
+            AUDIO_ERR_LOG("Failed to write-hdi thread.");
+            goto fail;
+        }
     }
 
     pa_sink_put(u->sink);
