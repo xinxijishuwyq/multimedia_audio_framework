@@ -90,7 +90,7 @@ public:
 
     virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) = 0;
 
-    virtual bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) = 0;
+    virtual bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId, int32_t appUid) = 0;
 
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
 

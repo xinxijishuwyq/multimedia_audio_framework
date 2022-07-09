@@ -88,7 +88,7 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId) override;
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -111,7 +111,7 @@ public:
 
     int32_t GetCurrentRendererChangeInfos(
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
- 
+
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 

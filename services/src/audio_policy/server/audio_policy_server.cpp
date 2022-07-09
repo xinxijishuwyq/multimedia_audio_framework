@@ -228,7 +228,7 @@ float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     if (streamType == AudioStreamType::STREAM_RING) {
-        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("SetStreamMute permission denied for stream type : %{public}d", streamType);
             return ERR_PERMISSION_DENIED;
         }
@@ -242,7 +242,7 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
     if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
         float currentRingVolume = GetStreamVolume(AudioStreamType::STREAM_RING);
         if ((currentRingVolume > 0.0f && volume == 0.0f) || (currentRingVolume == 0.0f && volume > 0.0f)) {
-            if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+            if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
                 AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
                 return ERR_PERMISSION_DENIED;
             }
@@ -267,7 +267,7 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
 bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 {
     if (streamType == AudioStreamType::STREAM_RING) {
-        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("GetStreamMute permission denied for stream type : %{public}d", streamType);
             return false;
         }
@@ -279,7 +279,7 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = mPolicyService.GetDevices(deviceFlag);
-    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, 0);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
             if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
@@ -332,7 +332,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     }
 
     if (isPermissionRequired) {
-        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION, 0)) {
+        if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("Access policy permission denied for ringerMode : %{public}d", ringMode);
             return ERR_PERMISSION_DENIED;
         }
@@ -1002,14 +1002,14 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return SUCCESS;
 }
 
-bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("==[%{public}s] [tid:%{public}d] [uid:%{public}d]==", permissionName.c_str(), appTokenId, callerUid);
+    AUDIO_DEBUG_LOG("[%{public}s] [tid:%{public}d] [uid:%{public}d]", permissionName.c_str(), appTokenId, callerUid);
 
     // Root users should be whitelisted
-    if (callerUid == ROOT_UID) {
-        AUDIO_INFO_LOG("Root user. Permission GRANTED!!!");
+    if ((callerUid == ROOT_UID) || ((callerUid == MEDIA_SERVICE_UID) && (appUid == ROOT_UID))) {
+        AUDIO_DEBUG_LOG("Root user. Permission GRANTED!!!");
         return true;
     }
 
@@ -1203,7 +1203,7 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, 0);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
     return mPolicyService.GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission);
 }
@@ -1211,7 +1211,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION, 0);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
     return mPolicyService.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, hasBTPermission);
 }

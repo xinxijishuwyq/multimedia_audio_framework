@@ -97,7 +97,7 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
         appInfo_.appPid = getpid();
     }
 
-    if (!(appInfo_.appUid)) {
+    if (appInfo_.appUid < 0) {
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
 
@@ -118,7 +118,7 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
-    if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId)) {
+    if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId, appInfo_.appUid)) {
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }
