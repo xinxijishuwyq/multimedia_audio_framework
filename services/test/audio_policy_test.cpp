@@ -211,18 +211,19 @@ static void HandlePausedOrRecoveryStream(int type)
 
     const int32_t uid = static_cast<int32_t>(20010035);
     cout << "HandlePausedOrRecoveryStream : uid : " << uid << endl;
-    if (uid == 0){
+    if (uid == 0) {
         return;
     }
 
+    StreamSetState sate = StreamSetState::Stream_Pause;
+    AudioStreamType stype = AudioStreamType::STREAM_MEDIA;
     int32_t result = 0;
     if (type == 0) {
         cout << "type :: Stream_Pause :: " << type << endl;
-        result = audioSystemMgr->PausedOrRecoveryStream(uid, StreamSetState::Stream_Pause, AudioStreamType::STREAM_MEDIA);
-    } 
-    else{
-         cout << "type :: Stream_Recovery :: " << type << endl;
-        result = audioSystemMgr->PausedOrRecoveryStream(uid, StreamSetState::Stream_Recovery, AudioStreamType::STREAM_MEDIA);
+        result = audioSystemMgr->PausedOrRecoveryStream(uid, sate, stype);
+    } else {
+        cout << "type :: Stream_Recovery :: " << type << endl;
+        result = audioSystemMgr->PausedOrRecoveryStream(uid, sate, stype);
     }
 
     cout << "result :  " << result << endl;

@@ -20,7 +20,8 @@ namespace AudioStandard {
 AudioClientTrackerCallbackProxy::AudioClientTrackerCallbackProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardClientTracker>(impl) { }
 
-void AudioClientTrackerCallbackProxy::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioClientTrackerCallbackProxy::PausedOrRecoveryStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -51,7 +52,8 @@ ClientTrackerCallbackListener::~ClientTrackerCallbackListener()
     AUDIO_DEBUG_LOG("ClientTrackerCallbackListener destructor");
 }
 
-void ClientTrackerCallbackListener::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void ClientTrackerCallbackListener::PausedOrRecoveryStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     if (listener_ != nullptr) {
         listener_->PausedOrRecoveryStreamImpl(streamSetStateEventInternal);

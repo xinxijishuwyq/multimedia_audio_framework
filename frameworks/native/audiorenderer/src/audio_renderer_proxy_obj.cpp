@@ -30,8 +30,7 @@ void AudioRendererProxyObj::PausedOrRecoveryStreamImpl(const StreamSetStateEvent
 {
     if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
         renderer->Pause();
-    }
-    else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Recovery) {
+    } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Recovery) {
         renderer->Start();
     }
 }

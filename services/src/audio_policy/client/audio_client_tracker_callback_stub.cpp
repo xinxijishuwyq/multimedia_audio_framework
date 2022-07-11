@@ -59,15 +59,13 @@ void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
     callback_ = callback;
 }
 
-void AudioClientTrackerCallbackStub::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioClientTrackerCallbackStub::PausedOrRecoveryStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedOrRecoveryStreamImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
     if (cb != nullptr) {
-        //std::shared_ptr<AudioRendererProxyObj> cb_ = std::make_shared<AudioRendererProxyObj>(cb);
-        // if (cb_ != nullptr) {
         cb->PausedOrRecoveryStreamImpl(streamSetStateEventInternal);
-        // }
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
     }

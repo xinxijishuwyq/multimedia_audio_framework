@@ -30,8 +30,7 @@ void AudioCapturerProxyObj::PausedOrRecoveryStreamImpl(const StreamSetStateEvent
 {
     if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
         capturer->Pause();
-    }
-    else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Recovery) {
+    } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Recovery) {
         capturer->Start();
     }
 }

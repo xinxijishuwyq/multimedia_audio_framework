@@ -1054,7 +1054,7 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 }
 
 int32_t AudioPolicyProxy::PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
-                                                AudioStreamType audioStreamType)
+    AudioStreamType audioStreamType)
 {
     MessageParcel data;
     MessageParcel reply;

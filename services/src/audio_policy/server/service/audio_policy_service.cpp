@@ -1189,7 +1189,8 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
     AUDIO_DEBUG_LOG("Input device updated to %{public}d", mActiveInputDevice_);
 }
 
-int32_t AudioPolicyService::PausedOrRecoveryStream(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal)
+int32_t AudioPolicyService::PausedOrRecoveryStream(int32_t clientUid,
+    StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     return mStreamCollector.PausedOrRecoveryStream(clientUid, streamSetStateEventInternal);
 }
