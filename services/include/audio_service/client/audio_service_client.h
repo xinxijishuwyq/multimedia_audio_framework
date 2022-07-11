@@ -495,7 +495,7 @@ public:
      *
      * @return Returns whether the authentication was success or not
      */
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
 
     // Audio timer callback
     virtual void OnTimeOut();

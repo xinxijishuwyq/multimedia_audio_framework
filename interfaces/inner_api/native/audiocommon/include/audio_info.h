@@ -33,6 +33,7 @@ constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
+constexpr int32_t INVALID_UID = -1;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
@@ -511,7 +512,7 @@ struct AudioCapturerOptions {
 };
 
 struct AppInfo {
-    int32_t appUid { 0 };
+    int32_t appUid { INVALID_UID };
     uint32_t appTokenId { 0 };
     int32_t appPid { 0 };
 };
