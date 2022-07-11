@@ -274,7 +274,7 @@ public:
     * @param latency will be filled up with the current latency in microseconds
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetAudioLatency(uint64_t &latency) const;
+    int32_t GetAudioLatency(uint64_t &latency);
 
     /**
     * Provides the playback/record stream parameters created using CreateStream

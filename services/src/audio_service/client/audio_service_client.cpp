@@ -1796,12 +1796,12 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
+int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-
+    lock_guard<mutex> lock(dataMutex);
     pa_usec_t paLatency {0};
     pa_usec_t cacheLatency {0};
     int negative {0};

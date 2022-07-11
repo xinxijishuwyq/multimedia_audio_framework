@@ -199,7 +199,7 @@ int32_t AudioStream::GetFrameCount(uint32_t &frameCount) const
     return SUCCESS;
 }
 
-int32_t AudioStream::GetLatency(uint64_t &latency) const
+int32_t AudioStream::GetLatency(uint64_t &latency)
 {
     if (GetAudioLatency(latency) != SUCCESS) {
         return ERR_OPERATION_FAILED;
