@@ -1833,7 +1833,13 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         cacheLatency = pa_bytes_to_usec((acache.totalCacheSize - acache.writeIndex), &sampleSpec);
 
         // Total latency will be sum of audio write cache latency + PA latency
-        latency = paLatency + cacheLatency - (sinkLatencyInMsec_ * PA_USEC_PER_MSEC);
+        uint64_t fwLatency = paLatency + cacheLatency;
+        uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
+        if (fwLatency > sinkLatency) {
+            latency = fwLatency - sinkLatency;
+        } else {
+            latency = fwLatency;
+        }
         AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
             PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
