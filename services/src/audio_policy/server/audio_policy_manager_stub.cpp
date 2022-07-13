@@ -246,6 +246,16 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    AudioStreamType streamType =  static_cast<AudioStreamType>(data.ReadInt32());
+
+    std::string deviceName = GetSelectedDeviceInfo(uid, pid, streamType);
+    reply.WriteString(deviceName);
+}
+
 void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = AudioCapturerFilter::Unmarshalling(data);
@@ -731,6 +741,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case SELECT_OUTPUT_DEVICE:
             SelectOutputDeviceInternal(data, reply);
+            break;
+
+        case GET_SELECTED_DEVICE_INFO:
+            GetSelectedDeviceInfoInternal(data, reply);
             break;
 
         case SELECT_INPUT_DEVICE:

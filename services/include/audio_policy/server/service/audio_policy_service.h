@@ -61,6 +61,8 @@ public:
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
+    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
+
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -235,6 +237,7 @@ private:
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     DeviceType mCurrentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;
+    std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& mAudioPolicyManager;
     Parser& mConfigParser;
     AudioStreamCollector& mStreamCollector;

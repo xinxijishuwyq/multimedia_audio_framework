@@ -800,6 +800,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
+    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_, mStreamType);
+    const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_buffer_attr bufferAttr;
@@ -817,7 +820,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     bufferAttr.minreq = bufferAttr.prebuf;
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
+        result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
                                             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
                                             | PA_STREAM_INTERPOLATE_TIMING
                                             | PA_STREAM_START_CORKED
@@ -829,7 +832,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         }
         memset_s(preBuf_.get(), bufferAttr.maxlength, 0, bufferAttr.maxlength);
     } else {
-        result = pa_stream_connect_record(paStream, nullptr, nullptr,
+        result = pa_stream_connect_record(paStream, nullptr, nullptr, // todo change to deviceName
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
                                           | PA_STREAM_START_CORKED

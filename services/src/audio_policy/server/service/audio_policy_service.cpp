@@ -168,8 +168,26 @@ inline std::string printSinkInput(SinkInput sinkInput)
     return value.str();
 }
 
+std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    (void)uid;
+    (void)pid;
+    (void)streamType;
+    
+    std::string selectedDevice = "";
+    if (routerMap_.count(uid) && routerMap_[uid].second == pid) {
+        selectedDevice = routerMap_[uid].first;
+    }
+    if (LOCAL_NETWORK_ID == selectedDevice) {
+        return "";
+    }
+    AUDIO_INFO_LOG("GetSelectedDeviceInfo result[%{public}s]", selectedDevice.c_str());
+    return selectedDevice;
+}
+
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
+    AUDIO_INFO_LOG("SelectOutputDevice start for");
     // check size == 1 && output device
     int deviceSize = audioDeviceDescriptors.size();
     if (deviceSize != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
@@ -191,21 +209,24 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // find sink-input id with audioRendererFilter
     std::vector<uint32_t> targetSinkInputIds = {};
     vector<SinkInput> sinkInputs = mAudioPolicyManager.GetAllSinkInputs();
+    int32_t pid = -1;
     for (size_t i = 0; i < sinkInputs.size(); i++) {
         AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, printSinkInput(sinkInputs[i]).c_str());
         if (moveAll || (targetUid == sinkInputs[i].uid && targetStreamType == sinkInputs[i].streamType)) {
             targetSinkInputIds.push_back(sinkInputs[i].paStreamId);
+            pid = sinkInputs[i].pid;
         }
     }
 
     int32_t ret = SUCCESS;
-    std::string localDevice = "LocalDevice";
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
-    if (localDevice == networkId) {
+    if (LOCAL_NETWORK_ID == networkId) {
         ret = MoveToLocalOutputDevice(targetSinkInputIds, audioDeviceDescriptors[0]);
     } else {
         ret = MoveToRemoteOutputDevice(targetSinkInputIds, audioDeviceDescriptors[0]);
     }
+
+    routerMap_[targetUid] = std::pair(networkId, pid);
 
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
     return ret;
@@ -216,8 +237,7 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<uint32_t> sinkIn
 {
     AUDIO_INFO_LOG("MoveToLocalOutputDevice start");
     // check
-    std::string localDevice = "LocalDevice";
-    if (localDevice != localDeviceDescriptor->networkId_) {
+    if (LOCAL_NETWORK_ID != localDeviceDescriptor->networkId_) {
         AUDIO_ERR_LOG("MoveToLocalOutputDevice failed: not a local device.");
         return ERR_INVALID_OPERATION;
     }
@@ -250,8 +270,7 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkI
     DeviceRole deviceRole = remoteDeviceDescriptor->deviceRole_;
     DeviceType deviceType = remoteDeviceDescriptor->deviceType_;
 
-    std::string localDevice = "LocalDevice";
-    if (networkId == localDevice) { // check: networkid
+    if (networkId == LOCAL_NETWORK_ID) { // check: networkid
         AUDIO_ERR_LOG("MoveToRemoteOutputDevice failed: not a remote device.");
         return ERR_INVALID_OPERATION;
     }
@@ -333,9 +352,8 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     }
 
     int32_t ret = SUCCESS;
-    std::string localDevice = "LocalDevice";
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
-    if (localDevice == networkId) {
+    if (LOCAL_NETWORK_ID == networkId) {
         ret = MoveToLocalInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
     } else {
         ret = MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
@@ -349,8 +367,7 @@ int32_t AudioPolicyService::MoveToLocalInputDevice(std::vector<uint32_t> sourceO
 {
     AUDIO_INFO_LOG("MoveToLocalInputDevice start");
     // check
-    std::string localDevice = "LocalDevice";
-    if (localDevice != localDeviceDescriptor->networkId_) {
+    if (LOCAL_NETWORK_ID != localDeviceDescriptor->networkId_) {
         AUDIO_ERR_LOG("MoveToLocalInputDevice failed: not a local device.");
         return ERR_INVALID_OPERATION;
     }
@@ -384,8 +401,7 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<uint32_t> source
     DeviceType deviceType = remoteDeviceDescriptor->deviceType_;
 
     // check: networkid
-    std::string localDevice = "LocalDevice";
-    if (networkId == localDevice) {
+    if (networkId == LOCAL_NETWORK_ID) {
         AUDIO_ERR_LOG("MoveToRemoteInputDevice failed: not a remote device.");
         return ERR_INVALID_OPERATION;
     }

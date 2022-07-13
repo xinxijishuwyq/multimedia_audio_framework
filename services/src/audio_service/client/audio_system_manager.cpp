@@ -519,6 +519,11 @@ int32_t AudioSystemManager::SelectInputDevice(std::vector<sptr<AudioDeviceDescri
     return ret;
 }
 
+std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const
+{
+    return AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
+}
+
 int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
     // basic check

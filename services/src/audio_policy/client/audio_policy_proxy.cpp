@@ -419,6 +419,27 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
 
     return reply.ReadInt32();
 }
+std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return "";
+    }
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+    data.WriteInt32(static_cast<int32_t>(streamType));
+    int error = Remote()->SendRequest(GET_SELECTED_DEVICE_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetSelectedDeviceInfo failed, error: %{public}d", error);
+        return "";
+    }
+
+    return reply.ReadString();
+}
 
 int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
