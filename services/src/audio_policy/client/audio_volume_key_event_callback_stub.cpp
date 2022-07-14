@@ -36,10 +36,13 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
     }
     switch (code) {
         case ON_VOLUME_KEY_EVENT: {
-            AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-            int32_t volume = data.ReadInt32();
-            bool isUpdateUi = data.ReadBool();
-            OnVolumeKeyEvent(streamType, volume, isUpdateUi);
+            VolumeEvent volumeEvent;
+            volumeEvent.volumeType = static_cast<AudioStreamType>(data.ReadInt32());
+            volumeEvent.volume = data.ReadInt32();
+            volumeEvent.updateUi = data.ReadBool();
+            volumeEvent.volumeGroupId = data.ReadInt32();
+            volumeEvent.networkId = data.ReadString();
+            OnVolumeKeyEvent(volumeEvent);
             reply.WriteInt32(0);
             break;
         }
@@ -51,13 +54,13 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
     return 0;
 }
 
-void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+void AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent");
     std::shared_ptr<VolumeKeyEventCallback> cb = callback_.lock();
     if (cb != nullptr) {
         AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NOT NULL");
-        cb->OnVolumeKeyEvent(streamType, volumeLevel, isUpdateUi);
+        cb->OnVolumeKeyEvent(volumeEvent);
     } else {
         AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackStub::OnVolumeKeyEvent CALLBACK NULL");
     }

@@ -439,6 +439,8 @@ struct VolumeEvent {
     AudioStreamType volumeType;
     int32_t volume;
     bool updateUi;
+    int32_t volumeGroupId;
+    std::string networkId;
 };
 
 struct AudioParameters {

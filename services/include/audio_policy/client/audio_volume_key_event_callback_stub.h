@@ -27,7 +27,7 @@ public:
     virtual ~AudioVolumeKeyEventCallbackStub();
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
             MessageParcel &reply, MessageOption &option) override;
-    void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) override;
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void SetOnVolumeKeyEventCallback(const std::weak_ptr<VolumeKeyEventCallback> &callback);
 
 private:
