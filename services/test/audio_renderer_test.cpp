@@ -265,6 +265,14 @@ public:
             AUDIO_ERR_LOG("AudioRendererTest: Drain failed");
         }
 
+        if (audioRenderer->GetLatency(latency)) {
+            AUDIO_ERR_LOG("AudioRendererTest: GetLatency failed after Drain");
+#ifdef LATENCY_ACCURACY_TEST
+        } else {
+            AUDIO_DEBUG_LOG("GetLatency after Drain: %{public}" PRIu64, latency);
+#endif // LATENCY_ACCURACY_TEST
+        }
+
         return true;
     }
     
