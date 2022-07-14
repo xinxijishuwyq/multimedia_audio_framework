@@ -1260,7 +1260,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 int32_t AudioPolicyServer::PausedOrResumeStream(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("PausedOrResumeStream::uid : %{public}d streamSetState : %{public}d audioStreamType : %{public}d", clientUid,
+    AUDIO_INFO_LOG("PausedOrResumeStream::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
         streamSetState, audioStreamType);
 
     auto callerUid =  IPCSkeleton::GetCallingUid();
