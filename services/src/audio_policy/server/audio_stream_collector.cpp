@@ -447,10 +447,10 @@ int32_t AudioStreamCollector::PausedOrResumeStream(int32_t clientUid,
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[clientUid];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         ERR_INVALID_PARAM, "AudioStreamCollector:PausedOrRecoveryStream callback failed");
-    
+
     if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
         callback->PausedStreamImpl(streamSetStateEventInternal);
-    } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Resume){
+    } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Resume) {
         callback->ResumeStreamImpl(streamSetStateEventInternal);
     }
 
