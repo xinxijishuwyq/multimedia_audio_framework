@@ -1257,29 +1257,30 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
     mPolicyService.RegisteredStreamListenerClientDied(pid);
 }
 
-int32_t AudioPolicyServer::PausedOrRecoveryStream(const int32_t clientUid,
+int32_t AudioPolicyServer::PausedOrResumeStream(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("PausedOrRecoveryStream: uid %{public}d", clientUid);
-    AUDIO_INFO_LOG("PausedOrRecoveryStream: streamSetState %{public}d", streamSetState);
-    AUDIO_INFO_LOG("PausedOrRecoveryStream: audioStreamType %{public}d", audioStreamType);
+    AUDIO_INFO_LOG("PausedOrResumeStream: uid:%{public}d streamSetState:%{public}d audioStreamType:%{public}d",
+        clientUid , streamSetState, audioStreamType);
+
     auto callerUid =  IPCSkeleton::GetCallingUid();
     if (callerUid == clientUid) {
-        AUDIO_DEBUG_LOG("PausedOrRecoveryStream clientUid value is error");
+        AUDIO_DEBUG_LOG("PausedOrResumeStream clientUid value is error");
         return ERROR;
     }
 
     StreamSetState setState = StreamSetState::Stream_Pause;
-    if (streamSetState == StreamSetState::Stream_Recovery) {
-        setState  = StreamSetState::Stream_Recovery;
+    if (streamSetState == StreamSetState::Stream_Resume) {
+        setState  = StreamSetState::Stream_Resume;
     } else if (streamSetState != StreamSetState::Stream_Pause) {
-        AUDIO_ERR_LOG("PausedOrRecoveryStream streamSetState value is error");
+        AUDIO_ERR_LOG("PausedOrResumeStream streamSetState value is error");
+        return ERROR;
     }
     StreamSetStateEventInternal setStateEvent = {};
     setStateEvent.streamSetState = setState;
     setStateEvent.audioStreamType = audioStreamType;
 
-    return mPolicyService.PausedOrRecoveryStream(clientUid, setStateEvent);
+    return mPolicyService.PausedOrResumeStream(clientUid, setStateEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

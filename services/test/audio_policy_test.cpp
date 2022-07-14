@@ -204,13 +204,13 @@ static void UnknownOptionError()
     PrintUsage();
 }
 
-static void HandlePausedOrRecoveryStream(int type)
+static void HandlePausedOrResumeStream(int type, char *seg1)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    cout << "HandlePausedOrRecoveryStream : Runing " << endl;
-
-    const int32_t uid = static_cast<int32_t>(20010035);
-    cout << "HandlePausedOrRecoveryStream : uid : " << uid << endl;
+    cout << "HandlePausedOrResumeStream : Runing " <<  seg1 << endl;
+    
+    const int32_t uid = atoi(seg1);
+    cout << "HandlePausedOrResumeStream : uid : " << uid << endl;
     if (uid == 0) {
         return;
     }
@@ -220,12 +220,11 @@ static void HandlePausedOrRecoveryStream(int type)
     int32_t result = 0;
     if (type == 0) {
         cout << "type :: Stream_Pause :: " << type << endl;
-        result = audioSystemMgr->PausedOrRecoveryStream(uid, sate, stype);
     } else {
-        cout << "type :: Stream_Recovery :: " << type << endl;
-        result = audioSystemMgr->PausedOrRecoveryStream(uid, sate, stype);
+        sate = StreamSetState::Stream_Resume;
+        cout << "type :: Stream_Resume :: " << type << endl;
     }
-
+    result = audioSystemMgr->PausedOrResumeStream(uid, sate, stype);
     cout << "result :  " << result << endl;
 }
 
@@ -274,10 +273,10 @@ int main(int argc, char* argv[])
                 HandleAudioScene(opt);
                 break;
             case 'X':
-                HandlePausedOrRecoveryStream(0);
+                HandlePausedOrResumeStream(0, optarg);
                 break;
             case 'Z':
-                HandlePausedOrRecoveryStream(1);
+                HandlePausedOrResumeStream(1, optarg);
                 break;
             case ':':
                 NoValueError();

@@ -252,7 +252,7 @@ public:
     bool AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
-    int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+    int32_t PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;

@@ -1189,10 +1189,10 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
     AUDIO_DEBUG_LOG("Input device updated to %{public}d", mActiveInputDevice_);
 }
 
-int32_t AudioPolicyService::PausedOrRecoveryStream(int32_t clientUid,
+int32_t AudioPolicyService::PausedOrResumeStream(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    return mStreamCollector.PausedOrRecoveryStream(clientUid, streamSetStateEventInternal);
+    return mStreamCollector.PausedOrResumeStream(clientUid, streamSetStateEventInternal);
 }
 } // namespace AudioStandard
 } // namespace OHOS

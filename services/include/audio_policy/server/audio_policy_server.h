@@ -147,7 +147,7 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
-    int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+    int32_t PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType) override;
 
 protected:

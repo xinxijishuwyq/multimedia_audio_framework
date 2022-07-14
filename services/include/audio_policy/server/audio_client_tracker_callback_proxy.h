@@ -27,7 +27,8 @@ public:
     explicit ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener);
     virtual ~ClientTrackerCallbackListener();
     DISALLOW_COPY_AND_MOVE(ClientTrackerCallbackListener);
-    virtual void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
 private:
     sptr<IStandardClientTracker> listener_ = nullptr;
 };
@@ -36,7 +37,8 @@ class AudioClientTrackerCallbackProxy : public IRemoteProxy<IStandardClientTrack
 public:
     explicit AudioClientTrackerCallbackProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioClientTrackerCallbackProxy() = default;
-    virtual void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
 private:
     static inline BrokerDelegator<AudioClientTrackerCallbackProxy> delegator_;
 };

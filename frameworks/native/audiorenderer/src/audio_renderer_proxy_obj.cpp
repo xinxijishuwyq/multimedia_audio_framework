@@ -26,13 +26,14 @@ void AudioRendererProxyObj::SaveRendererObj(const AudioRenderer *rendererObj)
     renderer = rendererObj;
 }
 
-void AudioRendererProxyObj::PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
-        renderer->Pause();
-    } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Recovery) {
-        renderer->Start();
-    }
+    renderer->Pause();
+}
+
+void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    renderer->Start();
 }
 } // namespace AudioStandard
 } // namespace OHOS

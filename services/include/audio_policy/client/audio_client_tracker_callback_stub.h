@@ -28,7 +28,8 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
             MessageParcel &reply, MessageOption &option) override;
     void SetClientTrackerCallback(const std::weak_ptr<AudioClientTracker> &callback);
-    void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
+    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) override;
 private:
     std::weak_ptr<AudioClientTracker> callback_;
 };

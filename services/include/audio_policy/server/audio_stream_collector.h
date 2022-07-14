@@ -45,7 +45,7 @@ public:
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
     void RegisteredStreamListenerClientDied(int32_t uid);
-    int32_t PausedOrRecoveryStream(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
+    int32_t PausedOrResumeStream(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 private:
     AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;

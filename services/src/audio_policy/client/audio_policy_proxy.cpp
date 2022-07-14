@@ -1053,17 +1053,17 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
-int32_t AudioPolicyProxy::PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+int32_t AudioPolicyProxy::PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
     AudioStreamType audioStreamType)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_DEBUG_LOG("AudioPolicyProxy::PausedOrRecoveryStream");
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::PausedOrResumeStream");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("PausedOrRecoveryStream: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("PausedOrResumeStream: WriteInterfaceToken failed");
         return ERROR;
     }
 

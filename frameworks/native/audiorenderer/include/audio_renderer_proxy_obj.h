@@ -25,7 +25,8 @@ class AudioRendererProxyObj : public AudioClientTracker {
 public:
     virtual ~AudioRendererProxyObj() = default;
     void SaveRendererObj(const AudioRenderer *rendererObj);
-    void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
+    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
+    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
 private:
     const AudioRenderer *renderer;
 };

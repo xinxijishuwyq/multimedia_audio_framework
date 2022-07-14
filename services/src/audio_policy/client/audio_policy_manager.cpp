@@ -467,12 +467,12 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
-int32_t AudioPolicyManager::PausedOrRecoveryStream(const int32_t clientUid,
+int32_t AudioPolicyManager::PausedOrResumeStream(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::PausedOrRecoveryStream");
+    AUDIO_DEBUG_LOG("AudioPolicyManager::PausedOrResumeStream");
     
-    return  g_sProxy->PausedOrRecoveryStream(clientUid, streamSetState, audioStreamType);
+    return  g_sProxy->PausedOrResumeStream(clientUid, streamSetState, audioStreamType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

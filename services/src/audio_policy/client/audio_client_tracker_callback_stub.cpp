@@ -36,11 +36,18 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
     }
 
     switch (code) {
-        case PAUSEDORRECOVERYSTREAM: {
+        case PAUSEDSTREAM: {
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
             sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
             sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
-            PausedOrRecoveryStreamImpl(sreamSetStateEventInternal);
+            PausedStreamImpl(sreamSetStateEventInternal);
+            return AUDIO_OK;
+        }
+        case RESUMESTREAM: {
+            StreamSetStateEventInternal sreamSetStateEventInternal = {};
+            sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
+            sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
+            ResumeStreamImpl(sreamSetStateEventInternal);
             return AUDIO_OK;
         }
         default: {
@@ -59,13 +66,25 @@ void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
     callback_ = callback;
 }
 
-void AudioClientTrackerCallbackStub::PausedOrRecoveryStreamImpl(
+void AudioClientTrackerCallbackStub::PausedStreamImpl(
     const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedOrRecoveryStreamImpl start");
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub PausedStreamImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
     if (cb != nullptr) {
-        cb->PausedOrRecoveryStreamImpl(streamSetStateEventInternal);
+        cb->PausedStreamImpl(streamSetStateEventInternal);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::ResumeStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub ResumeStreamImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->ResumeStreamImpl(streamSetStateEventInternal);
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
     }

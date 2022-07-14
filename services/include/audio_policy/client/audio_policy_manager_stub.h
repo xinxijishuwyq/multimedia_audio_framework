@@ -72,7 +72,7 @@ private:
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
-    void PausedOrRecoveryStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void PausedOrResumeStreamInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

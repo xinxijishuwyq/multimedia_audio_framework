@@ -510,18 +510,18 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
-void AudioPolicyManagerStub::PausedOrRecoveryStreamInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::PausedOrResumeStreamInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrRecoveryStream change info internal entered");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrResumeStreamInternal change info internal entered");
 
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
 
-    int32_t result = PausedOrRecoveryStream(clientUid, streamSetState, streamType);
+    int32_t result = PausedOrResumeStream(clientUid, streamSetState, streamType);
     reply.WriteInt32(result);
 
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrRecoveryStream change info internal exit");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrResumeStreamInternal change info internal exit");
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
@@ -701,7 +701,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             break;
             
         case PAUSED_OR_RECOVERY_STREAM:
-            PausedOrRecoveryStreamInternal(data, reply);
+            PausedOrResumeStreamInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

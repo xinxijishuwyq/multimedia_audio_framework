@@ -117,7 +117,7 @@ public:
     virtual int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
-    virtual int32_t PausedOrRecoveryStream(const int32_t clientUid, StreamSetState streamSetState,
+    virtual int32_t PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
                                             AudioStreamType audioStreamType) = 0;
 
 public:

@@ -25,7 +25,8 @@ class AudioCapturerProxyObj : public AudioClientTracker {
 public:
     virtual ~AudioCapturerProxyObj() = default;
     void SaveCapturerObj(const AudioCapturer *capturerObj);
-    void PausedOrRecoveryStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
+    void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
+    void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
 private:
     const AudioCapturer *capturer;
 };
