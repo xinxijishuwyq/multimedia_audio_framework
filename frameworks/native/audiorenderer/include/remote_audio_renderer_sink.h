@@ -77,10 +77,10 @@ private:
 
     int32_t CreateRender(struct AudioPort &renderPort);
     struct AudioManager *GetAudioManager();
-#define DUMPFILE
-#ifdef DUMPFILE
+#define DEBUG_DUMP_FILE
+#ifdef DEBUG_DUMP_FILE
     FILE *pfd;
-#endif // DUMPFILE
+#endif // DEBUG_DUMP_FILE
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

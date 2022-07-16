@@ -111,7 +111,7 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size,
         if (!adapterNameCase.compare(desc->adapterName)) {
             for (uint32_t port = 0; port < desc->portNum; port++) {
                 // Only find out the port of in in the sound card
-                if (desc->ports[port].dir == portFlag) {
+                if (desc->ports[port].portId == PIN_IN_MIC) {
                     capturePort = desc->ports[port];
                     return index;
                 }
@@ -158,7 +158,6 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
 
 int32_t RemoteAudioCapturerSource::Init(IAudioSourceAttr &attr)
 {
-#ifndef DEBUG_CAPTURE_DUMP
     attr_ = attr;
     int32_t ret;
     int32_t index;
@@ -203,9 +202,7 @@ int32_t RemoteAudioCapturerSource::Init(IAudioSourceAttr &attr)
     }
     capturerInited_ = true;
 
-
-#else
-    capturerInited_ = true;
+#ifdef DEBUG_CAPTURE_DUMP
     pfd = fopen(g_audioOutTestFilePath, "rb");
     if (pfd == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");
@@ -223,7 +220,7 @@ bool RemoteAudioCapturerSource::IsInited(void)
 int32_t RemoteAudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Initialize audio proxy manager");
-    audioManager_ = GetAudioManagerFuncs();
+    audioManager_ = GetAudioManagerFuncs(); // GetDAudioManagerFuncs
     CHECK_AND_RETURN_RET_LOG((audioManager_ != nullptr), ERR_INVALID_HANDLE, "Initialize audio proxy failed!");
 
     return SUCCESS;
@@ -231,7 +228,6 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
 
 int32_t RemoteAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-#ifndef DEBUG_CAPTURE_DUMP
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
 
@@ -240,7 +236,8 @@ int32_t RemoteAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestByt
         AUDIO_ERR_LOG("Capture Frame Fail");
         return ERR_READ_FAILED;
     }
-#else
+
+#ifdef DEBUG_CAPTURE_DUMP
     if (feof(pfd)) {
         AUDIO_INFO_LOG("End of the file reached, start reading from beginning");
         rewind(pfd);
@@ -249,7 +246,6 @@ int32_t RemoteAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestByt
     if (writeResult != requestBytes) {
         AUDIO_ERR_LOG("Failed to read the file.");
     }
-    replyBytes = writeResult;
 #endif // DEBUG_CAPTURE_DUMP
 
     return SUCCESS;
@@ -258,7 +254,6 @@ int32_t RemoteAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestByt
 int32_t RemoteAudioCapturerSource::Start(void)
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource::Start in");
-#ifndef DEBUG_CAPTURE_DUMP
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
     if (!started_) {
@@ -268,7 +263,6 @@ int32_t RemoteAudioCapturerSource::Start(void)
         }
         started_ = true;
     }
-#endif
     started_ = true;
     return SUCCESS;
 }
@@ -452,7 +446,7 @@ uint64_t RemoteAudioCapturerSource::GetTransactionId()
 
 int32_t RemoteAudioCapturerSource::Stop(void)
 {
-#ifndef DEBUG_CAPTURE_DUMP
+    AUDIO_INFO_LOG("RemoteAudioCapturerSource::Stop in");
     int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
         ret = audioCapture_->control.Stop(reinterpret_cast<AudioHandle>(audioCapture_));
@@ -461,7 +455,6 @@ int32_t RemoteAudioCapturerSource::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
-#endif // DEBUG_CAPTURE_DUMP
     started_ = false;
     return SUCCESS;
 }

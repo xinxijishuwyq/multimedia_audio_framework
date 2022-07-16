@@ -97,9 +97,6 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
-  if ("${product_name}" == "m40") {
-    cflags += [ "-DPRODUCT_M40" ]
-  }
   cflags_cc = cflags
 
   include_dirs = [
@@ -114,21 +111,18 @@ ohos_shared_library("remote_audio_renderer_sink") {
   public_configs = [ ":audio_external_library_config" ]
 
   deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/bounds_checking_function:libsec_static",
     "//utils/native/base:utils",
   ]
 
-  if ("${product_name}" == "m40") {
-    deps += [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
-  } else {
-    deps +=
-        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
-  }
+  deps += [
+    "$hdf_uhdf_path/hdi:libhdi",
+    "$hdf_uhdf_path/host:libhdf_host",
+    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
+    "$hdf_uhdf_path/utils:libhdf_utils",
+    "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client"
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"

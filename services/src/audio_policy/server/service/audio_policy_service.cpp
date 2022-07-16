@@ -484,8 +484,8 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 
     audioModuleInfo.adapterName = "remote";
     audioModuleInfo.className = "remote"; // used in renderer_sink_adapter.c
-    audioModuleInfo.fixedLatency = "1";
-    audioModuleInfo.fileName = "remote_test";
+    audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
+    audioModuleInfo.fileName = "remote_dump_file";
 
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
