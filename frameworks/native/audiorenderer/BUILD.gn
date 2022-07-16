@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_renderer_sink") {
   install_enable = true
@@ -47,12 +48,7 @@ ohos_shared_library("audio_renderer_sink") {
     "//utils/native/base:utils",
   ]
 
-  if ("${product_name}" == "m40") {
-    deps += [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
-  } else {
-    deps +=
-        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
-  }
+  deps += [ multimedia_audio_framework_hdi_audio_client ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"

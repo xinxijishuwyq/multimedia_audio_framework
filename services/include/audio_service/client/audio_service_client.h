@@ -274,7 +274,7 @@ public:
     * @param latency will be filled up with the current latency in microseconds
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetAudioLatency(uint64_t &latency) const;
+    int32_t GetAudioLatency(uint64_t &latency);
 
     /**
     * Provides the playback/record stream parameters created using CreateStream
@@ -495,7 +495,7 @@ public:
      *
      * @return Returns whether the authentication was success or not
      */
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
 
     // Audio timer callback
     virtual void OnTimeOut();
@@ -522,6 +522,7 @@ private:
     size_t internalRdBufIndex;
     size_t setBufferSize;
     int32_t streamCmdStatus;
+    int32_t updatePropStatus;
     int32_t streamDrainStatus;
     int32_t streamFlushStatus;
     bool isMainLoopStarted;
@@ -653,6 +654,7 @@ private:
     static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamUpdatePropSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);

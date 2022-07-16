@@ -35,7 +35,7 @@ ohos_shared_library("audio_ringtone_client") {
     "${ability_runtime_path}/frameworks/native/ability/native:data_ability_helper",
     "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
     "//foundation/graphic/graphic_2d/frameworks/surface:surface",
-    "//foundation/multimedia/media_standard/interfaces/inner_api/native:media_client",
+    "//foundation/multimedia/player_framework/interfaces/inner_api/native:media_client",
   ]
 
   external_deps = [

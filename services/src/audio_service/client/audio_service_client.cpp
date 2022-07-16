@@ -199,6 +199,20 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+void AudioServiceClient::PAStreamUpdatePropSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    if (!userdata) {
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamUpdatePropSuccessCb: userdata is null");
+        return;
+    }
+
+    AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
+
+    asClient->updatePropStatus = success;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
 void AudioServiceClient::PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     if (!userdata) {
@@ -491,6 +505,7 @@ AudioServiceClient::AudioServiceClient()
     internalRdBufIndex = 0;
     internalRdBufLen = 0;
     streamCmdStatus = 0;
+    updatePropStatus = 0;
     streamDrainStatus = 0;
     streamFlushStatus = 0;
     underFlowCount = 0;
@@ -625,9 +640,9 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+bool AudioServiceClient::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
 {   // for capturer check for MICROPHONE PERMISSION
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId)) {
+    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId, appUid)) {
         AUDIO_DEBUG_LOG("Client doesn't have MICROPHONE permission");
         return false;
     }
@@ -955,6 +970,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_threaded_mainloop_unlock(mainLoop);
 
     error = ConnectStreamToPA();
+    streamInfoUpdated = false;
     if (error < 0) {
         AUDIO_ERR_LOG("Create Stream Failed");
         ResetPAAudioClient();
@@ -1479,14 +1495,12 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
     int32_t writeError;
     StreamBuffer prebufStream;
     prebufStream.buffer = preBuf_.get();
-    uint32_t extra {0};
     if (writeLen == 0) {
         return AUDIO_CLIENT_SUCCESS;
     } else if (writeLen > diff) {
         prebufStream.bufferLen = diff;
     } else {
         prebufStream.bufferLen = writeLen;
-        extra = diff % writeLen;
     }
 
     size_t bytesWritten {0};
@@ -1497,12 +1511,12 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
             return AUDIO_CLIENT_ERR;
         }
 
-        if ((diff - bytesWritten) <= 0) {
+        if (static_cast<int32_t>(diff - bytesWritten) <= 0) {
             break;
         }
 
-        if ((diff - bytesWritten) == extra) {
-            prebufStream.bufferLen = extra;
+        if ((diff - bytesWritten) < writeLen) {
+            prebufStream.bufferLen = diff - bytesWritten;
         }
     }
 
@@ -1798,12 +1812,12 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
+int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-
+    lock_guard<mutex> lock(dataMutex);
     pa_usec_t paLatency {0};
     pa_usec_t cacheLatency {0};
     int negative {0};
@@ -1835,7 +1849,13 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency) const
         cacheLatency = pa_bytes_to_usec((acache.totalCacheSize - acache.writeIndex), &sampleSpec);
 
         // Total latency will be sum of audio write cache latency + PA latency
-        latency = paLatency + cacheLatency - (sinkLatencyInMsec_ * PA_USEC_PER_MSEC);
+        uint64_t fwLatency = paLatency + cacheLatency;
+        uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
+        if (fwLatency > sinkLatency) {
+            latency = fwLatency - sinkLatency;
+        } else {
+            latency = fwLatency;
+        }
         AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
             PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
@@ -2009,11 +2029,28 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_ERR;
     }
 
+    updatePropStatus = 0;
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
+        PAStreamUpdatePropSuccessCb, (void *)this);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
+        pa_proplist_free(propList);
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    while (pa_operation_get_state(updatePropOperation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mainLoop);
+    }
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
+
+    if (!updatePropStatus) {
+        AUDIO_ERR_LOG("Update volume property failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
 
     if (mAudioSystemMgr == nullptr) {
         AUDIO_ERR_LOG("System manager instance is null");

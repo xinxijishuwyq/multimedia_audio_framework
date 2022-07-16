@@ -696,10 +696,9 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
 {
-    AUDIO_ERR_LOG("VerifyClientPermission [permission : %{public}s] | [tid : %{public}d]",
-        permissionName.c_str(), appTokenId);
+    AUDIO_DEBUG_LOG("Proxy [permission : %{public}s] | [tid : %{public}d]", permissionName.c_str(), appTokenId);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -711,6 +710,7 @@ bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName,
 
     data.WriteString(permissionName);
     data.WriteUint32(appTokenId);
+    data.WriteInt32(appUid);
 
     int result = Remote()->SendRequest(QUERY_PERMISSION, data, reply, option);
     if (result != ERR_NONE) {

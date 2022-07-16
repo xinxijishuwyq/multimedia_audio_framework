@@ -62,6 +62,7 @@ struct Userdata {
     uint32_t sink_latency;
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
+    uint32_t sinkStreamCount;
     size_t bytes_dropped;
     pa_thread_mq thread_mq;
     pa_memchunk memchunk;
@@ -79,10 +80,9 @@ struct Userdata {
     struct RendererSinkAdapter *sinkAdapter;
     pa_asyncmsgq *dq;
     pa_atomic_t dflag;
-#ifdef TEST_MODE
+    bool test_mode_on;
     uint32_t writeCount;
     uint32_t renderCount;
-#endif // TEST_MODE
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -101,12 +101,53 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     p = pa_memblock_acquire(pchunk->memblock);
     pa_assert(p);
 
-#ifdef TEST_MODE
+    while (true) {
+        uint64_t writeLen = 0;
+
+        int32_t ret = u->sinkAdapter->RendererRenderFrame((char *)p + index, (uint64_t)length, &writeLen);
+        if (writeLen > length) {
+            AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+                         length, writeLen, ret);
+            count = -1 - count;
+            break;
+        }
+        if (writeLen == 0) {
+            AUDIO_ERR_LOG("Failed to render Length: %zu, Written: %" PRIu64 " bytes, %d ret",
+                         length, writeLen, ret);
+            count = -1 - count;
+            break;
+        } else {
+            count += writeLen;
+            index += writeLen;
+            length -= writeLen;
+            if (length <= 0) {
+                break;
+            }
+        }
+    }
+    pa_memblock_release(pchunk->memblock);
+    pa_memblock_unref(pchunk->memblock);
+
+    return count;
+}
+
+static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
+{
+    size_t index, length;
+    ssize_t count = 0;
+    void *p = NULL;
+
+    pa_assert(pchunk);
+
+    index = pchunk->index;
+    length = pchunk->length;
+    p = pa_memblock_acquire(pchunk->memblock);
+    pa_assert(p);
+
     if (*((int*)p) > 0) {
         AUDIO_DEBUG_LOG("RenderWrite Write: %{public}d", ++u->writeCount);
     }
     AUDIO_DEBUG_LOG("RenderWrite Write renderCount: %{public}d", ++u->renderCount);
-#endif // TEST_MODE
 
     while (true) {
         uint64_t writeLen = 0;
@@ -255,6 +296,40 @@ static void ThreadFuncWriteHDI(void *userdata)
         pa_asyncmsgq_done(u->dq, 0);
     } while (!quit);
 }
+
+static void TestModeThreadFuncWriteHDI(void *userdata)
+{
+    struct Userdata *u = userdata;
+    pa_assert(u);
+
+    int quit = 0;
+
+    do {
+        int code = 0;
+        pa_memchunk chunk;
+
+        pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
+
+        switch (code) {
+            case HDI_RENDER:
+                if (TestModeRenderWrite(u, &chunk) < 0) {
+                    u->bytes_dropped += chunk.length;
+                    AUDIO_ERR_LOG("TestModeRenderWrite failed");
+                }
+                if (pa_atomic_load(&u->dflag) == 1) {
+                    pa_atomic_sub(&u->dflag, 1);
+                }
+                break;
+            case QUIT:
+                quit = 1;
+                break;
+            default:
+                break;
+        }
+        pa_asyncmsgq_done(u->dq, 0);
+    } while (!quit);
+}
+
 static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 {
     struct Userdata *u = NULL;
@@ -275,7 +350,7 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
                           pa_memchunk *chunk)
 {
-    AUDIO_INFO_LOG("SinkProcessMsg: code: %{public}d", code);
+    AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
     pa_assert(u);
 
@@ -341,10 +416,8 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             pa_core_exit(u->core, true, 0);
         } else {
             u->isHDISinkStarted = true;
-#ifdef TEST_MODE
             u->writeCount = 0;
             u->renderCount = 0;
-#endif // TEST_MODE
             AUDIO_INFO_LOG("Successfully restarted HDI renderer");
         }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
@@ -366,6 +439,78 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     }
 
     return 0;
+}
+
+static pa_hook_result_t SinkStreamDisconnectCb(pa_core *c, pa_sink_input *s, struct Userdata *u)
+{
+    pa_assert(u);
+    pa_sink_input_assert_ref(s);
+
+    if (!s->sink || !u->sink) {
+        AUDIO_ERR_LOG("SinkStreamDisconnectCb error");
+        return PA_HOOK_OK;
+    }
+
+    if (u->sink->index != s->sink->index) {
+        return PA_HOOK_OK;
+    }
+
+    u->sinkStreamCount--;
+
+    if (u->sinkStreamCount == 0) {
+        pa_sink_suspend(s->sink, true, PA_SUSPEND_IDLE);
+        pa_core_maybe_vacuum(s->core);
+    }
+
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t SinkStreamConnectCb(pa_core *c, pa_sink_input *s, struct Userdata *u)
+{
+    pa_assert(u);
+    pa_sink_input_assert_ref(s);
+
+    if (!s->sink || !u->sink) {
+        AUDIO_ERR_LOG("SinkStreamConnectCb error");
+        return PA_HOOK_OK;
+    }
+
+    // Callback for non default sink can be ignored
+    if (u->sink->index != s->sink->index) {
+        return PA_HOOK_OK;
+    }
+
+    if (!PA_SINK_IS_OPENED(s->sink->state)) {
+        u->sinkStreamCount = 0;
+        pa_sink_suspend(s->sink, false, PA_SUSPEND_IDLE);
+    }
+
+    u->sinkStreamCount++;
+
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t SinkStreamMoveFinishCb(pa_core *c, pa_sink_input *s, struct Userdata *u)
+{
+    pa_assert(u);
+    pa_sink_input_assert_ref(s);
+
+    if (!s->sink || !u->sink) {
+        AUDIO_ERR_LOG("SinkStreamMoveFinishCb error");
+        return PA_HOOK_OK;
+    }
+
+    // Callback for non default sink can be ignored
+    if (u->sink->index != s->sink->index) {
+        return PA_HOOK_OK;
+    }
+
+    u->sinkStreamCount = pa_idxset_size(s->sink->inputs);
+    if (!PA_SINK_IS_OPENED(s->sink->state) && u->sinkStreamCount > 0) {
+        pa_sink_suspend(s->sink, false, PA_SUSPEND_IDLE);
+    }
+
+    return PA_HOOK_OK;
 }
 
 static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
@@ -520,12 +665,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
+    u->test_mode_on = false;
+    if (pa_modargs_get_value_boolean(ma, "test_mode_on", &u->test_mode_on) < 0) {
+        AUDIO_INFO_LOG("No test_mode_on arg. Normal mode it is.");
+    }
+
     pa_atomic_store(&u->dflag, 0);
     u->dq = pa_asyncmsgq_new(0);
-#ifdef TEST_MODE
-            u->writeCount = 0;
-            u->renderCount = 0;
-#endif // TEST_MODE
 
     u->sink = PaHdiSinkInit(u, ma, driver);
     if (!u->sink) {
@@ -566,13 +712,33 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    hdiThreadName = "write-hdi";
-    if (!(u->thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
-        AUDIO_ERR_LOG("Failed to write-hdi thread.");
-        goto fail;
+    if (u->test_mode_on) {
+        u->writeCount = 0;
+        u->renderCount = 0;
+        hdiThreadName = "test-mode-write-hdi";
+        if (!(u->thread_hdi = pa_thread_new(hdiThreadName, TestModeThreadFuncWriteHDI, u))) {
+            AUDIO_ERR_LOG("Failed to test-mode-write-hdi thread.");
+            goto fail;
+        }
+    } else {
+        hdiThreadName = "write-hdi";
+        if (!(u->thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
+            AUDIO_ERR_LOG("Failed to write-hdi thread.");
+            goto fail;
+        }
     }
 
     pa_sink_put(u->sink);
+    // Start modules in suspended state
+    pa_sink_suspend(u->sink, true, PA_SUSPEND_IDLE);
+
+    // register for sink callbacks
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_NORMAL,
+        (pa_hook_cb_t) SinkStreamDisconnectCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_NORMAL,
+        (pa_hook_cb_t) SinkStreamConnectCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_FINISH], PA_HOOK_NORMAL,
+        (pa_hook_cb_t) SinkStreamMoveFinishCb, u);
 
     return u->sink;
 fail:

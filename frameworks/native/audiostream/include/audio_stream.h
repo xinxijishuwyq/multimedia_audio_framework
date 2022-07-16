@@ -34,14 +34,14 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId);
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
 
     int32_t GetAudioSessionID(uint32_t &sessionID);
     State GetState();
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
     int32_t GetBufferSize(size_t &bufferSize) const;
     int32_t GetFrameCount(uint32_t &frameCount) const;
-    int32_t GetLatency(uint64_t &latency) const;
+    int32_t GetLatency(uint64_t &latency);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetAudioStreamType(AudioStreamType audioStreamType);
     int32_t SetVolume(float volume);
