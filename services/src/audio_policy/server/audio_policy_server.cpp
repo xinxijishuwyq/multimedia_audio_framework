@@ -166,7 +166,13 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 }
 
                 AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
-                volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MIN_VOLUME_LEVEL, true);
+                VolumeEvent volumeEvent;
+                volumeEvent.volumeType = streamInFocus;
+                volumeEvent.volume = MIN_VOLUME_LEVEL;
+                volumeEvent.updateUi = true;
+                volumeEvent.volumeGroupId = 0;
+                volumeEvent.networkId = LOCAL_NETWORK_ID;
+                volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
             }
             return;
         }
@@ -194,7 +200,13 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 }
 
                 AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
-                volumeChangeCb->OnVolumeKeyEvent(streamInFocus, MAX_VOLUME_LEVEL, true);
+                VolumeEvent volumeEvent;
+                volumeEvent.volumeType = streamInFocus;
+                volumeEvent.volume = MAX_VOLUME_LEVEL;
+                volumeEvent.updateUi = true;
+                volumeEvent.volumeGroupId = 0;
+                volumeEvent.networkId = LOCAL_NETWORK_ID;
+                volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
             }
             return;
         }
@@ -258,7 +270,13 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         }
 
         AUDIO_DEBUG_LOG("AudioPolicyServer::SetStreamVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
-        volumeChangeCb->OnVolumeKeyEvent(streamType, ConvertVolumeToInt(GetStreamVolume(streamType)), isUpdateUi);
+        VolumeEvent volumeEvent;
+        volumeEvent.volumeType = streamType;
+        volumeEvent.volume = ConvertVolumeToInt(GetStreamVolume(streamType));
+        volumeEvent.updateUi = isUpdateUi;
+        volumeEvent.volumeGroupId = 0;
+        volumeEvent.networkId = LOCAL_NETWORK_ID;
+        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
     }
 
     return ret;

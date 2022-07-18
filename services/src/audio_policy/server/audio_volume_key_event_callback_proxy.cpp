@@ -20,8 +20,7 @@ namespace AudioStandard {
 AudioVolumeKeyEventCallbackProxy::AudioVolumeKeyEventCallbackProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IAudioVolumeKeyEventCallback>(impl) { }
 
-void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi)
+void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent");
     MessageParcel data;
@@ -32,9 +31,11 @@ void AudioVolumeKeyEventCallbackProxy::OnVolumeKeyEvent(AudioStreamType streamTy
         AUDIO_ERR_LOG("AudioVolumeKeyEventCallbackProxy: WriteInterfaceToken failed");
         return;
     }
-    data.WriteInt32(static_cast<int32_t>(streamType));
-    data.WriteInt32(volumeLevel);
-    data.WriteBool(isUpdateUi);
+    data.WriteInt32(static_cast<int32_t>(volumeEvent.volumeType));
+    data.WriteInt32(volumeEvent.volume);
+    data.WriteBool(volumeEvent.updateUi);
+    data.WriteInt32(volumeEvent.volumeGroupId);
+    data.WriteString(volumeEvent.networkId);
     int error = Remote()->SendRequest(ON_VOLUME_KEY_EVENT, data, reply, option);
     if (error != 0) {
         AUDIO_DEBUG_LOG("Error while sending volume key event %{public}d", error);
@@ -53,11 +54,11 @@ VolumeKeyEventCallbackListner::~VolumeKeyEventCallbackListner()
     AUDIO_DEBUG_LOG("VolumeKeyEventCallbackListner desctrutor");
 }
 
-void VolumeKeyEventCallbackListner::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+void VolumeKeyEventCallbackListner::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     AUDIO_DEBUG_LOG("AudioVolumeKeyEventCallbackProxy VolumeKeyEventCallbackListner");
     if (listener_ != nullptr) {
-        listener_->OnVolumeKeyEvent(streamType, volumeLevel, isUpdateUi);
+        listener_->OnVolumeKeyEvent(volumeEvent);
     }
 }
 } // namespace AudioStandard

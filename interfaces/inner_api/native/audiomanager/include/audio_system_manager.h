@@ -103,11 +103,9 @@ public:
     /**
      * @brief VolumeKeyEventCallback will be executed when hard volume key is pressed up/down
      *
-     * @param streamType the stream type for which volume must be updated.
-     * @param volumeLevel the volume level to be updated.
-     * @param isUpdateUi whether to update volume level in UI.
+     * @param volumeEvent the volume event info.
     **/
-    virtual void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) = 0;
+    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
 class AudioRingerModeCallback {
