@@ -14,6 +14,9 @@
  */
 
 #include <common.h>
+#include "bundle_mgr_interface.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 using namespace std;
 using namespace OHOS;
@@ -52,8 +55,17 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     AudioRendererParams rendererParams;
     ConvertPcmFormat(pcmFormat, &rendererParams);
     streamType = AudioStreamType::STREAM_MUSIC;
-    unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(streamType);
-    rendererHolder->SetParams(rendererParams);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = rendererParams.sampleRate;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = rendererParams.sampleFormat;
+    rendererOptions.streamInfo.channels = rendererParams.channelCount;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
+
+    string cachePath = GetCachePath();
+    unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(cachePath, rendererOptions);
     AudioRenderer *renderer = rendererHolder.release();
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
     renderer->SetRenderMode(RENDER_MODE_CALLBACK);
@@ -159,13 +171,13 @@ SLresult AudioPlayerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState *
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 &size)
+SLresult AudioPlayerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 *size)
 {
     AudioRenderer *audioRenderer = GetAudioRenderById(id);
     BufferDesc bufferDesc = {};
     audioRenderer->GetBufferDesc(bufferDesc);
     *buffer = bufferDesc.buffer;
-    size = bufferDesc.bufLength;
+    *size = bufferDesc.bufLength;
     return SL_RESULT_SUCCESS;
 }
 
@@ -283,6 +295,35 @@ AudioChannel AudioPlayerAdapter::SlToOhosChannel(SLDataFormat_PCM *pcmFormat)
             AUDIO_ERR_LOG("AudioPlayerAdapter::channel count not supported ");
     }
     return channelCount;
+}
+
+std::string AudioPlayerAdapter::GetCachePath() {
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        AUDIO_ERR_LOG("failed to get system ability mgr.");
+        return "";
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("failed to get bundle manager proxy.");
+        return "";
+    }
+
+    AUDIO_INFO_LOG("get bundle manager proxy success.");
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    int appUid = static_cast<int32_t>(getuid());
+    std::string cachePath = "";
+    if (appUid > 100) { // 100 means not system uid
+        std::string bundleName = "";
+        bool getInfoResult = bundleMgrProxy->GetBundleNameForUid(appUid, bundleName);
+        AUDIO_INFO_LOG("Set application cache path, appUid %{public}d, bundleName %{public}s, getInfoResult %{public}d",
+            appUid, bundleName.c_str(), getInfoResult);
+
+        // TODO: use bundlemgr method to get application directory
+        cachePath = "/data/app/el2/100/base/" + bundleName;
+    }
+    return cachePath;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
