@@ -138,13 +138,13 @@ SLresult AudioCapturerAdapter::GetStateAdapter(SLuint32 id, SLOHBufferQueueState
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioCapturerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 &size)
+SLresult AudioCapturerAdapter::GetBufferAdapter(SLuint32 id, SLuint8 **buffer, SLuint32 *size)
 {
     AudioCapturer *audioCapturer = GetAudioCapturerById(id);
     BufferDesc bufferDesc = {};
     audioCapturer->GetBufferDesc(bufferDesc);
     *buffer = bufferDesc.buffer;
-    size = bufferDesc.bufLength;
+    *size = bufferDesc.bufLength;
     return SL_RESULT_SUCCESS;
 }
 
