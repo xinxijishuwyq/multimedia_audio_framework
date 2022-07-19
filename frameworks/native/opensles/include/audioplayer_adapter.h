@@ -56,6 +56,7 @@ private:
     AudioSampleFormat SlToOhosSampelFormat(SLDataFormat_PCM *pcmFormat);
     AudioSamplingRate SlToOhosSamplingRate(SLDataFormat_PCM *pcmFormat);
     AudioChannel SlToOhosChannel(SLDataFormat_PCM *pcmFormat);
+    std::string GetCachePath();
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
