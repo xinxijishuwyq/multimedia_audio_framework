@@ -453,7 +453,8 @@ int32_t AudioStreamCollector::PausedOrResumeStream(int32_t clientUid,
         if (changeInfo->clientUID == clientUid) {
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
-                AUDIO_DEBUG_LOG("AudioStreamCollector:PausedOrResumeStream callback failed sessionId:%{public}d", changeInfo->sessionId);
+                AUDIO_DEBUG_LOG("AudioStreamCollector:PausedOrResumeStream callback failed sId:%{public}d",
+                    changeInfo->sessionId);
                 continue;
             }
             if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
