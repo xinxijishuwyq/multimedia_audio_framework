@@ -297,7 +297,8 @@ AudioChannel AudioPlayerAdapter::SlToOhosChannel(SLDataFormat_PCM *pcmFormat)
     return channelCount;
 }
 
-std::string AudioPlayerAdapter::GetCachePath() {
+std::string AudioPlayerAdapter::GetCachePath()
+{
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
         AUDIO_ERR_LOG("failed to get system ability mgr.");
@@ -320,7 +321,7 @@ std::string AudioPlayerAdapter::GetCachePath() {
         AUDIO_INFO_LOG("Set application cache path, appUid %{public}d, bundleName %{public}s, getInfoResult %{public}d",
             appUid, bundleName.c_str(), getInfoResult);
 
-        // TODO: use bundlemgr method to get application directory
+        // use bundlemgr method to get application directory
         cachePath = "/data/app/el2/100/base/" + bundleName;
     }
     return cachePath;
