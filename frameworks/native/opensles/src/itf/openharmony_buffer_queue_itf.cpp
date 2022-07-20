@@ -17,7 +17,7 @@
 
 using namespace OHOS::AudioStandard;
 
-SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
+static SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
 {
     if (self == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
@@ -32,7 +32,7 @@ SLresult Enqueue(SLOHBufferQueueItf self, const void *buffer, SLuint32 size)
     return SL_RESULT_SUCCESS;
 }
 
-SLresult Clear(SLOHBufferQueueItf self)
+static SLresult Clear(SLOHBufferQueueItf self)
 {
     if (self == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
@@ -47,7 +47,7 @@ SLresult Clear(SLOHBufferQueueItf self)
     return SL_RESULT_SUCCESS;
 }
 
-SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
+static SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
 {
     if (self == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
@@ -62,7 +62,7 @@ SLresult GetState(SLOHBufferQueueItf self, SLOHBufferQueueState *state)
     return SL_RESULT_SUCCESS;
 }
 
-SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 *size)
+static SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 *size)
 {
     if (self == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
@@ -76,7 +76,7 @@ SLresult GetBuffer(SLOHBufferQueueItf self, SLuint8 **buffer, SLuint32 *size)
     return SL_RESULT_SUCCESS;
 }
 
-SLresult RegisterCallback(SLOHBufferQueueItf self, SlOHBufferQueueCallback callback, void *pContext)
+static SLresult RegisterCallback(SLOHBufferQueueItf self, SlOHBufferQueueCallback callback, void *pContext)
 {
     if (self == nullptr || callback == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
