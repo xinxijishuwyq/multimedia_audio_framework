@@ -35,8 +35,11 @@ void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &
 {
     size_t buffSize = 0;
     int32_t buff = renderer->GetBufferSize(buffSize);
-    AUDIO_INFO_LOG("AudioRendererProxyObj::ResumeStreamImpl GetBufferSize Value Is %{public}d", buff);
-    renderer->Start();
+    AUDIO_INFO_LOG("AudioRendererProxyObj::ResumeStreamImpl GetBufferSize result:%{public}d value:%{public}d", buff,
+        buffSize);
+    if (buff == 0) {
+        renderer->Start();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

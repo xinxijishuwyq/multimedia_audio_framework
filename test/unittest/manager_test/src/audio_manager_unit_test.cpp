@@ -736,5 +736,28 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioSystemManager::AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test SetPauseOrResumeStream API
+* @tc.number: SetPauseOrResumeStream_001
+* @tc.desc  : Test Puase functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->PausedOrResumeStream(0,StreamSetState::Stream_Pause,AudioStreamType::STREAM_MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetPauseOrResumeStream API
+* @tc.number: SetPauseOrResumeStream_002
+* @tc.desc  : Test Resume functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level0)
+{
+    int32_t ret = AudioSystemManager::GetInstance()->PausedOrResumeStream(0,StreamSetState::Stream_Resume,AudioStreamType::STREAM_MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

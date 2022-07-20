@@ -28,12 +28,12 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 
 void AudioCapturerProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    capturer->Pause();
+    AUDIO_INFO_LOG("AudioCapturerProxyObj::PausedStreamImpl");
 }
 
 void AudioCapturerProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    capturer->Start();
+    AUDIO_INFO_LOG("AudioCapturerProxyObj::ResumeStreamImpl");
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -153,15 +153,15 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterTracker mode %{public}d", mode);
 
-    int32_t clientUID;
+    int32_t clientID;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     if (mode == AUDIO_MODE_PLAYBACK) {
         AddRendererStream(streamChangeInfo);
-        clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
+        clientID = streamChangeInfo.audioRendererChangeInfo.sessionId;
     } else {
         // mode = AUDIO_MODE_RECORD
         AddCapturerStream(streamChangeInfo);
-        clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
+        clientID = streamChangeInfo.audioRendererChangeInfo.sessionId;
     }
 
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
@@ -170,7 +170,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     std::shared_ptr<AudioClientTracker> callback = std::make_shared<ClientTrackerCallbackListener>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         ERR_INVALID_PARAM, "AudioStreamCollector: failed to create tracker cb obj");
-    clientTracker_[clientUID] = callback;
+    clientTracker_[clientID] = callback;
 
     return SUCCESS;
 }
@@ -223,7 +223,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                     streamChangeInfo.audioRendererChangeInfo.sessionId);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
                     audioRendererChangeInfo.sessionId));
-                clientTracker_.erase(audioRendererChangeInfo.clientUID);
+                clientTracker_.erase(audioRendererChangeInfo.sessionId);
             }
             return SUCCESS;
         }
@@ -281,7 +281,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                     streamChangeInfo.audioCapturerChangeInfo.sessionId);
                 capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo.clientUID,
                     audioCapturerChangeInfo.sessionId));
-                clientTracker_.erase(audioCapturerChangeInfo.clientUID);
+                clientTracker_.erase(audioCapturerChangeInfo.sessionId);
             }
         return SUCCESS;
         }
@@ -390,14 +390,17 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     // Send the release state event notification for all streams of died client to registered app
     bool checkActiveStreams = true;
     uint32_t activeStreams = 0;
+    int32_t sessionID = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
     while (checkActiveStreams) {
+        sessionID = -1;
         checkActiveStreams = false;
         activeStreams = audioRendererChangeInfos_.size();
         for (uint32_t i = 0; i < activeStreams; i++) {
             const auto &audioRendererChangeInfo = audioRendererChangeInfos_.at(i);
             if (audioRendererChangeInfo != nullptr && audioRendererChangeInfo->clientUID == uid) {
+                sessionID = audioRendererChangeInfo->sessionId;
                 audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
                 mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
                     audioRendererChangeInfos_);
@@ -412,11 +415,13 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
 
     checkActiveStreams = true;
     while (checkActiveStreams) {
+        sessionID = -1;
         checkActiveStreams = false;
         activeStreams = audioCapturerChangeInfos_.size();
         for (uint32_t i = 0; i < activeStreams; i++) {
             const auto &audioCapturerChangeInfo = audioCapturerChangeInfos_.at(i);
             if (audioCapturerChangeInfo != nullptr && audioCapturerChangeInfo->clientUID == uid) {
+                sessionID = audioCapturerChangeInfo->sessionId;
                 audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
                 mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
                     audioCapturerChangeInfos_);
@@ -428,8 +433,8 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
             }
         }
     }
-    if (clientTracker_.erase(uid)) {
-        AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", uid);
+    if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
+        AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
         return;
     }
 }
@@ -444,14 +449,19 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
 int32_t AudioStreamCollector::PausedOrResumeStream(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    std::shared_ptr<AudioClientTracker> callback = clientTracker_[clientUid];
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        ERR_INVALID_PARAM, "AudioStreamCollector:PausedOrRecoveryStream callback failed");
-
-    if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
-        callback->PausedStreamImpl(streamSetStateEventInternal);
-    } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Resume) {
-        callback->ResumeStreamImpl(streamSetStateEventInternal);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->clientUID == clientUid) {
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_DEBUG_LOG("AudioStreamCollector:PausedOrResumeStream callback failed sessionId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
+                callback->PausedStreamImpl(streamSetStateEventInternal);
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Resume) {
+                callback->ResumeStreamImpl(streamSetStateEventInternal);
+            }
+        }
     }
 
     return SUCCESS;
