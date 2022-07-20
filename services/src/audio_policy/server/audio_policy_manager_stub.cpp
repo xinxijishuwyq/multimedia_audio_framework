@@ -329,7 +329,8 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
 {
     std::string permissionName = data.ReadString();
     uint32_t appTokenId = data.ReadUint32();
-    bool ret = VerifyClientPermission(permissionName, appTokenId);
+    uint32_t appUid = data.ReadInt32();
+    bool ret = VerifyClientPermission(permissionName, appTokenId, appUid);
     reply.WriteBool(ret);
 }
 
@@ -411,7 +412,7 @@ void AudioPolicyManagerStub::RegisterTrackerInternal(MessageParcel &data, Messag
         AUDIO_ERR_LOG("AudioPolicyManagerStub: Client Tracker obj is null");
         return;
     }
-    
+
     int ret = RegisterTracker(mode, streamChangeInfo, remoteObject);
     reply.WriteInt32(ret);
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register tracker internal ret = %{public}d", ret);
@@ -675,7 +676,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case UNREGISTER_PLAYBACK_EVENT:
             UnregisterAudioRendererEventListenerInternal(data, reply);
             break;
-        
+
         case REGISTER_RECORDING_EVENT:
             RegisterAudioCapturerEventListenerInternal(data, reply);
             break;
@@ -683,7 +684,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case UNREGISTER_RECORDING_EVENT:
             UnregisterAudioCapturerEventListenerInternal(data, reply);
             break;
-        
+
         case REGISTER_TRACKER:
             RegisterTrackerInternal(data, reply);
             break;

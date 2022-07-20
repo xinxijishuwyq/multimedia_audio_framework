@@ -122,7 +122,7 @@ static void OpenSLESCaptureTest()
         SL_DATAFORMAT_PCM,
         OHOS::AudioStandard::AudioChannel::MONO,
         OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_44100,
-        OHOS::AudioStandard::AudioSampleFormat::SAMPLE_S16LE,
+        SL_PCMSAMPLEFORMAT_FIXED_16,
         0,
         0,
         0

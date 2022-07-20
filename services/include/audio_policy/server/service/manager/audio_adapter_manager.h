@@ -129,6 +129,7 @@ private:
 
     AudioSessionCallback *sessionCallback_;
     friend class PolicyCallbackImpl;
+    bool testModeOn_ {false};
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

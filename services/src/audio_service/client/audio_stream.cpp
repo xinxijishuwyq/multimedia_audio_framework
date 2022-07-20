@@ -199,7 +199,7 @@ int32_t AudioStream::GetFrameCount(uint32_t &frameCount) const
     return SUCCESS;
 }
 
-int32_t AudioStream::GetLatency(uint64_t &latency) const
+int32_t AudioStream::GetLatency(uint64_t &latency)
 {
     if (GetAudioLatency(latency) != SUCCESS) {
         return ERR_OPERATION_FAILED;
@@ -275,9 +275,9 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
-bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId)
+bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
 {
-    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId);
+    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId, appUid);
 }
 
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
@@ -434,14 +434,12 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     stream.bufferLen = buffer_size;
     isWriteInProgress_ = true;
 
-#ifdef LATENCY_ACCURACY_TEST
     if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
             return ERR_WRITE_FAILED;
         }
         isFirstWrite_ = false;
     }
-#endif // LATENCY_ACCURACY_TEST
 
     size_t bytesWritten = WriteStream(stream, writeError);
     isWriteInProgress_ = false;
@@ -466,6 +464,15 @@ bool AudioStream::PauseAudioStream()
             readThread_->join();
         }
     }
+
+    // Ends the WriteBuffers thread
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        isReadyToWrite_ = false;
+        if (writeThread_ && writeThread_->joinable()) {
+            writeThread_->join();
+        }
+    }
+
     while (isReadInProgress_ || isWriteInProgress_) {
         std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
@@ -477,11 +484,6 @@ bool AudioStream::PauseAudioStream()
         AUDIO_DEBUG_LOG("StreamPause fail,ret:%{public}d", ret);
         state_ = oldState;
         return false;
-    }
-
-    // Ends the WriteBuffers thread
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        isReadyToWrite_ = false;
     }
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
@@ -514,6 +516,15 @@ bool AudioStream::StopAudioStream()
             readThread_->join();
         }
     }
+
+    // Ends the WriteBuffers thread
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        isReadyToWrite_ = false;
+        if (writeThread_ && writeThread_->joinable()) {
+            writeThread_->join();
+        }
+    }
+
     while (isReadInProgress_ || isWriteInProgress_) {
         std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
@@ -523,11 +534,6 @@ bool AudioStream::StopAudioStream()
         AUDIO_DEBUG_LOG("StreamStop fail,ret:%{public}d", ret);
         state_ = oldState;
         return false;
-    }
-
-    // Ends the WriteBuffers thread
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        isReadyToWrite_ = false;
     }
 
     AUDIO_INFO_LOG("StopAudioStream SUCCESS");

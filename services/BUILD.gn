@@ -205,6 +205,7 @@ ohos_shared_library("audio_policy_service") {
     "access_token:libaccesstoken_sdk",
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
     "input:libmmi-client",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
