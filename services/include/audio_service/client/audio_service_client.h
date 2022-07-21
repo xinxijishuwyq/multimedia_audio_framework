@@ -496,6 +496,8 @@ public:
      * @return Returns whether the authentication was success or not
      */
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
+    int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
+    float GetStreamLowPowerVolume();
 
     // Audio timer callback
     virtual void OnTimeOut();
@@ -539,6 +541,7 @@ private:
     std::string cachePath_ = "";
 
     float mVolumeFactor;
+    float mPowerVolumeFactor;
     bool mUnMute_;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;

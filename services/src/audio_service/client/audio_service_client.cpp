@@ -466,6 +466,7 @@ AudioServiceClient::AudioServiceClient()
     clientInfo.clear();
 
     mVolumeFactor = 1.0f;
+    mPowerVolumeFactor = 1.0f;
     mUnMute_ = false;
     mStreamType = STREAM_MUSIC;
     mAudioSystemMgr = nullptr;
@@ -920,6 +921,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
@@ -2131,7 +2133,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     int32_t systemVolumeInt
         = client.mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * client.mVolumeFactor;
+    float vol = systemVolume * client.mVolumeFactor * client.mPowerVolumeFactor;
 
     AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
     if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
@@ -2235,6 +2237,71 @@ void AudioServiceClient::WriteStateChangedSysEvents()
         "STREAMTYPE", mStreamType,
         "STATE", state_,
         "DEVICETYPE", deviceType);
+}
+
+int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
+{
+    lock_guard<mutex> lock(ctrlMutex);
+    AUDIO_INFO_LOG("SetPowerVolumeFactor volume: %{public}f", powerVolumeFactor);
+
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("context is null");
+        return AUDIO_CLIENT_ERR;
+    }
+
+    /* Validate and return INVALID_PARAMS error */
+    if ((powerVolumeFactor < MIN_STREAM_VOLUME_LEVEL) || (powerVolumeFactor > MAX_STREAM_VOLUME_LEVEL)) {
+        AUDIO_ERR_LOG("Invalid Power Volume Set!");
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    mPowerVolumeFactor = powerVolumeFactor;
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    if (mAudioSystemMgr == nullptr) {
+        AUDIO_ERR_LOG("System manager instance is null");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    if (!streamInfoUpdated) {
+        uint32_t idx = pa_stream_get_index(paStream);
+        pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+            reinterpret_cast<void *>(this));
+        if (operation == nullptr) {
+            AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
+
+        pa_threaded_mainloop_accept(mainLoop);
+
+        pa_operation_unref(operation);
+    } else {
+        SetPaVolume(*this);
+    }
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+float AudioServiceClient::GetStreamLowPowerVolume()
+{
+    return mPowerVolumeFactor;
 }
 } // namespace AudioStandard
 } // namespace OHOS

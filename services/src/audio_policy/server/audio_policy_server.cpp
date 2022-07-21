@@ -240,6 +240,16 @@ float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
     return mPolicyService.GetStreamVolume(streamType);
 }
 
+int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    return mPolicyService.SetLowPowerVolume(streamId, volume);
+}
+
+float AudioPolicyServer::GetLowPowerVolume(int32_t streamId)
+{
+    return mPolicyService.GetLowPowerVolume(streamId);
+}
+
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     if (streamType == AudioStreamType::STREAM_RING) {

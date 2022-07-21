@@ -20,6 +20,41 @@ namespace AudioStandard {
 AudioClientTrackerCallbackProxy::AudioClientTrackerCallbackProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardClientTracker>(impl) { }
 
+void AudioClientTrackerCallbackProxy::SetLowPowerVolumeImpl(float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteFloat(static_cast<float>(volume));
+    int error = Remote()->SendRequest(SETLOWPOWERVOL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
+    }
+}
+
+void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    int error = Remote()->SendRequest(GETLOWPOWERVOL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
+    }
+
+    volume = reply.ReadFloat();
+}
+
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)
     : listener_(listener)
 {
@@ -29,6 +64,20 @@ ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandar
 ClientTrackerCallbackListener::~ClientTrackerCallbackListener()
 {
     AUDIO_DEBUG_LOG("ClientTrackerCallbackListener destructor");
+}
+
+void ClientTrackerCallbackListener::SetLowPowerVolumeImpl(float volume)
+{
+    if (listener_ != nullptr) {
+        listener_->SetLowPowerVolumeImpl(volume);
+    }
+}
+
+void ClientTrackerCallbackListener::GetLowPowerVolumeImpl(float &volume)
+{
+    if (listener_ != nullptr) {
+        listener_->GetLowPowerVolumeImpl(volume);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

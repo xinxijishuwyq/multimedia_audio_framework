@@ -54,6 +54,10 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType) override;
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
+
+    float GetLowPowerVolume(int32_t streamId) override;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;

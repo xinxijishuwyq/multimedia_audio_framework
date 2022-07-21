@@ -705,5 +705,15 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
     AUDIO_INFO_LOG("AudioRendererPrivate: SetInterruptMode : InterruptMode %{pubilc}d", mode);
     mode_ = mode;
 }
+
+int32_t AudioRendererPrivate::SetLowPowerVolume(float volume) const
+{
+    return audioStream_->SetLowPowerVolume(volume);
+}
+
+float AudioRendererPrivate::GetLowPowerVolume() const
+{
+    return audioStream_->GetLowPowerVolume();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -49,6 +49,8 @@ public:
 class AudioClientTracker {
 public:
     virtual ~AudioClientTracker() = default;
+    virtual void SetLowPowerVolumeImpl(float volume) = 0;
+    virtual void GetLowPowerVolumeImpl(float &volume) = 0;
 };
 
 class AudioStreamManager {

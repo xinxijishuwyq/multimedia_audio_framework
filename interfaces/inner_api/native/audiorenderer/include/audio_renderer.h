@@ -522,6 +522,22 @@ public:
      * @return none
      */
     virtual void SetInterruptMode(InterruptMode mode) = 0;
+
+    /**
+     * @brief Set volume discount factor.
+     *
+     * @param volume Adjustment percentage.
+     * @return Whether the operation is effective
+     */
+    virtual int32_t SetLowPowerVolume(float volume) const = 0;
+
+    /**
+     * @brief Get volume discount factor.
+     *
+     * @param none.
+     * @return volume adjustment percentage.
+     */
+    virtual float GetLowPowerVolume() const = 0;
     
     virtual ~AudioRenderer();
 };
