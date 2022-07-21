@@ -65,3 +65,9 @@ IObject *Construct(const ClassTable *classTable, SLEngineItf engine)
     }
     return thiz;
 }
+
+std::string GetCachePath()
+{
+    std::string cachePath = "/data/storage/el2/base/haps/entry/files";
+    return cachePath;
+}
