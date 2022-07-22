@@ -71,6 +71,7 @@ enum AudioPolicyCommand {
     UPDATE_STREAM_STATE,
     GET_SINGLE_STREAM_VOLUME,
     GET_VOLUME_GROUP_INFO,
+    IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED,
 };
 } // namespace AudioStandard
 } // namespace OHOS

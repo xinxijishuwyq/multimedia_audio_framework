@@ -74,5 +74,11 @@ int32_t AudioStreamManager::GetCurrentCapturerChangeInfos(
     AUDIO_INFO_LOG("AudioStreamManager:: GetCurrentCapturerChangeInfos");
     return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+
+bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_INFO_LOG("AudioStreamManager::IsAudioRendererLowLatencySupported");
+    return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS
