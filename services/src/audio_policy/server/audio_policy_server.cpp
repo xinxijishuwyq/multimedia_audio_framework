@@ -1161,7 +1161,7 @@ void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
         deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
         policyData.inputDevices.push_back(deviceInfo);
     }
- 
+
     deviceFlag = DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG;
     audioDeviceDescriptors = GetDevices(deviceFlag);
 

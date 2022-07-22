@@ -790,7 +790,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             return;
         }
     }
-    
+
     auto isPresent = [&devType, &networkId](const sptr<AudioDeviceDescriptor>& descriptor) {
         return descriptor->deviceType_ == devType && descriptor->networkId_ == networkId;
     };
@@ -1311,7 +1311,7 @@ void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, 
         auto isPresent = [&groupName, &networkId] (const sptr<InterruptGroupInfo> &info) {
             return ((groupName == info->groupName_) || (networkId == info->networkId_));
         };
- 
+
         auto iter = std::find_if(mInterruptGroups.begin(), mInterruptGroups.end(), isPresent);
         if (iter != mInterruptGroups.end()) {
             groupId = (*iter)->interruptGroupId_;
