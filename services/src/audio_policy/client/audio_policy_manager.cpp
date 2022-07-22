@@ -171,7 +171,7 @@ int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
     return g_sProxy->UnsetRingerModeCallback(clientId);
 }
 
-int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
+int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -195,7 +195,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId,
         return ERROR;
     }
 
-    return g_sProxy->SetDeviceChangeCallback(clientId, object);
+    return g_sProxy->SetDeviceChangeCallback(clientId, flag, object);
 }
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId)

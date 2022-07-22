@@ -82,7 +82,8 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
+        override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
 
@@ -148,6 +149,8 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -165,6 +168,8 @@ private:
     void RegisterAudioServerDeathRecipient();
     void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
+    void GetDeviceInfo(PolicyData &policyData);
+    void GetGroupInfo(PolicyData &policyData);
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();

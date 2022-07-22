@@ -22,6 +22,12 @@ namespace AudioStandard {
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles
  */
+AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId,
+    int32_t volumeGroupId, std::string networkId)
+    : deviceType_(type), deviceRole_(role), interruptGroupId_(interruptGroupId), volumeGroupId_(volumeGroupId),
+    networkId_(networkId)
+{}
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
 {
     if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)

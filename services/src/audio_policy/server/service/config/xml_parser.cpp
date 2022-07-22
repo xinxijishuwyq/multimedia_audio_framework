@@ -21,6 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 bool XMLParser::LoadConfiguration()
 {
+    AUDIO_INFO_LOG("start LoadConfiguration");
     mDoc = xmlReadFile(CONFIG_FILE, nullptr, 0);
     if (mDoc == nullptr) {
         AUDIO_ERR_LOG("xmlReadFile Failed");
@@ -73,6 +74,12 @@ bool XMLParser::ParseInternal(xmlNode &node)
                 case SINK_LATENCY:
                     ParseSinkLatency(*currNode);
                     break;
+                case VOLUME_GROUP_CONFIG:
+                    ParseGroups(*currNode, VOLUME_GROUP_CONFIG);
+                    break;
+                case INTERRUPT_GROUP_CONFIG:
+                    ParseGroups(*currNode, INTERRUPT_GROUP_CONFIG);
+                    break;
                 default:
                     ParseInternal(*(currNode->children));
                     break;
@@ -81,6 +88,8 @@ bool XMLParser::ParseInternal(xmlNode &node)
     }
 
     mPortObserver.OnXmlParsingCompleted(xmlParsedDataMap_);
+    mPortObserver.OnVolumeGroupParsed(volumeGroupMap_);
+    mPortObserver.OnInterruptGroupParsed(interruptGroupMap_);
     return true;
 }
 
@@ -212,14 +221,18 @@ NodeName XMLParser::GetNodeNameAsInt(xmlNode &node)
 {
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("deviceclass"))) {
         return DEVICE_CLASS;
-    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioInterruptEnable"))) {
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioInterruptEnable"))) {
         return AUDIO_INTERRUPT_ENABLE;
-    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("UpdateRouteSupport"))) {
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("UpdateRouteSupport"))) {
         return UPDATE_ROUTE_SUPPORT;
-    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioLatency"))) {
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("AudioLatency"))) {
         return AUDIO_LATENCY;
-    } else  if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("SinkLatency"))) {
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("SinkLatency"))) {
         return SINK_LATENCY;
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("VolumeGroupConfig"))) {
+        return VOLUME_GROUP_CONFIG;
+    } else if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("InterruptGroupConfig"))) {
+        return INTERRUPT_GROUP_CONFIG;
     } else {
         return UNKNOWN;
     }
@@ -302,6 +315,49 @@ void XMLParser::ParseSinkLatency(xmlNode &node)
     mPortObserver.OnSinkLatencyParsed((uint64_t)std::stoi(sLatency));
 
     xmlFree(latency);
+}
+
+void XMLParser::ParseGroups(xmlNode& node, NodeName type)
+{
+    xmlNode* groupsNode = nullptr;
+    groupsNode = node.xmlChildrenNode; // get <groups>
+    while (groupsNode != nullptr) {
+        if (groupsNode->type == XML_ELEMENT_NODE) {
+            ParseGroup(*groupsNode, type);
+        }
+        groupsNode = groupsNode->next;
+    }
+}
+
+void XMLParser::ParseGroup(xmlNode& node, NodeName type)
+{
+    xmlNode* groupNode = nullptr;
+    groupNode = node.xmlChildrenNode;
+
+    while (groupNode != nullptr) {
+        if (groupNode->type == XML_ELEMENT_NODE) {
+            std::string groupName = ExtractPropertyValue("name", *groupNode);
+            ParseGroupModule(*groupNode, type, groupName);
+        }
+        groupNode = groupNode->next;
+    }
+}
+
+void XMLParser::ParseGroupModule(xmlNode& node, NodeName type, std::string groupName)
+{
+    xmlNode* moduleNode = nullptr;
+    moduleNode = node.xmlChildrenNode;
+    while (moduleNode != nullptr) {
+        if (moduleNode->type == XML_ELEMENT_NODE) {
+            std::string moduleName = ExtractPropertyValue("name", *moduleNode);
+            if (type == VOLUME_GROUP_CONFIG) {
+                volumeGroupMap_[moduleName] = groupName;
+            } else if (type == INTERRUPT_GROUP_CONFIG) {
+                interruptGroupMap_[moduleName] = groupName;
+            }
+        }
+        moduleNode = moduleNode->next;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

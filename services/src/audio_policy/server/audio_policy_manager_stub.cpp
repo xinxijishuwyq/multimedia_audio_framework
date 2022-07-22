@@ -203,12 +203,13 @@ void AudioPolicyManagerStub::UnsetRingerModeCallbackInternal(MessageParcel &data
 void AudioPolicyManagerStub::SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
+    DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetDeviceChangeCallback(clientId, object);
+    int32_t result = SetDeviceChangeCallback(clientId, flag, object);
     reply.WriteInt32(result);
 }
 

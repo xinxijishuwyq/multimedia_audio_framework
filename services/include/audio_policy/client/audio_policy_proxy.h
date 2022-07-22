@@ -60,7 +60,8 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+        const sptr<IRemoteObject>& object) override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
 
