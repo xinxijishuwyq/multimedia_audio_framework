@@ -63,8 +63,7 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
-    string cachePath = GetCachePath();
-    unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(cachePath, rendererOptions);
+    unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(APP_CACHE_PATH, rendererOptions);
     AudioRenderer *renderer = rendererHolder.release();
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
     renderer->SetRenderMode(RENDER_MODE_CALLBACK);
