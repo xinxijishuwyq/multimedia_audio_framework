@@ -82,7 +82,6 @@ static void PrintUsage(void)
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }
 
-
 static void ShowAudioDeviceDescriptorsVector(std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
     int vectorLen = audioDeviceDescriptorsVector.size();
@@ -223,18 +222,39 @@ static void HandleSelectInputDevice(int argc, char* argv[], char opt)
     }
 }
 
-static void HandleVolume(int streamType, char option)
+static void HandleVolume(int argc, char* argv[],int streamType, char option)
 {
-    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    if ((option != 'v' && option != 'V') || argc > AudioPolicyTest::FOURTH_ARG)
+    {
+        cout << "HandVolume invalid argv[" << argc << "] " << endl;
+    }
     if (option == 'v') {
-        float volume = audioSystemMgr->GetVolume(static_cast<AudioVolumeType>(streamType));
-        cout << "Get Volume : " << volume << endl;
+        networkId = argv[AudioPolicyTest::SECOND_ARG];
+        cout << "handle volume networkId: " << networkId << endl;
+        std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
+        if (groups.size() > 0) {
+            int32_t groupId = groups[0]->volumeGroupId_;
+            std::shared_ptr<AudioGroupManager> groupManager = audioSystemMgr->GetGroupManager(groupId);
+            float volume = groupManager->GetVolume(static_cast<AudioVolumeType>(streamType));
+            cout << "Get Volume : " << volume << endl;
+        }
     } else {
-        float volume = strtof(optarg, nullptr);
-        cout << "Set Volume : " << volume << endl;
-        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioVolumeType>(streamType),
-                                                   volume);
-        cout << "Set Volume Result: " << result << endl;
+        networkId = argv[AudioPolicyTest::THIRD_ARG];
+        cout << "handle volume networkId: " << networkId << endl;
+        std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
+        if (groups.size() > 0) {
+            int32_t groupId = groups[0]->volumeGroupId_;
+            std::shared_ptr<AudioGroupManager> groupManager = audioSystemMgr->GetGroupManager(groupId);
+
+            float volume = strtof(optarg, nullptr);
+            cout << "Set Volume : " << volume << endl;
+            int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType),
+                                                       volume);
+            cout << "Set Volume Result: " << result << endl;
+        }
     }
 }
 
@@ -464,7 +484,8 @@ int main(int argc, char* argv[])
                 break;
             case 'V':
             case 'v':
-                HandleVolume(streamType, opt);
+                // HandleVolume(streamType, opt);
+                HandleVolume(argc, argv, streamType, opt);
                 break;
             case 'M':
             case 'm':
