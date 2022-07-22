@@ -20,13 +20,11 @@
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
 #include <audioplayer_adapter.h>
-#include <audiocapturer_adapter.h>
+#include<audiocapturer_adapter.h>
 #include <iostream>
 #include <cstdlib>
 #include <stddef.h>
 #include "audio_log.h"
-
-#define APP_CACHE_PATH "/data/storage/el2/base/haps/entry/files"
 
 struct CEngine;
 
@@ -132,5 +130,4 @@ SLresult AudioPlayerDestroy(void* self);
 SLresult OutputMixDestroy(void* self);
 
 SLresult AudioRecorderDestroy(void *self);
-
 #endif
