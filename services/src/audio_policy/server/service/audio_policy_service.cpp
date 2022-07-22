@@ -181,8 +181,23 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
     if (LOCAL_NETWORK_ID == selectedDevice) {
         return "";
     }
-    AUDIO_INFO_LOG("GetSelectedDeviceInfo result[%{public}s]", selectedDevice.c_str());
-    return selectedDevice;
+    // check if connected.
+    bool isConnected = false;
+    for (auto device : mConnectedDevices) {
+        if (device->networkId_ == selectedDevice) {
+            isConnected = true;
+            break;
+        }
+    }
+
+    if (isConnected) {
+        AUDIO_INFO_LOG("GetSelectedDeviceInfo result[%{public}s]", selectedDevice.c_str());
+        return selectedDevice;
+    } else {
+        routerMap_.erase(uid);
+        AUDIO_INFO_LOG("GetSelectedDeviceInfo device already disconnected.");
+        return "";
+    }
 }
 
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
@@ -262,6 +277,11 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<uint32_t> sinkIn
     return SUCCESS;
 }
 
+inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
+{
+    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+}
+
 int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     AUDIO_INFO_LOG("MoveToRemoteOutputDevice start");
@@ -276,8 +296,9 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkI
     }
 
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
-    if (mIOHandles.count(networkId)) {
-        mIOHandles[networkId]; // mIOHandle is module id, not equal to sink id.
+    std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
+    if (mIOHandles.count(moduleName)) {
+        mIOHandles[moduleName]; // mIOHandle is module id, not equal to sink id.
     } else {
         AUDIO_ERR_LOG("no such device.");
         // return ERR_INVALID_OPERATION;
@@ -285,9 +306,19 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkI
         AudioModuleInfo remoteDeviceInfo = ConstructRemoteAudioModuleInfo(networkId, deviceRole, deviceType);
         AudioIOHandle remoteIOIdx = mAudioPolicyManager.OpenAudioPort(remoteDeviceInfo);
         AUDIO_DEBUG_LOG("OpenAudioPort remoteIOIdx %{public}d", remoteIOIdx);
-        CHECK_AND_RETURN_RET_LOG(remoteIOIdx != ERR_OPERATION_FAILED && remoteIOIdx != ERR_INVALID_HANDLE,
-                                             ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d", remoteIOIdx);
-        mIOHandles[remoteDeviceInfo.name] = remoteIOIdx;
+        CHECK_AND_RETURN_RET_LOG(remoteIOIdx != OPEN_PORT_FAILURE,
+                                 ERR_INVALID_HANDLE,
+                                 "OpenAudioPort failed %{public}d",
+                                 remoteIOIdx);
+        mIOHandles[moduleName] = remoteIOIdx;
+
+        // If device already in list, remove it else do not modify the list.
+        auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
+            return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId;
+        };
+        mConnectedDevices.erase(std::remove_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent),
+                            mConnectedDevices.end());
+        mConnectedDevices.insert(mConnectedDevices.begin(), remoteDeviceDescriptor);
     }
 
     // start move.
@@ -407,17 +438,29 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<uint32_t> source
     }
 
     uint32_t sourceId = -1; // invalid sink id, use sink name instead.
-    if (mIOHandles.count(networkId)) {
-        mIOHandles[networkId]; // mIOHandle is module id, not equal to sink id.
+    std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
+    if (mIOHandles.count(moduleName)) {
+        mIOHandles[moduleName]; // mIOHandle is module id, not equal to sink id.
     } else {
         AUDIO_ERR_LOG("no such device.");
         // return ERR_INVALID_OPERATION;
         //TODO here we open the device just for test. we should open it when device online.
         AudioModuleInfo remoteDeviceInfo = ConstructRemoteAudioModuleInfo(networkId, deviceRole, deviceType);
         AudioIOHandle remoteIOIdx = mAudioPolicyManager.OpenAudioPort(remoteDeviceInfo);
-        CHECK_AND_RETURN_RET_LOG(remoteIOIdx != ERR_OPERATION_FAILED && remoteIOIdx != ERR_INVALID_HANDLE,
-                                             ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d", remoteIOIdx);
-        mIOHandles[remoteDeviceInfo.name] = remoteIOIdx;
+        AUDIO_DEBUG_LOG("OpenAudioPort remoteIOIdx %{public}d", remoteIOIdx);
+        CHECK_AND_RETURN_RET_LOG(remoteIOIdx != OPEN_PORT_FAILURE,
+                                 ERR_INVALID_HANDLE,
+                                 "OpenAudioPort failed %{public}d",
+                                 remoteIOIdx);
+        mIOHandles[moduleName] = remoteIOIdx;
+
+        // If device already in list, remove it else do not modify the list.
+        auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
+            return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId;
+        };
+        mConnectedDevices.erase(std::remove_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent),
+                            mConnectedDevices.end());
+        mConnectedDevices.insert(mConnectedDevices.begin(), remoteDeviceDescriptor);
     }
 
     // start move.
@@ -708,9 +751,10 @@ int32_t AudioPolicyService::ActivateNewDevice(std::string networkId, DeviceType 
     if (isRemote) {
         AudioModuleInfo moduleInfo = ConstructRemoteAudioModuleInfo(networkId, GetDeviceRole(deviceType), deviceType);
         AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(ioHandle != ERR_OPERATION_FAILED && ioHandle != ERR_INVALID_HANDLE,
-            ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", ioHandle);
-        mIOHandles[networkId] = ioHandle;
+        CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE,
+                                 ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", ioHandle);
+        std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceType));
+        mIOHandles[moduleName] = ioHandle;
     }
     return SUCCESS;
 }
@@ -1096,16 +1140,20 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     if (statusInfo.isConnected) {
         AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
             statusInfo.connectType);
-        ActivateNewDevice(statusInfo.networkId, devType,
-            statusInfo.connectType==ConnectType::CONNECT_TYPE_DISTRIBUTED);
-
+        int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
+                                        statusInfo.connectType==ConnectType::CONNECT_TYPE_DISTRIBUTED);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("=== DEVICE online but open audio device failed.");
+            return;
+        }
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     } else {
         AUDIO_INFO_LOG("=== DEVICE DISCONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
             statusInfo.connectType);
-        if (mIOHandles.find(networkId) != mIOHandles.end()) {
-            mAudioPolicyManager.CloseAudioPort(mIOHandles[networkId]);
-            mIOHandles.erase(networkId);
+        std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
+        if (mIOHandles.find(moduleName) != mIOHandles.end()) {
+            mAudioPolicyManager.CloseAudioPort(mIOHandles[moduleName]);
+            mIOHandles.erase(moduleName);
         }
 
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
