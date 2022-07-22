@@ -130,4 +130,6 @@ SLresult AudioPlayerDestroy(void* self);
 SLresult OutputMixDestroy(void* self);
 
 SLresult AudioRecorderDestroy(void *self);
+
+std::string GetCachePath();
 #endif
