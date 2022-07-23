@@ -190,6 +190,8 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         return ERR_OPERATION_FAILED;
     }
 
+    // will SetDefaultSink make all sink-input connnect to only one sink?
+    // If so,we may need to use SetLocalDefaultSink to swich only local sink-input.
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
@@ -209,6 +211,11 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
             break;
     }
     return SUCCESS;
+}
+
+int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
+{
+    return mAudioServiceAdapter->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
@@ -318,6 +325,10 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(" test_mode_on=");
             args.append("1");
         }
+        if (!audioModuleInfo.networkId.empty()) {
+            args.append(" network_id=");
+            args.append(audioModuleInfo.networkId);
+        }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
         if (!audioModuleInfo.name.empty()) {
@@ -338,6 +349,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.fileName.empty()) {
             args.append(" file_path=");
             args.append(audioModuleInfo.fileName);
+        }
+
+        if (!audioModuleInfo.networkId.empty()) {
+            args.append(" network_id=");
+            args.append(audioModuleInfo.networkId);
         }
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {

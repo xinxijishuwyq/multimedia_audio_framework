@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,9 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_renderer_sink.h"
+#include "remote_audio_renderer_sink.h"
+
+#define DUMPFILE
 
 using namespace std;
 
@@ -28,7 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+// const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -41,34 +43,43 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 }
 
-#ifdef DUMPFILE
-const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
-#endif // DUMPFILE
+std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;
 
-AudioRendererSink::AudioRendererSink()
+RemoteAudioRendererSink::RemoteAudioRendererSink()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioRender_(nullptr)
+      rightVolume_(DEFAULT_VOLUME_LEVEL),audioAdapter_(nullptr), audioRender_(nullptr)
 {
     attr_ = {};
+    audioManager_ = GetAudioManager();
 #ifdef DUMPFILE
     pfd = nullptr;
 #endif // DUMPFILE
 }
 
-AudioRendererSink::~AudioRendererSink()
+RemoteAudioRendererSink::~RemoteAudioRendererSink()
 {
     DeInit();
 }
 
-AudioRendererSink *AudioRendererSink::GetInstance()
+RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *deviceNetworkId)
 {
-    static AudioRendererSink audioRenderer_;
-
-    return &audioRenderer_;
+    RemoteAudioRendererSink *audioRenderer_ = nullptr;
+    if(deviceNetworkId == nullptr) {
+        return audioRenderer_;
+    }
+    // check if it is in our map
+    std::string deviceName(deviceNetworkId);
+    if (allsinks.count(deviceName)) {
+        return allsinks[deviceName];
+    } else {
+        audioRenderer_ = new(std::nothrow) RemoteAudioRendererSink();
+        AUDIO_DEBUG_LOG("new Daudio device sink:[%{public}s]", deviceNetworkId);
+        allsinks[deviceName] = audioRenderer_;
+    }
+    return audioRenderer_;
 }
 
-void AudioRendererSink::DeInit()
+void RemoteAudioRendererSink::DeInit()
 {
     started_ = false;
     rendererInited_ = false;
@@ -98,7 +109,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
-    attrs.interleaved = true;
+    attrs.interleaved = 0;
     attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
@@ -108,43 +119,13 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.silenceThreshold = 0;
 }
 
-static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string adapterNameCase,
-    enum AudioPortDirection portFlag, struct AudioPort &renderPort, int32_t size)
+struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
 {
-    if (descs == nullptr) {
-        return ERROR;
-    }
+    AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
 
-    for (int32_t index = 0; index < size; index++) {
-        struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr || desc->adapterName == nullptr) {
-            continue;
-        }
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    return index;
-                }
-            }
-        }
-    }
-    AUDIO_ERR_LOG("SwitchAdapterRender Fail");
+    static struct AudioManager *audioManager_ = GetAudioManagerFuncs(); // here will change to GetDAudioManagerFuncs
 
-    return ERR_INVALID_INDEX;
-}
-
-int32_t AudioRendererSink::InitAudioManager()
-{
-    AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
-
-    audioManager_ = GetAudioManagerFuncs();
-    if (audioManager_ == nullptr) {
-        return ERR_INVALID_HANDLE;
-    }
-
-    return 0;
+    return audioManager_;
 }
 
 uint32_t PcmFormatToBits(enum AudioFormat format)
@@ -163,7 +144,7 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     }
 }
 
-int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
+int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
@@ -173,7 +154,7 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     param.format = attr_.format;
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
+    AUDIO_INFO_LOG("RemoteAudioRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -188,36 +169,22 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     return 0;
 }
 
-int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
+int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information
     openSpeaker_ = attr_.openMicSpeaker;
-    enum AudioPortDirection port = PORT_OUT; // Set port information
 
-    if (InitAudioManager() != 0) {
+    if (audioManager_ == nullptr) {
         AUDIO_ERR_LOG("Init audio manager Fail");
         return ERR_NOT_STARTED;
     }
 
-    int32_t size = 0;
-    int32_t ret;
-    struct AudioAdapterDescriptor *descs = nullptr;
-    ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail");
-        return ERR_NOT_STARTED;
-    }
+    struct AudioAdapterDescriptor desc;
+    desc.adapterName = attr.deviceNetworkId;
+    desc.portNum = 1; // TODO
 
-    // Get qualified sound card and port
-    int32_t index = SwitchAdapterRender(descs, adapterNameCase_, port, audioPort_, size);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
-
-    struct AudioAdapterDescriptor *desc = &descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
+    if (audioManager_->LoadAdapter(audioManager_, &desc, &audioAdapter_) != 0) {
         AUDIO_ERR_LOG("Load Adapter Fail");
         return ERR_NOT_STARTED;
     }
@@ -226,8 +193,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-    // Initialization port information, can fill through mode and other parameters
-    ret = audioAdapter_->InitAllPorts(audioAdapter_);
+    int32_t ret = audioAdapter_->InitAllPorts(audioAdapter_);
     if (ret != 0) {
         AUDIO_ERR_LOG("InitAllPorts failed");
         return ERR_NOT_STARTED;
@@ -237,15 +203,16 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
         AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
         return ERR_NOT_STARTED;
     }
-    if (openSpeaker_) {
-        ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
-        }
-    }
+    // if (openSpeaker_) {
+    //     ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+    //     if (ret < 0) {
+    //         AUDIO_ERR_LOG("RemoteAudioRendererSink: Update route FAILED: %{public}d", ret);
+    //     }
+    // }
     rendererInited_ = true;
 
 #ifdef DUMPFILE
+    const char *g_audioOutTestFilePath = "/data/local/tmp/remote_aduio_out_test.pcm";
     pfd = fopen(g_audioOutTestFilePath, "wb+");
     if (pfd == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");
@@ -255,7 +222,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int32_t ret;
     if (audioRender_ == nullptr) {
@@ -279,7 +246,7 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Start(void)
+int32_t RemoteAudioRendererSink::Start(void)
 {
     int32_t ret;
 
@@ -289,7 +256,7 @@ int32_t AudioRendererSink::Start(void)
             started_ = true;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Start failed!");
+            AUDIO_ERR_LOG("RemoteAudioRendererSink::Start failed!");
             return ERR_NOT_STARTED;
         }
     }
@@ -297,13 +264,13 @@ int32_t AudioRendererSink::Start(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetVolume(float left, float right)
+int32_t RemoteAudioRendererSink::SetVolume(float left, float right)
 {
     int32_t ret;
     float volume;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::SetVolume failed audioRender_ null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetVolume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -319,28 +286,28 @@ int32_t AudioRendererSink::SetVolume(float left, float right)
 
     ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
     if (ret) {
-        AUDIO_ERR_LOG("AudioRendererSink::Set volume failed!");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Set volume failed!");
     }
 
     return ret;
 }
 
-int32_t AudioRendererSink::GetVolume(float &left, float &right)
+int32_t RemoteAudioRendererSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::GetLatency(uint32_t *latency)
+int32_t RemoteAudioRendererSink::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed audio render null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink: GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!latency) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed latency null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink: GetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
@@ -373,7 +340,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_MEDIA;
             break;
     }
-    AUDIO_DEBUG_LOG("AudioRendererSink: Audio category returned is: %{public}d", audioCategory);
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSink: Audio category returned is: %{public}d", audioCategory);
 
     return audioCategory;
 }
@@ -395,10 +362,6 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_USB_EXT;
             sink.ext.device.desc = "pin_out_usb_ext";
             break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
-            sink.ext.device.desc = "pin_out_bluetooth_sco";
-            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -407,32 +370,24 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice)
-{
-    AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
-    return SetOutputRoute(outputDevice, outputPortPin);
-}
-
-int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
+int32_t RemoteAudioRendererSink::OpenOutput(DeviceType outputDevice)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetOutputPortPin(outputDevice, sink);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("RemoteAudioRendererSink: OpenOutput FAILED: %{public}d", ret);
         return ret;
     }
 
-    outputPortPin = sink.ext.device.type;
-    AUDIO_DEBUG_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
     source.ext.mix.streamId = INTERNAL_OUTPUT_STREAM_ID;
 
-    sink.portId = static_cast<int32_t>(audioPort_.portId);
+    sink.portId = audioPort_.portId;
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
@@ -445,77 +400,56 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     };
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink: UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;
     }
 
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t RemoteAudioRendererSink::SetAudioScene(AudioScene audioScene)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene in");
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
                              ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
-        return ERR_INVALID_HANDLE;
-    }
-    if (openSpeaker_) {
-        AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
-        int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
-        }
-
-        AUDIO_DEBUG_LOG("AudioRendererSink::OUTPUT port is %{public}d", audioSceneOutPort);
-        struct AudioSceneDescriptor scene;
-        scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = audioSceneOutPort;
-        scene.desc.desc = nullptr;
-        if (audioRender_->scene.SelectScene == nullptr) {
-            AUDIO_ERR_LOG("AudioRendererSink: Select scene nullptr");
-            return ERR_OPERATION_FAILED;
-        }
-
-        AUDIO_INFO_LOG("AudioRendererSink::SelectScene start");
-        ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
-        AUDIO_INFO_LOG("AudioRendererSink::SelectScene over");
-        if (ret < 0) {
-            AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
-            return ERR_OPERATION_FAILED;
-        }
-    }
-
-    AUDIO_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
-    return SUCCESS;
-}
-
-int32_t AudioRendererSink::GetTransactionId(uint64_t *transactionId)
-{
-    AUDIO_INFO_LOG("AudioRendererSink::GetTransactionId in");
-
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetTransactionId failed audio render null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
-    if (!transactionId) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetTransactionId failed transactionId null");
-        return ERR_INVALID_PARAM;
-    }
+	int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);
+	if (ret < 0) {
+		AUDIO_ERR_LOG("RemoteAudioRendererSink: Update route FAILED: %{public}d", ret);
+	}
+	struct AudioSceneDescriptor scene;
+	scene.scene.id = GetAudioCategory(audioScene);
+	scene.desc.pins = PIN_OUT_SPEAKER;
+	if (audioRender_->scene.SelectScene == nullptr) {
+		AUDIO_ERR_LOG("RemoteAudioRendererSink: Select scene nullptr");
+		return ERR_OPERATION_FAILED;
+	}
 
-    *transactionId = reinterpret_cast<uint64_t>(audioRender_);
+	AUDIO_INFO_LOG("RemoteAudioRendererSink::SelectScene start");
+	ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
+	AUDIO_INFO_LOG("RemoteAudioRendererSink::SelectScene over");
+	if (ret < 0) {
+		AUDIO_ERR_LOG("RemoteAudioRendererSink: Select scene FAILED: %{public}d", ret);
+		return ERR_OPERATION_FAILED;
+	}
+
+
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Stop(void)
+int32_t RemoteAudioRendererSink::Stop(void)
 {
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::Stop failed audioRender_ null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -525,7 +459,7 @@ int32_t AudioRendererSink::Stop(void)
             started_ = false;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Stop failed!");
+            AUDIO_ERR_LOG("RemoteAudioRendererSink::Stop failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -533,17 +467,17 @@ int32_t AudioRendererSink::Stop(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Pause(void)
+int32_t RemoteAudioRendererSink::Pause(void)
 {
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::Pause failed audioRender_ null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        AUDIO_ERR_LOG("AudioRendererSink::Pause invalid state!");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Pause invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -553,7 +487,7 @@ int32_t AudioRendererSink::Pause(void)
             paused_ = true;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Pause failed!");
+            AUDIO_ERR_LOG("RemoteAudioRendererSink::Pause failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -561,17 +495,17 @@ int32_t AudioRendererSink::Pause(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Resume(void)
+int32_t RemoteAudioRendererSink::Resume(void)
 {
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::Resume failed audioRender_ null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        AUDIO_ERR_LOG("AudioRendererSink::Resume invalid state!");
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Resume invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -581,7 +515,7 @@ int32_t AudioRendererSink::Resume(void)
             paused_ = false;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Resume failed!");
+            AUDIO_ERR_LOG("RemoteAudioRendererSink::Resume failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -589,7 +523,7 @@ int32_t AudioRendererSink::Resume(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Reset(void)
+int32_t RemoteAudioRendererSink::Reset(void)
 {
     int32_t ret;
 
@@ -598,7 +532,7 @@ int32_t AudioRendererSink::Reset(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Reset failed!");
+            AUDIO_ERR_LOG("RemoteAudioRendererSink::Reset failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -606,7 +540,7 @@ int32_t AudioRendererSink::Reset(void)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t AudioRendererSink::Flush(void)
+int32_t RemoteAudioRendererSink::Flush(void)
 {
     int32_t ret;
 
@@ -615,7 +549,7 @@ int32_t AudioRendererSink::Flush(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Flush failed!");
+            AUDIO_ERR_LOG("RemoteAudioRendererSink::Flush failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -631,11 +565,9 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
-
-int32_t FillinAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper)
+int32_t FillinRemoteAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper)
 {
-    AudioRendererSink *instance = AudioRendererSink::GetInstance();
+    RemoteAudioRendererSink *instance = RemoteAudioRendererSink::GetInstance(deviceNetworkId);
     if (instance != nullptr) {
         *wapper = static_cast<void *>(instance);
     } else {
@@ -645,132 +577,129 @@ int32_t FillinAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper)
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInit(void *wapper, AudioSinkAttr *attr)
+int32_t RemoteAudioRendererSinkInit(void *wapper, RemoteAudioSinkAttr *attr)
 {
-    (void)wapper;
     int32_t ret;
-    if (g_audioRendrSinkInstance->rendererInited_)
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (audioRendererSink->rendererInited_)
         return SUCCESS;
 
-    ret = g_audioRendrSinkInstance->Init(*attr);
+    ret = audioRendererSink->Init(*attr);
     return ret;
 }
 
-void AudioRendererSinkDeInit(void *wapper)
+void RemoteAudioRendererSinkDeInit(void *wapper)
 {
-    (void)wapper;
-    if (g_audioRendrSinkInstance->rendererInited_)
-        g_audioRendrSinkInstance->DeInit();
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_LOG(audioRendererSink != nullptr, "null audioRendererSink");
+    // remove the sink in allsinks.
+    if (audioRendererSink->rendererInited_)
+        audioRendererSink->DeInit();
 }
 
-int32_t AudioRendererSinkStop(void *wapper)
+int32_t RemoteAudioRendererSinkStop(void *wapper)
 {
-    (void)wapper;
     int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_)
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_)
         return SUCCESS;
 
-    ret = g_audioRendrSinkInstance->Stop();
+    ret = audioRendererSink->Stop();
     return ret;
 }
 
-int32_t AudioRendererSinkStart(void *wapper)
+int32_t RemoteAudioRendererSinkStart(void *wapper)
 {
-    (void)wapper;
     int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->Start();
+    ret = audioRendererSink->Start();
     return ret;
 }
 
-int32_t AudioRendererSinkPause(void *wapper)
+int32_t RemoteAudioRendererSinkPause(void *wapper)
 {
-    (void)wapper;
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_) {
         AUDIO_ERR_LOG("Renderer pause failed");
         return ERR_NOT_STARTED;
     }
 
-    return g_audioRendrSinkInstance->Pause();
+    return audioRendererSink->Pause();
 }
 
-int32_t AudioRendererSinkResume(void *wapper)
+int32_t RemoteAudioRendererSinkResume(void *wapper)
 {
-    (void)wapper;
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_) {
         AUDIO_ERR_LOG("Renderer resume failed");
         return ERR_NOT_STARTED;
     }
 
-    return g_audioRendrSinkInstance->Resume();
+    return audioRendererSink->Resume();
 }
 
-int32_t AudioRendererRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
+int32_t RemoteAudioRendererRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
 {
-    (void)wapper;
     int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->RenderFrame(data, len, writeLen);
+    ret = audioRendererSink->RenderFrame(data, len, writeLen);
     return ret;
 }
 
-int32_t AudioRendererSinkSetVolume(void *wapper, float left, float right)
+int32_t RemoteAudioRendererSinkSetVolume(void *wapper, float left, float right)
 {
-    (void)wapper;
     int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_audioRendrSinkInstance->SetVolume(left, right);
+    ret = audioRendererSink->SetVolume(left, right);
     return ret;
 }
 
-int32_t AudioRendererSinkGetLatency(void *wapper, uint32_t *latency)
+int32_t RemoteAudioRendererSinkGetLatency(void *wapper, uint32_t *latency)
 {
-    (void)wapper;
     int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
+    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
     if (!latency) {
-        AUDIO_ERR_LOG("AudioRendererSinkGetLatency failed latency null");
+        AUDIO_ERR_LOG("RemoteAudioRendererSinkGetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
-    ret = g_audioRendrSinkInstance->GetLatency(latency);
+    ret = audioRendererSink->GetLatency(latency);
     return ret;
 }
 
-int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId)
+int32_t RemoteAudioRendererSinkGetTransactionId(uint64_t *transactionId)
 {
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first");
-        return ERR_NOT_STARTED;
-    }
-
-    if (!transactionId) {
-        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transaction id null");
-        return ERR_INVALID_PARAM;
-    }
-
-    return g_audioRendrSinkInstance->GetTransactionId(transactionId);
+    // as we can not get wapper initialized, we dont know which sink address we should return.
+    *transactionId = (uint16_t)-1;
+    return SUCCESS;
 }
 #ifdef __cplusplus
 }

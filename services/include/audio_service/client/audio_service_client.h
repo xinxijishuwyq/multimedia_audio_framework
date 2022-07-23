@@ -650,6 +650,7 @@ private:
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
+    static void PAStreamMovedCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);

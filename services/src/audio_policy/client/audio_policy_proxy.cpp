@@ -384,6 +384,78 @@ DeviceType AudioPolicyProxy::GetActiveInputDevice()
     return static_cast<DeviceType>(reply.ReadInt32());
 }
 
+int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (!audioRendererFilter->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioRendererFilter Marshalling() failed");
+        return -1;
+    }
+    int size = audioDeviceDescriptors.size();
+    int validSize = 20; // Use this value temporarily.
+    if (size <=0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
+        return -1;
+    }
+    data.WriteInt32(size);
+    for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
+        if (!audioDeviceDescriptor->Marshalling(data)) {
+            AUDIO_ERR_LOG("AudioDeviceDescriptor Marshalling() failed");
+            return -1;
+        }
+    }
+    int error = Remote()->SendRequest(SELECT_OUTPUT_DEVICE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SelectOutputDevice failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (!audioCapturerFilter->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioCapturerFilter Marshalling() failed");
+        return -1;
+    }
+    int size = audioDeviceDescriptors.size();
+    int validSize = 20; // Use this value temporarily.
+    if (size <=0 || size > validSize) {
+        AUDIO_ERR_LOG("SelectIntputDevice get invalid device size.");
+        return -1;
+    }
+    data.WriteInt32(size);
+    for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
+        if (!audioDeviceDescriptor->Marshalling(data)) {
+            AUDIO_ERR_LOG("AudioDeviceDescriptor Marshalling() failed");
+            return -1;
+        }
+    }
+    int error = Remote()->SendRequest(SELECT_INPUT_DEVICE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SelectIntputDevice failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;

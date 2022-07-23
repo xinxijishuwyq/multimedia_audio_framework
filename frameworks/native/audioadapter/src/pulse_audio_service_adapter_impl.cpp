@@ -223,6 +223,138 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSource(string name)
     return SUCCESS;
 }
 
+void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData *>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
+    std::string adapterName = userData->adapterName;
+    if (eol < 0) {
+        AUDIO_ERR_LOG("[PaGetSinksCb] Failed to get sink information: %{public}s",
+            pa_strerror(pa_context_errno(c)));
+        return;
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+        return;
+    }
+
+    if (i->proplist == nullptr) {
+        AUDIO_ERR_LOG("[PaGetSinksCb] Invalid Proplist for sink (%{public}d).", i->index);
+        return;
+    }
+
+    const char *adapterCStr = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_STRING);
+    AUDIO_DEBUG_LOG("[PaGetSinksCb] sink (%{public}d) device[%{public}s]", i->index, adapterCStr);
+    std::string sinkDeviceName(adapterCStr);
+    if (!adapterName.empty() && adapterName == sinkDeviceName) {
+        userData->sinkIds.push_back(i->index);
+    }
+}
+
+std::vector<uint32_t> PulseAudioServiceAdapterImpl::getTargetSinks(std::string adapterName)
+{
+    //lock_guard<mutex> lock(routerMutex); // do we need lock here?
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+    userData->adapterName = adapterName;
+    userData->sinkIds = {};
+
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[getTargetSinks] mContext is nullptr");
+        return userData->sinkIds;
+    }
+
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    pa_operation *operation = pa_context_get_sink_info_list(mContext,
+        PulseAudioServiceAdapterImpl::PaGetSinksCb, reinterpret_cast<void*>(userData.get()));
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[getTargetSinks] pa_context_get_sink_info_list returned nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return userData->sinkIds;
+    }
+
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    return userData->sinkIds;
+}
+
+int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
+{
+    std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
+
+    std::string remoteDevice = "remote";
+    std::vector<uint32_t> remoteSinks = getTargetSinks(remoteDevice);
+    // filter sink-inputs which are not connected with remote sinks.
+
+    for (auto sinkInput : allSinkInputs) {
+        uint32_t sink = sinkInput.deviceSinkId;
+        if (std::find(remoteSinks.begin(), remoteSinks.end(), sink) != remoteSinks.end()) {
+            AUDIO_INFO_LOG("[SetLocalDefaultSink] sink-input[%{public}d] connects with remote device[%{public}d]",
+                           sinkInput.paStreamId,
+                           sinkInput.deviceSinkId);
+            continue;
+        }
+        else
+        {
+            uint32_t invalidSinkId = PA_INVALID_INDEX;
+            MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
+        }
+    }
+
+    return SUCCESS;
+}
+
+int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
+{
+    lock_guard<mutex> lock(routerMutex);
+
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("[MoveSinkInputByIndexOrName] SetVolume mContext is nullptr");
+        return ERROR;
+    }
+    pa_threaded_mainloop_lock(mMainLoop);
+    pa_operation *operation = nullptr;
+    if (sinkName.empty()) {
+        operation = pa_context_move_sink_input_by_index(mContext,
+                                                        sinkInputId,
+                                                        sinkIndex,
+                                                        PulseAudioServiceAdapterImpl::PaMoveSinkInputCb,
+                                                        reinterpret_cast<void *>(userData.get()));
+    } else {
+        operation = pa_context_move_sink_input_by_name(mContext,
+                                                       sinkInputId,
+                                                       sinkName.c_str(),
+                                                       PulseAudioServiceAdapterImpl::PaMoveSinkInputCb,
+                                                       reinterpret_cast<void *>(userData.get()));
+    }
+
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_get_sink_input_info_list nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    int result = userData->moveResult;
+    AUDIO_DEBUG_LOG("move result:[%{public}d]", result); // todo: return the result
+
+    return SUCCESS;
+}
+
 int32_t PulseAudioServiceAdapterImpl::SetVolume(AudioStreamType streamType, float volume)
 {
     lock_guard<mutex> lock(mMutex);
@@ -568,6 +700,18 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteCb(pa_context *c, const
     return;
 }
 
+void PulseAudioServiceAdapterImpl::PaMoveSinkInputCb(pa_context *c, int success, void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData *>(userdata);
+
+    AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failure: %{public}s", pa_strerror(pa_context_errno(c)));
+    userData->moveResult = success;
+
+    pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
+
+    return;
+}
+
 void PulseAudioServiceAdapterImpl::PaContextStateCb(pa_context *c, void *userdata)
 {
     PulseAudioServiceAdapterImpl *thiz = reinterpret_cast<PulseAudioServiceAdapterImpl*>(userdata);
@@ -721,6 +865,17 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
     }
 }
 
+template <typename T>
+inline void castValue(T &a, const char *raw)
+{
+    if (raw == nullptr) {
+        return;
+    }
+    std::stringstream valueStr;
+    valueStr << raw;
+    valueStr >> a;
+}
+
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
     void *userdata)
 {
@@ -757,7 +912,16 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
         audioStreamType = thiz->GetIdByStreamType(streamType);
     }
 
-    SinkInput sinkInput = {sessionID, audioStreamType};
+    SinkInput sinkInput = {};
+    sinkInput.streamId = sessionID;
+    sinkInput.streamType = audioStreamType;
+
+    sinkInput.deviceSinkId = i->sink;
+    sinkInput.paStreamId = i->index;
+    castValue<int32_t>(sinkInput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
+    castValue<int32_t>(sinkInput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
+    castValue<uint64_t>(sinkInput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));
+
     userData->sinkInputList.push_back(sinkInput);
 }
 

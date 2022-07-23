@@ -59,6 +59,10 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
+    int32_t SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
@@ -168,7 +172,7 @@ private:
     std::string GetPortName(InternalDeviceType deviceType);
 
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole, DeviceType deviceType);
- 
+
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
     InternalDeviceType GetDeviceType(const std::string &deviceName);

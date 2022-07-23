@@ -95,6 +95,43 @@ struct DeviceChangeAction {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
 };
 
+/**
+ * @brief AudioRendererFilter is used for select speficed AudioRenderer.
+ * 
+ */
+class AudioRendererFilter;
+class AudioRendererFilter : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    AudioRendererFilter();
+    virtual ~AudioRendererFilter();
+
+    int32_t uid = -1;
+    AudioRendererInfo rendererInfo = {};
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t streamId = -1;
+
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
+};
+
+/**
+ * @brief AudioCapturerFilter is used for select speficed audiocapturer.
+ * 
+ */
+class AudioCapturerFilter;
+class AudioCapturerFilter : public Parcelable {
+    friend class AudioSystemManager;
+public:
+    AudioCapturerFilter();
+    virtual ~AudioCapturerFilter();
+
+    int32_t uid = -1;
+
+    bool Marshalling(Parcel &parcel) const override;
+    static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);
+};
+
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt APIs, this will be removed
 class AudioManagerCallback {
@@ -183,6 +220,10 @@ public:
     bool IsStreamMute(AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(void);
+    int32_t SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectIntputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key);
     void SetAudioParameter(const std::string &key, const std::string &value);

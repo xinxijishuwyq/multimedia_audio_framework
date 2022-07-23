@@ -27,15 +27,16 @@ typedef struct {
     float volume;
 } BluetoothSinkAttr;
 
-int32_t BluetoothRendererSinkInit(BluetoothSinkAttr *attr);
-void BluetoothRendererSinkDeInit(void);
-int32_t BluetoothRendererSinkStart(void);
-int32_t BluetoothRendererSinkStop(void);
-int32_t BluetoothRendererSinkPause(void);
-int32_t BluetoothRendererSinkResume(void);
-int32_t BluetoothRendererRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
-int32_t BluetoothRendererSinkSetVolume(float left, float right);
-int32_t BluetoothRendererSinkGetLatency(uint32_t *latency);
+int32_t BluetoothFillinAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper);
+int32_t BluetoothRendererSinkInit(void *wapper, BluetoothSinkAttr *attr);
+void BluetoothRendererSinkDeInit(void *wapper);
+int32_t BluetoothRendererSinkStart(void *wapper);
+int32_t BluetoothRendererSinkStop(void *wapper);
+int32_t BluetoothRendererSinkPause(void *wapper);
+int32_t BluetoothRendererSinkResume(void *wapper);
+int32_t BluetoothRendererRenderFrame(void *wapper, char *data, uint64_t len, uint64_t *writeLen);
+int32_t BluetoothRendererSinkSetVolume(void *wapper, float left, float right);
+int32_t BluetoothRendererSinkGetLatency(void *wapper, uint32_t *latency);
 int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId);
 #ifdef __cplusplus
 }

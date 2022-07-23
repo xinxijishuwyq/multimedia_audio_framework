@@ -535,99 +535,113 @@ extern "C" {
 using namespace OHOS::AudioStandard;
 
 BluetoothRendererSink *g_bluetoothRendrSinkInstance = BluetoothRendererSink::GetInstance();
+int32_t BluetoothFillinAudioRenderSinkWapper(char *deviceNetworkId, void **wapper)
+{
+    (void)deviceNetworkId;
+    *wapper = static_cast<void *>(BluetoothRendererSink::GetInstance());
+    return SUCCESS;
+}
 
-int32_t BluetoothRendererSinkInit(BluetoothSinkAttr *attr)
+int32_t BluetoothRendererSinkInit(void *wapper, BluetoothSinkAttr *attr)
 {
     int32_t ret;
-
-    if (g_bluetoothRendrSinkInstance->rendererInited_)
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
+    if (bluetoothRendererSinkWapper->rendererInited_)
         return SUCCESS;
 
-    ret = g_bluetoothRendrSinkInstance->Init(*attr);
+    ret = bluetoothRendererSinkWapper->Init(*attr);
     return ret;
 }
 
-void BluetoothRendererSinkDeInit()
+void BluetoothRendererSinkDeInit(void *wapper)
 {
-    if (g_bluetoothRendrSinkInstance->rendererInited_)
-        g_bluetoothRendrSinkInstance->DeInit();
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
+    if (bluetoothRendererSinkWapper->rendererInited_)
+        bluetoothRendererSinkWapper->DeInit();
 }
 
-int32_t BluetoothRendererSinkStop()
+int32_t BluetoothRendererSinkStop(void *wapper)
 {
     int32_t ret;
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
 
-    if (!g_bluetoothRendrSinkInstance->rendererInited_)
+    if (!bluetoothRendererSinkWapper->rendererInited_)
         return SUCCESS;
 
-    ret = g_bluetoothRendrSinkInstance->Stop();
+    ret = bluetoothRendererSinkWapper->Stop();
     return ret;
 }
 
-int32_t BluetoothRendererSinkStart()
+int32_t BluetoothRendererSinkStart(void *wapper)
 {
     int32_t ret;
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
 
-    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+    if (!bluetoothRendererSinkWapper->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_bluetoothRendrSinkInstance->Start();
+    ret = bluetoothRendererSinkWapper->Start();
     return ret;
 }
 
-int32_t BluetoothRendererSinkPause()
+int32_t BluetoothRendererSinkPause(void *wapper)
 {
-    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
+    if (!bluetoothRendererSinkWapper->rendererInited_) {
         AUDIO_ERR_LOG("BT renderer sink pause failed");
         return ERR_NOT_STARTED;
     }
 
-    return g_bluetoothRendrSinkInstance->Pause();
+    return bluetoothRendererSinkWapper->Pause();
 }
 
-int32_t BluetoothRendererSinkResume()
+int32_t BluetoothRendererSinkResume(void *wapper)
 {
-    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
+    if (!bluetoothRendererSinkWapper->rendererInited_) {
         AUDIO_ERR_LOG("BT renderer sink resume failed");
         return ERR_NOT_STARTED;
     }
 
-    return g_bluetoothRendrSinkInstance->Resume();
+    return bluetoothRendererSinkWapper->Resume();
 }
 
-int32_t BluetoothRendererRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t BluetoothRendererRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
 {
     int32_t ret;
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
 
-    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+    if (!bluetoothRendererSinkWapper->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_bluetoothRendrSinkInstance->RenderFrame(data, len, writeLen);
+    ret = bluetoothRendererSinkWapper->RenderFrame(data, len, writeLen);
     return ret;
 }
 
-int32_t BluetoothRendererSinkSetVolume(float left, float right)
+int32_t BluetoothRendererSinkSetVolume(void *wapper, float left, float right)
 {
     int32_t ret;
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
 
-    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+    if (!bluetoothRendererSinkWapper->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
 
-    ret = g_bluetoothRendrSinkInstance->SetVolume(left, right);
+    ret = bluetoothRendererSinkWapper->SetVolume(left, right);
     return ret;
 }
 
-int32_t BluetoothRendererSinkGetLatency(uint32_t *latency)
+int32_t BluetoothRendererSinkGetLatency(void *wapper, uint32_t *latency)
 {
     int32_t ret;
+    BluetoothRendererSink *bluetoothRendererSinkWapper = static_cast<BluetoothRendererSink *>(wapper);
 
-    if (!g_bluetoothRendrSinkInstance->rendererInited_) {
+    if (!bluetoothRendererSinkWapper->rendererInited_) {
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
@@ -637,7 +651,7 @@ int32_t BluetoothRendererSinkGetLatency(uint32_t *latency)
         return ERR_INVALID_PARAM;
     }
 
-    ret = g_bluetoothRendrSinkInstance->GetLatency(latency);
+    ret = bluetoothRendererSinkWapper->GetLatency(latency);
     return ret;
 }
 

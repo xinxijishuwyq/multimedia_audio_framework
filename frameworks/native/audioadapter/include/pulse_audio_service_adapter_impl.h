@@ -44,7 +44,13 @@ public:
     std::vector<SourceOutput> GetAllSourceOutputs() override;
     void Disconnect() override;
 
+    std::vector<uint32_t> getTargetSinks(std::string adapterName) override;
+    int32_t SetLocalDefaultSink(std::string name) override;
+    int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
+
     // Static Member functions
+    static void PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
+    static void PaMoveSinkInputCb(pa_context *c, int success, void *userdata);
     static void PaContextStateCb(pa_context *c, void *userdata);
     static void PaModuleLoadCb(pa_context *c, uint32_t idx, void *userdata);
     static void PaGetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
@@ -64,6 +70,9 @@ private:
         uint32_t idx;
         std::vector<SinkInput> sinkInputList;
         std::vector<SourceOutput> sourceOutputList;
+        std::string adapterName;
+        std::vector<uint32_t> sinkIds;
+        int32_t moveResult;
     };
 
     bool ConnectToPulseAudio();
@@ -75,6 +84,7 @@ private:
     pa_threaded_mainloop *mMainLoop = NULL;
     static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
     std::mutex mMutex;
+    std::mutex routerMutex;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -32,14 +32,16 @@ const int32_t  ERROR = -1;
 const int32_t CLASS_TYPE_PRIMARY = 0;
 const int32_t CLASS_TYPE_A2DP = 1;
 const int32_t CLASS_TYPE_FILE = 2;
+const int32_t CLASS_TYPE_REMOTE = 3;
 
 const char *g_deviceClassPrimary = "primary";
 const char *g_deviceClassA2Dp = "a2dp";
 const char *g_deviceClassFile = "file_io";
+const char *g_deviceClassRemote = "remote";
 
 int32_t g_deviceClass = -1;
 
-static int32_t RendererSinkInitInner(const SinkAttr *attr)
+static int32_t RendererSinkInitInner(void *wapper, const SinkAttr *attr)
 {
     if (attr == NULL) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
@@ -53,7 +55,7 @@ static int32_t RendererSinkInitInner(const SinkAttr *attr)
 
     if (g_deviceClass == CLASS_TYPE_PRIMARY) {
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_PRIMARY", __func__);
-        return AudioRendererSinkInit((AudioSinkAttr *)attr);
+        return AudioRendererSinkInit(wapper, (AudioSinkAttr *)attr);
     } else if (g_deviceClass == CLASS_TYPE_A2DP) {
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_A2DP", __func__);
         BluetoothSinkAttr bluetoothSinkAttr;
@@ -62,10 +64,23 @@ static int32_t RendererSinkInitInner(const SinkAttr *attr)
         bluetoothSinkAttr.sampleRate = attr->sampleRate;
         bluetoothSinkAttr.channel = attr->channel;
         bluetoothSinkAttr.volume = attr->volume;
-        return BluetoothRendererSinkInit(&bluetoothSinkAttr);
+        return BluetoothRendererSinkInit(wapper, &bluetoothSinkAttr);
     } else if (g_deviceClass == CLASS_TYPE_FILE) {
         AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_FILE", __func__);
-        return AudioRendererFileSinkInit(attr->filePath);
+        return AudioRendererFileSinkInit(wapper, attr->filePath);
+    } else if (g_deviceClass == CLASS_TYPE_REMOTE) {
+        AUDIO_INFO_LOG("%{public}s: CLASS_TYPE_FILE", attr->deviceNetworkId);
+        RemoteAudioSinkAttr remoteAudioSinkAttr;
+        remoteAudioSinkAttr.adapterName = attr->adapterName;
+        remoteAudioSinkAttr.openMicSpeaker = attr->open_mic_speaker;
+        remoteAudioSinkAttr.format = attr->format;
+        remoteAudioSinkAttr.sampleFmt = attr->sampleFmt;
+        remoteAudioSinkAttr.sampleRate = attr->sampleRate;
+        remoteAudioSinkAttr.channel = attr->channel;
+        remoteAudioSinkAttr.volume = attr->volume;
+        remoteAudioSinkAttr.filePath = attr->filePath;
+        remoteAudioSinkAttr.deviceNetworkId = attr->deviceNetworkId;
+        return RemoteAudioRendererSinkInit(wapper, &remoteAudioSinkAttr);
     } else {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         return ERROR;
@@ -87,6 +102,8 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
     }
 
     if (!strcmp(device, g_deviceClassPrimary)) {
+        AUDIO_INFO_LOG("%{public}s: primary device", __func__);
+        FillinAudioRenderSinkWapper(device, &adapter->wapper);
         adapter->RendererSinkInit = RendererSinkInitInner;
         adapter->RendererSinkDeInit = AudioRendererSinkDeInit;
         adapter->RendererSinkStart = AudioRendererSinkStart;
@@ -99,6 +116,8 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkGetTransactionId = AudioRendererSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_PRIMARY;
     } else if (!strcmp(device, g_deviceClassA2Dp)) {
+        AUDIO_INFO_LOG("%{public}s: a2dp device", __func__);
+        BluetoothFillinAudioRenderSinkWapper(device, &adapter->wapper);
         adapter->RendererSinkInit = RendererSinkInitInner;
         adapter->RendererSinkDeInit = BluetoothRendererSinkDeInit;
         adapter->RendererSinkStart = BluetoothRendererSinkStart;
@@ -111,6 +130,7 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkGetTransactionId = BluetoothRendererSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_A2DP;
     } else if (!strcmp(device, g_deviceClassFile)) {
+        FillinAudioRenderFileSinkWapper(device, &adapter->wapper);
         adapter->RendererSinkInit = RendererSinkInitInner;
         adapter->RendererSinkDeInit = AudioRendererFileSinkDeInit;
         adapter->RendererSinkStart = AudioRendererFileSinkStart;
@@ -122,6 +142,20 @@ int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAda
         adapter->RendererSinkGetLatency = AudioRendererFileSinkGetLatency;
         adapter->RendererSinkGetTransactionId = AudioRendererFileSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_FILE;
+    } else if (!strcmp(device, g_deviceClassRemote)) {
+        AUDIO_DEBUG_LOG("%{public}s: remote device", __func__);
+        FillinRemoteAudioRenderSinkWapper(device, &adapter->wapper);
+        adapter->RendererSinkInit = RendererSinkInitInner;
+        adapter->RendererSinkDeInit = RemoteAudioRendererSinkDeInit;
+        adapter->RendererSinkStart = RemoteAudioRendererSinkStart;
+        adapter->RendererSinkStop = RemoteAudioRendererSinkStop;
+        adapter->RendererSinkPause = RemoteAudioRendererSinkPause;
+        adapter->RendererSinkResume = RemoteAudioRendererSinkResume;
+        adapter->RendererRenderFrame = RemoteAudioRendererRenderFrame;
+        adapter->RendererSinkSetVolume = RemoteAudioRendererSinkSetVolume;
+        adapter->RendererSinkGetLatency = RemoteAudioRendererSinkGetLatency;
+        adapter->RendererSinkGetTransactionId = RemoteAudioRendererSinkGetTransactionId;
+        g_deviceClass = CLASS_TYPE_REMOTE;
     } else {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         free(adapter);
@@ -153,6 +187,8 @@ const char *GetDeviceClass(void)
         return g_deviceClassA2Dp;
     } else if (g_deviceClass == CLASS_TYPE_FILE) {
         return g_deviceClassFile;
+    } else if (g_deviceClass == CLASS_TYPE_REMOTE) {
+        return g_deviceClassRemote;
     } else {
         return NULL;
     }

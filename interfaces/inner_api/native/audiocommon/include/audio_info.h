@@ -606,6 +606,14 @@ enum AudioCaptureMode {
 struct SinkInput {
     int32_t streamId;
     AudioStreamType streamType;
+
+    // add for routing stream.
+    int32_t uid; // client uid
+    int32_t pid; // client pid
+    uint32_t paStreamId; // streamId
+    uint32_t deviceSinkId; // sink id
+    int32_t statusMark; // mark the router status
+    uint64_t startTime; // when this router is created
 };
 
 struct SourceOutput {

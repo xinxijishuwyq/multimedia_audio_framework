@@ -127,6 +127,16 @@ bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
     return g_sProxy->IsStreamActive(streamType);
 }
 
+int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioPolicyManager::SelectIntputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+{
+    return g_sProxy->SelectIntputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     return g_sProxy->GetDevices(deviceFlag);
