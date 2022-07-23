@@ -23,6 +23,7 @@
 
 #include "audio_policy_service.h"
 
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -41,6 +42,7 @@ AudioPolicyService::~AudioPolicyService()
 
 bool AudioPolicyService::Init(void)
 {
+    AUDIO_DEBUG_LOG("AudioPolicyService init");
     serviceFlag_.reset();
     mAudioPolicyManager.Init();
     if (!mConfigParser.LoadConfiguration()) {
@@ -179,26 +181,78 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
     return portName;
 }
 
+// private method
+AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole,
+    DeviceType deviceType)
+{
+    AudioModuleInfo audioModuleInfo = {};
+
+    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
+        audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
+        audioModuleInfo.format = "s16le"; // 16bit little endian
+    } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
+        audioModuleInfo.lib = "libmodule-hdi-source.z.so";
+        audioModuleInfo.format = "s16le"; // we assume it is bigger endian
+    } else {
+        AUDIO_ERR_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
+    }
+
+    audioModuleInfo.name = networkId; // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.networkId = networkId;
+
+    std::stringstream typeValue;
+    typeValue << static_cast<int32_t>(deviceType);
+    audioModuleInfo.deviceType = typeValue.str();
+
+    audioModuleInfo.adapterName = "remote";
+    audioModuleInfo.className = "remote"; // used in renderer_sink_adapter.c
+    audioModuleInfo.fixedLatency = "1";
+    audioModuleInfo.fileName = "remote_test";
+
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.bufferSize = "4096";
+
+    return audioModuleInfo;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
 
-    if (deviceFlag < DeviceFlag::OUTPUT_DEVICES_FLAG || deviceFlag > DeviceFlag::ALL_DEVICES_FLAG) {
+    if (deviceFlag < DeviceFlag::OUTPUT_DEVICES_FLAG || deviceFlag > DeviceFlag::ALL_L_D_DEVICES_FLAG) {
         AUDIO_ERR_LOG("Invalid flag provided %{public}d", deviceFlag);
         return deviceList;
     }
 
-    if (deviceFlag == DeviceFlag::ALL_DEVICES_FLAG) {
+    if (deviceFlag == DeviceFlag::ALL_L_D_DEVICES_FLAG) {
         return mConnectedDevices;
     }
 
-    DeviceRole role = DeviceRole::OUTPUT_DEVICE;
-    role = (deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) ? DeviceRole::OUTPUT_DEVICE : DeviceRole::INPUT_DEVICE;
+    for (const auto& device : mConnectedDevices) {
+        if (device == nullptr) {
+            continue;
+        }
+        bool filterAllLocal = deviceFlag == DeviceFlag::ALL_DEVICES_FLAG && device->networkId_ == LOCAL_NETWORK_ID;
+        bool filterLocalOutput = deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG
+            && device->networkId_ == LOCAL_NETWORK_ID
+            && device->deviceRole_ == DeviceRole::OUTPUT_DEVICE;
+        bool filterLocalInput = deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG
+            && device->networkId_ == LOCAL_NETWORK_ID
+            && device->deviceRole_ == DeviceRole::INPUT_DEVICE;
 
-    AUDIO_INFO_LOG("GetDevices mConnectedDevices size = [%{public}zu]", mConnectedDevices.size());
-    for (const auto &device : mConnectedDevices) {
-        if (device != nullptr && device->deviceRole_ == role) {
+        bool filterAllRemote = deviceFlag == DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG
+            && device->networkId_ != LOCAL_NETWORK_ID;
+        bool filterRemoteOutput = deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG
+            && device->networkId_ != LOCAL_NETWORK_ID
+            && device->deviceRole_ == DeviceRole::OUTPUT_DEVICE;
+        bool filterRemoteInput = deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG
+            && device->networkId_ != LOCAL_NETWORK_ID
+        && device->deviceRole_ == DeviceRole::INPUT_DEVICE;
+
+        if (filterAllLocal || filterLocalOutput || filterLocalInput || filterAllRemote || filterRemoteOutput
+            || filterRemoteInput) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
             deviceList.push_back(devDesc);
         }
@@ -355,7 +409,18 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     return SUCCESS;
 }
 
-// User activates a device
+int32_t AudioPolicyService::ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote)
+{
+    if (isRemote) {
+        AudioModuleInfo moduleInfo = ConstructRemoteAudioModuleInfo(networkId, GetDeviceRole(deviceType), deviceType);
+        AudioIOHandle ioHandle = mAudioPolicyManager.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_RET_LOG(ioHandle != ERR_OPERATION_FAILED && ioHandle != ERR_INVALID_HANDLE,
+            ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", ioHandle);
+        mIOHandles[networkId] = ioHandle;
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
     AUDIO_DEBUG_LOG("[Policy Service] Device type[%{public}d] flag[%{public}d]", deviceType, active);
@@ -565,15 +630,20 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
     }
 }
 
-// When pulg-n-play device status gets updated
-void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string &macAddress,
-    const std::string &deviceName, const AudioStreamInfo &streamInfo)
+void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
+    const std::string& deviceName, const AudioStreamInfo& streamInfo)
 {
     AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
     int32_t result = ERROR;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(deviceName, macAddress);
     deviceDesc.SetDeviceCapability(streamInfo, 0);
+
+    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, LOCAL_NETWORK_ID, isConnected,
+        NO_REMOTE_ID);
+    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, LOCAL_NETWORK_ID, isConnected,
+        NO_REMOTE_ID);
+    deviceDesc.networkId_ = LOCAL_NETWORK_ID;
 
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
@@ -696,7 +766,61 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     }
 }
 
-// When hdi service is up
+void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
+{
+    DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d] NETWORKID[%{public}s]",
+        devType, statusInfo.isConnected, statusInfo.networkId);
+    const std::string networkId = statusInfo.networkId;
+    AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
+    deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
+    deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
+    deviceDesc.networkId_ = networkId;
+    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.isConnected,
+        statusInfo.mappingVolumeId);
+    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
+        statusInfo.isConnected, statusInfo.mappingInterruptId);
+
+    // fill device change action for callback
+    std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
+
+    for (auto devDes : mConnectedDevices) {
+        if (statusInfo.isConnected && devDes->deviceType_ == devType && devDes->networkId_== networkId) {
+            AUDIO_INFO_LOG("Device [%{public}s] Type [%{public}d] has connected already!", networkId.c_str(), devType);
+            return;
+        }
+    }
+
+    auto isPresent = [&devType, &networkId](const sptr<AudioDeviceDescriptor>& descriptor) {
+        return descriptor->deviceType_ == devType && descriptor->networkId_ == networkId;
+    };
+    // If device already in list, remove it else do not modify the list
+    mConnectedDevices.erase(std::remove_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent),
+        mConnectedDevices.end());
+
+    // new device found. If connected, add into active device list
+    if (statusInfo.isConnected) {
+        AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
+            statusInfo.connectType);
+        ActivateNewDevice(statusInfo.networkId, devType,
+            statusInfo.connectType==ConnectType::CONNECT_TYPE_DISTRIBUTED);
+
+        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
+    } else {
+        AUDIO_INFO_LOG("=== DEVICE DISCONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
+            statusInfo.connectType);
+        if (mIOHandles.find(networkId) != mIOHandles.end()) {
+            mAudioPolicyManager.CloseAudioPort(mIOHandles[networkId]);
+            mIOHandles.erase(networkId);
+        }
+
+        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
+    }
+
+    TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
+    AUDIO_INFO_LOG("device list size = [%{public}zu]", mConnectedDevices.size());
+}
+
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
     AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
@@ -723,7 +847,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                     continue;
                 }
                 mIOHandles[moduleInfo.name] = ioHandle;
-
                 auto devType = GetDeviceType(moduleInfo.name);
                 if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
                     result = mAudioPolicyManager.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
@@ -731,16 +854,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                         AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
                         continue;
                     }
-                    // add new device into active device list
-                    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
-                        GetDeviceRole(moduleInfo.role));
-                    if (!moduleInfo.rate.empty() && !moduleInfo.channels.empty()) {
-                        AudioStreamInfo streamInfo = {};
-                        streamInfo.samplingRate = static_cast<AudioSamplingRate>(stoi(moduleInfo.rate));
-                        streamInfo.channels = static_cast<AudioChannel>(stoi(moduleInfo.channels));
-                        audioDescriptor->SetDeviceCapability(streamInfo, 0);
-                    }
-                    mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
+                    AddAudioDevice(moduleInfo, devType);
                 }
             }
         }
@@ -751,6 +865,30 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         mCurrentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         mActiveInputDevice_ = DEVICE_TYPE_MIC;
     }
+}
+
+void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
+{
+    // add new device into active device list
+    std::string volumeGroupName = GetGroupName(moduleInfo.name, VOLUME_TYPE);
+    std::string interruptGroupName = GetGroupName(moduleInfo.name, INTERRUPT_TYPE);
+    int32_t volumeGroupId = GROUP_ID_NONE;
+    int32_t interruptGroupId = GROUP_ID_NONE;
+    UpdateGroupInfo(GroupType::VOLUME_TYPE, volumeGroupName, volumeGroupId, LOCAL_NETWORK_ID, true,
+        NO_REMOTE_ID);
+    UpdateGroupInfo(GroupType::INTERRUPT_TYPE, interruptGroupName, interruptGroupId, LOCAL_NETWORK_ID,
+        true, NO_REMOTE_ID);
+
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
+        GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId, LOCAL_NETWORK_ID);
+    if (!moduleInfo.rate.empty() && !moduleInfo.channels.empty()) {
+        AudioStreamInfo streamInfo = {};
+        streamInfo.samplingRate = static_cast<AudioSamplingRate>(stoi(moduleInfo.rate));
+        streamInfo.channels = static_cast<AudioChannel>(stoi(moduleInfo.channels));
+        audioDescriptor->SetDeviceCapability(streamInfo, 0);
+    }
+
+    mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
 }
 
 // Parser callbacks
@@ -765,13 +903,36 @@ void AudioPolicyService::OnXmlParsingCompleted(const std::unordered_map<ClassTyp
     deviceClassInfo_ = xmlData;
 }
 
-int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+void AudioPolicyService::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)
+{
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s, group data num [%{public}zu]", __func__, volumeGroupData.size());
+    if (volumeGroupData.empty()) {
+        AUDIO_ERR_LOG("failed to parse xml file. Received data is empty");
+        return;
+    }
+
+    volumeGroupData_ = volumeGroupData;
+}
+
+void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData)
+{
+    AUDIO_INFO_LOG("AudioPolicyService::%{public}s, group data num [%{public}zu]", __func__, interruptGroupData.size());
+    if (interruptGroupData.empty()) {
+        AUDIO_ERR_LOG("failed to parse xml file. Received data is empty");
+        return;
+    }
+
+    interruptGroupData_ = interruptGroupData;
+}
+
+int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    const sptr<IRemoteObject> &object)
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
 
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
     if (callback != nullptr) {
-        deviceChangeCallbackMap_[clientId] = callback;
+        deviceChangeCallbackMap_[clientId] = std::make_pair(flag, callback);
     }
 
     return SUCCESS;
@@ -1024,6 +1185,23 @@ InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceNa
     return devType;
 }
 
+std::string AudioPolicyService::GetGroupName(const std::string& deviceName, const GroupType type)
+{
+    std::string groupName = GROUP_NAME_NONE;
+    if (type == VOLUME_TYPE) {
+        auto iter = volumeGroupData_.find(deviceName);
+        if (iter != volumeGroupData_.end()) {
+            groupName = iter->second;
+        }
+    } else {
+        auto iter = interruptGroupData_.find(deviceName);
+        if (iter != interruptGroupData_.end()) {
+            groupName = iter->second;
+        }
+    }
+    return groupName;
+}
+
 void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     for (auto deviceDescriptor : desc) {
@@ -1101,21 +1279,118 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
     }
 }
 
+void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
+    bool connected, int32_t mappingId)
+{
+    ConnectType connectType = CONNECT_TYPE_LOCAL;
+    if (networkId != LOCAL_NETWORK_ID) {
+        connectType = CONNECT_TYPE_DISTRIBUTED;
+    }
+    if (type == GroupType::VOLUME_TYPE) {
+        auto isPresent = [&groupName, &networkId] (const sptr<VolumeGroupInfo> &volumeInfo) {
+            return ((groupName == volumeInfo->groupName_) || (networkId == volumeInfo->networkId_));
+        };
+
+        auto iter = std::find_if(mVolumeGroups.begin(), mVolumeGroups.end(), isPresent);
+        if (iter != mVolumeGroups.end()) {
+            groupId = (*iter)->volumeGroupId_;
+            // if status is disconnected, remove the group that has none audio device
+            std::vector<sptr<AudioDeviceDescriptor>> devsInGroup = GetDevicesForGroup(type, groupId);
+            if (!connected && devsInGroup.size() == 0) {
+                mVolumeGroups.erase(iter);
+            }
+            return;
+        }
+        if (groupName != GROUP_NAME_NONE) {
+            groupId = AudioGroupHandle::GetInstance().GetNextId(type);
+            sptr<VolumeGroupInfo> volumeGroupInfo = new(std::nothrow) VolumeGroupInfo(groupId,
+                mappingId, groupName, networkId, connectType);
+            mVolumeGroups.push_back(volumeGroupInfo);
+        }
+    } else {
+        auto isPresent = [&groupName, &networkId] (const sptr<InterruptGroupInfo> &info) {
+            return ((groupName == info->groupName_) || (networkId == info->networkId_));
+        };
+
+        auto iter = std::find_if(mInterruptGroups.begin(), mInterruptGroups.end(), isPresent);
+        if (iter != mInterruptGroups.end()) {
+            groupId = (*iter)->interruptGroupId_;
+            // if status is disconnected, remove the group that has none audio device
+            std::vector<sptr<AudioDeviceDescriptor>> devsInGroup = GetDevicesForGroup(type, groupId);
+            if (!connected && devsInGroup.size() == 0) {
+                mInterruptGroups.erase(iter);
+            }
+            return;
+        }
+        if (groupName != GROUP_NAME_NONE) {
+            groupId = AudioGroupHandle::GetInstance().GetNextId(type);
+            sptr<InterruptGroupInfo> interruptGroupInfo = new(std::nothrow) InterruptGroupInfo(groupId, mappingId,
+                groupName, networkId, connectType);
+            mInterruptGroups.push_back(interruptGroupInfo);
+        }
+    }
+}
+
+std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> AudioPolicyService::GetDevicesForGroup(GroupType type,
+    int32_t groupId)
+{
+    std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> devices = {};
+    for (auto devDes : mConnectedDevices) {
+        bool inVolumeGroup = type == VOLUME_TYPE && devDes->volumeGroupId_ == groupId;
+        bool inInterruptGroup = type == INTERRUPT_TYPE && devDes->interruptGroupId_ == groupId;
+
+        if (inVolumeGroup || inInterruptGroup) {
+            sptr<AudioDeviceDescriptor> device = new AudioDeviceDescriptor(*devDes);
+            devices.push_back(device);
+        }
+    }
+    return devices;
+}
+
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     DeviceChangeAction deviceChangeAction;
-    deviceChangeAction.deviceDescriptors = desc;
     deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
 
     WriteDeviceChangedSysEvents(desc, isConnected);
 
     for (auto it = deviceChangeCallbackMap_.begin(); it != deviceChangeCallbackMap_.end(); ++it) {
-        if (it->second) {
-            it->second->OnDeviceChange(deviceChangeAction);
+        deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->second.first, desc);
+        if (it->second.second && deviceChangeAction.deviceDescriptors.size() > 0) {
+            it->second.second->OnDeviceChange(deviceChangeAction);
         }
     }
 
     UpdateTrackerDeviceChange(desc);
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByFlag(DeviceFlag flag,
+    const std::vector<sptr<AudioDeviceDescriptor>>& desc)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> descRet;
+    switch (flag) {
+        case DeviceFlag::ALL_DEVICES_FLAG:
+            for (sptr<AudioDeviceDescriptor> var : desc) {
+            if (var->networkId_ == LOCAL_NETWORK_ID) {
+                    descRet.insert(descRet.end(), var);
+                }
+            }
+            break;
+        case DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG:
+            for (sptr<AudioDeviceDescriptor> var : desc) {
+                if (var->networkId_ != LOCAL_NETWORK_ID) {
+                    descRet.insert(descRet.end(), var);
+                }
+            }
+            break;
+        case DeviceFlag::ALL_L_D_DEVICES_FLAG:
+            descRet = desc;
+            break;
+        default:
+            AUDIO_INFO_LOG("AudioPolicyService::%{public}s:deviceFlag type are not supported", __func__);
+            break;
+    }
+    return descRet;
 }
 
 DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
@@ -1142,6 +1417,30 @@ DeviceRole AudioPolicyService::GetDeviceRole(const std::string &role)
         return DeviceRole::INPUT_DEVICE;
     } else {
         return DeviceRole::DEVICE_ROLE_NONE;
+    }
+}
+
+DeviceRole AudioPolicyService::GetDeviceRole(AudioPin pin) const
+{
+    switch (pin) {
+        case OHOS::AudioStandard::AUDIO_PIN_NONE:
+            return DeviceRole::DEVICE_ROLE_NONE;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_DAUDIO_DEFAULT:
+            return DeviceRole::OUTPUT_DEVICE;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+            return DeviceRole::INPUT_DEVICE;
+        default:
+            return DeviceRole::DEVICE_ROLE_NONE;
     }
 }
 
@@ -1193,6 +1492,51 @@ int32_t AudioPolicyService::PausedOrResumeStream(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     return mStreamCollector.PausedOrResumeStream(clientUid, streamSetStateEventInternal);
+}
+
+DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
+{
+    switch (hdiPin) {
+        case OHOS::AudioStandard::AUDIO_PIN_NONE:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_DAUDIO_DEFAULT:
+            return DeviceType::DEVICE_TYPE_SPEAKER;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+            return DeviceType::DEVICE_TYPE_MIC;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+            break;
+        default:
+            break;
+    }
+    return DeviceType::DEVICE_TYPE_DEFAULT;
+}
+
+std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
+{
+    std::unordered_map<int32_t, sptr<VolumeGroupInfo>> volumeGroupInfos = {};
+
+    for (auto& v : mVolumeGroups) {
+        sptr<VolumeGroupInfo> info = new(std::nothrow) VolumeGroupInfo(v->volumeGroupId_, v->mappingId_, v->groupName_,
+            v->networkId_, v->connectType_);
+        volumeGroupInfos.insert(std::pair(v->volumeGroupId_, info));
+    }
+    return volumeGroupInfos;
 }
 } // namespace AudioStandard
 } // namespace OHOS

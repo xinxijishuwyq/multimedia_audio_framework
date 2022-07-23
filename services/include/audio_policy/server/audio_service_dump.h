@@ -49,6 +49,7 @@ static const int32_t AUDIO_DUMP_INIT_ERR = -1;
 typedef struct {
     DeviceType deviceType;
     DeviceRole deviceRole;
+    ConnectType conneceType;
 } DevicesInfo;
 
 typedef struct {
@@ -74,12 +75,19 @@ typedef struct {
 } StreamData;
 
 typedef struct {
+    ConnectType type;
+    std::string groupName;
+    std::int32_t groupId;
+} GroupInfo;
+
+typedef struct {
     std::vector<DevicesInfo> inputDevices;
     std::vector<DevicesInfo> outputDevices;
     std::map<AudioStreamType, int32_t> streamVolumes;
     AudioRingerMode ringerMode;
     AudioScene callStatus;
     AudioInterrupt audioFocusInfo;
+    std::vector<GroupInfo> groupInfos;
 } PolicyData;
 
 typedef struct {
@@ -119,11 +127,13 @@ private:
     void StreamVolumesDump(std::string &dumpString);
     void DevicesInfoDump(std::string &dumpString);
     void AudioFocusInfoDump(std::string &dumpString);
+    void GroupInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
     static const std::string GetStreamName(AudioStreamType audioType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);
     static const std::string GetContentTypeName(ContentType contentType);
     static const std::string GetDeviceTypeName(DeviceType deviceType);
+    static const std::string GetConnectTypeName(ConnectType connectType);
     static bool IsEndWith(const std::string &mainStr, const std::string &toMatch);
     static bool IsValidModule (const std::string moduleName);
 

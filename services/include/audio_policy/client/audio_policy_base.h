@@ -62,7 +62,8 @@ public:
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
 
-    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+        const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetDeviceChangeCallback(const int32_t clientId) = 0;
 

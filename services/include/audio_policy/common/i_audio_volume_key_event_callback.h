@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 class IAudioVolumeKeyEventCallback : public IRemoteBroker {
 public:
-    virtual void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) = 0;
+    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
     enum {
         ON_VOLUME_KEY_EVENT = 0,
     };

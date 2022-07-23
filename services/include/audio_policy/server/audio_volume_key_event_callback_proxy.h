@@ -27,7 +27,7 @@ public:
     explicit VolumeKeyEventCallbackListner(const sptr<IAudioVolumeKeyEventCallback> &listener);
     virtual ~VolumeKeyEventCallbackListner();
     DISALLOW_COPY_AND_MOVE(VolumeKeyEventCallbackListner);
-    void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) override;
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
 
 private:
     sptr<IAudioVolumeKeyEventCallback> listener_ = nullptr;
@@ -36,7 +36,7 @@ class AudioVolumeKeyEventCallbackProxy : public IRemoteProxy<IAudioVolumeKeyEven
 public:
     explicit AudioVolumeKeyEventCallbackProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioVolumeKeyEventCallbackProxy() = default;
-    void OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi) override;
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
 private:
     static inline BrokerDelegator<AudioVolumeKeyEventCallbackProxy> delegator_;
 };

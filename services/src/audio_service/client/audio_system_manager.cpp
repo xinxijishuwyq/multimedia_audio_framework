@@ -423,7 +423,8 @@ bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volume
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
 }
 
-int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
+int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
+    const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback)
 {
     AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
     if (callback == nullptr) {
@@ -432,7 +433,7 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const std::shared_ptr<AudioM
     }
 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
-    return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, callback);
+    return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
 }
 
 int32_t AudioSystemManager::UnsetDeviceChangeCallback()

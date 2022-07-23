@@ -76,7 +76,7 @@ public:
 
     AudioScene GetAudioScene();
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId,
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback);
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);

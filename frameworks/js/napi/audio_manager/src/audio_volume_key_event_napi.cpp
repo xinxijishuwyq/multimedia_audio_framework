@@ -36,11 +36,11 @@ AudioVolumeKeyEventNapi::~AudioVolumeKeyEventNapi()
     AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi::Destructor");
 }
 
-void AudioVolumeKeyEventNapi::OnVolumeKeyEvent(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+void AudioVolumeKeyEventNapi::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: OnVolumeKeyEvent is called volumeLevel=%{public}d", volumeLevel);
-    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: isUpdateUi is called isUpdateUi=%{public}d", isUpdateUi);
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: OnVolumeKeyEvent is called volumeLevel=%{public}d", volumeEvent.volume);
+    AUDIO_DEBUG_LOG("AudioVolumeKeyEventNapi: isUpdateUi is called isUpdateUi=%{public}d", volumeEvent.updateUi);
     if (audioVolumeKeyEventJsCallback_ == nullptr) {
         AUDIO_DEBUG_LOG("AudioManagerCallbackNapi:No JS callback registered return");
         return;
@@ -49,9 +49,11 @@ void AudioVolumeKeyEventNapi::OnVolumeKeyEvent(AudioStreamType streamType, int32
     CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
     cb->callback = audioVolumeKeyEventJsCallback_;
     cb->callbackName = VOLUME_KEY_EVENT_CALLBACK_NAME;
-    cb->volumeEvent.volumeType = streamType;
-    cb->volumeEvent.volume = volumeLevel;
-    cb->volumeEvent.updateUi = isUpdateUi;
+    cb->volumeEvent.volumeType = volumeEvent.volumeType;
+    cb->volumeEvent.volume = volumeEvent.volume;
+    cb->volumeEvent.updateUi = volumeEvent.updateUi;
+    cb->volumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
+    cb->volumeEvent.networkId = volumeEvent.networkId;
 
     return OnJsCallbackVolumeEvent(cb);
 }

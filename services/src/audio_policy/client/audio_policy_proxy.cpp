@@ -390,7 +390,8 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
+    const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -406,6 +407,7 @@ int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const 
     }
 
     data.WriteInt32(clientId);
+    data.WriteInt32(flag);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_DEVICE_CHANGE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
@@ -1048,6 +1050,33 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
         ReadAudioCapturerChangeInfo(reply, capturerChangeInfo);
         audioCapturerChangeInfos.push_back(move(capturerChangeInfo));
         size--;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyProxy::PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
+    AudioStreamType audioStreamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::PausedOrResumeStream");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("PausedOrResumeStream: WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(clientUid));
+    data.WriteInt32(static_cast<int32_t>(streamSetState));
+    data.WriteInt32(static_cast<int32_t>(audioStreamType));
+
+    int32_t error = Remote()->SendRequest(PAUSED_OR_RECOVERY_STREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Paused or RECOVERY stream changed info event failed , error: %d", error);
+        return ERROR;
     }
 
     return SUCCESS;
