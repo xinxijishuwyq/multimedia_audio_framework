@@ -1713,6 +1713,8 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->second.first, desc);
         if (it->second.second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second.second->OnDeviceChange(deviceChangeAction);
+            AUDIO_INFO_LOG("OnDeviceChange:type: [%{public}d],", deviceChangeAction.type);
+            it->second.second->OnDeviceChange(deviceChangeAction);       
         }
     }
 

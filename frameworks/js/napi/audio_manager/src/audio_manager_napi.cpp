@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +25,7 @@
 #include "audio_manager_callback_napi.h"
 #include "audio_manager_interrupt_callback_napi.h"
 #include "audio_volume_key_event_napi.h"
+#include "audio_group_manager_napi.h"
 
 #include "hilog/log.h"
 #include "audio_log.h"
@@ -80,13 +81,16 @@ struct AudioManagerAsyncContext {
     int32_t intValue;
     int32_t status;
     int32_t focusType;
+    int32_t groupId;
     bool isMute;
     bool isActive;
     bool isTrue;
     string key;
     string valueStr;
+    string networkId;
     AudioManagerNapi *objectInfo;
     vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
 };
 
 namespace {
@@ -734,6 +738,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
         DECLARE_NAPI_FUNCTION("getRoutingManager", GetAudioRoutingManager),
+        DECLARE_NAPI_FUNCTION("getVolumeGroups", GetVolumeGroups),
+        DECLARE_NAPI_FUNCTION("getGroupManager", GetGroupManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -2135,8 +2141,15 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
             napi_create_int32(env, asyncContext->deviceDescriptors[i]->channelMasks_, &value);
             napi_set_element(env, channelMasks, 0, value);
             napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
-
-            napi_set_element(env, result[PARAM1], i, valueParam);
+/* todo
+            SetValueString(env, "networkId", static_cast<std::string>(
+                asyncContext->deviceDescriptors[i]->networkId_), valueParam);
+            SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(
+                asyncContext->deviceDescriptors[i]->interruptGroupId_), valueParam);
+            SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(
+                asyncContext->deviceDescriptors[i]->volumeGroupId_), valueParam);
+*/
+	    napi_set_element(env, result[PARAM1], i, valueParam);
         }
     }
 
@@ -2174,6 +2187,7 @@ napi_value AudioManagerNapi::GetDevices(napi_env env, napi_callback_info info)
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->deviceFlag);
+                HiLog::Info(LABEL, " GetDevices deviceFlag = %{public}d", asyncContext->deviceFlag);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -2303,22 +2317,26 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
     AUDIO_INFO_LOG("AudioManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("AudioManagerNapi::zhanhang  On callbackName: %{public}s", callbackName.c_str());
 
     AudioManagerNapi *managerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
     NAPI_ASSERT(env, status == napi_ok && managerNapi != nullptr, "Failed to retrieve audio manager napi instance.");
-    NAPI_ASSERT(env, managerNapi->audioMngr_ != nullptr, "audio system manager instance is null.");
     napi_valuetype handler = napi_undefined;
     if (argCount == minArgCount) {
+         AUDIO_INFO_LOG("zhanhang minArgCount");
         napi_valuetype handler = napi_undefined;
         if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
             AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 2");
             return undefinedResult;
         }
     } else {
+	
+         AUDIO_INFO_LOG("zhanhang minArgCount else");
         napi_valuetype paramArg1 = napi_undefined;
         napi_typeof(env, args[PARAM1], &paramArg1);
         if (!callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
+              AUDIO_INFO_LOG("zhanhang minArgCount");
             if (paramArg1 != napi_object) {
                 AUDIO_ERR_LOG("AudioManagerNapi::On Type mismatch for parameter 2");
                 return undefinedResult;
@@ -2327,32 +2345,32 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
                 AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 3");
                 return undefinedResult;
             }
-        }
-
-        if (managerNapi->interruptCallbackNapi_ == nullptr) {
-            managerNapi->interruptCallbackNapi_ = std::make_shared<AudioManagerInterruptCallbackNapi>(env);
-            int32_t ret = managerNapi->audioMngr_->
-                SetAudioManagerInterruptCallback(managerNapi->interruptCallbackNapi_);
+            if (managerNapi->interruptCallbackNapi_ == nullptr) {
+                managerNapi->interruptCallbackNapi_ = std::make_shared<AudioManagerInterruptCallbackNapi>(env);
+                int32_t ret = managerNapi->audioMngr_->
+                    SetAudioManagerInterruptCallback(managerNapi->interruptCallbackNapi_);
+                if (ret) {
+                    AUDIO_ERR_LOG("AudioManagerNapi: SetAudioManagerInterruptCallback Failed");
+                    return undefinedResult;
+                }
+            }
+            std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
+            std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
+            cb->SaveCallbackReference(callbackName, args[PARAM2]);
+            AudioInterrupt audioInterrupt;
+            status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
+            NAPI_ASSERT(env, status == napi_ok, "Failed to retrieve audioInterrupt value");
+            int32_t ret = managerNapi->audioMngr_->RequestAudioFocus(audioInterrupt);
             if (ret) {
-                AUDIO_ERR_LOG("AudioManagerNapi: SetAudioManagerInterruptCallback Failed");
+                AUDIO_ERR_LOG("AudioManagerNapi: RequestAudioFocus Failed");
                 return undefinedResult;
             }
-        }
-        std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
-        std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
-        cb->SaveCallbackReference(callbackName, args[PARAM2]);
-        AudioInterrupt audioInterrupt;
-        status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
-        NAPI_ASSERT(env, status == napi_ok, "Failed to retrieve audioInterrupt value");
-        int32_t ret = managerNapi->audioMngr_->RequestAudioFocus(audioInterrupt);
-        if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi: RequestAudioFocus Failed");
-            return undefinedResult;
-        }
-        AUDIO_INFO_LOG("AudioManagerNapi::On SetAudioManagerInterruptCallback and RequestAudioFocus is successful");
+            AUDIO_INFO_LOG("AudioManagerNapi::On SetAudioManagerInterruptCallback and RequestAudioFocus is successful");
+            }
     }
 
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
+         AUDIO_INFO_LOG("zhanhangI RINGERMODE_CALLBACK_NAME  ");
         if (managerNapi->ringerModecallbackNapi_ == nullptr) {
             managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
             int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
@@ -2369,12 +2387,63 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
             std::static_pointer_cast<AudioRingerModeCallbackNapi>(managerNapi->ringerModecallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
+         AUDIO_INFO_LOG("zhanhangI VOLUME_CHANGE_CALLBACK_NAME ");
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =
             std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
-        if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
-            managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
+
+        AUDIO_INFO_LOG("zhanhang enter devicechange");
+        // if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
+        //     managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
+        // }
+        // int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG, managerNapi->deviceChangeCallbackNapi_);
+        // if (ret) {
+        //     AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
+        //     return undefinedResult;
+        if(argCount == minArgCount){
+            if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
+                managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
+            }
+            int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,managerNapi->deviceChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
+                return undefinedResult;
+            }
+            std::shared_ptr<AudioManagerCallbackNapi> cb =
+            std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
+            cb->SaveCallbackReference(callbackName, args[PARAM1]);
+            AUDIO_INFO_LOG("AudioManagerNapi::On SetDeviceChangeCallback is successful");
+        }else if(argCount ==3){
+
+             AUDIO_INFO_LOG("zhanhang parameter size 3");
+            int32_t deviceFlag;
+            napi_valuetype paramArg1 = napi_undefined;
+            napi_typeof(env, args[PARAM1], &paramArg1);
+            if (paramArg1 != napi_number) {
+                    AUDIO_ERR_LOG("AudioManagerNapi::On Type mismatch for parameter 2");
+                    return undefinedResult;
+            }
+            napi_get_value_int32(env, args[PARAM1], &deviceFlag);
+            if (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function) {
+                AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 3");
+                return undefinedResult;
+            }
+            //TODO
+            if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
+                managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
+            }
+            int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(static_cast<DeviceFlag>(deviceFlag),managerNapi->deviceChangeCallbackNapi_);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
+                return undefinedResult;
+            }
+            std::shared_ptr<AudioManagerCallbackNapi> cb =
+            std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
+            cb->SaveCallbackReference(callbackName, args[PARAM2]);
+            AUDIO_INFO_LOG("AudioManagerNapi::On DeviceFlag SetDeviceChangeCallback is successful");
+
+
         }
         int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
             managerNapi->deviceChangeCallbackNapi_);
@@ -2392,6 +2461,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
 
 napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
 {
+
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
@@ -2448,16 +2518,34 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
         }
         AUDIO_INFO_LOG("AudioManagerNapi::Off Abandon Focus and UnSetAudioInterruptCallback success");
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
-        int32_t ret = managerNapi->audioMngr_->UnsetDeviceChangeCallback();
-        if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Failed");
-            return undefinedResult;
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, args[1], &valueType);
+        if(valueType == napi_number){
+              //TODO
+            int32_t ret = managerNapi->audioMngr_->UnsetDeviceChangeCallback();
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Failed");
+                return undefinedResult;
+            }
+            if (managerNapi->deviceChangeCallbackNapi_ != nullptr) {
+                managerNapi->deviceChangeCallbackNapi_.reset();
+                managerNapi->deviceChangeCallbackNapi_ = nullptr;
+            }
+            AUDIO_INFO_LOG("AudioManagerNapi::Off DeviceFlag UnsetDeviceChangeCallback Success");
+        }else {
+          
+            int32_t ret = managerNapi->audioMngr_->UnsetDeviceChangeCallback();
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Failed");
+                return undefinedResult;
+            }
+            if (managerNapi->deviceChangeCallbackNapi_ != nullptr) {
+                managerNapi->deviceChangeCallbackNapi_.reset();
+                managerNapi->deviceChangeCallbackNapi_ = nullptr;
+            }
+            AUDIO_INFO_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Success");
         }
-        if (managerNapi->deviceChangeCallbackNapi_ != nullptr) {
-            managerNapi->deviceChangeCallbackNapi_.reset();
-            managerNapi->deviceChangeCallbackNapi_ = nullptr;
-        }
-        AUDIO_INFO_LOG("AudioManagerNapi::Off UnsetDeviceChangeCallback Success");
+
     }
     return undefinedResult;
 }
@@ -2593,6 +2681,179 @@ void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_stat
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
             valueParam = AudioStreamMgrNapi::CreateStreamManagerWrapper(env);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: GetStreamMgrAsyncCallbackComplete asyncContext is Null!");
+    }
+}
+
+static void GetVolumeGroupsAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    auto asyncContext = static_cast<AudioManagerAsyncContext*>(data);
+    napi_value result[ARGS_TWO] = {0};
+    napi_value valueParam = nullptr;
+    napi_value retVal;
+    size_t size = asyncContext->volumeGroupInfos.size();
+    HiLog::Info(LABEL, "number of devices = %{public}zu", size);
+    napi_create_array_with_length(env, size, &result[PARAM1]);
+    for (size_t i = 0; i < size; i ++) {
+        if (asyncContext->volumeGroupInfos[i] != nullptr) {
+            (void)napi_create_object(env, &valueParam);
+            SetValueString(env, "networkId", static_cast<std::string>(
+                asyncContext->volumeGroupInfos[i]->networkId_), valueParam);
+            SetValueInt32(env, "groupId", static_cast<int32_t>(
+                asyncContext->volumeGroupInfos[i]->volumeGroupId_), valueParam);
+            SetValueInt32(env, "mappingId", static_cast<int32_t>(
+                asyncContext->volumeGroupInfos[i]->mappingId_), valueParam);
+            SetValueString(env, "groupName", static_cast<std::string>(
+                asyncContext->volumeGroupInfos[i]->groupName_), valueParam);
+            SetValueInt32(env, "ConnectType", static_cast<int32_t>(
+                asyncContext->volumeGroupInfos[i]->connectType_), valueParam);
+            napi_set_element(env, result[PARAM1], i, valueParam);
+        }
+    }
+
+    napi_get_undefined(env, &result[PARAM0]);
+
+    if (asyncContext->deferred) {
+        napi_resolve_deferred(env, asyncContext->deferred, result[PARAM1]);
+    } else {
+        napi_value callback = nullptr;
+        napi_get_reference_value(env, asyncContext->callbackRef, &callback);
+        napi_call_function(env, nullptr, callback, ARGS_TWO, result, &retVal);
+        napi_delete_reference(env, asyncContext->callbackRef);
+    }
+    napi_delete_async_work(env, asyncContext->work);
+
+    delete asyncContext;
+}
+
+napi_value AudioManagerNapi::GetVolumeGroups(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+    NAPI_ASSERT(env, argc >= ARGS_ONE, "requires 1 parameter minimum");
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        for (size_t i = PARAM0; i < argc; i++) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[i], &valueType);
+
+            if (i == PARAM0 && valueType == napi_string) {
+                asyncContext->networkId = AudioCommonNapi::GetStringArgument(env, argv[i]);
+
+            } else if (i == PARAM1 && valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+                break;
+            } else {
+                NAPI_ASSERT(env, false, "type mismatch");
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "getVolumeGroups", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioManagerAsyncContext*>(data);
+
+                context->volumeGroupInfos = context->objectInfo->audioMngr_->GetVolumeGroups(context->networkId);
+                HiLog::Info(LABEL, "AudioManagerNapi::GetVolumeGroups--napi_create_async_work ");
+                context->status = 0;
+            },
+           GetVolumeGroupsAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+napi_value AudioManagerNapi::GetGroupManager(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, "%{public}s IN", __func__);
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+    CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioManagerAsyncContext object creation failed");
+
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
+        } else {
+            NAPI_ASSERT(env, false, "type mismatch");
+        }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "GetGroupManager", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioManagerAsyncContext *>(data);
+            context->status = SUCCESS;
+        },
+        GetGroupMgrAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
+
+    return result;
+}
+
+void AudioManagerNapi::GetGroupMgrAsyncCallbackComplete(napi_env env, napi_status status, void* data)
+{
+    napi_value valueParam = nullptr;
+    auto asyncContext = static_cast<AudioManagerAsyncContext *>(data);
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            valueParam = AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(env, 0); //todo
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
