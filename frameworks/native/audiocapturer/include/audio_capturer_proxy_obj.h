@@ -25,6 +25,8 @@ class AudioCapturerProxyObj : public AudioClientTracker {
 public:
     virtual ~AudioCapturerProxyObj() = default;
     void SaveCapturerObj(const AudioCapturer *capturerObj);
+    void SetLowPowerVolumeImpl(float volume);
+    void GetLowPowerVolumeImpl(float &volume);
 
 private:
     const AudioCapturer *capturer;

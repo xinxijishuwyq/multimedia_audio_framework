@@ -25,5 +25,15 @@ void AudioRendererProxyObj::SaveRendererObj(const AudioRenderer *rendererObj)
 {
     renderer = rendererObj;
 }
+
+void AudioRendererProxyObj::SetLowPowerVolumeImpl(float volume)
+{
+    renderer->SetLowPowerVolume(volume);
+}
+
+void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
+{
+    volume = renderer->GetLowPowerVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS

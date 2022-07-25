@@ -63,6 +63,8 @@ enum AudioPolicyCommand {
     UPDATE_TRACKER,
     GET_RENDERER_CHANGE_INFOS,
     GET_CAPTURER_CHANGE_INFOS,
+    SET_LOW_POWER_STREM_VOLUME,
+    GET_LOW_POWRR_STREM_VOLUME,
 };
 } // namespace AudioStandard
 } // namespace OHOS

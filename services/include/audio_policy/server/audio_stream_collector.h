@@ -45,6 +45,8 @@ public:
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
     void RegisteredStreamListenerClientDied(int32_t uid);
+    int32_t SetLowPowerVolume(int32_t streamId, float volume);
+    float GetLowPowerVolume(int32_t streamId);
 
 private:
     AudioStreamEventDispatcher &mDispatcherService;

@@ -59,6 +59,8 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState);
     int32_t Enqueue(const BufferDesc &bufDesc);
     int32_t Clear();
+    int32_t SetLowPowerVolume(float volume);
+    float GetLowPowerVolume();
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;

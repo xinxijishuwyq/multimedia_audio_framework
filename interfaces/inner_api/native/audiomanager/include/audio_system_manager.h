@@ -241,6 +241,8 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
     int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
+    float GetLowPowerVolume(int32_t streamId) const;
     int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType);
     int32_t SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const;

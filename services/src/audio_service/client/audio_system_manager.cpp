@@ -327,6 +327,22 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     return MapVolumeFromHDI(volumeFromHdi);
 }
 
+int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
+{
+    AUDIO_INFO_LOG("AudioSystemManager SetLowPowerVolume, streamId:%{public}d, vol:%{public}f.", streamId, volume);
+    if ((volume < 0) || (volume > 1.0)) {
+        AUDIO_ERR_LOG("Invalid Volume Input!");
+        return ERR_INVALID_PARAM;
+    }
+
+    return AudioPolicyManager::GetInstance().SetLowPowerVolume(streamId, volume);
+}
+
+float AudioSystemManager::GetLowPowerVolume(int32_t streamId) const
+{
+    return AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
+}
+
 float AudioSystemManager::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;

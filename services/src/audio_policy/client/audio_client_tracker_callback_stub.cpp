@@ -34,6 +34,26 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
+
+    switch (code) {
+        case SETLOWPOWERVOL: {
+            float volume = data.ReadFloat();
+            SetLowPowerVolumeImpl(volume);
+            return AUDIO_OK;
+        }
+        case GETLOWPOWERVOL: {
+            float volume;
+            GetLowPowerVolumeImpl(volume);
+            reply.WriteFloat(volume);
+            data.WriteFloat(static_cast<float>(volume));
+            return AUDIO_OK;
+        }
+        default: {
+            AUDIO_ERR_LOG("default case, need check AudioListenerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+
     return 0;
 }
 
@@ -42,6 +62,28 @@ void AudioClientTrackerCallbackStub::SetClientTrackerCallback(
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub::SetClientTrackerCallback");
     callback_ = callback;
+}
+
+void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub SetLowPowerVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->SetLowPowerVolumeImpl(volume);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub GetLowPowerVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->GetLowPowerVolumeImpl(volume);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -25,5 +25,14 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 {
     capturer = capturerObj;
 }
+
+void AudioCapturerProxyObj::SetLowPowerVolumeImpl(float volume)
+{
+}
+
+void AudioCapturerProxyObj::GetLowPowerVolumeImpl(float &volume)
+{
+    volume = 1.0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

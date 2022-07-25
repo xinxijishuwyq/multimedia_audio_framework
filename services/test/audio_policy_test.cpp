@@ -204,6 +204,20 @@ static void UnknownOptionError()
     PrintUsage();
 }
 
+static void HandleLowPowerVolumeOption(char option)
+{
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    int32_t streamId = stoi(optarg);
+    if (option == 'L') {
+        cout << "set low power volume" << endl;
+        audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
+    } else {
+        cout << "Get low power volume" << endl;
+        float volume = audioSystemMgr->GetLowPowerVolume(streamId);
+        cout << "low power volume is: " << volume << endl;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     int opt = 0;
@@ -214,7 +228,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:vmruc")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:L:l:vmruc")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -247,6 +261,10 @@ int main(int argc, char* argv[])
             case 'C':
             case 'c':
                 HandleAudioScene(opt);
+                break;
+            case 'L':
+            case 'l':
+                HandleLowPowerVolumeOption(opt);
                 break;
             case ':':
                 NoValueError();
