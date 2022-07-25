@@ -140,9 +140,11 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
-
-    static struct AudioManager *audioManager_ = GetAudioManagerFuncs(); // here will change to GetDAudioManagerFuncs
-
+#ifdef PRODUCT_M40
+    static struct AudioManager *audioManager_ = GetDAudioManagerFuncs();
+#else
+    static struct AudioManager *audioManager_ = GetAudioManagerFuncs();
+#endif // PRODUCT_M40
     return audioManager_;
 }
 

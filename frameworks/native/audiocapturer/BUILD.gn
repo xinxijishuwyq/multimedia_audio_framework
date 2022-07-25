@@ -55,6 +55,9 @@ ohos_shared_library("remote_audio_capturer_source") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
+  if ("${product_name}" == "m40") {
+    cflags += [ "-DPRODUCT_M40" ]
+  }
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
@@ -69,13 +72,19 @@ ohos_shared_library("remote_audio_capturer_source") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
   ]
 
-  deps += [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
-    "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client",
-  ]
+  if ("${product_name}" == "m40") {
+    deps += [
+      "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client",
+    ]
+  } else {
+    deps += [
+      "$hdf_uhdf_path/hdi:libhdi",
+      "$hdf_uhdf_path/host:libhdf_host",
+      "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
+      "$hdf_uhdf_path/utils:libhdf_utils",
+      "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client"
+    ]
+  }
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"

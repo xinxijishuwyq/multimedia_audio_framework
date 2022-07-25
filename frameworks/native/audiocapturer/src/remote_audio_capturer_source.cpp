@@ -220,7 +220,11 @@ bool RemoteAudioCapturerSource::IsInited(void)
 int32_t RemoteAudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Initialize audio proxy manager");
-    audioManager_ = GetAudioManagerFuncs(); // GetDAudioManagerFuncs
+#ifdef PRODUCT_M40
+    audioManager_ = GetDAudioManagerFuncs(); // GetDAudioManagerFuncs
+#else
+    audioManager_ = GetAudioManagerFuncs();
+#endif // PRODUCT_M40
     CHECK_AND_RETURN_RET_LOG((audioManager_ != nullptr), ERR_INVALID_HANDLE, "Initialize audio proxy failed!");
 
     return SUCCESS;
