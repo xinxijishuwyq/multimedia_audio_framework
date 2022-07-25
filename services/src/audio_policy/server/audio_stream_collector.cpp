@@ -448,6 +448,8 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
 
 int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 {
+    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+        ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume streamId invalid.");
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume callback failed");
@@ -457,10 +459,12 @@ int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 
 float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 {
+    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+        ERR_INVALID_PARAM, "AudioStreamCollector:GetLowPowerVolume streamId invalid.");
     float volume;
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume callback failed");
+        ERR_INVALID_PARAM, "AudioStreamCollector:GetLowPowerVolume callback failed");
     callback->GetLowPowerVolumeImpl(volume);
     return volume;
 }

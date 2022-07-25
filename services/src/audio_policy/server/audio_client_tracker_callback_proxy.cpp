@@ -49,7 +49,7 @@ void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
 
     int error = Remote()->SendRequest(GETLOWPOWERVOL, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("GETLOWPOWERVOL failed, error: %{public}d", error);
     }
 
     volume = reply.ReadFloat();

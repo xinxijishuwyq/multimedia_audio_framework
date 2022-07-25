@@ -329,7 +329,7 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
 {
-    AUDIO_DEBUG_LOG("AudioSystemManager SetLowPowerVolume, streamId:%{public}d, vol:%{public}f.", streamId, volume);
+    AUDIO_INFO_LOG("AudioSystemManager SetLowPowerVolume, streamId:%{public}d, vol:%{public}f.", streamId, volume);
     if ((volume < 0) || (volume > 1.0)) {
         AUDIO_ERR_LOG("Invalid Volume Input!");
         return ERR_INVALID_PARAM;
