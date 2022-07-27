@@ -221,7 +221,27 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
-    audioManager_ = GetDAudioManagerFuncs(); // GetDAudioManagerFuncs
+    char resolvedPath[100] = "/vendor/lib64/libdaudio_client.z.so";
+    struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
+
+    void *handle_ = dlopen(resolvedPath, 1);
+    if (handle_ == nullptr) {
+        AUDIO_ERR_LOG("Open so Fail");
+        return ERR_INVALID_HANDLE;
+    }
+    AUDIO_INFO_LOG("dlopen successful");
+
+    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    if (GetAudioManagerFuncs == nullptr) {
+        return ERR_INVALID_HANDLE;
+    }
+    AUDIO_INFO_LOG("GetAudioManagerFuncs done");
+
+    audioManager_ = GetAudioManagerFuncs();
+    if (audioManager_ == nullptr) {
+        return ERR_INVALID_HANDLE;
+    }
+    AUDIO_INFO_LOG("daudio manager created");
 #else
     audioManager_ = GetAudioManagerFuncs();
 #endif // PRODUCT_M40

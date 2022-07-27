@@ -141,11 +141,31 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
-    static struct AudioManager *audioManager_ = GetDAudioManagerFuncs();
+    char resolvedPath[100] = "/vendor/lib64/libdaudio_client.z.so";
+    struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
+
+    void *handle_ = dlopen(resolvedPath, 1);
+    if (handle_ == nullptr) {
+        AUDIO_ERR_LOG("Open so Fail");
+        return nullptr;
+    }
+    AUDIO_INFO_LOG("dlopen successful");
+
+    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    if (GetAudioManagerFuncs == nullptr) {
+        return nullptr;
+    }
+    AUDIO_INFO_LOG("GetAudioManagerFuncs done");
+
+    struct AudioManager *audioManager = GetAudioManagerFuncs();
+    if (audioManager == nullptr) {
+        return nullptr;
+    }
+    AUDIO_INFO_LOG("daudio manager created");
 #else
-    static struct AudioManager *audioManager_ = GetAudioManagerFuncs();
+    struct AudioManager *audioManager = GetAudioManagerFuncs();
 #endif // PRODUCT_M40
-    return audioManager_;
+    return audioManager;
 }
 
 uint32_t PcmFormatToBits(enum AudioFormat format)
