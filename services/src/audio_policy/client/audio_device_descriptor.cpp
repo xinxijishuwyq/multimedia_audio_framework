@@ -26,7 +26,19 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     int32_t volumeGroupId, std::string networkId)
     : deviceType_(type), deviceRole_(role), interruptGroupId_(interruptGroupId), volumeGroupId_(volumeGroupId),
     networkId_(networkId)
-{}
+{
+    if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
+        || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) && (deviceRole_ == INPUT_DEVICE)) {
+        deviceId_ = deviceType_ + DEVICE_TYPE_MAX;
+    } else {
+        deviceId_ = deviceType_;
+    }
+
+    audioStreamInfo_ = {};
+    channelMasks_ = 0;
+    deviceName_ = "";
+    macAddress_ = "";
+}
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
 {
