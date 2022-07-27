@@ -2106,7 +2106,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
     int32_t systemVolumeInt
-        = client.mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType));
+        = client.mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(client.mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
     float vol = systemVolume * client.mVolumeFactor * client.mPowerVolumeFactor;
 
@@ -2115,9 +2115,9 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         vol = MIN_STREAM_VOLUME_LEVEL;
     }
 
-    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType))) {
+    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(client.mStreamType))) {
         if (client.mUnMute_) {
-            client.mAudioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType),
+            client.mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(client.mStreamType),
                 false);
         } else {
             vol = MIN_STREAM_VOLUME_LEVEL;

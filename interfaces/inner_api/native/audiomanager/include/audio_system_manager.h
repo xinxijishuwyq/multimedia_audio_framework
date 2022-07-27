@@ -163,72 +163,6 @@ public:
 
 class AudioSystemManager {
 public:
-    enum AudioVolumeType {
-        /**
-         * Indicates audio streams default.
-         */
-        STREAM_DEFAULT = -1,
-        /**
-         * Indicates audio streams of voices in calls.
-         */
-        STREAM_VOICE_CALL = 0,
-        /**
-         * Indicates audio streams for music playback.
-         */
-        STREAM_MUSIC = 1,
-        /**
-         * Indicates audio streams for ringtones.
-         */
-        STREAM_RING = 2,
-        /**
-         * Indicates audio streams media.
-         */
-        STREAM_MEDIA = 3,
-        /**
-         * Indicates Audio streams for voice assistant
-         */
-        STREAM_VOICE_ASSISTANT = 4,
-        /**
-         * Indicates audio streams for system sounds.
-         */
-        STREAM_SYSTEM = 5,
-        /**
-         * Indicates audio streams for alarms.
-         */
-        STREAM_ALARM = 6,
-        /**
-         * Indicates audio streams for notifications.
-         */
-        STREAM_NOTIFICATION = 7,
-        /**
-         * Indicates audio streams for voice calls routed through a connected Bluetooth device.
-         */
-        STREAM_BLUETOOTH_SCO = 8,
-        /**
-         * Indicates audio streams for enforced audible.
-         */
-        STREAM_ENFORCED_AUDIBLE = 9,
-        /**
-         * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
-         */
-        STREAM_DTMF = 10,
-        /**
-         * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
-         */
-        STREAM_TTS =  11,
-        /**
-         * Indicates audio streams used for prompts in terms of accessibility.
-         */
-        STREAM_ACCESSIBILITY = 12,
-        /**
-         * Indicates special scene used for recording.
-         */
-        STREAM_RECORDING = 13,
-        /**
-         * Indicates audio streams used for only one volume bar of a device.
-         */
-        STREAM_ALL = 100
-    };
     const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
         STREAM_RING,
@@ -239,14 +173,14 @@ public:
     static float MapVolumeToHDI(int32_t volume);
     static int32_t MapVolumeFromHDI(float volume);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
-    int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
+    int32_t GetVolume(AudioVolumeType volumeType) const;
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
     float GetLowPowerVolume(int32_t streamId) const;
-    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType);
-    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType);
-    int32_t SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const;
-    bool IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t GetMaxVolume(AudioVolumeType volumeType);
+    int32_t GetMinVolume(AudioVolumeType volumeType);
+    int32_t SetMute(AudioVolumeType volumeType, bool mute) const;
+    bool IsStreamMute(AudioVolumeType volumeType) const;
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(void);
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -258,7 +192,7 @@ public:
     bool IsDeviceActive(ActiveDeviceType deviceType) const;
     DeviceType GetActiveOutputDevice();
     DeviceType GetActiveInputDevice();
-    bool IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const;
+    bool IsStreamActive(AudioVolumeType volumeType) const;
     int32_t SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
     int32_t SetAudioScene(const AudioScene &scene);
@@ -275,9 +209,9 @@ public:
 
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be removed
-    int32_t SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+    int32_t SetAudioManagerCallback(const AudioVolumeType streamType,
                                     const std::shared_ptr<AudioManagerCallback> &callback);
-    int32_t UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const;
+    int32_t UnsetAudioManagerCallback(const AudioVolumeType streamType) const;
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
     int32_t SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback);

@@ -72,12 +72,12 @@ static void HandleVolume(int streamType, char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     if (option == 'v') {
-        float volume = audioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
+        float volume = audioSystemMgr->GetVolume(static_cast<AudioVolumeType>(streamType));
         cout << "Get Volume : " << volume << endl;
     } else {
         float volume = strtof(optarg, nullptr);
         cout << "Set Volume : " << volume << endl;
-        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
+        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioVolumeType>(streamType),
                                                    volume);
         cout << "Set Volume Result: " << result << endl;
     }
@@ -87,12 +87,12 @@ static void HandleMute(int streamType, char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     if (option == 'm') {
-        bool muteStatus = audioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
+        bool muteStatus = audioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(streamType));
         cout << "Get Mute : " << muteStatus << endl;
     } else {
         int mute = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
         cout << "Set Mute : " << mute << endl;
-        int32_t result = audioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
+        int32_t result = audioSystemMgr->SetMute(static_cast<AudioVolumeType>(streamType),
             (mute) ? true : false);
         cout << "Set Mute Result: " << result << endl;
     }
@@ -123,7 +123,7 @@ static void IsStreamActive()
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     int streamType = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
     cout << "Stream Active: " << audioSystemMgr->IsStreamActive(
-        static_cast<AudioSystemManager::AudioVolumeType>(streamType)) << endl;
+        static_cast<AudioVolumeType>(streamType)) << endl;
 }
 
 static void SetDeviceActive(int argc, char *argv[])
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
         return ERR_INVALID_PARAM;
     }
 
-    int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
+    int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
     while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:d:s:L:l:vmruc")) != -1) {
         switch (opt) {
             case 'V':
