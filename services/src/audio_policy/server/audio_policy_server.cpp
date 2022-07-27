@@ -241,6 +241,16 @@ float AudioPolicyServer::GetStreamVolume(AudioStreamType streamType)
     return mPolicyService.GetStreamVolume(streamType);
 }
 
+int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    return mPolicyService.SetLowPowerVolume(streamId, volume);
+}
+
+float AudioPolicyServer::GetLowPowerVolume(int32_t streamId)
+{
+    return mPolicyService.GetLowPowerVolume(streamId);
+}
+
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     if (streamType == AudioStreamType::STREAM_RING) {
@@ -1344,30 +1354,30 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 }
 
 
-int32_t AudioPolicyServer::PausedOrResumeStream(const int32_t clientUid,
+int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("PausedOrResumeStream::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
         streamSetState, audioStreamType);
 
-    auto callerUid =  IPCSkeleton::GetCallingUid();
+    auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid == clientUid) {
-        AUDIO_DEBUG_LOG("PausedOrResumeStream clientUid value is error");
+        AUDIO_ERR_LOG("UpdateStreamState clientUid value is error");
         return ERROR;
     }
 
-    StreamSetState setState = StreamSetState::Stream_Pause;
-    if (streamSetState == StreamSetState::Stream_Resume) {
-        setState  = StreamSetState::Stream_Resume;
-    } else if (streamSetState != StreamSetState::Stream_Pause) {
-        AUDIO_ERR_LOG("PausedOrResumeStream streamSetState value is error");
+    StreamSetState setState = StreamSetState::STREAM_PAUSE;
+    if (streamSetState == StreamSetState::STREAM_RESUME) {
+        setState  = StreamSetState::STREAM_RESUME;
+    } else if (streamSetState != StreamSetState::STREAM_PAUSE) {
+        AUDIO_ERR_LOG("UpdateStreamState streamSetState value is error");
         return ERROR;
     }
     StreamSetStateEventInternal setStateEvent = {};
     setStateEvent.streamSetState = setState;
     setStateEvent.audioStreamType = audioStreamType;
 
-    return mPolicyService.PausedOrResumeStream(clientUid, setStateEvent);
+    return mPolicyService.UpdateStreamState(clientUid, setStateEvent);
 }
 
 std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeGroupInfos()

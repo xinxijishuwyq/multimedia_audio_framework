@@ -135,6 +135,16 @@ float AudioPolicyService::GetStreamVolume(AudioStreamType streamType) const
     return mAudioPolicyManager.GetStreamVolume(streamType);
 }
 
+int32_t AudioPolicyService::SetLowPowerVolume(int32_t streamId, float volume) const
+{
+    return mStreamCollector.SetLowPowerVolume(streamId, volume);
+}
+
+float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
+{
+    return mStreamCollector.GetLowPowerVolume(streamId);
+}
+
 int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute) const
 {
     return mAudioPolicyManager.SetStreamMute(streamType, mute);
@@ -1488,10 +1498,10 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
     AUDIO_DEBUG_LOG("Input device updated to %{public}d", mActiveInputDevice_);
 }
 
-int32_t AudioPolicyService::PausedOrResumeStream(int32_t clientUid,
+int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    return mStreamCollector.PausedOrResumeStream(clientUid, streamSetStateEventInternal);
+    return mStreamCollector.UpdateStreamState(clientUid, streamSetStateEventInternal);
 }
 
 DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)

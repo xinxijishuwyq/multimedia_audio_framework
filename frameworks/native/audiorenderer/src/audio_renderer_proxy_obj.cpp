@@ -33,12 +33,17 @@ void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &
 
 void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    size_t buffSize = 0;
-    int32_t buff = renderer->GetBufferSize(buffSize);
-    AUDIO_INFO_LOG("AudioRendererProxyObj::ResumeStreamImpl GetBufferSize Value Is %{public}d", buff);
-    if (buff == 0) {
-        renderer->Start();
-    }
+    renderer->Start();
+}
+
+void AudioRendererProxyObj::SetLowPowerVolumeImpl(float volume)
+{
+    renderer->SetLowPowerVolume(volume);
+}
+
+void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
+{
+    volume = renderer->GetLowPowerVolume();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -646,9 +646,11 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
+    const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
-    if ((streamtype == nullptr) || (streamVolume == nullptr) || (sessionCStr == nullptr)) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType or streamVolume or SessionID");
+    if ((streamtype == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
+        (sessionCStr == nullptr)) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Stream parameter info.");
         return;
     }
 
@@ -662,9 +664,10 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     string streamType(streamtype);
     float volumeFactor = atof(streamVolume);
+    float powerVolumeFactor = atof(streamPowerVolume);
     AudioStreamType streamID = thiz->GetIdByStreamType(streamType);
     float volumeCb = g_audioServiceAdapterCallback->OnGetVolumeCb(streamtype);
-    float vol = volumeCb * volumeFactor;
+    float vol = volumeCb * volumeFactor * powerVolumeFactor;
 
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);

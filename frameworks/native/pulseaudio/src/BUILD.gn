@@ -31,7 +31,7 @@ config("pulsecommon_config") {
     "$pulseaudio_build_path/include",
     "$libsndfile_dir/include",
     "$pulseaudio_dir/src/pulse",
-    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/init/interfaces/innerkits/include",
   ]
 
   cflags = [

@@ -26,6 +26,7 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
     capturer = capturerObj;
 }
 
+
 void AudioCapturerProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     AUDIO_INFO_LOG("AudioCapturerProxyObj::PausedStreamImpl");
@@ -34,6 +35,15 @@ void AudioCapturerProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &
 void AudioCapturerProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     AUDIO_INFO_LOG("AudioCapturerProxyObj::ResumeStreamImpl");
+}
+
+void AudioCapturerProxyObj::SetLowPowerVolumeImpl(float volume)
+{
+}
+
+void AudioCapturerProxyObj::GetLowPowerVolumeImpl(float &volume)
+{
+    volume = 1.0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -49,6 +49,10 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType) const;
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
+
+    float GetLowPowerVolume(int32_t streamId) const;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) const;
 
     bool GetStreamMute(AudioStreamType streamType) const;
@@ -144,7 +148,7 @@ public:
 
     void OnSinkLatencyParsed(uint32_t latency);
 
-    int32_t PausedOrResumeStream(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
+    int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 

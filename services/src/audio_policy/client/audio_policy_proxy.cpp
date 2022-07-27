@@ -182,6 +182,45 @@ float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
     return reply.ReadFloat();
 }
 
+int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(streamId);
+    data.WriteFloat(volume);
+    int32_t error = Remote()->SendRequest(SET_LOW_POWER_STREM_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set low power stream volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(streamId);
+    int32_t error = Remote()->SendRequest(GET_LOW_POWRR_STREM_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get low power stream volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
+
 int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     MessageParcel data;
@@ -1055,17 +1094,17 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
-int32_t AudioPolicyProxy::PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
+int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
     AudioStreamType audioStreamType)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_DEBUG_LOG("AudioPolicyProxy::PausedOrResumeStream");
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::UpdateStreamState");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("PausedOrResumeStream: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("UpdateStreamState: WriteInterfaceToken failed");
         return ERROR;
     }
 
@@ -1073,36 +1112,9 @@ int32_t AudioPolicyProxy::PausedOrResumeStream(const int32_t clientUid, StreamSe
     data.WriteInt32(static_cast<int32_t>(streamSetState));
     data.WriteInt32(static_cast<int32_t>(audioStreamType));
 
-    int32_t error = Remote()->SendRequest(PAUSED_OR_RECOVERY_STREAM, data, reply, option);
+    int32_t error = Remote()->SendRequest(UPDATE_STREAM_STATE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Paused or RECOVERY stream changed info event failed , error: %d", error);
-        return ERROR;
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioPolicyProxy::PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
-    AudioStreamType audioStreamType)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    AUDIO_DEBUG_LOG("AudioPolicyProxy::PausedOrResumeStream");
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("PausedOrResumeStream: WriteInterfaceToken failed");
-        return ERROR;
-    }
-
-    data.WriteInt32(static_cast<int32_t>(clientUid));
-    data.WriteInt32(static_cast<int32_t>(streamSetState));
-    data.WriteInt32(static_cast<int32_t>(audioStreamType));
-
-    int32_t error = Remote()->SendRequest(PAUSED_OR_RECOVERY_STREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Paused or RECOVERY stream changed info event failed , error: %d", error);
+        AUDIO_ERR_LOG("UPDATE_STREAM_STATE stream changed info event failed , error: %d", error);
         return ERROR;
     }
 

@@ -327,6 +327,22 @@ int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volume
     return MapVolumeFromHDI(volumeFromHdi);
 }
 
+int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
+{
+    AUDIO_INFO_LOG("AudioSystemManager SetLowPowerVolume, streamId:%{public}d, vol:%{public}f.", streamId, volume);
+    if ((volume < 0) || (volume > 1.0)) {
+        AUDIO_ERR_LOG("Invalid Volume Input!");
+        return ERR_INVALID_PARAM;
+    }
+
+    return AudioPolicyManager::GetInstance().SetLowPowerVolume(streamId, volume);
+}
+
+float AudioSystemManager::GetLowPowerVolume(int32_t streamId) const
+{
+    return AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
+}
+
 float AudioSystemManager::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;
@@ -702,13 +718,14 @@ uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
     return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
 }
 
-int32_t AudioSystemManager::PausedOrResumeStream(const int32_t clientUid,
+int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("AudioSystemManager::PausedOrResumeStream::clientUid:%{public}d ", clientUid);
+    AUDIO_INFO_LOG("AudioSystemManager::UpdateStreamState::clientUid:%{public}d streamSetState:%{public}d",
+        clientUid, streamSetState);
     int32_t result = 0;
     
-    result = AudioPolicyManager::GetInstance().PausedOrResumeStream(clientUid, streamSetState, audioStreamType);
+    result = AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, audioStreamType);
     return result;
 }
 

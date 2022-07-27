@@ -32,6 +32,8 @@ private:
     void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioSceneInternal(MessageParcel &data);
     void GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
@@ -72,7 +74,7 @@ private:
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
-    void PausedOrResumeStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

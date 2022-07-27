@@ -112,6 +112,16 @@ bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType)
     return g_sProxy->GetStreamMute(streamType);
 }
 
+int32_t AudioPolicyManager::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    return g_sProxy->SetLowPowerVolume(streamId, volume);
+}
+
+float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
+{
+    return g_sProxy->GetLowPowerVolume(streamId);
+}
+
 bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
 {
     return g_sProxy->IsStreamActive(streamType);
@@ -462,12 +472,12 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
     return g_sProxy->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
-int32_t AudioPolicyManager::PausedOrResumeStream(const int32_t clientUid,
+int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::PausedOrResumeStream");
+    AUDIO_DEBUG_LOG("AudioPolicyManager::UpdateStreamState");
     
-    return  g_sProxy->PausedOrResumeStream(clientUid, streamSetState, audioStreamType);
+    return  g_sProxy->UpdateStreamState(clientUid, streamSetState, audioStreamType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

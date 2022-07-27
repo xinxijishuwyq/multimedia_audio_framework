@@ -61,6 +61,10 @@ public:
      * @param streamSetStateEventInternal Contains the set even information.
      */
     virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
+
+    virtual void SetLowPowerVolumeImpl(float volume) = 0;
+    virtual void GetLowPowerVolumeImpl(float &volume) = 0;
+
 };
 
 class AudioStreamManager {

@@ -689,8 +689,8 @@ struct DeviceInfo {
 };
 
 enum StreamSetState {
-    Stream_Pause,
-    Stream_Resume
+    STREAM_PAUSE,
+    STREAM_RESUME
 };
 
 struct StreamSetStateEventInternal {

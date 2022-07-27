@@ -204,13 +204,14 @@ static void UnknownOptionError()
     PrintUsage();
 }
 
-static void HandlePausedOrResumeStream(int type, char *seg1)
+
+static void HandleUpdateStreamState(int type, char *seg1)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    cout << "HandlePausedOrResumeStream : Runing " <<  seg1 << endl;
+    cout << "HandleUpdateStreamState : Runing " <<  seg1 << endl;
     
     const int32_t uid = atoi(seg1);
-    cout << "HandlePausedOrResumeStream : uid : " << uid << endl;
+    cout << "HandleUpdateStreamState : uid : " << uid << endl;
     if (uid == 0) {
         return;
     }
@@ -224,8 +225,22 @@ static void HandlePausedOrResumeStream(int type, char *seg1)
         sate = StreamSetState::Stream_Resume;
         cout << "type :: Stream_Resume :: " << type << endl;
     }
-    result = audioSystemMgr->PausedOrResumeStream(uid, sate, stype);
+    result = audioSystemMgr->UpdateStreamState(uid, sate, stype);
     cout << "result :  " << result << endl;
+}
+
+static void HandleLowPowerVolumeOption(char option)
+{
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+    int32_t streamId = stoi(optarg);
+    if (option == 'L') {
+        cout << "set low power volume" << endl;
+        audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
+    } else {
+        cout << "Get low power volume" << endl;
+        float volume = audioSystemMgr->GetLowPowerVolume(streamId);
+        cout << "low power volume is: " << volume << endl;
+    }
 }
 
 int main(int argc, char* argv[])
@@ -273,10 +288,14 @@ int main(int argc, char* argv[])
                 HandleAudioScene(opt);
                 break;
             case 'X':
-                HandlePausedOrResumeStream(0, optarg);
+                HandleUpdateStreamState(0, optarg);
                 break;
             case 'Z':
-                HandlePausedOrResumeStream(1, optarg);
+                HandleUpdateStreamState(1, optarg);
+                break;
+            case 'L':
+            case 'l':
+                HandleLowPowerVolumeOption(opt);
                 break;
             case ':':
                 NoValueError();

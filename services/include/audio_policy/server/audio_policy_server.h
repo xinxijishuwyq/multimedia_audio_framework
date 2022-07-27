@@ -54,6 +54,10 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType) override;
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
+
+    float GetLowPowerVolume(int32_t streamId) override;
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
@@ -149,7 +153,7 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
-    int32_t PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType) override;
                                     
     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();

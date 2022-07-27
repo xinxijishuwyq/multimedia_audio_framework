@@ -241,6 +241,8 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const;
     int32_t GetVolume(AudioSystemManager::AudioVolumeType volumeType) const;
+    int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
+    float GetLowPowerVolume(int32_t streamId) const;
     int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType);
     int32_t SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const;
@@ -287,7 +289,7 @@ public:
     bool AbandonIndependentInterrupt(FocusType focusType);
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
-    int32_t PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;

@@ -50,6 +50,18 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             ResumeStreamImpl(sreamSetStateEventInternal);
             return AUDIO_OK;
         }
+        case SETLOWPOWERVOL: {
+            float volume = data.ReadFloat();
+            SetLowPowerVolumeImpl(volume);
+            return AUDIO_OK;
+        }
+        case GETLOWPOWERVOL: {
+            float volume;
+            GetLowPowerVolumeImpl(volume);
+            reply.WriteFloat(volume);
+            data.WriteFloat(static_cast<float>(volume));
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -74,6 +86,17 @@ void AudioClientTrackerCallbackStub::PausedStreamImpl(
     if (cb != nullptr) {
         cb->PausedStreamImpl(streamSetStateEventInternal);
     } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: PausedStreamImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub SetLowPowerVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->SetLowPowerVolumeImpl(volume);
+    } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
     }
 }
@@ -85,6 +108,17 @@ void AudioClientTrackerCallbackStub::ResumeStreamImpl(
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
     if (cb != nullptr) {
         cb->ResumeStreamImpl(streamSetStateEventInternal);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub GetLowPowerVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->GetLowPowerVolumeImpl(volume);
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
     }

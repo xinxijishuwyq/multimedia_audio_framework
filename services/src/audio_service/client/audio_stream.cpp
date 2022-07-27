@@ -922,5 +922,15 @@ void AudioStream::ReadBuffers()
 
     AUDIO_INFO_LOG("AudioStream::ReadBuffers thread end");
 }
+
+int32_t AudioStream::SetLowPowerVolume(float volume)
+{
+    return SetStreamLowPowerVolume(volume);
+}
+
+float AudioStream::GetLowPowerVolume()
+{
+    return GetStreamLowPowerVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS

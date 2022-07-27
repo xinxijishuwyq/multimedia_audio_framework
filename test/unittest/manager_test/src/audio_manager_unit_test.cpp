@@ -744,7 +744,7 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->PausedOrResumeStream(0,
+    int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::Stream_Pause, AudioStreamType::STREAM_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -756,7 +756,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level0)
 */
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level0)
 {
-    int32_t ret = AudioSystemManager::GetInstance()->PausedOrResumeStream(0,
+    int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::Stream_Resume, AudioStreamType::STREAM_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }

@@ -161,7 +161,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     } else {
         // mode = AUDIO_MODE_RECORD
         AddCapturerStream(streamChangeInfo);
-        clientID = streamChangeInfo.audioRendererChangeInfo.sessionId;
+        clientID = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     }
 
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
@@ -446,26 +446,49 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
     mDispatcherService.removeCapturerListener(uid);
 }
 
-int32_t AudioStreamCollector::PausedOrResumeStream(int32_t clientUid,
+int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid) {
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
-                AUDIO_DEBUG_LOG("AudioStreamCollector:PausedOrResumeStream callback failed sId:%{public}d",
+                AUDIO_ERR_LOG("AudioStreamCollector:UpdateStreamState callback failed sId:%{public}d",
                     changeInfo->sessionId);
                 continue;
             }
-            if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Pause) {
+            if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_PAUSE) {
                 callback->PausedStreamImpl(streamSetStateEventInternal);
-            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::Stream_Resume) {
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_RESUME) {
                 callback->ResumeStreamImpl(streamSetStateEventInternal);
             }
         }
     }
 
     return SUCCESS;
+}
+
+int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+        ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume streamId invalid.");
+    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume callback failed");
+    callback->SetLowPowerVolumeImpl(volume);
+    return SUCCESS;
+}
+
+float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+        ERR_INVALID_PARAM, "AudioStreamCollector:GetLowPowerVolume streamId invalid.");
+    float volume;
+    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        ERR_INVALID_PARAM, "AudioStreamCollector:GetLowPowerVolume callback failed");
+    callback->GetLowPowerVolumeImpl(volume);
+    return volume;
 }
 } // namespace AudioStandard
 } // namespace OHOS

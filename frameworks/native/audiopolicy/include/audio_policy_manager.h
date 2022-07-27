@@ -52,6 +52,10 @@ public:
 
     float GetStreamVolume(AudioStreamType streamType);
 
+    int32_t SetLowPowerVolume(int32_t streamId, float volume);
+
+    float GetLowPowerVolume(int32_t streamId);
+
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
     bool GetStreamMute(AudioStreamType streamType);
@@ -141,7 +145,7 @@ public:
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
-    int32_t PausedOrResumeStream(const int32_t clientUid, StreamSetState streamSetState,
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
 private:
     AudioPolicyManager()

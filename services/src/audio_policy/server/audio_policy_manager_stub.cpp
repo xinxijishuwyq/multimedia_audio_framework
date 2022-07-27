@@ -112,6 +112,24 @@ void AudioPolicyManagerStub::GetStreamVolumeInternal(MessageParcel &data, Messag
     reply.WriteFloat(volume);
 }
 
+void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t streamId = data.ReadInt32();
+    float volume = data.ReadFloat();
+    int result = SetLowPowerVolume(streamId, volume);
+    if (result == SUCCESS)
+        reply.WriteInt32(AUDIO_OK);
+    else
+        reply.WriteInt32(AUDIO_ERR);
+}
+
+void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t streamId = data.ReadInt32();
+    float volume = GetLowPowerVolume(streamId);
+    reply.WriteFloat(volume);
+}
+
 void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
@@ -512,18 +530,18 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
-void AudioPolicyManagerStub::PausedOrResumeStreamInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrResumeStreamInternal change info internal entered");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal entered");
 
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
 
-    int32_t result = PausedOrResumeStream(clientUid, streamSetState, streamType);
+    int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
     reply.WriteInt32(result);
 
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:PausedOrResumeStreamInternal change info internal exit");
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal exit");
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
@@ -701,9 +719,17 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_CAPTURER_CHANGE_INFOS:
             GetCapturerChangeInfosInternal(data, reply);
             break;
+
+        case UPDATE_STREAM_STATE:
+            UpdateStreamStateInternal(data, reply);
+            break;
+
+        case SET_LOW_POWER_STREM_VOLUME:
+            SetLowPowerVolumeInternal(data, reply);
+            break;
             
-        case PAUSED_OR_RECOVERY_STREAM:
-            PausedOrResumeStreamInternal(data, reply);
+        case GET_LOW_POWRR_STREM_VOLUME:
+            GetLowPowerVolumeInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
