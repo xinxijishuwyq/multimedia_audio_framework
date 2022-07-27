@@ -35,14 +35,14 @@ public:
     enum AudioClientTrackerMsg {
         ON_ERROR = 0,
         ON_INIT,
-        PAUSEDSTREAM,
-        RESUMESTREAM,
         SETLOWPOWERVOL,
         GETLOWPOWERVOL,
+        PAUSEDSTREAM,
+        RESUMESTREAM,
     }
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardClientTracker");
-};
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // I_STANDARD_CLIENT_TRACKER_H

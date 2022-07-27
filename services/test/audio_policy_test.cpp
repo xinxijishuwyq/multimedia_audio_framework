@@ -216,13 +216,13 @@ static void HandleUpdateStreamState(int type, char *seg1)
         return;
     }
 
-    StreamSetState sate = StreamSetState::Stream_Pause;
+    StreamSetState sate = StreamSetState::STREAM_PAUSE;
     AudioStreamType stype = AudioStreamType::STREAM_MEDIA;
     int32_t result = 0;
     if (type == 0) {
         cout << "type :: Stream_Pause :: " << type << endl;
     } else {
-        sate = StreamSetState::Stream_Resume;
+        sate = StreamSetState::STREAM_RESUME;
         cout << "type :: Stream_Resume :: " << type << endl;
     }
     result = audioSystemMgr->UpdateStreamState(uid, sate, stype);
