@@ -115,11 +115,10 @@ void AudioStreamEventDispatcher::HandleRendererStreamStateChange(
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
         std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCb = it->second;
         if (rendererStateChangeCb == nullptr) {
-            rendererCBMap_.erase(it->first);
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
+            it = rendererCBMap_.erase(it);
             continue;
         }
-        AUDIO_DEBUG_LOG("rendererStateChangeCb : client = %{public}d", it->first);
         rendererStateChangeCb->OnRendererStateChange(streamStateChangeRequest->audioRendererChangeInfos);
     }
 }
@@ -131,11 +130,10 @@ void AudioStreamEventDispatcher::HandleCapturerStreamStateChange(
     for (auto it = capturerCBMap_.begin(); it != capturerCBMap_.end(); ++it) {
         std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCb = it->second;
         if (capturerStateChangeCb == nullptr) {
-            capturerCBMap_.erase(it->first);
             AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
+            it = capturerCBMap_.erase(it);
             continue;
         }
-        AUDIO_DEBUG_LOG("capturerStateChangeCb : client = %{public}d", it->first);
         capturerStateChangeCb->OnCapturerStateChange(streamStateChangeRequest->audioCapturerChangeInfos);
     }
 }
