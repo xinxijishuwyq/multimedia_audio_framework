@@ -83,7 +83,7 @@ ohos_shared_library("audio_client") {
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
