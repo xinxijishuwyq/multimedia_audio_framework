@@ -109,7 +109,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
         appInfo_.appPid = getpid();
     }
 
-    if (!(appInfo_.appUid)) {
+    if (appInfo_.appUid < 0) {
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
 
@@ -182,12 +182,12 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
-
-    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Success");
     if (ret) {
         AUDIO_ERR_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
         return ret;
     }
+
+    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Success");
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID Failed");
