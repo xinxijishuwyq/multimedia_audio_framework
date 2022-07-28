@@ -152,8 +152,8 @@ HWTEST_P(AudioPolicySetVolumeTest, SetVolume, TestSize.Level1)
 {
     PolicyParam params = GetParam();
 
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(params.streamType);
     float volume = params.volume;
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
 }
@@ -172,8 +172,8 @@ class AudioPolicyGetVolumeTest : public AudioPolicyTest {};
 HWTEST_P(AudioPolicyGetVolumeTest, GetVolume, TestSize.Level1)
 {
     PolicyParam params = GetParam();
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(params.streamType);
     float volume = params.volume;
 
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
@@ -194,8 +194,8 @@ class AudioPolicySetMuteTest : public AudioPolicyTest {};
 HWTEST_P(AudioPolicySetMuteTest, SetMute, TestSize.Level1)
 {
     PolicyParam params = GetParam();
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(params.streamType);
     bool mute = params.mute;
 
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetMute(volumeType, mute));
@@ -325,16 +325,16 @@ class AudioPolicyVolumeRangeTest : public AudioPolicyTest {};
 HWTEST_P(AudioPolicyVolumeRangeTest, GetMaxVolume, TestSize.Level1)
 {
     PolicyParam params = GetParam();
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(params.streamType);
     EXPECT_EQ(15, AudioSystemManager::GetInstance()->GetMaxVolume(volumeType));
 }
 
 HWTEST_P(AudioPolicyVolumeRangeTest, GetMinVolume, TestSize.Level1)
 {
     PolicyParam params = GetParam();
-    AudioSystemManager::AudioVolumeType volumeType
-        = static_cast<AudioSystemManager::AudioVolumeType>(params.streamType);
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(params.streamType);
     EXPECT_EQ(0, AudioSystemManager::GetInstance()->GetMinVolume(volumeType));
 }
 

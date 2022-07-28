@@ -26,7 +26,7 @@ AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
 {
 }
 
-int32_t AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioManagerProxy::GetMaxVolume(AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -47,7 +47,7 @@ int32_t AudioManagerProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volu
     return volume;
 }
 
-int32_t AudioManagerProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioManagerProxy::GetMinVolume(AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;

@@ -206,7 +206,7 @@ DeviceType AudioSystemManager::GetActiveInputDevice()
     return AudioPolicyManager::GetInstance().GetActiveInputDevice();
 }
 
-bool AudioSystemManager::IsStreamActive(AudioSystemManager::AudioVolumeType volumeType) const
+bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -258,7 +258,7 @@ uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole 
     return g_sProxy->GetTransactionId(deviceType, deviceRole);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volumeType, int32_t volume) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
 
@@ -300,7 +300,7 @@ int32_t AudioSystemManager::SetVolume(AudioSystemManager::AudioVolumeType volume
     return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioSystemManager::AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -357,7 +357,7 @@ int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
     return nearbyint(value);
 }
 
-int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 {
     if (!IsAlived()) {
         CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume service unavailable");
@@ -368,7 +368,7 @@ int32_t AudioSystemManager::GetMaxVolume(AudioSystemManager::AudioVolumeType vol
     return g_sProxy->GetMaxVolume(volumeType);
 }
 
-int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 {
     if (!IsAlived()) {
         CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume service unavailable");
@@ -379,7 +379,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioSystemManager::AudioVolumeType vol
     return g_sProxy->GetMinVolume(volumeType);
 }
 
-int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeType, bool mute) const
+int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetMute for volumeType=%{public}d", volumeType);
     switch (volumeType) {
@@ -413,7 +413,7 @@ int32_t AudioSystemManager::SetMute(AudioSystemManager::AudioVolumeType volumeTy
     return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute);
 }
 
-bool AudioSystemManager::IsStreamMute(AudioSystemManager::AudioVolumeType volumeType) const
+bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
 
@@ -536,14 +536,14 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
 
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
-int32_t AudioSystemManager::SetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType,
+int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,
                                                     const std::shared_ptr<AudioManagerCallback> &callback)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetAudioManagerCallback stub implementation");
     return SUCCESS;
 }
 
-int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioSystemManager::AudioVolumeType streamType) const
+int32_t AudioSystemManager::UnsetAudioManagerCallback(const AudioVolumeType streamType) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager UnsetAudioManagerCallback stub implementation");
     return SUCCESS;

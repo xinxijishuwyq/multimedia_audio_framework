@@ -38,7 +38,7 @@ void AudioManagerFuzzTest(const uint8_t* data, size_t size)
         return;
     }
 
-    AudioSystemManager::AudioVolumeType type = *reinterpret_cast<const AudioSystemManager::AudioVolumeType *>(data);
+    AudioVolumeType type = *reinterpret_cast<const AudioVolumeType *>(data);
     int32_t volume = *reinterpret_cast<const int32_t *>(data);
     AudioSystemManager::GetInstance()->SetVolume(type, volume);
     AudioSystemManager::GetInstance()->GetVolume(type);

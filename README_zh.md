@@ -180,7 +180,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 #### 音量控制
 2. 使用 **GetMaxVolume** 和  **GetMinVolume** 接口去查询音频流支持的最大和最小音量等级，在此范围内设置音量。
     ```
-    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+    AudioVolumeType streamType = AudioVolumeType::STREAM_MUSIC;
     int32_t maxVol = audioSystemMgr->GetMaxVolume(streamType);
     int32_t minVol = audioSystemMgr->GetMinVolume(streamType);
     ```

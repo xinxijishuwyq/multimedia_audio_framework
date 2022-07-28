@@ -229,8 +229,14 @@ enum AudioStreamType {
     /**
      * Indicates special scene used for recording.
      */
-    STREAM_RECORDING = 13
+    STREAM_RECORDING = 13,
+    /**
+     * Indicates audio streams used for only one volume bar of a device.
+     */
+    STREAM_ALL = 100
 };
+
+typedef AudioStreamType AudioVolumeType;
 
 enum FocusType {
     /**

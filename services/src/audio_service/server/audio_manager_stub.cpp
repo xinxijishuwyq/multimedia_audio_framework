@@ -35,8 +35,8 @@ int AudioManagerStub::OnRemoteRequest(
             AUDIO_DEBUG_LOG("GET_MAX_VOLUME AudioManagerStub");
             int volumeType = data.ReadInt32();
             AUDIO_DEBUG_LOG("GET_MAX_VOLUME volumeType received from client= %{public}d", volumeType);
-            AudioSystemManager::AudioVolumeType volumeStreamConfig =
-                   static_cast<AudioSystemManager::AudioVolumeType>(volumeType);
+            AudioVolumeType volumeStreamConfig =
+                   static_cast<AudioVolumeType>(volumeType);
             AUDIO_DEBUG_LOG("GET_MAX_VOLUME volumeType= %{public}d", volumeStreamConfig);
             int32_t ret = GetMaxVolume(volumeStreamConfig);
             reply.WriteInt32(ret);
@@ -46,8 +46,8 @@ int AudioManagerStub::OnRemoteRequest(
             AUDIO_DEBUG_LOG("GET_MIN_VOLUME AudioManagerStub");
             int volumeType = data.ReadInt32();
             AUDIO_DEBUG_LOG("GET_MIN_VOLUME volumeType received from client= %{public}d", volumeType);
-            AudioSystemManager::AudioVolumeType volumeStreamConfig =
-                   static_cast<AudioSystemManager::AudioVolumeType>(volumeType);
+            AudioVolumeType volumeStreamConfig =
+                   static_cast<AudioVolumeType>(volumeType);
             AUDIO_DEBUG_LOG("GET_MIN_VOLUME volumeType= %{public}d", volumeStreamConfig);
             int32_t ret = GetMinVolume(volumeStreamConfig);
             reply.WriteInt32(ret);
