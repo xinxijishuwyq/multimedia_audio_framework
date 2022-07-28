@@ -121,7 +121,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType) override;
+        AudioStreamType audioStreamType) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

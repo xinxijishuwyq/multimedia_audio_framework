@@ -533,14 +533,12 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
 void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal entered");
-
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-
+    
     int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
     reply.WriteInt32(result);
-
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal exit");
 }
 
@@ -731,6 +729,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_LOW_POWRR_STREM_VOLUME:
             GetLowPowerVolumeInternal(data, reply);
             break;
+
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

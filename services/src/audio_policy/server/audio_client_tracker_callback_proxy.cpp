@@ -33,7 +33,6 @@ void AudioClientTrackerCallbackProxy::PausedStreamImpl(
 
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
-
     int error = Remote()->SendRequest(PAUSEDSTREAM, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("PausedStreamImpl failed, error: %{public}d", error);
@@ -50,10 +49,9 @@ void AudioClientTrackerCallbackProxy::ResumeStreamImpl(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: ResumeStreamImpl WriteInterfaceToken failed");
         return;
     }
-
+    
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
-
     int error = Remote()->SendRequest(RESUMESTREAM, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("ResumeStreamImpl failed, error: %{public}d", error);
