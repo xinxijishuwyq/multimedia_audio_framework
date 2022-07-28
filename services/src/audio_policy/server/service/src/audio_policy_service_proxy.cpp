@@ -25,12 +25,12 @@ AudioPolicyServiceProxy::AudioPolicyServiceProxy(const sptr<IRemoteObject> &impl
 {
 }
 
-int32_t AudioPolicyServiceProxy::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioPolicyServiceProxy::GetMaxVolume(AudioVolumeType volumeType)
 {
     return 0;
 }
 
-int32_t AudioPolicyServiceProxy::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioPolicyServiceProxy::GetMinVolume(AudioVolumeType volumeType)
 {
     return 0;
 }

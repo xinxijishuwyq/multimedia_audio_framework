@@ -309,7 +309,7 @@ You can use the APIs provided in [**audio_system_manager.h**](https://gitee.com/
 #### Volume Control
 2. Use **GetMaxVolume** and  **GetMinVolume** APIs to query the Maximum & Minimum volume level allowed for the stream. Use this volume range to set the volume.
     ```
-    AudioSystemManager::AudioVolumeType streamType = AudioSystemManager::AudioVolumeType::STREAM_MUSIC;
+    AudioVolumeType streamType = AudioVolumeType::STREAM_MUSIC;
     int32_t maxVol = audioSystemMgr->GetMaxVolume(streamType);
     int32_t minVol = audioSystemMgr->GetMinVolume(streamType);
     ```

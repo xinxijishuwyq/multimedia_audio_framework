@@ -63,6 +63,10 @@ static void PrintUsage(void)
     cout << "-r\n\tGets RingerMode status" << endl << endl;
     cout << "-C\n\tSets AudioScene" << endl << endl;
     cout << "-c\n\tGets AudioScene status" << endl << endl;
+    cout << "-N\n\tSet the discount volume factor to 0" << endl << endl;
+    cout << "-O\n\tSet the discount volume factor to 0.5f" << endl << endl;
+    cout << "-P\n\tSet the discount volume factor to 1.0f" << endl << endl;
+    cout << "-G\n\tGet the discount volume factor" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
@@ -72,12 +76,12 @@ static void HandleVolume(int streamType, char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     if (option == 'v') {
-        float volume = audioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
+        float volume = audioSystemMgr->GetVolume(static_cast<AudioVolumeType>(streamType));
         cout << "Get Volume : " << volume << endl;
     } else {
         float volume = strtof(optarg, nullptr);
         cout << "Set Volume : " << volume << endl;
-        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
+        int32_t result = audioSystemMgr->SetVolume(static_cast<AudioVolumeType>(streamType),
                                                    volume);
         cout << "Set Volume Result: " << result << endl;
     }
@@ -87,12 +91,12 @@ static void HandleMute(int streamType, char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     if (option == 'm') {
-        bool muteStatus = audioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType));
+        bool muteStatus = audioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(streamType));
         cout << "Get Mute : " << muteStatus << endl;
     } else {
         int mute = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
         cout << "Set Mute : " << mute << endl;
-        int32_t result = audioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(streamType),
+        int32_t result = audioSystemMgr->SetMute(static_cast<AudioVolumeType>(streamType),
             (mute) ? true : false);
         cout << "Set Mute Result: " << result << endl;
     }
@@ -123,7 +127,7 @@ static void IsStreamActive()
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     int streamType = strtol(optarg, nullptr, AudioPolicyTest::OPT_ARG_BASE);
     cout << "Stream Active: " << audioSystemMgr->IsStreamActive(
-        static_cast<AudioSystemManager::AudioVolumeType>(streamType)) << endl;
+        static_cast<AudioVolumeType>(streamType)) << endl;
 }
 
 static void SetDeviceActive(int argc, char *argv[])
@@ -233,13 +237,27 @@ static void HandleLowPowerVolumeOption(char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     int32_t streamId = stoi(optarg);
-    if (option == 'L') {
-        cout << "set low power volume" << endl;
-        audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
-    } else {
-        cout << "Get low power volume" << endl;
-        float volume = audioSystemMgr->GetLowPowerVolume(streamId);
-        cout << "low power volume is: " << volume << endl;
+    switch (option) {
+        case 'N':
+            audioSystemMgr->SetLowPowerVolume(streamId, 0);
+            cout << "Set low power volume 0" << endl;
+            break;
+        case 'O':
+            audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
+            cout << "Set low power volume 0.5" << endl;
+            break;
+        case 'P':
+            audioSystemMgr->SetLowPowerVolume(streamId, 1.0f);
+            cout << "Set low power volume 1.0" << endl;
+            break;
+        case 'G': {
+            float volume = audioSystemMgr->GetLowPowerVolume(streamId);
+            cout << "Get low power volume is: " << volume << endl;
+            break;
+        }
+        default :
+            cout << "This operation is not supported" << endl;
+            break;
     }
 }
 
@@ -252,8 +270,8 @@ int main(int argc, char* argv[])
         return ERR_INVALID_PARAM;
     }
 
-    int streamType = static_cast<int32_t>(AudioSystemManager::AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:vmruc")) != -1) {
+    int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:N:O:P:G:vmruc")) != -1) {
         switch (opt) {
             case 'V':
             case 'v':
@@ -287,14 +305,17 @@ int main(int argc, char* argv[])
             case 'c':
                 HandleAudioScene(opt);
                 break;
+
             case 'X':
                 HandleUpdateStreamState(0, optarg);
                 break;
             case 'Z':
                 HandleUpdateStreamState(1, optarg);
                 break;
-            case 'L':
-            case 'l':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'G':
                 HandleLowPowerVolumeOption(opt);
                 break;
             case ':':

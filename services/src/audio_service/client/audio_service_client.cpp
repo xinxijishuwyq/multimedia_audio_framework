@@ -592,24 +592,15 @@ AudioServiceClient::~AudioServiceClient()
 void AudioServiceClient::SetEnv()
 {
     AUDIO_INFO_LOG("SetEnv called");
-    int ret = 0;
-    const char *env_home_pa = getenv("HOME");
-    if (!env_home_pa) {
-        ret = setenv("HOME", PA_HOME_DIR, 1);
-        AUDIO_INFO_LOG("set env HOME: %{public}d", ret);
-    }
 
-    const char *env_runtime_pa = getenv("PULSE_RUNTIME_PATH");
-    if (!env_runtime_pa) {
-        ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
-        AUDIO_INFO_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
-    }
+    int ret = setenv("HOME", PA_HOME_DIR, 1);
+    AUDIO_DEBUG_LOG("set env HOME: %{public}d", ret);
 
-    const char *env_state_pa = getenv("PULSE_STATE_PATH");
-    if (!env_state_pa) {
-        ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
-        AUDIO_INFO_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
-    }
+    ret = setenv("PULSE_RUNTIME_PATH", PA_RUNTIME_DIR, 1);
+    AUDIO_DEBUG_LOG("set env PULSE_RUNTIME_DIR: %{public}d", ret);
+
+    ret = setenv("PULSE_STATE_PATH", PA_STATE_DIR, 1);
+    AUDIO_DEBUG_LOG("set env PULSE_STATE_PATH: %{public}d", ret);
 }
 
 void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
@@ -2106,7 +2097,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
     int32_t systemVolumeInt
-        = client.mAudioSystemMgr->GetVolume(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType));
+        = client.mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(client.mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
     float vol = systemVolume * client.mVolumeFactor * client.mPowerVolumeFactor;
 
@@ -2115,9 +2106,9 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         vol = MIN_STREAM_VOLUME_LEVEL;
     }
 
-    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType))) {
+    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(client.mStreamType))) {
         if (client.mUnMute_) {
-            client.mAudioSystemMgr->SetMute(static_cast<AudioSystemManager::AudioVolumeType>(client.mStreamType),
+            client.mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(client.mStreamType),
                 false);
         } else {
             vol = MIN_STREAM_VOLUME_LEVEL;

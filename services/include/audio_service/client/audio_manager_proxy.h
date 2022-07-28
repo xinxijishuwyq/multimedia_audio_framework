@@ -26,8 +26,8 @@ class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
 public:
     explicit AudioManagerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioManagerProxy() = default;
-    int32_t GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType) override;
-    int32_t GetMinVolume(AudioSystemManager::AudioVolumeType volumeType) override;
+    int32_t GetMaxVolume(AudioVolumeType volumeType) override;
+    int32_t GetMinVolume(AudioVolumeType volumeType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
