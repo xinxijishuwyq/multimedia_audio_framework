@@ -175,13 +175,13 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     return transactionId;
 }
 
-int32_t AudioServer::GetMaxVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioServer::GetMaxVolume(AudioVolumeType volumeType)
 {
     AUDIO_DEBUG_LOG("GetMaxVolume server");
     return MAX_VOLUME;
 }
 
-int32_t AudioServer::GetMinVolume(AudioSystemManager::AudioVolumeType volumeType)
+int32_t AudioServer::GetMinVolume(AudioVolumeType volumeType)
 {
     AUDIO_DEBUG_LOG("GetMinVolume server");
     return MIN_VOLUME;

@@ -120,28 +120,28 @@ void AudioManagerNapi::Destructor(napi_env env, void *nativeObject, void *finali
     }
 }
 
-static AudioSystemManager::AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
+static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
 {
-    AudioSystemManager::AudioVolumeType result = AudioSystemManager::STREAM_MUSIC;
+    AudioVolumeType result = STREAM_MUSIC;
 
     switch (volumeType) {
         case AudioManagerNapi::RINGTONE:
-            result = AudioSystemManager::STREAM_RING;
+            result = STREAM_RING;
             break;
         case AudioManagerNapi::MEDIA:
-            result = AudioSystemManager::STREAM_MUSIC;
+            result = STREAM_MUSIC;
             break;
         case AudioManagerNapi::VOICE_CALL:
-            result = AudioSystemManager::STREAM_VOICE_CALL;
+            result = STREAM_VOICE_CALL;
             break;
         case AudioManagerNapi::VOICE_ASSISTANT:
-            result = AudioSystemManager::STREAM_VOICE_ASSISTANT;
+            result = STREAM_VOICE_ASSISTANT;
             break;
         case AudioManagerNapi::ALL:
-            result = AudioSystemManager::STREAM_ALL;
+            result = STREAM_ALL;
             break;
         default:
-            result = AudioSystemManager::STREAM_MUSIC;
+            result = STREAM_MUSIC;
             HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
             break;
     }
