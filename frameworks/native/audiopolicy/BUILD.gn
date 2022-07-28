@@ -79,10 +79,10 @@ ohos_executable("audio_policy_test") {
   configs = [ ":audio_policy_public_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
-    "//utils/native/base:utils",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//third_party/bounds_checking_function:libsec_static",
+    "//utils/native/base:utils",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

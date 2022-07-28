@@ -47,7 +47,8 @@ public:
     std::vector<uint32_t> getTargetSinks(std::string adapterName) override;
     int32_t SetLocalDefaultSink(std::string name) override;
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
-    int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName) override;
+    int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
+        uint32_t sourceIndex, std::string sourceName) override;
 
     // Static Member functions
     static void PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
@@ -86,7 +87,6 @@ private:
     pa_threaded_mainloop *mMainLoop = NULL;
     static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
     std::mutex mMutex;
-    //std::mutex routerMutex;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

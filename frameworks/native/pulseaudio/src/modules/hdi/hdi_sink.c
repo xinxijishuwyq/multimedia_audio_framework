@@ -106,7 +106,8 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = u->sinkAdapter->RendererRenderFrame(u->sinkAdapter->wapper, (char *)p + index, (uint64_t)length, &writeLen);
+        int32_t ret = u->sinkAdapter->RendererRenderFrame(u->sinkAdapter->wapper, ((char *)p + index),
+            (uint64_t)length, &writeLen);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
@@ -115,7 +116,7 @@ static ssize_t RenderWrite(struct Userdata *u, pa_memchunk *pchunk)
         }
         if (writeLen == 0) {
             AUDIO_ERR_LOG("Failed to render Length: %{public}zu, Written: %{public}" PRIu64 " bytes, %{public}d ret",
-                         length, writeLen, ret);
+                length, writeLen, ret);
             count = -1 - count;
             break;
         } else {
@@ -154,7 +155,8 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = u->sinkAdapter->RendererRenderFrame(u->sinkAdapter->wapper, (char *)p + index, (uint64_t)length, &writeLen);
+        int32_t ret = u->sinkAdapter->RendererRenderFrame(u->sinkAdapter->wapper, ((char *)p + index),
+            (uint64_t)length, &writeLen);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);
@@ -411,7 +413,7 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             return 0;
         }
 
-        AUDIO_INFO_LOG("Restarting HDI rendering device with rate:%{public}d,channels:%{public}d", u->ss.rate, u->ss.channels);
+        AUDIO_INFO_LOG("Restart with rate:%{public}d,channels:%{public}d", u->ss.rate, u->ss.channels);
         if (u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper)) {
             AUDIO_ERR_LOG("audiorenderer control start failed!");
             u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter->wapper);
@@ -516,8 +518,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     }
 
     AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d",
-                    u->ss.rate,
-                    u->ss.channels);
+        u->ss.rate, u->ss.channels);
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
@@ -530,9 +531,10 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     pa_sink_new_data_set_name(&data, pa_modargs_get_value(ma, "sink_name", DEFAULT_SINK_NAME));
     pa_sink_new_data_set_sample_spec(&data, &u->ss);
     pa_sink_new_data_set_channel_map(&data, &u->map);
-    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, (u->adapterName ? u->adapterName : DEFAULT_AUDIO_DEVICE_NAME));
+    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING,
+        (u->adapterName ? u->adapterName : DEFAULT_AUDIO_DEVICE_NAME));
     pa_proplist_setf(data.proplist, PA_PROP_DEVICE_DESCRIPTION, "HDI sink is %s",
-                     (u->adapterName ? u->adapterName : DEFAULT_AUDIO_DEVICE_NAME));
+        (u->adapterName ? u->adapterName : DEFAULT_AUDIO_DEVICE_NAME));
 
     if (pa_modargs_get_proplist(ma, "sink_properties", data.proplist, PA_UPDATE_REPLACE) < 0) {
         AUDIO_ERR_LOG("Invalid properties");
@@ -574,8 +576,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     AUDIO_DEBUG_LOG("Load sink adapter");
     int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
-                                  pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
-                                  &u->sinkAdapter);
+        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), &u->sinkAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;

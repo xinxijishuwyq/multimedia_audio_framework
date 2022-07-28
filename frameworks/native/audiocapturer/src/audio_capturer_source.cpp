@@ -445,7 +445,7 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene, DeviceType act
 {
     AUDIO_INFO_LOG("AudioCapturerSource::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
-                             ERR_INVALID_PARAM, "invalid audioScene");
+        ERR_INVALID_PARAM, "invalid audioScene");
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("AudioCapturerSource::SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;

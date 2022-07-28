@@ -179,13 +179,13 @@ public:
      */
     virtual void Disconnect() = 0;
 
-
     /**
      * @brief Move one stream to target source.
      *
      * @return int32_t the result.
      */
-    virtual int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName) = 0;
+    virtual int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
+        uint32_t sourceIndex, std::string sourceName) = 0;
 
     /**
      * @brief Move one stream to target sink.

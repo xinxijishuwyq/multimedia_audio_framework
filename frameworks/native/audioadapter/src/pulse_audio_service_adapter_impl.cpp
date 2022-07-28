@@ -247,14 +247,13 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
     const char *adapterCStr = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_STRING);
     AUDIO_DEBUG_LOG("[PaGetSinksCb] sink (%{public}d) device[%{public}s]", i->index, adapterCStr);
     std::string sinkDeviceName(adapterCStr);
-    if (!adapterName.empty() && adapterName == sinkDeviceName) {
+    if (!adapterName.empty() && (adapterName == sinkDeviceName)) {
         userData->sinkIds.push_back(i->index);
     }
 }
 
 std::vector<uint32_t> PulseAudioServiceAdapterImpl::getTargetSinks(std::string adapterName)
 {
-    //lock_guard<mutex> lock(routerMutex); // do we need lock here?
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->adapterName = adapterName;
@@ -291,18 +290,15 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 
     std::string remoteDevice = "remote";
     std::vector<uint32_t> remoteSinks = getTargetSinks(remoteDevice);
-    // filter sink-inputs which are not connected with remote sinks.
 
+    // filter sink-inputs which are not connected with remote sinks.
     for (auto sinkInput : allSinkInputs) {
         uint32_t sink = sinkInput.deviceSinkId;
         if (std::find(remoteSinks.begin(), remoteSinks.end(), sink) != remoteSinks.end()) {
             AUDIO_INFO_LOG("[SetLocalDefaultSink] sink-input[%{public}d] connects with remote device[%{public}d]",
-                           sinkInput.paStreamId,
-                           sinkInput.deviceSinkId);
+                sinkInput.paStreamId, sinkInput.deviceSinkId);
             continue;
-        }
-        else
-        {
+        } else {
             uint32_t invalidSinkId = PA_INVALID_INDEX;
             MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
         }
@@ -311,7 +307,8 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
     return SUCCESS;
 }
 
-int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
+int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex,
+    std::string sinkName)
 {
     lock_guard<mutex> lock(mMutex);
 
@@ -325,17 +322,11 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
     pa_threaded_mainloop_lock(mMainLoop);
     pa_operation *operation = nullptr;
     if (sinkName.empty()) {
-        operation = pa_context_move_sink_input_by_index(mContext,
-                                                        sinkInputId,
-                                                        sinkIndex,
-                                                        PulseAudioServiceAdapterImpl::PaMoveSinkInputCb,
-                                                        reinterpret_cast<void *>(userData.get()));
+        operation = pa_context_move_sink_input_by_index(mContext, sinkInputId, sinkIndex,
+            PulseAudioServiceAdapterImpl::PaMoveSinkInputCb, reinterpret_cast<void *>(userData.get()));
     } else {
-        operation = pa_context_move_sink_input_by_name(mContext,
-                                                       sinkInputId,
-                                                       sinkName.c_str(),
-                                                       PulseAudioServiceAdapterImpl::PaMoveSinkInputCb,
-                                                       reinterpret_cast<void *>(userData.get()));
+        operation = pa_context_move_sink_input_by_name(mContext, sinkInputId, sinkName.c_str(),
+            PulseAudioServiceAdapterImpl::PaMoveSinkInputCb, reinterpret_cast<void *>(userData.get()));
     }
 
     if (operation == nullptr) {
@@ -350,12 +341,13 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
     pa_threaded_mainloop_unlock(mMainLoop);
 
     int result = userData->moveResult;
-    AUDIO_DEBUG_LOG("move result:[%{public}d]", result); // todo: return the result
+    AUDIO_DEBUG_LOG("move result:[%{public}d]", result);
 
     return SUCCESS;
 }
 
-int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
+int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex,
+    std::string sourceName)
 {
     lock_guard<mutex> lock(mMutex);
 
@@ -369,17 +361,11 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     pa_threaded_mainloop_lock(mMainLoop);
     pa_operation *operation = nullptr;
     if (sourceName.empty()) {
-        operation = pa_context_move_source_output_by_index(mContext,
-                                                        sourceOutputId,
-                                                        sourceIndex,
-                                                        PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb,
-                                                        reinterpret_cast<void *>(userData.get()));
+        operation = pa_context_move_source_output_by_index(mContext, sourceOutputId, sourceIndex,
+            PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb, reinterpret_cast<void *>(userData.get()));
     } else {
-        operation = pa_context_move_source_output_by_name(mContext,
-                                                       sourceOutputId,
-                                                       sourceName.c_str(),
-                                                       PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb,
-                                                       reinterpret_cast<void *>(userData.get()));
+        operation = pa_context_move_source_output_by_name(mContext, sourceOutputId, sourceName.c_str(),
+            PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb, reinterpret_cast<void *>(userData.get()));
     }
 
     if (operation == nullptr) {
@@ -394,7 +380,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     pa_threaded_mainloop_unlock(mMainLoop);
 
     int result = userData->moveResult;
-    AUDIO_DEBUG_LOG("move result:[%{public}d]", result); // todo: return the result
+    AUDIO_DEBUG_LOG("move result:[%{public}d]", result);
 
     return SUCCESS;
 }
@@ -922,7 +908,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
 }
 
 template <typename T>
-inline void castValue(T &a, const char *raw)
+inline void CastValue(T &a, const char *raw)
 {
     if (raw == nullptr) {
         return;
@@ -975,9 +961,9 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
 
     sinkInput.deviceSinkId = i->sink;
     sinkInput.paStreamId = i->index;
-    castValue<int32_t>(sinkInput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
-    castValue<int32_t>(sinkInput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
-    castValue<uint64_t>(sinkInput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));
+    CastValue<int32_t>(sinkInput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
+    CastValue<int32_t>(sinkInput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
+    CastValue<uint64_t>(sinkInput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));
 
     userData->sinkInputList.push_back(sinkInput);
 }
@@ -991,7 +977,7 @@ void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const 
 
     if (eol < 0) {
         AUDIO_ERR_LOG("[PaGetAllSourceOutputsCb] Failed to get source output information: %{public}s",
-                        pa_strerror(pa_context_errno(c)));
+            pa_strerror(pa_context_errno(c)));
         return;
     }
 
@@ -1025,9 +1011,9 @@ void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const 
 
     sourceOutput.paStreamId = i->index;
     sourceOutput.deviceSourceId = i->source;
-    castValue<int32_t>(sourceOutput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
-    castValue<int32_t>(sourceOutput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
-    castValue<uint64_t>(sourceOutput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));
+    CastValue<int32_t>(sourceOutput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
+    CastValue<int32_t>(sourceOutput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
+    CastValue<uint64_t>(sourceOutput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));
     userData->sourceOutputList.push_back(sourceOutput);
 }
 

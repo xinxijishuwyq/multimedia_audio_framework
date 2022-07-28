@@ -38,7 +38,7 @@ namespace AudioPolicyTest {
     const int SEVENTH_ARG = 7;
     const int EIGHTH_ARG = 8;
     const int NINTH_ARG = 9;
-    const int TENTH_ARG =10;
+    const int TENTH_ARG = 10;
     const int ELEVENTH_ARG = 11;
     const int TWELFTH_ARG = 12;
     const int OPT_ARG_BASE = 10;
@@ -86,8 +86,7 @@ static void PrintUsage(void)
 static void ShowAudioDeviceDescriptorsVector(std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
     int vectorLen = audioDeviceDescriptorsVector.size();
-    for (int i = 0; i < vectorLen; i ++)
-    {
+    for (int i = 0; i < vectorLen; i ++) {
         cout << "------------show Audio Device Descriptors Vector------------" << endl;
         cout << "deviceRole: "       << audioDeviceDescriptorsVector[i]->deviceRole_ << endl;
         cout << "deviceType: "       << audioDeviceDescriptorsVector[i]->deviceType_ << endl;
@@ -111,8 +110,7 @@ static void ShowAudioRendererFilter(sptr<AudioRendererFilter> audioRendererFilte
 static void HandleGetDevices(int argc, char *argv[], char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    if ((option != 'g' && option != 'G') || argc != AudioPolicyTest::THIRD_ARG)
-    {
+    if ((option != 'g' && option != 'G') || argc != AudioPolicyTest::THIRD_ARG) {
         cout << "GetDevices invalid argv["<< argc <<"] "<< endl;
     }
     cout << "GetDevices() flag: " << argv[AudioPolicyTest::SECOND_ARG] << endl;
@@ -124,27 +122,24 @@ static void HandleGetDevices(int argc, char *argv[], char option)
     ShowAudioDeviceDescriptorsVector(audioDeviceDescriptorsVector);
 }
 
-
-static void CallSelectOutputDevice(char option,std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,sptr<AudioRendererFilter> audioRendererFilter)
+static void CallSelectOutputDevice(char option, std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
+    sptr<AudioRendererFilter> audioRendererFilter)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    if (option == 'o')
-    {
+    if (option == 'o') {
         int result = audioSystemMgr->SelectOutputDevice(audioDeviceDescriptorsVector);
         cout << "SelectOutputDevice Result: " << result << endl;
-    }
-    else
-    {
-        int result = audioSystemMgr->SelectOutputDevice(audioRendererFilter,audioDeviceDescriptorsVector);
+    } else {
+        int result = audioSystemMgr->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptorsVector);
         cout << "SelectOutputDevice by filter Result: " << result << endl;
     }
 }
 
-static void CreateAudioDeviceDescriptorVector(char* argv[],std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
+static void CreateAudioDeviceDescriptorVector(char *argv[],
+    std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector)
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-    int32_t intValue;
-    intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    int32_t intValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
     audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
     intValue = atoi(argv[AudioPolicyTest::THIRD_ARG]);
     audioDeviceDescriptor->deviceType_  = static_cast<DeviceType>(intValue);
@@ -159,21 +154,17 @@ static void CreateAudioDeviceDescriptorVector(char* argv[],std::vector<sptr<Audi
 
 static void HandleSelectOutputDevice(int argc, char* argv[], char opt)
 {
-    if (argc == AudioPolicyTest::SEVENTH_ARG)
-    {
+    if (argc == AudioPolicyTest::SEVENTH_ARG) {
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
+        CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
-        CallSelectOutputDevice(opt,audioDeviceDescriptorsVector,nullptr);
-    }
-    else if (argc == AudioPolicyTest::TWELFTH_ARG)
-    {
-        int32_t intValue;
+        CallSelectOutputDevice(opt, audioDeviceDescriptorsVector, nullptr);
+    } else if (argc == AudioPolicyTest::TWELFTH_ARG) {
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
+        CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
         sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-        intValue = atoi(argv[AudioPolicyTest::SEVENTH_ARG]);
+        int32_t intValue = atoi(argv[AudioPolicyTest::SEVENTH_ARG]);
         audioRendererFilter->uid = static_cast<DeviceRole>(intValue);
         intValue = atoi(argv[AudioPolicyTest::EIGHTH_ARG]);
         audioRendererFilter->rendererInfo.contentType = static_cast<ContentType>(intValue);
@@ -184,28 +175,24 @@ static void HandleSelectOutputDevice(int argc, char* argv[], char opt)
         intValue = atoi(argv[AudioPolicyTest::ELEVENTH_ARG]);
         audioRendererFilter->streamId = intValue;
         ShowAudioRendererFilter(audioRendererFilter);
-        CallSelectOutputDevice(opt,audioDeviceDescriptorsVector,audioRendererFilter);
-    }
-    else
-    {
+        CallSelectOutputDevice(opt, audioDeviceDescriptorsVector, audioRendererFilter);
+    } else {
         cout << "------------Please input right arg Num------------" << endl;
         cout << "The arg order: " << endl;
-        cout << "audioDeviceDescriptorsVector(deviceRole, deviceType, networkId, interruptGroupId, volumeGroupId)" << endl;
+        cout << "audioDevice(deviceRole, deviceType, networkId, interruptGroupId, volumeGroupId)" << endl;
         cout << "audioRendererFilter(uid,contentType,streamUsage,rendererFlags,streamId)" << endl;
     }
 }
 
-static void CallSelectInputDevice(char option,std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,sptr<AudioCapturerFilter> audioCapturerFilter)
+static void CallSelectInputDevice(char option, std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptorsVector,
+    sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    if (option == 'i')
-    {
+    if (option == 'i') {
         int result = audioSystemMgr->SelectInputDevice(audioDeviceDescriptorsVector);
         cout << "SelectInputDevice Result: " << result << endl;
-    }
-    else
-    {
-        int result = audioSystemMgr->SelectInputDevice(audioCapturerFilter,audioDeviceDescriptorsVector);
+    } else {
+        int result = audioSystemMgr->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorsVector);
         cout << "SelectInputDevice by filter Result: " << result << endl;
     }
 }
@@ -213,31 +200,25 @@ static void CallSelectInputDevice(char option,std::vector<sptr<AudioDeviceDescri
 
 static void HandleSelectInputDevice(int argc, char* argv[], char opt)
 {
-    if (argc == AudioPolicyTest::SEVENTH_ARG)
-    {
+    if (argc == AudioPolicyTest::SEVENTH_ARG) {
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
+        CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
-        CallSelectInputDevice(opt,audioDeviceDescriptorsVector,nullptr);
-    }
-    else if (argc == AudioPolicyTest::EIGHTH_ARG)
-    {
-        int32_t intValue;
+        CallSelectInputDevice(opt, audioDeviceDescriptorsVector, nullptr);
+    } else if (argc == AudioPolicyTest::EIGHTH_ARG) {
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-        CreateAudioDeviceDescriptorVector(argv,audioDeviceDescriptorsVector);
+        CreateAudioDeviceDescriptorVector(argv, audioDeviceDescriptorsVector);
 
         sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
-        intValue = atoi(argv[AudioPolicyTest::SEVENTH_ARG]);
+        int32_t intValue = atoi(argv[AudioPolicyTest::SEVENTH_ARG]);
         audioCapturerFilter->uid = intValue;
         cout << "------------show Audio Capturer Filter------------" << endl;
         cout << "uid: " << audioCapturerFilter->uid << endl;
-        CallSelectInputDevice(opt,audioDeviceDescriptorsVector,audioCapturerFilter);
-    }
-    else
-    {
+        CallSelectInputDevice(opt, audioDeviceDescriptorsVector, audioCapturerFilter);
+    } else {
         cout << "------------Please input right arg Num------------" << endl;
         cout << "The arg order: " << endl;
-        cout << "audioDeviceDescriptorsVector(deviceRole, deviceType, networkId, interruptGroupId, volumeGroupId)" << endl;
+        cout << "audioDevice(deviceRole, deviceType, networkId, interruptGroupId, volumeGroupId)" << endl;
         cout << "audioCapturerFilter(uid)" << endl;
     }
 }
@@ -445,15 +426,15 @@ int main(int argc, char* argv[])
         switch (opt) {
             case 'G':
             case 'g':
-                HandleGetDevices(argc,argv,opt);
+                HandleGetDevices(argc, argv, opt);
                 break;
             case 'O':
             case 'o':
-                HandleSelectOutputDevice(argc,argv,opt);
+                HandleSelectOutputDevice(argc, argv, opt);
                 break;
             case 'I':
             case 'i':
-                HandleSelectInputDevice(argc,argv,opt);
+                HandleSelectInputDevice(argc, argv, opt);
                 break;
             case 'V':
             case 'v':

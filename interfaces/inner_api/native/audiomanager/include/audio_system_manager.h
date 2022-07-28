@@ -97,7 +97,6 @@ struct DeviceChangeAction {
 
 /**
  * @brief AudioRendererFilter is used for select speficed AudioRenderer.
- * 
  */
 class AudioRendererFilter;
 class AudioRendererFilter : public Parcelable {
@@ -117,7 +116,6 @@ public:
 
 /**
  * @brief AudioCapturerFilter is used for select speficed audiocapturer.
- * 
  */
 class AudioCapturerFilter;
 class AudioCapturerFilter : public Parcelable {
@@ -223,8 +221,10 @@ public:
     int32_t SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     int32_t SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const;
-    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
-    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
     const std::string GetAudioParameter(const std::string key);
     void SetAudioParameter(const std::string &key, const std::string &value);

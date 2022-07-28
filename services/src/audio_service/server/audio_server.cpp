@@ -28,8 +28,6 @@
 
 extern "C" {
 #include "renderer_sink_adapter.h"
-    extern int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter);
-    extern int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
 }
 
 #define PA

@@ -165,7 +165,7 @@ bool AudioRendererFilter::Marshalling(Parcel &parcel) const
 sptr<AudioRendererFilter> AudioRendererFilter::Unmarshalling(Parcel &in)
 {
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    if(audioRendererFilter == nullptr) {
+    if (audioRendererFilter == nullptr) {
         return nullptr;
     }
 
@@ -193,7 +193,7 @@ bool AudioCapturerFilter::Marshalling(Parcel &parcel) const
 sptr<AudioCapturerFilter> AudioCapturerFilter::Unmarshalling(Parcel &in)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
-    if(audioCapturerFilter == nullptr) {
+    if (audioCapturerFilter == nullptr) {
         return nullptr;
     }
 

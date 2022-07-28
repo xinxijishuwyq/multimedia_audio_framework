@@ -397,16 +397,14 @@ void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
         return;
     }
 
-    AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
-    (void)asClient;
-    // pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
-    // informations.
-    uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index() todo
+    // get stream informations.
+    uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
 
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
     int res = pa_stream_is_suspended(stream);
-    AUDIO_DEBUG_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]", deviceIndex, res);
+    AUDIO_INFO_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]",
+        deviceIndex, res);
 }
 
 void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
@@ -800,7 +798,8 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_, mStreamType);
+    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+        mStreamType);
     const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
 
     pa_threaded_mainloop_lock(mainLoop);
@@ -821,10 +820,8 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
-                                            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
-                                            | PA_STREAM_INTERPOLATE_TIMING
-                                            | PA_STREAM_START_CORKED
-                                            | PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
+            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+            PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
         if (preBuf_ == nullptr) {
             AUDIO_ERR_LOG("Allocate memory for buffer failed.");
@@ -832,7 +829,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         }
         memset_s(preBuf_.get(), bufferAttr.maxlength, 0, bufferAttr.maxlength);
     } else {
-        result = pa_stream_connect_record(paStream, nullptr, nullptr, // todo change to deviceName
+        result = pa_stream_connect_record(paStream, nullptr, nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
                                           | PA_STREAM_START_CORKED

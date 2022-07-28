@@ -72,7 +72,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/frameworks/js/napi/ringtone_manager/src/ringtone_options_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/ringtone_manager/src/ringtone_player_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/ringtone_manager/src/system_sound_manager_napi.cpp",
-    ]
+  ]
 
   deps = [
     "${ability_runtime_path}/frameworks/native/ability/native:abilitykit_native",

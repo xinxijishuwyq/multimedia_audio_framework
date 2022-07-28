@@ -52,7 +52,8 @@ struct CapturerSourceAdapter {
     int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
 };
 
-int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, struct CapturerSourceAdapter **sourceAdapter);
+int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId,
+    struct CapturerSourceAdapter **sourceAdapter);
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
 const char *GetDeviceClass(void);
 #ifdef __cplusplus

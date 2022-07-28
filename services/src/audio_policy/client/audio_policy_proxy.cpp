@@ -384,7 +384,8 @@ DeviceType AudioPolicyProxy::GetActiveInputDevice()
     return static_cast<DeviceType>(reply.ReadInt32());
 }
 
-int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -399,8 +400,8 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
         return -1;
     }
     int size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use this value temporarily.
-    if (size <=0 || size > validSize) {
+    int validSize = 20; // Use 20 as limit.
+    if (size <= 0 || size > validSize) {
         AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
         return -1;
     }
@@ -441,7 +442,8 @@ std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, Au
     return reply.ReadString();
 }
 
-int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -456,8 +458,8 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
         return -1;
     }
     int size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use this value temporarily.
-    if (size <=0 || size > validSize) {
+    int validSize = 20; // Use 20 as limit.
+    if (size <= 0 || size > validSize) {
         AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
         return -1;
     }

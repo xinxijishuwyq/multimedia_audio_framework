@@ -19,11 +19,10 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "i_audio_capturer_source.h"
 #include "audio_capturer_source.h"
 #include "audio_capturer_file_source.h"
 #include "remote_audio_capturer_source.h"
-
+#include "i_audio_capturer_source.h"
 using namespace std;
 
 namespace OHOS {
@@ -183,7 +182,7 @@ bool IAudioCapturerSourceIsMuteRequired(void *wapper)
         AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
         return muteStat;
     }
-    iAudioCapturerSource->GetMute(muteStat); // todo: should we return mute flag?
+    iAudioCapturerSource->GetMute(muteStat);
     return muteStat;
 }
 

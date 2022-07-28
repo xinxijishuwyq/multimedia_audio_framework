@@ -226,9 +226,9 @@ void AudioPolicyManagerStub::SelectOutputDeviceInternal(MessageParcel &data, Mes
         return;
     }
 
-    int validSize = 20; // Use 20 temporarily.
+    int validSize = 20; // Use 20 as limit.
     int size = data.ReadInt32();
-    if (size <=0 || size > validSize) {
+    if (size <= 0 || size > validSize) {
         AUDIO_ERR_LOG("SelectOutputDevice get invalid device size.");
         return;
     }
@@ -264,9 +264,9 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
         return;
     }
 
-    int validSize = 10; // Use this value temporarily.
+    int validSize = 10; // Use 10 as limit.
     int size = data.ReadInt32();
-    if (size <=0 || size > validSize) {
+    if (size <= 0 || size > validSize) {
         AUDIO_ERR_LOG("SelectInputDevice get invalid device size.");
         return;
     }

@@ -59,11 +59,13 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
-    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
-    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter, std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
@@ -173,22 +175,25 @@ private:
 
     std::string GetPortName(InternalDeviceType deviceType);
 
-    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds,
+        sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
-    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds,
+        sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
-    int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> localDeviceDescriptor);
+    int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds,
+        sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
-    int32_t MoveToRemoteInputDevice(std::vector<uint32_t> sourceOutputIds, sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+    int32_t MoveToRemoteInputDevice(std::vector<uint32_t> sourceOutputIds,
+        sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
-    AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId, DeviceRole deviceRole, DeviceType deviceType);
+    AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
+        DeviceRole deviceRole, DeviceType deviceType);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
-    int32_t OpenRemoteAudioDevice(std::string networkId,
-                                  DeviceRole deviceRole,
-                                  DeviceType deviceType,
-                                  sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+    int32_t OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
+        sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
     InternalDeviceType GetDeviceType(const std::string &deviceName);
 

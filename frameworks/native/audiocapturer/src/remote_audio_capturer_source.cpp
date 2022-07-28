@@ -97,7 +97,7 @@ void RemoteAudioCapturerSource::DeInit()
 }
 
 int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size, const std::string &adapterNameCase,
-    enum AudioPortDirection portFlag, struct AudioPort &capturePort)
+    struct AudioPort &capturePort)
 {
     if (descs == nullptr) {
         return ERROR;
@@ -108,13 +108,14 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size,
         if (desc == nullptr) {
             continue;
         }
-        if (!adapterNameCase.compare(desc->adapterName)) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
-                // Only find out the port of in in the sound card
-                if (desc->ports[port].portId == PIN_IN_MIC) {
-                    capturePort = desc->ports[port];
-                    return index;
-                }
+        if (adapterNameCase.compare(desc->adapterName) != 0) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portNum; port++) {
+            // Only find out the port of in in the sound card
+            if (desc->ports[port].portId == PIN_IN_MIC) {
+                capturePort = desc->ports[port];
+                return index;
             }
         }
     }
@@ -175,7 +176,7 @@ int32_t RemoteAudioCapturerSource::Init(IAudioSourceAttr &attr)
     }
     // Get qualified sound card and port
     std::string adapterNameCase = attr_.deviceNetworkId;
-    index = SwitchAdapterCapture(descs, size, adapterNameCase, PORT_IN, audioPort);
+    index = SwitchAdapterCapture(descs, size, adapterNameCase, audioPort);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Capture Fail");
         return ERR_NOT_STARTED;
@@ -221,7 +222,11 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
+#ifdef __aarch64__
     char resolvedPath[100] = "/vendor/lib64/libdaudio_client.z.so";
+#else
+    char resolvedPath[100] = "/vendor/lib/libdaudio_client.z.so";
+#endif
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
     void *handle_ = dlopen(resolvedPath, 1);

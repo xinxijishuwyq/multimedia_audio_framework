@@ -457,7 +457,7 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activ
 {
     AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
-                             ERR_INVALID_PARAM, "invalid audioScene");
+        ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;

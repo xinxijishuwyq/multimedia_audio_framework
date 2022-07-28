@@ -24,10 +24,8 @@
 #include <list>
 #include <map>
 
-#define DEBUG_CAPTURE_DUMP
 namespace OHOS {
 namespace AudioStandard {
-
 class RemoteAudioCapturerSource : public IAudioCapturerSource {
 public:
     static RemoteAudioCapturerSource *GetInstance(std::string deviceNetworkId);

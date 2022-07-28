@@ -190,8 +190,6 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         return ERR_OPERATION_FAILED;
     }
 
-    // will SetDefaultSink make all sink-input connnect to only one sink?
-    // If so,we may need to use SetLocalDefaultSink to swich only local sink-input.
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
@@ -218,7 +216,8 @@ int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, ui
     return mAudioServiceAdapter->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
-int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
+int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex,
+    std::string sourceName)
 {
     return mAudioServiceAdapter->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
 }

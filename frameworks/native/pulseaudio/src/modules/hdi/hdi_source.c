@@ -310,9 +310,9 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
     data.module = m;
     pa_source_new_data_set_name(&data, pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME));
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING,
-                    (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
+        (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
     pa_proplist_setf(data.proplist, PA_PROP_DEVICE_DESCRIPTION, "HDI source is %s",
-                    (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
+        (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
     pa_source_new_data_set_sample_spec(&data, ss);
     pa_source_new_data_set_channel_map(&data, map);
     pa_proplist_setf(data.proplist, PA_PROP_DEVICE_BUFFERING_BUFFER_SIZE, "%lu", (unsigned long)u->buffer_size);
@@ -424,8 +424,7 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
-                            pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
-                            &u->sourceAdapter);
+        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), &u->sourceAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
