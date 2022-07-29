@@ -38,6 +38,9 @@ namespace {
     constexpr int32_t MIN_VOL = 0;
     constexpr int32_t INV_CHANNEL = -1;
     constexpr int32_t CHANNEL_10 = 10;
+    constexpr float DISCOUNT_VOLUME = 0.5;
+    constexpr float DISCOUNT_VOLUME_MIN = 0;
+    constexpr float DISCOUNT_VOLUME_MAX = 1.0;
 }
 
 void AudioManagerUnitTest::SetUpTestCase(void) {}
@@ -771,7 +774,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level0)
     }
     ASSERT_NE(0, streamId);
 
-    ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, 0.5);
+    ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, DISCOUNT_VOLUME);
     EXPECT_EQ(SUCCESS, ret);
 
     audioRenderer->Release();
@@ -811,7 +814,7 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level0)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    if (vol < 0 || vol > 1.0) {
+    if (vol < DISCOUNT_VOLUME_MIN || vol > DISCOUNT_VOLUME_MAX) {
         ret = ERROR;
     } else {
         ret = SUCCESS;
