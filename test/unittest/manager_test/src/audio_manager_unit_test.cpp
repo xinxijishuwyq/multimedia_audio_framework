@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
+#include "audio_stream_manager.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -735,6 +736,88 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 {
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_MUSIC, false);
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetLowPowerVolume API
+* @tc.number: SetLowPowerVolume_001
+* @tc.desc  : Test set the volume discount coefficient of a single stream
+*/
+HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level0)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, 0.5);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetLowPowerVolume API
+* @tc.number: GetLowPowerVolume_001
+* @tc.desc  : Test get the volume discount coefficient of a single stream
+*/
+HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level0)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
+    if (vol < 0 || vol > 1.0) {
+        ret = ERROR;
+    } else {
+        ret = SUCCESS;
+    }
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
 }
 } // namespace AudioStandard
 } // namespace OHOS
