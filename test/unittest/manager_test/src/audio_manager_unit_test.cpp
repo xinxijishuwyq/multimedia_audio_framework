@@ -746,7 +746,7 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 * @tc.number: SetLowPowerVolume_001
 * @tc.desc  : Test set the volume discount coefficient of a single stream
 */
-HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level0)
+HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -785,7 +785,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level0)
 * @tc.number: GetLowPowerVolume_001
 * @tc.desc  : Test get the volume discount coefficient of a single stream
 */
-HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level0)
+HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
