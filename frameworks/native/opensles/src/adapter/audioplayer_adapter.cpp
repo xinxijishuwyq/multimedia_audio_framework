@@ -90,9 +90,9 @@ SLresult AudioPlayerAdapter::SetPlayStateAdapter(SLuint32 id, SLuint32 state)
             result = pRender->Pause();
             break;
         case SL_PLAYSTATE_STOPPED: {
-            result = pRender->Clear();
-            result = result && pRender->Stop();
+            result = pRender->Stop();
             result = result && pRender->Release();
+            result = result && pRender->Clear();
             break;
         }
         default:
