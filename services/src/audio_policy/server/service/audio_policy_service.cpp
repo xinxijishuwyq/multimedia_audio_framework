@@ -1498,6 +1498,12 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
     AUDIO_DEBUG_LOG("Input device updated to %{public}d", mActiveInputDevice_);
 }
 
+int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
+    StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    return mStreamCollector.UpdateStreamState(clientUid, streamSetStateEventInternal);
+}
+
 DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
 {
     switch (hdiPin) {

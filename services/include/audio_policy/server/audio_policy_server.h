@@ -153,6 +153,9 @@ public:
 
     void RegisteredStreamListenerClientDied(int pid);
 
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+        AudioStreamType audioStreamType) override;
+                                    
     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
 protected:

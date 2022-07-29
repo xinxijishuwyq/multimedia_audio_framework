@@ -26,6 +26,9 @@ namespace AudioStandard {
 class IStandardClientTracker : public IRemoteBroker {
 public:
     virtual ~IStandardClientTracker() = default;
+
+    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
+    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
     virtual void SetLowPowerVolumeImpl(float volume) = 0;
     virtual void GetLowPowerVolumeImpl(float& volume) = 0;
 
@@ -34,6 +37,8 @@ public:
         ON_INIT,
         SETLOWPOWERVOL,
         GETLOWPOWERVOL,
+        PAUSEDSTREAM,
+        RESUMESTREAM,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardClientTracker");

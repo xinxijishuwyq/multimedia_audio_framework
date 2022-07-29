@@ -1093,5 +1093,32 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 
     return SUCCESS;
 }
+
+int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
+    AudioStreamType audioStreamType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AUDIO_DEBUG_LOG("AudioPolicyProxy::UpdateStreamState");
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("UpdateStreamState: WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(clientUid));
+    data.WriteInt32(static_cast<int32_t>(streamSetState));
+    data.WriteInt32(static_cast<int32_t>(audioStreamType));
+
+    int32_t error = Remote()->SendRequest(UPDATE_STREAM_STATE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UPDATE_STREAM_STATE stream changed info event failed , error: %d", error);
+        return ERROR;
+    }
+
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

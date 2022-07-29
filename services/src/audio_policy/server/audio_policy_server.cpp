@@ -1353,6 +1353,33 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
     mPolicyService.RegisteredStreamListenerClientDied(pid);
 }
 
+
+int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
+    StreamSetState streamSetState, AudioStreamType audioStreamType)
+{
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
+        streamSetState, audioStreamType);
+
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid == clientUid) {
+        AUDIO_ERR_LOG("UpdateStreamState clientUid value is error");
+        return ERROR;
+    }
+
+    StreamSetState setState = StreamSetState::STREAM_PAUSE;
+    if (streamSetState == StreamSetState::STREAM_RESUME) {
+        setState  = StreamSetState::STREAM_RESUME;
+    } else if (streamSetState != StreamSetState::STREAM_PAUSE) {
+        AUDIO_ERR_LOG("UpdateStreamState streamSetState value is error");
+        return ERROR;
+    }
+    StreamSetStateEventInternal setStateEvent = {};
+    setStateEvent.streamSetState = setState;
+    setStateEvent.audioStreamType = audioStreamType;
+
+    return mPolicyService.UpdateStreamState(clientUid, setStateEvent);
+}
+
 std::unordered_map<int32_t, sptr<VolumeGroupInfo>> AudioPolicyServer::GetVolumeGroupInfos()
 {
     return  mPolicyService.GetVolumeGroupInfos();

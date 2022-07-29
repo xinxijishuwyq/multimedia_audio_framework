@@ -49,6 +49,18 @@ public:
 class AudioClientTracker {
 public:
     virtual ~AudioClientTracker() = default;
+    /**
+     * Paused Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
+     /**
+     * Resumed Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
     virtual void SetLowPowerVolumeImpl(float volume) = 0;
     virtual void GetLowPowerVolumeImpl(float &volume) = 0;
 };

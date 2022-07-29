@@ -316,8 +316,9 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     audioStream_->UnsetRendererPeriodPositionCallback();
 }
 
-bool AudioRendererPrivate::Start()
+bool AudioRendererPrivate::Start() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Start");
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
         AUDIO_ERR_LOG("AudioRendererPrivate::Start() Illegal state:%{public}u, Start failed", state);
@@ -336,9 +337,6 @@ bool AudioRendererPrivate::Start()
         default:
             break;
     }
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::streamType::%{public}d", audioInterrupt.streamType);
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::contentType::%{public}d", audioInterrupt.contentType);
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::Start::sessionID::%{public}d", audioInterrupt.sessionID);
 
     if (audioInterrupt.streamType == STREAM_DEFAULT || audioInterrupt.sessionID == INVALID_SESSION_ID) {
         return false;
@@ -380,6 +378,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::Pause() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Pause");
     bool result = audioStream_->PauseAudioStream();
     AudioInterrupt audioInterrupt;
     switch (mode_) {
@@ -403,6 +402,7 @@ bool AudioRendererPrivate::Pause() const
 
 bool AudioRendererPrivate::Stop() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Stop");
     bool result = audioStream_->StopAudioStream();
     AudioInterrupt audioInterrupt;
     switch (mode_) {
@@ -425,6 +425,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release() const
 {
+    AUDIO_INFO_LOG("AudioRenderer::Release");
     // If Stop call was skipped, Release to take care of Deactivation
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 

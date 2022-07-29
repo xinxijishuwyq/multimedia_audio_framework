@@ -530,6 +530,18 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
 
+void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal entered");
+    int32_t clientUid = data.ReadInt32();
+    StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
+    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    
+    int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
+    reply.WriteInt32(result);
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal exit");
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -704,6 +716,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_CAPTURER_CHANGE_INFOS:
             GetCapturerChangeInfosInternal(data, reply);
+            break;
+
+        case UPDATE_STREAM_STATE:
+            UpdateStreamStateInternal(data, reply);
             break;
 
         case SET_LOW_POWER_STREM_VOLUME:
