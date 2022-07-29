@@ -26,6 +26,16 @@ void AudioRendererProxyObj::SaveRendererObj(const AudioRenderer *rendererObj)
     renderer = rendererObj;
 }
 
+void AudioRendererProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    renderer->Pause();
+}
+
+void AudioRendererProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    renderer->Start();
+}
+
 void AudioRendererProxyObj::SetLowPowerVolumeImpl(float volume)
 {
     renderer->SetLowPowerVolume(volume);

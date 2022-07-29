@@ -718,6 +718,17 @@ uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
     return AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
 }
 
+int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
+    StreamSetState streamSetState, AudioStreamType audioStreamType)
+{
+    AUDIO_INFO_LOG("AudioSystemManager::UpdateStreamState::clientUid:%{public}d streamSetState:%{public}d",
+        clientUid, streamSetState);
+    int32_t result = 0;
+    
+    result = AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, audioStreamType);
+    return result;
+}
+
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;

@@ -20,6 +20,44 @@ namespace AudioStandard {
 AudioClientTrackerCallbackProxy::AudioClientTrackerCallbackProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardClientTracker>(impl) { }
 
+void AudioClientTrackerCallbackProxy::PausedStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: PausedStreamImpl WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
+    data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
+    int error = Remote()->SendRequest(PAUSEDSTREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("PausedStreamImpl failed, error: %{public}d", error);
+    }
+}
+
+void AudioClientTrackerCallbackProxy::ResumeStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: ResumeStreamImpl WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
+    data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
+    int error = Remote()->SendRequest(RESUMESTREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ResumeStreamImpl failed, error: %{public}d", error);
+    }
+}
+
 void AudioClientTrackerCallbackProxy::SetLowPowerVolumeImpl(float volume)
 {
     MessageParcel data;
@@ -64,6 +102,23 @@ ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandar
 ClientTrackerCallbackListener::~ClientTrackerCallbackListener()
 {
     AUDIO_DEBUG_LOG("ClientTrackerCallbackListener destructor");
+}
+
+
+void ClientTrackerCallbackListener::PausedStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    if (listener_ != nullptr) {
+        listener_->PausedStreamImpl(streamSetStateEventInternal);
+    }
+}
+
+void ClientTrackerCallbackListener::ResumeStreamImpl(
+    const StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    if (listener_ != nullptr) {
+        listener_->ResumeStreamImpl(streamSetStateEventInternal);
+    }
 }
 
 void ClientTrackerCallbackListener::SetLowPowerVolumeImpl(float volume)

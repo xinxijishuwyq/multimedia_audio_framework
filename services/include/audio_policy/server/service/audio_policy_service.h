@@ -148,9 +148,12 @@ public:
 
     void OnSinkLatencyParsed(uint32_t latency);
 
+    int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
+
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
     std::unordered_map<int32_t, sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),

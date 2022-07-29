@@ -446,6 +446,28 @@ void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
     mDispatcherService.removeCapturerListener(uid);
 }
 
+int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
+    StreamSetStateEventInternal &streamSetStateEventInternal)
+{
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->clientUID == clientUid) {
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG("AudioStreamCollector:UpdateStreamState callback failed sId:%{public}d",
+                    changeInfo->sessionId);
+                continue;
+            }
+            if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_PAUSE) {
+                callback->PausedStreamImpl(streamSetStateEventInternal);
+            } else if (streamSetStateEventInternal.streamSetState == StreamSetState::STREAM_RESUME) {
+                callback->ResumeStreamImpl(streamSetStateEventInternal);
+            }
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 {
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),

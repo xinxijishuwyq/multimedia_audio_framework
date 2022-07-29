@@ -33,7 +33,7 @@ public:
     int32_t GetParams(AudioRendererParams &params) const override;
     int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
-    bool Start() override;
+    bool Start() const override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
