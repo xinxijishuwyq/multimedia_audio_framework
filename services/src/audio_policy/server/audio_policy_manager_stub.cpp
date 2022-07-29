@@ -725,7 +725,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case SET_LOW_POWER_STREM_VOLUME:
             SetLowPowerVolumeInternal(data, reply);
             break;
-            
+
         case GET_LOW_POWRR_STREM_VOLUME:
             GetLowPowerVolumeInternal(data, reply);
             break;

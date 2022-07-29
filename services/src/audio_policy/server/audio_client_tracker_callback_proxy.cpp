@@ -49,7 +49,7 @@ void AudioClientTrackerCallbackProxy::ResumeStreamImpl(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: ResumeStreamImpl WriteInterfaceToken failed");
         return;
     }
-    
+
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
     int error = Remote()->SendRequest(RESUMESTREAM, data, reply, option);
@@ -84,7 +84,7 @@ void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
         AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
         return;
     }
-    
+
     int error = Remote()->SendRequest(GETLOWPOWERVOL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("GETLOWPOWERVOL failed, error: %{public}d", error);
