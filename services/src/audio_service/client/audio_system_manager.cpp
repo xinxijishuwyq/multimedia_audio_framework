@@ -505,17 +505,33 @@ bool AudioSystemManager::IsMicrophoneMute()
 
 int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
+    if (audioDeviceDescriptors.size() != 1 || audioDeviceDescriptors[0] == nullptr) {
+        AUDIO_ERR_LOG("SelectOutputDevice: invalid parameter");
+        return ERR_INVALID_PARAM;
+    }
+    if (audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
+        AUDIO_ERR_LOG("SelectOutputDevice: not an output device.");
+        return ERR_INVALID_OPERATION;
+    }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     audioRendererFilter->uid = -1;
-    int32_t ret = SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    int32_t ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
     return ret;
 }
 
 int32_t AudioSystemManager::SelectInputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
+    if (audioDeviceDescriptors.size() != 1 || audioDeviceDescriptors[0] == nullptr) {
+        AUDIO_ERR_LOG("SelectInputDevice: invalid parameter");
+        return ERR_INVALID_PARAM;
+    }
+    if (audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::INPUT_DEVICE) {
+        AUDIO_ERR_LOG("SelectInputDevice: not an output device.");
+        return ERR_INVALID_OPERATION;
+    }
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = -1;
-    int32_t ret = SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+    int32_t ret = AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
     return ret;
 }
 
@@ -544,6 +560,10 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         AUDIO_ERR_LOG("SelectOutputDevice: not an output device.");
         return ERR_INVALID_OPERATION;
     }
+    if (audioRendererFilter->uid < 0) {
+        AUDIO_ERR_LOG("SelectOutputDevice: invalid uid.");
+        return ERR_INVALID_PARAM;
+    }
     AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<type:%{public}d>",
                     getpid(),
                     audioRendererFilter->uid,
@@ -570,6 +590,10 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     if (audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::INPUT_DEVICE) {
         AUDIO_ERR_LOG("SelectInputDevice: not an input device");
         return ERR_INVALID_OPERATION;
+    }
+    if (audioCapturerFilter->uid < 0) {
+        AUDIO_ERR_LOG("SelectInputDevice: invalid uid.");
+        return ERR_INVALID_PARAM;
     }
     AUDIO_DEBUG_LOG("[%{public}d] SelectInputDevice: uid<%{public}d> device<type:%{public}d>",
                     getpid(), audioCapturerFilter->uid, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));

@@ -185,6 +185,11 @@ private:
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
+    int32_t OpenRemoteAudioDevice(std::string networkId,
+                                  DeviceRole deviceRole,
+                                  DeviceType deviceType,
+                                  sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+
     InternalDeviceType GetDeviceType(const std::string &deviceName);
 
     std::string GetGroupName(const std::string& deviceName, const GroupType type);
@@ -232,6 +237,7 @@ private:
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
+    bool isOpenRemoteDevice = false;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
