@@ -76,10 +76,9 @@ AudioManagerListenerCallback::~AudioManagerListenerCallback()
 void AudioManagerListenerCallback::OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-	if (listener_ != nullptr) {
+    if (listener_ != nullptr) {
         listener_->OnAudioParameterChange(key, condition, value);
-	}
+    }
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

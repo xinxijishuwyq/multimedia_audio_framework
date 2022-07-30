@@ -35,7 +35,7 @@ namespace {
     // constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
-    int32_t groupId =1;
+    int32_t groupId = 1;
     // constexpr int32_t INV_CHANNEL = -1;
     // constexpr int32_t CHANNEL_10 = 10;
 }

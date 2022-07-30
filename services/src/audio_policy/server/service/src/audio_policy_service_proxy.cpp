@@ -143,7 +143,7 @@ const std::string AudioPolicyServiceProxy::GetAudioParameter(const std::string &
 }
 
 const std::string AudioPolicyServiceProxy::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
-	const std::string& condition)
+    const std::string& condition)
 {
     return "";
 }
@@ -155,9 +155,6 @@ void AudioPolicyServiceProxy::SetAudioParameter(const std::string &key, const st
 
 void AudioPolicyServiceProxy::SetAudioParameter(const std::string& networkId, const AudioParamKey key,
     const std::string& condition, const std::string& value)
-{
-
-}
-
+{}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1714,7 +1714,7 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
         if (it->second.second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second.second->OnDeviceChange(deviceChangeAction);
             AUDIO_INFO_LOG("OnDeviceChange:type: [%{public}d],", deviceChangeAction.type);
-            it->second.second->OnDeviceChange(deviceChangeAction);       
+            it->second.second->OnDeviceChange(deviceChangeAction);
         }
     }
 
@@ -1900,7 +1900,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
 {
     AUDIO_INFO_LOG("zhanhang Enter  AudioPolicyService::SetParameterCallback");
     auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
-     if (parameterChangeCbStub == nullptr) {
+    if (parameterChangeCbStub == nullptr) {
         AUDIO_ERR_LOG("SetDeviceChangeCallback: parameterChangeCbStub null");
         return;
     }

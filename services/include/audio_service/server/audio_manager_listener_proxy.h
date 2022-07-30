@@ -36,17 +36,17 @@ namespace OHOS {
                 const std::string& value);
         };
 
-		class AudioManagerListenerCallback : public AudioParameterCallback {
-		public:
+        class AudioManagerListenerCallback : public AudioParameterCallback {
+        public:
             AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
-			virtual ~AudioManagerListenerCallback();
-			DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
-			void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
+            virtual ~AudioManagerListenerCallback();
+            DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
+            void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
                 const std::string& value) override;
 
-		private:
-			sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
-		};
+        private:
+            sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
+        };
     } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_MANAGER_LISTENER_PROXY_H

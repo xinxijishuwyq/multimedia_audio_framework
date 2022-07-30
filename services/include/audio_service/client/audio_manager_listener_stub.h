@@ -22,27 +22,23 @@
 #include "i_standard_audio_server_manager_listener.h"
 
 namespace OHOS {
-    namespace AudioStandard {
-		class AudioManagerListenerStub : public IRemoteStub<IStandardAudioServerManagerListener> {
-		public:
-			AudioManagerListenerStub();
-			virtual ~AudioManagerListenerStub();
+namespace AudioStandard {
+class AudioManagerListenerStub : public IRemoteStub<IStandardAudioServerManagerListener> {
+public:
+    AudioManagerListenerStub();
+    virtual ~AudioManagerListenerStub();
 
-			// IStandardAudioManagerListener override
-			int OnRemoteRequest(uint32_t code, MessageParcel& data,
-				MessageParcel& reply, MessageOption& option) override;
-			void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-				const std::string& value) override;
-			// AudioManagerListenerStub
-			void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
-		private:
-			// void ReadParameterEventParams(MessageParcel& data, const std::string& key, const std::string& value);
-
-		    std::weak_ptr<AudioParameterCallback> callback_;
-		};
-
-    } // namespace AudioStandard
+    // IStandardAudioManagerListener override
+    int OnRemoteRequest(uint32_t code, MessageParcel& data,
+    MessageParcel& reply, MessageOption& option) override;
+    void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
+        const std::string& value) override;
+    // AudioManagerListenerStub
+    void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
+private:
+    // void ReadParameterEventParams(MessageParcel& data, const std::string& key, const std::string& value);
+    std::weak_ptr<AudioParameterCallback> callback_;
+};
+} // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_MANAGER_LISTENER_STUB_H
-
-

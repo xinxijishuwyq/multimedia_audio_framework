@@ -182,6 +182,9 @@ public:
     uint32_t GetSessionId(const std::string networkId);
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+
+    void RegisterParamCallback();
+
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
     void PrintOwnersLists();

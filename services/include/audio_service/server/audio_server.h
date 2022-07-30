@@ -30,7 +30,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub, public ISinkParameterCallback {
+class AudioServer : public SystemAbility, public AudioManagerStub, public AudioSinkCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);

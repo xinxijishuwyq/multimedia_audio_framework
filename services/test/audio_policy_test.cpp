@@ -222,13 +222,12 @@ static void HandleSelectInputDevice(int argc, char* argv[], char opt)
     }
 }
 
-static void HandleVolume(int argc, char* argv[],int streamType, char option)
+static void HandleVolume(int argc, char* argv[], int streamType, char option)
 {
     AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
     std::string networkId = LOCAL_NETWORK_ID;
 
-    if ((option != 'v' && option != 'V') || argc > AudioPolicyTest::FOURTH_ARG)
-    {
+    if ((option != 'v' && option != 'V') || argc > AudioPolicyTest::FOURTH_ARG) {
         cout << "HandVolume invalid argv[" << argc << "] " << endl;
     }
     if (option == 'v') {
@@ -251,8 +250,7 @@ static void HandleVolume(int argc, char* argv[],int streamType, char option)
 
             float volume = strtof(optarg, nullptr);
             cout << "Set Volume : " << volume << endl;
-            int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType),
-                                                       volume);
+            int32_t result = groupManager->SetVolume(static_cast<AudioVolumeType>(streamType), volume);
             cout << "Set Volume Result: " << result << endl;
         }
     }
@@ -330,13 +328,13 @@ static void IsDeviceActive()
 static void SetAudioParamter(int argc, char* argv[])
 {
     std::string key = "";
-    std::string value= "";
+    std::string value = "";
     if (argc == AudioPolicyTest::FOURTH_ARG) {
         key = argv[AudioPolicyTest::SECOND_ARG];
         value = argv[AudioPolicyTest::THIRD_ARG];
         AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
         audioSystemMgr->SetAudioParameter(key, value);
-        cout << "SetAudioParameter for key "<< key <<"; value: "<< value << endl; 
+        cout << "SetAudioParameter for key "<< key <<"; value: "<< value << endl;
     }
 }
 
@@ -347,7 +345,8 @@ static void GetAudioParamter(int argc, char* argv[])
         key = argv[AudioPolicyTest::SECOND_ARG];
         AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
         std::string value = audioSystemMgr->GetAudioParameter(key);
-        cout << "GetAudioParameter for key "<< key <<"; result: "<< value << endl; }
+        cout << "GetAudioParameter for key "<< key <<"; result: "<< value << endl;
+    }
 }
 
 static void HandleRingerMode(char option)
@@ -484,7 +483,6 @@ int main(int argc, char* argv[])
                 break;
             case 'V':
             case 'v':
-                // HandleVolume(streamType, opt);
                 HandleVolume(argc, argv, streamType, opt);
                 break;
             case 'M':

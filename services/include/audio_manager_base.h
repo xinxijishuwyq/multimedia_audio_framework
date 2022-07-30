@@ -138,7 +138,6 @@ public:
         return 0;
     }
 
-
     virtual void NotifyDeviceInfo(std::string networkId, bool connected) = 0;
 
     virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
@@ -155,10 +154,9 @@ public:
         UPDATE_ROUTE_REQ = 8,
         RETRIEVE_COOKIE = 9,
         GET_TRANSACTION_ID = 10,
-        SET_PARAMETER_CALLBACK =11,
+        SET_PARAMETER_CALLBACK = 11,
         GET_REMOTE_AUDIO_PARAMETER = 12,
         SET_REMOTE_AUDIO_PARAMETER = 13,
-        DEBUG_VOLUME_CALLBACK = 50
     };
 
 public:

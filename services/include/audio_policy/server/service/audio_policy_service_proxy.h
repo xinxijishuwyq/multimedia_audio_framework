@@ -33,10 +33,10 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;
-	const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
-		const std::string& condition) override;
+    const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+    const std::string& condition) override;
     void SetAudioParameter(const std::string &key, const std::string &value) override;
-	void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
+    void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
 
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;

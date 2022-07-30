@@ -367,7 +367,6 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
 
     return SUCCESS;
-
 }
 
 bool AudioServer::VerifyClientPermission(const std::string &permissionName)

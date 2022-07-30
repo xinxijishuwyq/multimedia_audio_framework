@@ -41,8 +41,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 constexpr float DUCK_FACTOR = 0.2f; // 20%
-constexpr int32_t PARAMS_VOLUME_NUM= 5;
-constexpr int32_t PARAMS_RENDER_STATE_NUM= 2;
+constexpr int32_t PARAMS_VOLUME_NUM = 5;
+constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 10;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -52,7 +52,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 {
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
-    } 
+    }
     interruptPriorityMap_[STREAM_VOICE_CALL] = THIRD_PRIORITY;
     interruptPriorityMap_[STREAM_RING] = SECOND_PRIORITY;
     interruptPriorityMap_[STREAM_MUSIC] = FIRST_PRIORITY;
@@ -103,10 +103,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
             ConnectServiceAdapter();
-            //TODO
-            AUDIO_INFO_LOG("zhanhang ConnectServiceAdapter");
-            remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
-            mPolicyService.SetParameterCallback(remoteParameterCallback_);
+            RegisterParamCallback();
             break;
         default:
             AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -1450,17 +1447,25 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
     if (key == RENDER_STATE) {
         int32_t state = 0;
         char eventDes[EVENT_DES_SIZE];
-        if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state) < PARAMS_RENDER_STATE_NUM) {
+        if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state)
+            < PARAMS_RENDER_STATE_NUM) {
             AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
             return;
         }
-        server_->UpdateStreamState(1/*clientid*/, StreamSetState::STREAM_RESUME, STREAM_ALL);
+        server_->UpdateStreamState(1, StreamSetState::STREAM_RESUME, STREAM_ALL);
     }
 }
 
 uint32_t AudioPolicyServer::GetSessionId(const std::string networkId)
 {
     return mPolicyService.GetSessionId(networkId);
-} 
+}
+
+void AudioPolicyServer::RegisterParamCallback()
+{
+    AUDIO_INFO_LOG("zhanhang ConnectServiceAdapter");
+    remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
+    mPolicyService.SetParameterCallback(remoteParameterCallback_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

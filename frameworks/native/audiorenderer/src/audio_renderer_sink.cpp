@@ -71,7 +71,7 @@ AudioRendererSink *AudioRendererSink::GetInstance()
 void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
+    AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter:key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
@@ -82,13 +82,14 @@ void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::st
 
 std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
+    AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %{public}d, condition: %{public}s", key,
+        condition.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
     int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
     if (ret !=SUCCESS) {
         AUDIO_ERR_LOG("AudioRendererSink::GetAudioParameter failed, error code: %d", ret);
-	strcpy(value, "ERR");
+        strcpy(value, "ERR");
         return value;
     }
     return value;

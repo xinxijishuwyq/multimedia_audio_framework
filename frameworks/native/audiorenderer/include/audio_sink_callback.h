@@ -18,7 +18,7 @@
 #include "audio_info.h"
 namespace OHOS {
 namespace AudioStandard {
-class ISinkParameterCallback {
+class AudioSinkCallback {
 public:
     virtual void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
         const std::string value) = 0;

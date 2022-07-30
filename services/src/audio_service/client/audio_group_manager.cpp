@@ -25,7 +25,7 @@
 namespace OHOS {
 namespace AudioStandard {
 AudioGroupManager::AudioGroupManager(int32_t groupId) : groupId_(groupId)
-{ 
+{
     Init();
 }
 AudioGroupManager::~AudioGroupManager()
@@ -99,7 +99,6 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
     if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
-
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType);
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
@@ -259,8 +258,7 @@ void AudioGroupManager::Init()
     g_sProxy = iface_cast<IStandardAudioService>(object);
     if (g_sProxy == nullptr) {
         AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
-    }
-    else {
+    } else {
         AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
     }
 
@@ -273,14 +271,13 @@ void AudioGroupManager::Init()
     };
     volumeGroupInfos.erase(std::remove_if(volumeGroupInfos.begin(), volumeGroupInfos.end(), filter),
         volumeGroupInfos.end());
-    if (volumeGroupInfos.size() > 0)
-    {
+    if (volumeGroupInfos.size() > 0) {
         netWorkId_ = volumeGroupInfos[0]->networkId_;
     }
 }
 
 bool AudioGroupManager::IsAlived()
-{ 
+{
     //std::lock_guard<std::mutex> lock(mutex_);
     if (g_sProxy == nullptr) {
         Init();
@@ -293,6 +290,5 @@ int32_t AudioGroupManager::GetGroupId()
 {
     return groupId_;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

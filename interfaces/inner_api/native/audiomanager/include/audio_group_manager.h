@@ -13,11 +13,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
 class IStandardAudioService;
 class AudioGroupManager {
 public:
-    const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES{
+    const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
         STREAM_RING,
         STREAM_VOICE_CALL,

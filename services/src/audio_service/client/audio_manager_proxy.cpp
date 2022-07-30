@@ -162,7 +162,7 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
 }
 
 const std::string AudioManagerProxy::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
-	const std::string& condition)
+    const std::string& condition)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -173,8 +173,8 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string& networ
         return "";
     }
     data.WriteString(static_cast<std::string>(networkId));
-	data.WriteInt32(static_cast<int32_t>(key));
-	data.WriteString(static_cast<std::string>(condition));
+    data.WriteInt32(static_cast<int32_t>(key));
+    data.WriteString(static_cast<std::string>(condition));
     int32_t error = Remote()->SendRequest(GET_REMOTE_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
@@ -217,8 +217,8 @@ void AudioManagerProxy::SetAudioParameter(const std::string& networkId, const Au
         return;
     }
     data.WriteString(static_cast<std::string>(networkId));
-	data.WriteInt32(static_cast<int32_t>(key));
-	data.WriteString(static_cast<std::string>(condition));
+    data.WriteInt32(static_cast<int32_t>(key));
+    data.WriteString(static_cast<std::string>(condition));
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(SET_REMOTE_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
@@ -312,7 +312,5 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
 
     return reply.ReadInt32();
 }
-
-
 } // namespace AudioStandard
 } // namespace OHOS

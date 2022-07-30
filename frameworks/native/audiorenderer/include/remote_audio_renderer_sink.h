@@ -58,13 +58,13 @@ public:
     int32_t OpenOutput(DeviceType deviceType);
     static RemoteAudioRendererSink *GetInstance(const char *deviceNetworkId);
     bool rendererInited_;
-    void RegisterParameterCallback(ISinkParameterCallback* callback);
+    void RegisterParameterCallback(AudioSinkCallback* callback);
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
     static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
         void *cookie);
     std::string GetNetworkId();
-    ISinkParameterCallback* GetParamCallback();
+    AudioSinkCallback* GetParamCallback();
 private:
     static std::map<std::string, RemoteAudioRendererSink *> allsinks;
     RemoteAudioRendererSink(std::string deviceNetworkId);
@@ -83,7 +83,7 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_;
-    ISinkParameterCallback* callback_;
+    AudioSinkCallback* callback_;
 
     int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
     int32_t CreateRender(struct AudioPort &renderPort);
