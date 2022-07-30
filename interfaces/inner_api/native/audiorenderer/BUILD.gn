@@ -26,7 +26,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
     "//foundation/multimedia/audio_framework/services/test",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -50,12 +50,14 @@ ohos_shared_library("audio_renderer") {
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
-    "//utils/native/base:utils",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
@@ -124,7 +126,7 @@ ohos_executable("audio_voip_test") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]

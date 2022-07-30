@@ -84,13 +84,13 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone:audio_ringtone_client",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
     "ability_runtime:ability_manager",
     "ability_runtime:napi_base_context",
     "bundle_framework:appexecfwk_base",
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]

@@ -40,7 +40,7 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_framework/services/include/audio_policy/common",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//utils/system/safwk/native/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
@@ -76,10 +76,10 @@ ohos_shared_library("audio_client") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
+    "c_utils:utils",
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",

@@ -34,10 +34,8 @@ ohos_fuzztest("AudioManagerFuzzTest") {
 
   sources = [ "audio_manager_fuzzer.cpp" ]
 
-  deps = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
-    "//utils/native/base:utils",
-  ]
+  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client" ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################
