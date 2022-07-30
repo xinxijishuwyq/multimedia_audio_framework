@@ -21,6 +21,7 @@
 #include <audio_renderer_sink_intf.h>
 #include <audio_renderer_file_sink_intf.h>
 #include <bluetooth_renderer_sink_intf.h>
+#include <remote_audio_renderer_sink_intf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,22 +35,25 @@ typedef struct {
     uint32_t channel;
     float volume;
     const char *filePath;
+    const char *deviceNetworkId;
+    int32_t device_type;
 } SinkAttr;
 
 struct RendererSinkAdapter {
-    int32_t (*RendererSinkInit)(const SinkAttr *attr);
-    void (*RendererSinkDeInit)(void);
-    int32_t (*RendererSinkStart)(void);
-    int32_t (*RendererSinkPause)(void);
-    int32_t (*RendererSinkResume)(void);
-    int32_t (*RendererSinkStop)(void);
-    int32_t (*RendererRenderFrame)(char *data, uint64_t len, uint64_t *writeLen);
-    int32_t (*RendererSinkSetVolume)(float left, float right);
-    int32_t (*RendererSinkGetLatency)(uint32_t *latency);
+    void* wapper;
+    int32_t (*RendererSinkInit)(void *wapper, const SinkAttr *attr);
+    void (*RendererSinkDeInit)(void *wapper);
+    int32_t (*RendererSinkStart)(void *wapper);
+    int32_t (*RendererSinkPause)(void *wapper);
+    int32_t (*RendererSinkResume)(void *wapper);
+    int32_t (*RendererSinkStop)(void *wapper);
+    int32_t (*RendererRenderFrame)(void *wapper, char *data, uint64_t len, uint64_t *writeLen);
+    int32_t (*RendererSinkSetVolume)(void *wapper, float left, float right);
+    int32_t (*RendererSinkGetLatency)(void *wapper, uint32_t *latency);
     int32_t (*RendererSinkGetTransactionId)(uint64_t *transactionId);
 };
 
-int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);
+int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter);
 int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
 const char *GetDeviceClass(void);
 #ifdef __cplusplus

@@ -19,15 +19,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int32_t AudioRendererFileSinkInit(const char *filePath);
-void AudioRendererFileSinkDeInit(void);
-int32_t AudioRendererFileSinkStart(void);
-int32_t AudioRendererFileSinkStop(void);
-int32_t AudioRendererFileSinkPause(void);
-int32_t AudioRendererFileSinkResume(void);
-int32_t AudioRendererFileSinkRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
-int32_t AudioRendererFileSinkSetVolume(float left, float right);
-int32_t AudioRendererFileSinkGetLatency(uint32_t *latency);
+int32_t FillinAudioRenderFileSinkWapper(const char *deviceNetworkId, void **wapper);
+int32_t AudioRendererFileSinkInit(void *wapper, const char *filePath);
+void AudioRendererFileSinkDeInit(void *wapper);
+int32_t AudioRendererFileSinkStart(void *wapper);
+int32_t AudioRendererFileSinkStop(void *wapper);
+int32_t AudioRendererFileSinkPause(void *wapper);
+int32_t AudioRendererFileSinkResume(void *wapper);
+int32_t AudioRendererFileSinkRenderFrame(void *wapper, char *data, uint64_t len, uint64_t *writeLen);
+int32_t AudioRendererFileSinkSetVolume(void *wapper, float left, float right);
+int32_t AudioRendererFileSinkGetLatency(void *wapper, uint32_t *latency);
 int32_t AudioRendererFileSinkGetTransactionId(uint64_t *transactionId);
 #ifdef __cplusplus
 }

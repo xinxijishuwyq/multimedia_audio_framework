@@ -73,6 +73,10 @@ public:
 
     int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active);
 
+    int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
+
+    int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName);
+
     int32_t SetRingerMode(AudioRingerMode ringerMode);
 
     AudioRingerMode GetRingerMode(void) const;

@@ -18,8 +18,7 @@
 
 #include <stdio.h>
 
-#include "audio_capturer_source_intf.h"
-#include "audio_capturer_file_source_intf.h"
+#include "i_audio_capturer_source_intf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,21 +34,26 @@ typedef struct {
     uint32_t bufferSize;
     bool isBigEndian;
     const char *filePath;
+    const char *deviceNetworkId;
+    int32_t device_type;
 } SourceAttr;
 
 struct CapturerSourceAdapter {
-    int32_t (*CapturerSourceInit)(const SourceAttr *attr);
-    void (*CapturerSourceDeInit)(void);
-    int32_t (*CapturerSourceStart)(void);
-    int32_t (*CapturerSourceSetMute)(bool isMute);
-    bool (*CapturerSourceIsMuteRequired)(void);
-    int32_t (*CapturerSourceStop)(void);
-    int32_t (*CapturerSourceFrame)(char *frame, uint64_t requestBytes, uint64_t *replyBytes);
-    int32_t (*CapturerSourceSetVolume)(float left, float right);
-    int32_t (*CapturerSourceGetVolume)(float *left, float *right);
+    int32_t deviceClass;
+    void *wapper;
+    int32_t (*CapturerSourceInit)(void *wapper, const SourceAttr *attr);
+    void (*CapturerSourceDeInit)(void *wapper);
+    int32_t (*CapturerSourceStart)(void *wapper);
+    int32_t (*CapturerSourceSetMute)(void *wapper, bool isMute);
+    bool (*CapturerSourceIsMuteRequired)(void *wapper);
+    int32_t (*CapturerSourceStop)(void *wapper);
+    int32_t (*CapturerSourceFrame)(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+    int32_t (*CapturerSourceSetVolume)(void *wapper, float left, float right);
+    int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
 };
 
-int32_t LoadSourceAdapter(const char *device, struct CapturerSourceAdapter **sourceAdapter);
+int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId,
+    struct CapturerSourceAdapter **sourceAdapter);
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
 const char *GetDeviceClass(void);
 #ifdef __cplusplus

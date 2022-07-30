@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_CAPTURER_SINK_INTF_H
-#define AUDIO_CAPTURER_SINK_INTF_H
+#ifndef I_AUDIO_CAPTURER_SINK_INTF_H
+#define I_AUDIO_CAPTURER_SINK_INTF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,17 +31,20 @@ typedef struct {
     uint32_t bufferSize;
     bool isBigEndian;
     const char *filePath;
-} AudioSourceAttr;
+    const char *deviceNetworkId;
+    int32_t device_type;
+} IAudioSourceAttr;
 
-int32_t AudioCapturerSourceInit(AudioSourceAttr *attr);
-void AudioCapturerSourceDeInit(void);
-int32_t AudioCapturerSourceStart(void);
-int32_t AudioCapturerSourceStop(void);
-int32_t AudioCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t *replyBytes);
-int32_t AudioCapturerSourceSetVolume(float left, float right);
-bool AudioCapturerSourceIsMuteRequired(void);
-int32_t AudioCapturerSourceSetMute(bool);
-int32_t AudioCapturerSourceGetVolume(float *left, float *right);
+int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId, void **wapper);
+int32_t IAudioCapturerSourceInit(void *wapper, IAudioSourceAttr *attr);
+void IAudioCapturerSourceDeInit(void *wapper);
+int32_t IAudioCapturerSourceStart(void *wapper);
+int32_t IAudioCapturerSourceStop(void *wapper);
+int32_t IAudioCapturerSourceFrame(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+int32_t IAudioCapturerSourceSetVolume(void *wapper, float left, float right);
+bool IAudioCapturerSourceIsMuteRequired(void *wapper);
+int32_t IAudioCapturerSourceSetMute(void *wapper, bool isMute);
+int32_t IAudioCapturerSourceGetVolume(void *wapper, float *left, float *right);
 #ifdef __cplusplus
 }
 #endif

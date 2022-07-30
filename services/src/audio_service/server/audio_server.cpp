@@ -28,8 +28,6 @@
 
 extern "C" {
 #include "renderer_sink_adapter.h"
-    extern int32_t LoadSinkAdapter(const char *device, struct RendererSinkAdapter **sinkAdapter);
-    extern int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
 }
 
 #define PA
@@ -152,9 +150,9 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
         struct RendererSinkAdapter *sinkAdapter;
         int32_t ret = SUCCESS;
         if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            ret = LoadSinkAdapter("a2dp", &sinkAdapter);
+            ret = LoadSinkAdapter("a2dp", "LocalDevice", &sinkAdapter);
         } else {
-            ret = LoadSinkAdapter("primary", &sinkAdapter);
+            ret = LoadSinkAdapter("primary", "LocalDevice", &sinkAdapter);
         }
 
         if (ret) {

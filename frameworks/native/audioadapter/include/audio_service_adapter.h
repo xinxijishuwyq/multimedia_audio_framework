@@ -97,6 +97,23 @@ public:
     virtual int32_t SetDefaultSource(std::string name) = 0;
 
     /**
+     * @brief sets all sink-input connect to one default dink
+     *
+     * @param name name of default audio sink to be set
+     * @return Returns {@link SUCCESS} if default audio sink is set successfully; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t SetLocalDefaultSink(std::string name) = 0;
+
+    /**
+     * @brief get sinks by adapter name
+     *
+     * @param adapterName name of default audio sink to be set
+     * @return Returns sink ids.
+     */
+    virtual std::vector<uint32_t> getTargetSinks(std::string adapterName) = 0;
+
+    /**
      * @brief sets audio volume
      *
      * @param streamType the streamType for which volume will be set, streamType defined in{@link audio_info.h}
@@ -161,6 +178,21 @@ public:
      * @return void
      */
     virtual void Disconnect() = 0;
+
+    /**
+     * @brief Move one stream to target source.
+     *
+     * @return int32_t the result.
+     */
+    virtual int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
+        uint32_t sourceIndex, std::string sourceName) = 0;
+
+    /**
+     * @brief Move one stream to target sink.
+     *
+     * @return int32_t the result.
+     */
+    virtual int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) = 0;
 
     virtual ~AudioServiceAdapter();
 };

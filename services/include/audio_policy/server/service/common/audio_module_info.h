@@ -63,6 +63,7 @@ enum ClassType {
     TYPE_A2DP,
     TYPE_USB,
     TYPE_FILE_IO,
+    TYPE_REMOTE_AUDIO,
     TYPE_INVALID
 };
 

@@ -16,6 +16,7 @@
 #include "audio_service_client.h"
 
 #include <fstream>
+#include <sstream>
 
 #include "iservice_registry.h"
 #include "audio_log.h"
@@ -389,6 +390,23 @@ void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userda
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
+{
+    if (!userdata) {
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamMovedCb: userdata is null");
+        return;
+    }
+
+    // get stream informations.
+    uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
+
+    // Return 1 if the sink or source this stream is connected to has been suspended.
+    // This will return 0 if not, and a negative value on error.
+    int res = pa_stream_is_suspended(stream);
+    AUDIO_INFO_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]",
+        deviceIndex, res);
+}
+
 void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 {
     if (!userdata) {
@@ -651,8 +669,12 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
-
-    context = pa_context_new(api, "AudioServiceClient");
+    stringstream ss;
+    string packageName = "";
+    ss << "app-pid<" << getpid() << ">-uid<" << getuid() << ">";
+    ss >> packageName;
+    AUDIO_INFO_LOG("AudioServiceClient:Initialize [%{public}s]", packageName.c_str());
+    context = pa_context_new(api, packageName.c_str());
     if (context == nullptr) {
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
@@ -776,6 +798,10 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
+    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+        mStreamType);
+    const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_buffer_attr bufferAttr;
@@ -793,11 +819,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     bufferAttr.minreq = bufferAttr.prebuf;
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
-                                            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY
-                                            | PA_STREAM_INTERPOLATE_TIMING
-                                            | PA_STREAM_START_CORKED
-                                            | PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
+        result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
+            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+            PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
         if (preBuf_ == nullptr) {
             AUDIO_ERR_LOG("Allocate memory for buffer failed.");
@@ -895,6 +919,10 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
+    // for remote audio device router filter.
+    pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
+    pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
+
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
@@ -940,6 +968,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     pa_proplist_free(propList);
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
+    pa_stream_set_moved_callback(paStream, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
     pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
     pa_stream_set_read_callback(paStream, PAStreamReadCb, (void *)this);
     pa_stream_set_latency_update_callback(paStream, PAStreamLatencyUpdateCb, mainLoop);

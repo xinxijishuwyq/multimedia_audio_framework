@@ -717,6 +717,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
+        DECLARE_NAPI_FUNCTION("getAudioRoutingManager", GetAudioRoutingManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -2498,6 +2499,75 @@ napi_value AudioManagerNapi::GetStreamManager(napi_env env, napi_callback_info i
     return result;
 }
 
+static void GetAudioRoutingManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    napi_value valueParam = nullptr;
+    auto asyncContext = static_cast<AudioManagerAsyncContext *>(data);
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            valueParam = AudioRoutingManagerNapi::CreateRoutingManagerWrapper(env);
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: GetAudioRoutingManagerAsyncCallbackComplete asyncContext is Null!");
+    }
+}
+
+napi_value AudioManagerNapi::GetAudioRoutingManager(napi_env env, napi_callback_info info)
+{
+    HiLog::Info(LABEL, "%{public}s IN", __func__);
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
+    CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioManagerAsyncContext object creation failed");
+
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_function) {
+            napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            break;
+        } else {
+            NAPI_ASSERT(env, false, "type mismatch");
+        }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "GetAudioRoutingManager", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource,
+        [](napi_env env, void *data) {
+            auto context = static_cast<AudioManagerAsyncContext *>(data);
+            context->status = SUCCESS;
+        },
+        GetAudioRoutingManagerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
+
+    return result;
+}
+
 void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     napi_value valueParam = nullptr;
@@ -2524,6 +2594,7 @@ static napi_value Init(napi_env env, napi_value exports)
     RingtoneOptionsNapi::Init(env, exports);
     AudioRendererInfoNapi::Init(env, exports);
     AudioStreamMgrNapi::Init(env, exports);
+    AudioRoutingManagerNapi::Init(env, exports);
 
     return exports;
 }

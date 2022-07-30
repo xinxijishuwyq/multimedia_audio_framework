@@ -28,15 +28,16 @@ typedef struct {
     const char *filePath;
 } AudioSinkAttr;
 
-int32_t AudioRendererSinkInit(AudioSinkAttr *attr);
-void AudioRendererSinkDeInit(void);
-int32_t AudioRendererSinkStart(void);
-int32_t AudioRendererSinkStop(void);
-int32_t AudioRendererSinkPause(void);
-int32_t AudioRendererSinkResume(void);
-int32_t AudioRendererRenderFrame(char *data, uint64_t len, uint64_t *writeLen);
-int32_t AudioRendererSinkSetVolume(float left, float right);
-int32_t AudioRendererSinkGetLatency(uint32_t *latency);
+int32_t FillinAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper);
+int32_t AudioRendererSinkInit(void *wapper, AudioSinkAttr *attr);
+void AudioRendererSinkDeInit(void *wapper);
+int32_t AudioRendererSinkStart(void *wapper);
+int32_t AudioRendererSinkStop(void *wapper);
+int32_t AudioRendererSinkPause(void *wapper);
+int32_t AudioRendererSinkResume(void *wapper);
+int32_t AudioRendererRenderFrame(void *wapper, char *data, uint64_t len, uint64_t *writeLen);
+int32_t AudioRendererSinkSetVolume(void *wapper, float left, float right);
+int32_t AudioRendererSinkGetLatency(void *wapper, uint32_t *latency);
 int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId);
 #ifdef __cplusplus
 }

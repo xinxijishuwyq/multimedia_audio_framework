@@ -52,6 +52,11 @@ AudioCapturerSource *AudioCapturerSource::GetInstance()
     return &audioCapturer_;
 }
 
+bool AudioCapturerSource::IsInited(void)
+{
+    return capturerInited_;
+}
+
 void AudioCapturerSource::DeInit()
 {
     started_ = false;
@@ -164,7 +169,7 @@ int32_t AudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     return 0;
 }
 
-int32_t AudioCapturerSource::Init(AudioSourceAttr &attr)
+int32_t AudioCapturerSource::Init(IAudioSourceAttr &attr)
 {
     attr_ = attr;
     int32_t ret;
@@ -440,7 +445,7 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene, DeviceType act
 {
     AUDIO_INFO_LOG("AudioCapturerSource::SetAudioScene in");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
-                             ERR_INVALID_PARAM, "invalid audioScene");
+        ERR_INVALID_PARAM, "invalid audioScene");
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("AudioCapturerSource::SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
@@ -542,117 +547,3 @@ int32_t AudioCapturerSource::Flush(void)
 }
 } // namespace AudioStandard
 } // namesapce OHOS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-using namespace OHOS::AudioStandard;
-
-AudioCapturerSource *g_audioCaptureSourceInstance = AudioCapturerSource::GetInstance();
-
-int32_t AudioCapturerSourceInit(AudioSourceAttr *attr)
-{
-    int32_t ret;
-
-    if (g_audioCaptureSourceInstance->capturerInited_)
-        return SUCCESS;
-
-    ret = g_audioCaptureSourceInstance->Init(*attr);
-
-    return ret;
-}
-
-void AudioCapturerSourceDeInit()
-{
-    if (g_audioCaptureSourceInstance->capturerInited_)
-        g_audioCaptureSourceInstance->DeInit();
-}
-
-int32_t AudioCapturerSourceStop()
-{
-    int32_t ret;
-
-    if (!g_audioCaptureSourceInstance->capturerInited_)
-        return SUCCESS;
-
-    ret = g_audioCaptureSourceInstance->Stop();
-
-    return ret;
-}
-
-int32_t AudioCapturerSourceStart()
-{
-    int32_t ret;
-
-    if (!g_audioCaptureSourceInstance->capturerInited_) {
-        AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
-        return ERR_DEVICE_INIT;
-    }
-
-    ret = g_audioCaptureSourceInstance->Start();
-
-    return ret;
-}
-
-int32_t AudioCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
-{
-    int32_t ret;
-    if (!g_audioCaptureSourceInstance->capturerInited_) {
-        AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
-        return ERR_DEVICE_INIT;
-    }
-
-    ret = g_audioCaptureSourceInstance->CaptureFrame(frame, requestBytes, replyBytes);
-
-    return ret;
-}
-
-int32_t AudioCapturerSourceSetVolume(float left, float right)
-{
-    int32_t ret;
-
-    if (!g_audioCaptureSourceInstance->capturerInited_) {
-        AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
-        return ERR_DEVICE_INIT;
-    }
-
-    ret = g_audioCaptureSourceInstance->SetVolume(left, right);
-
-    return ret;
-}
-
-int32_t AudioCapturerSourceGetVolume(float *left, float *right)
-{
-    int32_t ret;
-
-    if (!g_audioCaptureSourceInstance->capturerInited_) {
-        AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
-        return ERR_DEVICE_INIT;
-    }
-    ret = g_audioCaptureSourceInstance->GetVolume(*left, *right);
-
-    return ret;
-}
-
-bool AudioCapturerSourceIsMuteRequired(void)
-{
-    return AudioCapturerSource::micMuteState_;
-}
-
-int32_t AudioCapturerSourceSetMute(bool isMute)
-{
-    int32_t ret;
-
-    if (!g_audioCaptureSourceInstance->capturerInited_) {
-        AUDIO_ERR_LOG("audioCapturer Not Inited! Init the capturer first\n");
-        return ERR_DEVICE_INIT;
-    }
-
-    ret = g_audioCaptureSourceInstance->SetMute(isMute);
-
-    return ret;
-}
-#ifdef __cplusplus
-}
-#endif

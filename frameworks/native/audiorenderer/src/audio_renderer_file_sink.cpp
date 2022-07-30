@@ -162,50 +162,80 @@ extern "C" {
 using namespace OHOS::AudioStandard;
 
 AudioRendererFileSink *g_fileSinkInstance = AudioRendererFileSink::GetInstance();
-
-int32_t AudioRendererFileSinkInit(const char *filePath)
+int32_t FillinAudioRenderFileSinkWapper(const char *deviceNetworkId, void **wapper)
 {
-    return g_fileSinkInstance->Init(filePath);
+    AudioRendererFileSink *instance = AudioRendererFileSink::GetInstance();
+    if (instance != nullptr) {
+        *wapper = static_cast<void *>(instance);
+    } else {
+        *wapper = nullptr;
+        return ERROR;
+    }
+
+    return SUCCESS;
 }
 
-void AudioRendererFileSinkDeInit()
+int32_t AudioRendererFileSinkInit(void *wapper, const char *filePath)
 {
-    g_fileSinkInstance->DeInit();
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->Init(filePath);
 }
 
-int32_t AudioRendererFileSinkStop()
+void AudioRendererFileSinkDeInit(void *wapper)
 {
-    return g_fileSinkInstance->Stop();
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_LOG(fileSinkInstance != nullptr, "null audioRendererSink");
+    fileSinkInstance->DeInit();
 }
 
-int32_t AudioRendererFileSinkStart()
+int32_t AudioRendererFileSinkStop(void *wapper)
 {
-    return g_fileSinkInstance->Start();
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->Stop();
 }
 
-int32_t AudioRendererFileSinkPause()
+int32_t AudioRendererFileSinkStart(void *wapper)
 {
-    return g_fileSinkInstance->Pause();
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->Start();
 }
 
-int32_t AudioRendererFileSinkResume()
+int32_t AudioRendererFileSinkPause(void *wapper)
 {
-    return g_fileSinkInstance->Resume();
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->Pause();
 }
 
-int32_t AudioRendererFileSinkRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t AudioRendererFileSinkResume(void *wapper)
 {
-    return g_fileSinkInstance->RenderFrame(data, len, writeLen);
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->Resume();
 }
 
-int32_t AudioRendererFileSinkSetVolume(float left, float right)
+int32_t AudioRendererFileSinkRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
 {
-    return g_fileSinkInstance->SetVolume(left, right);
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->RenderFrame(data, len, writeLen);
 }
 
-int32_t AudioRendererFileSinkGetLatency(uint32_t *latency)
+int32_t AudioRendererFileSinkSetVolume(void *wapper, float left, float right)
 {
-    return g_fileSinkInstance->GetLatency(latency);
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->SetVolume(left, right);
+}
+
+int32_t AudioRendererFileSinkGetLatency(void *wapper, uint32_t *latency)
+{
+    AudioRendererFileSink *fileSinkInstance = static_cast<AudioRendererFileSink *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(fileSinkInstance != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    return fileSinkInstance->GetLatency(latency);
 }
 
 int32_t AudioRendererFileSinkGetTransactionId(uint64_t *transactionId)

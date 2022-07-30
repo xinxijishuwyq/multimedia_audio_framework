@@ -42,6 +42,8 @@ PA_MODULE_USAGE(
         "file_path=<file path for data reading>"
         "adapter_name=<primary1>"
         "open_mic_speaker<open mic>"
+        "network_id<device network id>"
+        "device_type<device type or port>"
     );
 
 static const char * const VALID_MODARGS[] = {
@@ -56,6 +58,8 @@ static const char * const VALID_MODARGS[] = {
     "file_path",
     "adapter_name",
     "open_mic_speaker",
+    "network_id",
+    "device_type",
     NULL
 };
 
