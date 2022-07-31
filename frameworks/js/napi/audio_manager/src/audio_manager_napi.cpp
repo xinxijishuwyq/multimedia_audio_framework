@@ -717,7 +717,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
-        DECLARE_NAPI_FUNCTION("getAudioRoutingManager", GetAudioRoutingManager),
+        DECLARE_NAPI_FUNCTION("getRoutingManager", GetAudioRoutingManager),
     };
 
     napi_property_descriptor static_prop[] = {
