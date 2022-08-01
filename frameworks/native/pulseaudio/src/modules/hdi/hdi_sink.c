@@ -46,7 +46,7 @@
 #define MAX_SINK_VOLUME_LEVEL 1.0
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
-
+const char *DEVICE_CLASS_REMOTE = "remote";
 enum {
     HDI_INIT,
     HDI_DEINIT,
@@ -385,6 +385,26 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
     return pa_sink_process_msg(o, code, data, offset, chunk);
 }
 
+static char *GetStateInfo(pa_sink_state_t state)
+{
+    switch (state) {
+        case PA_SINK_INVALID_STATE:
+            return "INVALID";
+        case PA_SINK_RUNNING:
+            return "RUNNING";
+        case PA_SINK_IDLE:
+            return "IDLE";
+        case PA_SINK_SUSPENDED:
+            return "SUSPENDED";
+        case PA_SINK_INIT:
+            return "INIT";
+        case PA_SINK_UNLINKED:
+            return "UNLINKED";
+        default:
+            return "error state";
+    }
+}
+
 // Called from the IO thread.
 static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
                                     pa_suspend_cause_t newSuspendCause)
@@ -394,7 +414,8 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     pa_assert(s);
     pa_assert_se(u = s->userdata);
 
-    AUDIO_INFO_LOG("Sink old state: %{public}d, new state: %{public}d", s->thread_info.state, newState);
+    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]", GetDeviceClass(),
+        GetStateInfo(s->thread_info.state), GetStateInfo(newState));
     if (!strcmp(GetDeviceClass(), DEVICE_CLASS_A2DP)) {
         if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
             u->sinkAdapter->RendererSinkResume(u->sinkAdapter->wapper);
@@ -493,7 +514,11 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
         return -1;
     }
 
-    ret = u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper);
+    // call start in io thread for remote device.
+    if (strcmp(GetDeviceClass(), DEVICE_CLASS_REMOTE)) {
+        ret = u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper);
+    }
+
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
         u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter->wapper);

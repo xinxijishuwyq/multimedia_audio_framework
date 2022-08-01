@@ -63,6 +63,7 @@ private:
     ~RemoteAudioRendererSink();
     RemoteAudioSinkAttr attr_;
     std::string deviceNetworkId_;
+    bool isRenderCreated = false;
     bool started_;
     bool paused_;
     float leftVolume_;
@@ -75,9 +76,9 @@ private:
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_;
 
+    int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
     int32_t CreateRender(struct AudioPort &renderPort);
     struct AudioManager *GetAudioManager();
-#define DEBUG_DUMP_FILE
 #ifdef DEBUG_DUMP_FILE
     FILE *pfd;
 #endif // DEBUG_DUMP_FILE

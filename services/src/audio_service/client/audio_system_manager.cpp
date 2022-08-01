@@ -561,6 +561,12 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         AUDIO_ERR_LOG("SelectOutputDevice: not an output device.");
         return ERR_INVALID_OPERATION;
     }
+    size_t validSize = 64;
+    if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
+        audioDeviceDescriptors[0]->networkId_.size() != validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
+        return ERR_INVALID_PARAM;
+    }
     if (audioRendererFilter->uid < 0) {
         AUDIO_ERR_LOG("SelectOutputDevice: invalid uid.");
         return ERR_INVALID_PARAM;
