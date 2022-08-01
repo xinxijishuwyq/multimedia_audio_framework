@@ -15,6 +15,7 @@
 #ifndef AUDIO_STREAM_H
 #define AUDIO_STREAM_H
 
+#include <mutex>
 #include "audio_info.h"
 #include "audio_session.h"
 #include "timestamp.h"
@@ -108,6 +109,8 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     bool isFirstRead_;
     bool isFirstWrite_;
+
+    std::mutex mBufferQueueLock;
 };
 } // namespace AudioStandard
 } // namespace OHOS

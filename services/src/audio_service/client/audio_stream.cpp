@@ -662,6 +662,8 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
     }
     renderMode_ = renderMode;
 
+    lock_guard<mutex> lock(mBufferQueueLock);
+
     for (int32_t i = 0; i < MAX_NUM_BUFFERS; ++i) {
         size_t length;
         GetMinimumBufferSize(length);
@@ -695,6 +697,8 @@ int32_t AudioStream::SetCaptureMode(AudioCaptureMode captureMode)
         return ERR_OPERATION_FAILED;
     }
     captureMode_ = captureMode;
+
+    lock_guard<mutex> lock(mBufferQueueLock);
 
     for (int32_t i = 0; i < MAX_NUM_BUFFERS; ++i) {
         size_t length;
@@ -760,8 +764,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
         return ERR_INCORRECT_MODE;
     }
 
-    AUDIO_INFO_LOG("AudioStream::freeBufferQ_ count %{public}zu", freeBufferQ_.size());
-    AUDIO_INFO_LOG("AudioStream::filledBufferQ_ count %{public}zu", filledBufferQ_.size());
+    lock_guard<mutex> lock(mBufferQueueLock);
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         if (!freeBufferQ_.empty()) {
@@ -797,6 +800,8 @@ int32_t AudioStream::GetBufQueueState(BufferQueueState &bufState)
         return ERR_INCORRECT_MODE;
     }
 
+    lock_guard<mutex> lock(mBufferQueueLock);
+
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufState.numBuffers = filledBufferQ_.size();
     }
@@ -821,13 +826,15 @@ int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
         return ERR_INVALID_PARAM;
     }
 
+    lock_guard<mutex> lock(mBufferQueueLock);
+
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        AUDIO_INFO_LOG("AudioStream::Enqueue: filledBuffer length: %{public}zu.", bufDesc.bufLength);
+        AUDIO_DEBUG_LOG("AudioStream::Enqueue: filledBuffer length: %{public}zu.", bufDesc.bufLength);
         filledBufferQ_.emplace(bufDesc);
     }
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
-        AUDIO_INFO_LOG("AudioStream::Enqueue: freeBuffer length: %{public}zu.", bufDesc.bufLength);
+        AUDIO_DEBUG_LOG("AudioStream::Enqueue: freeBuffer length: %{public}zu.", bufDesc.bufLength);
         freeBufferQ_.emplace(bufDesc);
     }
 
@@ -840,6 +847,8 @@ int32_t AudioStream::Clear()
         AUDIO_ERR_LOG("AudioStream::Clear not supported. Render or capture mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
+
+    lock_guard<mutex> lock(mBufferQueueLock);
 
     while (!filledBufferQ_.empty()) {
         freeBufferQ_.emplace(filledBufferQ_.front());
@@ -857,16 +866,18 @@ void AudioStream::WriteBuffers()
     int32_t writeError;
 
     while (isReadyToWrite_) {
+        lock_guard<mutex> lock(mBufferQueueLock);
         while (!filledBufferQ_.empty()) {
             if (state_ != RUNNING) {
                 AUDIO_ERR_LOG("Write: Illegal  state:%{public}u", state_);
                 isReadyToWrite_ = false;
                 return;
             }
-            AUDIO_DEBUG_LOG("AudioStream::WriteBuffers !filledBufferQ_.empty()");
+
             stream.buffer = filledBufferQ_.front().buffer;
             stream.bufferLen = filledBufferQ_.front().dataLength;
             AUDIO_DEBUG_LOG("AudioStream::WriteBuffers stream.bufferLen:%{public}d", stream.bufferLen);
+
             if (stream.buffer == nullptr) {
                 AUDIO_ERR_LOG("AudioStream::WriteBuffers stream.buffer == nullptr return");
                 return;
@@ -875,7 +886,7 @@ void AudioStream::WriteBuffers()
             if (writeError != 0) {
                 AUDIO_ERR_LOG("AudioStream::WriteStreamInCb fail, writeError:%{public}d", writeError);
             } else {
-                AUDIO_INFO_LOG("AudioStream::WriteBuffers WriteStream, bytesWritten:%{public}zu", bytesWritten);
+                AUDIO_DEBUG_LOG("AudioStream::WriteBuffers WriteStream, bytesWritten:%{public}zu", bytesWritten);
                 freeBufferQ_.emplace(filledBufferQ_.front());
                 filledBufferQ_.pop();
             }
@@ -893,16 +904,18 @@ void AudioStream::ReadBuffers()
     bool isBlockingRead = true;
 
     while (isReadyToRead_) {
+        lock_guard<mutex> lock(mBufferQueueLock);
         while (!freeBufferQ_.empty()) {
             if (state_ != RUNNING) {
                 AUDIO_ERR_LOG("AudioStream::ReadBuffers Read: Illegal  state:%{public}u", state_);
                 isReadyToRead_ = false;
                 return;
             }
-            AUDIO_DEBUG_LOG("AudioStream::ReadBuffers !freeBufferQ_.empty()");
+
             stream.buffer = freeBufferQ_.front().buffer;
             stream.bufferLen = freeBufferQ_.front().bufLength;
             AUDIO_DEBUG_LOG("AudioStream::ReadBuffers requested stream.bufferLen:%{public}d", stream.bufferLen);
+
             if (stream.buffer == nullptr) {
                 AUDIO_ERR_LOG("AudioStream::ReadBuffers stream.buffer == nullptr return");
                 return;
@@ -911,7 +924,7 @@ void AudioStream::ReadBuffers()
             if (readLen < 0) {
                 AUDIO_ERR_LOG("AudioStream::ReadBuffers ReadStream fail, ret: %{public}d", readLen);
             } else {
-                AUDIO_INFO_LOG("AudioStream::ReadBuffers ReadStream, bytesRead:%{public}d", readLen);
+                AUDIO_DEBUG_LOG("AudioStream::ReadBuffers ReadStream, bytesRead:%{public}d", readLen);
                 freeBufferQ_.front().dataLength = readLen;
                 filledBufferQ_.emplace(freeBufferQ_.front());
                 freeBufferQ_.pop();
