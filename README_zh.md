@@ -220,10 +220,124 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
 9. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
+#### 音频场景
+12. 使用 **SetAudioscene** 和 **getAudioScene** 接口去更改和检查音频策略。
+    ```
+    int32_t result = audioSystemMgr->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
+    AudioScene audioScene = audioSystemMgr->GetAudioScene();
+    ```
+有关支持的音频场景，请参阅 **AudioScene** 中的枚举[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
+#### 音频流管理
+可以使用[**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h)提供的接口用于流管理功能。
+1. 使用 **GetInstance** 接口获得 **AudioSystemManager** 实例。
+    ```
+    AudioStreamManager *audioStreamMgr = AudioStreamManager::GetInstance();
+    ```
 
+2. 使用 **RegisterAudioRendererEventListener** 为渲染器状态更改注册侦听器。渲染器状态更改回调，该回调将在渲染器流状态更改时调用， 通过重写 **AudioRendererStateChangeCallback** 类中的函数 **OnRendererStateChange** 。
+    ```
+    const int32_t clientUID;
+
+    class RendererStateChangeCallback : public AudioRendererStateChangeCallback {
+    public:
+        RendererStateChangeCallback = default;
+        ~RendererStateChangeCallback = default;
+    void OnRendererStateChange(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
+    {
+        cout<<"OnRendererStateChange entered"<<endl;
+    }
+    };
+
+    std::shared_ptr<AudioRendererStateChangeCallback> callback = std::make_shared<RendererStateChangeCallback>();
+    int32_t state = audioStreamMgr->RegisterAudioRendererEventListener(clientUID, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioRendererEventListener(clientUID);
+    ```
+
+3. 使用 **RegisterAudioCapturerEventListener** 为捕获器状态更改注册侦听器。 捕获器状态更改回调，该回调将在捕获器流状态更改时调用， 通过重写 **AudioCapturerStateChangeCallback** 类中的函数 **OnCapturerStateChange** 。
+    ```
+    const int32_t clientUID;
+
+    class CapturerStateChangeCallback : public AudioCapturerStateChangeCallback {
+    public:
+        CapturerStateChangeCallback = default;
+        ~CapturerStateChangeCallback = default;
+    void OnCapturerStateChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override
+    {
+        cout<<"OnCapturerStateChange entered"<<endl;
+    }
+    };
+
+    std::shared_ptr<AudioCapturerStateChangeCallback> callback = std::make_shared<CapturerStateChangeCallback>();
+    int32_t state = audioStreamMgr->RegisterAudioCapturerEventListener(clientUID, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioCapturerEventListener(clientUID);
+    ```
+4. 使用 **GetCurrentRendererChangeInfos** 获取所有当前正在运行的流渲染器信息，包括clientuid、sessionid、renderinfo、renderstate和输出设备详细信息。
+    ```
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    int32_t currentRendererChangeInfo = audioStreamMgr->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    ```
+
+5. 使用 **GetCurrentCapturerChangeInfos** 获取所有当前正在运行的流捕获器信息，包括clientuid、sessionid、capturerInfo、capturerState和输入设备详细信息。
+    ```
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    int32_t currentCapturerChangeInfo = audioStreamMgr->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    ```
+    有关结构，请参阅[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) **audioRendererChangeInfos** 和 **audioCapturerChangeInfos**.
+
+6. 使用 **IsAudioRendererLowLatencySupported** 检查低延迟功能是否支持。
+    ```
+    const AudioStreamInfo &audioStreamInfo;
+    bool isLatencySupport = audioStreamMgr->IsAudioRendererLowLatencySupported(audioStreamInfo);
+    ```
 #### JavaScript 用法:
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。\
 请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
+
+### 铃声管理
+可以使用提供的接口[**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) 和 [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h)实现铃声播放功能。
+1. 使用 **CreateRingtoneManager** 接口创建 **IRingtoneSoundManager** 实例。
+    ```
+    std::shared_ptr<IRingtoneSoundManager> ringtoneManagerClient = RingtoneFactory::CreateRingtoneManager();
+    ```
+2. 使用 **SetSystemRingtoneUri** 接口设置系统铃声Uri
+    ```
+    std::string uri = "/data/media/test.wav";
+    RingtoneType ringtoneType = RINGTONE_TYPE_DEFAULT;
+    ringtoneManagerClient->SetSystemRingtoneUri(context, uri, ringtoneType);
+    ```
+3. 使用 **GetRingtonePlayer** 接口获取 **IRingtonePlayer** 实例。
+    ```
+    std::unique_ptr<IRingtonePlayer> ringtonePlayer = ringtoneManagerClient->GetRingtonePlayer(context, ringtoneType);
+    ```
+4. 使用 **Configure** 接口配置铃声播放器。
+    ```
+    float volume = 1;
+    bool loop = true;
+    ringtonePlayer.Configure(volume, loop);
+    ```
+5. 使用 **Start**, **Stop**, 和 **Release** 接口在铃声播放器实例上控制播放状态。
+    ```
+    ringtonePlayer.Start();
+    ringtonePlayer.Stop();
+    ringtonePlayer.Release();
+    ```
+6. 使用 **GetTitle** 接口获取当前系统铃声的标题。
+7. 使用 **GetRingtoneState** 接口获取铃声播放状态 - **RingtoneState**
+8. 使用 **GetAudioRendererInfo** 获取 **AudioRendererInfo** 检查内容类型和流使用情况。
+
+## 支持设备
+以下是音频子系统支持的设备类型列表。
+
+1. **USB Type-C Headset**\
+    数字耳机，包括自己的DAC（数模转换器）和作为耳机一部分的放大器。
+2. **WIRED Headset**\
+    模拟耳机内部不包含任何DAC。它可以有3.5mm插孔或不带DAC的C型插孔。
+3. **Bluetooth Headset**\
+    蓝牙A2DP（高级音频分配模式）耳机，用于无线传输音频。
+4. **Internal Speaker and MIC**\
+    支持内置扬声器和麦克风，并将分别用作播放和录制的默认设备。
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
