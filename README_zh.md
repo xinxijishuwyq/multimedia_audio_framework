@@ -8,7 +8,13 @@
     -   [音频播放](#section1147510562812)
     -   [音频录制](#section295162052813)
     -   [音频管理](#section645572311287)
-
+        -   [音量控制](#section645572311287_001)
+        -   [设备控制](#section645572311287_002)
+        -   [音频场景](#section645572311287_003)
+        -   [音频流管理](#section645572311287_004)
+        -   [JavaScript 用法](#section645572311287_005)
+    -   [铃声管理](#section645572311287_006)
+-   [支持设备](#section645572311287_007)
 -   [相关仓](#section340mcpsimp)
 
 ## 简介<a name="section119mcpsimp"></a>
@@ -156,9 +162,9 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlocking);
     while (numBuffersToCapture) {
         bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-        if (bytesRead < 0) {
-            break;
-        } else if (bytesRead > 0) {
+            if (bytesRead < 0) {
+                break;
+            } else if (bytesRead > 0) {
             fwrite(buffer, size, bytesRead, recFile); // example shows writes the recorded data into a file
             numBuffersToCapture--;
         }
@@ -177,7 +183,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     ```
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     ```
-#### 音量控制
+#### 音量控制<a name="section645572311287_001"></a>
 2. 使用 **GetMaxVolume** 和  **GetMinVolume** 接口去查询音频流支持的最大和最小音量等级，在此范围内设置音量。
     ```
     AudioVolumeType streamType = AudioVolumeType::STREAM_MUSIC;
@@ -203,7 +209,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     int32_t result = audioSystemMgr->SetMicrophoneMute(true);
     bool isMicMute = audioSystemMgr->IsMicrophoneMute();
     ```
-#### 设备控制
+#### 设备控制<a name="section645572311287_002"></a>
 7. 使用 **GetDevices**, **deviceType_** 和 **deviceRole_** 接口来获取音频输入输出设备信息。 参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 内定义的DeviceFlag, DeviceType 和 DeviceRole 枚举。
     ```
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
@@ -220,14 +226,32 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
 9. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
-#### 音频场景
-12. 使用 **SetAudioscene** 和 **getAudioScene** 接口去更改和检查音频策略。
+10. 应用程序可以使用 **AudioManagerNapi::On**注册系统音量的更改。 在此，如果应用程序监听到系统音量更改的事件,就会用以下参数通知应用程序:
+volumeType : 更改的系统音量的类型
+volume : 当前的音量等级
+updateUi : 是否需要显示变化详细信息。（如果音量被增大/减小，将updateUi标志设置为true，在其他情况下，updateUi设置为false）。
+    ```
+    const audioManager = audio.getAudioManager();
+
+    export default {
+      onCreate() {
+        audioManager.on('volumeChange', (volumeChange) ==> {
+          console.info('volumeType = '+volumeChange.volumeType);
+          console.info('volume = '+volumeChange.volume);
+          console.info('updateUi = '+volumeChange.updateUi);
+        }
+      }
+    }
+    ```
+
+#### 音频场景<a name="section645572311287_003"></a>
+11. 使用 **SetAudioscene** 和 **getAudioScene** 接口去更改和检查音频策略。
     ```
     int32_t result = audioSystemMgr->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
     AudioScene audioScene = audioSystemMgr->GetAudioScene();
     ```
 有关支持的音频场景，请参阅 **AudioScene** 中的枚举[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
-#### 音频流管理
+#### 音频流管理<a name="section645572311287_004"></a>
 可以使用[**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h)提供的接口用于流管理功能。
 1. 使用 **GetInstance** 接口获得 **AudioSystemManager** 实例。
     ```
@@ -291,11 +315,11 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     const AudioStreamInfo &audioStreamInfo;
     bool isLatencySupport = audioStreamMgr->IsAudioRendererLowLatencySupported(audioStreamInfo);
     ```
-#### JavaScript 用法:
+#### JavaScript 用法:<a name="section645572311287_005"></a>
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。\
 请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
 
-### 铃声管理
+### 铃声管理<a name="section645572311287_006"></a>
 可以使用提供的接口[**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) 和 [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h)实现铃声播放功能。
 1. 使用 **CreateRingtoneManager** 接口创建 **IRingtoneSoundManager** 实例。
     ```
@@ -327,7 +351,7 @@ JavaScript应用可以使用系统提供的音频管理接口，来控制音量�
 7. 使用 **GetRingtoneState** 接口获取铃声播放状态 - **RingtoneState**
 8. 使用 **GetAudioRendererInfo** 获取 **AudioRendererInfo** 检查内容类型和流使用情况。
 
-## 支持设备
+## 支持设备<a name="section645572311287_007"></a>
 以下是音频子系统支持的设备类型列表。
 
 1. **USB Type-C Headset**\
