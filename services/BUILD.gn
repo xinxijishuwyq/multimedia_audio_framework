@@ -58,11 +58,11 @@ ohos_shared_library("audio_service") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
@@ -119,7 +119,7 @@ config("audio_policy_public_config") {
     "//third_party/pulseaudio/include",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/include",
     "//utils/system/safwk/native/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
     "//third_party/cJSON",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
@@ -152,10 +152,12 @@ ohos_shared_library("audio_dump") {
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
@@ -201,11 +203,11 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_bluetooth_client",
     "//foundation/multimedia/audio_framework/services:audio_dump",
     "//third_party/libxml2:xml2",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",

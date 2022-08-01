@@ -30,10 +30,10 @@ ohos_shared_library("audio_renderer_sink") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
@@ -45,13 +45,13 @@ ohos_shared_library("audio_renderer_sink") {
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
   ]
 
   deps += [ multimedia_audio_framework_hdi_audio_client ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
+  external_deps = [ "c_utils:utils" ]
 }
 
 ohos_shared_library("bluetooth_renderer_sink") {
@@ -67,11 +67,11 @@ ohos_shared_library("bluetooth_renderer_sink") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
     "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
@@ -83,11 +83,11 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
   ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
+  external_deps = [ "c_utils:utils" ]
 }
 
 ohos_shared_library("remote_audio_renderer_sink") {
@@ -105,10 +105,10 @@ ohos_shared_library("remote_audio_renderer_sink") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
@@ -116,7 +116,6 @@ ohos_shared_library("remote_audio_renderer_sink") {
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
   ]
   if ("${product_name}" == "m40") {
     deps += [ "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client" ]
@@ -128,6 +127,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
       "$hdf_uhdf_path/utils:libhdf_utils",
       "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client",
     ]
+    external_deps = [ "c_utils:utils" ]
   }
 
   part_name = "multimedia_audio_framework"
@@ -148,18 +148,16 @@ ohos_shared_library("audio_renderer_file_sink") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
 
-  deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//utils/native/base:utils",
-  ]
+  deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
+  external_deps = [ "c_utils:utils" ]
 }
 
 ohos_shared_library("audio_bluetooth_client") {
@@ -180,7 +178,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "//foundation/multimedia/audio_framework/services/include/audio_bluetooth/client",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
     "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
@@ -196,10 +194,10 @@ ohos_shared_library("audio_bluetooth_client") {
     "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:bluetooth_renderer_sink",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
@@ -226,7 +224,7 @@ ohos_shared_library("renderer_sink_adapter") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
+    "//commonlibrary/c_utils/base:utils",
   ]
 
   public_configs = [ ":audio_external_library_config" ]

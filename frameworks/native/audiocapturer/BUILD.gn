@@ -28,7 +28,7 @@ ohos_shared_library("audio_capturer_source") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//third_party/bounds_checking_function/include",
@@ -62,7 +62,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
   ]
   include_dirs += [ "//drivers/peripheral/audio/interfaces/include" ]
@@ -101,18 +101,16 @@ ohos_shared_library("audio_capturer_file_source") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
 
-  deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//utils/native/base:utils",
-  ]
+  deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
+  external_deps = [ "c_utils:utils" ]
 }
 
 ohos_shared_library("capturer_source_adapter") {
@@ -134,7 +132,7 @@ ohos_shared_library("capturer_source_adapter") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
+    "//commonlibrary/c_utils/base:utils",
   ]
 
   public_configs = [ ":audio_external_library_config" ]

@@ -31,7 +31,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
     "//foundation/multimedia/audio_framework/services/test",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]

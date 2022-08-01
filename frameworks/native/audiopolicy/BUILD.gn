@@ -29,7 +29,7 @@ config("audio_policy_public_config") {
     "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//utils/system/safwk/native/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
   ]
 
@@ -59,9 +59,8 @@ ohos_shared_library("audio_policy_client") {
 
   public_configs = [ ":audio_policy_public_config" ]
 
-  deps = [ "//utils/native/base:utils" ]
-
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
@@ -82,10 +81,12 @@ ohos_executable("audio_policy_test") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//third_party/bounds_checking_function:libsec_static",
-    "//utils/native/base:utils",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
