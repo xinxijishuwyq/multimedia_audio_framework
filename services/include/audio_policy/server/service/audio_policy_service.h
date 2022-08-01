@@ -175,10 +175,10 @@ private:
 
     std::string GetPortName(InternalDeviceType deviceType);
 
-    int32_t MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds,
+    int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
-    int32_t MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds,
+    int32_t MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
     int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds,
