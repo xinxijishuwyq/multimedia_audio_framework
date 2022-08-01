@@ -80,6 +80,9 @@ SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 stat
 
     SLresult slResult = SL_RESULT_SUCCESS;
     bool result = false;
+    bool rtStop = false;
+    bool rtRelease = false;
+    int32_t rtClear = -1;
     switch (state) {
         case SL_RECORDSTATE_RECORDING:
             result = audioCapturer->Start();
@@ -88,13 +91,14 @@ SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 stat
             result = audioCapturer->Pause();
             break;
         case SL_RECORDSTATE_STOPPED: {
-            result = audioCapturer->Stop();
-            result = result && audioCapturer->Release();
-            result = result && audioCapturer->Clear();
+            rtStop = audioCapturer->Stop();
+            rtClear = audioCapturer->Clear();
+            rtRelease = audioCapturer->Release();
+            result = rtStop && !rtClear && rtRelease;
             break;
         }
         default:
-            AUDIO_ERR_LOG("AudioPlayerAdapter::play state not supported ");
+            AUDIO_ERR_LOG("AudioPlayerAdapter::play state not supported.");
             break;
     }
     slResult = result ? SL_RESULT_SUCCESS : SL_RESULT_RESOURCE_ERROR;
