@@ -217,35 +217,33 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     if (targetUid == -1) {
         AUDIO_INFO_LOG("move all sink.");
         moveAll = true;
+        routerMap_.clear();
     }
 
     // find sink-input id with audioRendererFilter
-    std::vector<uint32_t> targetSinkInputIds = {};
+    std::vector<SinkInput> targetSinkInputs = {};
     vector<SinkInput> sinkInputs = mAudioPolicyManager.GetAllSinkInputs();
-    int32_t pid = -1;
+
     for (size_t i = 0; i < sinkInputs.size(); i++) {
         AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
         if (moveAll || (targetUid == sinkInputs[i].uid && targetStreamType == sinkInputs[i].streamType)) {
-            targetSinkInputIds.push_back(sinkInputs[i].paStreamId);
-            pid = sinkInputs[i].pid;
+            targetSinkInputs.push_back(sinkInputs[i]);
         }
     }
 
     int32_t ret = SUCCESS;
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     if (LOCAL_NETWORK_ID == networkId) {
-        ret = MoveToLocalOutputDevice(targetSinkInputIds, audioDeviceDescriptors[0]);
+        ret = MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     } else {
-        ret = MoveToRemoteOutputDevice(targetSinkInputIds, audioDeviceDescriptors[0]);
+        ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     }
-
-    routerMap_[targetUid] = std::pair(networkId, pid);
 
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
     return ret;
 }
 
-int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<uint32_t> sinkInputIds,
+int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
     sptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
     AUDIO_INFO_LOG("MoveToLocalOutputDevice start");
@@ -265,10 +263,11 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<uint32_t> sinkIn
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string sinkName = GetPortName(mCurrentActiveDevice_);
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
-        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i], sinkId, sinkName) != SUCCESS) {
-            AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sinkInputIds[i]);
+        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName) != SUCCESS) {
+            AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sinkInputIds[i].streamId);
             return ERROR;
         }
+        routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
 
     return SUCCESS;
@@ -301,7 +300,7 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkInputIds,
+int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
     sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     AUDIO_INFO_LOG("MoveToRemoteOutputDevice start");
@@ -330,14 +329,15 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<uint32_t> sinkI
 
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
-        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i], sinkId, networkId) != SUCCESS) {
-            AUDIO_DEBUG_LOG("move [%{public}d] failed", sinkInputIds[i]);
+        if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, networkId) != SUCCESS) {
+            AUDIO_ERR_LOG("move [%{public}d] failed", sinkInputIds[i].streamId);
             return ERROR;
         }
+        routerMap_[sinkInputIds[i].uid] = std::pair(networkId, sinkInputIds[i].pid);
     }
 
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
-        AUDIO_DEBUG_LOG("Not defult type[%{public}d] on device:[%{public}s]", deviceType, networkId.c_str());
+        AUDIO_WARNING_LOG("Not defult type[%{public}d] on device:[%{public}s]", deviceType, networkId.c_str());
     }
     return SUCCESS;
 }

@@ -513,6 +513,12 @@ int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescr
         AUDIO_ERR_LOG("SelectOutputDevice: not an output device.");
         return ERR_INVALID_OPERATION;
     }
+    size_t validSize = 64;
+    if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
+        audioDeviceDescriptors[0]->networkId_.size() != validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
+        return ERR_INVALID_PARAM;
+    }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     audioRendererFilter->uid = -1;
     int32_t ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
