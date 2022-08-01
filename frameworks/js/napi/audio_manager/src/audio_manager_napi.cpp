@@ -374,7 +374,6 @@ napi_value AudioManagerNapi::CreateAudioSceneObject(napi_env env)
     }
     HiLog::Error(LABEL, "CreateAudioSceneObject is Failed!");
     napi_get_undefined(env, &result);
-
     return result;
 }
 
@@ -692,6 +691,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
     napi_value constructor;
     napi_value result = nullptr;
     const int32_t refCount = 1;
+    napi_value localNetworkId;
+    napi_create_string_utf8(env, "LocalDevice", NAPI_AUTO_LENGTH, &localNetworkId);
 
     napi_property_descriptor audio_svc_mngr_properties[] = {
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
@@ -734,7 +735,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("InterruptHint", CreateInterruptHintObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptType", CreateInterruptTypeObject(env)),
         DECLARE_NAPI_PROPERTY("InterruptMode", CreatePropertyBase(env, interruptModeMap, interruptMode_)),
-        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_))
+        DECLARE_NAPI_PROPERTY("FocusType", CreatePropertyBase(env, focusTypeMap, focusType_)),
+        DECLARE_NAPI_PROPERTY("LOCAL_NETWORK_ID", localNetworkId)
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,

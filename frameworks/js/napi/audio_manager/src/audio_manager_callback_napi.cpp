@@ -79,7 +79,6 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
     napi_set_named_property(env, jsObj, "deviceDescriptors", jsArray);
 }
 
-
 void AudioManagerCallbackNapi::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     std::lock_guard<std::mutex> lock(mutex_);
