@@ -750,9 +750,8 @@ void AudioRoutingManagerNapi::RegisterDeviceChangeCallback(napi_env env, napi_va
         }
         DeviceFlag deviceFlag = DeviceFlag(flag);
 
-        int32_t ret =
-            routingMgrNapi->audioMngr_->SetDeviceChangeCallback(deviceFlag,
-                routingMgrNapi->deviceChangeCallbackNapi_);
+        int32_t ret = routingMgrNapi->audioMngr_->SetDeviceChangeCallback(deviceFlag,
+            routingMgrNapi->deviceChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioRoutingMgrNapi: Registering Device Change Callback Failed");
             return;
@@ -812,7 +811,6 @@ napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
         napi_valuetype handler = napi_undefined;
         napi_typeof(env, args[1], &handler);
         NAPI_ASSERT(env, handler == napi_function, "type mismatch for parameter 2");
-        
         deviceFlag = 3; // 3 for ALL_DEVICES_FLAG
     }
     if (argc == maxArgc) {
