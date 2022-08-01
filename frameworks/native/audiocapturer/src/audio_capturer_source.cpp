@@ -316,6 +316,13 @@ int32_t AudioCapturerSource::SetMute(bool isMute)
         AUDIO_ERR_LOG("AudioCapturerSource::SetMute failed from hdi");
     }
 
+    if (audioAdapter_ != nullptr) {
+        ret = audioAdapter_->SetMicMute(audioAdapter_, isMute);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("AudioCapturerSource::SetMicMute failed from hdi");
+        }
+    }
+
     micMuteState_ = isMute;
 
     return SUCCESS;
