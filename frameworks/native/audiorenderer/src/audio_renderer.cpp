@@ -187,7 +187,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         return ret;
     }
 
-    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Success");
+    AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID Failed");
@@ -539,7 +539,7 @@ bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal
         return false;
     }
 
-    AUDIO_DEBUG_LOG("AudioRendererPrivate: set duckVolume(instance) %{pubic}f success", duckInstanceVolume);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate: set duckVolume(instance) %{pubic}f succeeded", duckInstanceVolume);
     return true;
 }
 
