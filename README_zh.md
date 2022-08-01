@@ -14,7 +14,8 @@
         -   [音频流管理](#section645572311287_004)
         -   [JavaScript 用法](#section645572311287_005)
     -   [铃声管理](#section645572311287_006)
--   [支持设备](#section645572311287_007)
+    -   [蓝牙SCO呼叫](#section645572311287_007)
+-   [支持设备](#section645572311287_008)
 -   [相关仓](#section340mcpsimp)
 
 ## 简介<a name="section119mcpsimp"></a>
@@ -350,8 +351,18 @@ JavaScript应用可以使用系统提供的音频管理接口，来控制音量�
 6. 使用 **GetTitle** 接口获取当前系统铃声的标题。
 7. 使用 **GetRingtoneState** 接口获取铃声播放状态 - **RingtoneState**
 8. 使用 **GetAudioRendererInfo** 获取 **AudioRendererInfo** 检查内容类型和流使用情况。
+### 蓝牙SCO呼叫<a name="section645572311287_007"></a>
+可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
 
-## 支持设备<a name="section645572311287_007"></a>
+1. 为监听SCO状态更改，您可以使用 **OnScoStateChanged**.
+```
+const BluetoothRemoteDevice &device;
+int state;
+void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
+```
+
+2. (可选) 静态接口 **RegisterBluetoothScoAgListener**(), **UnregisterBluetoothScoAgListener**(), 可用于注册蓝牙SCO的侦听器。
+## 支持设备<a name="section645572311287_008"></a>
 以下是音频子系统支持的设备类型列表。
 
 1. **USB Type-C Headset**\
