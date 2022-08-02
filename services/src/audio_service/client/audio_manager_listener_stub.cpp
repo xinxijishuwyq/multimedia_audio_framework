@@ -39,11 +39,12 @@ namespace OHOS {
             switch (code) {
                 case ON_PARAMETER_CHANGED: {
                     AUDIO_DEBUG_LOG("ON_PARAMETER_CHANGED AudioManagerStub");
+                    string networkId = data.ReadString();
                     AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
                     string condition = data.ReadString();
                     string value = data.ReadString();
                     AUDIO_INFO_LOG("zhanhang key:%d value:%s", key, value.c_str());
-                    OnAudioParameterChange(key, condition, value);
+                    OnAudioParameterChange(networkId, key, condition, value);
                     return AUDIO_OK;
                 }
                 default: {
@@ -58,13 +59,13 @@ namespace OHOS {
             callback_ = callback;
         }
 
-        void AudioManagerListenerStub::OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-            const std::string& value)
+        void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+            const std::string& condition, const std::string& value)
         {
             AUDIO_INFO_LOG("zhanhang AudioManagerListenerStub OnAudioParameterChange start");
             std::shared_ptr<AudioParameterCallback> cb = callback_.lock();
             if (cb != nullptr) {
-                cb->OnAudioParameterChange(key, condition, value);
+                cb->OnAudioParameterChange(networkId, key, condition, value);
             } else {
                 AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
             }

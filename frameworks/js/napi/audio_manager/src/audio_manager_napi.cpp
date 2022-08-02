@@ -475,6 +475,7 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
             propName.clear();
         }
 
+        AddPropName(propName, status, env, result);
         status = AddPropName(propName, status, env, result);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &deviceFlagRef_);
@@ -2781,7 +2782,7 @@ void AudioManagerNapi::GetGroupMgrAsyncCallbackComplete(napi_env env, napi_statu
     }
 }
 
-void AudioManagerNapi::AddPropName(string& propName, napi_status& status, napi_env env, napi_value& result)
+void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
 {
     for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
         switch (i) {

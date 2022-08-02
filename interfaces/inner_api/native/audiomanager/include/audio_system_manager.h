@@ -184,8 +184,8 @@ public:
 class AudioParameterCallback {
 public:
     virtual ~AudioParameterCallback() = default;
-    virtual void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-        const std::string& value) = 0;
+    virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) = 0;
 };
 
 class AudioRingerModeCallback {

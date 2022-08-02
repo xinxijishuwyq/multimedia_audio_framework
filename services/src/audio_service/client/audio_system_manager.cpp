@@ -769,7 +769,7 @@ std::vector<sptr<VolumeGroupInfo>> AudioSystemManager::GetVolumeGroups(std::stri
 
     auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
         return networkId != info->networkId_;
-        };
+    };
     infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
     return infos;
 }

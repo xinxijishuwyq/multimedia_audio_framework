@@ -30,17 +30,17 @@ AudioManagerListenerProxy::~AudioManagerListenerProxy()
     AUDIO_DEBUG_LOG("~AudioPolicyManagerListenerProxy: Instance destroy");
 }
 
-void AudioManagerListenerProxy::WriteParameterEventParams(MessageParcel& data, const AudioParamKey key,
-    const std::string& condition,
-    const std::string& value)
+void AudioManagerListenerProxy::WriteParameterEventParams(MessageParcel& data,const std::string networkId,
+    const AudioParamKey key, const std::string& condition, const std::string& value)
 {
+    data.WriteString(static_cast<std::string>(networkId));
     data.WriteInt32(static_cast<std::int32_t>(key));
     data.WriteString(static_cast<std::string>(condition));
     data.WriteString(static_cast<std::string>(value));
 }
 
-void AudioManagerListenerProxy::OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void AudioManagerListenerProxy::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+    const std::string& condition, const std::string& value)
 {
     AUDIO_DEBUG_LOG("AudioManagerListenerProxy: ON_PARAMETER_CHANGED at listener proxy");
 
@@ -52,6 +52,7 @@ void AudioManagerListenerProxy::OnAudioParameterChange(const AudioParamKey key, 
         return;
     }
 
+    data.WriteString(static_cast<std::string>(networkId));
     data.WriteInt32(static_cast<std::int32_t>(key));
     data.WriteString(static_cast<std::string>(condition));
     data.WriteString(static_cast<std::string>(value));
@@ -73,11 +74,11 @@ AudioManagerListenerCallback::~AudioManagerListenerCallback()
     AUDIO_DEBUG_LOG("AudioManagerListenerCallback: Instance destroy");
 }
 
-void AudioManagerListenerCallback::OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void AudioManagerListenerCallback::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+    const std::string& condition, const std::string& value)
 {
     if (listener_ != nullptr) {
-        listener_->OnAudioParameterChange(key, condition, value);
+        listener_->OnAudioParameterChange(networkId, key, condition, value);
     }
 }
 } // namespace AudioStandard

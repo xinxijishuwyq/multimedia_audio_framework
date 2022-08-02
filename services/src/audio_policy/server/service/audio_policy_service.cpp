@@ -1146,6 +1146,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 
     // new device found. If connected, add into active device list
     if (statusInfo.isConnected) {
+        if (g_sProxy != nullptr && devType == DEVICE_TYPE_SPEAKER && statusInfo.connectType
+            == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
+            AUDIO_INFO_LOG("notifyDeviceInfo");
+            g_sProxy->NotifyDeviceInfo(networkId, true);
+        }
         AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
             statusInfo.connectType);
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
@@ -1181,11 +1186,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
         AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
         return;
-    }
-
-    if (g_sProxy != nullptr) {
-        AUDIO_INFO_LOG("notifyDeviceInfo");
-        g_sProxy->NotifyDeviceInfo(LOCAL_NETWORK_ID, true);
     }
 
     int32_t result = ERROR;
@@ -1920,9 +1920,9 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     g_sProxy->SetParameterCallback(object);
 }
 
-uint32_t AudioPolicyService::GetSessionId(const std::string networkId)
+std::vector<int32_t> AudioPolicyService::GetSessionId()
 {
-    return 0;
+    return mStreamCollector.GetSessionId();
 }
 } // namespace AudioStandard
 } // namespace OHOS

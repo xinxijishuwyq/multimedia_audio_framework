@@ -502,5 +502,14 @@ float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
     callback->GetSingleStreamVolumeImpl(volume);
     return volume;
 }
+
+std::vector<int32_t> AudioStreamCollector::GetSessionId()
+{
+    std::vector<int32_t> sessionIds = {};
+    for (const auto& changeInfo : audioRendererChangeInfos_) {
+        sessionIds.push_back(changeInfo->clientUID);
+    }
+    return sessionIds;
+}
 } // namespace AudioStandard
 } // namespace OHOS

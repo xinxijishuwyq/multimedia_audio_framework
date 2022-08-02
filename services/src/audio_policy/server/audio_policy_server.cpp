@@ -1414,8 +1414,8 @@ AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPo
     server_ = server;
 }
 
-void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const AudioParamKey key,
-    const std::string& condition, const std::string& value)
+void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
+    const AudioParamKey key, const std::string& condition, const std::string& value)
 {
     AUDIO_INFO_LOG("zhanhang AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
         key, value.c_str());
@@ -1425,6 +1425,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
     }
     if (key == AudioParamKey::VOLUME) {
         VolumeEvent volumeEvent;
+        volumeEvent.networkId = networkId;
         char eventDes[EVENT_DES_SIZE];
         if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d",
             &eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
@@ -1445,20 +1446,35 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const Au
         }
     }
     if (key == RENDER_STATE) {
-        int32_t state = 0;
+        RendererState state = RENDERER_INVALID;
+        StreamSetState streamState = STREAM_PAUSE;
         char eventDes[EVENT_DES_SIZE];
         if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state)
             < PARAMS_RENDER_STATE_NUM) {
             AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
             return;
         }
-        server_->UpdateStreamState(1, StreamSetState::STREAM_RESUME, STREAM_ALL);
+        if (state == RENDERER_INVALID) {
+            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+            return;
+        }
+        if (state == RENDERER_PAUSED) {
+            streamState = STREAM_PAUSE;
+        }
+        else if (state == RENDERER_RUNNING) {
+            streamState = STREAM_RESUME;
+        }
+        std::vector<int32_t> clientIds = server_->GetSessionId();
+        for (auto iter : clientIds)
+        {
+            server_->UpdateStreamState(iter, streamState, STREAM_ALL);
+        }
     }
 }
 
-uint32_t AudioPolicyServer::GetSessionId(const std::string networkId)
+std::vector<int32_t> AudioPolicyServer::GetSessionId()
 {
-    return mPolicyService.GetSessionId(networkId);
+    return mPolicyService.GetSessionId();
 }
 
 void AudioPolicyServer::RegisterParamCallback()

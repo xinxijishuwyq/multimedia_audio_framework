@@ -346,7 +346,7 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
     AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
 
     if (callback_ != nullptr) {
-        callback_->OnAudioParameterChange(key, condition, value);
+        callback_->OnAudioParameterChange(netWorkId, key, condition, value);
     }
 }
 

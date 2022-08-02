@@ -26,8 +26,8 @@ namespace OHOS {
         class IStandardAudioServerManagerListener : public IRemoteBroker {
         public:
             virtual ~IStandardAudioServerManagerListener() = default;
-            virtual void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-                const std::string& value) = 0;
+            virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+                const std::string& condition, const std::string& value) = 0;
 
             enum AudioServerManagerListenerMsg {
                 ON_ERROR = 0,

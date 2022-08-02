@@ -27,13 +27,13 @@ namespace OHOS {
             explicit AudioManagerListenerProxy(const sptr<IRemoteObject>& impl);
             virtual ~AudioManagerListenerProxy();
             DISALLOW_COPY_AND_MOVE(AudioManagerListenerProxy);
-            void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
-                const std::string& value) override;
+            void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+                const std::string& condition, const std::string& value) override;
 
         private:
             static inline BrokerDelegator<AudioManagerListenerProxy> delegator_;
-            void WriteParameterEventParams(MessageParcel& data, const AudioParamKey key, const std::string& condition,
-                const std::string& value);
+            void WriteParameterEventParams(MessageParcel& data, const std::string networkId, const AudioParamKey key,
+                const std::string& condition, const std::string& value);
         };
 
         class AudioManagerListenerCallback : public AudioParameterCallback {
@@ -41,7 +41,7 @@ namespace OHOS {
             AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
             virtual ~AudioManagerListenerCallback();
             DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
-            void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
+            void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
                 const std::string& value) override;
 
         private:

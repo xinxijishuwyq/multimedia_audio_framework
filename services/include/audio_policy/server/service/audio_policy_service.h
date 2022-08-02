@@ -166,7 +166,7 @@ public:
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
-    uint32_t GetSessionId(const std::string networkId);
+    std::vector<int32_t> GetSessionId();
 
 private:
     AudioPolicyService()

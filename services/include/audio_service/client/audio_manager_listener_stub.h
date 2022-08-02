@@ -31,7 +31,7 @@ public:
     // IStandardAudioManagerListener override
     int OnRemoteRequest(uint32_t code, MessageParcel& data,
     MessageParcel& reply, MessageOption& option) override;
-    void OnAudioParameterChange(const AudioParamKey key, const std::string& condition,
+    void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
     // AudioManagerListenerStub
     void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);

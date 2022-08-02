@@ -172,14 +172,14 @@ public:
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
         // AudioParameterCallback
-        void OnAudioParameterChange(const AudioParamKey key, const std::string& condition, const std::string& value)
-            override;
+        void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
+            const std::string& value) override;
     private:
         sptr<AudioPolicyServer> server_;
     };
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
 
-    uint32_t GetSessionId(const std::string networkId);
+    std::vector<int32_t> GetSessionId();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

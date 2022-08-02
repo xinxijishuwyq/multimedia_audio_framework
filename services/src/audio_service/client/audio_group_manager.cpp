@@ -51,8 +51,8 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
     if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType);
-        std::string value = "VOLUME = " + std::to_string(volume);
+            + std::to_string(volumeType) + ";";
+        std::string value = std::to_string(volume);
         g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
     }
 
@@ -100,7 +100,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
     if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType);
+            + std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
         if (value == "") {
             return 0;
@@ -139,7 +139,7 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     }
     if (netWorkId_ != LOCAL_NETWORK_ID) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
-            std::to_string(volumeType);
+            std::to_string(volumeType) + ";";
         return std::stoi(g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition));
     }
 
@@ -156,7 +156,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     }
     if (netWorkId_ != LOCAL_NETWORK_ID) {
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
-            std::to_string(volumeType);
+            std::to_string(volumeType) + ";";
         return std::stoi(g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition));
     }
 
@@ -170,8 +170,8 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 {
     if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
         std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType);
-        std::string value = "MUTE=" + std::string(mute ? "1" : "0");
+            + std::to_string(volumeType) + ";";
+        std::string value = mute ? "1" : "0";
         g_sProxy->SetAudioParameter(netWorkId_, AudioParamKey::VOLUME, conditon, value);
         return SUCCESS;
     }
@@ -213,7 +213,7 @@ bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
     if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
-            + std::to_string(volumeType);
+            + std::to_string(volumeType) + ";";
         std::string ret = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
 
         return ret == "1" ? true : false;
@@ -273,6 +273,7 @@ void AudioGroupManager::Init()
         volumeGroupInfos.end());
     if (volumeGroupInfos.size() > 0) {
         netWorkId_ = volumeGroupInfos[0]->networkId_;
+        AUDIO_INFO_LOG("AudioGroupManager::init set networkId %{public}s.", netWorkId_.c_str());
     }
 }
 
