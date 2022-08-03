@@ -2301,8 +2301,7 @@ float AudioServiceClient::GetStreamLowPowerVolume()
 
 float AudioServiceClient::GetSingleStreamVol()
 {
-    int32_t systemVolumeInt
-        = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    int32_t systemVolumeInt = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
     float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
     float vol = systemVolume * mVolumeFactor * mPowerVolumeFactor;
 
@@ -2313,8 +2312,7 @@ float AudioServiceClient::GetSingleStreamVol()
 
     if (mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(mStreamType))) {
         if (mUnMute_) {
-            mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(mStreamType),
-                false);
+            mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(mStreamType), false);
         } else {
             vol = MIN_STREAM_VOLUME_LEVEL;
         }
