@@ -46,7 +46,7 @@ void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
     volume = renderer->GetLowPowerVolume();
 }
 
-void AudioRendererProxyObj::GetSingleStreamVolumeImpl(uint32_t &volume)
+void AudioRendererProxyObj::GetSingleStreamVolumeImpl(float &volume)
 {
     volume = renderer->GetSingleStreamVolume();
 }

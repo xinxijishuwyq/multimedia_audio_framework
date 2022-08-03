@@ -133,8 +133,8 @@ void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t streamId = data.ReadInt32();
-    uint32_t volume = GetSingleStreamVolume(streamId);
-    reply.WriteUint32(volume);
+    float volume = GetSingleStreamVolume(streamId);
+    reply.WriteFloat(volume);
 }
 
 void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)

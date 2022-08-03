@@ -221,7 +221,7 @@ float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
     return reply.ReadFloat();
 }
 
-uint32_t AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
+float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
 {
     MessageParcel data;
     MessageParcel reply;

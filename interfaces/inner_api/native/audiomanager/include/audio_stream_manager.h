@@ -63,7 +63,7 @@ public:
     virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
     virtual void SetLowPowerVolumeImpl(float volume) = 0;
     virtual void GetLowPowerVolumeImpl(float &volume) = 0;
-    virtual void GetSingleStreamVolumeImpl(uint32_t &volume) = 0;
+    virtual void GetSingleStreamVolumeImpl(float &volume) = 0;
 };
 
 class AudioStreamManager {

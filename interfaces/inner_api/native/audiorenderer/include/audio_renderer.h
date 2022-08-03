@@ -545,7 +545,7 @@ public:
      * @param none.
      * @return single stream volume.
      */
-    virtual uint32_t GetSingleStreamVolume() const = 0;
+    virtual float GetSingleStreamVolume() const = 0;
     
     virtual ~AudioRenderer();
 };

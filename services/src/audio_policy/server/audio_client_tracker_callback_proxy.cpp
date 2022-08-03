@@ -93,7 +93,7 @@ void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
     volume = reply.ReadFloat();
 }
 
-void AudioClientTrackerCallbackProxy::GetSingleStreamVolumeImpl(uint32_t &volume)
+void AudioClientTrackerCallbackProxy::GetSingleStreamVolumeImpl(float &volume)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -108,7 +108,7 @@ void AudioClientTrackerCallbackProxy::GetSingleStreamVolumeImpl(uint32_t &volume
         AUDIO_ERR_LOG("GETSINGLESTREAMVOL failed, error: %{public}d", error);
     }
 
-    volume = reply.ReadUint32();
+    volume = reply.ReadFloat();
 }
 
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)
@@ -153,7 +153,7 @@ void ClientTrackerCallbackListener::GetLowPowerVolumeImpl(float &volume)
     }
 }
 
-void ClientTrackerCallbackListener::GetSingleStreamVolumeImpl(uint32_t &volume)
+void ClientTrackerCallbackListener::GetSingleStreamVolumeImpl(float &volume)
 {
     if (listener_ != nullptr) {
         listener_->GetSingleStreamVolumeImpl(volume);

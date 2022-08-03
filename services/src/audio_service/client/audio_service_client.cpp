@@ -2299,7 +2299,7 @@ float AudioServiceClient::GetStreamLowPowerVolume()
     return mPowerVolumeFactor;
 }
 
-uint32_t AudioServiceClient::GetSingleStreamVol()
+float AudioServiceClient::GetSingleStreamVol()
 {
     int32_t systemVolumeInt
         = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
@@ -2319,9 +2319,8 @@ uint32_t AudioServiceClient::GetSingleStreamVol()
             vol = MIN_STREAM_VOLUME_LEVEL;
         }
     }
-    uint32_t volume = pa_sw_volume_from_linear(vol);
 
-    return volume;
+    return vol;
 }
 } // namespace AudioStandard
 } // namespace OHOS

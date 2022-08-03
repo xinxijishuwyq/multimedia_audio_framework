@@ -53,7 +53,7 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) const;
 
-    uint32_t GetSingleStreamVolume(int32_t streamId) const;
+    float GetSingleStreamVolume(int32_t streamId) const;
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute) const;
 

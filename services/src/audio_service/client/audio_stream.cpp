@@ -946,7 +946,7 @@ float AudioStream::GetLowPowerVolume()
     return GetStreamLowPowerVolume();
 }
 
-uint32_t AudioStream::GetSingleStreamVolume()
+float AudioStream::GetSingleStreamVolume()
 {
     return GetSingleStreamVol();
 }

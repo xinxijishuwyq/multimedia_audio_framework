@@ -62,9 +62,9 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         case GETSINGLESTREAMVOL: {
-            uint32_t volume;
+            float volume;
             GetSingleStreamVolumeImpl(volume);
-            reply.WriteUint32(volume);
+            reply.WriteFloat(volume);
             return AUDIO_OK;
         }
         default: {
@@ -129,7 +129,7 @@ void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
     }
 }
 
-void AudioClientTrackerCallbackStub::GetSingleStreamVolumeImpl(uint32_t &volume)
+void AudioClientTrackerCallbackStub::GetSingleStreamVolumeImpl(float &volume)
 {
     AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub GetSingleStreamVolumeImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();

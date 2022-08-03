@@ -145,7 +145,7 @@ float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
     return mStreamCollector.GetLowPowerVolume(streamId);
 }
 
-uint32_t AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
+float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
 {
     return mStreamCollector.GetSingleStreamVolume(streamId);
 }

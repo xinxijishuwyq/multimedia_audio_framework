@@ -212,7 +212,7 @@ public:
     int32_t GetVolume(AudioVolumeType volumeType) const;
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
     float GetLowPowerVolume(int32_t streamId) const;
-    uint32_t GetSingleStreamVolume(int32_t streamId) const;
+    float GetSingleStreamVolume(int32_t streamId) const;
     int32_t GetMaxVolume(AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute) const;

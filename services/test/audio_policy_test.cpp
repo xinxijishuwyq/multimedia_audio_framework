@@ -407,7 +407,7 @@ static void HandleSingleStreamVolumeOption(int argc, char* argv[], char opt)
             float volume = audioSystemMgr->GetLowPowerVolume(streamId);
             cout << "Get discounted volume factor: " << volume << endl;
         } else if (opt_flag == AudioPolicyTest::OPT_GET_SS_VOL) {
-            uint32_t volume = audioSystemMgr->GetSingleStreamVolume(streamId);
+            float volume = audioSystemMgr->GetSingleStreamVolume(streamId);
             cout << "Get single stream volume: " << volume << endl;
         } else {
             cout << "invalid operation." << endl;

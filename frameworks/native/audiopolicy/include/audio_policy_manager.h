@@ -56,7 +56,7 @@ public:
 
     float GetLowPowerVolume(int32_t streamId);
 
-    uint32_t GetSingleStreamVolume(int32_t streamId);
+    float GetSingleStreamVolume(int32_t streamId);
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 

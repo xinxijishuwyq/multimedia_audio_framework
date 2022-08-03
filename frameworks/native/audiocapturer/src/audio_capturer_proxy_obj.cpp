@@ -46,7 +46,7 @@ void AudioCapturerProxyObj::GetLowPowerVolumeImpl(float &volume)
     volume = 1.0;
 }
 
-void AudioCapturerProxyObj::GetSingleStreamVolumeImpl(uint32_t &volume)
+void AudioCapturerProxyObj::GetSingleStreamVolumeImpl(float &volume)
 {
     volume = 0;
 }
