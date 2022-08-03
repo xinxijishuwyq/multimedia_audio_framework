@@ -435,7 +435,7 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
 }
 
 void AudioRoutingManagerNapi::CheckParams(size_t argc, napi_env env, napi_value* argv,
-    std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, const int32_t refCount, napi_value result)
+    std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, const int32_t refCount, napi_value& result)
 {
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
