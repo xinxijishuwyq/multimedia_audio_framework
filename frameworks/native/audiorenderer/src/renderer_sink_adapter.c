@@ -116,6 +116,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
         adapter->RendererSinkGetLatency = AudioRendererSinkGetLatency;
         adapter->RendererSinkGetTransactionId = AudioRendererSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_PRIMARY;
+        adapter->deviceClass = CLASS_TYPE_PRIMARY;
     } else if (!strcmp(device, g_deviceClassA2Dp)) {
         AUDIO_INFO_LOG("%{public}s: a2dp device", __func__);
         BluetoothFillinAudioRenderSinkWapper(device, &adapter->wapper);
@@ -130,6 +131,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
         adapter->RendererSinkGetLatency = BluetoothRendererSinkGetLatency;
         adapter->RendererSinkGetTransactionId = BluetoothRendererSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_A2DP;
+        adapter->deviceClass = CLASS_TYPE_A2DP;
     } else if (!strcmp(device, g_deviceClassFile)) {
         FillinAudioRenderFileSinkWapper(device, &adapter->wapper);
         adapter->RendererSinkInit = RendererSinkInitInner;
@@ -143,6 +145,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
         adapter->RendererSinkGetLatency = AudioRendererFileSinkGetLatency;
         adapter->RendererSinkGetTransactionId = AudioRendererFileSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_FILE;
+        adapter->deviceClass = CLASS_TYPE_FILE;
     } else if (!strcmp(device, g_deviceClassRemote)) {
         AUDIO_DEBUG_LOG("%{public}s: remote device", __func__);
         FillinRemoteAudioRenderSinkWapper(deviceNetworkId, &adapter->wapper);
@@ -157,6 +160,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
         adapter->RendererSinkGetLatency = RemoteAudioRendererSinkGetLatency;
         adapter->RendererSinkGetTransactionId = RemoteAudioRendererSinkGetTransactionId;
         g_deviceClass = CLASS_TYPE_REMOTE;
+        adapter->deviceClass = CLASS_TYPE_REMOTE;
     } else {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         free(adapter);
@@ -180,18 +184,18 @@ int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter)
     return SUCCESS;
 }
 
-const char *GetDeviceClass(void)
+const char *GetDeviceClass(int32_t deviceClass)
 {
-    if (g_deviceClass == CLASS_TYPE_PRIMARY) {
+    if (deviceClass == CLASS_TYPE_PRIMARY) {
         return g_deviceClassPrimary;
-    } else if (g_deviceClass == CLASS_TYPE_A2DP) {
+    } else if (deviceClass == CLASS_TYPE_A2DP) {
         return g_deviceClassA2Dp;
-    } else if (g_deviceClass == CLASS_TYPE_FILE) {
+    } else if (deviceClass == CLASS_TYPE_FILE) {
         return g_deviceClassFile;
-    } else if (g_deviceClass == CLASS_TYPE_REMOTE) {
+    } else if (deviceClass == CLASS_TYPE_REMOTE) {
         return g_deviceClassRemote;
     } else {
-        return NULL;
+        return "";
     }
 }
 #ifdef __cplusplus

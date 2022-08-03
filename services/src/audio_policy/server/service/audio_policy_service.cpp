@@ -225,6 +225,10 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     vector<SinkInput> sinkInputs = mAudioPolicyManager.GetAllSinkInputs();
 
     for (size_t i = 0; i < sinkInputs.size(); i++) {
+        if (sinkInputs[i].uid == dAudioClientUid) {
+            AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
+            continue;
+        }
         AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
         if (moveAll || (targetUid == sinkInputs[i].uid && targetStreamType == sinkInputs[i].streamType)) {
             targetSinkInputs.push_back(sinkInputs[i]);
@@ -1089,6 +1093,19 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     }
 }
 
+inline void RemoveDeviceInRouterMap(std::string networkId,
+    std::unordered_map<int32_t, std::pair<std::string, int32_t>> &routerMap_)
+{
+    std::unordered_map<int32_t, std::pair<std::string, int32_t>>::iterator it;
+    for (it = routerMap_.begin();it != routerMap_.end();) {
+        if (it->second.first == networkId) {
+            routerMap_.erase(it++);
+        } else {
+            it++;
+        }
+    }
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
@@ -1140,7 +1157,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             mAudioPolicyManager.CloseAudioPort(mIOHandles[moduleName]);
             mIOHandles.erase(moduleName);
         }
-
+        RemoveDeviceInRouterMap(networkId, routerMap_);
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     }
 

@@ -40,6 +40,7 @@ typedef struct {
 } SinkAttr;
 
 struct RendererSinkAdapter {
+    int32_t deviceClass;
     void* wapper;
     int32_t (*RendererSinkInit)(void *wapper, const SinkAttr *attr);
     void (*RendererSinkDeInit)(void *wapper);
@@ -55,7 +56,7 @@ struct RendererSinkAdapter {
 
 int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter);
 int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter);
-const char *GetDeviceClass(void);
+const char *GetDeviceClass(int32_t deviceClass);
 #ifdef __cplusplus
 }
 #endif

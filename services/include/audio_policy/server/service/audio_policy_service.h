@@ -243,6 +243,7 @@ private:
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isOpenRemoteDevice = false;
+    int32_t dAudioClientUid = 3055;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
