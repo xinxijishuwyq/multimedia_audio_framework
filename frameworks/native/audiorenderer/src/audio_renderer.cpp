@@ -716,5 +716,10 @@ float AudioRendererPrivate::GetLowPowerVolume() const
 {
     return audioStream_->GetLowPowerVolume();
 }
+
+uint32_t AudioRendererPrivate::GetSingleStreamVolume() const
+{
+    return audioStream_->GetSingleStreamVolume();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

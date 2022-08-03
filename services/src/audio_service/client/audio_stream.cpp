@@ -945,5 +945,10 @@ float AudioStream::GetLowPowerVolume()
 {
     return GetStreamLowPowerVolume();
 }
+
+uint32_t AudioStream::GetSingleStreamVolume()
+{
+    return GetSingleStreamVol();
+}
 } // namespace AudioStandard
 } // namespace OHOS

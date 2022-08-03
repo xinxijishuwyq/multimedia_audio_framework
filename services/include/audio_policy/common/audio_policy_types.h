@@ -69,6 +69,7 @@ enum AudioPolicyCommand {
     SET_LOW_POWER_STREM_VOLUME,
     GET_LOW_POWRR_STREM_VOLUME,
     UPDATE_STREAM_STATE,
+    GET_SINGLE_STREAM_VOLUME,
 };
 } // namespace AudioStandard
 } // namespace OHOS

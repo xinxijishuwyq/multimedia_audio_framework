@@ -31,6 +31,7 @@ public:
 
     void SetLowPowerVolumeImpl(float volume);
     void GetLowPowerVolumeImpl(float &volume);
+    void GetSingleStreamVolumeImpl(uint32_t &volume);
 
 private:
     const AudioCapturer *capturer;

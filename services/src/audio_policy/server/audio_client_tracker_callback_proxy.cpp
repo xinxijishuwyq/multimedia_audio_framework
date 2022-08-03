@@ -93,6 +93,24 @@ void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
     volume = reply.ReadFloat();
 }
 
+void AudioClientTrackerCallbackProxy::GetSingleStreamVolumeImpl(uint32_t &volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    int error = Remote()->SendRequest(GETSINGLESTREAMVOL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GETSINGLESTREAMVOL failed, error: %{public}d", error);
+    }
+
+    volume = reply.ReadUint32();
+}
+
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)
     : listener_(listener)
 {
@@ -132,6 +150,13 @@ void ClientTrackerCallbackListener::GetLowPowerVolumeImpl(float &volume)
 {
     if (listener_ != nullptr) {
         listener_->GetLowPowerVolumeImpl(volume);
+    }
+}
+
+void ClientTrackerCallbackListener::GetSingleStreamVolumeImpl(uint32_t &volume)
+{
+    if (listener_ != nullptr) {
+        listener_->GetSingleStreamVolumeImpl(volume);
     }
 }
 } // namespace AudioStandard

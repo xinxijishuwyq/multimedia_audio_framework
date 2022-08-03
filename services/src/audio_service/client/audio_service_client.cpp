@@ -2298,5 +2298,30 @@ float AudioServiceClient::GetStreamLowPowerVolume()
 {
     return mPowerVolumeFactor;
 }
+
+uint32_t AudioServiceClient::GetSingleStreamVol()
+{
+    int32_t systemVolumeInt
+        = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
+    float vol = systemVolume * mVolumeFactor * mPowerVolumeFactor;
+
+    AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
+    if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
+        vol = MIN_STREAM_VOLUME_LEVEL;
+    }
+
+    if (mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(mStreamType))) {
+        if (mUnMute_) {
+            mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(mStreamType),
+                false);
+        } else {
+            vol = MIN_STREAM_VOLUME_LEVEL;
+        }
+    }
+    uint32_t volume = pa_sw_volume_from_linear(vol);
+
+    return volume;
+}
 } // namespace AudioStandard
 } // namespace OHOS

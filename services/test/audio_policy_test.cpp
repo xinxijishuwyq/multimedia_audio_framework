@@ -43,6 +43,8 @@ namespace AudioPolicyTest {
     const int TWELFTH_ARG = 12;
     const int OPT_ARG_BASE = 10;
     const int OPT_SHORT_LEN = 3;
+    const int OPT_GET_VOL_FACTOR = 1;
+    const int OPT_GET_SS_VOL = 2;
 }
 
 static void PrintUsage(void)
@@ -73,10 +75,8 @@ static void PrintUsage(void)
     cout << "-r\n\tGets RingerMode status" << endl << endl;
     cout << "-C\n\tSets AudioScene" << endl << endl;
     cout << "-c\n\tGets AudioScene status" << endl << endl;
-    cout << "-N\n\tSet the discount volume factor to 0" << endl << endl;
-    cout << "-O\n\tSet the discount volume factor to 0.5f" << endl << endl;
-    cout << "-P\n\tSet the discount volume factor to 1.0f" << endl << endl;
-    cout << "-G\n\tGet the discount volume factor" << endl << endl;
+    cout << "-N\n\tSet the discount volume factor" << endl << endl;
+    cout << "-n\n\tGet the discount volume factor or Get single stream volume" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
@@ -384,31 +384,34 @@ static void HandleUpdateStreamState(int type, char *seg1)
     cout << "result :  " << result << endl;
 }
 
-static void HandleLowPowerVolumeOption(char option)
+static void HandleSingleStreamVolumeOption(int argc, char* argv[], char opt)
 {
+    if (argc != AudioPolicyTest::FOURTH_ARG) {
+        cout << "Incorrect number of test commands." << endl;
+        return;
+    }
+
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    int32_t streamId = stoi(optarg);
-    switch (option) {
-        case 'N':
-            audioSystemMgr->SetLowPowerVolume(streamId, 0);
-            cout << "Set low power volume 0" << endl;
-            break;
-        case 'O':
-            audioSystemMgr->SetLowPowerVolume(streamId, 0.5f);
-            cout << "Set low power volume 0.5" << endl;
-            break;
-        case 'P':
-            audioSystemMgr->SetLowPowerVolume(streamId, 1.0f);
-            cout << "Set low power volume 1.0" << endl;
-            break;
-        case 'G': {
-            float volume = audioSystemMgr->GetLowPowerVolume(streamId);
-            cout << "Get low power volume is: " << volume << endl;
-            break;
+    int32_t streamId = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    if (opt == 'N') {
+        float volume = atof(argv[AudioPolicyTest::THIRD_ARG]);
+        if (volume < 0 || volume > 1.0f) {
+            cout << "volume out of range." << endl;
+            return;
         }
-        default :
-            cout << "This operation is not supported" << endl;
-            break;
+        audioSystemMgr->SetLowPowerVolume(streamId, volume);
+        cout << "Set low power volume :" << volume << endl;
+    } else {
+        int32_t opt_flag = atoi(argv[AudioPolicyTest::THIRD_ARG]);
+        if (opt_flag == AudioPolicyTest::OPT_GET_VOL_FACTOR) {
+            float volume = audioSystemMgr->GetLowPowerVolume(streamId);
+            cout << "Get discounted volume factor: " << volume << endl;
+        } else if (opt_flag == AudioPolicyTest::OPT_GET_SS_VOL) {
+            uint32_t volume = audioSystemMgr->GetSingleStreamVolume(streamId);
+            cout << "Get single stream volume: " << volume << endl;
+        } else {
+            cout << "invalid operation." << endl;
+        }
     }
 }
 
@@ -422,7 +425,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:L:l:s:vmrucOoIiGg")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:vmrucOoIiGgNn")) != -1) {
         switch (opt) {
             case 'G':
             case 'g':
@@ -468,7 +471,6 @@ int main(int argc, char* argv[])
             case 'c':
                 HandleAudioScene(opt);
                 break;
-
             case 'X':
                 HandleUpdateStreamState(0, optarg);
                 break;
@@ -476,8 +478,8 @@ int main(int argc, char* argv[])
                 HandleUpdateStreamState(1, optarg);
                 break;
             case 'N':
-            case 'P':
-                HandleLowPowerVolumeOption(opt);
+            case 'n':
+                HandleSingleStreamVolumeOption(argc, argv, opt);
                 break;
             case ':':
                 NoValueError();

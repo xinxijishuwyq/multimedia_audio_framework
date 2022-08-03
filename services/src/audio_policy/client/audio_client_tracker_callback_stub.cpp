@@ -59,7 +59,12 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             float volume;
             GetLowPowerVolumeImpl(volume);
             reply.WriteFloat(volume);
-            data.WriteFloat(static_cast<float>(volume));
+            return AUDIO_OK;
+        }
+        case GETSINGLESTREAMVOL: {
+            uint32_t volume;
+            GetSingleStreamVolumeImpl(volume);
+            reply.WriteUint32(volume);
             return AUDIO_OK;
         }
         default: {
@@ -97,7 +102,7 @@ void AudioClientTrackerCallbackStub::SetLowPowerVolumeImpl(float volume)
     if (cb != nullptr) {
         cb->SetLowPowerVolumeImpl(volume);
     } else {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: SetLowPowerVolumeImpl callback_ is nullptr");
     }
 }
 
@@ -120,7 +125,18 @@ void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
     if (cb != nullptr) {
         cb->GetLowPowerVolumeImpl(volume);
     } else {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: GetLowPowerVolumeImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::GetSingleStreamVolumeImpl(uint32_t &volume)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub GetSingleStreamVolumeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->GetSingleStreamVolumeImpl(volume);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: GetSingleStreamVolumeImpl callback_ is nullptr");
     }
 }
 } // namespace AudioStandard

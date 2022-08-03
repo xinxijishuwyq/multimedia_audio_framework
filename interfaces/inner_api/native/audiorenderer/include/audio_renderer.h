@@ -538,6 +538,14 @@ public:
      * @return volume adjustment percentage.
      */
     virtual float GetLowPowerVolume() const = 0;
+
+    /**
+     * @brief Get single stream volume.
+     *
+     * @param none.
+     * @return single stream volume.
+     */
+    virtual uint32_t GetSingleStreamVolume() const = 0;
     
     virtual ~AudioRenderer();
 };

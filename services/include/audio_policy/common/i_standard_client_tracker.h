@@ -31,6 +31,7 @@ public:
     virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
     virtual void SetLowPowerVolumeImpl(float volume) = 0;
     virtual void GetLowPowerVolumeImpl(float& volume) = 0;
+    virtual void GetSingleStreamVolumeImpl(uint32_t& volume) = 0;
 
     enum AudioClientTrackerMsg {
         ON_ERROR = 0,
@@ -39,6 +40,7 @@ public:
         GETLOWPOWERVOL,
         PAUSEDSTREAM,
         RESUMESTREAM,
+        GETSINGLESTREAMVOL,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardClientTracker");

@@ -68,6 +68,7 @@ public:
     void SetInterruptMode(InterruptMode mode) override;
     int32_t SetLowPowerVolume(float volume) const override;
     float GetLowPowerVolume() const override;
+    uint32_t GetSingleStreamVolume() const override;
 
     AudioRendererInfo rendererInfo_ = {};
 

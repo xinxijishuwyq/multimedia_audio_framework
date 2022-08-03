@@ -343,6 +343,11 @@ float AudioSystemManager::GetLowPowerVolume(int32_t streamId) const
     return AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
 }
 
+uint32_t AudioSystemManager::GetSingleStreamVolume(int32_t streamId) const
+{
+    return AudioPolicyManager::GetInstance().GetSingleStreamVolume(streamId);
+}
+
 float AudioSystemManager::MapVolumeToHDI(int32_t volume)
 {
     float value = (float)volume / MAX_VOLUME_LEVEL;

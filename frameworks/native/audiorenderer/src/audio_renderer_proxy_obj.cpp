@@ -45,5 +45,10 @@ void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
 {
     volume = renderer->GetLowPowerVolume();
 }
+
+void AudioRendererProxyObj::GetSingleStreamVolumeImpl(uint32_t &volume)
+{
+    volume = renderer->GetSingleStreamVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS

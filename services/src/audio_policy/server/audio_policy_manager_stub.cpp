@@ -130,6 +130,13 @@ void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, Mess
     reply.WriteFloat(volume);
 }
 
+void AudioPolicyManagerStub::GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t streamId = data.ReadInt32();
+    uint32_t volume = GetSingleStreamVolume(streamId);
+    reply.WriteUint32(volume);
+}
+
 void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
@@ -805,6 +812,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_LOW_POWRR_STREM_VOLUME:
             GetLowPowerVolumeInternal(data, reply);
+            break;
+
+        case GET_SINGLE_STREAM_VOLUME:
+            GetSingleStreamVolumeInternal(data, reply);
             break;
 
         default:

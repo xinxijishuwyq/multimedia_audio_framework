@@ -490,5 +490,17 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
     callback->GetLowPowerVolumeImpl(volume);
     return volume;
 }
+
+uint32_t AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+        ERR_INVALID_PARAM, "AudioStreamCollector:GetSingleStreamVolume streamId invalid.");
+    uint32_t volume;
+    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        ERR_INVALID_PARAM, "AudioStreamCollector:GetSingleStreamVolume callback failed");
+    callback->GetSingleStreamVolumeImpl(volume);
+    return volume;
+}
 } // namespace AudioStandard
 } // namespace OHOS

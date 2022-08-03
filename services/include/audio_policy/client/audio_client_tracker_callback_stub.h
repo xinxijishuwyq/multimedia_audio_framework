@@ -34,6 +34,7 @@ public:
 
     void SetLowPowerVolumeImpl(float volume) override;
     void GetLowPowerVolumeImpl(float &volume) override;
+    void GetSingleStreamVolumeImpl(uint32_t &volume) override;
 
 private:
     std::weak_ptr<AudioClientTracker> callback_;
