@@ -38,7 +38,7 @@ private:
     static napi_value GetDevices(napi_env env, napi_callback_info info);
 
     static void CheckParams(size_t argc, napi_env env, napi_value* argv,
-        std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, const int32_t refCount, napi_value result);
+        std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, const int32_t refCount, napi_value& result);
 
     static napi_value SelectOutputDevice(napi_env env, napi_callback_info info);
     static napi_value SelectInputDevice(napi_env env, napi_callback_info info);
