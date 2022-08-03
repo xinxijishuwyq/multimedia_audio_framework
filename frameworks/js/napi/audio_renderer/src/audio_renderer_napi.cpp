@@ -134,7 +134,7 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = AudioRendererNapi::SAMPLE_FORMAT_INVALID; i <= AudioRendererNapi::SAMPLE_FORMAT_S32LE; i++) {
+        for (int i = AudioRendererNapi::SAMPLE_FORMAT_INVALID; i <= AudioRendererNapi::SAMPLE_FORMAT_F32LE; i++) {
             switch (i) {
                 case AudioRendererNapi::SAMPLE_FORMAT_INVALID:
                     propName = "SAMPLE_FORMAT_INVALID";
@@ -150,6 +150,9 @@ napi_value AudioRendererNapi::CreateAudioSampleFormatObject(napi_env env)
                     break;
                 case AudioRendererNapi::SAMPLE_FORMAT_S32LE:
                     propName = "SAMPLE_FORMAT_S32LE";
+                    break;
+                case AudioRendererNapi::SAMPLE_FORMAT_F32LE:
+                    propName = "SAMPLE_FORMAT_F32LE";
                     break;
                 default:
                     HiLog::Error(LABEL, "CreateAudioSampleFormatObject: No prop with this value try next value!");
