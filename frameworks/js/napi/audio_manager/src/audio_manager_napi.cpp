@@ -440,43 +440,7 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
-            switch (i) {
-                case DEVICE_FLAG_NONE:
-                    propName = "NONE_DEVICES_FLAG";
-                    break;
-                case OUTPUT_DEVICES_FLAG:
-                    propName = "OUTPUT_DEVICES_FLAG";
-                    break;
-                case INPUT_DEVICES_FLAG:
-                    propName = "INPUT_DEVICES_FLAG";
-                    break;
-                case ALL_DEVICES_FLAG:
-                    propName = "ALL_DEVICES_FLAG";
-                    break;
-                case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
-                    propName = "DISTRIBUTED_OUTPUT_DEVICES_FLAG";
-                    break;
-                case DISTRIBUTED_INPUT_DEVICES_FLAG:
-                    propName = "DISTRIBUTED_INPUT_DEVICES_FLAG";
-                    break;
-                case ALL_DISTRIBUTED_DEVICES_FLAG:
-                    propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
-                    break;
-                default:
-                    HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
-
         AddPropName(propName, status, env, result);
-        status = AddPropName(propName, status, env, result);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &deviceFlagRef_);
             if (status == napi_ok) {
@@ -2667,10 +2631,8 @@ napi_value AudioManagerNapi::GetVolumeGroups(napi_env env, napi_callback_info in
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
-
             if (i == PARAM0 && valueType == napi_string) {
                 asyncContext->networkId = AudioCommonNapi::GetStringArgument(env, argv[i]);
-
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -2697,7 +2659,7 @@ napi_value AudioManagerNapi::GetVolumeGroups(napi_env env, napi_callback_info in
                 HiLog::Info(LABEL, "AudioManagerNapi::GetVolumeGroups--napi_create_async_work ");
                 context->status = 0;
             },
-           GetVolumeGroupsAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+            GetVolumeGroupsAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
@@ -2787,7 +2749,7 @@ void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, n
     for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
         switch (i) {
             case DEVICE_FLAG_NONE:
-                propName = "DEVICE_FLAG_NONE";
+                propName = "NONE_DEVICE_FLAG";
                 break;
             case OUTPUT_DEVICES_FLAG:
                 propName = "OUTPUT_DEVICES_FLAG";
@@ -2806,12 +2768,6 @@ void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, n
                 break;
             case ALL_DISTRIBUTED_DEVICES_FLAG:
                 propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
-                break;
-            case ALL_L_D_DEVICES_FLAG:
-                propName = "ALL_L_D_DEVICES_FLAG";
-                break;
-            case DEVICE_FLAG_MAX:
-                propName = "DEVICE_FLAG_MAX";
                 break;
             default:
                 HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");

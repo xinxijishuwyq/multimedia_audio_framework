@@ -267,6 +267,7 @@ napi_value AudioGroupManagerNapi::GetVolume(napi_env env, napi_callback_info inf
     unique_ptr<AudioGroupManagerAsyncContext> asyncContext = make_unique<AudioGroupManagerAsyncContext>();
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    // constexpr int32_t CHANNEL_10 = 10;
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;

@@ -36,7 +36,6 @@ public:
     // AudioManagerListenerStub
     void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
 private:
-    // void ReadParameterEventParams(MessageParcel& data, const std::string& key, const std::string& value);
     std::weak_ptr<AudioParameterCallback> callback_;
 };
 } // namespace AudioStandard

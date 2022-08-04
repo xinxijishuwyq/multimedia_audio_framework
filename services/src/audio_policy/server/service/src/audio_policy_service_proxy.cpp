@@ -143,7 +143,6 @@ int32_t AudioPolicyServiceProxy::SetParameterCallback(const sptr<IRemoteObject>&
     }
 
     return reply.ReadInt32();
-
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(DeviceFlag deviceFlag)

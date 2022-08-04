@@ -1424,51 +1424,65 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
         return;
     }
     if (key == AudioParamKey::VOLUME) {
-        VolumeEvent volumeEvent;
-        volumeEvent.networkId = networkId;
-        char eventDes[EVENT_DES_SIZE];
-        if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d",
-            &eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
-            &(volumeEvent.volumeGroupId)) < PARAMS_VOLUME_NUM) {
-            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
-            return;
-        }
-
-        for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
-            std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
-            if (volumeChangeCb == nullptr) {
-                AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
-                continue;
-            }
-
-            AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
-            volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
-        }
+        VolumeOnChange(networkId, condition);
+        return;
     }
     if (key == RENDER_STATE) {
-        RendererState state = RENDERER_INVALID;
-        StreamSetState streamState = STREAM_PAUSE;
-        char eventDes[EVENT_DES_SIZE];
-        if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state)
-            < PARAMS_RENDER_STATE_NUM) {
-            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
-            return;
+        RenderStateOnChange(condition);
+        return;
+    }
+}
+
+void AudioPolicyServer::RemoteParameterCallback::RenderStateOnChange(const std::string& condition)
+{
+    RendererState state = RENDERER_INVALID;
+    StreamSetState streamState = STREAM_PAUSE;
+    char eventDes[EVENT_DES_SIZE];
+    if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state)
+        < PARAMS_RENDER_STATE_NUM) {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        return;
+    }
+
+    if (state == RENDERER_INVALID) {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        return;
+    } else if (state == RENDERER_PAUSED) {
+        streamState = STREAM_PAUSE;
+    } else if (state == RENDERER_RUNNING) {
+        streamState = STREAM_RESUME;
+    } else {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: wrong state value: %{public}d", state);
+        return;
+    }
+    std::vector<int32_t> clientIds = server_->GetSessionId();
+    for (auto iter : clientIds) {
+        server_->UpdateStreamState(iter, streamState, STREAM_ALL);
+    }
+}
+
+void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
+    const std::string& condition)
+{
+    VolumeEvent volumeEvent;
+    volumeEvent.networkId = networkId;
+    char eventDes[EVENT_DES_SIZE];
+    if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d",
+        &eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
+        &(volumeEvent.volumeGroupId)) < PARAMS_VOLUME_NUM) {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        return;
+    }
+
+    for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
+        std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+        if (volumeChangeCb == nullptr) {
+            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+            continue;
         }
-        if (state == RENDERER_INVALID) {
-            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
-            return;
-        }
-        if (state == RENDERER_PAUSED) {
-            streamState = STREAM_PAUSE;
-        }
-        else if (state == RENDERER_RUNNING) {
-            streamState = STREAM_RESUME;
-        }
-        std::vector<int32_t> clientIds = server_->GetSessionId();
-        for (auto iter : clientIds)
-        {
-            server_->UpdateStreamState(iter, streamState, STREAM_ALL);
-        }
+
+        AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+        volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
     }
 }
 

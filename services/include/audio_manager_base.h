@@ -139,16 +139,16 @@ public:
     }
 
     /**
-     * Notify device connect info 
+     * Notify device connect info
      *
      * @return Returns transaction id.
      */
     virtual void NotifyDeviceInfo(std::string networkId, bool connected) = 0;
 
     /**
-     * Set parameter callback 
+     * Set parameter callback
      *
-     * @return Returns the setting result 
+     * @return Returns the setting result
      */
     virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
 

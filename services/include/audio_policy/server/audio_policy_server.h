@@ -174,6 +174,8 @@ public:
         // AudioParameterCallback
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
             const std::string& value) override;
+        void RenderStateOnChange(const std::string& condition);
+        void VolumeOnChange(const std::string networkId, const std::string& condition);
     private:
         sptr<AudioPolicyServer> server_;
     };

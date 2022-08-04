@@ -41,8 +41,8 @@ namespace OHOS {
             AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
             virtual ~AudioManagerListenerCallback();
             DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
-            void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
-                const std::string& value) override;
+            void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+                const std::string& condition, const std::string& value) override;
 
         private:
             sptr<IStandardAudioServerManagerListener> listener_ = nullptr;

@@ -1114,22 +1114,16 @@ inline void RemoveDeviceInRouterMap(std::string networkId,
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 {
+    AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
+        statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
-    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d] NETWORKID[%{public}s]",
-        devType, statusInfo.isConnected, statusInfo.networkId);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;
-    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.isConnected,
-        statusInfo.mappingVolumeId);
-    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
-        statusInfo.isConnected, statusInfo.mappingInterruptId);
 
-    // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-
     for (auto devDes : mConnectedDevices) {
         if (statusInfo.isConnected && devDes->deviceType_ == devType && devDes->networkId_== networkId) {
             AUDIO_INFO_LOG("Device [%{public}s] Type [%{public}d] has connected already!", networkId.c_str(), devType);
@@ -1143,37 +1137,32 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     // If device already in list, remove it else do not modify the list
     mConnectedDevices.erase(std::remove_if(mConnectedDevices.begin(), mConnectedDevices.end(), isPresent),
                             mConnectedDevices.end());
-
     // new device found. If connected, add into active device list
     if (statusInfo.isConnected) {
-        AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
-            statusInfo.connectType);
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
             statusInfo.connectType==ConnectType::CONNECT_TYPE_DISTRIBUTED);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("=== DEVICE online but open audio device failed.");
             return;
         }
-        if (g_sProxy != nullptr && devType == DEVICE_TYPE_SPEAKER && statusInfo.connectType
-            == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
-            AUDIO_INFO_LOG("notifyDeviceInfo");
+        if (g_sProxy != nullptr && statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
             g_sProxy->NotifyDeviceInfo(networkId, true);
         }
-        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     } else {
-        AUDIO_INFO_LOG("=== DEVICE DISCONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
-            statusInfo.connectType);
         std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(devType));
         if (mIOHandles.find(moduleName) != mIOHandles.end()) {
             mAudioPolicyManager.CloseAudioPort(mIOHandles[moduleName]);
             mIOHandles.erase(moduleName);
         }
         RemoveDeviceInRouterMap(networkId, routerMap_);
-        UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     }
 
+    UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.isConnected,
+        statusInfo.mappingVolumeId);
+    UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
+        statusInfo.isConnected, statusInfo.mappingInterruptId);
+    UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
-    AUDIO_INFO_LOG("device list size = [%{public}zu]", mConnectedDevices.size());
 }
 
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)

@@ -30,7 +30,7 @@ AudioManagerListenerProxy::~AudioManagerListenerProxy()
     AUDIO_DEBUG_LOG("~AudioPolicyManagerListenerProxy: Instance destroy");
 }
 
-void AudioManagerListenerProxy::WriteParameterEventParams(MessageParcel& data,const std::string networkId,
+void AudioManagerListenerProxy::WriteParameterEventParams(MessageParcel& data, const std::string networkId,
     const AudioParamKey key, const std::string& condition, const std::string& value)
 {
     data.WriteString(static_cast<std::string>(networkId));

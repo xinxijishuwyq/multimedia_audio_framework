@@ -279,7 +279,6 @@ void AudioGroupManager::Init()
 
 bool AudioGroupManager::IsAlived()
 {
-    //std::lock_guard<std::mutex> lock(mutex_);
     if (g_sProxy == nullptr) {
         Init();
     }
