@@ -1234,5 +1234,32 @@ int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetSt
 
     return SUCCESS;
 }
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyProxy::GetVolumeGroupInfos()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    std::vector<sptr<VolumeGroupInfo>> infos;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetVolumeGroupById WriteInterfaceToken failed");
+        return infos;
+    }
+
+    int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfo, error: %d", error);
+        return infos;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        infos.push_back(VolumeGroupInfo::Unmarshalling(reply));
+    }
+
+    return infos;
+}
 } // namespace AudioStandard
 } // namespace OHOS

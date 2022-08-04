@@ -23,12 +23,14 @@
 #include "ipc_skeleton.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
-#include "audio_system_manager.h"
+#include "audio_renderer_sink.h"
+#include "remote_audio_renderer_sink.h"
+#include "i_standard_audio_server_manager_listener.h"
 #include "audio_manager_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub {
+class AudioServer : public SystemAbility, public AudioManagerStub, public ISinkParameterCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -44,21 +46,32 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     static void *paDaemonThread(void *arg);
-    void SetAudioParameter(const std::string &key, const std::string &value) override;
+    void SetAudioParameter(const std::string& key, const std::string& value) override;
+    void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
+        const std::string& value) override;
     const std::string GetAudioParameter(const std::string &key) override;
+    const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+        const std::string& condition) override;
     const char *RetrieveCookie(int32_t &size) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
 
+    void NotifyDeviceInfo(std::string networkId, bool connected) override;
+
+    // ISinkParameterCallback
+    void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key,
+        const std::string& condition, const std::string value) override;
+
+    int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 private:
     bool VerifyClientPermission(const std::string &permissionName);
-
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+    std::shared_ptr<AudioParameterCallback> callback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

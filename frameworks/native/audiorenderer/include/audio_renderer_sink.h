@@ -18,6 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_manager.h"
+#include "audio_sink_callback.h"
 
 #include <cstdio>
 #include <list>
@@ -55,6 +56,12 @@ public:
     int32_t SetOutputRoute(DeviceType deviceType);
     static AudioRendererSink *GetInstance(void);
     bool rendererInited_;
+    void RegisterParameterCallback(ISinkParameterCallback* callback);
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
+    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
+    static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
+        void *cookie);
+
 private:
     AudioRendererSink();
     ~AudioRendererSink();
@@ -70,6 +77,7 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_ = {};
+    ISinkParameterCallback* callback_;
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();

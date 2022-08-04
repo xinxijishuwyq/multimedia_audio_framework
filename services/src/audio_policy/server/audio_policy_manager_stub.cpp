@@ -615,6 +615,19 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal exit");
 }
 
+void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
+{
+    AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal entered");
+    std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
+    int32_t size = static_cast<int32_t>(groupInfos.size());
+    AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        groupInfos[i]->Marshalling(reply);
+    }
+    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:GetVolumeGroups internal exit");
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -816,6 +829,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_SINGLE_STREAM_VOLUME:
             GetSingleStreamVolumeInternal(data, reply);
+            break;
+
+        case GET_VOLUME_GROUP_INFO:
+            GetVolumeGroupInfoInternal(data, reply);
             break;
 
         default:

@@ -101,6 +101,15 @@ const char *AudioPolicyServiceProxy::RetrieveCookie(int32_t &size)
     return nullptr;
 }
 
+void AudioPolicyServiceProxy::NotifyDeviceInfo(std::string networkId, bool connected)
+{
+}
+
+int32_t AudioPolicyServiceProxy::SetParameterCallback(const sptr<IRemoteObject>& object)
+{
+    return 0;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(DeviceFlag deviceFlag)
 {
     MessageParcel data;
@@ -133,9 +142,22 @@ const std::string AudioPolicyServiceProxy::GetAudioParameter(const std::string &
     return "";
 }
 
+const std::string AudioPolicyServiceProxy::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+	const std::string& condition)
+{
+    return "";
+}
+
 void AudioPolicyServiceProxy::SetAudioParameter(const std::string &key, const std::string &value)
 {
     return;
 }
+
+void AudioPolicyServiceProxy::SetAudioParameter(const std::string& networkId, const AudioParamKey key,
+    const std::string& condition, const std::string& value)
+{
+
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

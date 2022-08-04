@@ -70,6 +70,7 @@ enum AudioPolicyCommand {
     GET_LOW_POWRR_STREM_VOLUME,
     UPDATE_STREAM_STATE,
     GET_SINGLE_STREAM_VOLUME,
+    GET_VOLUME_GROUP_INFO,
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -172,8 +172,7 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_003, TestSize.Level1)
     std::string testCaseName("volumeChange_test_003");
     g_isCallbackReceived = false;
     AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
-    AudioVolumeType volumeType
-        = static_cast<AudioVolumeType>(streamType);
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(streamType);
     int volume = 10;
     g_callbackName = testCaseName;
     bool isUpdateUi = false;

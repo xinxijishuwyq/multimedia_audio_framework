@@ -34,6 +34,7 @@ constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
+constexpr int32_t LOCAL_VOLUME_GROUP_ID = 0;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
@@ -759,6 +760,13 @@ enum AudioPin {
     AUDIO_PIN_IN_LINEIN = 134217732,
     AUDIO_PIN_IN_USB_EXT = 134217736,
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
+};
+
+enum AudioParamKey {
+    NONE = 0,
+    VOLUME = 1,
+    INTERRUPT = 2,
+    RENDER_STATE
 };
 
 struct DStatusInfo {

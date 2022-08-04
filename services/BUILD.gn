@@ -35,6 +35,7 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
     "//drivers/peripheral/audio/interfaces/include",
+    "include/audio_service/common",
   ]
 
   if (target_cpu == "arm") {
@@ -46,6 +47,7 @@ ohos_shared_library("audio_service") {
   install_enable = true
 
   sources = [
+    "src/audio_service/server/audio_manager_listener_proxy.cpp",
     "src/audio_service/server/audio_manager_stub.cpp",
     "src/audio_service/server/audio_server.cpp",
   ]
@@ -54,6 +56,7 @@ ohos_shared_library("audio_service") {
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_source",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
@@ -95,6 +98,7 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
     "//foundation/systemabilitymgr/safwk/services/safwk/include",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/common",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
@@ -202,6 +206,7 @@ ohos_shared_library("audio_policy_service") {
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_bluetooth_client",
     "//foundation/multimedia/audio_framework/services:audio_dump",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//third_party/libxml2:xml2",
   ]
 

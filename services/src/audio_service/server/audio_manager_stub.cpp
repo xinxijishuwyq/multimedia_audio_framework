@@ -124,6 +124,38 @@ int AudioManagerStub::OnRemoteRequest(
             reply.WriteInt32(ret);
             return AUDIO_OK;
         }
+        case SET_PARAMETER_CALLBACK: {
+            AUDIO_DEBUG_LOG("SET_PARAMETER_CALLBACK AudioManagerStub");
+            sptr<IRemoteObject> object = data.ReadRemoteObject();
+            if (object == nullptr) {
+                AUDIO_ERR_LOG("AudioManagerStub: SET_PARAMETER_CALLBACK obj is null");
+                return AUDIO_ERR;
+            }
+            int32_t result = SetParameterCallback(object);
+            reply.WriteInt32(result);
+            return AUDIO_OK;
+        }
+        case SET_REMOTE_AUDIO_PARAMETER: {
+            AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER AudioManagerStub");
+            const std::string networkId = data.ReadString();
+            AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
+            const std::string condtion = data.ReadString();
+            const std::string value = data.ReadString();
+            AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER key-value pair from client= %{public}d, %{public}s",
+                key, value.c_str());
+            SetAudioParameter(networkId, key, condtion, value);
+            return AUDIO_OK;
+        }
+        case GET_REMOTE_AUDIO_PARAMETER: {
+            AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER AudioManagerStub");
+            const std::string networkId = data.ReadString();
+            AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
+            const std::string condition = data.ReadString();
+            AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER key received from client= %{public}d", key);
+            const std::string value = GetAudioParameter(networkId, key, condition);
+            reply.WriteString(value);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

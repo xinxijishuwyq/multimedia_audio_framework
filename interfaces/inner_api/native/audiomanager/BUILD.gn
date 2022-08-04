@@ -36,6 +36,7 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/include/audio_service/common",
     "//foundation/multimedia/audio_framework/services/include/audio_policy/client",
     "//foundation/multimedia/audio_framework/services/include/audio_policy/common",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
@@ -68,6 +69,8 @@ ohos_shared_library("audio_client") {
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_stream_manager.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_stream_tracker.cpp",
     "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_system_manager.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_group_manager.cpp",
+    "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_manager_listener_stub.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
