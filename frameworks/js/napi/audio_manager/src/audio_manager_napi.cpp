@@ -438,6 +438,9 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
     if (status == napi_ok) {
         for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
             switch (i) {
+                case DEVICE_FLAG_NONE:
+                    propName = "NONE_DEVICES_FLAG";
+                    break;
                 case OUTPUT_DEVICES_FLAG:
                     propName = "OUTPUT_DEVICES_FLAG";
                     break;
@@ -446,6 +449,15 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
                     break;
                 case ALL_DEVICES_FLAG:
                     propName = "ALL_DEVICES_FLAG";
+                    break;
+                case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
+                    propName = "DISTRIBUTED_OUTPUT_DEVICES_FLAG";
+                    break;
+                case DISTRIBUTED_INPUT_DEVICES_FLAG:
+                    propName = "DISTRIBUTED_INPUT_DEVICES_FLAG";
+                    break;
+                case ALL_DISTRIBUTED_DEVICES_FLAG:
+                    propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
                     break;
                 default:
                     HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
