@@ -414,9 +414,9 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     pa_assert(s);
     pa_assert_se(u = s->userdata);
 
-    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]", GetDeviceClass(),
-        GetStateInfo(s->thread_info.state), GetStateInfo(newState));
-    if (!strcmp(GetDeviceClass(), DEVICE_CLASS_A2DP)) {
+    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass(u->sinkAdapter->deviceClass), GetStateInfo(s->thread_info.state), GetStateInfo(newState));
+    if (!strcmp(GetDeviceClass(u->sinkAdapter->deviceClass), DEVICE_CLASS_A2DP)) {
         if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
             u->sinkAdapter->RendererSinkResume(u->sinkAdapter->wapper);
         } else if (s->thread_info.state == PA_SINK_RUNNING && newState == PA_SINK_IDLE) {
@@ -438,7 +438,6 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
         if (u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper)) {
             AUDIO_ERR_LOG("audiorenderer control start failed!");
             u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter->wapper);
-            pa_core_exit(u->core, true, 0);
         } else {
             u->isHDISinkStarted = true;
             u->writeCount = 0;
@@ -515,7 +514,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
     }
 
     // call start in io thread for remote device.
-    if (strcmp(GetDeviceClass(), DEVICE_CLASS_REMOTE)) {
+    if (strcmp(GetDeviceClass(u->sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
         ret = u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper);
     }
 

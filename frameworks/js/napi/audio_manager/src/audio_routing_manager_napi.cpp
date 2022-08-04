@@ -231,7 +231,7 @@ static void ParseAudioRendererFilter(napi_env env, napi_value root, sptr<AudioRe
         ParseAudioRendererInfo(env, tempValue, &(audioRendererFilter->rendererInfo));
     }
 
-    if (napi_get_named_property(env, root, "streamId", &tempValue) == napi_ok) {
+    if (napi_get_named_property(env, root, "rendererId", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         audioRendererFilter->streamId = intValue;
     }
