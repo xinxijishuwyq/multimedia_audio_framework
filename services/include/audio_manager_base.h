@@ -138,8 +138,18 @@ public:
         return 0;
     }
 
+    /**
+     * Notify device connect info 
+     *
+     * @return Returns transaction id.
+     */
     virtual void NotifyDeviceInfo(std::string networkId, bool connected) = 0;
 
+    /**
+     * Set parameter callback 
+     *
+     * @return Returns the setting result 
+     */
     virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
 
     enum {
@@ -157,6 +167,7 @@ public:
         SET_PARAMETER_CALLBACK = 11,
         GET_REMOTE_AUDIO_PARAMETER = 12,
         SET_REMOTE_AUDIO_PARAMETER = 13,
+        NOTIFY_DEVICE_INFO = 14,
     };
 
 public:

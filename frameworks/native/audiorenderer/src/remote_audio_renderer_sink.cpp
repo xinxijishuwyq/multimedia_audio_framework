@@ -134,7 +134,8 @@ std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, 
 int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
     void* reserved, void* cookie)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback:key:%d, condition:%s, value:%s", key, condition, value);
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback:key:%{public}d, condition:%{public}s, value:%{public}s",
+        key, condition, value);
     RemoteAudioRendererSink* sink = reinterpret_cast<RemoteAudioRendererSink*>(cookie);
     std::string networkId = sink->GetNetworkId();
     AudioParamKey audioKey = AudioParamKey(key);

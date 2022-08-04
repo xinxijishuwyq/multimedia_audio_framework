@@ -230,7 +230,7 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
     if ((option != 'v' && option != 'V') || argc > AudioPolicyTest::FOURTH_ARG) {
         cout << "HandVolume invalid argv[" << argc << "] " << endl;
     }
-    if (option == 'v' && argc == THIRD_ARG) {
+    if (option == 'v' && argc == AudioPolicyTest::THIRD_ARG) {
         networkId = argv[AudioPolicyTest::SECOND_ARG];
         cout << "handle volume networkId: " << networkId << endl;
         std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
@@ -240,7 +240,7 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
             float volume = groupManager->GetVolume(static_cast<AudioVolumeType>(streamType));
             cout << "Get Volume : " << volume << endl;
         }
-    } else if (option == 'V' && argc == FOURTH_ARG){
+    } else if (option == 'V' && argc == AudioPolicyTest::FOURTH_ARG){
         networkId = argv[AudioPolicyTest::THIRD_ARG];
         cout << "handle volume networkId: " << networkId << endl;
         std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);

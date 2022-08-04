@@ -103,11 +103,47 @@ const char *AudioPolicyServiceProxy::RetrieveCookie(int32_t &size)
 
 void AudioPolicyServiceProxy::NotifyDeviceInfo(std::string networkId, bool connected)
 {
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteString(networkId);
+    data.WriteBool(connected);
+    int32_t error = Remote()->SendRequest(NOTIFY_DEVICE_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
+        return;
+    }
 }
 
 int32_t AudioPolicyServiceProxy::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
-    return 0;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioManagerProxy: SetParameterCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_PARAMETER_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServiceProxy::GetDevices(DeviceFlag deviceFlag)

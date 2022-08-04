@@ -155,6 +155,13 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteString(value);
             return AUDIO_OK;
         }
+        case NOTIFY_DEVICE_INFO: {
+            AUDIO_DEBUG_LOG("NOTIFY_DEVICE_INFO AudioManagerStub");
+            const std::string networkId = data.ReadString();
+            const bool connected = data.ReadBool();
+            NotifyDeviceInfo(networkId, connected);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

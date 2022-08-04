@@ -1146,11 +1146,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 
     // new device found. If connected, add into active device list
     if (statusInfo.isConnected) {
-        if (g_sProxy != nullptr && devType == DEVICE_TYPE_SPEAKER && statusInfo.connectType
-            == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
-            AUDIO_INFO_LOG("notifyDeviceInfo");
-            g_sProxy->NotifyDeviceInfo(networkId, true);
-        }
         AUDIO_INFO_LOG("=== DEVICE CONNECTED === TYPE[%{public}d], ConnectType[%{public}d]", devType,
             statusInfo.connectType);
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
@@ -1158,6 +1153,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("=== DEVICE online but open audio device failed.");
             return;
+        }
+        if (g_sProxy != nullptr && devType == DEVICE_TYPE_SPEAKER && statusInfo.connectType
+            == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
+            AUDIO_INFO_LOG("notifyDeviceInfo");
+            g_sProxy->NotifyDeviceInfo(networkId, true);
         }
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     } else {

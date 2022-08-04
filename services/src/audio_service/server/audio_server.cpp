@@ -333,7 +333,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
-    AUDIO_INFO_LOG("notify device info: networkId(%s), connected(%d)", networkId.c_str(), connected);
+    AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)", networkId.c_str(), connected);
     RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
     if (audioRendererSinkInstance != nullptr && connected) {
         audioRendererSinkInstance->RegisterParameterCallback(this);

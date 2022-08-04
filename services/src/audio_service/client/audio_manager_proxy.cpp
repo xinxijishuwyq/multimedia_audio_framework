@@ -281,6 +281,21 @@ uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole d
 
 void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
 {
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteString(networkId);
+    data.WriteBool(connected);
+    int32_t error = Remote()->SendRequest(NOTIFY_DEVICE_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
+        return;
+    }
 }
 
 int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
