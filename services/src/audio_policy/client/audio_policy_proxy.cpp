@@ -221,6 +221,25 @@ float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
     return reply.ReadFloat();
 }
 
+float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(streamId);
+    int32_t error = Remote()->SendRequest(GET_SINGLE_STREAM_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get single stream volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
+
 int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     MessageParcel data;

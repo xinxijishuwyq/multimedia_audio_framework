@@ -145,6 +145,11 @@ float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
     return mStreamCollector.GetLowPowerVolume(streamId);
 }
 
+float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
+{
+    return mStreamCollector.GetSingleStreamVolume(streamId);
+}
+
 int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute) const
 {
     return mAudioPolicyManager.SetStreamMute(streamType, mute);

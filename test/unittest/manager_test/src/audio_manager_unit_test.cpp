@@ -39,8 +39,8 @@ namespace {
     constexpr int32_t INV_CHANNEL = -1;
     constexpr int32_t CHANNEL_10 = 10;
     constexpr float DISCOUNT_VOLUME = 0.5;
-    constexpr float DISCOUNT_VOLUME_MIN = 0;
-    constexpr float DISCOUNT_VOLUME_MAX = 1.0;
+    constexpr float VOLUME_MIN = 0;
+    constexpr float VOLUME_MAX = 1.0;
 }
 
 void AudioManagerUnitTest::SetUpTestCase(void) {}
@@ -814,7 +814,50 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     float vol = AudioSystemManager::GetInstance()->GetLowPowerVolume(streamId);
-    if (vol < DISCOUNT_VOLUME_MIN || vol > DISCOUNT_VOLUME_MAX) {
+    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
+        ret = ERROR;
+    } else {
+        ret = SUCCESS;
+    }
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GetSingleStreamVolume API
+* @tc.number: GetSingleStreamVolume_001
+* @tc.desc  : Test get single stream volume.
+*/
+HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
+{
+    int32_t streamId = 0;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioRendererOptions rendererOptions = {};
+    AppInfo appInfo = {};
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = 0;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
+        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
+            streamId = audioRendererChangeInfos_.sessionId;
+        }
+    }
+    ASSERT_NE(0, streamId);
+
+    float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
+    if (vol < VOLUME_MIN || vol > VOLUME_MAX) {
         ret = ERROR;
     } else {
         ret = SUCCESS;

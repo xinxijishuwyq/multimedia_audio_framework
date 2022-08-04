@@ -30,6 +30,7 @@ public:
     void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
     void SetLowPowerVolumeImpl(float volume);
     void GetLowPowerVolumeImpl(float &volume);
+    void GetSingleStreamVolumeImpl(float &volume);
 private:
     const AudioRenderer *renderer;
 };

@@ -122,6 +122,11 @@ float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
     return g_sProxy->GetLowPowerVolume(streamId);
 }
 
+float AudioPolicyManager::GetSingleStreamVolume(int32_t streamId)
+{
+    return g_sProxy->GetSingleStreamVolume(streamId);
+}
+
 bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
 {
     return g_sProxy->IsStreamActive(streamType);

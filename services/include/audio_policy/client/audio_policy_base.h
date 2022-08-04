@@ -38,6 +38,8 @@ public:
 
     virtual float GetLowPowerVolume(int32_t streamId) = 0;
 
+    virtual float GetSingleStreamVolume(int32_t streamId) = 0;
+
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;

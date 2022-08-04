@@ -45,5 +45,10 @@ void AudioCapturerProxyObj::GetLowPowerVolumeImpl(float &volume)
 {
     volume = 1.0;
 }
+
+void AudioCapturerProxyObj::GetSingleStreamVolumeImpl(float &volume)
+{
+    volume = 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

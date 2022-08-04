@@ -33,6 +33,7 @@ public:
 
     virtual void SetLowPowerVolumeImpl(float volume) override;
     virtual void GetLowPowerVolumeImpl(float &volume) override;
+    virtual void GetSingleStreamVolumeImpl(float &volume) override;
 
 private:
     sptr<IStandardClientTracker> listener_ = nullptr;
@@ -47,6 +48,7 @@ public:
 
     virtual void SetLowPowerVolumeImpl(float volume) override;
     virtual void GetLowPowerVolumeImpl(float &volume) override;
+    virtual void GetSingleStreamVolumeImpl(float &volume) override;
 
 private:
     static inline BrokerDelegator<AudioClientTrackerCallbackProxy> delegator_;
