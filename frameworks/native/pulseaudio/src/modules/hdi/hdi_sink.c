@@ -405,6 +405,47 @@ static char *GetStateInfo(pa_sink_state_t state)
     }
 }
 
+static int RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
+{
+    struct Userdata *u = s->userdata;
+    if (s->thread_info.state == PA_SINK_INIT && newState == PA_SINK_IDLE) {
+        AUDIO_INFO_LOG("First start.");
+    }
+
+    if (s->thread_info.state == PA_SINK_SUSPENDED && PA_SINK_IS_OPENED(newState)) {
+        u->timestamp = pa_rtclock_now();
+        if (u->isHDISinkStarted) {
+            return 0;
+        }
+
+        if (u->sinkAdapter->RendererSinkStart(u->sinkAdapter->wapper)) {
+            AUDIO_ERR_LOG("audiorenderer control start failed!");
+        } else {
+            u->isHDISinkStarted = true;
+            u->render_in_idle_state = 1; // enable to reduce noise from idle to running.
+            u->writeCount = 0;
+            u->renderCount = 0;
+            AUDIO_INFO_LOG("Successfully restarted remote renderer");
+        }
+    }
+    if (PA_SINK_IS_OPENED(s->thread_info.state) && newState == PA_SINK_SUSPENDED) {
+        // Continuously dropping data (clear counter on entering suspended state.
+        if (u->bytes_dropped != 0) {
+            AUDIO_INFO_LOG("HDI-sink continuously dropping data - clear statistics (%zu -> 0 bytes dropped)",
+                           u->bytes_dropped);
+            u->bytes_dropped = 0;
+        }
+
+        if (u->isHDISinkStarted) {
+            u->sinkAdapter->RendererSinkStop(u->sinkAdapter->wapper);
+            AUDIO_INFO_LOG("Stopped HDI renderer");
+            u->isHDISinkStarted = false;
+        }
+    }
+
+    return 0;
+}
+
 // Called from the IO thread.
 static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
                                     pa_suspend_cause_t newSuspendCause)
@@ -416,6 +457,11 @@ static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
 
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass(u->sinkAdapter->deviceClass), GetStateInfo(s->thread_info.state), GetStateInfo(newState));
+
+    if (!strcmp(GetDeviceClass(u->sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
+        return RemoteSinkStateChange(s, newState);
+    }
+
     if (!strcmp(GetDeviceClass(u->sinkAdapter->deviceClass), DEVICE_CLASS_A2DP)) {
         if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
             u->sinkAdapter->RendererSinkResume(u->sinkAdapter->wapper);
