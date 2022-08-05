@@ -105,8 +105,8 @@ public:
      * Set Audio Parameter.
      *
      * @param  networkId for the distributed device
-	 * @param  key for the audio parameter to be set
-	 * @param  condition for the audio parameter to be set
+     * @param  key for the audio parameter to be set
+     * @param  condition for the audio parameter to be set
      * @return none.
      */
     virtual const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,

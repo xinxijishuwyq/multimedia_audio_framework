@@ -609,7 +609,7 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    
+
     int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
     reply.WriteInt32(result);
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:UpdateStreamStateInternal change info internal exit");
