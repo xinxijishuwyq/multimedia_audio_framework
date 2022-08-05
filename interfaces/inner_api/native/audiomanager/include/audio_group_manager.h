@@ -21,14 +21,12 @@
 #include <mutex>
 #include <vector>
 #include <unordered_map>
-#include "audio_manager_base.h"
 
 #include "parcel.h"
 #include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class IStandardAudioService;
 class AudioGroupManager {
 public:
     const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
@@ -51,7 +49,6 @@ public:
     bool IsAlived();
     int32_t GetGroupId();
 private:
-    sptr<IStandardAudioService> g_sProxy;
     int32_t groupId_;
     std::string netWorkId_ = LOCAL_NETWORK_ID;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;

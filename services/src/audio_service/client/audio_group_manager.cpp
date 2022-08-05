@@ -14,7 +14,7 @@
  */
 
 #include "audio_errors.h"
-
+#include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
 #include "audio_log.h"
 #include "iservice_registry.h"
@@ -24,6 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static sptr<IStandardAudioService> g_sProxy = nullptr;
 AudioGroupManager::AudioGroupManager(int32_t groupId) : groupId_(groupId)
 {
     Init();
