@@ -336,7 +336,7 @@ static void SetAudioParamter(int argc, char* argv[])
         value = argv[AudioPolicyTest::THIRD_ARG];
         AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
         audioSystemMgr->SetAudioParameter(key, value);
-        cout << "SetAudioParameter for key "<< key <<"; value: "<< value << endl;
+        cout << "SetAudioParameter for key " << key << "; value: " << value << endl;
     }
 }
 
@@ -347,7 +347,7 @@ static void GetAudioParamter(int argc, char* argv[])
         key = argv[AudioPolicyTest::SECOND_ARG];
         AudioSystemManager* audioSystemMgr = AudioSystemManager::GetInstance();
         std::string value = audioSystemMgr->GetAudioParameter(key);
-        cout << "GetAudioParameter for key "<< key <<"; result: "<< value << endl;
+        cout << "GetAudioParameter for key " << key << "; result: " << value << endl;
     }
 }
 
