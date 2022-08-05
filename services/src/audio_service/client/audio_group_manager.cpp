@@ -102,7 +102,8 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-        if (value == "") {
+        if (value.empty()) {
+            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
             return 0;
         }
         return std::stoi(value);
@@ -140,7 +141,12 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     if (netWorkId_ != LOCAL_NETWORK_ID) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
-        return std::stoi(g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition));
+        std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        if (value.empty()) {
+            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
+            return 0;
+        }
+        return std::stoi(value);
     }
 
     if (volumeType == STREAM_ALL) {
@@ -157,7 +163,12 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     if (netWorkId_ != LOCAL_NETWORK_ID) {
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
-        return std::stoi(g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition));
+        std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        if (value.empty()) {
+            AUDIO_ERR_LOG("[AudioGroupManger]: invalid value %{public}s", value.c_str());
+            return 0;
+        }
+        return std::stoi(value);
     }
 
     if (volumeType == STREAM_ALL) {

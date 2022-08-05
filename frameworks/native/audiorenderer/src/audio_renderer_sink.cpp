@@ -89,7 +89,7 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
     int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
     if (ret !=SUCCESS) {
         AUDIO_ERR_LOG("AudioRendererSink::GetAudioParameter failed, error code: %d", ret);
-        return "ERR";
+        return "";
     }
     return value;
 }
