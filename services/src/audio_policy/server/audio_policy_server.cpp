@@ -1417,7 +1417,7 @@ AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPo
 void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
     const AudioParamKey key, const std::string& condition, const std::string& value)
 {
-    AUDIO_INFO_LOG("zhanhang AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
+    AUDIO_INFO_LOG("AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
         key, value.c_str());
     if (server_ == nullptr) {
         AUDIO_ERR_LOG("server_ is nullptr");
@@ -1493,7 +1493,7 @@ std::vector<int32_t> AudioPolicyServer::GetSessionId()
 
 void AudioPolicyServer::RegisterParamCallback()
 {
-    AUDIO_INFO_LOG("zhanhang ConnectServiceAdapter");
+    AUDIO_INFO_LOG("AudioPolicyServer::RegisterParamCallback");
     remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
     mPolicyService.SetParameterCallback(remoteParameterCallback_);
 }

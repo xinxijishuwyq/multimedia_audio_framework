@@ -102,7 +102,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     }
 
     AudioServer::audioParameters[key] = value;
-#if PRODUCT_M40
+#ifdef PRODUCT_M40
     AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
@@ -134,7 +134,7 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
     AUDIO_DEBUG_LOG("server: get audio parameter");
-#if PRODUCT_M40
+#ifdef PRODUCT_M40
     AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
     if (audioRendererSinkInstance != nullptr) {
         AudioParamKey parmKey = AudioParamKey::NONE;
@@ -355,8 +355,6 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
 
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
-    AUDIO_INFO_LOG("zhanhang Entered AudioServer::%{public}s", __func__);
- 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
 
     sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);

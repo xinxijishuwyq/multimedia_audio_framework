@@ -29,7 +29,6 @@ namespace OHOS {
         int AudioManagerListenerStub::OnRemoteRequest(
             uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
         {
-            AUDIO_ERR_LOG("zhanhang AudioManagerListenerStub OnRemoteRequest");
             AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
             if (data.ReadInterfaceToken() != GetDescriptor()) {
                 AUDIO_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
@@ -43,7 +42,6 @@ namespace OHOS {
                     AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
                     string condition = data.ReadString();
                     string value = data.ReadString();
-                    AUDIO_INFO_LOG("zhanhang key:%d value:%s", key, value.c_str());
                     OnAudioParameterChange(networkId, key, condition, value);
                     return AUDIO_OK;
                 }
@@ -62,7 +60,6 @@ namespace OHOS {
         void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
             const std::string& condition, const std::string& value)
         {
-            AUDIO_INFO_LOG("zhanhang AudioManagerListenerStub OnAudioParameterChange start");
             std::shared_ptr<AudioParameterCallback> cb = callback_.lock();
             if (cb != nullptr) {
                 cb->OnAudioParameterChange(networkId, key, condition, value);

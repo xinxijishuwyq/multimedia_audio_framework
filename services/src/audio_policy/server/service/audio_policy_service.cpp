@@ -1887,7 +1887,7 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
  
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
-    AUDIO_INFO_LOG("zhanhang Enter  AudioPolicyService::SetParameterCallback");
+    AUDIO_INFO_LOG("Enter AudioPolicyService::SetParameterCallback");
     auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
     if (parameterChangeCbStub == nullptr) {
         AUDIO_ERR_LOG("SetDeviceChangeCallback: parameterChangeCbStub null");
