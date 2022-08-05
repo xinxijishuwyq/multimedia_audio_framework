@@ -546,10 +546,10 @@ int main(int argc, char* argv[])
             case '?':
                 UnknownOptionError();
                 break;
-            case 't':
+            case 'T':
                 SetAudioParamter(argc, argv);
                 break;
-            case 'T':
+            case 't':
                 GetAudioParamter(argc, argv);
                 break;
             case 'p':

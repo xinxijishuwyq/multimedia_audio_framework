@@ -111,8 +111,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+    } else {
+        AUDIO_ERR_LOG("SetAudioParameter: key %{publbic}s is invalid for hdi interface", key.c_str());
+        return;
     }
-    audioRendererSinkInstance->SetAudioParameter(AudioParamKey(parmKey), "", value);
+    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
 #endif
 }
 

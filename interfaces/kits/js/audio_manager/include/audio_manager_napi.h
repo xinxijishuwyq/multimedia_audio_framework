@@ -104,9 +104,6 @@ private:
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
     static napi_value GetAudioRoutingManager(napi_env env, napi_callback_info info);
     static void GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data);
-    static napi_value GetVolumeGroups(napi_env env, napi_callback_info info);
-    static napi_value GetGroupManager(napi_env env, napi_callback_info info);
-    static void GetGroupMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
 
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
