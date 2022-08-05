@@ -42,7 +42,6 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr float DUCK_FACTOR = 0.2f; // 20%
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
-constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 10;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -1428,39 +1427,8 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
         return;
     }
     if (key == RENDER_STATE) {
-        RenderStateOnChange(condition);
+        AUDIO_DEBUG_LOG("[AudioPolicyServer]: No processing for now");
         return;
-    }
-}
-
-void AudioPolicyServer::RemoteParameterCallback::RenderStateOnChange(const std::string& condition)
-{
-    RendererState state = RENDERER_INVALID;
-    StreamSetState streamState = STREAM_PAUSE;
-    char eventDes[EVENT_DES_SIZE];
-    if (sscanf_s(condition.c_str(), "%[^;];STATE=%d", &eventDes, EVENT_DES_SIZE, &state)
-        < PARAMS_RENDER_STATE_NUM) {
-        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
-        return;
-    }
-
-    if (state == RENDERER_INVALID) {
-        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
-        return;
-    } else if (state == RENDERER_PAUSED) {
-        streamState = STREAM_PAUSE;
-    } else if (state == RENDERER_RUNNING) {
-        streamState = STREAM_RESUME;
-    } else {
-        AUDIO_ERR_LOG("[AudioPolicyServer]: wrong state value: %{public}d", state);
-        return;
-    }
-    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    server_->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    int size = audioRendererChangeInfos.size();
-    for (int i = 0; i < size; i++) {
-        int32_t sessionId = audioRendererChangeInfos[i]->sessionId;
-        server_->UpdateStreamState(sessionId, streamState, STREAM_ALL);
     }
 }
 

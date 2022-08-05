@@ -19,53 +19,53 @@
 using namespace std;
 
 namespace OHOS {
-    namespace AudioStandard {
-        AudioManagerListenerStub::AudioManagerListenerStub()
-        {
-        }
-        AudioManagerListenerStub::~AudioManagerListenerStub()
-        {
-        }
-        int AudioManagerListenerStub::OnRemoteRequest(
-            uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
-        {
-            AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
-            if (data.ReadInterfaceToken() != GetDescriptor()) {
-                AUDIO_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
-                return -1;
-            }
+namespace AudioStandard {
+AudioManagerListenerStub::AudioManagerListenerStub()
+{
+}
+AudioManagerListenerStub::~AudioManagerListenerStub()
+{
+}
+int AudioManagerListenerStub::OnRemoteRequest(
+    uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
+{
+    AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
+    if (data.ReadInterfaceToken() != GetDescriptor()) {
+        AUDIO_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
+        return -1;
+    }
 
-            switch (code) {
-                case ON_PARAMETER_CHANGED: {
-                    AUDIO_DEBUG_LOG("ON_PARAMETER_CHANGED AudioManagerStub");
-                    string networkId = data.ReadString();
-                    AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
-                    string condition = data.ReadString();
-                    string value = data.ReadString();
-                    OnAudioParameterChange(networkId, key, condition, value);
-                    return AUDIO_OK;
-                }
-                default: {
-                    AUDIO_ERR_LOG("default case, need check AudioManagerStub");
-                    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-                }
-            }
+    switch (code) {
+        case ON_PARAMETER_CHANGED: {
+            AUDIO_DEBUG_LOG("ON_PARAMETER_CHANGED AudioManagerStub");
+            string networkId = data.ReadString();
+            AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
+            string condition = data.ReadString();
+            string value = data.ReadString();
+            OnAudioParameterChange(networkId, key, condition, value);
+            return AUDIO_OK;
         }
+        default: {
+            AUDIO_ERR_LOG("default case, need check AudioManagerStub");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+}
 
-        void AudioManagerListenerStub::SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback)
-        {
-            callback_ = callback;
-        }
+void AudioManagerListenerStub::SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback)
+{
+    callback_ = callback;
+}
 
-        void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-            const std::string& condition, const std::string& value)
-        {
-            std::shared_ptr<AudioParameterCallback> cb = callback_.lock();
-            if (cb != nullptr) {
-                cb->OnAudioParameterChange(networkId, key, condition, value);
-            } else {
-                AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
-            }
-        }
-    } // namespace AudioStandard
+void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+    const std::string& condition, const std::string& value)
+{
+    std::shared_ptr<AudioParameterCallback> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->OnAudioParameterChange(networkId, key, condition, value);
+    } else {
+        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
+    }
+}
+} // namespace AudioStandard
 } // namespace OHOS

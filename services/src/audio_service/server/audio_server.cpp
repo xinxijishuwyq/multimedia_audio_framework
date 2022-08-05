@@ -140,8 +140,8 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         AudioParamKey parmKey = AudioParamKey::NONE;
         if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
             parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
-        return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
     }
 #endif
      if (AudioServer::audioParameters.count(key)) {
