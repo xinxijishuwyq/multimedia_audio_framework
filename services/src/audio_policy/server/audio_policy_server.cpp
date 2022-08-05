@@ -1455,9 +1455,12 @@ void AudioPolicyServer::RemoteParameterCallback::RenderStateOnChange(const std::
         AUDIO_ERR_LOG("[AudioPolicyServer]: wrong state value: %{public}d", state);
         return;
     }
-    std::vector<int32_t> clientIds = server_->GetSessionId();
-    for (auto iter : clientIds) {
-        server_->UpdateStreamState(iter, streamState, STREAM_ALL);
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    server_->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    int size = audioRendererChangeInfos.size();
+    for (int i = 0; i < size; i++) {
+        int32_t sessionId = audioRendererChangeInfos[i]->sessionId;
+        server_->UpdateStreamState(sessionId, streamState, STREAM_ALL);
     }
 }
 
@@ -1484,11 +1487,6 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
         AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
         volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
     }
-}
-
-std::vector<int32_t> AudioPolicyServer::GetSessionId()
-{
-    return mPolicyService.GetSessionId();
 }
 
 void AudioPolicyServer::RegisterParamCallback()

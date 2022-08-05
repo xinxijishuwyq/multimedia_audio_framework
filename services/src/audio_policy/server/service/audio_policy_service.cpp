@@ -1908,10 +1908,6 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     AUDIO_INFO_LOG("AudioPolicyService: SetParameterCallback call SetParameterCallback.");
     g_sProxy->SetParameterCallback(object);
 }
-
-std::vector<int32_t> AudioPolicyService::GetSessionId()
-{
-    return mStreamCollector.GetSessionId();
 }
 } // namespace AudioStandard
 } // namespace OHOS

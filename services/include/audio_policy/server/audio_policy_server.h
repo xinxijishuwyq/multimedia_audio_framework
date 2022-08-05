@@ -180,8 +180,6 @@ public:
         sptr<AudioPolicyServer> server_;
     };
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
-
-    std::vector<int32_t> GetSessionId();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
