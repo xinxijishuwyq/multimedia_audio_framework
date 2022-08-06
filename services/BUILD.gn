@@ -66,7 +66,7 @@ ohos_shared_library("audio_service") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
 
   subsystem_name = "multimedia"
@@ -94,7 +94,7 @@ config("audio_policy_public_config") {
     "//drivers/peripheral/audio/interfaces/include",
     "//foundation/multimedia/audio_framework/services/include",
     "//foundation/multimedia/audio_framework/services/include/audio_service/client",
-    "//foundation/distributedschedule/safwk/services/safwk/include",
+    "//foundation/systemabilitymgr/safwk/services/safwk/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
@@ -110,7 +110,7 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_framework/services/include/audio_policy/client",
     "//foundation/multimedia/audio_framework/services/include/audio_bluetooth/client",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy/include",
+    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
     "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
     "//base/hiviewdfx/hilog/interfaces/native/inner_api/include",
     "//third_party/libxml2/include",
@@ -214,7 +214,7 @@ ohos_shared_library("audio_policy_service") {
     "input:libmmi-client",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
+    "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
