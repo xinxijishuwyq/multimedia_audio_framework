@@ -762,6 +762,33 @@ int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, Devic
     return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
 }
 
+std::vector<sptr<VolumeGroupInfo>> AudioSystemManager::GetVolumeGroups(std::string networkId)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos = {};
+    infos = AudioPolicyManager::GetInstance().GetVolumeGroupInfos();
+
+    auto filter = [&networkId](const sptr<VolumeGroupInfo>& info) {
+        return networkId != info->networkId_;
+    };
+    infos.erase(std::remove_if(infos.begin(), infos.end(), filter), infos.end());
+    return infos;
+}
+
+std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t groupId)
+{
+    std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
+    while (iter != groupManagerMap_.end()) {
+        if ((*iter)->GetGroupId() == groupId)
+            return *iter;
+        else
+            iter++;
+    }
+
+    std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
+    groupManagerMap_.push_back(groupManager);
+    return groupManager;
+}
+
 AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");

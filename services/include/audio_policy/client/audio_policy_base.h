@@ -135,6 +135,7 @@ public:
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
+    virtual std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

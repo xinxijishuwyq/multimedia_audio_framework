@@ -39,8 +39,8 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t PARAM_VALUE_LENTH = 10;
 }
-
 #ifdef DUMPFILE
 const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 #endif // DUMPFILE
@@ -66,6 +66,32 @@ AudioRendererSink *AudioRendererSink::GetInstance()
     static AudioRendererSink audioRenderer_;
 
     return &audioRenderer_;
+}
+
+void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+    const std::string& value)
+{
+    AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter:key %{public}d, condition: %{public}s, value: %{public}s", key,
+        condition.c_str(), value.c_str());
+    AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("AudioRendererSink::SetAudioParameter failed, error code: %d", ret);
+    }
+}
+
+std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+{
+    AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %{public}d, condition: %{public}s", key,
+        condition.c_str());
+    AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("AudioRendererSink::GetAudioParameter failed, error code: %d", ret);
+        return "";
+    }
+    return value;
 }
 
 void AudioRendererSink::DeInit()

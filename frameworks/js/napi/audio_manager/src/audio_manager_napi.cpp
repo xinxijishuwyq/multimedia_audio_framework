@@ -80,13 +80,16 @@ struct AudioManagerAsyncContext {
     int32_t intValue;
     int32_t status;
     int32_t focusType;
+    int32_t groupId;
     bool isMute;
     bool isActive;
     bool isTrue;
     string key;
     string valueStr;
+    string networkId;
     AudioManagerNapi *objectInfo;
     vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
 };
 
 namespace {
@@ -436,40 +439,7 @@ napi_value AudioManagerNapi::CreateDeviceFlagObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
-            switch (i) {
-                case DEVICE_FLAG_NONE:
-                    propName = "NONE_DEVICES_FLAG";
-                    break;
-                case OUTPUT_DEVICES_FLAG:
-                    propName = "OUTPUT_DEVICES_FLAG";
-                    break;
-                case INPUT_DEVICES_FLAG:
-                    propName = "INPUT_DEVICES_FLAG";
-                    break;
-                case ALL_DEVICES_FLAG:
-                    propName = "ALL_DEVICES_FLAG";
-                    break;
-                case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
-                    propName = "DISTRIBUTED_OUTPUT_DEVICES_FLAG";
-                    break;
-                case DISTRIBUTED_INPUT_DEVICES_FLAG:
-                    propName = "DISTRIBUTED_INPUT_DEVICES_FLAG";
-                    break;
-                case ALL_DISTRIBUTED_DEVICES_FLAG:
-                    propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
-                    break;
-                default:
-                    HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
-                    continue;
-            }
-            status = AddNamedProperty(env, result, propName, i);
-            if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
+        AddPropName(propName, status, env, result);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &deviceFlagRef_);
             if (status == napi_ok) {
@@ -2597,6 +2567,44 @@ void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_stat
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
         HiLog::Error(LABEL, "ERROR: GetStreamMgrAsyncCallbackComplete asyncContext is Null!");
+    }
+}
+
+void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
+{
+    for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
+        switch (i) {
+            case DEVICE_FLAG_NONE:
+                propName = "NONE_DEVICE_FLAG";
+                break;
+            case OUTPUT_DEVICES_FLAG:
+                propName = "OUTPUT_DEVICES_FLAG";
+                break;
+            case INPUT_DEVICES_FLAG:
+                propName = "INPUT_DEVICES_FLAG";
+                break;
+            case ALL_DEVICES_FLAG:
+                propName = "ALL_DEVICES_FLAG";
+                break;
+            case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
+                propName = "DISTRIBUTED_OUTPUT_DEVICES_FLAG";
+                break;
+            case DISTRIBUTED_INPUT_DEVICES_FLAG:
+                propName = "DISTRIBUTED_INPUT_DEVICES_FLAG";
+                break;
+            case ALL_DISTRIBUTED_DEVICES_FLAG:
+                propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
+                break;
+            default:
+                HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
+                continue;
+        }
+        status = AddNamedProperty(env, result, propName, i);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add named prop!");
+            break;
+        }
+        propName.clear();
     }
 }
 

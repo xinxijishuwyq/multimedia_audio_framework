@@ -161,6 +161,31 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
     return value;
 }
 
+const std::string AudioManagerProxy::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+    const std::string& condition)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return "";
+    }
+    data.WriteString(static_cast<std::string>(networkId));
+    data.WriteInt32(static_cast<int32_t>(key));
+    data.WriteString(static_cast<std::string>(condition));
+    int32_t error = Remote()->SendRequest(GET_REMOTE_AUDIO_PARAMETER, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
+        const std::string value = "";
+        return value;
+    }
+
+    const std::string value = reply.ReadString();
+    return value;
+}
+
 void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::string &value)
 {
     MessageParcel data;
@@ -174,6 +199,28 @@ void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::str
     data.WriteString(static_cast<std::string>(key));
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(SET_AUDIO_PARAMETER, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
+        return;
+    }
+}
+
+void AudioManagerProxy::SetAudioParameter(const std::string& networkId, const AudioParamKey key,
+    const std::string& condition, const std::string& value)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteString(static_cast<std::string>(networkId));
+    data.WriteInt32(static_cast<int32_t>(key));
+    data.WriteString(static_cast<std::string>(condition));
+    data.WriteString(static_cast<std::string>(value));
+    int32_t error = Remote()->SendRequest(SET_REMOTE_AUDIO_PARAMETER, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
@@ -232,9 +279,53 @@ uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole d
     return transactionId;
 }
 
+void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteString(networkId);
+    data.WriteBool(connected);
+    int32_t error = Remote()->SendRequest(NOTIFY_DEVICE_INFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
+        return;
+    }
+}
+
 int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     return ERR_NONE;
+}
+
+int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioManagerProxy: SetParameterCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_PARAMETER_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

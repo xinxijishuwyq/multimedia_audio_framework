@@ -20,10 +20,12 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <unordered_map>
 
 #include "parcel.h"
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
+#include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -179,6 +181,13 @@ public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
+class AudioParameterCallback {
+public:
+    virtual ~AudioParameterCallback() = default;
+    virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) = 0;
+};
+
 class AudioRingerModeCallback {
 public:
     virtual ~AudioRingerModeCallback() = default;
@@ -270,7 +279,8 @@ public:
                                     AudioStreamType audioStreamType);
     AudioPin GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const;
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
-
+    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
+    std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
@@ -283,13 +293,14 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
 
     int32_t cbClientId_ = -1;
-    
+
     int32_t volumeChangeClientPid_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
 
     uint32_t GetCallingPid();
     std::mutex mutex_;
+    std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

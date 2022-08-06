@@ -24,6 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioDeviceDescriptor;
 class IStandardAudioService : public IRemoteBroker {
 public:
     /**
@@ -81,12 +82,35 @@ public:
     virtual void SetAudioParameter(const std::string &key, const std::string &value) = 0;
 
     /**
+     * Set Audio Parameter.
+     *
+     * @param  networkId for the distributed device
+     * @param  key for the audio parameter to be set
+     * @param  condition for the audio parameter to be set
+     * @param  value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
+        const std::string& value) = 0;
+
+    /**
      * Get Audio Parameter.
      *
      * @param  key for the audio parameter to be set
      * @return Returns value associated to the key requested.
      */
     virtual const std::string GetAudioParameter(const std::string &key) = 0;
+
+    /**
+     * Set Audio Parameter.
+     *
+     * @param  networkId for the distributed device
+     * @param  key for the audio parameter to be set
+     * @param  condition for the audio parameter to be set
+     * @return none.
+     */
+    virtual const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
+        const std::string& condition) = 0;
 
     /**
      * Update the audio route after device is detected and route is decided
@@ -114,6 +138,20 @@ public:
         return 0;
     }
 
+    /**
+     * Notify device connect info
+     *
+     * @return Returns transaction id.
+     */
+    virtual void NotifyDeviceInfo(std::string networkId, bool connected) = 0;
+
+    /**
+     * Set parameter callback
+     *
+     * @return Returns the setting result
+     */
+    virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -125,7 +163,11 @@ public:
         SET_AUDIO_SCENE = 7,
         UPDATE_ROUTE_REQ = 8,
         RETRIEVE_COOKIE = 9,
-        GET_TRANSACTION_ID = 10
+        GET_TRANSACTION_ID = 10,
+        SET_PARAMETER_CALLBACK = 11,
+        GET_REMOTE_AUDIO_PARAMETER = 12,
+        SET_REMOTE_AUDIO_PARAMETER = 13,
+        NOTIFY_DEVICE_INFO = 14,
     };
 
 public:

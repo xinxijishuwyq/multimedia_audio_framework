@@ -498,8 +498,12 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UpdateStreamState");
-    
     return  g_sProxy->UpdateStreamState(clientUid, streamSetState, audioStreamType);
+}
+
+std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
+{
+    return g_sProxy->GetVolumeGroupInfos();
 }
 } // namespace AudioStandard
 } // namespace OHOS
