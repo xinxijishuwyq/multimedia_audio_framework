@@ -721,7 +721,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("requestIndependentInterrupt", RequestIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("abandonIndependentInterrupt", AbandonIndependentInterrupt),
         DECLARE_NAPI_FUNCTION("getStreamManager", GetStreamManager),
-        DECLARE_NAPI_FUNCTION("getRoutingManager", GetAudioRoutingManager),
+        DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -2504,7 +2504,7 @@ napi_value AudioManagerNapi::GetStreamManager(napi_env env, napi_callback_info i
     return result;
 }
 
-static void GetAudioRoutingManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+static void GetRoutingManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     napi_value valueParam = nullptr;
     auto asyncContext = static_cast<AudioManagerAsyncContext *>(data);
@@ -2515,11 +2515,11 @@ static void GetAudioRoutingManagerAsyncCallbackComplete(napi_env env, napi_statu
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
-        HiLog::Error(LABEL, "ERROR: GetAudioRoutingManagerAsyncCallbackComplete asyncContext is Null!");
+        HiLog::Error(LABEL, "ERROR: GetRoutingManagerAsyncCallbackComplete asyncContext is Null!");
     }
 }
 
-napi_value AudioManagerNapi::GetAudioRoutingManager(napi_env env, napi_callback_info info)
+napi_value AudioManagerNapi::GetRoutingManager(napi_env env, napi_callback_info info)
 {
     HiLog::Info(LABEL, "%{public}s IN", __func__);
     napi_status status;
@@ -2550,7 +2550,7 @@ napi_value AudioManagerNapi::GetAudioRoutingManager(napi_env env, napi_callback_
     }
 
     napi_value resource = nullptr;
-    napi_create_string_utf8(env, "GetAudioRoutingManager", NAPI_AUTO_LENGTH, &resource);
+    napi_create_string_utf8(env, "GetRoutingManager", NAPI_AUTO_LENGTH, &resource);
 
     status = napi_create_async_work(
         env, nullptr, resource,
@@ -2558,7 +2558,7 @@ napi_value AudioManagerNapi::GetAudioRoutingManager(napi_env env, napi_callback_
             auto context = static_cast<AudioManagerAsyncContext *>(data);
             context->status = SUCCESS;
         },
-        GetAudioRoutingManagerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+        GetRoutingManagerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
     if (status != napi_ok) {
         result = nullptr;
     } else {
