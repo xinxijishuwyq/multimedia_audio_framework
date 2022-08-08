@@ -236,9 +236,17 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
     return audioManager;
 }
 
+inline int64_t GetNowTimeMs()
+{
+    std::chrono::milliseconds nowMs =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    return nowMs.count();
+}
+
 int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
+    int64_t start = GetNowTimeMs();
     struct AudioSampleAttributes param;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
@@ -257,6 +265,9 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
+
+    int64_t cost = GetNowTimeMs() - start;
+    AUDIO_INFO_LOG("CreateRender cost[%{public}zu]ms", (size_t)cost);
 
     return 0;
 }
@@ -353,13 +364,6 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
 #endif // DEBUG_DUMP_FILE
 
     return SUCCESS;
-}
-
-inline int64_t GetNowTimeMs()
-{
-    std::chrono::milliseconds nowMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    return nowMs.count();
 }
 
 int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)

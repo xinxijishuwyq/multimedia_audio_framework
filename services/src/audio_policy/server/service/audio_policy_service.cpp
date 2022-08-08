@@ -522,6 +522,7 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
         audioModuleInfo.format = "s16le"; // 16bit little endian
+        audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
     } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-source.z.so";
         audioModuleInfo.format = "s16le"; // we assume it is bigger endian
@@ -538,7 +539,6 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 
     audioModuleInfo.adapterName = "remote";
     audioModuleInfo.className = "remote"; // used in renderer_sink_adapter.c
-    audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
     audioModuleInfo.fileName = "remote_dump_file";
 
     audioModuleInfo.channels = "2";
@@ -1118,6 +1118,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
+    if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
+        return; // not support input device.
+    }
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
