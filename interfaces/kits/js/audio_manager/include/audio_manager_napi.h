@@ -102,7 +102,7 @@ private:
     static napi_value RequestIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
-    static napi_value GetAudioRoutingManager(napi_env env, napi_callback_info info);
+    static napi_value GetRoutingManager(napi_env env, napi_callback_info info);
     static void GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
 
