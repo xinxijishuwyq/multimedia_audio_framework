@@ -1705,8 +1705,6 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->second.first, desc);
         if (it->second.second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second.second->OnDeviceChange(deviceChangeAction);
-            AUDIO_INFO_LOG("OnDeviceChange:type: [%{public}d],", deviceChangeAction.type);
-            it->second.second->OnDeviceChange(deviceChangeAction);
         }
     }
 
@@ -1887,7 +1885,7 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
     }
     return volumeGroupInfos;
 }
- 
+
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Enter AudioPolicyService::SetParameterCallback");
