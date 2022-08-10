@@ -29,12 +29,14 @@ namespace AudioStandard {
 static const std::string AUDIO_GROUP_MNGR_NAPI_CLASS_NAME = "AudioGroupManager";
 
 class AudioGroupManagerNapi {
-    friend class AudioManagerNapi;
 public:
+
+    static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateAudioGroupManagerWrapper(napi_env env, int32_t groupId);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
+    static void GetGroupManagerAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
@@ -42,13 +44,11 @@ private:
     static napi_value GetMinVolume(napi_env env, napi_callback_info info);
     static napi_value SetMute(napi_env env, napi_callback_info info);
     static napi_value IsStreamMute(napi_env env, napi_callback_info info);
-
-    // AudioGroupManager *audioGroupMngr_;
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
-    
+
     napi_ref wrapper_;
 
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif /* AUDIO_MNGR_NAPI_H_ */
+#endif //AUDIO_GROUP_MNGR_NAPI_H_
