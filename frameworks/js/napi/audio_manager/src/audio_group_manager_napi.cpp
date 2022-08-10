@@ -225,14 +225,13 @@ void AudioGroupManagerNapi::Destructor(napi_env env, void *nativeObject, void *f
     }
 }
 
-napi_value AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(napi_env env,int32_t groupId)
+napi_value AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(napi_env env, int32_t groupId)
 {
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;
-    napi_value resul;
-    napi_create_int64(env, groupId, &resul);
-    napi_value args[1] = {resul};
+    napi_create_int64(env, groupId, &result);
+    napi_value args[1] = {result};
     HiLog::Info(LABEL, "AudioGroupManagerNapi::CreateAudioGroupManagerWrapper()! groupId %{public}d",groupId);
     status = napi_get_reference_value(env, g_groupmanagerConstructor, &constructor);
     if (status == napi_ok) {

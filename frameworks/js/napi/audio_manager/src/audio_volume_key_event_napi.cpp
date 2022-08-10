@@ -81,6 +81,14 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void SetValueString(const napi_env& env, const std::string& fieldStr, const std::string stringValue,
+    napi_value& result)
+{
+    napi_value value = nullptr;
+    napi_create_string_utf8(env, stringValue.c_str(), NAPI_AUTO_LENGTH, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
 static void SetValueBoolean(const napi_env& env, const std::string& fieldStr, const bool boolValue, napi_value& result)
 {
     napi_value value = nullptr;
@@ -119,6 +127,8 @@ static void NativeVolumeEventToJsObj(const napi_env& env, napi_value& jsObj,
     SetValueInt32(env, "volumeType", GetJsAudioVolumeType(volumeEvent.volumeType), jsObj);
     SetValueInt32(env, "volume", static_cast<int32_t>(volumeEvent.volume), jsObj);
     SetValueBoolean(env, "updateUi", volumeEvent.updateUi, jsObj);
+    SetValueInt32(env, "volumeGroupId", volumeEvent.volumeGroupId, jsObj);
+    SetValueString(env, "networkId", volumeEvent.networkId, jsObj);
 }
 
 void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)
