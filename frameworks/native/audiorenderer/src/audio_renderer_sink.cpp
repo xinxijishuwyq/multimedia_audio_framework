@@ -451,7 +451,7 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     }
 
     outputPortPin = sink.ext.device.type;
-    AUDIO_DEBUG_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
+    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
@@ -481,7 +481,8 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
 
 int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene in");
+    AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene scene: %{public}d, device: %{public}d",
+        audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
@@ -495,7 +496,7 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activ
             AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
         }
 
-        AUDIO_DEBUG_LOG("AudioRendererSink::OUTPUT port is %{public}d", audioSceneOutPort);
+        AUDIO_INFO_LOG("AudioRendererSink::OUTPUT port is %{public}d", audioSceneOutPort);
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
         scene.desc.pins = audioSceneOutPort;
@@ -505,9 +506,7 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activ
             return ERR_OPERATION_FAILED;
         }
 
-        AUDIO_INFO_LOG("AudioRendererSink::SelectScene start");
         ret = audioRender_->scene.SelectScene((AudioHandle)audioRender_, &scene);
-        AUDIO_INFO_LOG("AudioRendererSink::SelectScene over");
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;

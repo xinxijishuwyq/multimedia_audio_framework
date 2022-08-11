@@ -27,7 +27,8 @@ void BluetoothA2dpSrcObserver::OnConfigurationChanged(const bluetooth::RawAddres
 
 void BluetoothA2dpSrcObserver::OnPlayingStatusChanged(const bluetooth::RawAddress &device, int playingState, int error)
 {
-    AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnPlayingStatusChanged");
+    AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnPlayingStatusChanged, state: %{public}d, error: %{public}d",
+        playingState, error);
     if ((callbacks_ != nullptr) && (callbacks_->OnPlayingStatusChanged)) {
         callbacks_->OnPlayingStatusChanged(device, playingState, error);
     }
@@ -35,7 +36,7 @@ void BluetoothA2dpSrcObserver::OnPlayingStatusChanged(const bluetooth::RawAddres
 
 void BluetoothA2dpSrcObserver::OnConnectionStateChanged(const bluetooth::RawAddress &device, int state)
 {
-    AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnConnectionStateChanged");
+    AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnConnectionStateChanged, state: %{public}d", state);
     if ((callbacks_ != nullptr) && (callbacks_->OnConnectionStateChanged)) {
         callbacks_->OnConnectionStateChanged(device, state);
     }

@@ -420,7 +420,7 @@ int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice, AudioPortPin 
     }
 
     inputPortPin = source.ext.device.type;
-    AUDIO_DEBUG_LOG("AudioCapturerSource: Input PIN is: %{public}d", inputPortPin);
+    AUDIO_INFO_LOG("AudioCapturerSource: Input PIN is: %{public}d", inputPortPin);
     source.portId = static_cast<int32_t>(audioPort.portId);
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
@@ -450,7 +450,8 @@ int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice, AudioPortPin 
 
 int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    AUDIO_INFO_LOG("AudioCapturerSource::SetAudioScene in");
+    AUDIO_INFO_LOG("AudioCapturerSource::SetAudioScene scene: %{public}d, device: %{public}d",
+        audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioCapture_ == nullptr) {
@@ -472,9 +473,7 @@ int32_t AudioCapturerSource::SetAudioScene(AudioScene audioScene, DeviceType act
             return ERR_OPERATION_FAILED;
         }
 
-        AUDIO_INFO_LOG("AudioCapturerSource::SelectScene start");
         ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
-        AUDIO_INFO_LOG("AudioCapturerSource::SelectScene over");
         if (ret < 0) {
             AUDIO_ERR_LOG("AudioCapturerSource: Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;

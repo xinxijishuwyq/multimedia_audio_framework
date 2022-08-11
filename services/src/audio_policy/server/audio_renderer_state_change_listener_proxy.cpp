@@ -35,18 +35,6 @@ AudioRendererStateChangeListenerProxy::~AudioRendererStateChangeListenerProxy()
 void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParcel &data,
     const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerProxy WriteRendererChangeInfo sessionId = %{public}d",
-        rendererChangeInfo->sessionId);
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerProxy WriteRendererChangeInfo rendererState = %{public}d",
-        rendererChangeInfo->rendererState);
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerProxy WriteRendererChangeInfo client id = %{public}d",
-        rendererChangeInfo->clientUID);
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerProxy WriteRendererChangeInfo contenttype = %{public}d",
-        rendererChangeInfo->rendererInfo.contentType);
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerProxy WriteRendererChangeInfo streamusage = %{public}d",
-        rendererChangeInfo->rendererInfo.streamUsage);
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerProxy WriteRendererChangeInfo rendererflags = %{public}d",
-        rendererChangeInfo->rendererInfo.rendererFlags);
     data.WriteInt32(rendererChangeInfo->sessionId);
     data.WriteInt32(rendererChangeInfo->rendererState);
     data.WriteInt32(rendererChangeInfo->clientUID);
@@ -98,7 +86,7 @@ AudioRendererStateChangeListenerCallback::AudioRendererStateChangeListenerCallba
     const sptr<IStandardRendererStateChangeListener> &listener, bool hasBTPermission)
     : listener_(listener), hasBTPermission_(hasBTPermission)
 {
-        AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerCallback: Instance create");
+    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerCallback: Instance create");
 }
 
 AudioRendererStateChangeListenerCallback::~AudioRendererStateChangeListenerCallback()
