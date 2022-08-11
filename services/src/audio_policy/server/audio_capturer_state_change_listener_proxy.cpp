@@ -35,12 +35,6 @@ AudioCapturerStateChangeListenerProxy::~AudioCapturerStateChangeListenerProxy()
 void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParcel &data,
     const unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
 {
-    AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerProxy WriteCapturerChangeInfo sessionId = %{public}d",
-        capturerChangeInfo->sessionId);
-    AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerProxy WriteCapturerChangeInfo capturerState = %{public}d",
-        capturerChangeInfo->capturerState);
-    AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerProxy WriteCapturerChangeInfo client id = %{public}d",
-        capturerChangeInfo->clientUID);
     data.WriteInt32(capturerChangeInfo->sessionId);
     data.WriteInt32(capturerChangeInfo->capturerState);
     data.WriteInt32(capturerChangeInfo->clientUID);

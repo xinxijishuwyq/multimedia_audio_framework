@@ -297,7 +297,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
 
 int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
-    AUDIO_INFO_LOG("[%{public}s]", __func__);
+    AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType: %{public}d, flag: %{public}d", type, flag);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
