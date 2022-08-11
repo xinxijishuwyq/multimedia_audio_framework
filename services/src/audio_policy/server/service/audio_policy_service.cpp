@@ -169,7 +169,7 @@ inline std::string PrintSinkInput(SinkInput sinkInput)
     value << "uid:[" << sinkInput.uid << "] ";
     value << "pid:[" << sinkInput.pid << "] ";
     value << "statusMark:[" << sinkInput.statusMark << "] ";
-    value << "deviceSinkId:[" << sinkInput.deviceSinkId << "] ";
+    value << "sinkName:[" << sinkInput.sinkName << "] ";
     value << "startTime:[" << sinkInput.startTime << "]";
     return value.str();
 }
@@ -202,6 +202,39 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
         AUDIO_INFO_LOG("GetSelectedDeviceInfo device already disconnected.");
         return "";
     }
+}
+
+void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)
+{
+    AUDIO_INFO_LOG("NotifyRemoteRenderState device<%{public}s> condition:%{public}s value:%{public}s",
+        networkId.c_str(), condition.c_str(), value.c_str());
+
+    vector<SinkInput> sinkInputs = mAudioPolicyManager.GetAllSinkInputs();
+    vector<SinkInput> targetSinkInputs = {};
+    for (auto sinkInput : sinkInputs) {
+        if (sinkInput.sinkName == networkId) {
+            targetSinkInputs.push_back(sinkInput);
+        }
+    }
+    AUDIO_INFO_LOG("NotifyRemoteRenderState move [%{public}zu] of all [%{public}zu]sink-inputs to local.",
+        targetSinkInputs.size(), sinkInputs.size());
+    sptr<AudioDeviceDescriptor> localDevice = new(std::nothrow) AudioDeviceDescriptor();
+    if (localDevice == nullptr) {
+        AUDIO_ERR_LOG("Device error: null device.");
+        return;
+    }
+    localDevice->networkId_ = LOCAL_NETWORK_ID;
+    localDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    localDevice->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+
+    int32_t ret = MoveToLocalOutputDevice(targetSinkInputs, localDevice);
+    CHECK_AND_RETURN_LOG((ret == SUCCESS), "MoveToLocalOutputDevice failed!");
+
+    // Suspend device, notify audio stream manager that device has been changed.
+    ret = mAudioPolicyManager.SuspendAudioDevice(networkId, true);
+    CHECK_AND_RETURN_LOG((ret == SUCCESS), "SuspendAudioDevice failed!");
+
+    AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -256,7 +289,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
     sptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
-    AUDIO_INFO_LOG("MoveToLocalOutputDevice start");
+    AUDIO_INFO_LOG("MoveToLocalOutputDevice for [%{public}zu] sink-inputs", sinkInputIds.size());
     // check
     if (LOCAL_NETWORK_ID != localDeviceDescriptor->networkId_) {
         AUDIO_ERR_LOG("MoveToLocalOutputDevice failed: not a local device.");
@@ -274,7 +307,7 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
     std::string sinkName = GetPortName(mCurrentActiveDevice_);
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         if (mAudioPolicyManager.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName) != SUCCESS) {
-            AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sinkInputIds[i].streamId);
+            AUDIO_ERR_LOG("move [%{public}d] to local failed", sinkInputIds[i].streamId);
             return ERROR;
         }
         routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
@@ -336,6 +369,10 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
+
+    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    CHECK_AND_RETURN_RET_LOG((g_sProxy->CheckRemoteDeviceState(networkId, deviceRole, true) == SUCCESS),
+        ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {

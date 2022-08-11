@@ -138,6 +138,15 @@ int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const 
     RemoteAudioRendererSink* sink = reinterpret_cast<RemoteAudioRendererSink*>(cookie);
     std::string networkId = sink->GetNetworkId();
     AudioParamKey audioKey = AudioParamKey(key);
+    // render state change to invalid.
+    if (audioKey == AudioParamKey::RENDER_STATE) {
+        AUDIO_INFO_LOG("RemoteAudioRendererSink render state invalid, destroy audioRender");
+        if ((sink->audioRender_ != nullptr) && (sink->audioAdapter_ != nullptr)) {
+            sink->audioAdapter_->DestroyRender(sink->audioAdapter_, sink->audioRender_);
+        }
+        sink->audioRender_ = nullptr;
+        sink->isRenderCreated = false;
+    }
     AudioSinkCallback* callback = sink->GetParamCallback();
     callback->OnAudioParameterChange(networkId, audioKey, condition, value);
     return 0;
@@ -262,10 +271,10 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
 
+    isRenderCreated = true;
     int64_t cost = GetNowTimeMs() - start;
     AUDIO_INFO_LOG("CreateRender cost[%{public}zu]ms", (size_t)cost);
 
@@ -403,7 +412,6 @@ int32_t RemoteAudioRendererSink::Start(void)
             AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
             return ERR_NOT_STARTED;
         }
-        isRenderCreated = true;
     }
     int32_t ret;
 

@@ -1427,7 +1427,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
         return;
     }
     if (key == RENDER_STATE) {
-        AUDIO_DEBUG_LOG("[AudioPolicyServer]: No processing for now");
+        server_->mPolicyService.NotifyRemoteRenderState(networkId, condition, value);
         return;
     }
 }

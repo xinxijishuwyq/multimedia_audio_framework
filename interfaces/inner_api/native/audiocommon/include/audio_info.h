@@ -609,6 +609,12 @@ enum AudioCaptureMode {
     CAPTURE_MODE_CALLBACK
 };
 
+struct SinkInfo {
+    uint32_t sinkId; // sink id
+    std::string sinkName;
+    std::string adapterName;
+};
+
 struct SinkInput {
     int32_t streamId;
     AudioStreamType streamType;
@@ -618,6 +624,7 @@ struct SinkInput {
     int32_t pid; // client pid
     uint32_t paStreamId; // streamId
     uint32_t deviceSinkId; // sink id
+    std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
 };
