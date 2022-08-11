@@ -193,7 +193,11 @@ napi_value AudioGroupManagerNapi::Construct(napi_env env, napi_callback_info inf
         unique_ptr<AudioGroupManagerNapi> groupmanagerNapi = make_unique<AudioGroupManagerNapi>();
         if (groupmanagerNapi != nullptr) {
 
-            groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()-> GetGroupManager(valueParam);
+            groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(valueParam);
+            if (groupmanagerNapi->audioGroupMngr_ == nullptr) {
+                HiLog::Error(LABEL, "Failed in AudioGroupManagerNapi::Construct()!");
+                return undefinedResult;
+            }
             status = napi_wrap(env, jsThis, static_cast<void*>(groupmanagerNapi.get()),
                 AudioGroupManagerNapi::Destructor, nullptr, &(groupmanagerNapi->wrapper_));
             if (status == napi_ok) {
@@ -204,7 +208,6 @@ napi_value AudioGroupManagerNapi::Construct(napi_env env, napi_callback_info inf
     }
 
     HiLog::Error(LABEL, "Failed in AudioGroupManagerNapi::Construct()!");
-
     return undefinedResult;
 }
 

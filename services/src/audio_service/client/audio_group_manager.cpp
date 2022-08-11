@@ -27,7 +27,6 @@ namespace AudioStandard {
 static sptr<IStandardAudioService> g_sProxy = nullptr;
 AudioGroupManager::AudioGroupManager(int32_t groupId) : groupId_(groupId)
 {
-    Init();
 }
 AudioGroupManager::~AudioGroupManager()
 {
@@ -50,7 +49,7 @@ int32_t AudioGroupManager::MapVolumeFromHDI(float volume)
 
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
-    if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
+    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = std::to_string(volume);
@@ -99,7 +98,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
 {
-    if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
+    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
@@ -139,7 +138,7 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     if (!IsAlived()) {
         CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMaxVolume service unavailable");
     }
-    if (netWorkId_ != LOCAL_NETWORK_ID) {
+    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
@@ -161,7 +160,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     if (!IsAlived()) {
         CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "GetMinVolume service unavailable");
     }
-    if (netWorkId_ != LOCAL_NETWORK_ID) {
+    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
         std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
@@ -180,7 +179,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 {
-    if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
+    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string value = mute ? "1" : "0";
@@ -223,7 +222,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
 {
     AUDIO_DEBUG_LOG("AudioSystemManager::GetMute Client");
-    if (groupId_ != LOCAL_VOLUME_GROUP_ID) {
+    if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string ret = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
@@ -253,27 +252,8 @@ bool AudioGroupManager::IsStreamMute(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
 }
 
-void AudioGroupManager::Init()
+int32_t AudioGroupManager::Init()
 {
-    // init g_sProxy
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        AUDIO_ERR_LOG("AudioSystemManager::init failed");
-        return;
-    }
-
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    if (object == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::object is NULL.");
-        return;
-    }
-    g_sProxy = iface_cast<IStandardAudioService>(object);
-    if (g_sProxy == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
-    } else {
-        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
-    }
-
     // init networkId_
     int32_t groupId = groupId_;
     std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
@@ -285,7 +265,33 @@ void AudioGroupManager::Init()
         volumeGroupInfos.end());
     if (volumeGroupInfos.size() > 0) {
         netWorkId_ = volumeGroupInfos[0]->networkId_;
+        connectType_ = netWorkId_ == LOCAL_NETWORK_ID ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
         AUDIO_INFO_LOG("AudioGroupManager::init set networkId %{public}s.", netWorkId_.c_str());
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("AudioGroupManager::init failed, has no valid group");
+        return ERROR;
+    }
+
+    // init g_sProxy
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgr == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManager::init failed");
+        return ERROR;
+    }
+
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    if (object == nullptr) {
+        AUDIO_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        return ERROR;
+    }
+    g_sProxy = iface_cast<IStandardAudioService>(object);
+    if (g_sProxy == nullptr) {
+        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is NULL.");
+        return ERROR;
+    } else {
+        AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
+        return ERROR;
     }
 }
 
