@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -116,7 +116,6 @@ static void CommonCallbackRoutine(napi_env env, AudioGroupManagerAsyncContext* &
             napi_reject_deferred(env, asyncContext->deferred, result[PARAM0]);
         }
     } else {
-
         napi_value callback = nullptr;
         napi_get_reference_value(env, asyncContext->callbackRef, &callback);
         napi_call_function(env, nullptr, callback, ARGS_TWO, result, &retVal);
@@ -192,7 +191,6 @@ napi_value AudioGroupManagerNapi::Construct(napi_env env, napi_callback_info inf
     if (status == napi_ok) {
         unique_ptr<AudioGroupManagerNapi> groupmanagerNapi = make_unique<AudioGroupManagerNapi>();
         if (groupmanagerNapi != nullptr) {
-
             groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(valueParam);
             if (groupmanagerNapi->audioGroupMngr_ == nullptr) {
                 HiLog::Error(LABEL, "Failed in AudioGroupManagerNapi::Construct()!");
@@ -232,10 +230,8 @@ napi_value AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(napi_env env, i
     HiLog::Info(LABEL, "AudioGroupManagerNapi::CreateAudioGroupManagerWrapper() groupId %{public}d", groupId);
     status = napi_get_reference_value(env, g_groupmanagerConstructor, &constructor);
     if (status == napi_ok) {
-
         status = napi_new_instance(env, constructor, 1, args, &result);
         if (status == napi_ok) {
-
             return result;
         }
     }
@@ -252,7 +248,6 @@ void GetGroupManagerAsyncCallbackComplete(napi_env env, napi_status status, void
     auto asyncContext = static_cast<AudioGroupManagerAsyncContext *>(data);
 
     if (asyncContext != nullptr) {
-
         if (!asyncContext->status) {
             unique_ptr<AudioGroupManagerAsyncContext> capturerOptions = make_unique<AudioGroupManagerAsyncContext>();
             valueParam = AudioGroupManagerNapi::CreateAudioGroupManagerWrapper(env, asyncContext->groupId);
@@ -282,7 +277,6 @@ napi_value AudioGroupManagerNapi::GetVolume(napi_env env, napi_callback_info inf
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                HiLog::Info(LABEL, " GetVolume volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;
@@ -308,8 +302,7 @@ napi_value AudioGroupManagerNapi::GetVolume(napi_env env, napi_callback_info inf
                     GetNativeAudioVolumeType(context->volType));
                 context->intValue = context->volLevel;
                 context->status = 0;
-            },
-            GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+            }, GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
@@ -344,10 +337,8 @@ napi_value AudioGroupManagerNapi::SetVolume(napi_env env, napi_callback_info inf
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                HiLog::Info(LABEL, " SetVolume volType = %{public}d", asyncContext->volType);
             } else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
-                HiLog::Info(LABEL, " SetVolume volLevel = %{public}d", asyncContext->volLevel);
             } else if (i == PARAM2 && valueType == napi_function) {
                 napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 break;

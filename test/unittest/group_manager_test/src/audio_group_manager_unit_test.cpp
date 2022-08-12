@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,20 +24,9 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    // constexpr uint32_t MIN_DEVICE_COUNT = 2;
-    // constexpr uint32_t MIN_INPUT_DEVICE_COUNT = 1;
-    // constexpr uint32_t MIN_OUTPUT_DEVICE_COUNT = 1;
-    // constexpr uint32_t CONTENT_TYPE_UPPER_INVALID = 6;
-    // constexpr uint32_t STREAM_USAGE_UPPER_INVALID = 7;
-    // constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 100;
-    // constexpr uint32_t CONTENT_TYPE_LOWER_INVALID = -1;
-    // constexpr uint32_t STREAM_USAGE_LOWER_INVALID = -1;
-    // constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
-    int32_t groupId =1;
-    // constexpr int32_t INV_CHANNEL = -1;
-    // constexpr int32_t CHANNEL_10 = 10;
+    int32_t groupId = 1;
 }
 
 void AudioGroupManagerUnitTest::SetUpTestCase(void) {}
@@ -127,7 +116,7 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 /**
 * @tc.name  : Test GetMaxVolume API
 * @tc.number: GetMaxVolumeTest_001
-* @tc.desc  : Test GetMaxVolume  of media stream
+* @tc.desc  : Test GetMaxVolume of media stream
 */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 {
@@ -145,7 +134,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 /**
 * @tc.name  : Test GetMaxVolume API
 * @tc.number: GetMinVolumeTest_001
-* @tc.desc  : Test GetMaxVolume  of media stream
+* @tc.desc  : Test GetMaxVolume of media stream
 */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 {

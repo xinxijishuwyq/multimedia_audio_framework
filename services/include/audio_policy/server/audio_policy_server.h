@@ -174,9 +174,11 @@ public:
         // AudioParameterCallback
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
             const std::string& value) override;
-        void VolumeOnChange(const std::string networkId, const std::string& condition);
     private:
         sptr<AudioPolicyServer> server_;
+        void VolumeOnChange(const std::string networkId, const std::string& condition);
+        void InterruptOnChange(const std::string networkId, const std::string& condition);
+        void StateOnChange(const std::string networkId, const std::string& condition, const std::string& value);
     };
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
 protected:
