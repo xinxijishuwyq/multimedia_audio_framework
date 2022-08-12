@@ -36,7 +36,7 @@ AudioRendererStateChangeListenerStub::~AudioRendererStateChangeListenerStub()
 void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessageParcel &data,
     unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerStub ReadAudioRendererChangeInfo");
+    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub ReadAudioRendererChangeInfo");
     rendererChangeInfo->sessionId = data.ReadInt32();
     rendererChangeInfo->rendererState = static_cast<RendererState>(data.ReadInt32());
     rendererChangeInfo->clientUID = data.ReadInt32();
@@ -76,7 +76,7 @@ int AudioRendererStateChangeListenerStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioRendererStateChangeListenerStub: ReadInterfaceToken failed");
         return -1;
     }
-    AUDIO_INFO_LOG("AudioRendererStateChangeListenerStub OnRemoteRequest");
+
     switch (code) {
         case ON_RENDERERSTATE_CHANGE: {
             vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
