@@ -55,7 +55,7 @@ bool PulseAudioServiceAdapterImpl::Connect()
 
     if (pa_threaded_mainloop_start(mMainLoop) < 0) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to start mainloop");
-        pa_threaded_mainloop_free (mMainLoop);
+        pa_threaded_mainloop_free(mMainLoop);
         return false;
     }
 
@@ -227,7 +227,6 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
-    std::string adapterName = userData->adapterName;
     if (eol < 0) {
         AUDIO_ERR_LOG("[PaGetSinksCb] Failed to get sink information: %{public}s",
             pa_strerror(pa_context_errno(c)));
@@ -245,23 +244,28 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
     }
 
     const char *adapterCStr = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_STRING);
-    AUDIO_DEBUG_LOG("[PaGetSinksCb] sink (%{public}d) device[%{public}s]", i->index, adapterCStr);
+    AUDIO_INFO_LOG("[PaGetSinksCb] sink[%{public}d] device[%{public}s] name[%{public}s]", i->index, adapterCStr,
+        i->name);
     std::string sinkDeviceName(adapterCStr);
-    if (!adapterName.empty() && (adapterName == sinkDeviceName)) {
-        userData->sinkIds.push_back(i->index);
-    }
+    std::string sinkName(i->name);
+    SinkInfo sinkInfo = {};
+    sinkInfo.sinkId = i->index;
+    sinkInfo.sinkName = sinkName;
+    sinkInfo.adapterName = sinkDeviceName;
+    userData->sinkInfos.push_back(sinkInfo);
 }
 
-std::vector<uint32_t> PulseAudioServiceAdapterImpl::getTargetSinks(std::string adapterName)
+std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
+    AUDIO_INFO_LOG("GetAllSinks enter.");
+    lock_guard<mutex> lock(mMutex);
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
-    userData->adapterName = adapterName;
-    userData->sinkIds = {};
+    userData->sinkInfos = {};
 
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[getTargetSinks] mContext is nullptr");
-        return userData->sinkIds;
+        AUDIO_ERR_LOG("GetAllSinks mContext is nullptr");
+        return userData->sinkInfos;
     }
 
     pa_threaded_mainloop_lock(mMainLoop);
@@ -269,9 +273,9 @@ std::vector<uint32_t> PulseAudioServiceAdapterImpl::getTargetSinks(std::string a
     pa_operation *operation = pa_context_get_sink_info_list(mContext,
         PulseAudioServiceAdapterImpl::PaGetSinksCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("[getTargetSinks] pa_context_get_sink_info_list returned nullptr");
+        AUDIO_ERR_LOG("GetAllSinks pa_context_get_sink_info_list returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
-        return userData->sinkIds;
+        return userData->sinkInfos;
     }
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
@@ -281,7 +285,20 @@ std::vector<uint32_t> PulseAudioServiceAdapterImpl::getTargetSinks(std::string a
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    return userData->sinkIds;
+    AUDIO_INFO_LOG("GetAllSinks end, get [%{public}zu] sinks.", userData->sinkInfos.size());
+    return userData->sinkInfos;
+}
+
+std::vector<uint32_t> PulseAudioServiceAdapterImpl::GetTargetSinks(std::string adapterName)
+{
+    std::vector<SinkInfo> sinkInfos = GetAllSinks();
+    std::vector<uint32_t> targetSinkIds = {};
+    for (size_t i = 0; i < sinkInfos.size(); i++) {
+        if (sinkInfos[i].adapterName == adapterName) {
+            targetSinkIds.push_back(sinkInfos[i].sinkId);
+        }
+    }
+    return targetSinkIds;
 }
 
 int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
@@ -289,7 +306,7 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
     std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
 
     std::string remoteDevice = "remote";
-    std::vector<uint32_t> remoteSinks = getTargetSinks(remoteDevice);
+    std::vector<uint32_t> remoteSinks = GetTargetSinks(remoteDevice);
 
     // filter sink-inputs which are not connected with remote sinks.
     for (auto sinkInput : allSinkInputs) {
@@ -527,11 +544,12 @@ bool PulseAudioServiceAdapterImpl::IsStreamActive(AudioStreamType streamType)
 
 vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    lock_guard<mutex> lock(mMutex);
-
+    AUDIO_INFO_LOG("GetAllSinkInputs enter");
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
+    userData->sinkInfos = GetAllSinks();
 
+    lock_guard<mutex> lock(mMutex);
     if (mContext == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] GetAllSinkInputs mContext is nullptr");
         return userData->sinkInputList;
@@ -554,6 +572,7 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
+    AUDIO_INFO_LOG("GetAllSinkInputs get:[%{public}zu]", userData->sinkInputList.size());
     return userData->sinkInputList;
 }
 
@@ -941,14 +960,6 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
         return;
     }
 
-    uint32_t sessionID = 0;
-    const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
-    if (sessionCStr != nullptr) {
-        std::stringstream sessionStr;
-        sessionStr << sessionCStr;
-        sessionStr >> sessionID;
-    }
-
     AudioStreamType audioStreamType = STREAM_DEFAULT;
     const char *streamType = pa_proplist_gets(i->proplist, "stream.type");
     if (streamType != nullptr) {
@@ -956,11 +967,17 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
     }
 
     SinkInput sinkInput = {};
-    sinkInput.streamId = sessionID;
     sinkInput.streamType = audioStreamType;
 
     sinkInput.deviceSinkId = i->sink;
+    for (auto sinkInfo : userData->sinkInfos) {
+        if (sinkInput.deviceSinkId == sinkInfo.sinkId) {
+            sinkInput.sinkName = sinkInfo.sinkName;
+            break;
+        }
+    }
     sinkInput.paStreamId = i->index;
+    CastValue<int32_t>(sinkInput.streamId, pa_proplist_gets(i->proplist, "stream.sessionID"));
     CastValue<int32_t>(sinkInput.uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
     CastValue<int32_t>(sinkInput.pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
     CastValue<uint64_t>(sinkInput.startTime, pa_proplist_gets(i->proplist, "stream.startTime"));

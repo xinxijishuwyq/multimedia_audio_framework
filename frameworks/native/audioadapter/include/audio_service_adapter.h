@@ -111,7 +111,14 @@ public:
      * @param adapterName name of default audio sink to be set
      * @return Returns sink ids.
      */
-    virtual std::vector<uint32_t> getTargetSinks(std::string adapterName) = 0;
+    virtual std::vector<uint32_t> GetTargetSinks(std::string adapterName) = 0;
+
+    /**
+     * @brief get all sinks
+     *
+     * @return Returns sink infos.
+     */
+    virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
     /**
      * @brief sets audio volume

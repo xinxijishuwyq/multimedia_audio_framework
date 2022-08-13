@@ -162,6 +162,15 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             NotifyDeviceInfo(networkId, connected);
             return AUDIO_OK;
         }
+        case CHECK_REMOTE_DEVICE_STATE: {
+            AUDIO_DEBUG_LOG("CHECK_REMOTE_DEVICE_STATE AudioManagerStub");
+            std::string networkId = data.ReadString();
+            DeviceRole deviceRole = static_cast<DeviceRole>(data.ReadInt32());
+            bool isStartDevice = data.ReadBool();
+            int32_t result = CheckRemoteDeviceState(networkId, deviceRole, isStartDevice);
+            reply.WriteInt32(result);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

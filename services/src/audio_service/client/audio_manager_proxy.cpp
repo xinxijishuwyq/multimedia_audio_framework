@@ -319,6 +319,27 @@ void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
     }
 }
 
+int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return ERR_TRANSACTION_FAILED;
+    }
+    data.WriteString(networkId);
+    data.WriteInt32(static_cast<int32_t>(deviceRole));
+    data.WriteBool(isStartDevice);
+    int32_t error = Remote()->SendRequest(CHECK_REMOTE_DEVICE_STATE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CheckRemoteDeviceState failed in proxy, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     AUDIO_DEBUG_LOG("[%{public}s]", __func__);

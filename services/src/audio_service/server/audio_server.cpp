@@ -343,6 +343,21 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
     }
 }
 
+int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
+{
+    AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
+        networkId.c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
+    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->rendererInited_) {
+        return ERR_ILLEGAL_STATE;
+    }
+    int32_t ret = SUCCESS;
+    if (isStartDevice) {
+        ret = audioRendererSinkInstance->Start();
+    }
+    return ret;
+}
+
 void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
     const std::string value)
 {
