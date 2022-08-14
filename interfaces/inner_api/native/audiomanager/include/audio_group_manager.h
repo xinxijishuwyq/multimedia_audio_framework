@@ -45,11 +45,12 @@ public:
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute);
     bool IsStreamMute(AudioVolumeType volumeType);
-    void Init();
+    int32_t Init();
     bool IsAlived();
     int32_t GetGroupId();
 private:
     int32_t groupId_;
+    ConnectType connectType_ = CONNECT_TYPE_LOCAL;
     std::string netWorkId_ = LOCAL_NETWORK_ID;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;

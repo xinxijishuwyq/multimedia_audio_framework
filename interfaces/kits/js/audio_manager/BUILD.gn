@@ -56,6 +56,7 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_capturer/src/capturer_position_callback_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_common/src/audio_common_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_manager/src/audio_capturer_state_callback_napi.cpp",
+    "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_manager/src/audio_group_manager_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_manager/src/audio_manager_callback_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_manager/src/audio_manager_interrupt_callback_napi.cpp",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_manager/src/audio_manager_napi.cpp",
