@@ -2078,7 +2078,7 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
     HiLog::Info(LABEL, "number of devices = %{public}zu", size);
 
     napi_create_array_with_length(env, size, &result[PARAM1]);
-    for (size_t i = 0; i < size; i ++) {
+    for (size_t i = 0; i < size; i++) {
         if (asyncContext->deviceDescriptors[i] != nullptr) {
             (void)napi_create_object(env, &valueParam);
             SetValueInt32(env, "deviceRole", static_cast<int32_t>(
@@ -2720,7 +2720,7 @@ napi_value AudioManagerNapi::GetGroupManager(napi_env env, napi_callback_info in
     const int32_t refCount = 1;
     napi_value result = nullptr;
 
-    GET_PARAMS(env, info, ARGS_ONE);
+    GET_PARAMS(env, info, ARGS_TWO);
 
     unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioManagerAsyncContext object creation failed");
@@ -2728,7 +2728,7 @@ napi_value AudioManagerNapi::GetGroupManager(napi_env env, napi_callback_info in
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[i], &valueType);
-        if (i == PARAM0 &&valueType == napi_number) {
+        if (i == PARAM0 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->groupId);
         } else if (i == PARAM1 && valueType == napi_function) {
             napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
