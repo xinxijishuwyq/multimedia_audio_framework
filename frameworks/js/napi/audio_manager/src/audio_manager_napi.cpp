@@ -2720,7 +2720,7 @@ napi_value AudioManagerNapi::GetGroupManager(napi_env env, napi_callback_info in
     const int32_t refCount = 1;
     napi_value result = nullptr;
 
-    GET_PARAMS(env, info, ARGS_ONE);
+    GET_PARAMS(env, info, ARGS_TWO);
 
     unique_ptr<AudioManagerAsyncContext> asyncContext = make_unique<AudioManagerAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioManagerAsyncContext object creation failed");
