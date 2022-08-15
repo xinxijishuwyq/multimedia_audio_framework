@@ -267,7 +267,6 @@ int32_t AudioGroupManager::Init()
         netWorkId_ = volumeGroupInfos[0]->networkId_;
         connectType_ = netWorkId_ == LOCAL_NETWORK_ID ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
         AUDIO_INFO_LOG("AudioGroupManager::init set networkId %{public}s.", netWorkId_.c_str());
-        return SUCCESS;
     } else {
         AUDIO_ERR_LOG("AudioGroupManager::init failed, has no valid group");
         return ERROR;
@@ -291,7 +290,7 @@ int32_t AudioGroupManager::Init()
         return ERROR;
     } else {
         AUDIO_DEBUG_LOG("AudioSystemManager::init g_sProxy is assigned.");
-        return ERROR;
+        return SUCCESS;
     }
 }
 
