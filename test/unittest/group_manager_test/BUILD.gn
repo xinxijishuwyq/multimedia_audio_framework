@@ -13,14 +13,14 @@
 
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_standard/audio_manager"
+module_output_path = "multimedia_audio_framework/audio_manager"
 
 ohos_unittest("audio_group_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_standard/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_standard/frameworks/native/common/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/common/include",
   ]
 
   cflags = [
@@ -33,6 +33,6 @@ ohos_unittest("audio_group_manager_unit_test") {
   deps = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer",
-    "//utils/native/base:utils",
   ]
+  external_deps = [ "c_utils:utils" ]
 }
