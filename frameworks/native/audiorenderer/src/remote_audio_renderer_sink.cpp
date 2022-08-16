@@ -91,10 +91,18 @@ void RemoteAudioRendererSink::RegisterParameterCallback(AudioSinkCallback* callb
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");
     callback_ = callback;
+    if (paramCallbackRegistered_) {
+        return;
+    }
 #ifdef PRODUCT_M40
     // register to adapter
     ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
-    audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+    int32_t ret = audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::RegisterParameterCallback failed, error code: %d", ret);
+    } else {
+        paramCallbackRegistered_ = true;
+    }
 #endif
 }
 
