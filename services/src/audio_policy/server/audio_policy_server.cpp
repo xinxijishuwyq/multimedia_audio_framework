@@ -1480,7 +1480,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     }
 
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-    
+
     for (auto it : server_->policyListenerCbsMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(interruptEvent);

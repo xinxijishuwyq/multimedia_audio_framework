@@ -1685,7 +1685,7 @@ void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, 
             }
             return;
         }
-        if (groupName != GROUP_NAME_NONE) {
+        if (groupName != GROUP_NAME_NONE && connected) {
             groupId = AudioGroupHandle::GetInstance().GetNextId(type);
             sptr<VolumeGroupInfo> volumeGroupInfo = new(std::nothrow) VolumeGroupInfo(groupId,
                 mappingId, groupName, networkId, connectType);
@@ -1706,7 +1706,7 @@ void AudioPolicyService::UpdateGroupInfo(GroupType type, std::string groupName, 
             }
             return;
         }
-        if (groupName != GROUP_NAME_NONE) {
+        if (groupName != GROUP_NAME_NONE && connected) {
             groupId = AudioGroupHandle::GetInstance().GetNextId(type);
             sptr<InterruptGroupInfo> interruptGroupInfo = new(std::nothrow) InterruptGroupInfo(groupId, mappingId,
                 groupName, networkId, connectType);
