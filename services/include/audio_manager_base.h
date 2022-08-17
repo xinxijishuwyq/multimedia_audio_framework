@@ -146,6 +146,13 @@ public:
     virtual void NotifyDeviceInfo(std::string networkId, bool connected) = 0;
 
     /**
+     * Check remote device state.
+     *
+     * @return Returns transaction id.
+     */
+    virtual int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) = 0;
+
+    /**
      * Set parameter callback
      *
      * @return Returns the setting result
@@ -168,6 +175,7 @@ public:
         GET_REMOTE_AUDIO_PARAMETER = 12,
         SET_REMOTE_AUDIO_PARAMETER = 13,
         NOTIFY_DEVICE_INFO = 14,
+        CHECK_REMOTE_DEVICE_STATE = 15,
     };
 
 public:

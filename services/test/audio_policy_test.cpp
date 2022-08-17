@@ -105,7 +105,6 @@ static void ShowAudioRendererFilter(sptr<AudioRendererFilter> audioRendererFilte
     cout << "streamId: "      << audioRendererFilter->streamId << endl;
 }
 
-
 static void HandleGetDevices(int argc, char *argv[], char option)
 {
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();

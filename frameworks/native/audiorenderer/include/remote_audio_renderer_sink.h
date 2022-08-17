@@ -84,6 +84,7 @@ private:
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_;
     AudioSinkCallback* callback_;
+    bool paramCallbackRegistered_ = false;
 
     int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
     int32_t CreateRender(struct AudioPort &renderPort);

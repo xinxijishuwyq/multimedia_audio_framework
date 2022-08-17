@@ -778,14 +778,19 @@ std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t g
 {
     std::vector<std::shared_ptr<AudioGroupManager>>::iterator iter = groupManagerMap_.begin();
     while (iter != groupManagerMap_.end()) {
-        if ((*iter)->GetGroupId() == groupId)
+        if ((*iter)->GetGroupId() == groupId) {
             return *iter;
-        else
+        } else {
             iter++;
+        }
     }
 
     std::shared_ptr<AudioGroupManager> groupManager = std::make_shared<AudioGroupManager>(groupId);
-    groupManagerMap_.push_back(groupManager);
+    if (groupManager->Init() == SUCCESS) {
+        groupManagerMap_.push_back(groupManager);
+    } else {
+        groupManager = nullptr;
+    }
     return groupManager;
 }
 

@@ -44,7 +44,8 @@ public:
     std::vector<SourceOutput> GetAllSourceOutputs() override;
     void Disconnect() override;
 
-    std::vector<uint32_t> getTargetSinks(std::string adapterName) override;
+    std::vector<uint32_t> GetTargetSinks(std::string adapterName) override;
+    std::vector<SinkInfo> GetAllSinks() override;
     int32_t SetLocalDefaultSink(std::string name) override;
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
@@ -73,8 +74,7 @@ private:
         uint32_t idx;
         std::vector<SinkInput> sinkInputList;
         std::vector<SourceOutput> sourceOutputList;
-        std::string adapterName;
-        std::vector<uint32_t> sinkIds;
+        std::vector<SinkInfo> sinkInfos;
         int32_t moveResult;
     };
 

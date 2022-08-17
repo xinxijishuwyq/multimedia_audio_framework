@@ -34,7 +34,6 @@ constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t MIN_SERVICE_COUNT = 2;
 constexpr int32_t ROOT_UID = 0;
 constexpr int32_t INVALID_UID = -1;
-constexpr int32_t LOCAL_VOLUME_GROUP_ID = 0;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
@@ -609,6 +608,12 @@ enum AudioCaptureMode {
     CAPTURE_MODE_CALLBACK
 };
 
+struct SinkInfo {
+    uint32_t sinkId; // sink id
+    std::string sinkName;
+    std::string adapterName;
+};
+
 struct SinkInput {
     int32_t streamId;
     AudioStreamType streamType;
@@ -618,6 +623,7 @@ struct SinkInput {
     int32_t pid; // client pid
     uint32_t paStreamId; // streamId
     uint32_t deviceSinkId; // sink id
+    std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
 };

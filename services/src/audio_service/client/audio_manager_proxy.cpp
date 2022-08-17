@@ -135,7 +135,28 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo = {};
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return deviceInfo;
+    }
+    data.WriteInt32(static_cast<int32_t>(deviceFlag));
+
+    int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get devices failed, error: %d", error);
+        return deviceInfo;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
     return deviceInfo;
 }
 
@@ -298,9 +319,50 @@ void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
     }
 }
 
+int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return ERR_TRANSACTION_FAILED;
+    }
+    data.WriteString(networkId);
+    data.WriteInt32(static_cast<int32_t>(deviceRole));
+    data.WriteBool(isStartDevice);
+    int32_t error = Remote()->SendRequest(CHECK_REMOTE_DEVICE_STATE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CheckRemoteDeviceState failed in proxy, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
-    return ERR_NONE;
+    AUDIO_DEBUG_LOG("[%{public}s]", __func__);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(type);
+    data.WriteInt32(flag);
+
+    auto error = Remote()->SendRequest(UPDATE_ROUTE_REQ, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %{public}d", error);
+        return false;
+    }
+
+    auto result = reply.ReadInt32();
+    AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
+    return result;
 }
 
 int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& object)

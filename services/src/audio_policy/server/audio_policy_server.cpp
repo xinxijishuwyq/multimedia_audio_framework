@@ -42,7 +42,10 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr float DUCK_FACTOR = 0.2f; // 20%
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
-constexpr int32_t EVENT_DES_SIZE = 10;
+constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
+constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
+constexpr int32_t EVENT_DES_SIZE = 60;
+constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
@@ -1376,7 +1379,6 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
     mPolicyService.RegisteredStreamListenerClientDied(pid);
 }
 
-
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
@@ -1416,19 +1418,25 @@ AudioPolicyServer::RemoteParameterCallback::RemoteParameterCallback(sptr<AudioPo
 void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const std::string networkId,
     const AudioParamKey key, const std::string& condition, const std::string& value)
 {
-    AUDIO_INFO_LOG("AudioPolicyServer::OnAudioParameterChange KEY :%{public}d ,value: %{public}s ",
-        key, value.c_str());
+    AUDIO_INFO_LOG("AudioPolicyServer::OnAudioParameterChange key:%{public}d, condition:%{public}s, value:%{public}s",
+        key, condition.c_str(), value.c_str());
     if (server_ == nullptr) {
         AUDIO_ERR_LOG("server_ is nullptr");
         return;
     }
-    if (key == AudioParamKey::VOLUME) {
-        VolumeOnChange(networkId, condition);
-        return;
-    }
-    if (key == RENDER_STATE) {
-        AUDIO_DEBUG_LOG("[AudioPolicyServer]: No processing for now");
-        return;
+    switch (key) {
+        case VOLUME:
+            VolumeOnChange(networkId, condition);
+            break;
+        case INTERRUPT:
+            InterruptOnChange(networkId, condition);
+            break;
+        case RENDER_STATE:
+            StateOnChange(networkId, condition, value);
+            break;
+        default:
+            AUDIO_DEBUG_LOG("[AudioPolicyServer]: No processing");
+            break;
     }
 }
 
@@ -1438,8 +1446,8 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
     VolumeEvent volumeEvent;
     volumeEvent.networkId = networkId;
     char eventDes[EVENT_DES_SIZE];
-    if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d",
-        &eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
+    if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d;",
+        eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
         &(volumeEvent.volumeGroupId)) < PARAMS_VOLUME_NUM) {
         AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
         return;
@@ -1454,6 +1462,44 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
 
         AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
         volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+    }
+}
+
+void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::string networkId,
+    const std::string& condition)
+{
+    char eventDes[EVENT_DES_SIZE];
+    InterruptType type = INTERRUPT_TYPE_BEGIN;
+    InterruptForceType forceType = INTERRUPT_SHARE;
+    InterruptHint hint = INTERRUPT_HINT_NONE;
+
+    if (sscanf_s(condition.c_str(), "%[^;];INTERRUPT_TYPE=%d;INTERRUPT_FORCE_TYPE=%d;INTERRUPT_HINT=%d;", eventDes,
+        EVENT_DES_SIZE, &type, &forceType, &hint) < PARAMS_INTERRUPT_NUM) {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        return;
+    }
+
+    InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
+
+    for (auto it : server_->policyListenerCbsMap_) {
+        if (it.second != nullptr) {
+            it.second->OnInterrupt(interruptEvent);
+        }
+    }
+}
+
+void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string networkId,
+    const std::string& condition, const std::string& value)
+{
+    char eventDes[EVENT_DES_SIZE];
+    char contentDes[RENDER_STATE_CONTENT_DES_SIZE];
+    if (sscanf_s(condition.c_str(), "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes,
+        RENDER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
+        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        return;
+    }
+    if (!strcmp(eventDes, "ERR_EVENT")) {
+        server_->mPolicyService.NotifyRemoteRenderState(networkId, condition, value);
     }
 }
 

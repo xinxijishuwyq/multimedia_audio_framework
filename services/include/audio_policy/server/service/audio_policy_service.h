@@ -61,6 +61,8 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
+    void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
