@@ -151,7 +151,9 @@
             "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/opensles:audio_opensles_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/opensles:audio_opensles_capture_test",
-            "//foundation/multimedia/audio_framework/test/benchmarktest/audiorenderer:benchmarktest"
+            "//foundation/multimedia/audio_framework/test/benchmarktest/audiorenderer:benchmarktest",
+			"//foundation/multimedia/audio_framework/test/benchmarktest/audiocapturer:benchmarktest",
+			"//foundation/multimedia/audio_framework/test/benchmarktest/audiomanager:benchmarktest"
           ]
         }
     }
