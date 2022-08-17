@@ -36,6 +36,7 @@ namespace AudioStandard {
 static __thread napi_ref g_capturerConstructor = nullptr;
 std::unique_ptr<AudioParameters> AudioCapturerNapi::sAudioParameters_ = nullptr;
 std::unique_ptr<AudioCapturerOptions> AudioCapturerNapi::sCapturerOptions_ = nullptr;
+mutex AudioCapturerNapi::createMutex_;
 
 namespace {
     constexpr int ARGS_ONE = 1;
@@ -1269,6 +1270,7 @@ bool AudioCapturerNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
 napi_value AudioCapturerNapi::CreateAudioCapturerWrapper(napi_env env, unique_ptr<AudioCapturerOptions> &captureOptions)
 {
+    lock_guard<mutex> lock(createMutex_);
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;
