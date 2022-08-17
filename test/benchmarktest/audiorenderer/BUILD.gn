@@ -10,11 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License. 
-  
-import("//build/test.gni")  
-module_output_path = "multimedia_audio_framework/audio_renderer" 
+
+import("//build/test.gni")
+module_output_path = "multimedia_audio_framework/audio_renderer"
 ohos_benchmarktest("BenchmarkAudioRendererTest") {
-module_out_path = module_output_path
+  module_out_path = module_output_path
   include_dirs = [
     "./include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
@@ -32,4 +32,4 @@ group("benchmarktest") {
     # deps file
     ":BenchmarkAudioRendererTest",
   ]
-} 
+}
