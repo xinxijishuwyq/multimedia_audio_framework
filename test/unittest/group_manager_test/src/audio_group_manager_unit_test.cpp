@@ -26,7 +26,7 @@ namespace AudioStandard {
 namespace {
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
-    int32_t groupId = 1;
+    std::string networkId = "LocalDevice";
 }
 
 void AudioGroupManagerUnitTest::SetUpTestCase(void) {}
@@ -43,20 +43,23 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
     int32_t volume = 0;
     bool mute = true;
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
-    auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ALL, volume);
-    EXPECT_EQ(SUCCESS, ret);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    ret = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ALL);
-    EXPECT_EQ(volume, ret);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_ALL, volume);
+        EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ALL, mute);
-    EXPECT_EQ(SUCCESS, ret);
+        ret = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_ALL);
+        EXPECT_EQ(volume, ret);
 
-    ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ALL);
-    EXPECT_EQ(SUCCESS, ret);
+        ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ALL, mute);
+        EXPECT_EQ(SUCCESS, ret);
 
-    delete audioGroupMngr_;
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ALL);
+        EXPECT_EQ(true, ret);
+    }
 }
 
 /**
@@ -66,14 +69,17 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_001, TestSize.Level1)
 */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
-    auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
-    EXPECT_EQ(SUCCESS, ret);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(MAX_VOL, volume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
+        EXPECT_EQ(SUCCESS, ret);
 
-    delete audioGroupMngr_;
+        int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(MAX_VOL, volume);
+    }
 }
 
 /**
@@ -83,14 +89,17 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_001, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
-    auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
-    EXPECT_EQ(SUCCESS, ret);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(MIN_VOL, volume);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, MIN_VOL);
+        EXPECT_EQ(SUCCESS, ret);
 
-    delete audioGroupMngr_;
+        int32_t volume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(MIN_VOL, volume);
+    }
 }
 
 /**
@@ -100,17 +109,20 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_002, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
-    auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, MAX_VOL);
-    EXPECT_EQ(SUCCESS, ret);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    int32_t mediaVol = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
-    EXPECT_EQ(MAX_VOL, mediaVol);
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, MAX_VOL);
+        EXPECT_EQ(SUCCESS, ret);
 
-    int32_t ringVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(MIN_VOL, ringVolume);
+        int32_t mediaVol = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
+        EXPECT_EQ(MAX_VOL, mediaVol);
 
-    delete audioGroupMngr_;
+        int32_t ringVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(MIN_VOL, ringVolume);
+    }
 }
 
 /**
@@ -120,15 +132,17 @@ HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_003, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+    int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    int32_t mediaVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_MUSIC);
-    EXPECT_EQ(MAX_VOL, mediaVol);
+        int32_t mediaVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_MUSIC);
+        EXPECT_EQ(MAX_VOL, mediaVol);
 
-    int32_t ringVolume = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(MAX_VOL, ringVolume);
-
-    delete audioGroupMngr_;
+        int32_t ringVolume = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(MAX_VOL, ringVolume);
+    }
 }
 
 /**
@@ -138,15 +152,17 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolumeTest_001, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    int32_t mediaVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_MUSIC);
-    EXPECT_EQ(MIN_VOL, mediaVol);
+        int32_t mediaVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_MUSIC);
+        EXPECT_EQ(MIN_VOL, mediaVol);
 
-    int32_t ringVolume = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(MIN_VOL, ringVolume);
-
-    delete audioGroupMngr_;
+        int32_t ringVolume = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(MIN_VOL, ringVolume);
+    }
 }
 
 /**
@@ -156,15 +172,17 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolumeTest_001, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_RING, true);
-    EXPECT_EQ(SUCCESS, ret);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_RING, true);
+        EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(true, ret);
-
-    delete audioGroupMngr_;
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(true, ret);
+    }
 }
 
 /**
@@ -174,15 +192,17 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_001, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_RING, false);
-    EXPECT_EQ(SUCCESS, ret);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_RING, false);
+        EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(false, ret);
-
-    delete audioGroupMngr_;
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(false, ret);
+    }
 }
 
 /**
@@ -192,15 +212,17 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_002, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, true);
-    EXPECT_EQ(SUCCESS, ret);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, true);
+        EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(true, ret);
-
-    delete audioGroupMngr_;
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_MUSIC);
+        EXPECT_EQ(true, ret);
+    }
 }
 
 /**
@@ -210,15 +232,17 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_003, TestSize.Level0)
 */
 HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
 {
-    auto audioGroupMngr_ = new AudioGroupManager(groupId);
+    std::vector<sptr<VolumeGroupInfo>> infos = AudioSystemManager::GetInstance()->GetVolumeGroups(networkId);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-    auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, false);
-    EXPECT_EQ(SUCCESS, ret);
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, false);
+        EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(false, ret);
-
-    delete audioGroupMngr_;
+        ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(false, ret);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
