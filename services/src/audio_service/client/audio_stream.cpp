@@ -770,6 +770,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
         if (!freeBufferQ_.empty()) {
             bufDesc.buffer = freeBufferQ_.front().buffer;
             bufDesc.bufLength = freeBufferQ_.front().bufLength;
+            bufDesc.dataLength = freeBufferQ_.front().dataLength;
             freeBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
