@@ -49,7 +49,8 @@ namespace {
             sleep(1);
         }
 
-        void TearDown(const ::benchmark::State &state) override{
+        void TearDown(const ::benchmark::State &state) override
+		{
         }
 
     protected:
@@ -60,7 +61,7 @@ namespace {
     };
 
     // StartAbility
-    BENCHMARK_F(BenchmarkAudiocapturerTest, StartAbilityTestCase) 
+    BENCHMARK_F(BenchmarkAudiocapturerTest, StartAbilityTestCase)
     (
         benchmark::State &state)
     {
