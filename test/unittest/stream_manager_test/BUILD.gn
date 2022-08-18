@@ -34,8 +34,8 @@ ohos_unittest("audio_stream_manager_unit_test") {
 
   deps = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

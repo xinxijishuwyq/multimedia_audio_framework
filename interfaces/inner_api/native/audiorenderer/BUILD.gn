@@ -23,8 +23,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/services/include",
-    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//foundation/multimedia/audio_framework/services/test",
     "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
@@ -48,8 +47,8 @@ ohos_shared_library("audio_renderer") {
   ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
@@ -124,8 +123,7 @@ ohos_executable("audio_voip_test") {
     "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/services/include",
-    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
@@ -158,7 +156,7 @@ ohos_executable("audio_interrupt_test") {
 
   deps = [
     ":audio_renderer",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

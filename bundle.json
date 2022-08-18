@@ -47,24 +47,21 @@
             "base_group": [
             ],
             "fwk_group": [
-              "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager:audio",
-              "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager:audio_js",
+              "//foundation/multimedia/audio_framework/interfaces/kits/js:audio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
               "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio:pulseaudio_packages"
             ],
             "service_group": [
-              "//foundation/multimedia/audio_framework/services:audio_service",
-              "//foundation/multimedia/audio_framework/services:pulseaudio.rc",
-              "//foundation/multimedia/audio_framework/services:audio_policy_service_packages",
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
+              "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/sa_profile:audio_policy_service_sa_profile",
-              "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter"
+              "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages"
             ]
           },
           "inner_kits": [
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
+              "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
               "header": {
                 "header_files": [
                   "audio_system_manager.h",
@@ -104,7 +101,7 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager:audio",
+              "name": "//foundation/multimedia/audio_framework/interfaces/kits/js:audio",
               "header": {
                 "header_files": [
                   "audio_manager_napi.h",
@@ -135,8 +132,9 @@
             "//foundation/multimedia/audio_framework/test:audio_unit_test",
             "//foundation/multimedia/audio_framework/test:audio_module_test",
             "//foundation/multimedia/audio_framework/test:audio_fuzz_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client_test_packages",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_multichannel_test",
+            "//foundation/multimedia/audio_framework/services/audio_service:audio_client_test_packages",
+            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test",
+            "//foundation/multimedia/audio_framework/services/audio_service:audio_multichannel_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_latency_accuracy_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_render_mode_callback_test",
@@ -144,7 +142,6 @@
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_interrupt_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:interrupt_multi_renderer_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer_test_packages",
-            "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/opensles:audio_opensles_test",
             "//foundation/multimedia/audio_framework/interfaces/inner_api/native/opensles:audio_opensles_capture_test"
           ]
