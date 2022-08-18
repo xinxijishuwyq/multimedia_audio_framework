@@ -724,6 +724,7 @@ struct DeviceInfo {
     std::string deviceName;
     std::string macAddress;
     AudioStreamInfo audioStreamInfo;
+    std::string networkId;
 };
 
 enum StreamSetState {
