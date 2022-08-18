@@ -214,5 +214,6 @@ namespace {
         }
     }
 }
+
 // Run the benchmark
 BENCHMARK_MAIN();
