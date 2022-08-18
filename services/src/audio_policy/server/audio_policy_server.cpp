@@ -1453,6 +1453,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
         return;
     }
 
+    volumeEvent.updateUi = false;
     for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
