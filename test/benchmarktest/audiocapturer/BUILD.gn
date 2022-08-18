@@ -9,9 +9,10 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License. 
+# limitations under the License.
 
 import("//build/test.gni")
+
 module_output_path = "multimedia_audio_framework/audio_capturer"
 ohos_benchmarktest("BenchmarkAudioCapturerTest") {
   module_out_path = module_output_path
