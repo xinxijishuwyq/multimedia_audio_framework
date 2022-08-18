@@ -876,7 +876,7 @@ void AudioStream::WriteBuffers()
             }
 
             stream.buffer = filledBufferQ_.front().buffer;
-            stream.bufferLen = filledBufferQ_.front().dataLength;
+            stream.bufferLen = filledBufferQ_.front().bufLength;
             AUDIO_DEBUG_LOG("AudioStream::WriteBuffers stream.bufferLen:%{public}d", stream.bufferLen);
 
             if (stream.buffer == nullptr) {
