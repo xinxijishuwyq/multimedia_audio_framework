@@ -23,7 +23,7 @@ ohos_shared_library("audio_ringtone_client") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
     "//foundation/multimedia/audio_framework/frameworks/native/ringtoneplayer/include",
-    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/media_library/interfaces/inner_api/media_library_helper/include",
   ]
