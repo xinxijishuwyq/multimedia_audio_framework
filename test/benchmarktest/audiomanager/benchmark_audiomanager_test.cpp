@@ -16,28 +16,24 @@
 #include <benchmark/benchmark.h>
 #include <string>
 #include <vector>
-
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
-
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
-namespace
-{
-    class AudioManagerTest : public benchmark::Fixture
-    {
+namespace {
+    class BenchmarkAudiomanagerTest : public benchmark::Fixture {
     public:
-        AudioManagerTest()
+        BenchmarkAudiomanagerTest()
         {
             Iterations(iterations);
             Repetitions(repetitions);
             ReportAggregatesOnly();
         }
 
-        ~AudioManagerTest() override = default;
+        ~BenchmarkAudiomanagerTest() override = default;
 
         void SetUp(const ::benchmark::State &state) override
         {
@@ -60,7 +56,7 @@ namespace
     };
 
     // SetDeviceActiveAbility
-    BENCHMARK_F(AudioManagerTest, SetDeviceActiveAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiomanagerTest, SetDeviceActiveAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -82,7 +78,7 @@ namespace
     }
 
     // SetVolumeAbility
-    BENCHMARK_F(AudioManagerTest, SetVolumeAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiomanagerTest, SetVolumeAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -104,7 +100,7 @@ namespace
     }
 
     // SetMuteAbility
-    BENCHMARK_F(AudioManagerTest, SetMuteAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiomanagerTest, SetMuteAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -124,8 +120,6 @@ namespace
             }
         }
     }
-
 }
-
 // Run the benchmark
 BENCHMARK_MAIN();

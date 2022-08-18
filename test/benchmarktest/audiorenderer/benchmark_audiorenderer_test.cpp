@@ -21,24 +21,21 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
-
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
-namespace
-{
-    class AudioRendererTest : public benchmark::Fixture
-    {
+namespace {
+    class BenchmarkAudiorendererTest : public benchmark::Fixture {
     public:
-        AudioRendererTest()
+        BenchmarkAudiorendererTest()
         {
             Iterations(iterations);
             Repetitions(repetitions);
             ReportAggregatesOnly();
         }
 
-        ~AudioRendererTest() override = default;
+        ~BenchmarkAudiorendererTest() override = default;
 
         void SetUp(const ::benchmark::State &state) override
         {
@@ -69,7 +66,7 @@ namespace
     };
 
     // StartAbility
-    BENCHMARK_F(AudioRendererTest, StartAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiorendererTest, StartAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -92,7 +89,7 @@ namespace
     }
 
     // PauseAbility
-    BENCHMARK_F(AudioRendererTest, PauseAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiorendererTest, PauseAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -122,7 +119,7 @@ namespace
     }
 
     // StopAbility
-    BENCHMARK_F(AudioRendererTest, StopAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiorendererTest, StopAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -145,7 +142,7 @@ namespace
     }
 
     // SetVolumeAbility
-    BENCHMARK_F(AudioRendererTest, SetVolumeAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiorendererTest, SetVolumeAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -169,7 +166,7 @@ namespace
     }
 
     // WriteAbility  ****************** write
-    BENCHMARK_F(AudioRendererTest, WriteAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiorendererTest, WriteAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -217,6 +214,5 @@ namespace
         }
     }
 }
-
 // Run the benchmark
 BENCHMARK_MAIN();

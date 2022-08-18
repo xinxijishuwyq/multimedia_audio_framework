@@ -19,24 +19,21 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_capturer.h"
-
 using namespace std;
 using namespace OHOS;
 using namespace OHOS::AudioStandard;
 
-namespace
-{
-    class AudioCapturerTest : public benchmark::Fixture
-    {
+namespace {
+    class BenchmarkAudiocapturerTest : public benchmark::Fixture {
     public:
-        AudioCapturerTest()
+        BenchmarkAudiocapturerTest()
         {
             Iterations(iterations);
             Repetitions(repetitions);
             ReportAggregatesOnly();
         }
 
-        ~AudioCapturerTest() override = default;
+        ~BenchmarkAudiocapturerTest() override = default;
 
         void SetUp(const ::benchmark::State &state) override
         {
@@ -52,8 +49,7 @@ namespace
             sleep(1);
         }
 
-        void TearDown(const ::benchmark::State &state) override
-        {
+        void TearDown(const ::benchmark::State &state) override{
         }
 
     protected:
@@ -64,7 +60,7 @@ namespace
     };
 
     // StartAbility
-    BENCHMARK_F(AudioCapturerTest, StartAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiocapturerTest, StartAbilityTestCase) 
     (
         benchmark::State &state)
     {
@@ -87,7 +83,7 @@ namespace
     }
 
     // StopAbility
-    BENCHMARK_F(AudioCapturerTest, StopAbilityTestCase)
+    BENCHMARK_F(BenchmarkAudiocapturerTest, StopAbilityTestCase)
     (
         benchmark::State &state)
     {
@@ -109,6 +105,5 @@ namespace
         }
     }
 }
-
 // Run the benchmark
 BENCHMARK_MAIN();
