@@ -509,6 +509,9 @@ napi_value AudioManagerNapi::CreateDeviceTypeObject(napi_env env)
                 case DEVICE_TYPE_INVALID:
                     propName = "INVALID";
                     break;
+                case DEVICE_TYPE_EARPIECE:
+                    propName = "EARPIECE";
+                    break;
                 case DEVICE_TYPE_SPEAKER:
                     propName = "SPEAKER";
                     break;

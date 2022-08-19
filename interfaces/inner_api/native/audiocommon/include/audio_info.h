@@ -110,6 +110,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_INVALID = 0,
     /**
+     * Indicates a built-in earpiece device
+     */
+    DEVICE_TYPE_EARPIECE = 1,
+    /**
      * Indicates a speaker built in a device.
      */
     DEVICE_TYPE_SPEAKER = 2,
