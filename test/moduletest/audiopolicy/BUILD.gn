@@ -32,6 +32,6 @@ ohos_moduletest("audio_policy_module_test") {
 
   sources = [ "1.0/src/audio_policy_test.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client" ]
+  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
   external_deps = [ "c_utils:utils" ]
 }

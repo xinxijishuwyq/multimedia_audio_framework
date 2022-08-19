@@ -16,14 +16,14 @@ import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
 
 ohos_shared_library("audio_ringtone_client") {
   install_enable = true
-  sources = [ "//foundation/multimedia/audio_framework/services/src/audio_service/client/audio_ringtone_manager.cpp" ]
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/systemsound/audio_ringtone_manager.cpp" ]
 
   public_configs = [ ":ringtone_external_library_config" ]
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
     "//foundation/multimedia/audio_framework/frameworks/native/ringtoneplayer/include",
-    "//foundation/multimedia/audio_framework/services/include/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/media_library/interfaces/inner_api/media_library_helper/include",
   ]

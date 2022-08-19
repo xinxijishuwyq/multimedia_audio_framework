@@ -13,15 +13,6 @@
 
 import("//build/ohos.gni")
 
-group("audio_packages") {
-  public_deps = [
-    "interfaces/inner_api/native/audiocapturer:audio_capturer",
-    "interfaces/inner_api/native/audiomanager:audio_client",
-    "interfaces/inner_api/native/audiorenderer:audio_renderer",
-    "services:audio_service",
-  ]
-}
-
 group("libsl") {
   public_deps = [ "//third_party/openSLES:libSLES" ]
 }

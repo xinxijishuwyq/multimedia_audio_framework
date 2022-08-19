@@ -28,8 +28,15 @@ config("hdi_config") {
     "$pulseaudio_build_path/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/primary",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/file",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/bluetooth",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/file",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/remote",
     "//commonlibrary/c_utils/base/include",
   ]
 
@@ -61,7 +68,7 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:renderer_sink_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -84,7 +91,7 @@ ohos_shared_library("module-hdi-source") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:capturer_source_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:capturer_source_adapter",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 

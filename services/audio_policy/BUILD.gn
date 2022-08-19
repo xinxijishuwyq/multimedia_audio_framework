@@ -1,0 +1,249 @@
+# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
+
+group("audio_policy_packages") {
+  deps = [
+    ":audio_dump",
+    ":audio_interrupt_policy_config",
+    ":audio_policy_init",
+    ":audio_policy_service",
+  ]
+}
+
+ohos_prebuilt_etc("audio_policy_init") {
+  source = "etc/audio_policy.cfg"
+  relative_install_dir = "init"
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+config("audio_policy_public_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/common/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/common",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/config",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/interface",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/listener",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/manager",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service",
+    "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
+    "//foundation/systemabilitymgr/safwk/services/safwk/include",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
+    "//base/hiviewdfx/hilog/interfaces/native/inner_api/include",
+    "//drivers/peripheral/audio/interfaces/include",
+    "//third_party/libxml2/include",
+    "//third_party/pulseaudio/src",
+    "//third_party/pulseaudio/confgure/src",
+    "//third_party/pulseaudio/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/include",
+    "//utils/system/safwk/native/include",
+    "//commonlibrary/c_utils/base/include",
+    "//third_party/bounds_checking_function/include",
+    "//third_party/cJSON",
+    "//drivers/peripheral/bluetooth/audio/interfaces/include",
+    "//foundation/communication/bluetooth/interfaces/frameworks/inner/common",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
+    "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
+    "//foundation/communication/bluetooth/services/bluetooth/common/",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  ldflags = [ "-Wl" ]
+}
+
+ohos_shared_library("audio_dump") {
+  install_enable = true
+  sources = [ "server/src/service/dump/audio_service_dump.cpp" ]
+
+  public_configs = [ ":audio_policy_public_config" ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
+    "//third_party/bounds_checking_function:libsec_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
+
+ohos_shared_library("audio_policy_service") {
+  install_enable = true
+  sources = [
+    "client/src/audio_device_descriptor.cpp",
+    "client/src/audio_interrupt_group_info.cpp",
+    "client/src/audio_volume_group_info.cpp",
+    "server/src/audio_capturer_state_change_listener_proxy.cpp",
+    "server/src/audio_client_tracker_callback_proxy.cpp",
+    "server/src/audio_group_handle.cpp",
+    "server/src/audio_policy_manager_listener_proxy.cpp",
+    "server/src/audio_policy_manager_stub.cpp",
+    "server/src/audio_policy_server.cpp",
+    "server/src/audio_renderer_state_change_listener_proxy.cpp",
+    "server/src/audio_ringermode_update_listener_proxy.cpp",
+    "server/src/audio_stream_collector.cpp",
+    "server/src/audio_stream_event_dispatcher.cpp",
+    "server/src/audio_volume_key_event_callback_proxy.cpp",
+    "server/src/service/audio_policy_service.cpp",
+    "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/xml_parser.cpp",
+    "server/src/service/listener/device_status_listener.cpp",
+    "server/src/service/manager/audio_adapter_manager.cpp",
+  ]
+
+  public_configs = [ ":audio_policy_public_config" ]
+
+  deps = [
+    "$hdf_uhdf_path/hdi:libhdi",
+    "$hdf_uhdf_path/host:libhdf_host",
+    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
+    "$hdf_uhdf_path/utils:libhdf_utils",
+    "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
+    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
+    "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_dump",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//third_party/libxml2:xml2",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "hisysevent_native:libhisysevent",
+    "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
+    "input:libmmi-client",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
+
+ohos_prebuilt_etc("audio_interrupt_policy_config") {
+  source = "server/config/audio_interrupt_policy_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  install_images = [ chipset_base_dir ]
+  part_name = "multimedia_audio_framework"
+}
+
+config("audio_policy_client_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//foundation/systemabilitymgr/safwk/services/safwk/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//utils/system/safwk/native/include",
+    "//commonlibrary/c_utils/base/include",
+    "//third_party/bounds_checking_function/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+}
+
+ohos_shared_library("audio_policy_client") {
+  install_enable = true
+  sources = [
+    "client/src/audio_capturer_state_change_listener_stub.cpp",
+    "client/src/audio_client_tracker_callback_stub.cpp",
+    "client/src/audio_device_descriptor.cpp",
+    "client/src/audio_policy_manager.cpp",
+    "client/src/audio_policy_manager_listener_stub.cpp",
+    "client/src/audio_policy_proxy.cpp",
+    "client/src/audio_renderer_state_change_listener_stub.cpp",
+    "client/src/audio_ringermode_update_listener_stub.cpp",
+    "client/src/audio_volume_group_info.cpp",
+    "client/src/audio_volume_key_event_callback_stub.cpp",
+  ]
+
+  public_configs = [ ":audio_policy_client_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
+
+ohos_executable("audio_policy_test") {
+  install_enable = false
+
+  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_policy_test.cpp" ]
+
+  configs = [ ":audio_policy_client_config" ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "//third_party/bounds_checking_function:libsec_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}

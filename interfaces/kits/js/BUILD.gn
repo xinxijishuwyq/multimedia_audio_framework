@@ -15,36 +15,22 @@ import("//build/ohos.gni")
 import("//build/ohos/ace/ace.gni")
 import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
 
-js_declaration("audio_js") {
-  part_name = "multimedia_audio_framework"
-  sources = [ "./@ohos.multimedia.audio.d.ts" ]
-}
-
-ohos_copy("audio_declaration") {
-  sources = [ "./@ohos.multimedia.audio.d.ts" ]
-  outputs = [ target_out_dir + "/$target_name/" ]
-  module_source_dir = target_out_dir + "/$target_name"
-  module_install_name = ""
-}
-
 ohos_shared_library("audio") {
   include_dirs = [
-    "${ability_runtime_path}/interfaces/kits/native/ability/native",
-    "//foundation/arkui/napi/interfaces/kits",
-    "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
-    "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_capturer/include",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_common/include",
+    "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_renderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_capturer/include",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_manager/include",
     "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_stream_manager/include",
-    "//foundation/multimedia/audio_framework/frameworks/js/napi/audio_renderer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_stream_manager/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/ringtone_manager/include",
-    "//foundation/multimedia/audio_framework/frameworks/inner_api/audiosoundmanager/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
+    "${ability_runtime_path}/interfaces/kits/native/ability/native",
+    "//foundation/arkui/napi/interfaces/kits",
     "//third_party/libuv/include",
   ]
 
@@ -80,11 +66,11 @@ ohos_shared_library("audio") {
     "//base/global/resource_management/frameworks/resmgr:global_resmgr",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/arkui/napi:ace_napi",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy:audio_policy_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone:audio_ringtone_client",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
   external_deps = [
