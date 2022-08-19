@@ -258,6 +258,9 @@ const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
 {
     string device;
     switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+            device = "EARPIECE";
+            break;
         case DEVICE_TYPE_SPEAKER:
             device = "SPEAKER";
             break;

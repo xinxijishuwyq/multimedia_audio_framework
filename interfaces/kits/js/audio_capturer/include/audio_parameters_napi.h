@@ -79,6 +79,7 @@ static const std::map<std::string, DeviceRole> deviceRoleMap = {
 static const std::map<std::string, DeviceType> deviceTypeMap = {
     {"NONE", DEVICE_TYPE_NONE},
     {"INVALID", DEVICE_TYPE_INVALID},
+    {"EARPIECE", DEVICE_TYPE_EARPIECE},
     {"SPEAKER", DEVICE_TYPE_SPEAKER},
     {"WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
     {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
