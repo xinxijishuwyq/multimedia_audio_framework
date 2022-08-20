@@ -1812,6 +1812,8 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
             AUDIO_ERR_LOG("AudioServiceClient::GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
             return AUDIO_CLIENT_ERR;
         }
+        uint64_t timeCompensate = pa_bytes_to_usec(internalRdBufLen, &sampleSpec);
+        timeStamp -= timeCompensate;
     }
 
     pa_threaded_mainloop_unlock(mainLoop);
