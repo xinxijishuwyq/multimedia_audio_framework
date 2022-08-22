@@ -22,9 +22,6 @@ ohos_shared_library("audio_renderer_sink") {
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
-  if ("${product_name}" == "m40") {
-    cflags += [ "-DPRODUCT_M40" ]
-  }
   cflags_cc = cflags
 
   include_dirs = [
