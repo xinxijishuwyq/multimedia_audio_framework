@@ -51,6 +51,7 @@ namespace {
 
         void TearDown(const ::benchmark::State &state) override
 		{
+			audioCapturer->Release();
         }
 
     protected:

@@ -22,7 +22,7 @@ ohos_benchmarktest("BenchmarkAudioManagerTest") {
     "//foundation/multimedia/audio_framework/frameworks/native/common/include",
   ]
   sources = [ "benchmark_audiomanager_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager:audio_client" ]
+  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
 }
 
 group("benchmarktest") {
