@@ -17,6 +17,7 @@
 #define ST_AUDIO_SERVICE_ADAPTER_H
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -148,6 +149,16 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
+
+    /**
+     * @brief Adjust volume balance in current active device
+     *
+     * @param audioPortName Name of the default audio sink
+     * @param audioBalance Audio balance value
+     * @return Returns {@link SUCCESS} if suspend is success; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t AdjustAudioBalance(const std::string &audioPortName, std::optional<float> audioBalanceOptional) = 0;
 
     /**
      * @brief returns if given streamType is set to mute
