@@ -107,7 +107,6 @@ ohos_shared_library("audio_dump") {
 ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
-    "client/src/audio_device_descriptor.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
     "server/src/audio_capturer_state_change_listener_proxy.cpp",
@@ -201,9 +200,9 @@ config("audio_policy_client_config") {
 ohos_shared_library("audio_policy_client") {
   install_enable = true
   sources = [
+    "//foundation/multimedia/audio_framework/services/audio_service/client/src/audio_device_descriptor.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
-    "client/src/audio_device_descriptor.cpp",
     "client/src/audio_policy_manager.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_policy_proxy.cpp",

@@ -283,11 +283,8 @@ bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
-    AUDIO_INFO_LOG("AudioStream: SetAudioParams");
-    AUDIO_DEBUG_LOG("AudioStream: Sampling rate: %{public}d", info.samplingRate);
-    AUDIO_DEBUG_LOG("AudioStream: channels: %{public}d", info.channels);
-    AUDIO_DEBUG_LOG("AudioStream: format: %{public}d", info.format);
-    AUDIO_DEBUG_LOG("AudioStream: stream type: %{public}d", eStreamType_);
+    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
+        " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
 
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");

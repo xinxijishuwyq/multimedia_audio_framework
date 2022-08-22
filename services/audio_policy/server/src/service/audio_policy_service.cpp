@@ -178,11 +178,24 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 {
     (void)streamType;
 
-    std::string selectedDevice = "";
-    if (routerMap_.count(uid) && routerMap_[uid].second == pid) {
-        selectedDevice = routerMap_[uid].first;
+    if (!routerMap_.count(uid)) {
+        AUDIO_INFO_LOG("GetSelectedDeviceInfo no such uid[%{public}d]", uid);
+        return "";
     }
+    std::string selectedDevice = "";
+    if (routerMap_[uid].second == pid) {
+        selectedDevice = routerMap_[uid].first;
+    } else if (routerMap_[uid].second == G_UNKNOWN_PID) {
+        routerMap_[uid].second = pid;
+        selectedDevice = routerMap_[uid].first;
+    } else {
+        AUDIO_INFO_LOG("GetSelectedDeviceInfo: uid[%{public}d] changed pid, get local as defalut", uid);
+        routerMap_.erase(uid);
+        selectedDevice = LOCAL_NETWORK_ID;
+    }
+
     if (LOCAL_NETWORK_ID == selectedDevice) {
+        AUDIO_INFO_LOG("GetSelectedDeviceInfo: uid[%{public}d]-->local.", uid);
         return "";
     }
     // check if connected.
@@ -234,6 +247,9 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     ret = mAudioPolicyManager.SuspendAudioDevice(networkId, true);
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "SuspendAudioDevice failed!");
 
+    std::vector<sptr<AudioDeviceDescriptor>> desc = {};
+    desc.push_back(localDevice);
+    UpdateTrackerDeviceChange(desc);
     AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
@@ -274,6 +290,11 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         }
     }
 
+    // move target uid, but no stream played yet, record the routing info for first start.
+    if (!moveAll && sinkInputs.size() == 0) {
+        return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
+    }
+
     int32_t ret = SUCCESS;
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     if (LOCAL_NETWORK_ID == networkId) {
@@ -281,9 +302,41 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     } else {
         ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     }
+    UpdateTrackerDeviceChange(audioDeviceDescriptors);
 
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
     return ret;
+}
+
+inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
+{
+    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+}
+
+int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    AUDIO_INFO_LOG("RememberRoutingInfo for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
+        routerMap_[audioRendererFilter->uid] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
+        return SUCCESS;
+    }
+    // remote device.
+    std::string networkId = deviceDescriptor->networkId_;
+    DeviceRole deviceRole = deviceDescriptor->deviceRole_;
+
+    std::string moduleName = GetRemoteModuleName(networkId, deviceRole);
+    if (!mIOHandles.count(moduleName)) {
+        AUDIO_ERR_LOG("Device error: no such device:%{public}s", networkId.c_str());
+        return ERR_INVALID_PARAM;
+    }
+    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    int32_t ret = g_sProxy->CheckRemoteDeviceState(networkId, deviceRole, true);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
+
+    routerMap_[audioRendererFilter->uid] = std::pair(networkId, G_UNKNOWN_PID);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
@@ -314,11 +367,6 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
     }
 
     return SUCCESS;
-}
-
-inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
-{
-    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
 }
 
 int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
@@ -1038,6 +1086,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         AUDIO_INFO_LOG("BT SCO device detected in non-call mode [%{public}d]", GetAudioScene());
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
         TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+        UpdateTrackerDeviceChange(deviceChangeDescriptor);
         return;
     }
 
@@ -1075,6 +1124,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+    UpdateTrackerDeviceChange(deviceChangeDescriptor);
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
@@ -1165,7 +1215,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
     for (auto devDes : mConnectedDevices) {
-        if (statusInfo.isConnected && devDes->deviceType_ == devType && devDes->networkId_== networkId) {
+        if (statusInfo.isConnected && devDes->deviceType_ == devType && devDes->networkId_ == networkId) {
             AUDIO_INFO_LOG("Device [%{public}s] Type [%{public}d] has connected already!", networkId.c_str(), devType);
             return;
         }
@@ -1180,7 +1230,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     // new device found. If connected, add into active device list
     if (statusInfo.isConnected) {
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
-            statusInfo.connectType==ConnectType::CONNECT_TYPE_DISTRIBUTED);
+            statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("=== DEVICE online but open audio device failed.");
             return;
@@ -1364,6 +1414,7 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.networkId = desc->networkId_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
@@ -1744,8 +1795,6 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
             it->second.second->OnDeviceChange(deviceChangeAction);
         }
     }
-
-    UpdateTrackerDeviceChange(desc);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByFlag(DeviceFlag flag,

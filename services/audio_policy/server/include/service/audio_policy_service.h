@@ -181,6 +181,9 @@ private:
 
     std::string GetPortName(InternalDeviceType deviceType);
 
+    int32_t RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
+        sptr<AudioDeviceDescriptor> deviceDescriptor);
+
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
@@ -249,6 +252,7 @@ private:
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isOpenRemoteDevice = false;
+    static const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
