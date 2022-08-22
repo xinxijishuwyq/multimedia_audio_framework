@@ -852,7 +852,7 @@ static void CommonCallbackRoutine(napi_env env, AudioManagerAsyncContext* &async
     if (!asyncContext->status) {
         napi_get_undefined(env, &result[PARAM0]);
         result[PARAM1] = valueParam;
-    } else if (ERR_INVALID_PARAM == asyncContext->status){
+    } else if (ERR_INVALID_PARAM == asyncContext->status) {
         napi_value message = nullptr;
         napi_create_string_utf8(env, "Error, The input parameters are incorrect, please check!",
             NAPI_AUTO_LENGTH, &message);
