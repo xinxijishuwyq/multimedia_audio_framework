@@ -153,6 +153,25 @@ static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
     return result;
 }
 
+static bool IsLegalInputArgument(int32_t inputType)
+{
+    bool result = false;
+    switch (inputType) {
+        case AudioManagerNapi::RINGTONE:
+        case AudioManagerNapi::MEDIA:
+        case AudioManagerNapi::VOICE_CALL:
+        case AudioManagerNapi::VOICE_ASSISTANT:
+        case AudioManagerNapi::ALL:
+            result = true;
+            break;
+        default:
+            HiLog::Error(LABEL, "Unknown volume type");
+            result = false;
+            break;
+    }
+    return result;
+}
+
 static AudioStandard::FocusType GetNativeFocusType(int32_t focusType)
 {
     AudioStandard::FocusType result = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
@@ -833,6 +852,12 @@ static void CommonCallbackRoutine(napi_env env, AudioManagerAsyncContext* &async
     if (!asyncContext->status) {
         napi_get_undefined(env, &result[PARAM0]);
         result[PARAM1] = valueParam;
+    } else if (ERR_INVALID_PARAM == asyncContext->status) {
+        napi_value message = nullptr;
+        napi_create_string_utf8(env, "Error, The input parameters are incorrect, please check!",
+            NAPI_AUTO_LENGTH, &message);
+        napi_create_error(env, nullptr, message, &result[PARAM0]);
+        napi_get_undefined(env, &result[PARAM1]);
     } else {
         napi_value message = nullptr;
         napi_create_string_utf8(env, "Error, Operation not supported or Failed", NAPI_AUTO_LENGTH, &message);
@@ -1913,10 +1938,16 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
-                context->volLevel = context->objectInfo->audioMngr_->GetVolume(
-                    GetNativeAudioVolumeType(context->volType));
-                context->intValue = context->volLevel;
-                context->status = 0;
+
+                bool isLegalInput = IsLegalInputArgument(context->volType);
+                if (!isLegalInput) {
+                    context->status = ERR_INVALID_PARAM;
+                } else {
+                    context->volLevel = context->objectInfo->audioMngr_->GetVolume(
+                        GetNativeAudioVolumeType(context->volType));
+                    context->intValue = context->volLevel;
+                    context->status = 0;
+                }
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
