@@ -167,6 +167,10 @@ void AudioRendererStateCallbackNapi::OnJsCallbackRendererState(std::unique_ptr<A
     int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
         // Js Thread
         AudioRendererStateJsCallback *event = reinterpret_cast<AudioRendererStateJsCallback *>(work->data);
+        if (event == nullptr || event->callback == nullptr) {
+            AUDIO_ERR_LOG("AudioRendererStateCallbackNapi: OnJsCallbackRendererState: No memory");
+            return;
+        }
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
 
