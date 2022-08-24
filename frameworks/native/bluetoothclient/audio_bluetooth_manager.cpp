@@ -40,6 +40,7 @@ RawAddress g_device;
 IDeviceStatusObserver *g_deviceObserver = nullptr;
 HandsFreeAudioGateway *HandsFreeAudioGatewayManager::handsFreeAgInstance_;
 HandsFreeGatewayListener HandsFreeAudioGatewayManager::hfpAgObserver_;
+std::mutex observerMutex_;
 
 static bool GetAudioStreamInfo(BluetoothA2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -115,6 +116,7 @@ static void AudioOnConfigurationChanged(const RawAddress &device, const Bluetoot
 
 static void AudioOnConnectionChanged(const RawAddress &device, int state)
 {
+    std::lock_guard<std::mutex> lock(observerMutex_);
     AUDIO_INFO_LOG("AudioOnConnectionChanged: state: %{public}d", state);
     g_device = RawAddress(device);
 
@@ -198,6 +200,7 @@ int32_t GetProxy()
 
 int32_t RegisterObserver(IDeviceStatusObserver &observer)
 {
+    std::lock_guard<std::mutex> lock(observerMutex_);
     AUDIO_INFO_LOG("RegisterObserver start");
     if (g_proxy == nullptr) {
         if (GetProxy()) {
@@ -214,6 +217,7 @@ int32_t RegisterObserver(IDeviceStatusObserver &observer)
 
 void DeRegisterObserver()
 {
+    std::lock_guard<std::mutex> lock(observerMutex_);
     if ((g_deviceObserver != nullptr) && (g_btA2dpSrcObserverCallbacks != nullptr)) {
         AUDIO_INFO_LOG("DeRegisterObserver start");
         g_deviceObserver = nullptr;
