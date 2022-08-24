@@ -118,6 +118,10 @@ void AudioPolicyService::Deinit(void)
 
     mIOHandles.clear();
     mDeviceStatusListener->UnRegisterDeviceStatusListener();
+
+    if (isBtListenerRegistered) {
+        UnregisterBluetoothListener();
+    }
     return;
 }
 
@@ -1989,6 +1993,24 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     }
     AUDIO_INFO_LOG("AudioPolicyService: SetParameterCallback call SetParameterCallback.");
     g_sProxy->SetParameterCallback(object);
+}
+
+void AudioPolicyService::RegisterBluetoothListener()
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyService::RegisterBluetoothListener");
+    Bluetooth::RegisterDeviceObserver(deviceObserver_);
+    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    isBtListenerRegistered = true;
+}
+
+void AudioPolicyService::UnregisterBluetoothListener()
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyService::UnregisterBluetoothListener");
+    Bluetooth::UnregisterDeviceObserver();
+    Bluetooth::AudioA2dpManager::UnregisterBluetoothA2dpListener();
+    Bluetooth::AudioHfpManager::UnregisterBluetoothScoListener();
+    isBtListenerRegistered = false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

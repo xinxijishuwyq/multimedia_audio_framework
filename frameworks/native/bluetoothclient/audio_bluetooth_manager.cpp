@@ -15,33 +15,32 @@
 
 #include "audio_bluetooth_manager.h"
 
-#include "audio_errors.h"
 #include "audio_info.h"
-#include "bluetooth_a2dp_src_observer.h"
-#include "bluetooth_def.h"
-#include "bluetooth_host.h"
-#include "bluetooth_types.h"
-#include "bt_def.h"
-#include "i_bluetooth_a2dp_src.h"
-#include "i_bluetooth_host.h"
-#include "iservice_registry.h"
+#include "audio_errors.h"
 #include "audio_log.h"
+#include "bluetooth_def.h"
+#include "bluetooth_types.h"
+#include "bluetooth_host.h"
+#include "iservice_registry.h"
 #include "system_ability_definition.h"
 
 namespace OHOS {
 namespace Bluetooth {
-using namespace bluetooth;
 using namespace AudioStandard;
 
-sptr<IBluetoothA2dpSrc> g_proxy = nullptr;
-static sptr<BluetoothA2dpSrcObserver> g_btA2dpSrcObserverCallbacks = nullptr;
-int g_playState = false;
-RawAddress g_device;
 IDeviceStatusObserver *g_deviceObserver = nullptr;
-HandsFreeAudioGateway *HandsFreeAudioGatewayManager::handsFreeAgInstance_;
-HandsFreeGatewayListener HandsFreeAudioGatewayManager::hfpAgObserver_;
+A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
+AudioA2dpListener AudioA2dpManager::a2dpListener_;
+HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
+AudioHfpListener AudioHfpManager::hfpListener_;
+int AudioA2dpManager::connectionState_ = STATE_TURN_OFF;
+bool AudioA2dpManager::bluetoothSinkLoaded_ = false;
+BluetoothRemoteDevice AudioA2dpManager::bluetoothRemoteDevice_;
 
-static bool GetAudioStreamInfo(BluetoothA2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
+std::mutex g_deviceLock;
+std::mutex g_a2dpInstanceLock;
+
+static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
     switch (codecInfo.sampleRate) {
         case A2DP_SBC_SAMPLE_RATE_48000_USER:
@@ -90,168 +89,169 @@ static bool GetAudioStreamInfo(BluetoothA2dpCodecInfo codecInfo, AudioStreamInfo
     return true;
 }
 
-static void AudioOnPlayingStatusChanged(const RawAddress &device, int playingState, int error)
+int32_t RegisterDeviceObserver(IDeviceStatusObserver &observer)
 {
-    AUDIO_INFO_LOG("AudioOnPlayingStatusChanged");
-    g_playState = playingState;
+    std::lock_guard<std::mutex> deviceLock(g_deviceLock);
+    g_deviceObserver = &observer;
+    return SUCCESS;
 }
 
-static void AudioOnConfigurationChanged(const RawAddress &device, const BluetoothA2dpCodecInfo &info, int error)
+void UnregisterDeviceObserver()
 {
-    AUDIO_INFO_LOG("AudioOnConfigurationChanged: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
-        info.sampleRate, info.channelMode, info.bitsPerSample);
-    AudioStreamInfo audioStreamInfo = {};
-    if (!GetAudioStreamInfo(info, audioStreamInfo)) {
-        AUDIO_ERR_LOG("AudioOnConfigurationChanged: Unsupported a2dp codec info");
+    std::lock_guard<std::mutex> deviceLock(g_deviceLock);
+    g_deviceObserver = nullptr;
+}
+
+void AudioA2dpManager::RegisterBluetoothA2dpListener()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+
+    a2dpInstance_ = A2dpSource::GetProfile();
+    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "Failed to obtain A2DP profile instance");
+
+    a2dpInstance_->RegisterObserver(&a2dpListener_);
+}
+
+void AudioA2dpManager::UnregisterBluetoothA2dpListener()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+
+    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
+
+    a2dpInstance_->DeregisterObserver(&a2dpListener_);
+    a2dpInstance_ = nullptr;
+}
+
+void AudioA2dpManager::ConnectBluetoothA2dpSink()
+{
+    // Update device when hdi service is available
+    if (connectionState_ != STATE_TURN_ON) {
+        AUDIO_ERR_LOG("bluetooth state is not on");
         return;
     }
 
-    std::string deviceName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetAddress(),
-        BT_TRANSPORT_BREDR).GetDeviceName();
-
-    g_deviceObserver->OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetAddress(), deviceName,
-        audioStreamInfo);
-}
-
-static void AudioOnConnectionChanged(const RawAddress &device, int state)
-{
-    AUDIO_INFO_LOG("AudioOnConnectionChanged: state: %{public}d", state);
-    g_device = RawAddress(device);
+    std::lock_guard<std::mutex> deviceLock(g_deviceLock);
 
     if (g_deviceObserver == nullptr) {
-        AUDIO_INFO_LOG("observer is null");
+        AUDIO_INFO_LOG("device observer is null");
         return;
     }
 
-    BluetoothA2dpCodecStatus codecStatus = g_proxy->GetCodecStatus(device);
-    AUDIO_DEBUG_LOG("BluetoothA2dpCodecStatus: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
-        codecStatus.codecInfo.sampleRate, codecStatus.codecInfo.channelMode, codecStatus.codecInfo.bitsPerSample);
-
     AudioStreamInfo streamInfo = {};
-    std::string deviceName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetAddress(),
-        BT_TRANSPORT_BREDR).GetDeviceName();
+    A2dpCodecStatus codecStatus = A2dpSource::GetProfile()->GetCodecStatus(bluetoothRemoteDevice_);
+    if (!GetAudioStreamInfo(codecStatus.codecInfo, streamInfo)) {
+        AUDIO_ERR_LOG("OnConnectionStateChanged: Unsupported a2dp codec info");
+        return;
+    }
+
+    g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true,
+        bluetoothRemoteDevice_.GetDeviceAddr(), bluetoothRemoteDevice_.GetDeviceName(), streamInfo);
+    bluetoothSinkLoaded_ = true;
+}
+
+// Prepare for future optimization
+void AudioA2dpManager::DisconnectBluetoothA2dpSink()
+{
+    if (bluetoothSinkLoaded_) {
+        AUDIO_WARNING_LOG("bluetooth sink still loaded, some error may occur!");
+    }
+}
+
+void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
+{
+    AUDIO_INFO_LOG("OnConnectionStateChanged: state: %{public}d", state);
+
+    // Record connection state and device for hdi start time to check
+    AudioA2dpManager::SetConnectionState(state);
     if (state == STATE_TURN_ON) {
-        if (!GetAudioStreamInfo(codecStatus.codecInfo, streamInfo)) {
-            AUDIO_ERR_LOG("AudioOnConnectionChanged: Unsupported a2dp codec info");
+        AudioA2dpManager::SetBluetoothRemoteDevice(device);
+    }
+
+    // Currently disconnect need to be done in OnConnectionStateChanged instead of hdi service stopped
+    if (state == STATE_TURN_OFF) {
+        std::lock_guard<std::mutex> deviceLock(g_deviceLock);
+
+        if (g_deviceObserver == nullptr) {
+            AUDIO_INFO_LOG("device observer is null");
             return;
         }
 
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, true, device.GetAddress(), deviceName,
-            streamInfo);
-    } else if (state == STATE_TURN_OFF) {
-        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false, device.GetAddress(), deviceName,
-            streamInfo);
+        AudioStreamInfo streamInfo = {};
+        g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_A2DP, false,
+            device.GetDeviceAddr(), device.GetDeviceName(), streamInfo);
+        AudioA2dpManager::SetBluetoothSinkLoaded(false);
     }
 }
 
-static BtA2dpAudioCallback g_hdiCallacks = {
-    .OnPlayingStatusChanged = AudioOnPlayingStatusChanged,
-    .OnConfigurationChanged = AudioOnConfigurationChanged,
-    .OnConnectionStateChanged = AudioOnConnectionChanged,
-};
-
-int GetPlayingState()
+void AudioA2dpListener::OnConfigurationChanged(const BluetoothRemoteDevice &device, const A2dpCodecInfo &codecInfo,
+    int error)
 {
-    return g_playState;
+    AUDIO_INFO_LOG("OnConfigurationChanged: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
+        codecInfo.sampleRate, codecInfo.channelMode, codecInfo.bitsPerSample);
+
+    std::lock_guard<std::mutex> deviceLock(g_deviceLock);
+
+    if (g_deviceObserver == nullptr) {
+        AUDIO_INFO_LOG("device observer is null");
+        return;
+    }
+
+    AudioStreamInfo streamInfo = {};
+    if (!GetAudioStreamInfo(codecInfo, streamInfo)) {
+        AUDIO_ERR_LOG("OnConfigurationChanged: Unsupported a2dp codec info");
+        return;
+    }
+
+    g_deviceObserver->OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetDeviceAddr(),
+        device.GetDeviceName(), streamInfo);
 }
 
-RawAddress& GetDevice()
+void AudioA2dpListener::OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error)
 {
-    return g_device;
+    AUDIO_INFO_LOG("OnPlayingStatusChanged, state: %{public}d, error: %{public}d", playingState, error);
 }
 
-int32_t GetProxy()
-{
-    AUDIO_INFO_LOG("GetProxy start");
-    sptr<ISystemAbilityManager> samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!samgr) {
-        AUDIO_ERR_LOG("GetProxy error: no samgr");
-        return ERROR;
-    }
-
-    sptr<IRemoteObject> hostRemote = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    if (!hostRemote) {
-        AUDIO_ERR_LOG("A2dpSource::impl:GetProxy failed: no hostRemote");
-        return ERROR;
-    }
-
-    sptr<IBluetoothHost> hostProxy = iface_cast<IBluetoothHost>(hostRemote);
-    if (!hostProxy) {
-        AUDIO_ERR_LOG("GetProxy error: host no proxy");
-        return ERROR;
-    }
-
-    sptr<IRemoteObject> remote = hostProxy->GetProfile("A2dpSrcServer");
-    if (!remote) {
-        AUDIO_ERR_LOG("GetProxy error: no remote");
-        return ERROR;
-    }
-
-    g_proxy = iface_cast<IBluetoothA2dpSrc>(remote);
-    if (!g_proxy) {
-        AUDIO_ERR_LOG("GetProxy error: no proxy");
-        return ERROR;
-    }
-
-    return SUCCESS;
-}
-
-int32_t RegisterObserver(IDeviceStatusObserver &observer)
-{
-    AUDIO_INFO_LOG("RegisterObserver start");
-    if (g_proxy == nullptr) {
-        if (GetProxy()) {
-            AUDIO_ERR_LOG("proxy is null");
-            return ERROR;
-        }
-    }
-
-    g_deviceObserver = &observer;
-    g_btA2dpSrcObserverCallbacks = new BluetoothA2dpSrcObserver(&g_hdiCallacks);
-    g_proxy->RegisterObserver(g_btA2dpSrcObserverCallbacks);
-    return SUCCESS;
-}
-
-void DeRegisterObserver()
-{
-    if ((g_deviceObserver != nullptr) && (g_btA2dpSrcObserverCallbacks != nullptr)) {
-        AUDIO_INFO_LOG("DeRegisterObserver start");
-        g_deviceObserver = nullptr;
-        g_proxy->DeregisterObserver(g_btA2dpSrcObserverCallbacks);
-    }
-}
-
-// Handsfree Gateway feature support
-void HandsFreeAudioGatewayManager::RegisterBluetoothScoAgListener()
+void AudioHfpManager::RegisterBluetoothScoListener()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    handsFreeAgInstance_ = HandsFreeAudioGateway::GetProfile();
-    CHECK_AND_RETURN_LOG(handsFreeAgInstance_ != nullptr, "Failed to obtain HFP AG profile instance");
+    hfpInstance_ = HandsFreeAudioGateway::GetProfile();
+    CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "Failed to obtain HFP AG profile instance");
 
-    handsFreeAgInstance_->RegisterObserver(&hfpAgObserver_);
+    hfpInstance_->RegisterObserver(&hfpListener_);
 }
 
-void HandsFreeAudioGatewayManager::UnregisterBluetoothScoAgListener()
+void AudioHfpManager::UnregisterBluetoothScoListener()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    CHECK_AND_RETURN_LOG(handsFreeAgInstance_ != nullptr, "HFP AG profile instance unavailable");
+    CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP AG profile instance unavailable");
 
-    handsFreeAgInstance_->DeregisterObserver(&hfpAgObserver_);
-    handsFreeAgInstance_ = nullptr;
+    hfpInstance_->DeregisterObserver(&hfpListener_);
+    hfpInstance_ = nullptr;
 }
 
-void HandsFreeGatewayListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("Entered %{public}s [%{public}d]", __func__, state);
+
+    std::lock_guard<std::mutex> deviceLock(g_deviceLock);
+
+    if (g_deviceObserver == nullptr) {
+        AUDIO_INFO_LOG("device observer is null");
+        return;
+    }
+
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        AudioStreamInfo info = {};
-        std::string deviceName = BluetoothHost::GetDefaultHost().GetRemoteDevice(device.GetDeviceAddr(),
-            BT_TRANSPORT_BREDR).GetDeviceName();
+        AudioStreamInfo streamInfo = {};
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
         g_deviceObserver->OnDeviceStatusUpdated(DEVICE_TYPE_BLUETOOTH_SCO, isConnected, device.GetDeviceAddr(),
-            deviceName, info);
+            device.GetDeviceName(), streamInfo);
     }
 }
-}
-}
+
+} // namespace Bluetooth
+} // namespace OHOS

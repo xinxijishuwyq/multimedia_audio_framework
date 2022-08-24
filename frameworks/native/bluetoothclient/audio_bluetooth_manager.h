@@ -16,50 +16,97 @@
 #ifndef AUDIO_BLUETOOTH_MANAGERI_H
 #define AUDIO_BLUETOOTH_MANAGERI_H
 
+#include "bluetooth_a2dp_src.h"
 #include "bluetooth_a2dp_codec.h"
-#include "bluetooth_a2dp_a2dpCodecInfo.h"
-#include "bluetooth_a2dp_a2dpCodecStatus.h"
 #include "bluetooth_hfp_ag.h"
 #include "idevice_status_observer.h"
-#include "raw_address.h"
 
 namespace OHOS {
 namespace Bluetooth {
-using namespace bluetooth;
 
-typedef struct BtA2dpAudioCallback {
-    void (*OnPlayingStatusChanged)(const RawAddress &device, int playingState, int error);
-    void (*OnConfigurationChanged)(const RawAddress &device, const BluetoothA2dpCodecInfo &info, int error);
-    void (*OnConnectionStateChanged)(const RawAddress &device, int state);
-} BtA2dpAudioCallback;
+int32_t RegisterDeviceObserver(AudioStandard::IDeviceStatusObserver &observer);
+void UnregisterDeviceObserver();
 
-int GetPlayingState();
-RawAddress& GetDevice();
-int32_t GetProxy();
-int32_t RegisterObserver(AudioStandard::IDeviceStatusObserver &observer);
-void DeRegisterObserver();
-
-class HandsFreeGatewayListener : public HandsFreeAudioGatewayObserver {
+// Audio bluetooth a2dp feature support
+class AudioA2dpListener : public A2dpSourceObserver {
 public:
-    HandsFreeGatewayListener() = default;
-    virtual ~HandsFreeGatewayListener() = default;
+    AudioA2dpListener() = default;
+    virtual ~AudioA2dpListener() = default;
+
+    virtual void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state);
+    virtual void OnConfigurationChanged(const BluetoothRemoteDevice &device, const A2dpCodecInfo &info, int error);
+    virtual void OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error);
+
+private:
+    BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioA2dpListener);
+};
+
+class AudioA2dpManager {
+public:
+    AudioA2dpManager() = default;
+    virtual ~AudioA2dpManager() = default;
+    static void RegisterBluetoothA2dpListener();
+    static void UnregisterBluetoothA2dpListener();
+    static void ConnectBluetoothA2dpSink();
+    static void DisconnectBluetoothA2dpSink();
+    static void SetConnectionState(int state)
+    {
+        connectionState_ = state;
+    }
+    static int GetConnectionState()
+    {
+        return connectionState_;
+    }
+    static void SetBluetoothSinkLoaded(bool isLoaded)
+    {
+        bluetoothSinkLoaded_ = isLoaded;
+    }
+    static bool GetBluetoothSinkLoaded()
+    {
+        return bluetoothSinkLoaded_;
+    }
+    static void SetBluetoothRemoteDevice(BluetoothRemoteDevice device)
+    {
+        bluetoothRemoteDevice_ = device;
+    }
+    static BluetoothRemoteDevice GetBluetoothRemoteDevice()
+    {
+        return bluetoothRemoteDevice_;
+    }
+
+private:
+    static A2dpSource *a2dpInstance_;
+    static AudioA2dpListener a2dpListener_;
+    static int connectionState_;
+    static bool bluetoothSinkLoaded_;
+    static BluetoothRemoteDevice bluetoothRemoteDevice_;
+};
+
+// Audio bluetooth sco feature support
+class AudioHfpListener : public HandsFreeAudioGatewayObserver {
+public:
+    AudioHfpListener() = default;
+    virtual ~AudioHfpListener() = default;
 
     void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
     void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state) {}
     void OnActiveDeviceChanged(const BluetoothRemoteDevice &device) {}
     void OnHfEnhancedDriverSafetyChanged(const BluetoothRemoteDevice &device, int indValue) {}
-};
-
-class HandsFreeAudioGatewayManager {
-public:
-    HandsFreeAudioGatewayManager() = default;
-    virtual ~HandsFreeAudioGatewayManager() = default;
-    static void RegisterBluetoothScoAgListener();
-    static void UnregisterBluetoothScoAgListener();
 
 private:
-    static HandsFreeAudioGateway *handsFreeAgInstance_;
-    static HandsFreeGatewayListener hfpAgObserver_;
+    BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioHfpListener);
+};
+
+class AudioHfpManager {
+public:
+    AudioHfpManager() = default;
+    virtual ~AudioHfpManager() = default;
+    static void RegisterBluetoothScoListener();
+    static void UnregisterBluetoothScoListener();
+
+private:
+    static HandsFreeAudioGateway *hfpInstance_;
+    static AudioHfpListener hfpListener_;
 };
 }
 }

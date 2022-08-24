@@ -102,12 +102,10 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
     } else if (serviceStatus->serviceName == AUDIO_BLUETOOTH_HDI_SERVICE_NAME) {
         if (serviceStatus->status == SERVIE_STATUS_START) {
             AUDIO_INFO_LOG("Bluetooth hdi service started");
-            Bluetooth::RegisterObserver(devListener->deviceObserver_);
-            Bluetooth::HandsFreeAudioGatewayManager::RegisterBluetoothScoAgListener();
+            Bluetooth::AudioA2dpManager::ConnectBluetoothA2dpSink();
         } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
             AUDIO_INFO_LOG("Bluetooth hdi service stopped");
-            OHOS::Bluetooth::DeRegisterObserver();
-            Bluetooth::HandsFreeAudioGatewayManager::UnregisterBluetoothScoAgListener();
+
         }
     } else if (serviceStatus->serviceName == DAUDIO_HDI_SERVICE_NAME) {
         ReceviceDistributedInfo(serviceStatus, info, devListener);

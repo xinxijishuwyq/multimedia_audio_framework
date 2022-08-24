@@ -17,24 +17,17 @@ import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_bluetooth_client") {
   install_enable = true
-  sources = [
-    "audio_bluetooth_manager.cpp",
-    "bluetooth_a2dp_audio_src_observer_stub.cpp",
-    "bluetooth_a2dp_src_observer.cpp",
-  ]
+  sources = [ "audio_bluetooth_manager.cpp" ]
 
   include_dirs = [
-    "//foundation/communication/bluetooth/frameworks/inner/common",
-    "//foundation/communication/bluetooth/interfaces/inner_api/include",
-    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
-    "//foundation/communication/bluetooth/services/bluetooth/common/",
-    "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/interface",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
     "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
   ]
 
   deps = [
@@ -44,12 +37,12 @@ ohos_shared_library("audio_bluetooth_client") {
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/communication/bluetooth/frameworks/inner:btframework",
-    "//foundation/communication/bluetooth/services/bluetooth/ipc:btipc_static",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
   ]
 
   external_deps = [
+    "bluetooth:btframework",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
