@@ -742,10 +742,11 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetLowPowerVolume API
-* @tc.number: SetLowPowerVolume_001
-* @tc.desc  : Test set the volume discount coefficient of a single stream
-*/
+ * @tc.name : SetLowPowerVolume_001
+ * @tc.desc : Test set the volume discount coefficient of a single stream
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
 HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
@@ -781,10 +782,11 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetLowPowerVolume API
-* @tc.number: GetLowPowerVolume_001
-* @tc.desc  : Test get the volume discount coefficient of a single stream
-*/
+ * @tc.name : GetLowPowerVolume_001
+ * @tc.desc : Test get the volume discount coefficient of a single stream
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
 HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
@@ -824,10 +826,11 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetSingleStreamVolume API
-* @tc.number: GetSingleStreamVolume_001
-* @tc.desc  : Test get single stream volume.
-*/
+ * @tc.name : GetSingleStreamVolume_001
+ * @tc.desc : Test get single stream volume.
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
 HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
