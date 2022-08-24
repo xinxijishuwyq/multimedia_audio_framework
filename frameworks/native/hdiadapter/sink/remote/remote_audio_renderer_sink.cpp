@@ -19,6 +19,7 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include "securec.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -38,6 +39,9 @@ const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
+constexpr int32_t EVENT_DES_SIZE = 60;
+constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
 #ifdef PRODUCT_M40
 const uint32_t PARAM_VALUE_LENTH = 20;
 #endif
@@ -161,12 +165,21 @@ int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const 
     AudioParamKey audioKey = AudioParamKey(key);
     // render state change to invalid.
     if (audioKey == AudioParamKey::RENDER_STATE) {
-        AUDIO_INFO_LOG("RemoteAudioRendererSink render state invalid, destroy audioRender");
-        if ((sink->audioRender_ != nullptr) && (sink->audioAdapter_ != nullptr)) {
-            sink->audioAdapter_->DestroyRender(sink->audioAdapter_, sink->audioRender_);
+        char eventDes[EVENT_DES_SIZE];
+        char contentDes[RENDER_STATE_CONTENT_DES_SIZE];
+        if (sscanf_s(condition, "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes,
+            RENDER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
+            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+            return 0;
         }
-        sink->audioRender_ = nullptr;
-        sink->isRenderCreated = false;
+        if (!strcmp(eventDes, "ERR_EVENT")) {
+            AUDIO_INFO_LOG("RemoteAudioRendererSink render state invalid, destroy audioRender");
+            if ((sink->audioRender_ != nullptr) && (sink->audioAdapter_ != nullptr)) {
+                sink->audioAdapter_->DestroyRender(sink->audioAdapter_, sink->audioRender_);
+            }
+            sink->audioRender_ = nullptr;
+            sink->isRenderCreated = false;
+        }
     }
     AudioSinkCallback* callback = sink->GetParamCallback();
     callback->OnAudioParameterChange(networkId, audioKey, condition, value);
