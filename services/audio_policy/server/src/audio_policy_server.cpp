@@ -15,6 +15,7 @@
 
 #include <csignal>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include "audio_errors.h"
@@ -35,7 +36,6 @@
 
 #include "audio_service_dump.h"
 #include "audio_policy_server.h"
-
 using namespace std;
 
 namespace OHOS {
@@ -1230,7 +1230,35 @@ void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer: Dump Process Invoked");
+    std::unordered_set<std::u16string> argSets;
+    std::u16string arg1(u"debug_interrupt_resume");
+    std::u16string arg2(u"debug_interrupt_pause");
+    for (decltype(args.size()) index = 0; index < args.size(); ++index) {
+        argSets.insert(args[index]);
+    }
 
+    if (argSets.count(arg1) != 0) {
+        InterruptType type = INTERRUPT_TYPE_BEGIN;
+        InterruptForceType forceType = INTERRUPT_SHARE;
+        InterruptHint hint = INTERRUPT_HINT_RESUME;
+        InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
+        for (auto it : policyListenerCbsMap_) {
+            if (it.second != nullptr) {
+                it.second->OnInterrupt(interruptEvent);
+            }
+        }
+    }
+    if (argSets.count(arg2) != 0) {
+        InterruptType type = INTERRUPT_TYPE_BEGIN;
+        InterruptForceType forceType = INTERRUPT_SHARE;
+        InterruptHint hint = INTERRUPT_HINT_PAUSE;
+        InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
+        for (auto it : policyListenerCbsMap_) {
+            if (it.second != nullptr) {
+                it.second->OnInterrupt(interruptEvent);
+            }
+        }
+    }
     std::string dumpString;
     PolicyData policyData;
     AudioServiceDump dumpObj;
