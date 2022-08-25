@@ -1502,14 +1502,13 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     InterruptForceType forceType = INTERRUPT_SHARE;
     InterruptHint hint = INTERRUPT_HINT_NONE;
 
-    if (sscanf_s(condition.c_str(), "%[^;];INTERRUPT_TYPE=%d;INTERRUPT_FORCE_TYPE=%d;INTERRUPT_HINT=%d;", eventDes,
+    if (sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;", eventDes,
         EVENT_DES_SIZE, &type, &forceType, &hint) < PARAMS_INTERRUPT_NUM) {
         AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
         return;
     }
 
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-
     for (auto it : server_->policyListenerCbsMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(interruptEvent);
