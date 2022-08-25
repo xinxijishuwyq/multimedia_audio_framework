@@ -19,6 +19,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "audio_capturer_source.h"
 
 using namespace std;
@@ -234,6 +235,7 @@ int32_t AudioCapturerSource::Init(IAudioSourceAttr &attr)
 
 int32_t AudioCapturerSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
+    int64_t stamp = GetNowTimeMs();
     int32_t ret;
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("Audio capture Handle is nullptr!");
@@ -253,6 +255,8 @@ int32_t AudioCapturerSource::CaptureFrame(char *frame, uint64_t requestBytes, ui
     }
 #endif // CAPTURE_DUMP
 
+    stamp = GetNowTimeMs() - stamp;
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     return SUCCESS;
 }
 

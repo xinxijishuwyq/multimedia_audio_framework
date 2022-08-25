@@ -26,6 +26,7 @@ ohos_shared_library("audio_renderer_sink") {
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
@@ -41,6 +42,7 @@ ohos_shared_library("audio_renderer_sink") {
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 
@@ -101,6 +103,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
@@ -112,6 +115,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//third_party/bounds_checking_function:libsec_static",
   ]
   if ("${product_name}" == "m40") {

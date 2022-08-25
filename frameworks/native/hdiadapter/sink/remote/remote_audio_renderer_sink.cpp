@@ -23,6 +23,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "remote_audio_renderer_sink.h"
 
 using namespace std;
@@ -279,13 +280,6 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
     return audioManager;
 }
 
-inline int64_t GetNowTimeMs()
-{
-    std::chrono::milliseconds nowMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    return nowMs.count();
-}
-
 int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
@@ -310,7 +304,7 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 
     isRenderCreated = true;
     int64_t cost = GetNowTimeMs() - start;
-    AUDIO_INFO_LOG("CreateRender cost[%{public}zu]ms", (size_t)cost);
+    AUDIO_INFO_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
 
     return 0;
 }
@@ -434,7 +428,7 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
 #endif // DEBUG_DUMP_FILE
 
     int64_t cost = GetNowTimeMs() - start;
-    AUDIO_DEBUG_LOG("RenderFrame len[%{public}zu] cost[%{public}zu]ms", (size_t)len, (size_t)cost);
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
     return SUCCESS;
 }
 

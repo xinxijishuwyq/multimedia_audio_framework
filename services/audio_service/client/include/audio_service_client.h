@@ -558,6 +558,7 @@ private:
     AudioCaptureMode captureMode_;
     std::weak_ptr<AudioCapturerReadCallback> readCallback_;
 
+    int64_t mWriteCbStamp = 0; // used to measure callback duration
     uint32_t mFrameSize = 0;
     bool mMarkReached = false;
     uint64_t mFrameMarkPosition = 0;
