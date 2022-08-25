@@ -34,6 +34,7 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static sptr<IStandardAudioService> g_sProxy = nullptr;
+static int32_t startDeviceId = 1;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -1016,6 +1017,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 
         desc.push_back(audioDescriptor);
         if (isConnected) {
+            audioDescriptor->deviceId_ = startDeviceId++;
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
 
@@ -1035,6 +1037,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         }
         desc.push_back(audioDescriptor);
         if (isConnected) {
+            audioDescriptor->deviceId_ = startDeviceId++;
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
     } else {
@@ -1043,6 +1046,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         audioDescriptor->deviceRole_ = GetDeviceRole(deviceDescriptor.deviceType_);
         desc.push_back(audioDescriptor);
         if (isConnected) {
+            audioDescriptor->deviceId_ = startDeviceId++;
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
     }
@@ -1322,6 +1326,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
         audioDescriptor->SetDeviceCapability(streamInfo, 0);
     }
 
+    audioDescriptor->deviceId_ = startDeviceId++;
     mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
 }
 
