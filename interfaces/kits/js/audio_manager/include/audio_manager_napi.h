@@ -91,6 +91,7 @@ private:
     static napi_value CreateDeviceRoleObject(napi_env env);
     static napi_value CreateDeviceTypeObject(napi_env env);
     static napi_value CreateActiveDeviceTypeObject(napi_env env);
+    static napi_value CreateConnectTypeObject(napi_env env);
     static napi_value CreateInterruptActionTypeObject(napi_env env);
     static napi_value CreateInterruptHintObject(napi_env env);
     static napi_value CreateInterruptTypeObject(napi_env env);
@@ -124,6 +125,7 @@ private:
     static napi_ref audioScene_;
     static napi_ref interruptMode_;
     static napi_ref focusType_;
+    static napi_ref connectTypeRef_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId = -1;
