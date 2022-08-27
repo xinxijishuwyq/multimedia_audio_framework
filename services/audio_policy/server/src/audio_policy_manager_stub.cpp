@@ -758,6 +758,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case QUERY_PERMISSION:
             VerifyClientPermissionInternal(data, reply);
+            break;
 
         case SELECT_OUTPUT_DEVICE:
             SelectOutputDeviceInternal(data, reply);
