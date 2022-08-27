@@ -28,6 +28,7 @@ group("audio_service_packages") {
 config("audio_client_public_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
@@ -76,6 +77,7 @@ ohos_shared_library("audio_client") {
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//third_party/bounds_checking_function:libsec_static",

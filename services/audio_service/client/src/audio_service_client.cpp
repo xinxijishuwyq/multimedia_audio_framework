@@ -20,6 +20,7 @@
 
 #include "iservice_registry.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "hisysevent.h"
 #include "securec.h"
 #include "system_ability_definition.h"
@@ -320,13 +321,16 @@ int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerRe
 
 void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_DEBUG_LOG("AudioServiceClient::Inside PA write callback");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamWriteCb: userdata is null");
         return;
     }
 
     auto asClient = static_cast<AudioServiceClient *>(userdata);
+    int64_t now = GetNowTimeMs();
+    AUDIO_DEBUG_LOG("AudioServiceClient::Inside PA write callback cost[%{public}" PRId64 "]",
+        (now - asClient->mWriteCbStamp));
+    asClient->mWriteCbStamp = now;
     auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
 

@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "audio_renderer_sink.h"
 
 using namespace std;
@@ -283,6 +284,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 
 int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    int64_t stamp = GetNowTimeMs();
     int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
@@ -302,6 +304,8 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
         return ERR_WRITE_FAILED;
     }
 
+    stamp = GetNowTimeMs() - stamp;
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     return SUCCESS;
 }
 
