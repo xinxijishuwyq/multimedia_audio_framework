@@ -51,6 +51,7 @@ napi_ref AudioManagerNapi::deviceFlagRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceRoleRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::activeDeviceTypeRef_ = nullptr;
+napi_ref AudioManagerNapi::connectTypeRef_ = nullptr;
 napi_ref AudioManagerNapi::audioRingModeRef_ = nullptr;
 napi_ref AudioManagerNapi::deviceChangeType_ = nullptr;
 napi_ref AudioManagerNapi::interruptActionType_ = nullptr;
@@ -617,6 +618,46 @@ napi_value AudioManagerNapi::CreateActiveDeviceTypeObject(napi_env env)
     return result;
 }
 
+napi_value AudioManagerNapi::CreateConnectTypeObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    int32_t refCount = 1;
+    string propName;
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (int i = CONNECT_TYPE_LOCAL ; i < CONNECT_TYPE_DISTRIBUTED + 1; i++) {
+            switch (i) {
+                case CONNECT_TYPE_LOCAL:
+                    propName = "CONNECT_TYPE_LOCAL";
+                    break;
+                case CONNECT_TYPE_DISTRIBUTED:
+                    propName = "CONNECT_TYPE_DISTRIBUTED";
+                    break;
+                default:
+                    HiLog::Error(LABEL, "CreateConnectTypeObject: No prob with this value try next value!");
+                    continue;
+            }
+            status = AddNamedProperty(env, result, propName, i);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to add named prop!");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, refCount, &connectTypeRef_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateConnectTypeObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
 napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
 {
     napi_value result = nullptr;
@@ -738,6 +779,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateDeviceRoleObject(env)),
         DECLARE_NAPI_PROPERTY("DeviceType", CreateDeviceTypeObject(env)),
         DECLARE_NAPI_PROPERTY("ActiveDeviceType", CreateActiveDeviceTypeObject(env)),
+        DECLARE_NAPI_PROPERTY("ConnectType", CreateConnectTypeObject(env)),
         DECLARE_NAPI_PROPERTY("AudioRingMode", CreateAudioRingModeObject(env)),
         DECLARE_NAPI_PROPERTY("AudioScene", CreateAudioSceneObject(env)),
         DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateDeviceChangeTypeObject(env)),
