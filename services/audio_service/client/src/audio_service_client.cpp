@@ -831,7 +831,10 @@ int32_t AudioServiceClient::ConnectStreamToPA()
             AUDIO_ERR_LOG("Allocate memory for buffer failed.");
             return AUDIO_CLIENT_INIT_ERR;
         }
-        memset_s(preBuf_.get(), bufferAttr.maxlength, 0, bufferAttr.maxlength);
+        if (memset_s(preBuf_.get(), bufferAttr.maxlength, 0, bufferAttr.maxlength) != 0) {
+            AUDIO_ERR_LOG("memset_s for buffer failed.");
+            return AUDIO_CLIENT_INIT_ERR;
+        }
     } else {
         result = pa_stream_connect_record(paStream, nullptr, nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
