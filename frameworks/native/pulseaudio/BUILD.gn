@@ -15,8 +15,7 @@ import("//build/ohos.gni")
 
 pulseaudio_build_path =
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
-libsndfile_build_path =
-    "//foundation/multimedia/audio_framework/frameworks/native/libsnd"
+libsndfile_build_path = "//third_party/libsnd"
 
 group("pulseaudio_packages") {
   deps = [
