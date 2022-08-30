@@ -17,8 +17,7 @@ pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path =
     "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
 libsndfile_dir = "//third_party/libsnd"
-libsndfile_build_path =
-    "//foundation/multimedia/audio_framework/frameworks/native/libsnd"
+libsndfile_build_path = "//third_party/libsnd"
 
 config("pulsecore_config") {
   visibility = [ ":*" ]
