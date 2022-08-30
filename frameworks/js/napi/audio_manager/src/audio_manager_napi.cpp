@@ -2651,10 +2651,10 @@ void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_stat
 
 void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
 {
-    for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
+    for (int i = NONE_DEVICES_FLAG; i < DEVICE_FLAG_MAX; i++) {
         switch (i) {
-            case DEVICE_FLAG_NONE:
-                propName = "NONE_DEVICE_FLAG";
+            case NONE_DEVICES_FLAG:
+                propName = "NONE_DEVICES_FLAG";
                 break;
             case OUTPUT_DEVICES_FLAG:
                 propName = "OUTPUT_DEVICES_FLAG";
