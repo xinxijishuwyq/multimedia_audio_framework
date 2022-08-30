@@ -182,6 +182,16 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
     return mAudioServiceAdapter->SuspendAudioDevice(portName, isSuspend);
 }
 
+int32_t AudioAdapterManager::AdjustAudioBalance(const std::string &portName, float audioBalance)
+{
+    if (!mAudioServiceAdapter) {
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+
+    return mAudioServiceAdapter->AdjustAudioBalance(portName, audioBalance);
+}
+
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
