@@ -43,7 +43,11 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const uint32_t PARAM_VALUE_LENTH = 10;
 }
 #ifdef DUMPFILE
-const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
+// Note: accessing to this directory requires selinux permission
+// const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
+
+// change file path temporarily
+const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/audioout_test.pcm";
 #endif // DUMPFILE
 
 AudioRendererSink::AudioRendererSink()
@@ -93,6 +97,34 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
         return "";
     }
     return value;
+}
+
+void AudioRendererSink::SetAudioMonoState(bool audioMono)
+{
+    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioMonoState: %{public}d", audioMono);
+    audioMonoState = audioMono;
+}
+
+void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
+{
+    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioBalanceValue: %{public}f", audioBalance);
+    // reset the balance coefficient
+    leftBalanceCoef = 1.0f;
+    rightBalanceCoef = 1.0f;
+
+    if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        // audioBalance is equal to 0.0f
+        audioBalanceState = false;
+    } else {
+        // audioBalance is not equal to 0.0f
+        audioBalanceState = true;
+        // calculate the balance coefficient
+        if (audioBalance > 0.0f) {
+            leftBalanceCoef -= audioBalance;
+        } else if (audioBalance < 0.0f) {
+            rightBalanceCoef += audioBalance;
+        }
+    }
 }
 
 void AudioRendererSink::DeInit()
@@ -291,10 +323,24 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
         return ERR_INVALID_HANDLE;
     }
 
+    if (audioMonoState) {
+        // AUDIO_INFO_LOG("audioBalance: AudioRendererSink::RenderFrame: audioMonoState is true");
+        AdjustStereoToMono((int16_t*)&data, len);
+    }
+
+    if (audioBalanceState) {
+        // AUDIO_INFO_LOG("audioBalance: AudioRendererSink::RenderFrame: audioBalanceState is true");
+        AdjustAudioBalance((int16_t*)&data, len, leftBalanceCoef, rightBalanceCoef);
+    }
+
 #ifdef DUMPFILE
-    size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-    if (writeResult != len) {
-        AUDIO_ERR_LOG("Failed to write the file.");
+    if (pfd != nullptr) {
+        size_t writeResult = fwrite((void*)&data, 1, (size_t)len, pfd);
+        if (writeResult != len) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    } else {
+        AUDIO_INFO_LOG("DUMPFILE: nullptr");
     }
 #endif // DUMPFILE
 

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// #define DUMPFILE
 
 #ifndef AUDIO_RENDERER_SINK_H
 #define AUDIO_RENDERER_SINK_H
@@ -58,6 +59,8 @@ public:
     bool rendererInited_;
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
+    void SetAudioMonoState(bool audioMono);
+    void SetAudioBalanceValue(float audioBalance);
 
 private:
     AudioRendererSink();
@@ -74,6 +77,11 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_ = {};
+    bool audioMonoState = false;
+    bool audioBalanceState = false;
+    // float audioBalanceValue = 0.0f;
+    float leftBalanceCoef = 1.0f;
+    float rightBalanceCoef = 1.0f;
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();

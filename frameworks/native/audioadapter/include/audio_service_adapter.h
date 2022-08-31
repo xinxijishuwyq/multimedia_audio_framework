@@ -151,6 +151,15 @@ public:
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
 
     /**
+     * @brief Adjust audio mono
+     *
+     * @param
+     * @return Returns {@link SUCCESS} if suspend is success; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t AdjustAudioMono(const std::string &audioPortName, std::optional<bool> audioMonoOptional) = 0;
+
+    /**
      * @brief Adjust volume balance in current active device
      *
      * @param audioPortName Name of the default audio sink

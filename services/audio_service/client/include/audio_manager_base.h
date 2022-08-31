@@ -159,6 +159,22 @@ public:
      */
     virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
 
+    /**
+     * Set audio mono state for accessibility
+     *
+     * @param  audioMono the state of mono for accessibility
+     * @return none.
+     */
+    virtual void SetAudioMonoState(bool audioMono) = 0;
+
+    /**
+     * Set audio balance value for accessibility
+     *
+     * @param  audioBalance the value of balance for accessibility
+     * @return none.
+     */
+    virtual void SetAudioBalanceValue(float audioBalance) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -176,6 +192,8 @@ public:
         SET_REMOTE_AUDIO_PARAMETER = 13,
         NOTIFY_DEVICE_INFO = 14,
         CHECK_REMOTE_DEVICE_STATE = 15,
+        SET_AUDIO_MONO_STATE = 16,
+        SET_AUDIO_BALANCE_VALUE = 17,
     };
 
 public:

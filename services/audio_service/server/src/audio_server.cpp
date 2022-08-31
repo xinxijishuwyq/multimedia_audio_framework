@@ -334,6 +334,30 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
     return SUCCESS;
 }
 
+void AudioServer::SetAudioMonoState(bool audioMono)
+{
+    AUDIO_INFO_LOG("audioBalance: AudioServer::SetAudioMonoState: %{public}d", audioMono);
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioMonoState(audioMono);
+    }
+}
+
+void AudioServer::SetAudioBalanceValue(float audioBalance)
+{
+    AUDIO_INFO_LOG("audioBalance: AudioServer::SetAudioBalanceValue: %{public}f", audioBalance);
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
+    }
+}
+
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)", networkId.c_str(), connected);

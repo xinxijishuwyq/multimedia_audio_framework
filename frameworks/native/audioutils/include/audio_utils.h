@@ -21,6 +21,8 @@
 namespace OHOS {
 namespace AudioStandard {
 int64_t GetNowTimeMs();
+void AdjustStereoToMono(int16_t *data, uint64_t len);
+void AdjustAudioBalance(int16_t *data, uint64_t len, float left, float right);
 
 template <typename T>
 bool GetSysPara(const char *key, T &value);

@@ -55,6 +55,8 @@ public:
     const char *RetrieveCookie(int32_t &size) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 

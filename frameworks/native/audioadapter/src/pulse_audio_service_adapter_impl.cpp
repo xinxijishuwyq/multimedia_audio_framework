@@ -193,32 +193,72 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
     return SUCCESS;
 }
 
+int32_t PulseAudioServiceAdapterImpl::AdjustAudioMono(const std::string &audioPortName, std::optional<bool> audioMonoOptional)
+{
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioMono in");
+
+    lock_guard<mutex> lock(mMutex);
+
+    if (audioMonoOptional.has_value()) {
+        mAudioMono = audioMonoOptional.value();
+    }
+
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
+    pa_threaded_mainloop_lock(mMainLoop);
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioMono: operation start");
+    pa_operation *operation = pa_context_get_sink_info_by_name(mContext, audioPortName.c_str(),
+        PulseAudioServiceAdapterImpl::PaAdjustSinkAudioMonoCb, reinterpret_cast<void*>(userData.get()));
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_get_sink_info_by_name failed!");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERR_OPERATION_FAILED;
+    }
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioMono: operation end");
+
+    userData.release();
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioMono: release finish");
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    return SUCCESS;
+}
+
 int32_t PulseAudioServiceAdapterImpl::AdjustAudioBalance(const std::string &audioPortName, std::optional<float> audioBalanceOptional)
 {
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioBalance in");
+
     lock_guard<mutex> lock(mMutex);
 
     if (audioBalanceOptional.has_value()) {
         mAudioBalance = audioBalanceOptional.value();
     }
-    AUDIO_INFO_LOG("Adjust audio balance for: [%{public}s] : %{public}f", audioPortName.c_str(), mAudioBalance);
+    AUDIO_INFO_LOG("audioBalance: Adjust audio balance for: [%{public}s] : %{public}f", audioPortName.c_str(), mAudioBalance);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
 
     pa_threaded_mainloop_lock(mMainLoop);
 
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioBalance: operation start");
     pa_operation *operation = pa_context_get_sink_info_by_name(mContext, audioPortName.c_str(),
-        PaAdjustSinkAudioBalanceCb, reinterpret_cast<void*>(userData.get()));
+        PulseAudioServiceAdapterImpl::PaAdjustSinkAudioBalanceCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_get_sink_info_by_name failed!");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERR_OPERATION_FAILED;
     }
-
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mMainLoop);
     }
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioBalance: operation end");
 
+    userData.release();
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::AdjustAudioBalance: release finish");
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
@@ -237,7 +277,10 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    // AdjustAudioBalance(name, {});
+    AUDIO_INFO_LOG("audioBalance: PulseAudioServiceAdapterImpl::SetDefaultSink in: name[%{public}s]", name.c_str());
+
+    AdjustAudioBalance(name, {});
+    AdjustAudioMono(name, {});
 
     return SUCCESS;
 }
@@ -924,16 +967,81 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
         "ISOUTPUT", 1, "STREAMID", sessionID, "STREAMTYPE", streamID, "VOLUME", vol);
 }
 
+void PulseAudioServiceAdapterImpl::PaAdjustSinkAudioMonoCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData*>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
+
+    AUDIO_INFO_LOG("audioBalance: [PulseAudioServiceAdapterImpl] PaAdjustSinkAudioMonoCb in");
+    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] PaAdjustSinkAudioMonoCb");
+    if (eol < 0) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink information: %{public}s",
+            pa_strerror(pa_context_errno(c)));
+        delete userData;
+        return;
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+        delete userData;
+        return;
+    }
+
+    // // remap
+    // pa_channel_map channelMap = i->channel_map;
+    // pa_sample_spec sampleSpec = i->sample_spec;
+
+    // pa_sample_format_t format = sampleSpec.format;
+    // unsigned inChannels = channelMap.channels;
+    // unsigned outChannels = 1;
+
+    // pa_remap_t remap = {PA_SAMPLE_INVALID};
+    // // setup_remap_channels:
+    // remap.format = format;
+    // remap.i_ss.channels = inChannels;
+    // remap.o_ss.channels = outChannels;
+    // for (unsigned i = 0; i < inChannels; i++) {
+    //     remap.map_table_f[0][i] = 1.0f / inChannels;
+    //     remap.map_table_i[0][i] = 0x10000 / inChannels;
+    // }
+    // pa_init_remap_func(&remap);
+
+    // pa_pstream *pstream = c->pstream;
+    // pa_memchunk *input = &(pstream->write.memchunk);
+    // void *src = pa_memblock_acquire_chunk(input);
+
+    // pa_mempool *mempool = c->mempool;
+    // pa_memblock *output = pa_memblock_new(mempool, input->memblock->length);
+    // void *dst = pa_memblock_acquire(output);
+
+    // size_t sampleSize = pa_sample_size(&sampleSpec);
+    // unsigned nSamples = (unsigned) (input->length / sampleSize);
+    // unsigned nFrames = nSamples / inChannels;
+
+    // // remap_func->do_remap(remap_func, out, in, nsamples);
+    // remap.do_remap(&remap, dst, src, nFrames);
+
+    // pa_mempool_unref(mempool);
+
+    // // // channelMap
+    // // AUDIO_INFO_LOG("audioBalance: [PulseAudioServiceAdapterImpl] PaAdjustSinkAudioMonoCb: channel_map.channels = %{public}d, initial", i->channel_map.channels);
+    // // pa_channel_map channelMap = i->channel_map;
+    // // (void)pa_channel_map_init_mono(&channelMap);
+    // // AUDIO_INFO_LOG("audioBalance: [PulseAudioServiceAdapterImpl] PaAdjustSinkAudioMonoCb: channel_map.channels = %{public}d, adjusted", i->channel_map.channels);
+
+}
+
 void PulseAudioServiceAdapterImpl::PaAdjustSinkAudioBalanceCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
+    AUDIO_INFO_LOG("audioBalance: [PulseAudioServiceAdapterImpl] PaAdjustSinkAudioBalanceCb in");
     AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] PaAdjustSinkAudioBalanceCb");
     if (eol < 0) {
-        delete userData;
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink information: %{public}s",
             pa_strerror(pa_context_errno(c)));
+        delete userData;
         return;
     }
 
@@ -947,7 +1055,9 @@ void PulseAudioServiceAdapterImpl::PaAdjustSinkAudioBalanceCb(pa_context *c, con
     pa_channel_map channelMap = i->channel_map;
 
     pa_cvolume* adjustedCVolume = pa_cvolume_set_balance(&cv, &channelMap, thiz->mAudioBalance);
-    pa_context_set_sink_volume_by_name(c, i->name, adjustedCVolume, nullptr, nullptr);
+    pa_operation_unref(pa_context_set_sink_volume_by_name(c, i->name, adjustedCVolume, nullptr, nullptr));
+
+    AUDIO_INFO_LOG("audioBalance: [PulseAudioServiceAdapterImpl] PaAdjustSinkAudioBalanceCb out");
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
