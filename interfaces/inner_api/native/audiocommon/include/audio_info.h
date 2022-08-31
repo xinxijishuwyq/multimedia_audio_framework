@@ -46,7 +46,7 @@ enum DeviceFlag {
     /**
      * Device flag none.
      */
-    DEVICE_FLAG_NONE = 0,
+    NONE_DEVICES_FLAG = 0,
     /**
      * Indicates all output audio devices.
      */
