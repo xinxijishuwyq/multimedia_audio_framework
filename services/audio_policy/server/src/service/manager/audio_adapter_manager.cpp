@@ -106,7 +106,7 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
     }
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     mVolumeMap[streamForVolumeMap] = volume;
-    WriteVolumeToKvStore(streamType, volume);
+    WriteVolumeToKvStore(currentActiveDevice_, streamType, volume);
 
     return mAudioServiceAdapter->SetVolume(streamType, volume);
 }
@@ -126,7 +126,7 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
     }
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     mMuteStatusMap[streamForVolumeMap] = mute;
-    WriteMuteStatusToKvStore(streamType, mute);
+    WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
     return mAudioServiceAdapter->SetMute(streamType, mute);
 }
 
@@ -206,6 +206,29 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+            if (mAudioPolicyKvStore == nullptr) {
+                AUDIO_ERR_LOG("[AudioAdapterManager] mAudioPolicyKvStore is null!");
+                return ERR_OPERATION_FAILED;
+            }
+            currentActiveDevice_ = deviceType;
+            LoadVolumeMap();
+            std::vector<AudioStreamType> streamTypeList = {
+                STREAM_MUSIC,
+                STREAM_RING,
+                STREAM_VOICE_CALL,
+                STREAM_VOICE_ASSISTANT
+            };
+            auto iter = streamTypeList.begin();
+            while (iter != streamTypeList.end()) {
+                Key key = GetStreamNameByStreamType(deviceType, *iter);
+                Value value = Value(TransferTypeToByteArray<float>(0));
+                Status status = mAudioPolicyKvStore->Get(key, value);
+                if (status == SUCCESS) {
+                    float volume = TransferByteArrayToType<float>(value.Data());
+                    SetStreamVolume(*iter, volume);
+                }
+                iter++;
+            }
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
@@ -396,25 +419,45 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
     return args;
 }
 
-std::string AudioAdapterManager::GetStreamNameByStreamType(AudioStreamType streamType)
+std::string AudioAdapterManager::GetStreamNameByStreamType(DeviceType deviceType, AudioStreamType streamType)
 {
+    std::string type;
+    switch (deviceType) {
+        case DEVICE_TYPE_SPEAKER:
+            type = "primary";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            type = "bluetooth";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            type = "wired";
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            type = "usb";
+            break;
+        default:
+            AUDIO_ERR_LOG("[AudioAdapterManager::GetStreamNameByStreamType] deivice %{public}d is not supported for kv"
+                " store", deviceType);
+            return "";
+    }
+
     switch (streamType) {
         case STREAM_MUSIC:
-            return "music";
+            return type + "music";
         case STREAM_RING:
-            return "ring";
+            return type + "ring";
         case STREAM_SYSTEM:
-            return "system";
+            return type + "system";
         case STREAM_NOTIFICATION:
-            return "notification";
+            return type + "notification";
         case STREAM_ALARM:
-            return "alarm";
+            return type + "alarm";
         case STREAM_DTMF:
-            return "dtmf";
+            return type + "dtmf";
         case STREAM_VOICE_CALL:
-            return "voice_call";
+            return type + "voice_call";
         case STREAM_VOICE_ASSISTANT:
-            return "voice_assistant";
+            return type + "voice_assistant";
         default:
             return "";
     }
@@ -527,10 +570,14 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
 void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
     if (isFirstBoot == true) {
-        WriteVolumeToKvStore(STREAM_MUSIC, MAX_VOLUME);
-        WriteVolumeToKvStore(STREAM_RING, MAX_VOLUME);
-        WriteVolumeToKvStore(STREAM_VOICE_CALL, MAX_VOLUME);
-        WriteVolumeToKvStore(STREAM_VOICE_ASSISTANT, MAX_VOLUME);
+        auto iter = deviceList_.begin();
+        while (iter != deviceList_.end()) {
+            WriteVolumeToKvStore(*iter, STREAM_MUSIC, MAX_VOLUME);
+            WriteVolumeToKvStore(*iter, STREAM_RING, MAX_VOLUME);
+            WriteVolumeToKvStore(*iter, STREAM_VOICE_CALL, MAX_VOLUME);
+            WriteVolumeToKvStore(*iter, STREAM_VOICE_ASSISTANT, MAX_VOLUME);
+            iter++;
+        }
         AUDIO_INFO_LOG("[AudioAdapterManager] Wrote default stream volumes to KvStore");
     } else {
         LoadVolumeMap();
@@ -553,23 +600,43 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     }
 }
 
-bool AudioAdapterManager::LoadVolumeFromKvStore(AudioStreamType streamType)
+bool AudioAdapterManager::LoadVolumeFromKvStore(DeviceType deviceType, AudioStreamType streamType)
 {
     Key key;
     Value value;
+    std::string type;
+
+    switch (deviceType) {
+        case DEVICE_TYPE_SPEAKER:
+            type = "primary";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            type = "bluetooth";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            type = "wired";
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            type = "usb";
+            break;
+        default:
+            AUDIO_ERR_LOG("[AudioAdapterManager::LoadVolumeFromKvStore] deivice %{public}d is not supported for kv"
+                "store", deviceType);
+            return false;
+    }
 
     switch (streamType) {
         case STREAM_MUSIC:
-            key = "music";
+            key = type + "music";
             break;
         case STREAM_RING:
-            key = "ring";
+            key = type + "ring";
             break;
         case STREAM_VOICE_CALL:
-            key = "voice_call";
+            key = type + "voice_call";
             break;
         case STREAM_VOICE_ASSISTANT:
-            key = "voice_assistant";
+            key = type + "voice_assistant";
             break;
         default:
             return false;
@@ -594,16 +661,16 @@ bool AudioAdapterManager::LoadVolumeMap(void)
         return false;
     }
 
-    if (!LoadVolumeFromKvStore(STREAM_MUSIC))
+    if (!LoadVolumeFromKvStore(currentActiveDevice_, STREAM_MUSIC))
         AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Music from kvStore!");
 
-    if (!LoadVolumeFromKvStore(STREAM_RING))
+    if (!LoadVolumeFromKvStore(currentActiveDevice_, STREAM_RING))
         AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for Ring from kvStore!");
 
-    if (!LoadVolumeFromKvStore(STREAM_VOICE_CALL))
+    if (!LoadVolumeFromKvStore(currentActiveDevice_, STREAM_VOICE_CALL))
         AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_call from kvStore!");
 
-    if (!LoadVolumeFromKvStore(STREAM_VOICE_ASSISTANT))
+    if (!LoadVolumeFromKvStore(currentActiveDevice_, STREAM_VOICE_ASSISTANT))
         AUDIO_ERR_LOG("[AudioAdapterManager] LoadVolumeMap: Couldnot load volume for voice_assistant from kvStore!");
 
     return true;
@@ -628,21 +695,21 @@ bool AudioAdapterManager::LoadRingerMode(void)
     return true;
 }
 
-void AudioAdapterManager::WriteVolumeToKvStore(AudioStreamType streamType, float volume)
+void AudioAdapterManager::WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, float volume)
 {
     if (mAudioPolicyKvStore == nullptr)
         return;
 
-    Key key = GetStreamNameByStreamType(streamType);
+    Key key = GetStreamNameByStreamType(type, streamType);
     Value value = Value(TransferTypeToByteArray<float>(volume));
 
     Status status = mAudioPolicyKvStore->Put(key, value);
     if (status == Status::SUCCESS) {
         AUDIO_INFO_LOG("[AudioAdapterManager] volume %{public}f for %{public}s updated in kvStore", volume,
-            GetStreamNameByStreamType(streamType).c_str());
+            GetStreamNameByStreamType(type, streamType).c_str());
     } else {
         AUDIO_ERR_LOG("[AudioAdapterManager] volume %{public}f for %{public}s failed to update in kvStore!", volume,
-            GetStreamNameByStreamType(streamType).c_str());
+            GetStreamNameByStreamType(type, streamType).c_str());
     }
 
     return;
@@ -669,10 +736,14 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot == true) {
-        WriteMuteStatusToKvStore(STREAM_MUSIC, 0);
-        WriteMuteStatusToKvStore(STREAM_RING, 0);
-        WriteMuteStatusToKvStore(STREAM_VOICE_CALL, 0);
-        WriteMuteStatusToKvStore(STREAM_VOICE_ASSISTANT, 0);
+        auto iter = deviceList_.begin();
+        while (iter != deviceList_.end()) {
+            WriteMuteStatusToKvStore(*iter, STREAM_MUSIC, 0);
+            WriteMuteStatusToKvStore(*iter, STREAM_RING, 0);
+            WriteMuteStatusToKvStore(*iter, STREAM_VOICE_CALL, 0);
+            WriteMuteStatusToKvStore(*iter, STREAM_VOICE_ASSISTANT, 0);
+            iter++;
+        }
         AUDIO_INFO_LOG("[AudioAdapterManager] Wrote default mute status to KvStore");
     } else {
         LoadMuteStatusMap();
@@ -718,7 +789,7 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(AudioStreamType streamType)
         default:
             return false;
     }
-    Key key = GetStreamTypeKeyForMute(streamType);
+    Key key = GetStreamTypeKeyForMute(DeviceType::DEVICE_TYPE_SPEAKER, streamType);
     Status status = mAudioPolicyKvStore->Get(key, value);
     if (status == Status::SUCCESS) {
         int volumeStatus = TransferByteArrayToType<int>(value.Data());
@@ -729,46 +800,67 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(AudioStreamType streamType)
     return false;
 }
 
-std::string AudioAdapterManager::GetStreamTypeKeyForMute(AudioStreamType streamType)
+std::string AudioAdapterManager::GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType)
 {
+    std::string type = "";
+    switch (deviceType) {
+        case DEVICE_TYPE_SPEAKER:
+            type = "primary";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            type = "bluetooth";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            type = "wired";
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            type = "usb";
+            break;
+        default:
+            AUDIO_ERR_LOG("[AudioAdapterManager::GetStreamTypeKeyForMute] deivice %{public}d is not supported for kv"
+                "store", deviceType);
+            return "";
+    }
+
     switch (streamType) {
         case STREAM_MUSIC:
-            return "music_mute_status";
+            return type + "music_mute_status";
         case STREAM_RING:
-            return "ring_mute_status";
+            return type + "ring_mute_status";
         case STREAM_SYSTEM:
-            return "system_mute_status";
+            return type + "system_mute_status";
         case STREAM_NOTIFICATION:
-            return "notification_mute_status";
+            return type + "notification_mute_status";
         case STREAM_ALARM:
-            return "alarm_mute_status";
+            return type + "alarm_mute_status";
         case STREAM_DTMF:
-            return "dtmf_mute_status";
+            return type + "dtmf_mute_status";
         case STREAM_VOICE_CALL:
-            return "voice_call_mute_status";
+            return type + "voice_call_mute_status";
         case STREAM_VOICE_ASSISTANT:
-            return "voice_assistant_mute_status";
+            return type + "voice_assistant_mute_status";
         default:
             return "";
     }
 }
 
-void AudioAdapterManager::WriteMuteStatusToKvStore(AudioStreamType streamType, bool muteStatus)
+void AudioAdapterManager::WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType,
+    bool muteStatus)
 {
     if (mAudioPolicyKvStore == nullptr) {
         return;
     }
 
-    Key key = GetStreamTypeKeyForMute(streamType);
+    Key key = GetStreamTypeKeyForMute(deviceType, streamType);
     Value value = Value(TransferTypeToByteArray<int>(muteStatus));
 
     Status status = mAudioPolicyKvStore->Put(key, value);
     if (status == Status::SUCCESS) {
         AUDIO_INFO_LOG("[AudioAdapterManager] muteStatus %{public}d for %{public}s updated to kvStore", muteStatus,
-            GetStreamNameByStreamType(streamType).c_str());
+            GetStreamNameByStreamType(deviceType, streamType).c_str());
     } else {
         AUDIO_INFO_LOG("[AudioAdapterManager] muteStatus %{public}d for %{public}s update to kvStore failed",
-            muteStatus, GetStreamNameByStreamType(streamType).c_str());
+            muteStatus, GetStreamNameByStreamType(deviceType, streamType).c_str());
     }
 
     return;

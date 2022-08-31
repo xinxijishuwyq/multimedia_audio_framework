@@ -296,6 +296,17 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return ERR_INVALID_OPERATION;
     }
 
+    std::string networkId = audioDeviceDescriptors[0]->networkId_;
+    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
+
+    // switch between local devices
+    if (LOCAL_NETWORK_ID == networkId && currentActiveDevice_ != deviceType) {
+        if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
+            deviceType = FetchHighPriorityDevice();
+        }
+        return SetDeviceActive(deviceType, true);
+    }
+
     int32_t targetUid = audioRendererFilter->uid;
     AudioStreamType targetStreamType = audioRendererFilter->streamType;
     // move all sink-input.
@@ -327,7 +338,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     int32_t ret = SUCCESS;
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
     if (LOCAL_NETWORK_ID == networkId) {
         ret = MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     } else {
