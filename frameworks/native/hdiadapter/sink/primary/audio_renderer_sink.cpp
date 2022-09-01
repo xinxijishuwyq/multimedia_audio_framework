@@ -455,7 +455,7 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     }
 
     outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
+    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: 0x%{public}X", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
