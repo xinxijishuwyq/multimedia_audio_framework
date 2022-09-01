@@ -362,6 +362,16 @@ int32_t AudioRendererSink::GetVolume(float &left, float &right)
     return SUCCESS;
 }
 
+int32_t AudioRendererSink::SetVoiceVolume(float volume)
+{
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink: SetVoiceVolume failed audio adapter null");
+        return ERR_INVALID_HANDLE;
+    }
+    AUDIO_DEBUG_LOG("AudioRendererSink: SetVoiceVolume %{public}f", volume);
+    return audioAdapter_->SetVoiceVolume(audioAdapter_, volume);
+}
+
 int32_t AudioRendererSink::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {

@@ -171,6 +171,13 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
+        case SET_VOICE_VOLUME: {
+            AUDIO_DEBUG_LOG("SET_VOICE_VOLUME AudioManagerStub");
+            const float volume = data.ReadFloat();
+            int32_t result = SetVoiceVolume(volume);
+            reply.WriteInt32(result);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
