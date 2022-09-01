@@ -425,7 +425,6 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
                     propName = "VOICE_ASSISTANT";
                     break;
                 default:
-                    HiLog::Error(LABEL, "CreateAudioVolumeTypeObject: No prob with this value try next value!");
                     continue;
             }
             status = AddNamedProperty(env, result, propName, i);
@@ -2675,7 +2674,6 @@ void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, n
                 propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
                 break;
             default:
-                HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
                 continue;
         }
         status = AddNamedProperty(env, result, propName, i);

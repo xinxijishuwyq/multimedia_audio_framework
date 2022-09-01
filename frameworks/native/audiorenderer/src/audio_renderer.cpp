@@ -127,6 +127,11 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     }
 
     audioInterrupt_.streamType = audioStreamType;
+    sharedInterrupt_.streamType = audioStreamType;
+}
+
+void AudioRendererPrivate::InitSharedInterrupt()
+{
     if (AudioRendererPrivate::sharedInterrupts_.find(getpid()) == AudioRendererPrivate::sharedInterrupts_.end()) {
         std::map<AudioStreamType, AudioInterrupt> interrupts;
         std::vector<AudioStreamType> types;
@@ -149,12 +154,14 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
             if (audioStream_->GetAudioSessionID(interruptId) != 0) {
                 AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID interruptId Failed");
             }
-            AudioInterrupt interrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, audioStreamType, interruptId};
+            AudioInterrupt interrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, sharedInterrupt_.streamType,
+                interruptId};
             interrupts.insert(std::make_pair(type, interrupt));
         }
         AudioRendererPrivate::sharedInterrupts_.insert(std::make_pair(getpid(), interrupts));
     }
-    sharedInterrupt_ = AudioRendererPrivate::sharedInterrupts_.find(getpid())->second.find(audioStreamType)->second;
+    sharedInterrupt_ = AudioRendererPrivate::sharedInterrupts_.find(getpid())->second.find(sharedInterrupt_.streamType)
+        ->second;
 }
 
 int32_t AudioRendererPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -188,6 +195,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
 
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
+    InitSharedInterrupt();
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID Failed");
