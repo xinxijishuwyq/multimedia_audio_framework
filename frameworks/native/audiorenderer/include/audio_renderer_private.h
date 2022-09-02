@@ -76,6 +76,7 @@ public:
     ~AudioRendererPrivate();
 
 private:
+    void InitSharedInterrupt();
     static std::map<pid_t, std::map<AudioStreamType, AudioInterrupt>> sharedInterrupts_;
     std::shared_ptr<AudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

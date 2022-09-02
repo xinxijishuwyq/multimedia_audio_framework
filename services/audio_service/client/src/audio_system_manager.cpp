@@ -837,7 +837,8 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
-    int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
+    int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
+
     AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
 }
@@ -850,7 +851,7 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
-    int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
+    int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
 }
