@@ -582,9 +582,9 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         AUDIO_ERR_LOG("SelectOutputDevice: invalid uid.");
         return ERR_INVALID_PARAM;
     }
-    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<type:%{public}d>",
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s>",
         getpid(), audioRendererFilter->uid, static_cast<int32_t>(audioRendererFilter->streamType),
-        static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
+        (audioDeviceDescriptors[0]->networkId_.c_str()));
 
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
