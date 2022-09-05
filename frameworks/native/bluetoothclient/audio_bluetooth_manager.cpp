@@ -30,7 +30,7 @@
 
 namespace OHOS {
 namespace Bluetooth {
-using namespace bluetooth;
+using namespace OHOS::bluetooth;
 using namespace AudioStandard;
 
 sptr<IBluetoothA2dpSrc> g_proxy = nullptr;

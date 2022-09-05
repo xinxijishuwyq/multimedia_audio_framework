@@ -16,7 +16,7 @@
 #include "bluetooth_a2dp_src_observer.h"
 #include "audio_log.h"
 
-void BluetoothA2dpSrcObserver::OnConfigurationChanged(const bluetooth::RawAddress &device,
+void BluetoothA2dpSrcObserver::OnConfigurationChanged(const OHOS::bluetooth::RawAddress &device,
     const OHOS::Bluetooth::BluetoothA2dpCodecInfo &info, int error)
 {
     AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnConfigurationChanged");
@@ -25,7 +25,8 @@ void BluetoothA2dpSrcObserver::OnConfigurationChanged(const bluetooth::RawAddres
     }
 }
 
-void BluetoothA2dpSrcObserver::OnPlayingStatusChanged(const bluetooth::RawAddress &device, int playingState, int error)
+void BluetoothA2dpSrcObserver::OnPlayingStatusChanged(
+    const OHOS::bluetooth::RawAddress &device, int playingState, int error)
 {
     AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnPlayingStatusChanged, state: %{public}d, error: %{public}d",
         playingState, error);
@@ -34,7 +35,7 @@ void BluetoothA2dpSrcObserver::OnPlayingStatusChanged(const bluetooth::RawAddres
     }
 }
 
-void BluetoothA2dpSrcObserver::OnConnectionStateChanged(const bluetooth::RawAddress &device, int state)
+void BluetoothA2dpSrcObserver::OnConnectionStateChanged(const OHOS::bluetooth::RawAddress &device, int state)
 {
     AUDIO_INFO_LOG("[BluetoothA2dpSrcObserver] OnConnectionStateChanged, state: %{public}d", state);
     if ((callbacks_ != nullptr) && (callbacks_->OnConnectionStateChanged)) {
