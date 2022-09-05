@@ -29,7 +29,7 @@ config("audio_capture_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosession/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/test",
+    "//foundation/multimedia/audio_framework/services/audio_service/test/example",
     "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",

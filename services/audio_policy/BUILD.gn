@@ -225,10 +225,14 @@ ohos_shared_library("audio_policy_client") {
   part_name = "multimedia_audio_framework"
 }
 
+group("audio_policy_test_packages") {
+  deps = [ ":audio_policy_test" ]
+}
+
 ohos_executable("audio_policy_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_policy_test.cpp" ]
+  sources = [ "test/example/audio_policy_test.cpp" ]
 
   configs = [ ":audio_policy_client_config" ]
 

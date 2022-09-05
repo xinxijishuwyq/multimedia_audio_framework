@@ -94,62 +94,6 @@ ohos_shared_library("audio_client") {
   part_name = "multimedia_audio_framework"
 }
 
-group("audio_client_test_packages") {
-  deps = [
-    ":playback_test",
-    ":record_test",
-  ]
-}
-
-ohos_executable("playback_test") {
-  install_enable = false
-
-  sources = [
-    "//foundation/multimedia/audio_framework/services/test/playback_test.cpp",
-  ]
-
-  configs = [ ":audio_client_public_config" ]
-
-  deps = [ ":audio_client" ]
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-}
-
-ohos_executable("record_test") {
-  install_enable = false
-
-  sources = [
-    "//foundation/multimedia/audio_framework/services/test/record_test.cpp",
-  ]
-
-  configs = [ ":audio_client_public_config" ]
-
-  deps = [ ":audio_client" ]
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-}
-
-ohos_executable("audio_multichannel_test") {
-  install_enable = false
-
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_multichannel_test.cpp" ]
-
-  configs = [ ":audio_client_public_config" ]
-
-  deps = [ ":audio_client" ]
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
-  part_name = "multimedia_audio_framework"
-  subsystem_name = "multimedia"
-}
-
 ohos_prebuilt_etc("audio_service_init") {
   source = "etc/pulseaudio.cfg"
   relative_install_dir = "init"
@@ -216,4 +160,57 @@ ohos_shared_library("audio_service") {
 
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
+}
+
+group("audio_service_test_packages") {
+  deps = [
+    ":audio_multichannel_test",
+    ":audio_service_playback_test",
+    ":audio_service_record_test",
+  ]
+}
+
+ohos_executable("audio_service_playback_test") {
+  install_enable = false
+
+  sources = [ "test/example/playback_test.cpp" ]
+
+  configs = [ ":audio_client_public_config" ]
+
+  deps = [ ":audio_client" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_service_record_test") {
+  install_enable = false
+
+  sources = [ "test/example/record_test.cpp" ]
+
+  configs = [ ":audio_client_public_config" ]
+
+  deps = [ ":audio_client" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_multichannel_test") {
+  install_enable = false
+
+  sources = [ "test/example/audio_multichannel_test.cpp" ]
+
+  configs = [ ":audio_client_public_config" ]
+
+  deps = [ ":audio_client" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
 }
