@@ -257,7 +257,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    AUDIO_INFO_LOG("SelectOutputDevice start for");
+    AUDIO_INFO_LOG("SelectOutputDevice start for uid[%{public}d]", audioRendererFilter->uid);
     // check size == 1 && output device
     int deviceSize = audioDeviceDescriptors.size();
     if (deviceSize != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
@@ -292,7 +292,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     // move target uid, but no stream played yet, record the routing info for first start.
-    if (!moveAll && sinkInputs.size() == 0) {
+    if (!moveAll && targetSinkInputs.size() == 0) {
         return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
     }
 
@@ -305,7 +305,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
 
-    AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
+    AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
 }
 
@@ -395,7 +395,7 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
 int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
     sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
-    AUDIO_INFO_LOG("MoveToRemoteOutputDevice start");
+    AUDIO_INFO_LOG("MoveToRemoteOutputDevice for [%{public}zu] sink-inputs", sinkInputIds.size());
 
     std::string networkId = remoteDeviceDescriptor->networkId_;
     DeviceRole deviceRole = remoteDeviceDescriptor->deviceRole_;
