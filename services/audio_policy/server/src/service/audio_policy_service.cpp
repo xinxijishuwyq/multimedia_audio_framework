@@ -129,6 +129,13 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
 
 int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume) const
 {
+    if (streamType == STREAM_VOICE_CALL) {
+        if (g_sProxy == nullptr) {
+            AUDIO_ERR_LOG("AudioPolicyService: SetVoiceVolume g_sProxy null");
+        } else {
+            g_sProxy->SetVoiceVolume(volume);
+        }
+    }
     return mAudioPolicyManager.SetStreamVolume(streamType, volume);
 }
 

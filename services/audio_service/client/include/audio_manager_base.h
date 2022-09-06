@@ -57,6 +57,14 @@ public:
     virtual bool IsMicrophoneMute() = 0;
 
     /**
+     * @brief Set the Voice Volume.
+     *
+     * @param volume Voice colume to be set.
+     * @return int32_t Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t SetVoiceVolume(float volume) = 0;
+
+    /**
      * Sets Audio modes.
      *
      * @param audioScene Audio scene type.
@@ -176,6 +184,7 @@ public:
         SET_REMOTE_AUDIO_PARAMETER = 13,
         NOTIFY_DEVICE_INFO = 14,
         CHECK_REMOTE_DEVICE_STATE = 15,
+        SET_VOICE_VOLUME = 16,
     };
 
 public:
