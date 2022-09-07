@@ -22,7 +22,7 @@ ohos_benchmarktest("BenchmarkAudioRendererTest") {
     "//foundation/multimedia/audio_framework/frameworks/native/common/include",
   ]
   sources = [ "benchmark_audiorenderer_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer" ]
+  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer" ]
   resource_config_file = "//foundation/multimedia/audio_framework/test/resource/audio_renderer/ohos_test.xml"
 }
 

@@ -15,17 +15,13 @@ import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
-group("audio_capturer_test_packages") {
-  deps = [ ":audio_capturer_test" ]
-}
-
 config("audio_capturer_config") {
   include_dirs = [
+    "include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
@@ -43,8 +39,8 @@ ohos_shared_library("audio_capturer") {
   configs = [ ":audio_capturer_config" ]
 
   sources = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/src/audio_capturer.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/src/audio_capturer_proxy_obj.cpp",
+    "src/audio_capturer.cpp",
+    "src/audio_capturer_proxy_obj.cpp",
   ]
 
   deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
@@ -61,14 +57,18 @@ config("audio_external_library_config") {
   include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include" ]
 }
 
+group("audio_capturer_test_packages") {
+  deps = [ ":audio_capturer_test" ]
+}
+
 ohos_executable("audio_capturer_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_capturer_test.cpp" ]
+  sources = [ "test/example/audio_capturer_test.cpp" ]
 
   configs = [ ":audio_capturer_config" ]
 
-  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
+  deps = [ ":audio_capturer" ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 

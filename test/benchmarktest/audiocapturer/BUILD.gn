@@ -22,7 +22,7 @@ ohos_benchmarktest("BenchmarkAudioCapturerTest") {
     "//foundation/multimedia/audio_framework/frameworks/native/common/include",
   ]
   sources = [ "benchmark_audiocapturer_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer" ]
+  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer" ]
 }
 
 group("benchmarktest") {
