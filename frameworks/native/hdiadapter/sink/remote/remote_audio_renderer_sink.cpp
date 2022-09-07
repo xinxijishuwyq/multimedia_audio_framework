@@ -19,9 +19,11 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include "securec.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "remote_audio_renderer_sink.h"
 
 using namespace std;
@@ -38,6 +40,9 @@ const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
+constexpr int32_t EVENT_DES_SIZE = 60;
+constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
 #ifdef PRODUCT_M40
 const uint32_t PARAM_VALUE_LENTH = 20;
 #endif
@@ -97,6 +102,11 @@ void RemoteAudioRendererSink::RegisterParameterCallback(AudioSinkCallback* callb
 #ifdef PRODUCT_M40
     // register to adapter
     ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::RegisterParameterCallback audioAdapter_ is null");
+        return;
+    }
+    
     int32_t ret = audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::RegisterParameterCallback failed, error code: %d", ret);
@@ -113,6 +123,10 @@ void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const s
     AUDIO_INFO_LOG("RemoteAudioRendererSink::SetParameter: key %{public}d, condition: %{public}s, value: %{public}s",
         key, condition.c_str(), value.c_str());
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter audioAdapter_ is null");
+        return;
+    }
     int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::SetAudioParameter failed, error code: %d", ret);
@@ -127,6 +141,10 @@ std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, 
         condition.c_str());
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::GetAudioParameter audioAdapter_ is null");
+        return "";
+    }
     int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
     if (ret !=SUCCESS) {
         AUDIO_ERR_LOG("AudioRendererSink::GetAudioParameter failed, error code: %d", ret);
@@ -148,12 +166,21 @@ int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const 
     AudioParamKey audioKey = AudioParamKey(key);
     // render state change to invalid.
     if (audioKey == AudioParamKey::RENDER_STATE) {
-        AUDIO_INFO_LOG("RemoteAudioRendererSink render state invalid, destroy audioRender");
-        if ((sink->audioRender_ != nullptr) && (sink->audioAdapter_ != nullptr)) {
-            sink->audioAdapter_->DestroyRender(sink->audioAdapter_, sink->audioRender_);
+        char eventDes[EVENT_DES_SIZE];
+        char contentDes[RENDER_STATE_CONTENT_DES_SIZE];
+        if (sscanf_s(condition, "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes,
+            RENDER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
+            AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+            return 0;
         }
-        sink->audioRender_ = nullptr;
-        sink->isRenderCreated = false;
+        if (!strcmp(eventDes, "ERR_EVENT")) {
+            AUDIO_INFO_LOG("RemoteAudioRendererSink render state invalid, destroy audioRender");
+            if ((sink->audioRender_ != nullptr) && (sink->audioAdapter_ != nullptr)) {
+                sink->audioAdapter_->DestroyRender(sink->audioAdapter_, sink->audioRender_);
+            }
+            sink->audioRender_ = nullptr;
+            sink->isRenderCreated = false;
+        }
     }
     AudioSinkCallback* callback = sink->GetParamCallback();
     callback->OnAudioParameterChange(networkId, audioKey, condition, value);
@@ -253,13 +280,6 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
     return audioManager;
 }
 
-inline int64_t GetNowTimeMs()
-{
-    std::chrono::milliseconds nowMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    return nowMs.count();
-}
-
 int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
@@ -284,7 +304,7 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
 
     isRenderCreated = true;
     int64_t cost = GetNowTimeMs() - start;
-    AUDIO_INFO_LOG("CreateRender cost[%{public}zu]ms", (size_t)cost);
+    AUDIO_INFO_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
 
     return 0;
 }
@@ -408,7 +428,7 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
 #endif // DEBUG_DUMP_FILE
 
     int64_t cost = GetNowTimeMs() - start;
-    AUDIO_DEBUG_LOG("RenderFrame len[%{public}zu] cost[%{public}zu]ms", (size_t)len, (size_t)cost);
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
     return SUCCESS;
 }
 

@@ -109,6 +109,29 @@ bool AudioManagerProxy::IsMicrophoneMute()
     return isMute;
 }
 
+int32_t AudioManagerProxy::SetVoiceVolume(float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteFloat(volume);
+
+    int32_t error = Remote()->SendRequest(SET_VOICE_VOLUME, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetVoiceVolume failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
 int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     MessageParcel data;

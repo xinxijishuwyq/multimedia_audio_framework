@@ -13,15 +13,18 @@
  * limitations under the License.
  */
 
-#include "device_status_listener.h"
-
 #include <hdf_io_service_if.h>
 #include <securec.h>
 
-#include "audio_bluetooth_manager.h"
 #include "audio_errors.h"
 #include "audio_events.h"
 #include "audio_log.h"
+
+#ifdef BLUETOOTH_ENABLE
+#include "audio_bluetooth_manager.h"
+#endif
+
+#include "device_status_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -100,13 +103,14 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             devListener->deviceObserver_.OnDeviceStatusUpdated(internalDevice, isConnected, "", "", streamInfo);
         }
     } else if (serviceStatus->serviceName == AUDIO_BLUETOOTH_HDI_SERVICE_NAME) {
+#ifdef BLUETOOTH_ENABLE
         if (serviceStatus->status == SERVIE_STATUS_START) {
             AUDIO_INFO_LOG("Bluetooth hdi service started");
             Bluetooth::AudioA2dpManager::ConnectBluetoothA2dpSink();
         } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
             AUDIO_INFO_LOG("Bluetooth hdi service stopped");
-
         }
+#endif
     } else if (serviceStatus->serviceName == DAUDIO_HDI_SERVICE_NAME) {
         ReceviceDistributedInfo(serviceStatus, info, devListener);
     } else {

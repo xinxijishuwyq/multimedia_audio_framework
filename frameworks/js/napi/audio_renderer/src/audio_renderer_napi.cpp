@@ -437,12 +437,13 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererOptions.rendererInfo.rendererFlags = sRendererOptions_->rendererInfo.rendererFlags;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
+    std::string cacheDir = "";
     if (abilityContext != nullptr) {
-        std::string cacheDir = abilityContext->GetCacheDir();
-        rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+        cacheDir = abilityContext->GetCacheDir();
     } else {
-        rendererNapi->audioRenderer_ = AudioRenderer::Create(rendererOptions);
+        cacheDir = "/data/storage/el2/base/haps/entry/files";
     }
+    rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
 
     CHECK_AND_RETURN_RET_LOG(rendererNapi->audioRenderer_ != nullptr, result, "Renderer Create failed");
 

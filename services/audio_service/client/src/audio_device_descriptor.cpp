@@ -27,13 +27,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     : deviceType_(type), deviceRole_(role), interruptGroupId_(interruptGroupId), volumeGroupId_(volumeGroupId),
     networkId_(networkId)
 {
-    if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
-        || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) && (deviceRole_ == INPUT_DEVICE)) {
-        deviceId_ = deviceType_ + DEVICE_TYPE_MAX;
-    } else {
-        deviceId_ = deviceType_;
-    }
-
+    deviceId_ = 0;
     audioStreamInfo_ = {};
     channelMasks_ = 0;
     deviceName_ = "";
@@ -42,13 +36,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
 {
-    if (((deviceType_ == DEVICE_TYPE_WIRED_HEADSET) || (deviceType_ == DEVICE_TYPE_USB_HEADSET)
-        || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) && (deviceRole_ == INPUT_DEVICE)) {
-        deviceId_ = deviceType_ + DEVICE_TYPE_MAX;
-    } else {
-        deviceId_ = deviceType_;
-    }
-
+    deviceId_ = 0;
     audioStreamInfo_ = {};
     channelMasks_ = 0;
     deviceName_ = "";

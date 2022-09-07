@@ -22,18 +22,24 @@
 #include "system_ability_definition.h"
 #include "audio_manager_listener_stub.h"
 
+#ifdef BLUETOOTH_ENABLE
+#include "audio_bluetooth_manager.h"
+#endif
+
 #include "audio_policy_service.h"
 
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static sptr<IStandardAudioService> g_sProxy = nullptr;
+static int32_t startDeviceId = 1;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -132,6 +138,13 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
 
 int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume) const
 {
+    if (streamType == STREAM_VOICE_CALL) {
+        if (g_sProxy == nullptr) {
+            AUDIO_ERR_LOG("AudioPolicyService: SetVoiceVolume g_sProxy null");
+        } else {
+            g_sProxy->SetVoiceVolume(volume);
+        }
+    }
     return mAudioPolicyManager.SetStreamVolume(streamType, volume);
 }
 
@@ -251,13 +264,16 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     ret = mAudioPolicyManager.SuspendAudioDevice(networkId, true);
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "SuspendAudioDevice failed!");
 
+    std::vector<sptr<AudioDeviceDescriptor>> desc = {};
+    desc.push_back(localDevice);
+    UpdateTrackerDeviceChange(desc);
     AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    AUDIO_INFO_LOG("SelectOutputDevice start for");
+    AUDIO_INFO_LOG("SelectOutputDevice start for uid[%{public}d]", audioRendererFilter->uid);
     // check size == 1 && output device
     int deviceSize = audioDeviceDescriptors.size();
     if (deviceSize != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
@@ -292,7 +308,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     // move target uid, but no stream played yet, record the routing info for first start.
-    if (!moveAll && sinkInputs.size() == 0) {
+    if (!moveAll && targetSinkInputs.size() == 0) {
         return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
     }
 
@@ -303,8 +319,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     } else {
         ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     }
+    UpdateTrackerDeviceChange(audioDeviceDescriptors);
 
-    AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d]", ret);
+    AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
 }
 
@@ -394,7 +411,7 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
 int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
     sptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
-    AUDIO_INFO_LOG("MoveToRemoteOutputDevice start");
+    AUDIO_INFO_LOG("MoveToRemoteOutputDevice for [%{public}zu] sink-inputs", sinkInputIds.size());
 
     std::string networkId = remoteDeviceDescriptor->networkId_;
     DeviceRole deviceRole = remoteDeviceDescriptor->deviceRole_;
@@ -1016,6 +1033,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 
         desc.push_back(audioDescriptor);
         if (isConnected) {
+            audioDescriptor->deviceId_ = startDeviceId++;
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
 
@@ -1035,6 +1053,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         }
         desc.push_back(audioDescriptor);
         if (isConnected) {
+            audioDescriptor->deviceId_ = startDeviceId++;
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
     } else {
@@ -1043,6 +1062,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         audioDescriptor->deviceRole_ = GetDeviceRole(deviceDescriptor.deviceType_);
         desc.push_back(audioDescriptor);
         if (isConnected) {
+            audioDescriptor->deviceId_ = startDeviceId++;
             mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
         }
     }
@@ -1086,6 +1106,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         AUDIO_INFO_LOG("BT SCO device detected in non-call mode [%{public}d]", GetAudioScene());
         UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, isConnected);
         TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+        UpdateTrackerDeviceChange(deviceChangeDescriptor);
         return;
     }
 
@@ -1123,6 +1144,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+    UpdateTrackerDeviceChange(deviceChangeDescriptor);
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
@@ -1320,6 +1342,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
         audioDescriptor->SetDeviceCapability(streamInfo, 0);
     }
 
+    audioDescriptor->deviceId_ = startDeviceId++;
     mConnectedDevices.insert(mConnectedDevices.begin(), audioDescriptor);
 }
 
@@ -1412,6 +1435,7 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.networkId = desc->networkId_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
@@ -1792,8 +1816,6 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
             it->second.second->OnDeviceChange(deviceChangeAction);
         }
     }
-
-    UpdateTrackerDeviceChange(desc);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByFlag(DeviceFlag flag,
@@ -1997,20 +2019,24 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
 
 void AudioPolicyService::RegisterBluetoothListener()
 {
+#ifdef BLUETOOTH_ENABLE
     AUDIO_INFO_LOG("Enter AudioPolicyService::RegisterBluetoothListener");
-    Bluetooth::RegisterDeviceObserver(deviceObserver_);
+    Bluetooth::RegisterDeviceObserver(mDeviceStatusListener->deviceObserver_);
     Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
     Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     isBtListenerRegistered = true;
+#endif
 }
 
 void AudioPolicyService::UnregisterBluetoothListener()
 {
+#ifdef BLUETOOTH_ENABLE
     AUDIO_INFO_LOG("Enter AudioPolicyService::UnregisterBluetoothListener");
     Bluetooth::UnregisterDeviceObserver();
     Bluetooth::AudioA2dpManager::UnregisterBluetoothA2dpListener();
     Bluetooth::AudioHfpManager::UnregisterBluetoothScoListener();
     isBtListenerRegistered = false;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "audio_renderer_sink.h"
 
 using namespace std;
@@ -283,6 +284,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
 
 int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    int64_t stamp = GetNowTimeMs();
     int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
@@ -302,6 +304,8 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
         return ERR_WRITE_FAILED;
     }
 
+    stamp = GetNowTimeMs() - stamp;
+    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     return SUCCESS;
 }
 
@@ -356,6 +360,16 @@ int32_t AudioRendererSink::GetVolume(float &left, float &right)
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
+}
+
+int32_t AudioRendererSink::SetVoiceVolume(float volume)
+{
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink: SetVoiceVolume failed audio adapter null");
+        return ERR_INVALID_HANDLE;
+    }
+    AUDIO_DEBUG_LOG("AudioRendererSink: SetVoiceVolume %{public}f", volume);
+    return audioAdapter_->SetVoiceVolume(audioAdapter_, volume);
 }
 
 int32_t AudioRendererSink::GetLatency(uint32_t *latency)
@@ -451,7 +465,7 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     }
 
     outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
+    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: 0x%{public}X", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;

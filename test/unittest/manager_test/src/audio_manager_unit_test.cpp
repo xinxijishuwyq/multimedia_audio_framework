@@ -105,6 +105,96 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_001
+* @tc.desc  : Test SelectOutputDevice interface.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    outputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_002
+* @tc.desc  : Test SelectOutputDevice interface.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level0)
+{
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    outputDevice->networkId_ = std::string("");
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
+    EXPECT_TRUE(ret < 0);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_003
+* @tc.desc  : Test SelectOutputDevice interface.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_003, TestSize.Level0)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = 20010041;
+    audioRendererFilter->rendererInfo.contentType   = ContentType::CONTENT_TYPE_MUSIC;
+    audioRendererFilter->rendererInfo.streamUsage   = StreamUsage::STREAM_USAGE_MEDIA;
+    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->streamId = 0;
+
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    outputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SelectOutputDevice API
+* @tc.number: SelectOutputDevice_004
+* @tc.desc  : Test SelectOutputDevice interface.
+* @tc.require: issueI5NZAQ
+*/
+HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level0)
+{
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = -1;
+    audioRendererFilter->rendererInfo.contentType   = ContentType::CONTENT_TYPE_MUSIC;
+    audioRendererFilter->rendererInfo.streamUsage   = StreamUsage::STREAM_USAGE_MEDIA;
+    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->streamId = 0;
+
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptorVector;
+
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    auto outputDevice =  audioDeviceDescriptors[0];
+    outputDevice->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    outputDevice->networkId_ = LOCAL_NETWORK_ID;
+    deviceDescriptorVector.push_back(outputDevice);
+    auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
+    EXPECT_TRUE(ret < 0);
+}
+
+/**
 * @tc.name  : Test SetDeviceActive API
 * @tc.number: SetDeviceActive_001
 * @tc.desc  : Test SetDeviceActive interface. Activate bluetooth sco device by deactivating speaker
@@ -742,10 +832,11 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test SetLowPowerVolume API
-* @tc.number: SetLowPowerVolume_001
-* @tc.desc  : Test set the volume discount coefficient of a single stream
-*/
+ * @tc.name : SetLowPowerVolume_001
+ * @tc.desc : Test set the volume discount coefficient of a single stream
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
 HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
@@ -781,10 +872,11 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetLowPowerVolume API
-* @tc.number: GetLowPowerVolume_001
-* @tc.desc  : Test get the volume discount coefficient of a single stream
-*/
+ * @tc.name : GetLowPowerVolume_001
+ * @tc.desc : Test get the volume discount coefficient of a single stream
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
 HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;
@@ -824,10 +916,11 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetSingleStreamVolume API
-* @tc.number: GetSingleStreamVolume_001
-* @tc.desc  : Test get single stream volume.
-*/
+ * @tc.name : GetSingleStreamVolume_001
+ * @tc.desc : Test get single stream volume.
+ * @tc.type : FUNC
+ * @tc.require : issueI5NXAE
+ */
 HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
 {
     int32_t streamId = 0;

@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
+import("//foundation/multimedia/audio_framework/bluetooth_part.gni")
 
 group("audio_policy_packages") {
   deps = [
@@ -52,7 +53,7 @@ config("audio_policy_public_config") {
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
     "//foundation/systemabilitymgr/safwk/services/safwk/include",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//base/hiviewdfx/hilog/interfaces/native/inner_api/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//third_party/libxml2/include",
@@ -81,6 +82,10 @@ config("audio_policy_public_config") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
+  if (bluetooth_part_enable == true) {
+    cflags += [ "-DBLUETOOTH_ENABLE" ]
+  }
+
   ldflags = [ "-Wl" ]
 }
 
@@ -107,7 +112,6 @@ ohos_shared_library("audio_dump") {
 ohos_shared_library("audio_policy_service") {
   install_enable = true
   sources = [
-    "client/src/audio_device_descriptor.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
     "server/src/audio_capturer_state_change_listener_proxy.cpp",
@@ -136,10 +140,9 @@ ohos_shared_library("audio_policy_service") {
     "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
     "$hdf_uhdf_path/utils:libhdf_utils",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
-    "//foundation/distributeddatamgr/distributeddatamgr/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/distributeddatamgr/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
-    "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient:audio_bluetooth_client",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_dump",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
     "//third_party/libxml2:xml2",
@@ -147,7 +150,6 @@ ohos_shared_library("audio_policy_service") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "bluetooth:btframework",
     "c_utils:utils",
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
@@ -157,6 +159,12 @@ ohos_shared_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (bluetooth_part_enable == true) {
+    deps += [ "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+
+    external_deps += [ "bluetooth:btframework" ]
+  }
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
 }
@@ -201,9 +209,9 @@ config("audio_policy_client_config") {
 ohos_shared_library("audio_policy_client") {
   install_enable = true
   sources = [
+    "//foundation/multimedia/audio_framework/services/audio_service/client/src/audio_device_descriptor.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
-    "client/src/audio_device_descriptor.cpp",
     "client/src/audio_policy_manager.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_policy_proxy.cpp",
