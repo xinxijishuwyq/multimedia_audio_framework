@@ -206,6 +206,7 @@ private:
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
+    void RegisterBluetoothListener();
 
     static float MapVolumeToHDI(int32_t volume);
     static int32_t ConvertVolumeToInt(float volume);

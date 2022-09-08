@@ -168,6 +168,10 @@ public:
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
+    void RegisterBluetoothListener();
+
+    void UnregisterBluetoothListener();
+
 private:
     AudioPolicyService()
         : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -252,6 +256,7 @@ private:
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isOpenRemoteDevice = false;
+    bool isBtListenerRegistered = false;
     static const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     uint64_t audioLatencyInMsec_ = 50;

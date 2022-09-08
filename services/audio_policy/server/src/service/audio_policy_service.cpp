@@ -22,12 +22,17 @@
 #include "system_ability_definition.h"
 #include "audio_manager_listener_stub.h"
 
+#ifdef BLUETOOTH_ENABLE
+#include "audio_bluetooth_manager.h"
+#endif
+
 #include "audio_policy_service.h"
 
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -119,6 +124,10 @@ void AudioPolicyService::Deinit(void)
 
     mIOHandles.clear();
     mDeviceStatusListener->UnRegisterDeviceStatusListener();
+
+    if (isBtListenerRegistered) {
+        UnregisterBluetoothListener();
+    }
     return;
 }
 
@@ -2006,6 +2015,28 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     }
     AUDIO_INFO_LOG("AudioPolicyService: SetParameterCallback call SetParameterCallback.");
     g_sProxy->SetParameterCallback(object);
+}
+
+void AudioPolicyService::RegisterBluetoothListener()
+{
+#ifdef BLUETOOTH_ENABLE
+    AUDIO_INFO_LOG("Enter AudioPolicyService::RegisterBluetoothListener");
+    Bluetooth::RegisterDeviceObserver(mDeviceStatusListener->deviceObserver_);
+    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    isBtListenerRegistered = true;
+#endif
+}
+
+void AudioPolicyService::UnregisterBluetoothListener()
+{
+#ifdef BLUETOOTH_ENABLE
+    AUDIO_INFO_LOG("Enter AudioPolicyService::UnregisterBluetoothListener");
+    Bluetooth::UnregisterDeviceObserver();
+    Bluetooth::AudioA2dpManager::UnregisterBluetoothA2dpListener();
+    Bluetooth::AudioHfpManager::UnregisterBluetoothScoListener();
+    isBtListenerRegistered = false;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
