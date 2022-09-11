@@ -29,9 +29,7 @@ group("audio_unit_test") {
 group("audio_module_test") {
   testonly = true
 
-  deps = [
-    #"moduletest/audiopolicy:audio_policy_module_test",
-  ]
+  deps = [ "moduletest/audiopolicy:audio_policy_module_test" ]
 }
 
 group("audio_fuzz_test") {
