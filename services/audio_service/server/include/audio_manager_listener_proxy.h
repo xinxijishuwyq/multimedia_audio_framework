@@ -21,32 +21,32 @@
 #include "i_standard_audio_server_manager_listener.h"
 
 namespace OHOS {
-    namespace AudioStandard {
-        class AudioManagerListenerProxy : public IRemoteProxy<IStandardAudioServerManagerListener> {
-        public:
-            explicit AudioManagerListenerProxy(const sptr<IRemoteObject>& impl);
-            virtual ~AudioManagerListenerProxy();
-            DISALLOW_COPY_AND_MOVE(AudioManagerListenerProxy);
-            void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-                const std::string& condition, const std::string& value) override;
+namespace AudioStandard {
+class AudioManagerListenerProxy : public IRemoteProxy<IStandardAudioServerManagerListener> {
+public:
+    explicit AudioManagerListenerProxy(const sptr<IRemoteObject>& impl);
+    virtual ~AudioManagerListenerProxy();
+    DISALLOW_COPY_AND_MOVE(AudioManagerListenerProxy);
+    void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) override;
 
-        private:
-            static inline BrokerDelegator<AudioManagerListenerProxy> delegator_;
-            void WriteParameterEventParams(MessageParcel& data, const std::string networkId, const AudioParamKey key,
-                const std::string& condition, const std::string& value);
-        };
+private:
+    static inline BrokerDelegator<AudioManagerListenerProxy> delegator_;
+    void WriteParameterEventParams(MessageParcel& data, const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value);
+};
 
-        class AudioManagerListenerCallback : public AudioParameterCallback {
-        public:
-            AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
-            virtual ~AudioManagerListenerCallback();
-            DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
-            void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-                const std::string& condition, const std::string& value) override;
+class AudioManagerListenerCallback : public AudioParameterCallback {
+public:
+    AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
+    virtual ~AudioManagerListenerCallback();
+    DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
+    void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) override;
 
-        private:
-            sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
-        };
-    } // namespace AudioStandard
+private:
+    sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
+};
+} // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_MANAGER_LISTENER_PROXY_H
