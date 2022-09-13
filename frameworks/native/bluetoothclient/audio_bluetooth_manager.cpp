@@ -33,7 +33,7 @@ A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
 AudioA2dpListener AudioA2dpManager::a2dpListener_;
 HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 AudioHfpListener AudioHfpManager::hfpListener_;
-int AudioA2dpManager::connectionState_ = STATE_TURN_OFF;
+int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
 bool AudioA2dpManager::bluetoothSinkLoaded_ = false;
 BluetoothRemoteDevice AudioA2dpManager::bluetoothRemoteDevice_;
 
@@ -129,7 +129,7 @@ void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 void AudioA2dpManager::ConnectBluetoothA2dpSink()
 {
     // Update device when hdi service is available
-    if (connectionState_ != STATE_TURN_ON) {
+    if (connectionState_ != static_cast<int>(BTConnectState::CONNECTED)) {
         AUDIO_ERR_LOG("bluetooth state is not on");
         return;
     }
@@ -167,12 +167,12 @@ void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &de
 
     // Record connection state and device for hdi start time to check
     AudioA2dpManager::SetConnectionState(state);
-    if (state == STATE_TURN_ON) {
+    if (state == static_cast<int>(BTConnectState::CONNECTED)) {
         AudioA2dpManager::SetBluetoothRemoteDevice(device);
     }
 
     // Currently disconnect need to be done in OnConnectionStateChanged instead of hdi service stopped
-    if (state == STATE_TURN_OFF) {
+    if (state == static_cast<int>(BTConnectState::DISCONNECTED)) {
         std::lock_guard<std::mutex> deviceLock(g_deviceLock);
 
         if (g_deviceObserver == nullptr) {
