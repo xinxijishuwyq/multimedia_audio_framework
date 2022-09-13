@@ -22,19 +22,19 @@
 #include "iremote_stub.h"
 
 namespace OHOS {
-    namespace AudioStandard {
-        class IStandardAudioServerManagerListener : public IRemoteBroker {
-        public:
-            virtual ~IStandardAudioServerManagerListener() = default;
-            virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-                const std::string& condition, const std::string& value) = 0;
+namespace AudioStandard {
+class IStandardAudioServerManagerListener : public IRemoteBroker {
+public:
+    virtual ~IStandardAudioServerManagerListener() = default;
+    virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) = 0;
 
-            enum AudioServerManagerListenerMsg {
-                ON_ERROR = 0,
-                ON_PARAMETER_CHANGED
-            };
-            DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioServerManagerListener");
-        };
-    } // namespace AudioStandard
+    enum AudioServerManagerListenerMsg {
+        ON_ERROR = 0,
+        ON_PARAMETER_CHANGED
+    };
+    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioServerManagerListener");
+};
+} // namespace AudioStandard
 } // namespace OHOS
 #endif // I_STANDARD_AUDIO_SERVER_MANAGER_LISTENER_H
