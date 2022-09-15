@@ -901,7 +901,6 @@ void AudioStream::WriteCbTheadLoop()
                 filledBufferQ_.pop();
                 SendWriteBufferRequestEvent();
             }
-            bufferQueueLock_.unlock();
         }
     }
     AUDIO_INFO_LOG("AudioStream::WriteCb thread end");
@@ -915,7 +914,6 @@ void AudioStream::ReadCbThreadLoop()
     bool isBlockingRead = true;
 
     while (isReadyToRead_) {
-        lock_guard<mutex> lock(bufferQueueLock_);
         while (!freeBufferQ_.empty()) {
             if (state_ != RUNNING) {
                 AUDIO_ERR_LOG("AudioStream::ReadCb Read: Illegal  state:%{public}u", state_);
