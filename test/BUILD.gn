@@ -35,5 +35,9 @@ group("audio_module_test") {
 group("audio_fuzz_test") {
   testonly = true
 
-  deps = [ "fuzztest/audiomanager_fuzzer:fuzztest" ]
+  deps = [
+    "fuzztest/audiomanager_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer:fuzztest",
+    "fuzztest/audioserver_fuzzer:fuzztest",
+  ]
 }
