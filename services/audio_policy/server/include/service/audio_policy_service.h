@@ -174,11 +174,11 @@ public:
 
 private:
     AudioPolicyService()
-        : mAudioPolicyManager(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-          mConfigParser(ParserFactory::GetInstance().CreateParser(*this)),
-          mStreamCollector(AudioStreamCollector::GetAudioStreamCollector())
+        : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+          configParser_(ParserFactory::GetInstance().CreateParser(*this)),
+          streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
     {
-        mDeviceStatusListener = std::make_unique<DeviceStatusListener>(*this);
+        deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
     ~AudioPolicyService();
@@ -262,23 +262,23 @@ private:
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
-    DeviceType mCurrentActiveDevice_ = DEVICE_TYPE_NONE;
-    DeviceType mActiveInputDevice_ = DEVICE_TYPE_NONE;
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
-    IAudioPolicyInterface& mAudioPolicyManager;
-    Parser& mConfigParser;
-    AudioStreamCollector& mStreamCollector;
-    std::unique_ptr<DeviceStatusListener> mDeviceStatusListener;
-    std::vector<sptr<AudioDeviceDescriptor>> mConnectedDevices;
+    IAudioPolicyInterface& audioPolicyManager_;
+    Parser& configParser_;
+    AudioStreamCollector& streamCollector_;
+    std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
+    std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
     std::unordered_map<int32_t, std::pair<DeviceFlag, sptr<IStandardAudioPolicyManagerListener>>>
         deviceChangeCallbackMap_;
-    AudioScene mAudioScene = AUDIO_SCENE_DEFAULT;
+    AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioFocusEntry focusTable_[MAX_NUM_STREAMS][MAX_NUM_STREAMS];
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
-    std::unordered_map<std::string, AudioIOHandle> mIOHandles = {};
+    std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
     std::vector<DeviceType> ioDeviceList = {
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_BLUETOOTH_SCO,
@@ -293,8 +293,8 @@ private:
         DEVICE_TYPE_SPEAKER
     };
 
-    std::vector<sptr<VolumeGroupInfo>> mVolumeGroups;
-    std::vector<sptr<InterruptGroupInfo>> mInterruptGroups;
+    std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
+    std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
 };
