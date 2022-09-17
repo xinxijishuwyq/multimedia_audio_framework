@@ -257,7 +257,7 @@ private:
     bool isUpdateRouteSupported_ = true;
     bool isOpenRemoteDevice = false;
     bool isBtListenerRegistered = false;
-    static const int32_t G_UNKNOWN_PID = -1;
+    const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
