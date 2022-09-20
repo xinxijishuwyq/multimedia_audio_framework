@@ -1548,5 +1548,11 @@ void AudioPolicyServer::RegisterBluetoothListener()
     AUDIO_INFO_LOG("AudioPolicyServer::RegisterBluetoothListener");
     mPolicyService.RegisterBluetoothListener();
 }
+
+bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

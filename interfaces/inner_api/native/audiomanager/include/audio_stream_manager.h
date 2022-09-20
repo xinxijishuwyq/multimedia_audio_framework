@@ -82,6 +82,7 @@ public:
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 };
 } // namespace AudioStandard
 } // namespace OHOS

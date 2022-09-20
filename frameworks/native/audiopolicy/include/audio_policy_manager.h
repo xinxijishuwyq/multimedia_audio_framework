@@ -159,6 +159,8 @@ public:
                                     AudioStreamType audioStreamType);
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+
+    bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 private:
     AudioPolicyManager()
     {

@@ -505,5 +505,12 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
 {
     return g_sProxy->GetVolumeGroupInfos();
 }
+
+bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::IsAudioRendererLowLatencySupported");
+
+    return g_sProxy->IsAudioRendererLowLatencySupported(audioStreamInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -795,6 +795,11 @@ struct DStatusInfo {
     AudioStreamInfo streamInfo = {};
     ConnectType connectType = CONNECT_TYPE_LOCAL;
 };
+
+struct AudioRendererDataInfo {
+    uint8_t *buffer;
+    size_t flag;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
