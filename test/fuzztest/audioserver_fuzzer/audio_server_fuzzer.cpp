@@ -24,8 +24,8 @@ using namespace std;
 namespace OHOS {
 constexpr int32_t OFFSET = 4;
     const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
-    const int32_t SYSTEM_ABILITY_ID=3001;
-    const bool RUN_ON_CREATE=false;
+    const int32_t SYSTEM_ABILITY_ID = 3001;
+    const bool RUN_ON_CREATE = false;
     namespace AudioStandard {
         uint32_t Convert2Uint32(const uint8_t *ptr)
         {
@@ -51,7 +51,8 @@ constexpr int32_t OFFSET = 4;
             data.RewindRead(0);
             MessageParcel reply;
             MessageOption option;
-            std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+            std::shared_ptr<AudioServer> AudioServerPtr =
+                std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
             AudioServerPtr->OnRemoteRequest(code, data, reply, option);
         }
     } // namespace AudioStandard
