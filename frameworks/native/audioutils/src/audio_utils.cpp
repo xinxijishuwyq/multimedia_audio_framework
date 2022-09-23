@@ -29,7 +29,7 @@ int64_t GetNowTimeMs()
     return nowMs.count();
 }
 
-void AdjustStereoToMono(int16_t *data, uint64_t len)
+void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
         data[0] = data[0] / 2 + data[1] / 2;
@@ -38,11 +38,33 @@ void AdjustStereoToMono(int16_t *data, uint64_t len)
     }
 }
 
-void AdjustAudioBalance(int16_t *data, uint64_t len, float left, float right)
+void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
-        data[0] = (int16_t) data[0] * left;
-        data[1] = (int16_t) data[1] * right;
+        data[0] = data[0] / 2 + data[1] / 2;
+        data[1] = data[0];
+        data += 2;
+    }
+}
+
+void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        data[0] *= left;
+        data[1] *= right;
+        // data[0] = (int16_t) data[0] * left;
+        // data[1] = (int16_t) data[1] * right;
+        data += 2;
+    }
+}
+
+void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        data[0] *= left;
+        data[1] *= right;
+        // data[0] = (int16_t) data[0] * left;
+        // data[1] = (int16_t) data[1] * right;
         data += 2;
     }
 }

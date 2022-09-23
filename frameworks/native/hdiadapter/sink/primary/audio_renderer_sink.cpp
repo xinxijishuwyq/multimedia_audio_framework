@@ -127,6 +127,70 @@ void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
     }
 }
 
+void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
+{
+    if (attr_.channel != 2) {
+        // 目前仅支持双声道
+        // AUDIO_DEBUG_LOG("AudioRendererSink::AdjustStereoToMono: channel is %{public}d", attr_.channel);
+        return;
+    }
+
+    switch (attr_.format) {
+        case AUDIO_FORMAT_PCM_8_BIT: {
+            // 暂未支持
+            break;
+        }
+        case AUDIO_FORMAT_PCM_16_BIT: {
+            AdjustStereoToMonoForPCM16Bit((int16_t*)data, len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_24_BIT: {
+            // 暂未支持
+            break;
+        }
+        case AUDIO_FORMAT_PCM_32_BIT: {
+            AdjustStereoToMonoForPCM32Bit((int32_t*)data, len);
+            break;
+        }
+        default: {
+            // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioMonoState: Unkowned audio format!");
+            break;
+        }
+    }
+}
+
+void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
+{
+    if (attr_.channel != 2) {
+        // 目前只支持双声道
+        // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioBalanceState is true, but channel is %{public}d", attr_.channel);
+        return;
+    }
+
+    switch (attr_.format) {
+        case AUDIO_FORMAT_PCM_8_BIT: {
+            // 暂未支持
+            break;
+        }
+        case AUDIO_FORMAT_PCM_16_BIT: {
+            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_24_BIT: {
+            // 暂未支持
+            break;
+        }
+        case AUDIO_FORMAT_PCM_32_BIT: {
+            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            break;
+        }
+        default: {
+            // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioMonoState: Unkowned audio format!");
+            break;
+        }
+    }
+}
+
 void AudioRendererSink::DeInit()
 {
     started_ = false;
@@ -324,13 +388,13 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
     }
 
     if (audioMonoState) {
-        // AUDIO_INFO_LOG("audioBalance: AudioRendererSink::RenderFrame: audioMonoState is true");
-        AdjustStereoToMono((int16_t*)&data, len);
+        // AUDIO_DEBUG_LOG("audioBalance: AudioRendererSink::RenderFrame: audioMonoState is true");
+        AdjustStereoToMono(&data, len);
     }
 
     if (audioBalanceState) {
-        // AUDIO_INFO_LOG("audioBalance: AudioRendererSink::RenderFrame: audioBalanceState is true");
-        AdjustAudioBalance((int16_t*)&data, len, leftBalanceCoef, rightBalanceCoef);
+        // AUDIO_DEBUG_LOG("audioBalance: AudioRendererSink::RenderFrame: audioBalanceState is true");
+        AdjustAudioBalance(&data, len);
     }
 
 #ifdef DUMPFILE

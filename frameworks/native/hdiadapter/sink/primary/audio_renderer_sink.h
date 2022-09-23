@@ -85,6 +85,8 @@ private:
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();
+    void AdjustStereoToMono(char *data, uint64_t len);
+    void AdjustAudioBalance(char *data, uint64_t len);
 #ifdef DUMPFILE
     FILE *pfd;
 #endif // DUMPFILE
