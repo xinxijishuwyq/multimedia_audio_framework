@@ -42,6 +42,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "ipc:ipc_core",
+    "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]
 }
