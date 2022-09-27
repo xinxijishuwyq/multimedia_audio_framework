@@ -16,6 +16,7 @@
 #include "audio_renderer_napi.h"
 #include "ability.h"
 #include "audio_renderer_callback_napi.h"
+#include "renderer_data_request_callback_napi.h"
 #include "renderer_period_position_callback_napi.h"
 #include "renderer_position_callback_napi.h"
 
@@ -57,6 +58,7 @@ namespace {
 
     const std::string MARK_REACH_CALLBACK_NAME = "markReach";
     const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
+    const std::string DATA_REQUEST_CALLBACK_NAME = "dataRequest";
 
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
@@ -437,12 +439,13 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererOptions.rendererInfo.rendererFlags = sRendererOptions_->rendererInfo.rendererFlags;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
+    std::string cacheDir = "";
     if (abilityContext != nullptr) {
-        std::string cacheDir = abilityContext->GetCacheDir();
-        rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
+        cacheDir = abilityContext->GetCacheDir();
     } else {
-        rendererNapi->audioRenderer_ = AudioRenderer::Create(rendererOptions);
+        cacheDir = "/data/storage/el2/base/haps/entry/files";
     }
+    rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
 
     CHECK_AND_RETURN_RET_LOG(rendererNapi->audioRenderer_ != nullptr, result, "Renderer Create failed");
 
@@ -1758,6 +1761,26 @@ napi_value AudioRendererNapi::RegisterRendererCallback(napi_env env, napi_value*
     return result;
 }
 
+napi_value AudioRendererNapi::RegisterDataRequestCallback(napi_env env, napi_value* argv,
+    const std::string& cbName, AudioRendererNapi *rendererNapi)
+{
+    if (rendererNapi->dataRequestCBNapi_ == nullptr) {
+        rendererNapi->dataRequestCBNapi_ = std::make_shared<RendererDataRequestCallbackNapi>(env, rendererNapi);
+        rendererNapi->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
+        NAPI_ASSERT(env, rendererNapi->dataRequestCBNapi_ != nullptr, "AudioRendererNapi: No memory.");
+        int32_t ret = rendererNapi->audioRenderer_->SetRendererWriteCallback(rendererNapi->dataRequestCBNapi_);
+        NAPI_ASSERT(env, ret == SUCCESS, "AudioRendererNapi:SetRendererWriteCallback failed.");
+        std::shared_ptr<RendererDataRequestCallbackNapi> cb =
+            std::static_pointer_cast<RendererDataRequestCallbackNapi>(rendererNapi->dataRequestCBNapi_);
+        cb->SaveCallbackReference(cbName, argv[PARAM1]);
+    } else {
+        AUDIO_DEBUG_LOG("AudioRendererNapi:dataRequest already subscribed.");
+    }
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    return result;
+}
+
 napi_value AudioRendererNapi::RegisterCallback(napi_env env, napi_value jsThis,
                                                napi_value* argv, const std::string& cbName)
 {
@@ -1775,6 +1798,8 @@ napi_value AudioRendererNapi::RegisterCallback(napi_env env, napi_value jsThis,
         result = RegisterPositionCallback(env, argv, cbName, rendererNapi);
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
         result = RegisterPeriodPositionCallback(env, argv, cbName, rendererNapi);
+    } else if (!cbName.compare(DATA_REQUEST_CALLBACK_NAME)) {
+        result = RegisterDataRequestCallback(env, argv, cbName, rendererNapi);
     } else {
         bool unknownCallback = true;
         NAPI_ASSERT(env, !unknownCallback, "No such on callback supported");

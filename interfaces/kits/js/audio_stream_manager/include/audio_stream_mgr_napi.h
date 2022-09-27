@@ -39,6 +39,7 @@ private:
     static napi_value GetCurrentAudioCapturerInfos(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value IsAudioRendererLowLatencySupported(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
                                 napi_value* args, const std::string& cbName);
     static void RegisterCapturerStateChangeCallback(napi_env env, napi_value* args,
@@ -48,7 +49,8 @@ private:
     static void  UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
-
+    static bool ParseAudioStreamInfo(napi_env env, napi_value root, AudioStreamInfo &audioStreamInfo);
+    static void IsLowLatencySupportedCallback(napi_env env, napi_status status, void *data);
     napi_env env_;
     napi_ref wrapper_;
     AudioStreamManager *audioStreamMngr_;

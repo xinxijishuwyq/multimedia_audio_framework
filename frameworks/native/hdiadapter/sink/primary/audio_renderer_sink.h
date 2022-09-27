@@ -20,6 +20,7 @@
 #include "audio_info.h"
 #include "audio_manager.h"
 #include "audio_sink_callback.h"
+#include "running_lock.h"
 
 #include <cstdio>
 #include <list>
@@ -39,17 +40,18 @@ typedef struct {
 
 class AudioRendererSink {
 public:
-    int32_t Init(AudioSinkAttr &atrr);
+    int32_t Init(AudioSinkAttr &attr);
     void DeInit(void);
+    int32_t Flush(void);
+    int32_t Pause(void);
+    int32_t Reset(void);
+    int32_t Resume(void);
     int32_t Start(void);
     int32_t Stop(void);
-    int32_t Flush(void);
-    int32_t Reset(void);
-    int32_t Pause(void);
-    int32_t Resume(void);
-    int32_t RenderFrame(char &frame, uint64_t len, uint64_t &writeLen);
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     int32_t SetVolume(float left, float right);
     int32_t GetVolume(float &left, float &right);
+    int32_t SetVoiceVolume(float volume);
     int32_t GetLatency(uint32_t *latency);
     int32_t GetTransactionId(uint64_t *transactionId);
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
@@ -81,6 +83,8 @@ private:
     // float audioBalanceValue = 0.0f;
     float leftBalanceCoef = 1.0f;
     float rightBalanceCoef = 1.0f;
+
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
     int32_t CreateRender(struct AudioPort &renderPort);
     int32_t InitAudioManager();

@@ -16,9 +16,7 @@ import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
 
 ohos_shared_library("audio_ringtone_client") {
   install_enable = true
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/systemsound/audio_ringtone_manager.cpp" ]
-
-  public_configs = [ ":ringtone_external_library_config" ]
+  sources = [ "audio_ringtone_manager.cpp" ]
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
@@ -26,10 +24,10 @@ ohos_shared_library("audio_ringtone_client") {
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/media_library/interfaces/inner_api/media_library_helper/include",
+    "//foundation/multimedia/media_library/frameworks/utils/include",
   ]
 
   deps = [
-    "${ability_runtime_path}/frameworks/native/ability/native:abilitykit_native",
     "${ability_runtime_path}/frameworks/native/ability/native:data_ability_helper",
     "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
     "//foundation/graphic/graphic_2d/frameworks/surface:surface",
@@ -40,6 +38,7 @@ ohos_shared_library("audio_ringtone_client") {
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:ability_manager",
+    "ability_runtime:abilitykit_native",
     "bundle_framework:appexecfwk_base",
     "hiviewdfx_hilog_native:libhilog",
     "relational_store:native_dataability",
@@ -52,9 +51,5 @@ ohos_shared_library("audio_ringtone_client") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
-}
-
-config("ringtone_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include" ]
+  part_name = "multimedia_player_framework"
 }

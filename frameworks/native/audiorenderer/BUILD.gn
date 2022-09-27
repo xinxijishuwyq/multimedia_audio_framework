@@ -24,7 +24,7 @@ config("audio_renderer_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/test",
+    "//foundation/multimedia/audio_framework/services/audio_service/test/example",
     "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
@@ -42,8 +42,8 @@ ohos_shared_library("audio_renderer") {
   configs = [ ":audio_renderer_config" ]
 
   sources = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/src/audio_renderer_proxy_obj.cpp",
+    "src/audio_renderer.cpp",
+    "src/audio_renderer_proxy_obj.cpp",
   ]
 
   deps = [
@@ -55,6 +55,7 @@ ohos_shared_library("audio_renderer") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
   ]
 
@@ -62,10 +63,25 @@ ohos_shared_library("audio_renderer") {
   subsystem_name = "multimedia"
 }
 
+config("audio_external_library_config") {
+  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include" ]
+}
+
+group("audio_renderer_test_packages") {
+  deps = [
+    ":audio_interrupt_test",
+    ":audio_latency_accuracy_test",
+    ":audio_render_mode_callback_test",
+    ":audio_renderer_test",
+    ":audio_voip_test",
+    ":interrupt_multi_renderer_test",
+  ]
+}
+
 ohos_executable("audio_renderer_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_renderer_test.cpp" ]
+  sources = [ "test/example/audio_renderer_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -80,7 +96,7 @@ ohos_executable("audio_renderer_test") {
 ohos_executable("audio_latency_accuracy_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_renderer_test.cpp" ]
+  sources = [ "test/example/audio_renderer_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
   cflags = [ "-DLATENCY_ACCURACY_TEST" ]
@@ -96,7 +112,7 @@ ohos_executable("audio_latency_accuracy_test") {
 ohos_executable("audio_render_mode_callback_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_render_mode_callback_test.cpp" ]
+  sources = [ "test/example/audio_render_mode_callback_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -111,9 +127,7 @@ ohos_executable("audio_render_mode_callback_test") {
 ohos_executable("audio_voip_test") {
   install_enable = false
 
-  sources = [
-    "//foundation/multimedia/audio_framework/services/test/audio_voip_test.cpp",
-  ]
+  sources = [ "test/example/audio_voip_test.cpp" ]
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
@@ -138,7 +152,7 @@ ohos_executable("audio_voip_test") {
 
   deps = [
     ":audio_renderer",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -150,7 +164,7 @@ ohos_executable("audio_voip_test") {
 ohos_executable("audio_interrupt_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/audio_interrupt_test.cpp" ]
+  sources = [ "test/example/audio_interrupt_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -168,7 +182,7 @@ ohos_executable("audio_interrupt_test") {
 ohos_executable("interrupt_multi_renderer_test") {
   install_enable = false
 
-  sources = [ "//foundation/multimedia/audio_framework/services/test/interrupt_multi_renderer_test.cpp" ]
+  sources = [ "test/example/interrupt_multi_renderer_test.cpp" ]
 
   configs = [ ":audio_renderer_config" ]
 
@@ -178,8 +192,4 @@ ohos_executable("interrupt_multi_renderer_test") {
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
-}
-
-config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include" ]
 }

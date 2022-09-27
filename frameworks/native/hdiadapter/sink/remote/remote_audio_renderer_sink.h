@@ -42,7 +42,7 @@ typedef struct {
 
 class RemoteAudioRendererSink {
 public:
-    int32_t Init(RemoteAudioSinkAttr &atrr);
+    int32_t Init(RemoteAudioSinkAttr &attr);
     void DeInit(void);
     int32_t Start(void);
     int32_t Stop(void);
@@ -50,7 +50,7 @@ public:
     int32_t Reset(void);
     int32_t Pause(void);
     int32_t Resume(void);
-    int32_t RenderFrame(char &frame, uint64_t len, uint64_t &writeLen);
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     int32_t SetVolume(float left, float right);
     int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
@@ -67,7 +67,7 @@ public:
     AudioSinkCallback* GetParamCallback();
 private:
     static std::map<std::string, RemoteAudioRendererSink *> allsinks;
-    RemoteAudioRendererSink(std::string deviceNetworkId);
+    explicit RemoteAudioRendererSink(std::string deviceNetworkId);
     ~RemoteAudioRendererSink();
     RemoteAudioSinkAttr attr_;
     std::string deviceNetworkId_;

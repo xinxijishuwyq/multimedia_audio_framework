@@ -46,7 +46,7 @@ enum DeviceFlag {
     /**
      * Device flag none.
      */
-    DEVICE_FLAG_NONE = 0,
+    NONE_DEVICES_FLAG = 0,
     /**
      * Indicates all output audio devices.
      */
@@ -794,6 +794,11 @@ struct DStatusInfo {
     std::string macAddress;
     AudioStreamInfo streamInfo = {};
     ConnectType connectType = CONNECT_TYPE_LOCAL;
+};
+
+struct AudioRendererDataInfo {
+    uint8_t *buffer;
+    size_t flag;
 };
 } // namespace AudioStandard
 } // namespace OHOS

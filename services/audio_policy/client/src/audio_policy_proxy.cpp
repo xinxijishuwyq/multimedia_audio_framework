@@ -69,6 +69,14 @@ void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data,
     }
 }
 
+void AudioPolicyProxy::WriteAudioStreamInfoParams(MessageParcel &data, const AudioStreamInfo &audioStreamInfo)
+{
+    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.samplingRate));
+    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.channels));
+    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.format));
+    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.encoding));
+}
+
 int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
 {
     MessageParcel data;
@@ -1260,6 +1268,26 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyProxy::GetVolumeGroupInfos()
     }
 
     return infos;
+}
+
+bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported WriteInterfaceToken failed");
+        return IPC_PROXY_ERR;
+    }
+    WriteAudioStreamInfoParams(data, audioStreamInfo);
+    int32_t error = Remote()->SendRequest(IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported, error: %d", error);
+        return ERR_TRANSACTION_FAILED;
+    }
+
+    return reply.ReadBool();
 }
 } // namespace AudioStandard
 } // namespace OHOS

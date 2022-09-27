@@ -582,9 +582,9 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         AUDIO_ERR_LOG("SelectOutputDevice: invalid uid.");
         return ERR_INVALID_PARAM;
     }
-    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<type:%{public}d>",
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s>",
         getpid(), audioRendererFilter->uid, static_cast<int32_t>(audioRendererFilter->streamType),
-        static_cast<int32_t>(audioDeviceDescriptors[0]->deviceType_));
+        (audioDeviceDescriptors[0]->networkId_.c_str()));
 
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
@@ -837,7 +837,8 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
-    int32_t result = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
+    int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
+
     AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
 }
@@ -850,7 +851,7 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
-    int32_t result = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
+    int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
 }

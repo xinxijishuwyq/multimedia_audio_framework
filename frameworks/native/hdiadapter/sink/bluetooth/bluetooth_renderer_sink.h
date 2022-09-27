@@ -18,6 +18,8 @@
 
 #include "audio_info.h"
 #include "audio_proxy_manager.h"
+#include "running_lock.h"
+
 #include <cstdio>
 #include <list>
 
@@ -68,6 +70,8 @@ private:
     bool audioBalanceState = false;
     float leftBalanceCoef = 1.0f;
     float rightBalanceCoef = 1.0f;
+
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
     int32_t InitAudioManager();

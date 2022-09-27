@@ -35,7 +35,8 @@
               "native_dataability",
               "native_rdb",
               "samgr_proxy",
-              "system_ability_fwk"
+              "system_ability_fwk",
+              "eventhandler"
             ],
             "third_party": [
               "libsnd",
@@ -47,7 +48,7 @@
             "base_group": [
             ],
             "fwk_group": [
-              "//foundation/multimedia/audio_framework/interfaces/kits/js:audio",
+              "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
               "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio:pulseaudio_packages"
             ],
@@ -76,7 +77,7 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
               "header": {
                 "header_files": [
                   "audio_capturer.h",
@@ -90,7 +91,7 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
               "header": {
                 "header_files": [
                   "audio_renderer.h",
@@ -101,7 +102,7 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/interfaces/kits/js:audio",
+              "name": "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
               "header": {
                 "header_files": [
                   "audio_manager_napi.h",
@@ -118,7 +119,7 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone:audio_ringtone_client",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/systemsound:audio_ringtone_client",
               "header": {
                 "header_files": [
                   "iringtone_player.h",
@@ -132,18 +133,11 @@
             "//foundation/multimedia/audio_framework/test:audio_unit_test",
             "//foundation/multimedia/audio_framework/test:audio_module_test",
             "//foundation/multimedia/audio_framework/test:audio_fuzz_test",
-            "//foundation/multimedia/audio_framework/services/audio_service:audio_client_test_packages",
-            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test",
-            "//foundation/multimedia/audio_framework/services/audio_service:audio_multichannel_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_renderer_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_latency_accuracy_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_render_mode_callback_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_voip_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:audio_interrupt_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer:interrupt_multi_renderer_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer:audio_capturer_test_packages",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/opensles:audio_opensles_test",
-            "//foundation/multimedia/audio_framework/interfaces/inner_api/native/opensles:audio_opensles_capture_test",
+            "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
+            "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
+            "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
+            "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",
+            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test_packages",
             "//foundation/multimedia/audio_framework/test/benchmarktest/audiorenderer:benchmarktest",
             "//foundation/multimedia/audio_framework/test/benchmarktest/audiocapturer:benchmarktest",
             "//foundation/multimedia/audio_framework/test/benchmarktest/audiomanager:benchmarktest"

@@ -18,6 +18,8 @@
 #include <string>
 #include <unistd.h>
 
+#include "power_mgr_client.h"
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -197,6 +199,7 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
 
 void AudioRendererSink::DeInit()
 {
+    AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -286,6 +289,7 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
         case AUDIO_FORMAT_PCM_32_BIT:
             return PCM_32_BIT;
         default:
+            AUDIO_INFO_LOG("PcmFormatToBits: Unkown format type,set it to default");
             return PCM_24_BIT;
     }
 }
@@ -303,11 +307,11 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.pins = PIN_OUT_SPEAKER;
     deviceDesc.desc = nullptr;
+    deviceDesc.pins = PIN_OUT_SPEAKER;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_);
     if (ret != 0 || audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
+        AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
         return ERR_NOT_STARTED;
     }
@@ -323,7 +327,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail");
+        AUDIO_ERR_LOG("Init audio manager Fail.");
         return ERR_NOT_STARTED;
     }
 
@@ -332,24 +336,24 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     struct AudioAdapterDescriptor *descs = nullptr;
     ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail");
+        AUDIO_ERR_LOG("Get adapters Fail.");
         return ERR_NOT_STARTED;
     }
 
     // Get qualified sound card and port
     int32_t index = SwitchAdapterRender(descs, adapterNameCase_, port, audioPort_, size);
     if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Fail");
+        AUDIO_ERR_LOG("Switch Adapter Fail.");
         return ERR_NOT_STARTED;
     }
 
     struct AudioAdapterDescriptor *desc = &descs[index];
     if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail");
+        AUDIO_ERR_LOG("Load Adapter Fail.");
         return ERR_NOT_STARTED;
     }
     if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("Load audio device failed");
+        AUDIO_ERR_LOG("Load audio device failed.");
         return ERR_NOT_STARTED;
     }
 
@@ -412,7 +416,7 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
     }
 #endif // DUMPFILE
 
-    ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+    ret = audioRender_->RenderFrame(audioRender_, static_cast<void*>(&data), len, &writeLen);
     if (ret != 0) {
         AUDIO_ERR_LOG("RenderFrame failed ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
@@ -425,8 +429,21 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
 
 int32_t AudioRendererSink::Start(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("Start.");
 
+    if (mKeepRunningLock == nullptr) {
+        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+    }
+
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock lock");
+        mKeepRunningLock->Lock(0); // 0 for lasting.
+    } else {
+        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+    }
+
+    int32_t ret;
     if (!started_) {
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
@@ -474,6 +491,16 @@ int32_t AudioRendererSink::GetVolume(float &left, float &right)
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
+}
+
+int32_t AudioRendererSink::SetVoiceVolume(float volume)
+{
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink: SetVoiceVolume failed audio adapter null");
+        return ERR_INVALID_HANDLE;
+    }
+    AUDIO_DEBUG_LOG("AudioRendererSink: SetVoiceVolume %{public}f", volume);
+    return audioAdapter_->SetVoiceVolume(audioAdapter_, volume);
 }
 
 int32_t AudioRendererSink::GetLatency(uint32_t *latency)
@@ -569,7 +596,7 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     }
 
     outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: %{public}d", outputPortPin);
+    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: 0x%{public}X", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
@@ -655,6 +682,15 @@ int32_t AudioRendererSink::GetTransactionId(uint64_t *transactionId)
 
 int32_t AudioRendererSink::Stop(void)
 {
+    AUDIO_INFO_LOG("Stop.");
+
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock UnLock");
+        mKeepRunningLock->UnLock();
+    } else {
+        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+    }
+
     int32_t ret;
 
     if (audioRender_ == nullptr) {

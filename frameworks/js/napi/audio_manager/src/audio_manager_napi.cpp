@@ -425,7 +425,6 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
                     propName = "VOICE_ASSISTANT";
                     break;
                 default:
-                    HiLog::Error(LABEL, "CreateAudioVolumeTypeObject: No prob with this value try next value!");
                     continue;
             }
             status = AddNamedProperty(env, result, propName, i);
@@ -2651,10 +2650,10 @@ void AudioManagerNapi::GetStreamMgrAsyncCallbackComplete(napi_env env, napi_stat
 
 void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
 {
-    for (int i = DEVICE_FLAG_NONE; i < DEVICE_FLAG_MAX; i++) {
+    for (int i = NONE_DEVICES_FLAG; i < DEVICE_FLAG_MAX; i++) {
         switch (i) {
-            case DEVICE_FLAG_NONE:
-                propName = "NONE_DEVICE_FLAG";
+            case NONE_DEVICES_FLAG:
+                propName = "NONE_DEVICES_FLAG";
                 break;
             case OUTPUT_DEVICES_FLAG:
                 propName = "OUTPUT_DEVICES_FLAG";
@@ -2675,7 +2674,6 @@ void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, n
                 propName = "ALL_DISTRIBUTED_DEVICES_FLAG";
                 break;
             default:
-                HiLog::Error(LABEL, "CreateDeviceFlagObject: No prob with this value try next value!");
                 continue;
         }
         status = AddNamedProperty(env, result, propName, i);

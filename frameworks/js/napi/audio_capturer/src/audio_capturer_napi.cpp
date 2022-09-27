@@ -192,12 +192,13 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
+    std::string cacheDir = "";
     if (abilityContext != nullptr) {
-        std::string cacheDir = abilityContext->GetCacheDir();
-        capturerNapi->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+        cacheDir = abilityContext->GetCacheDir();
     } else {
-        capturerNapi->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+        cacheDir = "/data/storage/el2/base/haps/entry/files";
     }
+    capturerNapi->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
 
     CHECK_AND_RETURN_RET_LOG(capturerNapi->audioCapturer_ != nullptr, result, "Capturer Create failed");
 

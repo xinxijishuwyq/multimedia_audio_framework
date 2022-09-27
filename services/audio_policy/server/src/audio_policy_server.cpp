@@ -78,6 +78,7 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
+    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
 
     mPolicyService.Init();
     RegisterAudioServerDeathRecipient();
@@ -92,23 +93,27 @@ void AudioPolicyServer::OnStop()
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
     switch (systemAbilityId) {
         case MULTIMODAL_INPUT_SERVICE_ID:
-            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility SubscribeKeyEvents");
+            AUDIO_INFO_LOG("OnAddSystemAbility input service start");
             SubscribeKeyEvents();
             break;
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
-            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility InitKVStore");
+            AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
             InitKVStore();
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
-            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility ConnectServiceAdapter");
+            AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
             ConnectServiceAdapter();
             RegisterParamCallback();
             break;
+        case BLUETOOTH_HOST_SYS_ABILITY_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
+            RegisterBluetoothListener();
+            break;
         default:
-            AUDIO_DEBUG_LOG("AudioPolicyServer::OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
 }
@@ -1536,6 +1541,18 @@ void AudioPolicyServer::RegisterParamCallback()
     AUDIO_INFO_LOG("AudioPolicyServer::RegisterParamCallback");
     remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
     mPolicyService.SetParameterCallback(remoteParameterCallback_);
+}
+
+void AudioPolicyServer::RegisterBluetoothListener()
+{
+    AUDIO_INFO_LOG("AudioPolicyServer::RegisterBluetoothListener");
+    mPolicyService.RegisterBluetoothListener();
+}
+
+bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
+{
+    AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS
