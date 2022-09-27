@@ -75,7 +75,7 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
-    mAccessibilityConfigListener->SubscribeObserver();
+    accessibilityConfigListener_->SubscribeObserver();
 
     return true;
 }
@@ -125,7 +125,7 @@ void AudioPolicyService::Deinit(void)
     });
 
     IOHandles_.clear();
-    mDeviceStatusListener->UnRegisterDeviceStatusListener();
+    accessibilityConfigListener_->UnsubscribeObserver();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
 
     if (isBtListenerRegistered) {
@@ -1327,20 +1327,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
     AUDIO_INFO_LOG("audioBalance: OnMonoAudioConfigChanged in");
-
-    // std::string activePort = GetPortName(mCurrentActiveDevice_);
-    // if (activePort == "none") {
-    //     AUDIO_INFO_LOG("audioBalance: Adjust Mono of active sink %{public}s, do not adjust mono and return", activePort.c_str());
-    // } else { // activePort is not none
-    //     AUDIO_INFO_LOG("audioBalance: Adjust Mono of active sink %{public}s. Mono: %{public}d", activePort.c_str(), audioMono);
-    //     // 单声道开启时，混合多声道，平均输出。设想调用remap
-    //     // 单声道关闭时，还原立体声
-    //     mAudioPolicyManager.AdjustAudioMono(activePort, audioMono);
-    // }
-    // manager不宜处理播放数据，放弃此思路
-
-    // 尝试调用hdi_sink.c，直接在该文件里自行编写声道转换函数
-    // 最终在audio_renderer_sink.cpp中添加数据处理函数
     if (g_sProxy == nullptr) {
         AUDIO_ERR_LOG("Service proxy unavailable: g_sProxy null");
         return;
@@ -1352,17 +1338,6 @@ void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
     AUDIO_INFO_LOG("audioBalance: OnAduioBalanceChanged in");
-
-    // std::string activePort = GetPortName(mCurrentActiveDevice_);
-    // if (activePort == "none") {
-    //     AUDIO_INFO_LOG("audioBalance: Adjust balance of active sink %{public}s, do not adjust balance and return", activePort.c_str());
-    // } else {
-    //     AUDIO_INFO_LOG("audioBalance: Adjust balance of active sink %{public}s, balance: %{public}f", activePort.c_str(), audioBalance);
-    //     mAudioPolicyManager.AdjustAudioBalance(activePort, audioBalance);
-    // }
-    // 此路原本可行，但由于Mono接口是在audio_renderer_sink.cpp中处理数据，会抹掉Manager中调整音量的效果
-
-    // 改为和Mono接口同一方案
     if (g_sProxy == nullptr) {
         AUDIO_ERR_LOG("Service proxy unavailable: g_sProxy null");
         return;

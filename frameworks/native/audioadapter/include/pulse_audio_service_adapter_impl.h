@@ -38,10 +38,6 @@ public:
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
     int32_t SetMute(AudioStreamType streamType, bool mute) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
-    int32_t AdjustAudioMono(const std::string &audioPortName,
-        std::optional<bool> audioMonoOptional) override;
-    int32_t AdjustAudioBalance(const std::string &audioPortName,
-        std::optional<float> audioBalanceOptional) override;
     bool IsMute(AudioStreamType streamType) override;
     bool IsStreamActive(AudioStreamType streamType) override;
     std::vector<SinkInput> GetAllSinkInputs() override;
@@ -62,8 +58,6 @@ public:
     static void PaContextStateCb(pa_context *c, void *userdata);
     static void PaModuleLoadCb(pa_context *c, uint32_t idx, void *userdata);
     static void PaGetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
-    static void PaAdjustSinkAudioMonoCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
-    static void PaAdjustSinkAudioBalanceCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
     static void PaSubscribeCb(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
     static void PaGetSinkInputInfoMuteCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetSinkInputInfoMuteStatusCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
@@ -91,8 +85,6 @@ private:
     static constexpr uint32_t PA_CONNECT_RETRY_SLEEP_IN_MICRO_SECONDS = 500000;
     pa_context *mContext = NULL;
     pa_threaded_mainloop *mMainLoop = NULL;
-    bool mAudioMono = false;
-    float mAudioBalance = 0.0f;
     static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
     std::mutex mMutex;
 };

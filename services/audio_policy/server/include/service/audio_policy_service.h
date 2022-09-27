@@ -184,7 +184,7 @@ private:
           configParser_(ParserFactory::GetInstance().CreateParser(*this)),
           streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
     {
-        mAccessibilityConfigListener = std::make_shared<AccessibilityConfigListener>(*this);
+        accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
@@ -272,10 +272,10 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
-    std::shared_ptr<AccessibilityConfigListener> mAccessibilityConfigListener;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
     AudioStreamCollector& streamCollector_;
+    std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;

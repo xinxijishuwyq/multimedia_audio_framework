@@ -70,10 +70,6 @@ public:
     virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
-
-    virtual int32_t AdjustAudioMono(const std::string &portName, bool audioMono) = 0;
-
-    virtual int32_t AdjustAudioBalance(const std::string &portName, float audioBalance) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

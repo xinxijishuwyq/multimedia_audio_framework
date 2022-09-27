@@ -32,8 +32,8 @@ void AccessibilityConfigListener::OnConfigChanged(const CONFIG_ID configId, cons
     if (configId == CONFIG_AUDIO_MONO) {
         audioAccessibilityConfigObserver_.OnMonoAudioConfigChanged(value.audioMono);
     } else if (configId == CONFIG_AUDIO_BALANCE) {
-        // 应在此处加入audioBalance值的判断？
-        // 应在[-1, +1]范围内
+        // 是否应在此处加入audioBalance值的判断？
+        // value.audioBalance应在[-1, +1]范围内
         audioAccessibilityConfigObserver_.OnAudioBalanceChanged(value.audioBalance);
     }
 }
