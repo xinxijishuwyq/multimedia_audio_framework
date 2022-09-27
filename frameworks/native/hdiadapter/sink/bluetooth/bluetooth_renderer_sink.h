@@ -18,7 +18,6 @@
 
 #include "audio_info.h"
 #include "audio_proxy_manager.h"
-
 #include <cstdio>
 #include <list>
 
@@ -49,6 +48,9 @@ public:
     int32_t GetTransactionId(uint64_t *transactionId);
     static BluetoothRendererSink *GetInstance(void);
     bool rendererInited_;
+    void SetAudioMonoState(bool audioMono);
+    void SetAudioBalanceValue(float audioBalance);
+
 private:
     BluetoothRendererSink();
     ~BluetoothRendererSink();
@@ -62,9 +64,15 @@ private:
     struct HDI::Audio_Bluetooth::AudioRender *audioRender_;
     struct HDI::Audio_Bluetooth::AudioPort audioPort = {};
     void *handle_;
+    bool audioMonoState = false;
+    bool audioBalanceState = false;
+    float leftBalanceCoef = 1.0f;
+    float rightBalanceCoef = 1.0f;
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
     int32_t InitAudioManager();
+    void AdjustStereoToMono(char *data, uint64_t len);
+    void AdjustAudioBalance(char *data, uint64_t len);
 #ifdef BT_DUMPFILE
     FILE *pfd;
 #endif // DUMPFILE

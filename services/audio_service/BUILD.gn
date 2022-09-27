@@ -173,6 +173,8 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
+    "//drivers/peripheral/bluetooth/audio/interfaces/include",
+    "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
     "include/audio_service/common",
   ]
 
@@ -197,7 +199,9 @@ ohos_shared_library("audio_service") {
   }
 
   deps = [
+    "$hdf_uhdf_path/hdi:libhdi",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",

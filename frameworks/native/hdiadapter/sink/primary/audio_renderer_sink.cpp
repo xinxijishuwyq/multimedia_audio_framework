@@ -130,14 +130,15 @@ void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
 void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != 2) {
-        // 目前仅支持双声道
+        // 目前仅支持双声道，暂未支持 channels >= 3
         // AUDIO_DEBUG_LOG("AudioRendererSink::AdjustStereoToMono: channel is %{public}d", attr_.channel);
         return;
     }
 
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
-            // 暂未支持
+            // 暂未测试是否可行
+            AdjustStereoToMonoForPCM8Bit((int8_t*)data, len);
             break;
         }
         case AUDIO_FORMAT_PCM_16_BIT: {
@@ -145,7 +146,8 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
-            // 暂未支持
+            // 暂未测试是否可行
+            AdjustStereoToMonoForPCM24Bit((int8_t*)data, len);
             break;
         }
         case AUDIO_FORMAT_PCM_32_BIT: {
@@ -162,14 +164,15 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != 2) {
-        // 目前只支持双声道
+        // 目前只支持双声道，单声道无法调整平衡，暂未支持 channels >= 3
         // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioBalanceState is true, but channel is %{public}d", attr_.channel);
         return;
     }
 
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
-            // 暂未支持
+            // 暂未测试是否可行
+            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
             break;
         }
         case AUDIO_FORMAT_PCM_16_BIT: {
@@ -177,7 +180,8 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
-            // 暂未支持
+            // 暂未测试是否可行
+            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
             break;
         }
         case AUDIO_FORMAT_PCM_32_BIT: {

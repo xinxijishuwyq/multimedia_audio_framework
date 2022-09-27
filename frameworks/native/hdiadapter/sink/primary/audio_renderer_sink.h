@@ -61,7 +61,6 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
     void SetAudioMonoState(bool audioMono);
     void SetAudioBalanceValue(float audioBalance);
-
 private:
     AudioRendererSink();
     ~AudioRendererSink();

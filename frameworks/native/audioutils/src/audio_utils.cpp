@@ -29,6 +29,15 @@ int64_t GetNowTimeMs()
     return nowMs.count();
 }
 
+void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        data[0] = data[0] / 2 + data[1] / 2;
+        data[1] = data[0];
+        data += 2;
+    }
+}
+
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
@@ -38,11 +47,32 @@ void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
     }
 }
 
+void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len){
+    for (unsigned i = len >> 1; i > 0; i--) {
+        data[0] = data[0] / 2 + data[3] / 2;
+        data[3] = data[0];
+        data[1] = data[1] / 2 + data[4] / 2;
+        data[4] = data[1];
+        data[2] = data[2] / 2 + data[5] / 2;
+        data[5] = data[2];
+        data += 6;
+    }
+}
+
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
         data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
+        data += 2;
+    }
+}
+
+void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        data[0] *= left;
+        data[1] *= right;
         data += 2;
     }
 }
@@ -58,13 +88,24 @@ void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, floa
     }
 }
 
+void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        data[0] *= left;
+        data[1] *= left;
+        data[2] *= left;
+        data[3] *= right;
+        data[4] *= right;
+        data[5] *= right;
+        data += 6;
+    }
+}
+
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
         data[0] *= left;
         data[1] *= right;
-        // data[0] = (int16_t) data[0] * left;
-        // data[1] = (int16_t) data[1] * right;
         data += 2;
     }
 }

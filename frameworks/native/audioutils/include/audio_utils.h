@@ -21,9 +21,13 @@
 namespace OHOS {
 namespace AudioStandard {
 int64_t GetNowTimeMs();
+void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
+void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len);
+void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float right);
 void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right);
+void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right);
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right);
 
 template <typename T>

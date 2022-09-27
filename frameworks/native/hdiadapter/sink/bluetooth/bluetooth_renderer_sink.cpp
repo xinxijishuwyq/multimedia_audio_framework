@@ -22,6 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 using namespace std;
 using namespace OHOS::HDI::Audio_Bluetooth;
@@ -525,6 +526,102 @@ int32_t BluetoothRendererSink::Flush(void)
 
     return ERR_OPERATION_FAILED;
 }
+
+void BluetoothRendererSink::SetAudioMonoState(bool audioMono)
+{
+    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioMonoState: %{public}d", audioMono);
+    audioMonoState = audioMono;
+}
+
+void BluetoothRendererSink::SetAudioBalanceValue(float audioBalance)
+{
+    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioBalanceValue: %{public}f", audioBalance);
+    // reset the balance coefficient
+    leftBalanceCoef = 1.0f;
+    rightBalanceCoef = 1.0f;
+
+    if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        // audioBalance is equal to 0.0f
+        audioBalanceState = false;
+    } else {
+        // audioBalance is not equal to 0.0f
+        audioBalanceState = true;
+        // calculate the balance coefficient
+        if (audioBalance > 0.0f) {
+            leftBalanceCoef -= audioBalance;
+        } else if (audioBalance < 0.0f) {
+            rightBalanceCoef += audioBalance;
+        }
+    }
+}
+
+void BluetoothRendererSink::AdjustStereoToMono(char *data, uint64_t len)
+{
+    if (attr_.channel != 2) {
+        // 目前仅支持双声道，暂未支持 channels >= 3
+        // AUDIO_DEBUG_LOG("AudioRendererSink::AdjustStereoToMono: channel is %{public}d", attr_.channel);
+        return;
+    }
+
+    switch (attr_.format) {
+        case AUDIO_FORMAT_PCM_8_BIT: {
+            // 暂未测试是否可行
+            AdjustStereoToMonoForPCM8Bit((int8_t*)data, len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_16_BIT: {
+            AdjustStereoToMonoForPCM16Bit((int16_t*)data, len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_24_BIT: {
+            // 暂未测试是否可行
+            AdjustStereoToMonoForPCM24Bit((int8_t*)data, len);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_32_BIT: {
+            AdjustStereoToMonoForPCM32Bit((int32_t*)data, len);
+            break;
+        }
+        default: {
+            // AUDIO_DEBUG_LOG("BluetoothRendererSink::RenderFrame: audioMonoState: Unkowned audio format!");
+            break;
+        }
+    }
+}
+
+void BluetoothRendererSink::AdjustAudioBalance(char *data, uint64_t len)
+{
+    if (attr_.channel != 2) {
+        // 目前只支持双声道，单声道无法调整平衡，暂未支持 channels >= 3
+        // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioBalanceState is true, but channel is %{public}d", attr_.channel);
+        return;
+    }
+
+    switch (attr_.format) {
+        case AUDIO_FORMAT_PCM_8_BIT: {
+            // 暂未测试是否可行
+            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_16_BIT: {
+            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_24_BIT: {
+            // 暂未测试是否可行
+            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            break;
+        }
+        case AUDIO_FORMAT_PCM_32_BIT: {
+            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            break;
+        }
+        default: {
+            // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioMonoState: Unkowned audio format!");
+            break;
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -617,6 +714,13 @@ int32_t BluetoothRendererRenderFrame(void *wapper, char &data, uint64_t len, uin
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
+
+    // if (g_bluetoothRendrSinkInstance->GetAudioMonoState()) {
+    //     bluetoothRendererSinkWapper->SetAudioMonoState(true);
+    // }
+    // if (g_bluetoothRendrSinkInstance->GetAudioBalanceState()) {
+    //     bluetoothRendererSinkWapper->SetAudioBalanceValue(value);
+    // }
 
     ret = bluetoothRendererSinkWapper->RenderFrame(data, len, writeLen);
     return ret;

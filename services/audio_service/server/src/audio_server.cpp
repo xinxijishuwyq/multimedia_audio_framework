@@ -337,25 +337,39 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
     AUDIO_INFO_LOG("audioBalance: AudioServer::SetAudioMonoState: %{public}d", audioMono);
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
     if (!audioRendererSinkInstance->rendererInited_) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         audioRendererSinkInstance->SetAudioMonoState(audioMono);
     }
+
+    // BluetoothRendererSink *bluetoothRendererSinkInstance = BluetoothRendererSink::GetInstance();
+    // if (!bluetoothRendererSinkInstance->rendererInited_) {
+    //     AUDIO_WARNING_LOG("Renderer is not initialized.");
+    // } else {
+    //     bluetoothRendererSinkInstance->SetAudioMonoState(audioMono);
+    // }
 }
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
 {
     AUDIO_INFO_LOG("audioBalance: AudioServer::SetAudioBalanceValue: %{public}f", audioBalance);
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
     if (!audioRendererSinkInstance->rendererInited_) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
     }
+
+//     BluetoothRendererSink *bluetoothRendererSinkInstance = BluetoothRendererSink::GetInstance();
+//     if (!bluetoothRendererSinkInstance->rendererInited_) {
+//         AUDIO_WARNING_LOG("Renderer is not initialized.");
+//     } else {
+//         bluetoothRendererSinkInstance->SetAudioBalanceValue(audioBalance);
+//     }
 }
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
