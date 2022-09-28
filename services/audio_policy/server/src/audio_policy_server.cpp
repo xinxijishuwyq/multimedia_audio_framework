@@ -676,8 +676,15 @@ bool AudioPolicyServer::ProcessPendingInterrupt(std::list<AudioInterrupt>::itera
     AudioStreamType pendingStreamType = iterPending->streamType;
     AudioStreamType incomingStreamType = incoming.streamType;
 
-    auto focusTable = mPolicyService.GetAudioFocusTable();
-    AudioFocusEntry focusEntry = focusTable[pendingStreamType][incomingStreamType];
+    auto focusMap = mPolicyService.GetAudioFocusMap();
+    std::pair<AudioStreamType, AudioStreamType> streamTypePair = std::make_pair(pendingStreamType, incomingStreamType);
+
+    if (focusMap.find(streamTypePair) == focusMap.end()) {
+        AUDIO_WARNING_LOG("AudioPolicyServer: Streame type is invalid");
+        return iterPendingErased;
+    }
+
+    AudioFocusEntry focusEntry = focusMap[streamTypePair];
     float duckVol = 0.2f;
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, duckVol};
 
@@ -709,8 +716,15 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
     AudioStreamType activeStreamType = iterActive->streamType;
     AudioStreamType incomingStreamType = incoming.streamType;
 
-    auto focusTable = mPolicyService.GetAudioFocusTable();
-    AudioFocusEntry focusEntry = focusTable[activeStreamType][incomingStreamType];
+    auto focusMap = mPolicyService.GetAudioFocusMap();
+    std::pair<AudioStreamType, AudioStreamType> streamTypePair = std::make_pair(activeStreamType, incomingStreamType);
+
+    if (focusMap.find(streamTypePair) == focusMap.end()) {
+        AUDIO_WARNING_LOG("AudioPolicyServer: Streame type is invalid");
+        return iterActiveErased;
+    }
+
+    AudioFocusEntry focusEntry = focusMap[streamTypePair];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, 0.2f};
 
     uint32_t activeSessionID = iterActive->sessionID;
@@ -781,12 +795,20 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
     }
 
-    auto focusTable = mPolicyService.GetAudioFocusTable();
+    auto focusMap = mPolicyService.GetAudioFocusMap();
     // Function: Process Focus entry
     for (auto iterActive = curActiveOwnersList_.begin(); iterActive != curActiveOwnersList_.end();) {
         AudioStreamType activeStreamType = iterActive->streamType;
         AudioStreamType incomingStreamType = incomingInterrupt.streamType;
-        AudioFocusEntry focusEntry = focusTable[activeStreamType][incomingStreamType];
+        std::pair<AudioStreamType, AudioStreamType> streamTypePair =
+            std::make_pair(activeStreamType, incomingStreamType);
+
+        if (focusMap.find(streamTypePair) == focusMap.end()) {
+            AUDIO_WARNING_LOG("AudioPolicyServer: Streame type is invalid");
+            return ERR_INVALID_PARAM;
+        }
+
+        AudioFocusEntry focusEntry = focusMap[streamTypePair];
         if (focusEntry.isReject) {
             AUDIO_INFO_LOG("AudioPolicyServer: focusEntry.isReject : ActivateAudioInterrupt request rejected");
             return ERR_FOCUS_DENIED;
