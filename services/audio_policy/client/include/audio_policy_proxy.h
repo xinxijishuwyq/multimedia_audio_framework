@@ -68,11 +68,17 @@ public:
 
     int32_t SetAudioScene(AudioScene scene) override;
 
+    int32_t SetMicrophoneMute(bool isMute) override;
+
+    bool IsMicrophoneMute(void) override;
+
     AudioScene GetAudioScene() override;
 
     int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
+
+    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject>& object) override;

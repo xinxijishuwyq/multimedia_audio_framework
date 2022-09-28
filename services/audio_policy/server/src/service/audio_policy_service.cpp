@@ -728,6 +728,20 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice()
     return priorityDevice;
 }
 
+int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
+{
+    AUDIO_DEBUG_LOG("SetMicrophoneMute state[%{public}d]", isMute);
+
+    return g_sProxy->SetMicrophoneMute(isMute);
+}
+
+bool AudioPolicyService::IsMicrophoneMute() const
+{
+    AUDIO_DEBUG_LOG("Enter IsMicrophoneMute");
+
+    return g_sProxy->IsMicrophoneMute();
+}
+
 void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);

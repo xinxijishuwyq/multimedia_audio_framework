@@ -62,11 +62,17 @@ public:
 
     virtual int32_t SetAudioScene(AudioScene scene) = 0;
 
+    virtual int32_t SetMicrophoneMute(bool isMute) = 0;
+
+    virtual bool IsMicrophoneMute() = 0;
+
     virtual AudioScene GetAudioScene() = 0;
 
     virtual int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
+
+    virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject> &object) = 0;

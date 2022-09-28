@@ -24,6 +24,8 @@
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
 #include "audio_ringermode_update_listener_stub.h"
+#include "audio_routing_manager.h"
+#include "audio_routing_manager_listener_stub.h"
 #include "audio_system_manager.h"
 #include "audio_volume_key_event_callback_stub.h"
 #include "audio_system_manager.h"
@@ -88,6 +90,10 @@ public:
 
     int32_t SetAudioScene(AudioScene scene);
 
+    int32_t SetMicrophoneMute(bool isMute);
+
+    bool IsMicrophoneMute(void);
+
     AudioScene GetAudioScene();
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
@@ -99,6 +105,9 @@ public:
                                   const std::shared_ptr<AudioRingerModeCallback> &callback);
 
     int32_t UnsetRingerModeCallback(const int32_t clientId);
+
+    int32_t SetMicStateChangeCallback(const int32_t clientId,
+                                  const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
                                     const std::shared_ptr<AudioInterruptCallback> &callback);

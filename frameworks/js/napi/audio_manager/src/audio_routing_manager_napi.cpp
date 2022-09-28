@@ -16,6 +16,7 @@
 #include "audio_routing_manager_napi.h"
 
 #include "audio_common_napi.h"
+#include "audio_routing_manager_callback_napi.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "hilog/log.h"
@@ -147,7 +148,9 @@ napi_value AudioRoutingManagerNapi::Construct(napi_env env, napi_callback_info i
     CHECK_AND_RETURN_RET_LOG(audioRoutingManagerNapi != nullptr, result, "No memory");
 
     audioRoutingManagerNapi->audioMngr_ = AudioSystemManager::GetInstance();
-
+    
+    audioRoutingManagerNapi->audioRoutingMngr_ = AudioRoutingManager::GetInstance();
+    
     audioRoutingManagerNapi->env_ = env;
 
     status = napi_wrap(env, thisVar, static_cast<void*>(audioRoutingManagerNapi.get()),
@@ -820,12 +823,38 @@ void AudioRoutingManagerNapi::RegisterDeviceChangeCallback(napi_env env, napi_va
     AUDIO_INFO_LOG("AudioRoutingManager::On SetDeviceChangeCallback is successful");
 }
 
+void AudioRoutingManagerNapi::RegisterMicStateChangeCallback(napi_env env, napi_value* args,
+    const std::string& cbName, AudioRoutingManagerNapi* routingMgrNapi)
+{
+    if (!routingMgrNapi->micStateChangeCallbackNapi_) {
+        routingMgrNapi->micStateChangeCallbackNapi_= std::make_shared<AudioRoutingManagerCallbackNapi>(env);
+        if (!routingMgrNapi->micStateChangeCallbackNapi_) {
+            AUDIO_ERR_LOG("AudioStreamMgrNapi: Memory Allocation Failed !!");
+            return;
+        }
+
+        int32_t ret = routingMgrNapi->audioRoutingMngr_->SetMicStateChangeCallback(
+            routingMgrNapi->micStateChangeCallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG("AudioRoutingMgrNapi: Registering Microphone Change Callback Failed");
+            return;
+        }
+    }
+
+    std::shared_ptr<AudioRoutingManagerCallbackNapi> cb =
+        std::static_pointer_cast<AudioRoutingManagerCallbackNapi>(routingMgrNapi->micStateChangeCallbackNapi_);
+    cb->SaveCallbackReference(cbName, args[PARAM1]);
+
+    AUDIO_INFO_LOG("AudioRoutingManager::On SetMicStateChangeCallback is successful");
+}
+
 void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value* args, const std::string& cbName, int32_t flag)
 {
     AudioRoutingManagerNapi* routingMgrNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void**>(&routingMgrNapi));
-    if ((status != napi_ok) || (routingMgrNapi == nullptr) || (routingMgrNapi->audioMngr_ == nullptr)) {
+    if ((status != napi_ok) || (routingMgrNapi == nullptr) || (routingMgrNapi->audioMngr_ == nullptr)
+        || (routingMgrNapi->audioRoutingMngr_ == nullptr)) {
         AUDIO_ERR_LOG("AudioStreamMgrNapi::Failed to retrieve stream mgr napi instance.");
         return;
     }
@@ -834,6 +863,12 @@ void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterDeviceChangeCallback(env, args, cbName, flag, routingMgrNapi);
     } else {
         AUDIO_ERR_LOG("AudioStreamMgrNapi::No such callback supported");
+    }
+
+    if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
+        RegisterMicStateChangeCallback(env, args, cbName, routingMgrNapi);
+    } else {
+        AUDIO_ERR_LOG("AudioStreamMgrNapi::No such micStateChangeCallback supported");
     }
 }
 

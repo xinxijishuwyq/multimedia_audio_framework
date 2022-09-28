@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager_listener_proxy.h"
+#include "audio_routing_manager_listener_proxy.h"
 #include "audio_ringermode_update_listener_proxy.h"
 #include "audio_volume_key_event_callback_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
@@ -450,6 +451,44 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     return ret;
 }
 
+int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+    
+    bool isMicrophoneMute = IsMicrophoneMute();
+    int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
+    if (ret == SUCCESS && isMicrophoneMute != isMute) {
+        for (auto it = micStateChangeListenerCbsMap_.begin(); it != micStateChangeListenerCbsMap_.end(); ++it) {
+            std::shared_ptr<AudioManagerMicStateChangeCallback> MicStateChangeListenerCb = it->second;
+            if (MicStateChangeListenerCb == nullptr) {
+                AUDIO_ERR_LOG("micStateChangeListenerCbsMap_: nullptr for client : %{public}d", it->first);
+                continue;
+            }
+
+            AUDIO_DEBUG_LOG("micStateChangeListenerCbsMap_ :client =  %{public}d", it->first);
+            MicStateChangeEvent micStateChangeEvent;
+            micStateChangeEvent.mute = isMute;
+            MicStateChangeListenerCb->OnMicStateUpdated(micStateChangeEvent);
+        }
+    }
+    return ret;
+}
+
+bool AudioPolicyServer::IsMicrophoneMute()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return mPolicyService.IsMicrophoneMute();
+}
+
 AudioRingerMode AudioPolicyServer::GetRingerMode()
 {
     return mPolicyService.GetRingerMode();
@@ -494,6 +533,23 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
         AUDIO_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
         return ERR_INVALID_OPERATION;
     }
+}
+
+int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(micStateChangeMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+
+    sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: listener obj cast failed");
+
+    std::shared_ptr<AudioManagerMicStateChangeCallback> callback =
+        std::make_shared<AudioRoutingManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    micStateChangeListenerCbsMap_[clientId] = callback;
+
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,

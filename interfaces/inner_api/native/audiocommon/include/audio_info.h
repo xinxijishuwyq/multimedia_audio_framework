@@ -508,6 +508,10 @@ struct AudioRendererOptions {
     AudioRendererInfo rendererInfo;
 };
 
+struct MicStateChangeEvent {
+    bool mute;
+};
+
 enum DeviceChangeType {
     CONNECT = 0,
     DISCONNECT = 1,
