@@ -173,6 +173,12 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
     return audioPolicyManager_.SetStreamMute(streamType, mute);
 }
 
+int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
+{
+    return audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);
+}
+
+
 bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
 {
     return audioPolicyManager_.GetStreamMute(streamType);
