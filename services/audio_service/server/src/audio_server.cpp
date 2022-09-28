@@ -24,6 +24,7 @@
 #include "audio_log.h"
 #include "system_ability_definition.h"
 #include "audio_manager_listener_proxy.h"
+#include "bluetooth_renderer_sink_intf.h"
 
 #include "audio_server.h"
 
@@ -357,6 +358,8 @@ void AudioServer::SetAudioMonoState(bool audioMono)
         audioRendererSinkInstance->SetAudioMonoState(audioMono);
     }
 
+    BluetoothRendererSinkSetAudioMonoState(audioMono);
+    // AUDIO_INFO_LOG("audioBalance: AudioServer::Bluetooth: SetAudioMonoState: %{public}d", audioMono);
     // BluetoothRendererSink *bluetoothRendererSinkInstance = BluetoothRendererSink::GetInstance();
     // if (!bluetoothRendererSinkInstance->rendererInited_) {
     //     AUDIO_WARNING_LOG("Renderer is not initialized.");
@@ -376,6 +379,8 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
     }
 
+    BluetoothRendererSinkSetAudioBalanceValue(audioBalance);
+    // AUDIO_INFO_LOG("audioBalance: AudioServer::Bluetooth: SetAudioBalanceValue: %{public}f", audioBalance);
 //     BluetoothRendererSink *bluetoothRendererSinkInstance = BluetoothRendererSink::GetInstance();
 //     if (!bluetoothRendererSinkInstance->rendererInited_) {
 //         AUDIO_WARNING_LOG("Renderer is not initialized.");

@@ -48,7 +48,8 @@ const uint32_t PCM_32_BIT = 32;
 }
 
 #ifdef BT_DUMPFILE
-const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_bt.pcm";
+// const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_bt.pcm";
+const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/audioout_bt.pcm";
 #endif // BT_DUMPFILE
 
 BluetoothRendererSink::BluetoothRendererSink()
@@ -292,6 +293,17 @@ int32_t BluetoothRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Bluetooth Render Handle is nullptr!");
         return ERR_INVALID_HANDLE;
+    }
+
+    if (audioMonoState) {
+        // AUDIO_DEBUG_LOG("audioBalance: AudioRendererSink::RenderFrame: audioMonoState is true");
+        // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSink::RenderFrame: audioMonoState is true");
+        AdjustStereoToMono(&data, len);
+    }
+
+    if (audioBalanceState) {
+        // AUDIO_DEBUG_LOG("audioBalance: AudioRendererSink::RenderFrame: audioBalanceState is true");
+        AdjustAudioBalance(&data, len);
     }
 
 #ifdef BT_DUMPFILE
@@ -551,25 +563,38 @@ int32_t BluetoothRendererSink::Flush(void)
     return ERR_OPERATION_FAILED;
 }
 
+bool BluetoothRendererSink::GetAudioMonoState()
+{
+    return audioMonoState;
+}
+
+float BluetoothRendererSink::GetAudioBalanceValue()
+{
+    return audioBalanceValue;
+}
+
 void BluetoothRendererSink::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioMonoState: %{public}d", audioMono);
+    // AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioMonoState: %{public}d", audioMono);
     audioMonoState = audioMono;
 }
 
 void BluetoothRendererSink::SetAudioBalanceValue(float audioBalance)
 {
-    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioBalanceValue: %{public}f", audioBalance);
+    // AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioBalanceValue: %{public}f", audioBalance);
+
     // reset the balance coefficient
+    audioBalanceValue = 0.0f;
     leftBalanceCoef = 1.0f;
     rightBalanceCoef = 1.0f;
 
-    if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+    if (std::abs(audioBalance) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
         audioBalanceState = false;
     } else {
         // audioBalance is not equal to 0.0f
         audioBalanceState = true;
+        audioBalanceValue = audioBalance;
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
             leftBalanceCoef -= audioBalance;
@@ -586,7 +611,7 @@ void BluetoothRendererSink::AdjustStereoToMono(char *data, uint64_t len)
         // AUDIO_DEBUG_LOG("AudioRendererSink::AdjustStereoToMono: channel is %{public}d", attr_.channel);
         return;
     }
-
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSink::channels is %{public}d, format is %{public}d", attr_.channel, attr_.format);
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
             // 暂未测试是否可行
@@ -739,12 +764,18 @@ int32_t BluetoothRendererRenderFrame(void *wapper, char &data, uint64_t len, uin
         return ERR_NOT_STARTED;
     }
 
-    // if (g_bluetoothRendrSinkInstance->GetAudioMonoState()) {
-    //     bluetoothRendererSinkWapper->SetAudioMonoState(true);
-    // }
-    // if (g_bluetoothRendrSinkInstance->GetAudioBalanceState()) {
-    //     bluetoothRendererSinkWapper->SetAudioBalanceValue(value);
-    // }
+    if (bluetoothRendererSinkWapper->GetAudioMonoState() != g_bluetoothRendrSinkInstance->GetAudioMonoState()) {
+        // AUDIO_INFO_LOG("audioBalance: BluetoothRendererRenderFrame in:g_bt_MonoState is %{public}s", g_bluetoothRendrSinkInstance->GetAudioMonoState()? "true": "false");
+        // AUDIO_INFO_LOG("audioBalance: BluetoothRendererRenderFrame in:bt_MonoState is %{public}s", bluetoothRendererSinkWapper->GetAudioMonoState()? "true": "false");
+        bluetoothRendererSinkWapper->SetAudioMonoState(g_bluetoothRendrSinkInstance->GetAudioMonoState());
+        // AUDIO_INFO_LOG("audioBalance: BluetoothRendererRenderFrame in:g_bt_MonoState is %{public}s", g_bluetoothRendrSinkInstance->GetAudioMonoState()? "true": "false");
+        // AUDIO_INFO_LOG("audioBalance: BluetoothRendererRenderFrame in:bt_MonoState is %{public}s", bluetoothRendererSinkWapper->GetAudioMonoState()? "true": "false");
+    }
+    if (std::abs(bluetoothRendererSinkWapper->GetAudioBalanceValue() - g_bluetoothRendrSinkInstance->GetAudioBalanceValue())
+        > std::numeric_limits<float>::epsilon()) {
+        // 若二者值不相等，则重新赋值
+        bluetoothRendererSinkWapper->SetAudioBalanceValue(g_bluetoothRendrSinkInstance->GetAudioBalanceValue());
+    }
 
     ret = bluetoothRendererSinkWapper->RenderFrame(data, len, writeLen);
     return ret;
@@ -796,6 +827,22 @@ int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId)
     }
 
     return g_bluetoothRendrSinkInstance->GetTransactionId(transactionId);
+}
+
+void BluetoothRendererSinkSetAudioMonoState(bool audioMonoState)
+{
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSinkSetMonoState in:audioMonoState is %{public}s", audioMonoState? "true": "false");
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSinkSetMonoState in:g_bt_MonoState is %{public}s", g_bluetoothRendrSinkInstance->GetAudioMonoState()? "true": "false");
+    g_bluetoothRendrSinkInstance->SetAudioMonoState(audioMonoState);
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSinkSetMonoState out:audioMonoState is %{public}s", audioMonoState? "true": "false");
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSinkSetMonoState out:g_bt_MonoState is %{public}s", g_bluetoothRendrSinkInstance->GetAudioMonoState()? "true": "false");
+}
+
+void BluetoothRendererSinkSetAudioBalanceValue(float audioBalance)
+{
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSinkSetBalanceValue in:audioBalanceValue is %{public}f", audioBalance);
+    g_bluetoothRendrSinkInstance->SetAudioBalanceValue(audioBalance);
+    // AUDIO_INFO_LOG("audioBalance: BluetoothRendererSinkSetBalanceValue out:audioBalanceValue is %{public}f", audioBalance);
 }
 #ifdef __cplusplus
 }

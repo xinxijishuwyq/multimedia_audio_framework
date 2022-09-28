@@ -16,6 +16,8 @@
 #ifndef BLUETOOTH_RENDERER_SINK_H
 #define BLUETOOTH_RENDERER_SINK_H
 
+// #define BT_DUMPFILE
+
 #include "audio_info.h"
 #include "audio_proxy_manager.h"
 #include "running_lock.h"
@@ -49,9 +51,11 @@ public:
     int32_t GetLatency(uint32_t *latency);
     int32_t GetTransactionId(uint64_t *transactionId);
     static BluetoothRendererSink *GetInstance(void);
-    bool rendererInited_;
+    bool GetAudioMonoState();
+    float GetAudioBalanceValue();
     void SetAudioMonoState(bool audioMono);
     void SetAudioBalanceValue(float audioBalance);
+    bool rendererInited_;
 
 private:
     BluetoothRendererSink();
@@ -68,6 +72,7 @@ private:
     void *handle_;
     bool audioMonoState = false;
     bool audioBalanceState = false;
+    float audioBalanceValue = 0.0f;
     float leftBalanceCoef = 1.0f;
     float rightBalanceCoef = 1.0f;
 

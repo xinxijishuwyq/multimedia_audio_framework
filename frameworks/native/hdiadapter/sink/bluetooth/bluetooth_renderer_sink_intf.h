@@ -38,6 +38,8 @@ int32_t BluetoothRendererRenderFrame(void *wapper, char *data, uint64_t len, uin
 int32_t BluetoothRendererSinkSetVolume(void *wapper, float left, float right);
 int32_t BluetoothRendererSinkGetLatency(void *wapper, uint32_t *latency);
 int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId);
+void BluetoothRendererSinkSetAudioMonoState(bool audioMonoState);
+void BluetoothRendererSinkSetAudioBalanceValue(float audioBalance);
 #ifdef __cplusplus
 }
 #endif
