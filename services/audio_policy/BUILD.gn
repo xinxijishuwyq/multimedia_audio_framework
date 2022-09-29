@@ -15,6 +15,8 @@ import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 import("//foundation/multimedia/audio_framework/bluetooth_part.gni")
 
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
+
 group("audio_policy_packages") {
   deps = [
     ":audio_dump",
@@ -60,7 +62,7 @@ config("audio_policy_public_config") {
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/include",
+    "$pulseaudio_build_path/include",
     "//utils/system/safwk/native/include",
     "//commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
@@ -96,7 +98,7 @@ ohos_shared_library("audio_dump") {
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
+    "$pulseaudio_build_path/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 

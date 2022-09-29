@@ -13,6 +13,8 @@
 
 import("//build/ohos.gni")
 
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
+
 ohos_shared_library("pulse_audio_service_adapter") {
   install_enable = true
   sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/src/pulse_audio_service_adapter_impl.cpp" ]
@@ -21,8 +23,8 @@ ohos_shared_library("pulse_audio_service_adapter") {
   cflags_cc = cflags
 
   include_dirs = [
+    "$pulseaudio_build_path/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",
@@ -34,7 +36,7 @@ ohos_shared_library("pulse_audio_service_adapter") {
   public_configs = [ ":audio_external_library_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
+    "$pulseaudio_build_path/src/pulse:pulse",
     "//third_party/libxml2:xml2",
   ]
 

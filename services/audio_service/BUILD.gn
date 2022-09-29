@@ -15,8 +15,7 @@ import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path =
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_service_packages") {
   deps = [
@@ -78,8 +77,8 @@ ohos_shared_library("audio_client") {
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//third_party/bounds_checking_function:libsec_static",
   ]
@@ -143,11 +142,11 @@ ohos_shared_library("audio_service") {
   }
 
   deps = [
+    "$pulseaudio_build_path/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 

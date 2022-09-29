@@ -14,8 +14,7 @@
 import("//build/ohos.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path =
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 config("hdi_config") {
   visibility = [ ":*" ]
@@ -51,8 +50,8 @@ config("hdi_config") {
 
 ohos_shared_library("module-hdi-sink") {
   sources = [
-    "$pulseaudio_build_path/src/modules/hdi/hdi_sink.c",
-    "$pulseaudio_build_path/src/modules/hdi/module_hdi_sink.c",
+    "hdi_sink.c",
+    "module_hdi_sink.c",
   ]
 
   configs = [ ":hdi_config" ]
