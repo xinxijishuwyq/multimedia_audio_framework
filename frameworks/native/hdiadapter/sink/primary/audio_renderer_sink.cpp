@@ -46,10 +46,7 @@ const uint32_t PARAM_VALUE_LENTH = 10;
 }
 #ifdef DUMPFILE
 // Note: accessing to this directory requires selinux permission
-// const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
-
-// change file path temporarily
-const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/audioout_test.pcm";
+const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
 #endif // DUMPFILE
 
 AudioRendererSink::AudioRendererSink()
@@ -103,14 +100,12 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
 
 void AudioRendererSink::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioMonoState: %{public}d", audioMono);
     audioMonoState = audioMono;
 }
 
 void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
 {
-    AUDIO_INFO_LOG("audioBalance: AudioRendererSink::SetAudioBalanceValue: %{public}f", audioBalance);
-    // reset the balance coefficient
+    // reset the balance coefficient value firstly
     leftBalanceCoef = 1.0f;
     rightBalanceCoef = 1.0f;
 
@@ -132,14 +127,13 @@ void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
 void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != 2) {
-        // 目前仅支持双声道，暂未支持 channels >= 3
-        // AUDIO_DEBUG_LOG("AudioRendererSink::AdjustStereoToMono: channel is %{public}d", attr_.channel);
+        // only stereo is surpported now (channel numbers is 2)
         return;
     }
 
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
-            // 暂未测试是否可行
+            // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM8Bit((int8_t*)data, len);
             break;
         }
@@ -148,7 +142,7 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
-            // 暂未测试是否可行
+            // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM24Bit((int8_t*)data, len);
             break;
         }
@@ -157,7 +151,8 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
             break;
         }
         default: {
-            // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioMonoState: Unkowned audio format!");
+            // if the audio format is unsupported, the audio data will not be changed
+            AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported audio format");
             break;
         }
     }
@@ -166,14 +161,13 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != 2) {
-        // 目前只支持双声道，单声道无法调整平衡，暂未支持 channels >= 3
-        // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioBalanceState is true, but channel is %{public}d", attr_.channel);
+        // only stereo is surpported now (channel numbers is 2)
         return;
     }
 
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
-            // 暂未测试是否可行
+            // this function needs to be further tested for usability
             AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
             break;
         }
@@ -182,7 +176,7 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
-            // 暂未测试是否可行
+            // this function needs to be further tested for usability
             AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
             break;
         }
@@ -191,7 +185,8 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
             break;
         }
         default: {
-            // AUDIO_DEBUG_LOG("AudioRendererSink::RenderFrame: audioMonoState: Unkowned audio format!");
+            // if the audio format is unsupported, the audio data will not be changed
+            AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported audio format");
             break;
         }
     }
@@ -396,23 +391,17 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
     }
 
     if (audioMonoState) {
-        // AUDIO_DEBUG_LOG("audioBalance: AudioRendererSink::RenderFrame: audioMonoState is true");
         AdjustStereoToMono(&data, len);
     }
 
     if (audioBalanceState) {
-        // AUDIO_DEBUG_LOG("audioBalance: AudioRendererSink::RenderFrame: audioBalanceState is true");
         AdjustAudioBalance(&data, len);
     }
 
 #ifdef DUMPFILE
-    if (pfd != nullptr) {
-        size_t writeResult = fwrite((void*)&data, 1, (size_t)len, pfd);
-        if (writeResult != len) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    } else {
-        AUDIO_INFO_LOG("DUMPFILE: nullptr");
+    size_t writeResult = fwrite((void*)&data, 1, len, pfd);
+    if (writeResult != len) {
+        AUDIO_ERR_LOG("Failed to write the file.");
     }
 #endif // DUMPFILE
 

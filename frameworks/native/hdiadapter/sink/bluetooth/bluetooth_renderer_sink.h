@@ -16,8 +16,6 @@
 #ifndef BLUETOOTH_RENDERER_SINK_H
 #define BLUETOOTH_RENDERER_SINK_H
 
-// #define BT_DUMPFILE
-
 #include "audio_info.h"
 #include "audio_proxy_manager.h"
 #include "running_lock.h"

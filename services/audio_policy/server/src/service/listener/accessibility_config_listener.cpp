@@ -28,19 +28,21 @@ AccessibilityConfigListener::~AccessibilityConfigListener() {}
 
 void AccessibilityConfigListener::OnConfigChanged(const CONFIG_ID configId, const ConfigValue &value)
 {
-    AUDIO_INFO_LOG("audioBalance: OnConfigChanged in");
     if (configId == CONFIG_AUDIO_MONO) {
         audioAccessibilityConfigObserver_.OnMonoAudioConfigChanged(value.audioMono);
     } else if (configId == CONFIG_AUDIO_BALANCE) {
-        // 是否应在此处加入audioBalance值的判断？
-        // value.audioBalance应在[-1, +1]范围内
-        audioAccessibilityConfigObserver_.OnAudioBalanceChanged(value.audioBalance);
+        // value.audioBalance should be in the range [-1.0, 1.0]
+        float balance = value.audioBalance;
+        if (balance < -1.0f || balance > 1.0f) {
+            AUDIO_ERR_LOG("AccessibilityConfigListener: audioBalance value is out of range [-1.0, 1.0]");
+        } else {
+            audioAccessibilityConfigObserver_.OnAudioBalanceChanged(balance);
+        }
     }
 }
 
 void AccessibilityConfigListener::SubscribeObserver()
 {
-    AUDIO_INFO_LOG("audioBalance: SubscribeObserver in");
     auto &accessibilityConfig = OHOS::Singleton<OHOS::AccessibilityConfig::AccessibilityConfig>::GetInstance();
     (void)accessibilityConfig.InitializeContext();
     accessibilityConfig.SubscribeConfigObserver(CONFIG_AUDIO_MONO, shared_from_this());
@@ -49,7 +51,6 @@ void AccessibilityConfigListener::SubscribeObserver()
 
 void AccessibilityConfigListener::UnsubscribeObserver()
 {
-    AUDIO_INFO_LOG("audioBalance: UnsubscribeObserver in");
     auto &accessibilityConfig = OHOS::Singleton<OHOS::AccessibilityConfig::AccessibilityConfig>::GetInstance();
     (void)accessibilityConfig.InitializeContext();
     accessibilityConfig.UnsubscribeConfigObserver(CONFIG_AUDIO_MONO, shared_from_this());

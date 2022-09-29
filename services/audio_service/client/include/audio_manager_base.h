@@ -170,7 +170,7 @@ public:
     /**
      * Set audio mono state for accessibility
      *
-     * @param  audioMono the state of mono for accessibility
+     * @param  audioMono the state of mono audio for accessibility
      * @return none.
      */
     virtual void SetAudioMonoState(bool audioMono) = 0;
@@ -178,7 +178,7 @@ public:
     /**
      * Set audio balance value for accessibility
      *
-     * @param  audioBalance the value of balance for accessibility
+     * @param  audioBalance the value of audio balance for accessibility
      * @return none.
      */
     virtual void SetAudioBalanceValue(float audioBalance) = 0;

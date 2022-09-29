@@ -1326,23 +1326,21 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_INFO_LOG("audioBalance: OnMonoAudioConfigChanged in");
+    AUDIO_INFO_LOG("AudioPolicyService::OnMonoAudioConfigChanged: audioMono = %{public}s", audioMono? "true": "false");
     if (g_sProxy == nullptr) {
         AUDIO_ERR_LOG("Service proxy unavailable: g_sProxy null");
         return;
     }
-    AUDIO_INFO_LOG("audioBalance: Adjust mono by audio_server, audioMono: %{public}d", audioMono);
     g_sProxy->SetAudioMonoState(audioMono);
 }
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_INFO_LOG("audioBalance: OnAduioBalanceChanged in");
+    AUDIO_INFO_LOG("AudioPolicyService::OnAudioBalanceChanged: audioBalance = %{public}f", audioBalance);
     if (g_sProxy == nullptr) {
         AUDIO_ERR_LOG("Service proxy unavailable: g_sProxy null");
         return;
     }
-    AUDIO_INFO_LOG("audioBalance: Adjust balance by audio_server, audioBalance: %{public}f", audioBalance);
     g_sProxy->SetAudioBalanceValue(audioBalance);
 }
 
