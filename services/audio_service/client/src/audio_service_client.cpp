@@ -1892,6 +1892,7 @@ void AudioServiceClient::SetRendererPositionCallback(int64_t markPosition,
     AUDIO_INFO_LOG("mark position: %{public}" PRIu64, markPosition);
     mFrameMarkPosition = markPosition;
     mRenderPositionCb = callback;
+    mMarkReached = false;
 }
 
 void AudioServiceClient::UnsetRendererPositionCallback()
@@ -1933,6 +1934,7 @@ void AudioServiceClient::SetCapturerPositionCallback(int64_t markPosition,
     AUDIO_INFO_LOG("mark position: %{public}" PRIu64, markPosition);
     mFrameMarkPosition = markPosition;
     mCapturePositionCb = callback;
+    mMarkReached = false;
 }
 
 void AudioServiceClient::UnsetCapturerPositionCallback()
