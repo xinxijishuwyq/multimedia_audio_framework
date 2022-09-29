@@ -31,6 +31,8 @@ private:
     void GetRingerModeInternal(MessageParcel &data);
     void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioSceneInternal(MessageParcel &data);
+    void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void IsMicrophoneMuteInternal(MessageParcel &data);
     void GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
@@ -44,6 +46,7 @@ private:
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);

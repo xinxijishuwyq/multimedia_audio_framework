@@ -117,6 +117,45 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteBool(isMute);
+    int32_t error = Remote()->SendRequest(SET_MICROPHONE_MUTE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set microphoneMute failed, error: %d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::IsMicrophoneMute()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(IS_MICROPHONE_MUTE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set microphoneMute failed, error: %d", error);
+        return error;
+    }
+
+    return reply.ReadBool();
+}
+
 AudioRingerMode AudioPolicyProxy::GetRingerMode()
 {
     MessageParcel data;
@@ -545,6 +584,32 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
     int error = Remote()->SendRequest(UNSET_RINGERMODE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: unset ringermode callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientId);
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_MIC_STATE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback failed, error: %{public}d", error);
         return error;
     }
 
