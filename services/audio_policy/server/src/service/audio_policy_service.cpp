@@ -65,7 +65,7 @@ bool AudioPolicyService::Init(void)
     CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
     std::string AUDIO_FOCUS_CONFIG_FILE = "vendor/etc/audio/audio_interrupt_policy_config.xml";
 
-    if (audioFocusParser->LoadConfig(focusTable_[0][0])) {
+    if (audioFocusParser->LoadConfig(focusMap_)) {
         AUDIO_ERR_LOG("Audio Interrupt Load Configuration failed");
         return false;
     }
