@@ -158,7 +158,7 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
 
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-	if (state_ == STOPPED) {
+    if (state_ == STOPPED) {
         return false;
     }
     uint64_t paTimeStamp = 0;

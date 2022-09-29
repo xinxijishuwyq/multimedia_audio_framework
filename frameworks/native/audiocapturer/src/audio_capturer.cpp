@@ -69,10 +69,10 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
-    bool ischange = false;
+    bool isChange = false;
     if (AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
         params.audioChannel = AudioChannel::STEREO;
-        ischange = true;
+        isChange = true;
     } else {
         params.audioChannel = capturerOptions.streamInfo.channels;
     }
@@ -93,7 +93,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (capturer->SetParams(params) != SUCCESS) {
         capturer = nullptr;
     }
-    if (ischange) {
+    if (isChange) {
         capturer->isChannelChange_ = true;
     }
     return capturer;
