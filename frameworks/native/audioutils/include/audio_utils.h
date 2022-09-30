@@ -21,6 +21,7 @@
 namespace OHOS {
 namespace AudioStandard {
 int64_t GetNowTimeMs();
+int64_t GetNowTimeUs();
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len);
