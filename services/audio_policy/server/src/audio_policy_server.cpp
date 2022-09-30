@@ -451,6 +451,16 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     return ret;
 }
 
+std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
+{
+    return mPolicyService.GetToneConfig(ltonetype);
+}
+
+std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
+{
+    return mPolicyService.GetSupportedTones();
+}
+
 int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);

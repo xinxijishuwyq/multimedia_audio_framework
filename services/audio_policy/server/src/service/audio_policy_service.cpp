@@ -60,6 +60,14 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
+    std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
+    CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
+    std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
+
+    if (audioToneParser->LoadConfig(toneDescriptorMap)) {
+        AUDIO_ERR_LOG("Audio Tone Load Configuration failed");
+        return false;
+    }
 
     std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
     CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
@@ -1165,6 +1173,24 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     UpdateTrackerDeviceChange(deviceChangeDescriptor);
+}
+
+std::vector<int32_t> AudioPolicyService::GetSupportedTones()
+{
+    std::vector<int> supportedToneList = {};
+    for (auto i = toneDescriptorMap.begin(); i != toneDescriptorMap.end(); i++) {
+        supportedToneList.push_back(i->first);
+    }
+    return supportedToneList;
+}
+
+std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
+{
+    if (toneDescriptorMap.find(ltonetype) == toneDescriptorMap.end()) {
+        return nullptr;
+    }
+    AUDIO_DEBUG_LOG("AudioPolicyService GetToneConfig %{public}d", ltonetype);
+    return toneDescriptorMap[ltonetype];
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
