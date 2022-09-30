@@ -86,6 +86,10 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
+    std::vector<int32_t> GetSupportedTones();
+
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+
     AudioRingerMode GetRingerMode();
 
     int32_t SetAudioScene(AudioScene scene);

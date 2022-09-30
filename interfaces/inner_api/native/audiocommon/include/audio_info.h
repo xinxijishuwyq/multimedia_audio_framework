@@ -42,6 +42,29 @@ const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCES
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 
+// Maximun number of sine waves in a tone segment
+constexpr uint32_t TONEINFO_MAX_WAVES = 3;
+
+// Maximun number of segments in a tone descriptor
+constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
+constexpr uint32_t TONEINFO_INF = 0xFFFFFFFF;
+class ToneSegment {
+public:
+    uint32_t duration;
+    uint16_t waveFreq[TONEINFO_MAX_WAVES+1];
+    uint16_t loopCnt;
+    uint16_t loopIndx;
+};
+
+class ToneInfo {
+public:
+    ToneSegment segments[TONEINFO_MAX_SEGMENTS+1];
+    uint32_t segmentCnt;
+    uint32_t repeatCnt;
+    uint32_t repeatSegment;
+    ToneInfo() {}
+};
+
 enum DeviceFlag {
     /**
      * Device flag none.

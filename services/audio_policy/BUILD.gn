@@ -23,6 +23,7 @@ group("audio_policy_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
+    ":audio_tone_dtmf_config",
   ]
 }
 
@@ -130,6 +131,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_volume_key_event_callback_proxy.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/audio_tone_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
@@ -182,6 +184,14 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
   install_images = [ chipset_base_dir ]
+  part_name = "multimedia_audio_framework"
+}
+
+ohos_prebuilt_etc("audio_tone_dtmf_config") {
+  source = "server/config/audio_tone_dtmf_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
   part_name = "multimedia_audio_framework"
 }
 

@@ -164,6 +164,18 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFl
     return g_sProxy->GetDevices(deviceFlag);
 }
 
+std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
+{
+    return g_sProxy->GetSupportedTones();
+}
+
+std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager GetToneConfig,");
+
+    return g_sProxy->GetToneConfig(ltonetype);
+}
+
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
     return g_sProxy->SetDeviceActive(deviceType, active);
