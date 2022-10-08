@@ -73,7 +73,11 @@ public:
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle);
 
+    int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
+
     int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active);
+
+    void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 

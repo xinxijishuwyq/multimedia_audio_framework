@@ -300,11 +300,11 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
     // switch between local devices
-    if (LOCAL_NETWORK_ID == networkId && currentActiveDevice_ != deviceType) {
+    if (!isCurrentRemoteRenderer && LOCAL_NETWORK_ID == networkId && currentActiveDevice_ != deviceType) {
         if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
             deviceType = FetchHighPriorityDevice();
         }
-        return SetDeviceActive(deviceType, true);
+        return SelectNewDevice(DeviceRole::OUTPUT_DEVICE, deviceType);
     }
 
     int32_t targetUid = audioRendererFilter->uid;
@@ -407,6 +407,7 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
         routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
 
+    isCurrentRemoteRenderer = false;
     return SUCCESS;
 }
 
@@ -475,6 +476,7 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
         AUDIO_WARNING_LOG("Not defult type[%{public}d] on device:[%{public}s]", deviceType, networkId.c_str());
     }
+    isCurrentRemoteRenderer = true;
     return SUCCESS;
 }
 
@@ -501,7 +503,18 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
             static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_));
         return ERR_INVALID_OPERATION;
     }
+    std::string networkId = audioDeviceDescriptors[0]->networkId_;
+    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
+    // switch between local devices
+    if (LOCAL_NETWORK_ID == networkId && activeInputDevice_ != deviceType) {
+        return SelectNewDevice(DeviceRole::INPUT_DEVICE, deviceType);
+    }
+
+    if (!remoteCapturerSwitch) {
+        AUDIO_DEBUG_LOG("remote capturer capbility is not open now");
+        return SUCCESS;
+    }
     int32_t targetUid = audioCapturerFilter->uid;
     // move all source-output.
     bool moveAll = false;
@@ -521,7 +534,6 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     }
 
     int32_t ret = SUCCESS;
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
     if (LOCAL_NETWORK_ID == networkId) {
         ret = MoveToLocalInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
     } else {
@@ -821,6 +833,38 @@ static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
     }
 }
 
+int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType)
+{
+    int32_t result = SUCCESS;
+    DeviceType activeDevice = deviceRole == DeviceRole::OUTPUT_DEVICE ? currentActiveDevice_ : activeInputDevice_;
+
+    if (activeDevice == deviceType) {
+        return result;
+    }
+
+    std::string activePort = GetPortName(activeDevice);
+    AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), activeDevice);
+    audioPolicyManager_.SuspendAudioDevice(activePort, true);
+
+    std::string portName = GetPortName(deviceType);
+    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "Invalid port name %{public}s", portName.c_str());
+
+    result = audioPolicyManager_.SelectDevice(deviceRole, deviceType, portName);
+    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
+    audioPolicyManager_.SuspendAudioDevice(portName, false);
+
+    if (isUpdateRouteSupported_) {
+        DeviceFlag deviceFlag = deviceRole == DeviceRole::OUTPUT_DEVICE ? OUTPUT_DEVICES_FLAG : INPUT_DEVICES_FLAG;
+        g_sProxy->UpdateActiveDeviceRoute(deviceType, deviceFlag);
+    }
+
+    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
+        currentActiveDevice_ = deviceType;
+    } else {
+        activeInputDevice_ = deviceType;
+    }
+    return SUCCESS;
+}
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
     int32_t result = SUCCESS;
