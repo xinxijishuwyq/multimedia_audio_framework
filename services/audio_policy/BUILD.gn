@@ -53,11 +53,9 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
     "//foundation/systemabilitymgr/safwk/services/safwk/include",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//base/hiviewdfx/hilog/interfaces/native/inner_api/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",
@@ -68,12 +66,7 @@ config("audio_policy_public_config") {
     "//commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
     "//third_party/cJSON",
-    "//drivers/peripheral/bluetooth/audio/interfaces/include",
-    "//foundation/communication/bluetooth/interfaces/frameworks/inner/common",
     "//foundation/communication/bluetooth/interfaces/inner_api/include",
-    "//foundation/communication/bluetooth/interfaces/inner_api/include/c_header",
-    "//foundation/communication/bluetooth/services/bluetooth/ipc/include",
-    "//foundation/communication/bluetooth/services/bluetooth/common/",
   ]
 
   cflags = [
@@ -141,11 +134,6 @@ ohos_shared_library("audio_policy_service") {
 
   deps = [
     "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_dump",
@@ -171,9 +159,8 @@ ohos_shared_library("audio_policy_service") {
 
   if (bluetooth_part_enable == true) {
     deps += [ "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient:audio_bluetooth_client" ]
-
-    external_deps += [ "bluetooth:btframework" ]
   }
+
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
 }
@@ -198,18 +185,12 @@ ohos_prebuilt_etc("audio_tone_dtmf_config") {
 config("audio_policy_client_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/systemabilitymgr/safwk/services/safwk/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//utils/system/safwk/native/include",
-    "//commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
   ]
 
@@ -245,7 +226,6 @@ ohos_shared_library("audio_policy_client") {
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"

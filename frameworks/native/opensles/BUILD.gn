@@ -83,16 +83,7 @@ ohos_shared_library("opensles") {
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
-  external_deps = [
-    "ability_base:want",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   output_name = "OpenSLES"
   output_extension = "so"

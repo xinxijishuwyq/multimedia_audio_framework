@@ -26,22 +26,16 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "$pulseaudio_build_path/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
-    "//commonlibrary/c_utils/base/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
 
-  deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "//third_party/libxml2:xml2",
-  ]
+  deps = [ "$pulseaudio_build_path/src/pulse:pulse" ]
 
   external_deps = [
-    "c_utils:utils",
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
   ]

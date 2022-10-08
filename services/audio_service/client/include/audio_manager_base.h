@@ -193,8 +193,8 @@ public:
 
 class AudioManagerStub : public IRemoteStub<IStandardAudioService> {
 public:
-    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+    virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+        MessageOption &option) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS
