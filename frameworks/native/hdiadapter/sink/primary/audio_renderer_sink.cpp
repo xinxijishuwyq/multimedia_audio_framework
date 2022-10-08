@@ -43,6 +43,7 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const uint32_t PARAM_VALUE_LENTH = 10;
+const uint32_t STEREO_CHANNEL_COUNT = 2;
 }
 #ifdef DUMPFILE
 // Note: accessing to this directory requires selinux permission
@@ -126,8 +127,8 @@ void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
 
 void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 {
-    if (attr_.channel != 2) {
-        // only stereo is surpported now (channel numbers is 2)
+    if (attr_.channel != STEREO_CHANNEL_COUNT) {
+        // only stereo is surpported now (stereo channel count is 2)
         AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported channel");
         return;
     }
@@ -135,20 +136,20 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM8Bit((int8_t*)data, len);
+            AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
         case AUDIO_FORMAT_PCM_16_BIT: {
-            AdjustStereoToMonoForPCM16Bit((int16_t*)data, len);
+            AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustStereoToMonoForPCM24Bit((int8_t*)data, len);
+            AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
         case AUDIO_FORMAT_PCM_32_BIT: {
-            AdjustStereoToMonoForPCM32Bit((int32_t*)data, len);
+            AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
             break;
         }
         default: {
@@ -161,8 +162,8 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 
 void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
 {
-    if (attr_.channel != 2) {
-        // only stereo is surpported now (channel numbers is 2)
+    if (attr_.channel != STEREO_CHANNEL_COUNT) {
+        // only stereo is surpported now (stereo channel count is 2)
         AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported channel");
         return;
     }
@@ -170,20 +171,20 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM8Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_16_BIT: {
-            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM16Bit(reinterpret_cast<int16_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_32_BIT: {
-            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
+            AdjustAudioBalanceForPCM32Bit(reinterpret_cast<int32_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         default: {
