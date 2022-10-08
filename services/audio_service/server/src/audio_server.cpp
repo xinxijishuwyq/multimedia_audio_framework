@@ -377,7 +377,6 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
 
     // Set balance for bluetooth_renderer_sink
     BluetoothRendererSinkSetAudioBalanceValue(audioBalance);
-
 }
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)

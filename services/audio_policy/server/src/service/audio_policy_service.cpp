@@ -75,8 +75,6 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 
-    accessibilityConfigListener_->SubscribeObserver();
-
     return true;
 }
 
@@ -2060,6 +2058,11 @@ void AudioPolicyService::UnregisterBluetoothListener()
     Bluetooth::AudioHfpManager::UnregisterBluetoothScoListener();
     isBtListenerRegistered = false;
 #endif
+}
+
+void AudioPolicyService::SubscribeAccessibilityConfigObserver()
+{
+    accessibilityConfigListener_->SubscribeObserver();
 }
 } // namespace AudioStandard
 } // namespace OHOS

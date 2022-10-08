@@ -100,26 +100,26 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
 
 void AudioRendererSink::SetAudioMonoState(bool audioMono)
 {
-    audioMonoState = audioMono;
+    audioMonoState_ = audioMono;
 }
 
 void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
 {
     // reset the balance coefficient value firstly
-    leftBalanceCoef = 1.0f;
-    rightBalanceCoef = 1.0f;
+    leftBalanceCoef_ = 1.0f;
+    rightBalanceCoef_ = 1.0f;
 
     if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
-        audioBalanceState = false;
+        audioBalanceState_ = false;
     } else {
         // audioBalance is not equal to 0.0f
-        audioBalanceState = true;
+        audioBalanceState_ = true;
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
-            leftBalanceCoef -= audioBalance;
+            leftBalanceCoef_ -= audioBalance;
         } else if (audioBalance < 0.0f) {
-            rightBalanceCoef += audioBalance;
+            rightBalanceCoef_ += audioBalance;
         }
     }
 }
@@ -128,6 +128,7 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != 2) {
         // only stereo is surpported now (channel numbers is 2)
+        AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported channel");
         return;
     }
 
@@ -162,26 +163,27 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != 2) {
         // only stereo is surpported now (channel numbers is 2)
+        AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported channel");
         return;
     }
 
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_16_BIT: {
-            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_32_BIT: {
-            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         default: {
@@ -390,11 +392,11 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
         return ERR_INVALID_HANDLE;
     }
 
-    if (audioMonoState) {
+    if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
 
-    if (audioBalanceState) {
+    if (audioBalanceState_) {
         AdjustAudioBalance(&data, len);
     }
 

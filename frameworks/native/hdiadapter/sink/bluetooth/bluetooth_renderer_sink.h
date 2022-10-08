@@ -68,11 +68,11 @@ private:
     struct HDI::Audio_Bluetooth::AudioRender *audioRender_;
     struct HDI::Audio_Bluetooth::AudioPort audioPort = {};
     void *handle_;
-    bool audioMonoState = false;
-    bool audioBalanceState = false;
-    float audioBalanceValue = 0.0f;
-    float leftBalanceCoef = 1.0f;
-    float rightBalanceCoef = 1.0f;
+    bool audioMonoState_ = false;
+    bool audioBalanceState_ = false;
+    float audioBalanceValue_ = 0.0f;
+    float leftBalanceCoef_ = 1.0f;
+    float rightBalanceCoef_ = 1.0f;
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 

@@ -57,11 +57,11 @@ public:
     int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
     int32_t SetOutputRoute(DeviceType deviceType);
     static AudioRendererSink *GetInstance(void);
-    bool rendererInited_;
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
     void SetAudioMonoState(bool audioMono);
     void SetAudioBalanceValue(float audioBalance);
+    bool rendererInited_;
 
 private:
     AudioRendererSink();
@@ -78,10 +78,10 @@ private:
     struct AudioAdapter *audioAdapter_;
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_ = {};
-    bool audioMonoState = false;
-    bool audioBalanceState = false;
-    float leftBalanceCoef = 1.0f;
-    float rightBalanceCoef = 1.0f;
+    bool audioMonoState_ = false;
+    bool audioBalanceState_ = false;
+    float leftBalanceCoef_ = 1.0f;
+    float rightBalanceCoef_ = 1.0f;
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 

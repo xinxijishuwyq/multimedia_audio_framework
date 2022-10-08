@@ -294,11 +294,11 @@ int32_t BluetoothRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         return ERR_INVALID_HANDLE;
     }
 
-    if (audioMonoState) {
+    if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
 
-    if (audioBalanceState) {
+    if (audioBalanceState_) {
         AdjustAudioBalance(&data, len);
     }
 
@@ -561,38 +561,38 @@ int32_t BluetoothRendererSink::Flush(void)
 
 bool BluetoothRendererSink::GetAudioMonoState()
 {
-    return audioMonoState;
+    return audioMonoState_;
 }
 
 float BluetoothRendererSink::GetAudioBalanceValue()
 {
-    return audioBalanceValue;
+    return audioBalanceValue_;
 }
 
 void BluetoothRendererSink::SetAudioMonoState(bool audioMono)
 {
-    audioMonoState = audioMono;
+    audioMonoState_ = audioMono;
 }
 
 void BluetoothRendererSink::SetAudioBalanceValue(float audioBalance)
 {
     // reset the balance coefficient value firstly
-    audioBalanceValue = 0.0f;
-    leftBalanceCoef = 1.0f;
-    rightBalanceCoef = 1.0f;
+    audioBalanceValue_ = 0.0f;
+    leftBalanceCoef_ = 1.0f;
+    rightBalanceCoef_ = 1.0f;
 
     if (std::abs(audioBalance) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
-        audioBalanceState = false;
+        audioBalanceState_ = false;
     } else {
         // audioBalance is not equal to 0.0f
-        audioBalanceState = true;
-        audioBalanceValue = audioBalance;
+        audioBalanceState_ = true;
+        audioBalanceValue_ = audioBalance;
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
-            leftBalanceCoef -= audioBalance;
+            leftBalanceCoef_ -= audioBalance;
         } else if (audioBalance < 0.0f) {
-            rightBalanceCoef += audioBalance;
+            rightBalanceCoef_ += audioBalance;
         }
     }
 }
@@ -640,20 +640,20 @@ void BluetoothRendererSink::AdjustAudioBalance(char *data, uint64_t len)
     switch (attr_.format) {
         case AUDIO_FORMAT_PCM_8_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM8Bit((int8_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_16_BIT: {
-            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM16Bit((int16_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_24_BIT: {
             // this function needs to be further tested for usability
-            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM24Bit((int8_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         case AUDIO_FORMAT_PCM_32_BIT: {
-            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef, rightBalanceCoef);
+            AdjustAudioBalanceForPCM32Bit((int32_t*)data, len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
         default: {
@@ -820,12 +820,20 @@ int32_t BluetoothRendererSinkGetTransactionId(uint64_t *transactionId)
 
 void BluetoothRendererSinkSetAudioMonoState(bool audioMonoState)
 {
-    g_bluetoothRendrSinkInstance->SetAudioMonoState(audioMonoState);
+    if (g_bluetoothRendrSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("BluetoothRendererSinkSetAudioMonoState failed, g_bluetoothRendrSinkInstance is null");
+    } else {
+        g_bluetoothRendrSinkInstance->SetAudioMonoState(audioMonoState);
+    }
 }
 
 void BluetoothRendererSinkSetAudioBalanceValue(float audioBalance)
 {
-    g_bluetoothRendrSinkInstance->SetAudioBalanceValue(audioBalance);
+    if (g_bluetoothRendrSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("BluetoothRendererSinkSetAudioBalanceValue failed, g_bluetoothRendrSinkInstance is null");
+    } else {
+        g_bluetoothRendrSinkInstance->SetAudioBalanceValue(audioBalance);
+    }
 }
 #ifdef __cplusplus
 }

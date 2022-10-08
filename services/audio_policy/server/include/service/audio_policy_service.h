@@ -178,6 +178,8 @@ public:
 
     void UnregisterBluetoothListener();
 
+    void SubscribeAccessibilityConfigObserver();
+
 private:
     AudioPolicyService()
         : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
