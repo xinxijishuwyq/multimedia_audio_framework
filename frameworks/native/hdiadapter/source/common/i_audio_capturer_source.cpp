@@ -14,15 +14,14 @@
  */
 
 #include <cstring>
-#include <dlfcn.h>
 #include <string>
-
+#include "audio_capturer_file_source.h"
+#include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_capturer_source.h"
-#include "audio_capturer_file_source.h"
 #include "remote_audio_capturer_source.h"
 #include "i_audio_capturer_source.h"
+
 using namespace std;
 
 namespace OHOS {

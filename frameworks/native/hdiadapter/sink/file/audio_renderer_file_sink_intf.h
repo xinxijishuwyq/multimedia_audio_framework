@@ -16,6 +16,8 @@
 #ifndef AUDIO_RENDERER_FILE_SINK_INTF_H
 #define AUDIO_RENDERER_FILE_SINK_INTF_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -16,6 +16,8 @@
 #ifndef BLUETOOTH_RENDERER_SINK_INTF_H
 #define BLUETOOTH_RENDERER_SINK_INTF_H
 
+#include "audio_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

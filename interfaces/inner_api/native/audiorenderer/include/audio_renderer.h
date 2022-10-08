@@ -16,10 +16,13 @@
 #ifndef AUDIO_RENDERER_H
 #define AUDIO_RENDERER_H
 
+#include <vector>
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
-
+#include <cstring>
+#include <timestamp.h>
 #include "audio_info.h"
-#include "timestamp.h"
 
 namespace OHOS {
 namespace AudioStandard {

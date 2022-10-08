@@ -14,10 +14,15 @@
  */
 
 #include <chrono>
-#include <string>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <vector>
-
+#include <cstdlib>
+#include <memory>
+#include "unistd.h"
 #include "audio_capturer.h"
+#include "audio_info.h"
 #include "audio_log.h"
 
 using namespace std;

@@ -17,13 +17,12 @@
 #include <dlfcn.h>
 #include <string>
 #include <unistd.h>
-
-#include "power_mgr_client.h"
-
+#include <cinttypes>
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_renderer_sink.h"
+#include "power_mgr_client.h"
 
 using namespace std;
 

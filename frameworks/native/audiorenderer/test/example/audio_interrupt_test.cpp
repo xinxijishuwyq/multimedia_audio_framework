@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+#include <cstddef>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
 #include "audio_interrupt_test.h"
 #include "audio_log.h"
 #include "pcm2wav.h"

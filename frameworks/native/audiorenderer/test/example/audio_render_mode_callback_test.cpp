@@ -14,11 +14,12 @@
  */
 
 #include <chrono>
+#include <cstdio>
 #include <thread>
-#include <vector>
-
-#include "audio_renderer.h"
+#include <climits>
+#include <cstdlib>
 #include "audio_log.h"
+#include "audio_renderer.h"
 #include "pcm2wav.h"
 
 using namespace std;

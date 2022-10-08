@@ -16,11 +16,9 @@
 #ifndef I_AUDIO_CAPTURER_SOURCE_H
 #define I_AUDIO_CAPTURER_SOURCE_H
 
+#include <cstdint>
 #include "audio_info.h"
-#include "audio_manager.h"
-
-#include <cstdio>
-#include <list>
+#include "audio_types.h"
 
 namespace OHOS {
 namespace AudioStandard {

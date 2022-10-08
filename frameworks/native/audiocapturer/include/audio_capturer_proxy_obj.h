@@ -17,6 +17,7 @@
 #define AUDIO_CAPTURER_PROXY_OBJ_H
 
 #include "audio_capturer.h"
+#include "audio_info.h"
 #include "audio_stream_manager.h"
 
 namespace OHOS {

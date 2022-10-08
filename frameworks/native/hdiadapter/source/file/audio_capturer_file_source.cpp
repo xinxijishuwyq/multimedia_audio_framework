@@ -13,14 +13,11 @@
  * limitations under the License.
  */
 
-#include "audio_capturer_file_source.h"
-
 #include <cerrno>
-#include <cstring>
-#include <dlfcn.h>
+#include <climits>
+#include <cstdlib>
 #include <string>
-#include <unistd.h>
-
+#include "audio_capturer_file_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
