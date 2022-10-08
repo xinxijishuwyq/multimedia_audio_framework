@@ -376,4 +376,4 @@ void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
-[multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_standard)
+[multimedia\_audio\_framework](https://gitee.com/openharmony/multimedia_audio_framework)
