@@ -29,9 +29,6 @@
 
 #include "hilog/log.h"
 #include "audio_log.h"
-#include "ringtone_options_napi.h"
-#include "ringtone_player_napi.h"
-#include "system_sound_manager_napi.h"
 #include "toneplayer_napi.h"
 
 using namespace std;
@@ -2865,10 +2862,6 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioRendererNapi::Init(env, exports);
     TonePlayerNapi::Init(env, exports);
     AudioParametersNapi::Init(env, exports);
-    // RingtonePlayerNapi::Init(env, exports) need audio_ringtone_client
-    // SystemSoundManagerNapi::Init(env, exports) need audio_ringtone_client
-    // RingtoneOptionsNapi::Init(env, exports) need audio_ringtone_client
-    // AudioRendererInfoNapi::Init(env, exports) need audio_ringtone_client
     AudioStreamMgrNapi::Init(env, exports);
     AudioRoutingManagerNapi::Init(env, exports);
     AudioGroupManagerNapi::Init(env, exports);
