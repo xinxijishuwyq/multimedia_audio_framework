@@ -82,6 +82,7 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
 
     mPolicyService.Init();
     RegisterAudioServerDeathRecipient();
@@ -124,6 +125,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
             RegisterBluetoothListener();
+            break;
+        case ACCESSIBILITY_MANAGER_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
+            SubscribeAccessibilityConfigObserver();
             break;
         default:
             AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -1693,6 +1698,12 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("AudioPolicyServer::RegisterBluetoothListener");
     mPolicyService.RegisterBluetoothListener();
+}
+
+void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
+{
+    AUDIO_INFO_LOG("AudioPolicyServer::SubscribeAccessibilityConfigObserver");
+    mPolicyService.SubscribeAccessibilityConfigObserver();
 }
 
 bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)

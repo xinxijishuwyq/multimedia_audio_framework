@@ -56,6 +56,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
     "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
@@ -63,6 +64,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 
   deps = [
     "$hdf_uhdf_path/hdi:libhdi",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 

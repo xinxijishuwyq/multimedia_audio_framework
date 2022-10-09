@@ -131,6 +131,7 @@ void AudioPolicyService::Deinit(void)
     });
 
     IOHandles_.clear();
+    accessibilityConfigListener_->UnsubscribeObserver();
     deviceStatusListener_->UnRegisterDeviceStatusListener();
 
     if (isBtListenerRegistered) {
@@ -1377,6 +1378,26 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     }
 }
 
+void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
+{
+    AUDIO_INFO_LOG("AudioPolicyService::OnMonoAudioConfigChanged: audioMono = %{public}s", audioMono? "true": "false");
+    if (g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_sProxy null");
+        return;
+    }
+    g_sProxy->SetAudioMonoState(audioMono);
+}
+
+void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
+{
+    AUDIO_INFO_LOG("AudioPolicyService::OnAudioBalanceChanged: audioBalance = %{public}f", audioBalance);
+    if (g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_sProxy null");
+        return;
+    }
+    g_sProxy->SetAudioBalanceValue(audioBalance);
+}
+
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
 {
     // add new device into active device list
@@ -2093,6 +2114,11 @@ void AudioPolicyService::UnregisterBluetoothListener()
     Bluetooth::AudioHfpManager::UnregisterBluetoothScoListener();
     isBtListenerRegistered = false;
 #endif
+}
+
+void AudioPolicyService::SubscribeAccessibilityConfigObserver()
+{
+    accessibilityConfigListener_->SubscribeObserver();
 }
 } // namespace AudioStandard
 } // namespace OHOS

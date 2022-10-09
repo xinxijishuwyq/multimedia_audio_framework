@@ -241,6 +241,7 @@ private:
     void InitKVStore();
     void ConnectServiceAdapter();
     void RegisterBluetoothListener();
+    void SubscribeAccessibilityConfigObserver();
 
     static float MapVolumeToHDI(int32_t volume);
     static int32_t ConvertVolumeToInt(float volume);

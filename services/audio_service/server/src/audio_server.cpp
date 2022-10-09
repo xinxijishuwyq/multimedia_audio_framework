@@ -24,6 +24,7 @@
 #include "audio_log.h"
 #include "system_ability_definition.h"
 #include "audio_manager_listener_proxy.h"
+#include "bluetooth_renderer_sink_intf.h"
 
 #include "audio_server.h"
 
@@ -342,6 +343,38 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
     }
 
     return SUCCESS;
+}
+
+void AudioServer::SetAudioMonoState(bool audioMono)
+{
+    AUDIO_INFO_LOG("AudioServer::SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
+
+    // Set mono for audio_renderer_sink(primary sink)
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioMonoState(audioMono);
+    }
+
+    // Set mono for bluetooth_renderer_sink
+    BluetoothRendererSinkSetAudioMonoState(audioMono);
+}
+
+void AudioServer::SetAudioBalanceValue(float audioBalance)
+{
+    AUDIO_INFO_LOG("AudioServer::SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
+
+    // Set balance for audio_renderer_sink(primary sink)
+    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    if (!audioRendererSinkInstance->rendererInited_) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
+    }
+
+    // Set balance for bluetooth_renderer_sink
+    BluetoothRendererSinkSetAudioBalanceValue(audioBalance);
 }
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)

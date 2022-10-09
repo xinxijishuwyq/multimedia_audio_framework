@@ -144,6 +144,7 @@ ohos_shared_library("audio_service") {
   deps = [
     "$pulseaudio_build_path/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:audio_renderer_sink",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",

@@ -178,6 +178,18 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
+        case SET_AUDIO_MONO_STATE: {
+            AUDIO_DEBUG_LOG("SET_AUDIO_MONO_STATE AudioManagerStub");
+            bool audioMonoState = data.ReadBool();
+            SetAudioMonoState(audioMonoState);
+            return AUDIO_OK;
+        }
+        case SET_AUDIO_BALANCE_VALUE: {
+            AUDIO_DEBUG_LOG("SET_AUDIO_BALANCE_VALUE AudioManagerStub");
+            float audioBalanceValue = data.ReadFloat();
+            SetAudioBalanceValue(audioBalanceValue);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
