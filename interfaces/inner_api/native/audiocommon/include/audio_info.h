@@ -402,6 +402,7 @@ enum StreamUsage {
 enum SourceType {
     SOURCE_TYPE_INVALID = -1,
     SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION = 1,
     SOURCE_TYPE_VOICE_COMMUNICATION = 7
 };
 
