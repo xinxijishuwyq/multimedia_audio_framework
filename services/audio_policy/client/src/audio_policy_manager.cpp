@@ -92,6 +92,16 @@ int32_t AudioPolicyManager::SetAudioScene(AudioScene scene)
     return g_sProxy->SetAudioScene(scene);
 }
 
+int32_t AudioPolicyManager::SetMicrophoneMute(bool isMute)
+{
+    return g_sProxy->SetMicrophoneMute(isMute);
+}
+
+bool AudioPolicyManager::IsMicrophoneMute()
+{
+    return g_sProxy->IsMicrophoneMute();
+}
+
 AudioScene AudioPolicyManager::GetAudioScene()
 {
     return g_sProxy->GetAudioScene();
@@ -152,6 +162,18 @@ int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     return g_sProxy->GetDevices(deviceFlag);
+}
+
+std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
+{
+    return g_sProxy->GetSupportedTones();
+}
+
+std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager GetToneConfig,");
+
+    return g_sProxy->GetToneConfig(ltonetype);
 }
 
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
@@ -235,6 +257,30 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId)
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     return g_sProxy->UnsetDeviceChangeCallback(clientId);
+}
+
+int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    auto micStateChangeCbStub = new(std::nothrow) AudioRoutingManagerListenerStub();
+    if (micStateChangeCbStub == nullptr || g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("SetMicStateChangeCallback: object null");
+        return ERROR;
+    }
+
+    micStateChangeCbStub->SetMicStateChangeCallback(callback);
+
+    sptr<IRemoteObject> object = micStateChangeCbStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManager: listenerStub->AsObject is nullptr..");
+        return ERROR;
+    }
+    return g_sProxy->SetMicStateChangeCallback(clientId, object);
 }
 
 int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,

@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager_listener_proxy.h"
+#include "audio_routing_manager_listener_proxy.h"
 #include "audio_ringermode_update_listener_proxy.h"
 #include "audio_volume_key_event_callback_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
@@ -36,6 +37,8 @@
 
 #include "audio_service_dump.h"
 #include "audio_policy_server.h"
+#include "permission_state_change_info.h"
+#include "token_setproc.h"
 using namespace std;
 
 namespace OHOS {
@@ -83,6 +86,16 @@ void AudioPolicyServer::OnStart()
 
     mPolicyService.Init();
     RegisterAudioServerDeathRecipient();
+
+    Security::AccessToken::PermStateChangeScope scopeInfo;
+    scopeInfo.permList = {"ohos.permission.MICROPHONE"};
+    auto callbackPtr = std::make_shared<PerStateChangeCbCustomizeCallback>(scopeInfo, this);
+    callbackPtr->ready_ = false;
+    int32_t iRes = Security::AccessToken::AccessTokenKit::RegisterPermStateChangeCallback(callbackPtr);
+    if (iRes < 0) {
+        AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
+    }
+
     return;
 }
 
@@ -443,6 +456,54 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     return ret;
 }
 
+std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
+{
+    return mPolicyService.GetToneConfig(ltonetype);
+}
+
+std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
+{
+    return mPolicyService.GetSupportedTones();
+}
+
+int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+    
+    bool isMicrophoneMute = IsMicrophoneMute();
+    int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
+    if (ret == SUCCESS && isMicrophoneMute != isMute) {
+        for (auto it = micStateChangeListenerCbsMap_.begin(); it != micStateChangeListenerCbsMap_.end(); ++it) {
+            std::shared_ptr<AudioManagerMicStateChangeCallback> MicStateChangeListenerCb = it->second;
+            if (MicStateChangeListenerCb == nullptr) {
+                AUDIO_ERR_LOG("micStateChangeListenerCbsMap_: nullptr for client : %{public}d", it->first);
+                continue;
+            }
+
+            AUDIO_DEBUG_LOG("micStateChangeListenerCbsMap_ :client =  %{public}d", it->first);
+            MicStateChangeEvent micStateChangeEvent;
+            micStateChangeEvent.mute = isMute;
+            MicStateChangeListenerCb->OnMicStateUpdated(micStateChangeEvent);
+        }
+    }
+    return ret;
+}
+
+bool AudioPolicyServer::IsMicrophoneMute()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    return mPolicyService.IsMicrophoneMute();
+}
+
 AudioRingerMode AudioPolicyServer::GetRingerMode()
 {
     return mPolicyService.GetRingerMode();
@@ -487,6 +548,23 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
         AUDIO_ERR_LOG("AudioPolicyServer: Cb does not exit for client %{public}d cannot unregister", clientId);
         return ERR_INVALID_OPERATION;
     }
+}
+
+int32_t AudioPolicyServer::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(micStateChangeMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+
+    sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: listener obj cast failed");
+
+    std::shared_ptr<AudioManagerMicStateChangeCallback> callback =
+        std::make_shared<AudioRoutingManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    micStateChangeListenerCbsMap_[clientId] = callback;
+
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
@@ -669,8 +747,15 @@ bool AudioPolicyServer::ProcessPendingInterrupt(std::list<AudioInterrupt>::itera
     AudioStreamType pendingStreamType = iterPending->streamType;
     AudioStreamType incomingStreamType = incoming.streamType;
 
-    auto focusTable = mPolicyService.GetAudioFocusTable();
-    AudioFocusEntry focusEntry = focusTable[pendingStreamType][incomingStreamType];
+    auto focusMap = mPolicyService.GetAudioFocusMap();
+    std::pair<AudioStreamType, AudioStreamType> streamTypePair = std::make_pair(pendingStreamType, incomingStreamType);
+
+    if (focusMap.find(streamTypePair) == focusMap.end()) {
+        AUDIO_WARNING_LOG("AudioPolicyServer: Streame type is invalid");
+        return iterPendingErased;
+    }
+
+    AudioFocusEntry focusEntry = focusMap[streamTypePair];
     float duckVol = 0.2f;
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, duckVol};
 
@@ -702,8 +787,15 @@ bool AudioPolicyServer::ProcessCurActiveInterrupt(std::list<AudioInterrupt>::ite
     AudioStreamType activeStreamType = iterActive->streamType;
     AudioStreamType incomingStreamType = incoming.streamType;
 
-    auto focusTable = mPolicyService.GetAudioFocusTable();
-    AudioFocusEntry focusEntry = focusTable[activeStreamType][incomingStreamType];
+    auto focusMap = mPolicyService.GetAudioFocusMap();
+    std::pair<AudioStreamType, AudioStreamType> streamTypePair = std::make_pair(activeStreamType, incomingStreamType);
+
+    if (focusMap.find(streamTypePair) == focusMap.end()) {
+        AUDIO_WARNING_LOG("AudioPolicyServer: Streame type is invalid");
+        return iterActiveErased;
+    }
+
+    AudioFocusEntry focusEntry = focusMap[streamTypePair];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, 0.2f};
 
     uint32_t activeSessionID = iterActive->sessionID;
@@ -774,12 +866,20 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
     }
 
-    auto focusTable = mPolicyService.GetAudioFocusTable();
+    auto focusMap = mPolicyService.GetAudioFocusMap();
     // Function: Process Focus entry
     for (auto iterActive = curActiveOwnersList_.begin(); iterActive != curActiveOwnersList_.end();) {
         AudioStreamType activeStreamType = iterActive->streamType;
         AudioStreamType incomingStreamType = incomingInterrupt.streamType;
-        AudioFocusEntry focusEntry = focusTable[activeStreamType][incomingStreamType];
+        std::pair<AudioStreamType, AudioStreamType> streamTypePair =
+            std::make_pair(activeStreamType, incomingStreamType);
+
+        if (focusMap.find(streamTypePair) == focusMap.end()) {
+            AUDIO_WARNING_LOG("AudioPolicyServer: Streame type is invalid");
+            return ERR_INVALID_PARAM;
+        }
+
+        AudioFocusEntry focusEntry = focusMap[streamTypePair];
         if (focusEntry.isReject) {
             AUDIO_INFO_LOG("AudioPolicyServer: focusEntry.isReject : ActivateAudioInterrupt request rejected");
             return ERR_FOCUS_DENIED;
@@ -1539,6 +1639,52 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
     if (!strcmp(eventDes, "ERR_EVENT")) {
         server_->mPolicyService.NotifyRemoteRenderState(networkId, condition, value);
     }
+}
+
+void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallback(
+    Security::AccessToken::PermStateChangeInfo& result)
+{
+    ready_ = true;
+    Security::AccessToken::HapTokenInfo hapTokenInfo;
+    int32_t res = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(result.tokenID, hapTokenInfo);
+    if (res < 0) {
+        AUDIO_ERR_LOG("Call GetHapTokenInfo fail.");
+    }
+    bool bSetMute;
+    if (result.PermStateChangeType > 0) {
+        bSetMute = false;
+    } else {
+        bSetMute = true;
+    }
+
+    int32_t appUid = getUidByBundleName(hapTokenInfo.bundleName, hapTokenInfo.userID);
+    if (appUid < 0) {
+        AUDIO_ERR_LOG("fail to get uid.");
+    } else {
+        server_->mPolicyService.SetSourceOutputStreamMute(appUid, bSetMute);
+        AUDIO_DEBUG_LOG(" get uid value:%{public}d", appUid);
+    }
+}
+
+int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName(std::string bundle_name, int user_id)
+{
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        return ERR_INVALID_PARAM;
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        return ERR_INVALID_PARAM;
+    }
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (bundleMgrProxy == nullptr) {
+        return ERR_INVALID_PARAM;
+    }
+    int32_t iUid = bundleMgrProxy->GetUidByBundleName(bundle_name, user_id);
+
+    return iUid;
 }
 
 void AudioPolicyServer::RegisterParamCallback()

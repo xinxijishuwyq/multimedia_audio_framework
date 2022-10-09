@@ -236,11 +236,10 @@ int32_t AudioServer::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
-        return ERR_PERMISSION_DENIED;
-    }
-
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+    return ERR_PERMISSION_DENIED;
+}
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
     if (!audioCapturerSourceInstance->capturerInited_) {
@@ -254,11 +253,10 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
 
 bool AudioServer::IsMicrophoneMute()
 {
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("IsMicrophoneMute: MICROPHONE permission denied");
-        return false;
-    }
-
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+    return ERR_PERMISSION_DENIED;
+}
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 

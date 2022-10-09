@@ -17,6 +17,10 @@ pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
 opensles_version = "1.0.1"
 
+group("libsl") {
+  public_deps = [ "//third_party/openSLES:libSLES" ]
+}
+
 config("audio_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
@@ -73,22 +77,13 @@ ohos_shared_library("opensles") {
   cflags = [ "-Werror" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework:libsl",
+    ":libsl",
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
-  external_deps = [
-    "ability_base:want",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   output_name = "OpenSLES"
   output_extension = "so"
@@ -144,8 +139,8 @@ ohos_executable("audio_opensles_player_test") {
   ]
 
   deps = [
+    ":libsl",
     ":opensles",
-    "//foundation/multimedia/audio_framework:libsl",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -165,8 +160,8 @@ ohos_executable("audio_opensles_recorder_test") {
   ]
 
   deps = [
+    ":libsl",
     ":opensles",
-    "//foundation/multimedia/audio_framework:libsl",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

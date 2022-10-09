@@ -479,4 +479,4 @@ Currently following are the list of device types supported by audio subsystem.
 
 ## Repositories Involved<a name="repositories-involved"></a>
 
-[multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_framework)
+[multimedia\_audio\_framework](https://gitee.com/openharmony/multimedia_audio_framework)

@@ -56,17 +56,27 @@ public:
 
     virtual DeviceType GetActiveInputDevice() = 0;
 
+    virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) = 0;
+
+    virtual std::vector<int32_t> GetSupportedTones() = 0;
+
     virtual int32_t SetRingerMode(AudioRingerMode ringMode) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
 
     virtual int32_t SetAudioScene(AudioScene scene) = 0;
 
+    virtual int32_t SetMicrophoneMute(bool isMute) = 0;
+
+    virtual bool IsMicrophoneMute() = 0;
+
     virtual AudioScene GetAudioScene() = 0;
 
     virtual int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
+
+    virtual int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
         const sptr<IRemoteObject> &object) = 0;

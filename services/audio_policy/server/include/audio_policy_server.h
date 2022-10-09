@@ -29,6 +29,13 @@
 #include "system_ability.h"
 #include "audio_service_dump.h"
 #include "audio_info.h"
+#include "accesstoken_kit.h"
+#include "perm_state_change_callback_customize.h"
+#include "bundle_mgr_interface.h"
+#include "system_ability_definition.h"
+#include "iservice_registry.h"
+#include "ipc_skeleton.h"
+#include "bundle_mgr_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -86,15 +93,25 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
+    std::vector<int32_t> GetSupportedTones() override;
+
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+
     AudioRingerMode GetRingerMode() override;
 
     int32_t SetAudioScene(AudioScene audioScene) override;
+
+    int32_t SetMicrophoneMute(bool isMute) override;
+
+    bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
 
     int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
+
+    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
         override;
@@ -183,6 +200,21 @@ public:
         void StateOnChange(const std::string networkId, const std::string& condition, const std::string& value);
     };
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
+
+    class PerStateChangeCbCustomizeCallback : public Security::AccessToken::PermStateChangeCallbackCustomize {
+    public:
+        explicit PerStateChangeCbCustomizeCallback(const Security::AccessToken::PermStateChangeScope &scopeInfo,
+        sptr<AudioPolicyServer> server) : PermStateChangeCallbackCustomize(scopeInfo), server_(server) {}
+        ~PerStateChangeCbCustomizeCallback() {}
+
+        void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
+        int32_t getUidByBundleName(std::string bundle_name, int user_id);
+
+        bool ready_;
+    private:
+        sptr<AudioPolicyServer> server_;
+    };
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -219,6 +251,7 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;
     std::mutex volumeKeyEventMutex_;
+    std::mutex micStateChangeMutex_;
     uint32_t clientOnFocus_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
 
@@ -228,6 +261,7 @@ private:
     std::list<AudioInterrupt> pendingOwnersList_;
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;

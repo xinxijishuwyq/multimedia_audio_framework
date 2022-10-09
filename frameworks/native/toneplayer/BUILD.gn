@@ -1,0 +1,86 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+pulseaudio_dir = "//third_party/pulseaudio"
+
+config("audio_toneplayer_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiosession/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/services/audio_policy/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/client",
+    "//foundation/multimedia/audio_framework/services/test",
+    "//commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+ohos_shared_library("audio_toneplayer") {
+  install_enable = true
+
+  configs = [ ":audio_toneplayer_config" ]
+
+  sources = [ "src/toneplayer.cpp" ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+  ]
+
+  public_configs = [ ":audio_external_library_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_toneplayer_test") {
+  install_enable = false
+
+  sources = [ "test/example/audio_toneplayer_test.cpp" ]
+
+  configs = [ ":audio_toneplayer_config" ]
+
+  deps = [ ":audio_toneplayer" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+config("audio_external_library_config") {
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer/include",
+  ]
+}

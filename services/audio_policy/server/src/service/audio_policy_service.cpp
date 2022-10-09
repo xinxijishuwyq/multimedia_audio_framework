@@ -60,12 +60,20 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
+    std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
+    CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
+    std::string AUDIO_TONE_CONFIG_FILE = "system/etc/audio/audio_tone_dtmf_config.xml";
+
+    if (audioToneParser->LoadConfig(toneDescriptorMap)) {
+        AUDIO_ERR_LOG("Audio Tone Load Configuration failed");
+        return false;
+    }
 
     std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
     CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
     std::string AUDIO_FOCUS_CONFIG_FILE = "vendor/etc/audio/audio_interrupt_policy_config.xml";
 
-    if (audioFocusParser->LoadConfig(focusTable_[0][0])) {
+    if (audioFocusParser->LoadConfig(focusMap_)) {
         AUDIO_ERR_LOG("Audio Interrupt Load Configuration failed");
         return false;
     }
@@ -173,6 +181,12 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     return audioPolicyManager_.SetStreamMute(streamType, mute);
 }
+
+int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
+{
+    return audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);
+}
+
 
 bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
 {
@@ -283,6 +297,17 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return ERR_INVALID_OPERATION;
     }
 
+    std::string networkId = audioDeviceDescriptors[0]->networkId_;
+    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
+
+    // switch between local devices
+    if (LOCAL_NETWORK_ID == networkId && currentActiveDevice_ != deviceType) {
+        if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
+            deviceType = FetchHighPriorityDevice();
+        }
+        return SetDeviceActive(deviceType, true);
+    }
+
     int32_t targetUid = audioRendererFilter->uid;
     AudioStreamType targetStreamType = audioRendererFilter->streamType;
     // move all sink-input.
@@ -314,7 +339,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     int32_t ret = SUCCESS;
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
     if (LOCAL_NETWORK_ID == networkId) {
         ret = MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     } else {
@@ -721,6 +745,20 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice()
     }
 
     return priorityDevice;
+}
+
+int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
+{
+    AUDIO_DEBUG_LOG("SetMicrophoneMute state[%{public}d]", isMute);
+
+    return g_sProxy->SetMicrophoneMute(isMute);
+}
+
+bool AudioPolicyService::IsMicrophoneMute() const
+{
+    AUDIO_DEBUG_LOG("Enter IsMicrophoneMute");
+
+    return g_sProxy->IsMicrophoneMute();
 }
 
 void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
@@ -1146,6 +1184,24 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     UpdateTrackerDeviceChange(deviceChangeDescriptor);
+}
+
+std::vector<int32_t> AudioPolicyService::GetSupportedTones()
+{
+    std::vector<int> supportedToneList = {};
+    for (auto i = toneDescriptorMap.begin(); i != toneDescriptorMap.end(); i++) {
+        supportedToneList.push_back(i->first);
+    }
+    return supportedToneList;
+}
+
+std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
+{
+    if (toneDescriptorMap.find(ltonetype) == toneDescriptorMap.end()) {
+        return nullptr;
+    }
+    AUDIO_DEBUG_LOG("AudioPolicyService GetToneConfig %{public}d", ltonetype);
+    return toneDescriptorMap[ltonetype];
 }
 
 void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,

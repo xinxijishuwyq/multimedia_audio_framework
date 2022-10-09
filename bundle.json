@@ -49,14 +49,15 @@
             ],
             "fwk_group": [
               "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
-              "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
-              "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio:pulseaudio_packages"
+              "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles"
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/sa_profile:audio_policy_service_sa_profile",
-              "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages"
+              "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
+              "//third_party/pulseaudio/ohosbuild:pulseaudio_packages",
+              "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/modules:pa_extend_modules"
             ]
           },
           "inner_kits": [
@@ -102,6 +103,18 @@
             },
             {
               "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
+              "header": {
+                "header_files": [
+                  "audio_toneplayer_private.h",
+                  "audio_renderer.h",
+                  "audio_info.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include"
+              }
+            },
+            {
+              "type": "none",
               "name": "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
               "header": {
                 "header_files": [
@@ -116,17 +129,6 @@
                      "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include"
                 ]
               }
-            },
-            {
-              "type": "none",
-              "name": "//foundation/multimedia/audio_framework/frameworks/native/systemsound:audio_ringtone_client",
-              "header": {
-                "header_files": [
-                  "iringtone_player.h",
-                  "iringtone_sound_manager.h"
-                ],
-                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include"
-              }
             }
           ],
           "test": [
@@ -136,6 +138,7 @@
             "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
+            "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer_test",
             "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",
             "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test_packages",
             "//foundation/multimedia/audio_framework/test/benchmarktest/audiorenderer:benchmarktest",

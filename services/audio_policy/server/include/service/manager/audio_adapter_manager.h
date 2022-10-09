@@ -59,6 +59,8 @@ public:
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
+    int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
+
     bool GetStreamMute(AudioStreamType streamType);
 
     bool IsStreamActive(AudioStreamType streamType);
@@ -109,31 +111,39 @@ private:
 
     bool ConnectToPulseAudio(void);
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
-    std::string GetStreamNameByStreamType(AudioStreamType streamType);
+    std::string GetStreamNameByStreamType(DeviceType deviceType, AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
-    void WriteVolumeToKvStore(AudioStreamType streamType, float volume);
-    bool LoadVolumeFromKvStore(AudioStreamType streamType);
+    void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, float volume);
+    bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
     bool LoadMuteStatusFromKvStore(AudioStreamType streamType);
-    void WriteMuteStatusToKvStore(AudioStreamType streamType, bool muteStatus);
-    std::string GetStreamTypeKeyForMute(AudioStreamType streamType);
+    void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
+    std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
     std::unique_ptr<AudioServiceAdapter> mAudioServiceAdapter;
     std::unordered_map<AudioStreamType, float> mVolumeMap;
     std::unordered_map<AudioStreamType, int> mMuteStatusMap;
+    DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode mRingerMode;
     std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
 
     AudioSessionCallback *sessionCallback_;
     friend class PolicyCallbackImpl;
     bool testModeOn_ {false};
+
+    std::vector<DeviceType> deviceList_ = {
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_WIRED_HEADSET
+    };
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

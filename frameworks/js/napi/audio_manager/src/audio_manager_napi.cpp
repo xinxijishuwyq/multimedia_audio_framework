@@ -29,9 +29,7 @@
 
 #include "hilog/log.h"
 #include "audio_log.h"
-#include "ringtone_options_napi.h"
-#include "ringtone_player_napi.h"
-#include "system_sound_manager_napi.h"
+#include "toneplayer_napi.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -2862,11 +2860,8 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioManagerNapi::Init(env, exports);
     AudioCapturerNapi::Init(env, exports);
     AudioRendererNapi::Init(env, exports);
+    TonePlayerNapi::Init(env, exports);
     AudioParametersNapi::Init(env, exports);
-    RingtonePlayerNapi::Init(env, exports);
-    SystemSoundManagerNapi::Init(env, exports);
-    RingtoneOptionsNapi::Init(env, exports);
-    AudioRendererInfoNapi::Init(env, exports);
     AudioStreamMgrNapi::Init(env, exports);
     AudioRoutingManagerNapi::Init(env, exports);
     AudioGroupManagerNapi::Init(env, exports);

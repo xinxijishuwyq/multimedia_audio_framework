@@ -26,28 +26,18 @@ ohos_shared_library("audio_capturer_source") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//third_party/bounds_checking_function/include",
-  ]
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "$hdf_uhdf_path/host:libhdf_host",
-    "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-    "$hdf_uhdf_path/utils:libhdf_utils",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//third_party/bounds_checking_function:libsec_static",
   ]
 
+  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
   deps += [ multimedia_audio_framework_hdi_audio_client ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
+
 ohos_shared_library("remote_audio_capturer_source") {
   install_enable = true
   sources = [ "remote/remote_audio_capturer_source.cpp" ]
@@ -61,25 +51,16 @@ ohos_shared_library("remote_audio_capturer_source") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//drivers/peripheral/audio/interfaces/include",
   ]
-  include_dirs += [ "//drivers/peripheral/audio/interfaces/include" ]
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
 
   if ("${product_name}" == "m40") {
-    deps += [ "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client" ]
+    deps = [ "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client" ]
   } else {
-    deps += [
-      "$hdf_uhdf_path/hdi:libhdi",
-      "$hdf_uhdf_path/host:libhdf_host",
-      "$hdf_uhdf_path/ipc:libhdf_ipc_adapter",
-      "$hdf_uhdf_path/utils:libhdf_utils",
-      "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client",
-    ]
+    deps = [ multimedia_audio_framework_hdi_audio_client ]
   }
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
@@ -96,20 +77,15 @@ ohos_shared_library("audio_capturer_file_source") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
     "//drivers/peripheral/audio/interfaces/include",
-    "//commonlibrary/c_utils/base/include",
   ]
 
-  public_configs = [ ":audio_external_library_config" ]
-
-  deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
-  external_deps = [ "c_utils:utils" ]
 }
 
 ohos_shared_library("capturer_source_adapter") {
@@ -132,24 +108,16 @@ ohos_shared_library("capturer_source_adapter") {
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/remote",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//drivers/peripheral/audio/interfaces/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//commonlibrary/c_utils/base:utils",
-    "//third_party/bounds_checking_function:libsec_static",
   ]
-
-  public_configs = [ ":audio_external_library_config" ]
 
   deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_file_source",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:remote_audio_capturer_source",
+    ":audio_capturer_file_source",
+    ":audio_capturer_source",
+    ":remote_audio_capturer_source",
   ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
-}
-
-config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
 }
