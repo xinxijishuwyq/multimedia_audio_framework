@@ -43,7 +43,7 @@ void AccessibilityConfigListener::OnConfigChanged(const CONFIG_ID configId, cons
 
 void AccessibilityConfigListener::SubscribeObserver()
 {
-    auto &accessibilityConfig = OHOS::Singleton<OHOS::AccessibilityConfig::AccessibilityConfig>::GetInstance();
+    auto &accessibilityConfig = OHOS::AccessibilityConfig::AccessibilityConfig::GetInstance();
     (void)accessibilityConfig.InitializeContext();
     accessibilityConfig.SubscribeConfigObserver(CONFIG_AUDIO_MONO, shared_from_this());
     accessibilityConfig.SubscribeConfigObserver(CONFIG_AUDIO_BALANCE, shared_from_this());
@@ -51,7 +51,7 @@ void AccessibilityConfigListener::SubscribeObserver()
 
 void AccessibilityConfigListener::UnsubscribeObserver()
 {
-    auto &accessibilityConfig = OHOS::Singleton<OHOS::AccessibilityConfig::AccessibilityConfig>::GetInstance();
+    auto &accessibilityConfig = OHOS::AccessibilityConfig::AccessibilityConfig::GetInstance();
     (void)accessibilityConfig.InitializeContext();
     accessibilityConfig.UnsubscribeConfigObserver(CONFIG_AUDIO_MONO, shared_from_this());
     accessibilityConfig.UnsubscribeConfigObserver(CONFIG_AUDIO_BALANCE, shared_from_this());
