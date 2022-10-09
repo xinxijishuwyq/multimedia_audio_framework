@@ -21,6 +21,7 @@
 #include "audio_renderer_info_napi.h"
 #include "audio_system_manager.h"
 #include "audio_manager_callback_napi.h"
+#include "audio_routing_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,6 +47,8 @@ private:
     static napi_value SelectInputDeviceByFilter(napi_env env, napi_callback_info info);
     static void RegisterDeviceChangeCallback(napi_env env, napi_value* args, const std::string& cbName, int32_t flag,
         AudioRoutingManagerNapi* routingMgrNapi);
+    static void RegisterMicStateChangeCallback(napi_env env, napi_value* args, const std::string& cbName,
+        AudioRoutingManagerNapi* routingMgrNapi);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value* args, const std::string& cbName,
         int32_t flag);
     static napi_value On(napi_env env, napi_callback_info info);
@@ -54,8 +57,9 @@ private:
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     AudioSystemManager *audioMngr_;
-
+    AudioRoutingManager *audioRoutingMngr_;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
 
     napi_env env_;
     napi_ref wrapper_;

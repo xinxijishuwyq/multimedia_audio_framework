@@ -93,15 +93,25 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode) override;
 
+    std::vector<int32_t> GetSupportedTones() override;
+
+    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+
     AudioRingerMode GetRingerMode() override;
 
     int32_t SetAudioScene(AudioScene audioScene) override;
+
+    int32_t SetMicrophoneMute(bool isMute) override;
+
+    bool IsMicrophoneMute() override;
 
     AudioScene GetAudioScene() override;
 
     int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
+
+    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object)
         override;
@@ -240,6 +250,7 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex interruptMutex_;
     std::mutex volumeKeyEventMutex_;
+    std::mutex micStateChangeMutex_;
     uint32_t clientOnFocus_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
 
@@ -249,6 +260,7 @@ private:
     std::list<AudioInterrupt> pendingOwnersList_;
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;

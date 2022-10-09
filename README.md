@@ -366,4 +366,4 @@ The following lists the device types supported by the audio framework.
 
 ## Repositories Involved
 
-[multimedia\_audio\_standard](https://gitee.com/openharmony/multimedia_audio_standard)
+[multimedia\_audio\_framework](https://gitee.com/openharmony/multimedia_audio_framework)

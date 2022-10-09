@@ -19,6 +19,21 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int STRING_BUFFER_SIZE = 4096;
+
+template <typename...Args>
+void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
+{
+    char buf[STRING_BUFFER_SIZE] = {0};
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    if (len <= 0) {
+        AUDIO_ERR_LOG("snprintf_s error : buffer allocation fails");
+        return;
+    }
+    out += buf;
+}
+
 AudioServiceDump::AudioServiceDump() : mainLoop(nullptr),
                                        api(nullptr),
                                        context(nullptr),

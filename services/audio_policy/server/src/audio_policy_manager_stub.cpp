@@ -86,6 +86,33 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
+    reply.WriteUint32(ltoneInfo->segmentCnt);
+    reply.WriteUint32(ltoneInfo->repeatCnt);
+    reply.WriteUint32(ltoneInfo->repeatSegment);
+    for (int i = 0; i<ltoneInfo->segmentCnt; i++) {
+        reply.WriteUint32(ltoneInfo->segments[i].duration);
+        reply.WriteUint16(ltoneInfo->segments[i].loopCnt);
+        reply.WriteUint16(ltoneInfo->segments[i].loopIndx);
+        for (uint32_t j = 0; j<TONEINFO_MAX_WAVES+1; j++) {
+            reply.WriteUint16(ltoneInfo->segments[i].waveFreq[j]);
+        }
+    }
+}
+
+void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t lToneListSize = 0;
+    std::vector<int32_t> lToneList = GetSupportedTones();
+    lToneListSize = static_cast<int32_t>(lToneList.size());
+    reply.WriteInt32(lToneListSize);
+    for (int i = 0; i < lToneListSize; i++) {
+        reply.WriteInt32(lToneList[i]);
+    }
+}
+
 void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &reply)
 {
     AudioRingerMode rMode = GetRingerMode();
@@ -97,6 +124,19 @@ void AudioPolicyManagerStub::SetAudioSceneInternal(MessageParcel &data, MessageP
     AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
     int32_t result = SetAudioScene(audioScene);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetMicrophoneMute(isMute);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &reply)
+{
+    int32_t result = IsMicrophoneMute();
+    reply.WriteBool(result);
 }
 
 void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
@@ -215,6 +255,18 @@ void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, 
         return;
     }
     int32_t result = SetRingerModeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        return;
+    }
+    int32_t result = SetMicStateChangeCallback(clientId, object);
     reply.WriteInt32(result);
 }
 
@@ -666,6 +718,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_AUDIO_SCENE:
             GetAudioSceneInternal(reply);
             break;
+        
+        case SET_MICROPHONE_MUTE:
+            SetMicrophoneMuteInternal(data, reply);
+            break;
+
+        case IS_MICROPHONE_MUTE:
+            IsMicrophoneMuteInternal(reply);
+            break;
 
         case GET_STREAM_VOLUME:
             GetStreamVolumeInternal(data, reply);
@@ -705,6 +765,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case UNSET_RINGERMODE_CALLBACK:
             UnsetRingerModeCallbackInternal(data, reply);
+            break;
+
+        case SET_MIC_STATE_CHANGE_CALLBACK:
+            SetMicStateChangeCallbackInternal(data, reply);
             break;
 
         case SET_DEVICE_CHANGE_CALLBACK:
@@ -782,7 +846,12 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case SELECT_INPUT_DEVICE:
             SelectInputDeviceInternal(data, reply);
             break;
-
+        case GET_TONEINFO:
+            GetToneInfoInternal(data, reply);
+            break;
+        case GET_SUPPORTED_TONES:
+            GetSupportedTonesInternal(data, reply);
+            break;
         case RECONFIGURE_CHANNEL:
             ReconfigureAudioChannelInternal(data, reply);
             break;

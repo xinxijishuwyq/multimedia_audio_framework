@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
+    const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
 }
 
 class AudioManagerCallbackNapi : public AudioManagerDeviceChangeCallback {

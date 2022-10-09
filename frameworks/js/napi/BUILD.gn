@@ -27,8 +27,10 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/ringtone_manager/include",
+    "//foundation/multimedia/audio_framework/interfaces/kits/js/toneplayer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
     "${ability_runtime_path}/interfaces/kits/native/ability/native",
     "//foundation/arkui/napi/interfaces/kits",
     "//third_party/libuv/include",
@@ -48,6 +50,7 @@ ohos_shared_library("audio") {
     "audio_manager/src/audio_manager_napi.cpp",
     "audio_manager/src/audio_renderer_state_callback_napi.cpp",
     "audio_manager/src/audio_ringermode_callback_napi.cpp",
+    "audio_manager/src/audio_routing_manager_callback_napi.cpp",
     "audio_manager/src/audio_routing_manager_napi.cpp",
     "audio_manager/src/audio_volume_key_event_napi.cpp",
     "audio_renderer/src/audio_renderer_callback_napi.cpp",
@@ -56,30 +59,22 @@ ohos_shared_library("audio") {
     "audio_renderer/src/renderer_period_position_callback_napi.cpp",
     "audio_renderer/src/renderer_position_callback_napi.cpp",
     "audio_stream_manager/src/audio_stream_mgr_napi.cpp",
-
-    # "ringtone_manager/src/audio_renderer_info_napi.cpp",
-    # "ringtone_manager/src/ringtone_options_napi.cpp",
-    # "ringtone_manager/src/ringtone_player_napi.cpp",
-    # "ringtone_manager/src/system_sound_manager_napi.cpp",
+    "toneplayer/src/toneplayer_napi.cpp",
   ]
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-
-    # "//foundation/multimedia/audio_framework/frameworks/native/systemsound:audio_ringtone_client",
+    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
   external_deps = [
-    "ability_runtime:ability_manager",
     "ability_runtime:abilitykit_native",
     "ability_runtime:napi_base_context",
-    "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
     "napi:ace_napi",
     "resource_management:global_resmgr",
   ]

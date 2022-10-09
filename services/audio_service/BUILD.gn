@@ -15,8 +15,7 @@ import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path =
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio"
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_service_packages") {
   deps = [
@@ -66,6 +65,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
+    "client/src/audio_routing_manager.cpp",
     "client/src/audio_service_client.cpp",
     "client/src/audio_session.cpp",
     "client/src/audio_stream.cpp",
@@ -77,10 +77,9 @@ ohos_shared_library("audio_client") {
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/pulse:pulse",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//third_party/bounds_checking_function:libsec_static",
   ]
 
   external_deps = [
@@ -108,8 +107,10 @@ config("audio_service_config") {
   include_dirs = [
     "common/include",
     "server/include",
+    "client/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/primary",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote",
@@ -118,7 +119,6 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
-    "include/audio_service/common",
   ]
 
   if (target_cpu == "arm") {
@@ -142,12 +142,11 @@ ohos_shared_library("audio_service") {
   }
 
   deps = [
+    "$pulseaudio_build_path/src/daemon:pulseaudio",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",
-    "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/src/daemon:pulseaudio",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
   external_deps = [
@@ -157,7 +156,6 @@ ohos_shared_library("audio_service") {
     "ipc:ipc_core",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
   ]
 
   subsystem_name = "multimedia"

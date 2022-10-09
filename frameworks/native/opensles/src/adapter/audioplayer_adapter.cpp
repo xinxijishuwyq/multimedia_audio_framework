@@ -14,9 +14,6 @@
  */
 
 #include <common.h>
-#include "bundle_mgr_interface.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 
 using namespace std;
 using namespace OHOS;

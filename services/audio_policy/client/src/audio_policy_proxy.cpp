@@ -117,6 +117,108 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
     return reply.ReadInt32();
 }
 
+std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    int32_t lListSize = 0;
+    AUDIO_DEBUG_LOG("get GetSupportedTones,");
+    std::vector<int> lSupportedToneList = {};
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return lSupportedToneList;
+    }
+    int32_t error = Remote()->SendRequest(GET_SUPPORTED_TONES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get ringermode failed, error: %d", error);
+    }
+    lListSize=reply.ReadInt32();
+    for (int i = 0; i < lListSize; i++) {
+        lSupportedToneList.push_back(reply.ReadInt32());
+    }
+    AUDIO_DEBUG_LOG("get GetSupportedTones, %{public}d", lListSize);
+    return lSupportedToneList;
+}
+
+std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::shared_ptr<ToneInfo> spToneInfo =  std::make_shared<ToneInfo>();
+    if (spToneInfo == nullptr) {
+        return nullptr;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return spToneInfo;
+    }
+    data.WriteInt32(ltonetype);
+    int32_t error = Remote()->SendRequest(GET_TONEINFO, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get toneinfo failed, error: %d", error);
+    }
+
+    spToneInfo->segmentCnt=reply.ReadUint32();
+    spToneInfo->repeatCnt=reply.ReadUint32();
+    spToneInfo->repeatSegment=reply.ReadUint32();
+    AUDIO_INFO_LOG("segmentCnt: %{public}d, repeatCnt: %{public}d, repeatSegment: %{public}d",
+        spToneInfo->segmentCnt, spToneInfo->repeatCnt, spToneInfo->repeatSegment);
+    for (uint32_t i = 0; i<spToneInfo->segmentCnt; i++) {
+        spToneInfo->segments[i].duration = reply.ReadUint32();
+        spToneInfo->segments[i].loopCnt = reply.ReadUint16();
+        spToneInfo->segments[i].loopIndx = reply.ReadUint16();
+        AUDIO_INFO_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, seg[%{public}d].loopIndex: %{public}d",
+            i, spToneInfo->segments[i].duration, i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
+        for (uint32_t j = 0; j < TONEINFO_MAX_WAVES+1; j++) {
+            spToneInfo->segments[i].waveFreq[j] = reply.ReadUint16();
+            AUDIO_INFO_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
+        }
+    }
+    AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
+    return spToneInfo;
+}
+
+int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteBool(isMute);
+    int32_t error = Remote()->SendRequest(SET_MICROPHONE_MUTE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set microphoneMute failed, error: %d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::IsMicrophoneMute()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(IS_MICROPHONE_MUTE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set microphoneMute failed, error: %d", error);
+        return error;
+    }
+
+    return reply.ReadBool();
+}
+
 AudioRingerMode AudioPolicyProxy::GetRingerMode()
 {
     MessageParcel data;
@@ -545,6 +647,32 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
     int error = Remote()->SendRequest(UNSET_RINGERMODE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: unset ringermode callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientId);
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_MIC_STATE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback failed, error: %{public}d", error);
         return error;
     }
 
