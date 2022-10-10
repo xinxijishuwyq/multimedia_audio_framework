@@ -602,6 +602,8 @@ void BluetoothRendererSink::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
+        AUDIO_ERR_LOG("BluetoothRendererSink::AdjustStereoToMono: Unsupported channel number. Channel: %{public}d",
+            attr_.channel);
         return;
     }
     switch (attr_.format) {
@@ -635,6 +637,8 @@ void BluetoothRendererSink::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
+        AUDIO_ERR_LOG("BluetoothRendererSink::AdjustAudioBalance: Unsupported channel number. Channel: %{public}d",
+            attr_.channel);
         return;
     }
 
