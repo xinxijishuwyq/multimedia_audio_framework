@@ -48,6 +48,7 @@ namespace {
     constexpr int PARAM2 = 2;
 
     constexpr int TYPE_COMMUNICATION = 7;
+    constexpr int TYPE_VOICE_RECOGNITION = 1;
     constexpr int TYPE_MIC = 0;
     constexpr int TYPE_INVALID = -1;
 
@@ -1268,6 +1269,7 @@ bool AudioCapturerNapi::ParseCapturerInfo(napi_env env, napi_value root, AudioCa
         switch (intValue) {
             case TYPE_INVALID:
             case TYPE_MIC:
+            case TYPE_VOICE_RECOGNITION:
             case TYPE_COMMUNICATION:
                 capturerInfo->sourceType = static_cast<SourceType>(intValue);
                 break;
