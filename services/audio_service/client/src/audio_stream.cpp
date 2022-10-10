@@ -279,9 +279,10 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
-bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+    bool privacyFlag, AudioPermissionState state)
 {
-    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId, appUid);
+    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
 }
 
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,

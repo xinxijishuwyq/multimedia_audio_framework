@@ -39,7 +39,8 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+        bool privacyFlag, AudioPermissionState state);
 
     int32_t GetAudioSessionID(uint32_t &sessionID);
     State GetState();
