@@ -191,6 +191,27 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
     return mAudioServiceAdapter->SuspendAudioDevice(portName, isSuspend);
 }
 
+int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name)
+{
+    if (!mAudioServiceAdapter) {
+        AUDIO_ERR_LOG("[AudioAdapterManager] audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+    switch (deviceRole) {
+        case DeviceRole::INPUT_DEVICE:
+            return mAudioServiceAdapter->SetDefaultSource(name);
+        case DeviceRole::OUTPUT_DEVICE: {
+            SetVolumeForSwitchDevice(deviceType);
+            AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
+            return mAudioServiceAdapter->SetDefaultSink(name);
+        }
+        default:
+            AUDIO_ERR_LOG("[AudioAdapterManager] error deviceRole %{public}d", deviceRole);
+            return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
     std::string name, bool active)
 {
@@ -206,29 +227,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
-            if (mAudioPolicyKvStore == nullptr) {
-                AUDIO_ERR_LOG("[AudioAdapterManager] mAudioPolicyKvStore is null!");
-                return ERR_OPERATION_FAILED;
-            }
-            currentActiveDevice_ = deviceType;
-            LoadVolumeMap();
-            std::vector<AudioStreamType> streamTypeList = {
-                STREAM_MUSIC,
-                STREAM_RING,
-                STREAM_VOICE_CALL,
-                STREAM_VOICE_ASSISTANT
-            };
-            auto iter = streamTypeList.begin();
-            while (iter != streamTypeList.end()) {
-                Key key = GetStreamNameByStreamType(deviceType, *iter);
-                Value value = Value(TransferTypeToByteArray<float>(0));
-                Status status = mAudioPolicyKvStore->Get(key, value);
-                if (status == SUCCESS) {
-                    float volume = TransferByteArrayToType<float>(value.Data());
-                    SetStreamVolume(*iter, volume);
-                }
-                iter++;
-            }
+            SetVolumeForSwitchDevice(deviceType);
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return mAudioServiceAdapter->SetDefaultSink(name);
         }
@@ -241,6 +240,33 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
             break;
     }
     return SUCCESS;
+}
+
+void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
+{
+    if (mAudioPolicyKvStore == nullptr) {
+        AUDIO_ERR_LOG("[AudioAdapterManager] mAudioPolicyKvStore is null!");
+        return;
+    }
+    currentActiveDevice_ = deviceType;
+    LoadVolumeMap();
+    std::vector<AudioStreamType> streamTypeList = {
+        STREAM_MUSIC,
+        STREAM_RING,
+        STREAM_VOICE_CALL,
+        STREAM_VOICE_ASSISTANT
+    };
+    auto iter = streamTypeList.begin();
+    while (iter != streamTypeList.end()) {
+        Key key = GetStreamNameByStreamType(deviceType, *iter);
+        Value value = Value(TransferTypeToByteArray<float>(0));
+        Status status = mAudioPolicyKvStore->Get(key, value);
+        if (status == SUCCESS) {
+            float volume = TransferByteArrayToType<float>(value.Data());
+            SetStreamVolume(*iter, volume);
+        }
+        iter++;
+    }
 }
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)

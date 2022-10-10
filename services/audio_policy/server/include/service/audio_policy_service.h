@@ -238,6 +238,8 @@ private:
 
     DeviceRole GetDeviceRole(const std::string &role);
 
+    int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
@@ -275,6 +277,8 @@ private:
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
+    bool isCurrentRemoteRenderer = false;
+    bool remoteCapturerSwitch = false;
     bool isOpenRemoteDevice = false;
     bool isBtListenerRegistered = false;
     const int32_t G_UNKNOWN_PID = -1;
