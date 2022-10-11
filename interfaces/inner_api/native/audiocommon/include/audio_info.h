@@ -828,6 +828,11 @@ struct AudioRendererDataInfo {
     uint8_t *buffer;
     size_t flag;
 };
+
+enum AudioPermissionState {
+    AUDIO_PERMISSION_START = 0,
+    AUDIO_PERMISSION_STOP = 1,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

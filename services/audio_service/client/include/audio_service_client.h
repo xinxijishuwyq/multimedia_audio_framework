@@ -495,7 +495,8 @@ public:
      *
      * @return Returns whether the authentication was success or not
      */
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+        bool privacyFlag, AudioPermissionState state);
     int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
     float GetStreamLowPowerVolume();
     float GetSingleStreamVol();

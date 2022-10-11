@@ -504,9 +504,10 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return g_sProxy->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName,
+    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
 {
-    return g_sProxy->VerifyClientPermission(permissionName, appTokenId, appUid);
+    return g_sProxy->VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
 }
 
 int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)

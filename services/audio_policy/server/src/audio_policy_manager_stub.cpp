@@ -474,7 +474,9 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     std::string permissionName = data.ReadString();
     uint32_t appTokenId = data.ReadUint32();
     uint32_t appUid = data.ReadInt32();
-    bool ret = VerifyClientPermission(permissionName, appTokenId, appUid);
+    bool privacyFlag = data.ReadBool();
+    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
+    bool ret = VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
     reply.WriteBool(ret);
 }
 

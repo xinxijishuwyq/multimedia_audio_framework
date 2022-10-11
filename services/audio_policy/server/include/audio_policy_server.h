@@ -146,8 +146,8 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0,
-        int32_t appUid = INVALID_UID) override;
+    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0, int32_t appUid = INVALID_UID,
+        bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 

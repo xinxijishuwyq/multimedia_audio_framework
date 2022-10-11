@@ -29,6 +29,7 @@
 #include "key_event.h"
 #include "key_option.h"
 
+#include "privacy_kit.h"
 #include "accesstoken_kit.h"
 #include "audio_log.h"
 #include "ipc_skeleton.h"
@@ -39,6 +40,8 @@
 #include "audio_policy_server.h"
 #include "permission_state_change_info.h"
 #include "token_setproc.h"
+
+using OHOS::Security::AccessToken::PrivacyKit;
 using namespace std;
 
 namespace OHOS {
@@ -1191,7 +1194,8 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return SUCCESS;
 }
 
-bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+    bool privacyFlag, AudioPermissionState state)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_DEBUG_LOG("[%{public}s] [tid:%{public}d] [uid:%{public}d]", permissionName.c_str(), appTokenId, callerUid);
@@ -1218,6 +1222,24 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
     if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
         return false;
+    }
+
+    if (privacyFlag) {
+        if (state == AUDIO_PERMISSION_START) {
+            if (PrivacyKit::IsAllowedUsingPermission(clientTokenId, MICROPHONE_PERMISSION)) {
+                res = PrivacyKit::StartUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+                if (res != 0) {
+                    AUDIO_ERR_LOG("start using perm error for client %{public}d", clientTokenId);
+                }
+            } else {
+                AUDIO_ERR_LOG("app background, not allow using perm for client %{public}d", clientTokenId);
+            }
+        } else {
+            res = PrivacyKit::StopUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+            if (res != 0) {
+                AUDIO_ERR_LOG("stop using perm error for client %{public}d", clientTokenId);
+            }
+        }
     }
 
     return true;
