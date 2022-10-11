@@ -303,7 +303,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // switch between local devices
     if (!isCurrentRemoteRenderer && LOCAL_NETWORK_ID == networkId && currentActiveDevice_ != deviceType) {
         if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
-            deviceType = FetchHighPriorityDevice();
+            deviceType = FetchHighPriorityDevice(true);
         }
         return SelectNewDevice(DeviceRole::OUTPUT_DEVICE, deviceType);
     }
@@ -509,6 +509,9 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 
     // switch between local devices
     if (LOCAL_NETWORK_ID == networkId && activeInputDevice_ != deviceType) {
+        if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
+            deviceType = FetchHighPriorityDevice(false);
+        }
         return SelectNewDevice(DeviceRole::INPUT_DEVICE, deviceType);
     }
 
@@ -733,11 +736,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
     return deviceList;
 }
 
-DeviceType AudioPolicyService::FetchHighPriorityDevice()
+DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = true)
 {
     AUDIO_DEBUG_LOG("Entered AudioPolicyService::%{public}s", __func__);
-    DeviceType priorityDevice = DEVICE_TYPE_SPEAKER;
-
+    DeviceType priorityDevice = isOutputDevice ? DEVICE_TYPE_SPEAKER : DEVICE_TYPE_MIC;
+    std::vector<DeviceType> priorityList = isOutputDevice ? outputPriorityList_ : inputPriorityList_;
     for (const auto &device : priorityList) {
         auto isPresent = [&device, this] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
