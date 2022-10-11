@@ -22,10 +22,6 @@
 #include "audio_log.h"
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-const uint32_t STEREO_CHANNEL_COUNT = 2;
-} // namespace
-
 int64_t GetNowTimeMs()
 {
     std::chrono::milliseconds nowMs =
@@ -36,84 +32,92 @@ int64_t GetNowTimeMs()
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
-        data[0] = data[0] / STEREO_CHANNEL_COUNT + data[1] / STEREO_CHANNEL_COUNT;
+        // the number 2 is the count of stereo audio channels
+        data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
-        data += STEREO_CHANNEL_COUNT;
+        data += 2;
     }
 }
 
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
-        data[0] = data[0] / STEREO_CHANNEL_COUNT + data[1] / STEREO_CHANNEL_COUNT;
+        // the number 2 is the count of stereo audio channels
+        data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
-        data += STEREO_CHANNEL_COUNT;
+        data += 2;
     }
 }
 
 void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
 {
-    // int8_t is used for reading data of PCM24BIT here.
-    // 24 / 8 = 3, so we need repeat the calculation three times.
+    // int8_t is used for reading data of PCM24BIT here
+    // 24 / 8 = 3, so we need repeat the calculation three times in each loop
     for (unsigned i = len >> 1; i > 0; i--) {
-        data[0] = data[0] / STEREO_CHANNEL_COUNT + data[3] / STEREO_CHANNEL_COUNT;
+        // the number 2 is the count of stereo audio channels, 2 * 3 = 6
+        data[0] = data[0] / 2 + data[3] / 2;
         data[3] = data[0];
-        data[1] = data[1] / STEREO_CHANNEL_COUNT + data[4] / STEREO_CHANNEL_COUNT;
+        data[1] = data[1] / 2 + data[4] / 2;
         data[4] = data[1];
-        data[2] = data[2] / STEREO_CHANNEL_COUNT + data[5] / STEREO_CHANNEL_COUNT;
+        data[2] = data[2] / 2 + data[5] / 2;
         data[5] = data[2];
-        data += (STEREO_CHANNEL_COUNT * 3);
+        data += 6;
     }
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
-        data[0] = data[0] / STEREO_CHANNEL_COUNT + data[1] / STEREO_CHANNEL_COUNT;
+        // the number 2 is the count of stereo audio channels
+        data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
-        data += STEREO_CHANNEL_COUNT;
+        data += 2;
     }
 }
 
 void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float right)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
         data[0] *= left;
         data[1] *= right;
-        data += STEREO_CHANNEL_COUNT;
+        data += 2;
     }
 }
 
 void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
         data[0] *= left;
         data[1] *= right;
-        data += STEREO_CHANNEL_COUNT;
+        data += 2;
     }
 }
 
 void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
 {
+    // int8_t is used for reading data of PCM24BIT here
+    // 24 / 8 = 3, so we need repeat the calculation three times in each loop
     for (unsigned i = len >> 1; i > 0; i--) {
-        // int8_t is used for reading data of PCM24BIT here.
-        // 24 / 8 = 3, so we need repeat the calculation three times.
+        // the number 2 is the count of stereo audio channels, 2 * 3 = 6
         data[0] *= left;
         data[1] *= left;
         data[2] *= left;
         data[3] *= right;
         data[4] *= right;
         data[5] *= right;
-        data += (STEREO_CHANNEL_COUNT * 3);
+        data += 6;
     }
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
         data[0] *= left;
         data[1] *= right;
-        data += STEREO_CHANNEL_COUNT;
+        data += 2;
     }
 }
 
