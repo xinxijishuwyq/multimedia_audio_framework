@@ -478,8 +478,8 @@ int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
     }
     
     bool isMicrophoneMute = IsMicrophoneMute();
-    mPolicyService.SetMicrophoneMute(isMute);
-    if (isMicrophoneMute != isMute) {
+    int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
+    if (ret == SUCCESS && isMicrophoneMute != isMute) {
         for (auto it = micStateChangeListenerCbsMap_.begin(); it != micStateChangeListenerCbsMap_.end(); ++it) {
             std::shared_ptr<AudioManagerMicStateChangeCallback> MicStateChangeListenerCb = it->second;
             if (MicStateChangeListenerCb == nullptr) {
@@ -493,7 +493,7 @@ int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
             MicStateChangeListenerCb->OnMicStateUpdated(micStateChangeEvent);
         }
     }
-    return SUCCESS;
+    return ret;
 }
 
 bool AudioPolicyServer::IsMicrophoneMute()
