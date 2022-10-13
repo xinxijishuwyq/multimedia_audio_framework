@@ -840,15 +840,12 @@ static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
 int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType)
 {
     int32_t result = SUCCESS;
-    DeviceType activeDevice = deviceRole == DeviceRole::OUTPUT_DEVICE ? currentActiveDevice_ : activeInputDevice_;
 
-    if (activeDevice == deviceType) {
-        return result;
+    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
+        std::string activePort = GetPortName(currentActiveDevice_);
+        AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_);
+        audioPolicyManager_.SuspendAudioDevice(activePort, true);
     }
-
-    std::string activePort = GetPortName(activeDevice);
-    AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), activeDevice);
-    audioPolicyManager_.SuspendAudioDevice(activePort, true);
 
     std::string portName = GetPortName(deviceType);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "Invalid port name %{public}s", portName.c_str());
@@ -869,6 +866,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
     }
     return SUCCESS;
 }
+
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
     int32_t result = SUCCESS;
