@@ -30,8 +30,8 @@ namespace OHOS {
         float Convert2Float(const uint8_t *ptr)
         {
             // 根据ptr的大小随机生成区间[-1, +1]内的float值
-            float floatPtr = *ptr;
-            return floatPtr / 128.0f - 1.0f;
+            float floatValue = static_cast<float>(*ptr);
+            return floatValue / 128.0f - 1.0f;
         }
         void AudioServerBalanceFuzzTest(const uint8_t *rawData, size_t size)
         {

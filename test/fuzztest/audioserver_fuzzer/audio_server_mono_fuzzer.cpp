@@ -29,8 +29,8 @@ namespace OHOS {
     namespace AudioStandard {
         bool Convert2Bool(const uint8_t *ptr)
         {
-            // 根据ptr的大小随机生成bool值
-            return (*ptr < 128)? true: false;
+            // 根据ptr的值随机生成bool值
+            return (ptr[0] & 1) ? true : false;
         }
         void AudioServerMonoFuzzTest(const uint8_t *rawData, size_t size)
         {
