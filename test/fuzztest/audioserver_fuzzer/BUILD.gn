@@ -20,7 +20,10 @@ ohos_fuzztest("AudioServerFuzzTest") {
   fuzz_config_file =
       "//foundation/multimedia/audio_framework/test/fuzztest/audioserver_fuzzer"
 
-  include_dirs = [ "//foundation/multimedia/audio_framework/services/audio_service/server/include" ]
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "//foundation/multimedia/audio_framework/services/audio_service/server/include",
+  ]
 
   cflags = [
     "-g",

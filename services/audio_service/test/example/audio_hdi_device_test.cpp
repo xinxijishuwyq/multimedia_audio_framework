@@ -74,11 +74,11 @@ public:
     bool InitHdiRender()
     {
         hdiRenderSink_ = FastAudioRendererSink::GetInstance();
-        AudioSinkAttr attr = {};
+        IAudioSinkAttr attr = {};
         attr.adapterName = "primary";
         attr.sampleRate = 48000; // 48000hz
         attr.channel = 2;
-        attr.format = AUDIO_FORMAT_TYPE_PCM_16_BIT; // 0x2u
+        attr.format = SAMPLE_S16LE;
 
         hdiRenderSink_->Init(attr);
 

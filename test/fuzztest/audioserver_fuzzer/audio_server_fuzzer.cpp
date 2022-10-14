@@ -16,6 +16,8 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
+
+#include "i_audio_renderer_sink.h"
 #include "audio_server.h"
 #include "message_parcel.h"
 using namespace std;
