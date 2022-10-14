@@ -40,6 +40,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+    const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
     const std::string INDEPENDENTINTERRUPT_CALLBACK_NAME = "independentInterrupt";
     const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
 }
@@ -83,15 +84,18 @@ struct AutoRef {
     napi_env env_;
     napi_ref cb_;
 };
-const int32_t  ERR_NUMBER_401 = 401;
-const int32_t  ERR_NUMBER101 = ERROR_INVALID_PARAM;
-const int32_t  ERR_NUMBER102 = ERROR_NO_MEMORY;
-const int32_t  ERR_NUMBER103 = ERROR_ILLEGAL_STATE;
-const int32_t  ERR_NUMBER104 = ERROR_UNSUPPORTED;
-const int32_t  ERR_NUMBER105 = ERROR_TIMEOUT;
-const int32_t  ERR_NUMBER201 = ERROR_STREAM_LIMIT;
-const int32_t  ERR_NUMBER301 = ERROR_SYSTEM;
 
+const int32_t  ERR_NUMBER_101 = 6800101;
+const int32_t  ERR_NUMBER_401 = 401;
+const int32_t  ERR_NUMBER101 = 6800101;
+const int32_t  ERR_NUMBER102 = 6800102;
+const int32_t  ERR_NUMBER103 = 6800103;
+const int32_t  ERR_NUMBER104 = 6800104;
+const int32_t  ERR_NUMBER105 = 6800105;
+const int32_t  ERR_NUMBER201 = 6800201;
+const int32_t  ERR_NUMBER301 = 6800301;
+
+const std::string ERR_MESSAGE_101 = "input parameter value error";
 const std::string ERR_MESSAGE_401 = "input parameter type or number mismatch";
 const std::string ERR_MESSAGE101 = "invalid parameter";
 const std::string ERR_MESSAGE102 = "allocate memory failed";

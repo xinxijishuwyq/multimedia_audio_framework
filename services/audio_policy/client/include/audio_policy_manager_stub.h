@@ -28,7 +28,7 @@ public:
 private:
     void SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
-    void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
+    // void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
     void GetRingerModeInternal(MessageParcel &data);
     void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);

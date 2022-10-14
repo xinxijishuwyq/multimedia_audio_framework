@@ -16,6 +16,7 @@
 #include "audio_common_napi.h"
 #include "audio_log.h"
 #include "audio_manager_napi.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
