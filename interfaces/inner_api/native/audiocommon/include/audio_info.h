@@ -276,7 +276,53 @@ enum FocusType {
     /**
      * Recording type.
      */
-    FOCUS_TYPE_RECORDING = 0,
+    FOCUS_TYPE_DEFAULT = 0,
+};
+
+enum AudioErrors {
+    /**
+     * Common errors.
+     */
+    ERROR_INVALID_PARAM = 6800101,
+    ERROR_NO_MEMORY     = 6800102,
+    ERROR_ILLEGAL_STATE = 6800103,
+    ERROR_UNSUPPORTED   = 6800104,
+    ERROR_TIMEOUT       = 6800105,
+    /**
+     * Audio specific errors.
+     */
+    ERROR_STREAM_LIMIT  = 6800201,
+    /**
+     * Default error.
+     */
+    ERROR_SYSTEM        = 6800301
+};
+
+enum CommunicationDeviceType {
+    /**
+     * Speaker.
+     * @since 7
+     * @syscap SystemCapability.Multimedia.Audio.Communication
+     */
+    COMMUNICATION_SPEAKER = 2
+};
+
+enum AudioOutputChannelMask {
+    CHANNEL_OUT_FRONT_LEFT = 0x1 << 0,
+    CHANNEL_OUT_FRONT_RIGHT = 0x1 << 1,
+    CHANNEL_OUT_FRONT_CENTER = 0x1 << 2, 
+    CHANNEL_OUT_LOW_FREQUENCY = 0x1 << 3, 
+    CHANNEL_OUT_SIDE_LEFT = 0x1 << 4,
+    CHANNEL_OUT_SIDE_RIGHT = 0x1 << 5, 
+    CHANNEL_OUT_BACK_LEFT = 0x1 << 6,
+    CHANNEL_OUT_BACK_RIGHT = 0x1 << 7
+};
+
+enum AudioInputChannelMask {
+    CHANNEL_IN_LEFT = 0x1 << 0,
+    CHANNEL_IN_RIGHT = 0x1 << 1,
+    CHANNEL_IN_FRONT = 0x1 << 2,
+    CHANNEL_IN_BACK = 0x1 << 3
 };
 
 enum InterruptMode {
@@ -511,6 +557,8 @@ struct AudioStreamInfo {
     AudioEncodingType encoding;
     AudioSampleFormat format;
     AudioChannel channels;
+    AudioOutputChannelMask channelOut;
+    AudioInputChannelMask channelIn;
 };
 
 struct AudioRendererInfo {

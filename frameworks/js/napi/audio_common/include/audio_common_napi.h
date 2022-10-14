@@ -18,6 +18,23 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_info.h"
+
+
+#define THROW_ERROR_ASSERT(env, assertion, code)        \
+    do {                                                \
+        if (!(assertion)) {                             \
+            AudioCommonNapi::throwError( env, code);    \
+            return nullptr;                             \
+        }                                               \
+    } while (0)
+
+#define GET_PARAMS(env, info, num) \
+    size_t argc = num;             \
+    napi_value argv[num] = {0};    \
+    napi_value thisVar = nullptr;  \
+    void *data;                    \
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,9 +46,27 @@ namespace {
 
 class AudioCommonNapi {
 public:
+    enum AudioVolumeType {
+        VOLUMETYPE_DEFAULT = -1,
+        VOICE_CALL = 0,
+        RINGTONE = 2,
+        MEDIA = 3,
+        VOICE_ASSISTANT = 9,
+        VOLUMETYPE_MAX,
+        ALL = 100
+    };
     AudioCommonNapi() = delete;
     ~AudioCommonNapi() = delete;
     static std::string GetStringArgument(napi_env env, napi_value value);
+    static std::string getMessageByCode(int32_t &code);
+    static void throwError (napi_env env, int32_t code);
+    static bool IsLegalInputArgumentVolLevel(int32_t volLevel);
+    static bool IsLegalInputArgumentVolType(int32_t inputType);
+    static bool IsLegalInputArgumentDeviceFlag(int32_t inputType);
+    static bool IsLegalInputArgumentActiveDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentCommunicationDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
+    static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
 };
 
 struct AutoRef {
@@ -48,6 +83,23 @@ struct AutoRef {
     napi_env env_;
     napi_ref cb_;
 };
+const int32_t  ERR_NUMBER_401 = 401;
+const int32_t  ERR_NUMBER101 = ERROR_INVALID_PARAM;
+const int32_t  ERR_NUMBER102 = ERROR_NO_MEMORY;
+const int32_t  ERR_NUMBER103 = ERROR_ILLEGAL_STATE;
+const int32_t  ERR_NUMBER104 = ERROR_UNSUPPORTED;
+const int32_t  ERR_NUMBER105 = ERROR_TIMEOUT;
+const int32_t  ERR_NUMBER201 = ERROR_STREAM_LIMIT;
+const int32_t  ERR_NUMBER301 = ERROR_SYSTEM;
+
+const std::string ERR_MESSAGE_401 = "input parameter type or number mismatch";
+const std::string ERR_MESSAGE101 = "invalid parameter";
+const std::string ERR_MESSAGE102 = "allocate memory failed";
+const std::string ERR_MESSAGE103 = "Operation not permit at current state";
+const std::string ERR_MESSAGE104 = "unsupported option";
+const std::string ERR_MESSAGE105 = "time out";
+const std::string ERR_MESSAGE201 = "stream number limited";
+const std::string ERR_MESSAGE301 = "system error";
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_COMMON_NAPI_H_

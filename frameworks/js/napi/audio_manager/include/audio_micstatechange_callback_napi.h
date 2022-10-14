@@ -24,21 +24,21 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioRoutingManagerCallbackNapi : public AudioManagerMicStateChangeCallback {
+class AudioManagerMicStateChangeCallbackNapi : public AudioManagerMicStateChangeCallback {
 public:
-    explicit AudioRoutingManagerCallbackNapi(napi_env env);
-    virtual ~AudioRoutingManagerCallbackNapi();
+    explicit AudioManagerMicStateChangeCallbackNapi(napi_env env);
+    virtual ~AudioManagerMicStateChangeCallbackNapi();
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
 
 private:
-    struct AudioRoutingManagerJsCallback {
+    struct AudioManagerMicStateChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         MicStateChangeEvent micStateChangeEvent;
     };
 
-    void OnJsCallbackMicStateChange(std::unique_ptr<AudioRoutingManagerJsCallback> &jsCb);
+    void OnJsCallbackMicStateChange(std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
