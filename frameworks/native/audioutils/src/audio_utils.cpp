@@ -29,6 +29,13 @@ int64_t GetNowTimeMs()
     return nowMs.count();
 }
 
+int64_t GetNowTimeUs()
+{
+    std::chrono::microseconds nowUs =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    return nowUs.count();
+}
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
     for (unsigned i = len >> 1; i > 0; i--) {
