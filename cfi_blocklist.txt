@@ -1,5 +1,5 @@
 src:*frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp
-src:*frameworks/native/hdiadapter/sink/source/audio_capturer_source.cpp
+src:*frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_sink.c
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_source.c
 fun:*AudioFocusParser*
