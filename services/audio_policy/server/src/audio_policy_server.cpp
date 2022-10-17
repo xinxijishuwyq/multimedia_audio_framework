@@ -88,7 +88,6 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
 
     mPolicyService.Init();
-    RegisterAudioServerDeathRecipient();
 
     Security::AccessToken::PermStateChangeScope scopeInfo;
     scopeInfo.permList = {"ohos.permission.MICROPHONE"};
@@ -142,31 +141,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
-}
-
-void AudioPolicyServer::RegisterAudioServerDeathRecipient()
-{
-    AUDIO_INFO_LOG("Register audio server death recipient");
-    pid_t pid = IPCSkeleton::GetCallingPid();
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
-    if (deathRecipient_ != nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
-        CHECK_AND_RETURN_LOG(object != nullptr, "Audio service unavailable");
-
-        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add deathRecipient");
-        }
-    }
-}
-
-void AudioPolicyServer::AudioServerDied(pid_t pid)
-{
-    AUDIO_INFO_LOG("Audio server died: restart policy server pid %{public}d", pid);
-    kill(pid, SIGKILL);
 }
 
 void AudioPolicyServer::SubscribeKeyEvents()

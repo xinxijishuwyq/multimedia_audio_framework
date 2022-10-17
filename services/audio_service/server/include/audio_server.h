@@ -27,6 +27,7 @@
 #include "remote_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_manager_base.h"
+#include "audio_server_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,12 +69,16 @@ public:
         const std::string& condition, const std::string value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
+protected:
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
     bool VerifyClientPermission(const std::string &permissionName);
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
+    void AudioServerDied(pid_t pid);
+    void RegisterPolicyServerDeathRecipient();
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;

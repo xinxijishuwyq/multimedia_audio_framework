@@ -30,6 +30,7 @@ public:
         const AudioStreamInfo &streamInfo) = 0;
     virtual void OnDeviceStatusUpdated(DStatusInfo statusInfo) = 0;
     virtual void OnServiceConnected(AudioServiceIndex serviceIndex) = 0;
+    virtual void OnServiceDisconnected(AudioServiceIndex serviceIndex) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
