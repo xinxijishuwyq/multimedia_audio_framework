@@ -232,8 +232,6 @@ private:
     void NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi);
-    void RegisterAudioServerDeathRecipient();
-    void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);

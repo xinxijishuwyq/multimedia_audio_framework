@@ -136,6 +136,8 @@ public:
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
+    void OnServiceDisconnected(AudioServiceIndex serviceIndex);
+
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);

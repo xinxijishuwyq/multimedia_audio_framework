@@ -14,6 +14,7 @@
  */
 
 #include <cinttypes>
+#include <csignal>
 #include <fstream>
 #include <sstream>
 
@@ -79,7 +80,7 @@ void AudioServer::OnStart()
     if (res) {
         AUDIO_DEBUG_LOG("AudioService OnStart res=%{public}d", res);
     }
-
+    AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
     if (ret != 0) {
@@ -87,6 +88,20 @@ void AudioServer::OnStart()
     }
     AUDIO_INFO_LOG("Created paDaemonThread\n");
 #endif
+}
+
+void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    switch (systemAbilityId) {
+        case AUDIO_POLICY_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility input service start");
+            RegisterPolicyServerDeathRecipient();
+            break;
+        default:
+            AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            break;
+    }
 }
 
 void AudioServer::OnStop()
@@ -457,6 +472,30 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag devi
 {
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptor = {};
     return audioDeviceDescriptor;
+}
+
+void AudioServer::AudioServerDied(pid_t pid)
+{
+    AUDIO_INFO_LOG("Policy server died: restart pulse audio");
+    exit(0);
+}
+
+void AudioServer::RegisterPolicyServerDeathRecipient()
+{
+    AUDIO_INFO_LOG("Register policy server death recipient");
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+    if (deathRecipient_ != nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
+        CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
+        deathRecipient_->SetNotifyCb(std::bind(&AudioServer::AudioServerDied, this, std::placeholders::_1));
+        bool result = object->AddDeathRecipient(deathRecipient_);
+        if (!result) {
+            AUDIO_ERR_LOG("Failed to add deathRecipient");
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
