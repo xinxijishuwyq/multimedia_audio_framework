@@ -15,6 +15,9 @@
 
 #ifndef PCM_2_WAV_H
 #define PCM_2_WAV_H
+
+#include <cstdint>
+
 struct WAV_HEADER {
     /* RIFF Chunk Descriptor */
     uint8_t RIFF[4] = {'R', 'I', 'F', 'F'}; // RIFF Header Magic header

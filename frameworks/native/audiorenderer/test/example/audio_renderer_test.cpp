@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifdef LATENCY_ACCURACY_TEST
-#include <cinttypes>
-#endif // LATENCY_ACCURACY_TEST
-#include <vector>
 
-#include "audio_renderer.h"
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <cinttypes>
+#include <unistd.h>
 #include "audio_log.h"
+#include "audio_renderer.h"
 #include "pcm2wav.h"
 
 using namespace std;
@@ -323,7 +324,7 @@ public:
         }
         int32_t bufferMsec = 0;
         if (argc > ARGS_COUNT_FOUR) {
-            bufferMsec = strtol(argv[ARGS_COUNT_FOUR], NULL, numBase);
+            bufferMsec = strtol(argv[ARGS_COUNT_FOUR], nullptr, numBase);
         }
 
         AudioRendererOptions rendererOptions = {};

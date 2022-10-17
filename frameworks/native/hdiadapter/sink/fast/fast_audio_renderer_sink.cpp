@@ -18,6 +18,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
+#include <cinttypes>
 #include <sys/mman.h>
 #include <unistd.h>
 

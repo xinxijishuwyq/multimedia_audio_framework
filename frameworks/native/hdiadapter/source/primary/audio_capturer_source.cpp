@@ -16,7 +16,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
-
+#include <cinttypes>
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"

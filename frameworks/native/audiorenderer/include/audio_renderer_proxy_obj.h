@@ -16,6 +16,7 @@
 #ifndef AUDIO_RENDERER_PROXY_OBJ_H
 #define AUDIO_RENDERER_PROXY_OBJ_H
 
+#include "audio_info.h"
 #include "audio_renderer.h"
 #include "audio_stream_manager.h"
 

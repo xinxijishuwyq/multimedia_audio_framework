@@ -16,7 +16,6 @@
 #define AUDIO_UTILS_H
 
 #include <cstdint>
-#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {

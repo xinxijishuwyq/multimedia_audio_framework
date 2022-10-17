@@ -16,12 +16,8 @@
 #ifndef RENDERER_SINK_ADAPTER_H
 #define RENDERER_SINK_ADAPTER_H
 
-#include <stdio.h>
-
-#include <audio_renderer_sink_intf.h>
-#include <audio_renderer_file_sink_intf.h>
-#include <bluetooth_renderer_sink_intf.h>
-#include <remote_audio_renderer_sink_intf.h>
+#include <stdint.h>
+#include "audio_types.h"
 
 #ifdef __cplusplus
 extern "C" {

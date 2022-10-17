@@ -19,8 +19,8 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include <cinttypes>
 #include "securec.h"
-
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"

@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 
-#include "audio_capturer.h"
-#include "audio_renderer.h"
-#include "audio_log.h"
-#include "pcm2wav.h"
-
+#include <cstdio>
 #include <thread>
+#include <climits>
+#include <cstdlib>
+#include "audio_capturer.h"
+#include "audio_log.h"
+#include "audio_renderer.h"
+#include "pcm2wav.h"
 
 using namespace std;
 using namespace OHOS;

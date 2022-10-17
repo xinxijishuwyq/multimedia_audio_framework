@@ -14,6 +14,9 @@
  */
 
 #include <common.h>
+#include <cstddef>
+#include "OpenSLES_OpenHarmony.h"
+#include "readorwritecallback_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {

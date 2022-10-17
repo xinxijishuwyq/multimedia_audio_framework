@@ -15,11 +15,13 @@
 
 #include <OpenSLES.h>
 #include <OpenSLES_OpenHarmony.h>
-#include <OpenSLES_Platform.h>
-#include "audio_log.h"
-#include <iostream>
-#include "pcm2wav.h"
+#include <cstdio>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
+#include "audio_log.h"
+#include "pcm2wav.h"
 
 using namespace std;
 

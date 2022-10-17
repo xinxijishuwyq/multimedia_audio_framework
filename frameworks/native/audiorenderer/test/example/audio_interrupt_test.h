@@ -16,10 +16,12 @@
 #ifndef AUDIO_INTERRUPT_TEST_H
 #define AUDIO_INTERRUPT_TEST_H
 
+#include <cstdint>
+#include <cstdio>
 #include <thread>
-
+#include <memory>
+#include "audio_info.h"
 #include "audio_renderer.h"
-#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -16,6 +16,10 @@
 #ifndef INTERRUPT_MULTI_RENDERER_TEST_H
 #define INTERRUPT_MULTI_RENDERER_TEST_H
 
+#include <cstdint>
+#include <cstdio>
+#include <memory>
+#include "audio_info.h"
 #include "audio_renderer.h"
 
 namespace OHOS {
