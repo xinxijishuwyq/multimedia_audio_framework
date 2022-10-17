@@ -34,6 +34,11 @@ config("audio_capturer_config") {
 }
 
 ohos_shared_library("audio_capturer") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   configs = [ ":audio_capturer_config" ]

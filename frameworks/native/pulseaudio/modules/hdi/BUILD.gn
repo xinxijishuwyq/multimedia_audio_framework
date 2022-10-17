@@ -49,6 +49,11 @@ config("hdi_config") {
 }
 
 ohos_shared_library("module-hdi-sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   sources = [
     "hdi_sink.c",
     "module_hdi_sink.c",
@@ -77,6 +82,11 @@ ohos_shared_library("module-hdi-sink") {
 }
 
 ohos_shared_library("module-hdi-source") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   sources = [
     "hdi_source.c",
     "module_hdi_source.c",
