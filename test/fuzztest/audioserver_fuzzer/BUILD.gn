@@ -29,7 +29,10 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "audio_server_fuzzer.cpp" ]
+  sources = [
+    "audio_server_balance_fuzzer.cpp",
+    "audio_server_fuzzer.cpp",
+  ]
 
   configs = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_service_config" ]
 
