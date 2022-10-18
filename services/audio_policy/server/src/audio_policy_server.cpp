@@ -156,6 +156,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
     keyOption_down->SetFinalKeyDown(true);
     keyOption_down->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
     im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        AUDIO_INFO_LOG("receive key down event");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = GetStreamInFocus();
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
@@ -171,7 +172,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                     continue;
                 }
 
-                AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                AUDIO_DEBUG_LOG("volume lower than min, trigger volumeChangeCb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = streamInFocus;
                 volumeEvent.volume = MIN_VOLUME_LEVEL;
@@ -190,6 +191,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
     keyOption_up->SetFinalKeyDown(true);
     keyOption_up->SetFinalKeyDownDuration(0);
     im->SubscribeKeyEvent(keyOption_up, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        AUDIO_INFO_LOG("receive key up event");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = GetStreamInFocus();
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
@@ -205,7 +207,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                     continue;
                 }
 
-                AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                AUDIO_DEBUG_LOG("volume greater than max, trigger volumeChangeCb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = streamInFocus;
                 volumeEvent.volume = MAX_VOLUME_LEVEL;
@@ -302,6 +304,8 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         }
     }
 
+    AUDIO_INFO_LOG("SetStreamVolume streamType: %{public}d, volume: %{public}f, updateUi: %{public}d",
+        streamType, volume, isUpdateUi);
     int ret = mPolicyService.SetStreamVolume(streamType, volume);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
