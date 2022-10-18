@@ -77,6 +77,7 @@ enum AudioPolicyCommand {
     GET_SUPPORTED_TONES,
     IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED,
     SET_MIC_STATE_CHANGE_CALLBACK,
+    GET_USING_PEMISSION_FROM_PRIVACY,
 };
 } // namespace AudioStandard
 } // namespace OHOS

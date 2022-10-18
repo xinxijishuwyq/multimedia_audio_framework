@@ -1015,6 +1015,32 @@ bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName,
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    AUDIO_DEBUG_LOG("Proxy [permission : %{public}s] | [tid : %{public}d]", permissionName.c_str(), appTokenId);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy: WriteInterfaceToken failed");
+        return false;
+    }
+
+    data.WriteString(permissionName);
+    data.WriteUint32(appTokenId);
+    data.WriteInt32(state);
+
+    int result = Remote()->SendRequest(GET_USING_PEMISSION_FROM_PRIVACY, data, reply, option);
+    if (result != ERR_NONE) {
+        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy failed, result: %{public}d", result);
+        return false;
+    }
+
+    return reply.ReadBool();
+}
+
 int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
     AUDIO_ERR_LOG("ReconfigureAudioChannel proxy %{public}d, %{public}d", count, deviceType);

@@ -1197,22 +1197,41 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
         return false;
     }
-
     if (privacyFlag) {
-        if (state == AUDIO_PERMISSION_START) {
-            if (PrivacyKit::IsAllowedUsingPermission(clientTokenId, MICROPHONE_PERMISSION)) {
-                res = PrivacyKit::StartUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
-                if (res != 0) {
-                    AUDIO_ERR_LOG("start using perm error for client %{public}d", clientTokenId);
-                }
-            } else {
-                AUDIO_ERR_LOG("app background, not allow using perm for client %{public}d", clientTokenId);
-            }
-        } else {
-            res = PrivacyKit::StopUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
-            if (res != 0) {
-                AUDIO_ERR_LOG("stop using perm error for client %{public}d", clientTokenId);
-            }
+        if (!PrivacyKit::IsAllowedUsingPermission(clientTokenId, MICROPHONE_PERMISSION)) {
+            AUDIO_ERR_LOG("app background, not allow using perm for client %{public}d", clientTokenId);
+        }
+    }
+
+    return true;
+}
+
+bool AudioPolicyServer::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_DEBUG_LOG("[%{public}s] [tid:%{public}d] [uid:%{public}d]", permissionName.c_str(), appTokenId, callerUid);
+
+    Security::AccessToken::AccessTokenID clientTokenId = 0;
+    if (callerUid == MEDIA_SERVICE_UID) {
+        if (appTokenId == 0) {
+            AUDIO_ERR_LOG("Invalid token received. Permission rejected");
+            return false;
+        }
+        clientTokenId = appTokenId;
+    } else {
+        clientTokenId = IPCSkeleton::GetCallingTokenID();
+    }
+    
+    if (state == AUDIO_PERMISSION_START) {
+        int res = PrivacyKit::StartUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_ERR_LOG("start using perm error for client %{public}d", clientTokenId);
+        }
+    } else {
+        int res = PrivacyKit::StopUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_ERR_LOG("stop using perm error for client %{public}d", clientTokenId);
         }
     }
 
