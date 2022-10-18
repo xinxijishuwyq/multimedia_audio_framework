@@ -110,6 +110,9 @@ public:
     virtual bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId, int32_t appUid,
         bool privacyFlag, AudioPermissionState state) = 0;
 
+    virtual bool getUsingPemissionFromPrivacy(const std::string &permission, uint32_t appTokenId,
+        AudioPermissionState state) = 0;
+
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
 
     virtual int32_t GetAudioLatencyFromXml() = 0;

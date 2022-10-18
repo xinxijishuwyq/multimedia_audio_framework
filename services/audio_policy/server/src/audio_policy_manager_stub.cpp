@@ -480,6 +480,15 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     reply.WriteBool(ret);
 }
 
+void AudioPolicyManagerStub::getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string permissionName = data.ReadString();
+    uint32_t appTokenId = data.ReadUint32();
+    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
+    bool ret = getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
+    reply.WriteBool(ret);
+}
+
 void AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply)
 {
     int ret = GetAudioLatencyFromXml();
@@ -920,6 +929,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:
              IsAudioRendererLowLatencySupportedInternal(data, reply);
+             break;
+
+        case GET_USING_PEMISSION_FROM_PRIVACY:
+             getUsingPemissionFromPrivacyInternal(data, reply);
              break;
 
         default:

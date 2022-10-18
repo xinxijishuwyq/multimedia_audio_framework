@@ -116,6 +116,9 @@ public:
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
         bool privacyFlag, AudioPermissionState state) override;
 
+    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state) override;
+
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
     int32_t GetAudioLatencyFromXml() override;

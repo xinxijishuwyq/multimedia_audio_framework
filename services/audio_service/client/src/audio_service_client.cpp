@@ -637,6 +637,16 @@ bool AudioServiceClient::VerifyClientPermission(const std::string &permissionNam
     return true;
 }
 
+bool AudioServiceClient::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    if (!AudioPolicyManager::GetInstance().getUsingPemissionFromPrivacy(permissionName, appTokenId, state)) {
+        AUDIO_ERR_LOG("Failed to obtain privacy framework permission");
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 {
     int error = PA_ERR_INTERNAL;

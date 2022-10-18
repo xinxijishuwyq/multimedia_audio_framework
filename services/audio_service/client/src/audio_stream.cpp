@@ -285,6 +285,12 @@ bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint
     return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
 }
 
+bool AudioStream::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    return AudioServiceClient::getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
+}
+
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj)
 {

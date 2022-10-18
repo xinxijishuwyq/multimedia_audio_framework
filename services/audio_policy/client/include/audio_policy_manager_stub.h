@@ -86,6 +86,7 @@ private:
     void UpdateStreamStateInternal(MessageParcel& data, MessageParcel& reply);
     void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

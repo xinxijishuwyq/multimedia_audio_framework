@@ -497,6 +497,8 @@ public:
      */
     bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
         bool privacyFlag, AudioPermissionState state);
+    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state);
     int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
     float GetStreamLowPowerVolume();
     float GetSingleStreamVol();
