@@ -16,6 +16,11 @@ import("//build/ohos/ace/ace.gni")
 import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
 
 ohos_shared_library("audio") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   include_dirs = [
     "audio_common/include",
     "audio_renderer/include",

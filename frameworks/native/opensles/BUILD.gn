@@ -44,6 +44,11 @@ config("audio_config") {
 }
 
 ohos_shared_library("opensles") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   include_dirs = [
     "$opensles_dir/api/$opensles_version",
     "//foundation/multimedia/audio_framework/frameworks/native/opensles/include",

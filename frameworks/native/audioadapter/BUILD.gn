@@ -16,6 +16,11 @@ import("//build/ohos.gni")
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 ohos_shared_library("pulse_audio_service_adapter") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
   sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/src/pulse_audio_service_adapter_impl.cpp" ]
   cflags = [ "-fPIC" ]

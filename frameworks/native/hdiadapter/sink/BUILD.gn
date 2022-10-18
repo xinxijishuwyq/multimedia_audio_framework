@@ -16,6 +16,11 @@ import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "primary/audio_renderer_sink.cpp" ]
@@ -45,6 +50,11 @@ ohos_shared_library("audio_renderer_sink") {
 }
 
 ohos_shared_library("fast_audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "fast/fast_audio_renderer_sink.cpp" ]
@@ -74,6 +84,11 @@ ohos_shared_library("fast_audio_renderer_sink") {
 }
 
 ohos_shared_library("bluetooth_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "bluetooth/bluetooth_renderer_sink.cpp" ]
@@ -107,6 +122,11 @@ ohos_shared_library("bluetooth_renderer_sink") {
 }
 
 ohos_shared_library("remote_audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "remote/remote_audio_renderer_sink.cpp" ]
@@ -144,6 +164,11 @@ ohos_shared_library("remote_audio_renderer_sink") {
 }
 
 ohos_shared_library("audio_renderer_file_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "file/audio_renderer_file_sink.cpp" ]
@@ -162,6 +187,11 @@ ohos_shared_library("audio_renderer_file_sink") {
 }
 
 ohos_shared_library("renderer_sink_adapter") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "common/renderer_sink_adapter.c" ]
