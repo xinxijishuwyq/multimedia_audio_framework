@@ -70,6 +70,8 @@ typedef struct {
 typedef struct {
     std::vector<DevicesInfo> inputDevices;
     std::vector<DevicesInfo> outputDevices;
+    DeviceType priorityOutputDevice;
+    DeviceType priorityInputDevice;
     std::map<AudioStreamType, int32_t> streamVolumes;
     AudioRingerMode ringerMode;
     AudioScene callStatus;
