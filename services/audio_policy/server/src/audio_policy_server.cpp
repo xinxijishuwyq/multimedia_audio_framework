@@ -1341,6 +1341,9 @@ void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
         deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
         policyData.outputDevices.push_back(deviceInfo);
     }
+
+    policyData.priorityOutputDevice = GetActiveOutputDevice();
+    policyData.priorityInputDevice = GetActiveInputDevice();
 }
 
 void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
