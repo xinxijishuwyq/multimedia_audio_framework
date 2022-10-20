@@ -161,7 +161,7 @@ napi_value TonePlayerNapi::CreateTonePlayerWrapper(napi_env env, unique_ptr<Audi
 }
 
 void TonePlayerNapi::CommonCallbackRoutine(napi_env env, TonePlayerAsyncContext* &asyncContext,
-                                              const napi_value &valueParam)
+                                           const napi_value &valueParam)
 {
     napi_value result[ARGS_TWO] = {0};
     napi_value retVal;

@@ -31,10 +31,8 @@ namespace AudioStandard {
 static __thread napi_ref g_interruptManagerConstructor = nullptr;
 
 namespace {
-    // const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
     const int PARAM0 = 0;
-    // const int PARAM1 = 1;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioInterruptManagerNapi"};
 }
 

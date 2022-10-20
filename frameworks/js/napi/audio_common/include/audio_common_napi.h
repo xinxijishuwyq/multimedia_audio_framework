@@ -68,6 +68,9 @@ public:
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
+private:
+    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
+    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
 };
 
 struct AutoRef {

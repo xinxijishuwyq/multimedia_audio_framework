@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_ROUTING_MANAGER_CALLBACK_NAPI_H
-#define AUDIO_ROUTING_MANAGER_CALLBACK_NAPI_H
+#ifndef AUDIO_MIC_STATE_CHANGE_MANAGER_CALLBACK_NAPI_H
+#define AUDIO_MIC_STATE_CHANGE_MANAGER_CALLBACK_NAPI_H
 
 #include "audio_common_napi.h"
 #include "audio_routing_manager_napi.h"
@@ -46,4 +46,4 @@ private:
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_MANAGER_CALLBACK_NAPI_H_
+#endif // AUDIO_MIC_STATE_CHANGE_MANAGER_CALLBACK_NAPI_H

@@ -56,7 +56,7 @@ public:
     };
 
     enum FocusType {
-        FOCUS_TYPE_DEFAULT
+        FOCUS_TYPE_RECORDING
     };
 
     static napi_value Init(napi_env env, napi_value exports);
@@ -128,6 +128,8 @@ private:
     static napi_ref communicationDeviceType_;
     static napi_ref audioOutputChannelMask_;
     static napi_ref audioInputChannelMask_;
+    static napi_ref interruptRequestType_;
+    static napi_ref interruptRequestResultType_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId = -1;
@@ -173,7 +175,7 @@ static const std::map<std::string, AudioStandard::InterruptMode> interruptModeMa
     {"INDEPENDENT_MODE", INDEPENDENT_MODE}
 };
 static const std::map<std::string, AudioStandard::FocusType> focusTypeMap = {
-    {"FOCUS_TYPE_DEFAULT", FOCUS_TYPE_DEFAULT}
+    {"FOCUS_TYPE_RECORDING", FOCUS_TYPE_RECORDING}
 };
 
 static const std::map<std::string, AudioStandard::AudioErrors> audioErrorsMap = {
@@ -204,6 +206,13 @@ static const std::map<std::string, AudioStandard::AudioInputChannelMask> audioIn
     {"CHANNEL_IN_RIGHT", CHANNEL_IN_RIGHT},
     {"CHANNEL_IN_FRONT", CHANNEL_IN_FRONT},
     {"CHANNEL_IN_BACK", CHANNEL_IN_BACK},
+};
+static const std::map<std::string, AudioStandard::InterruptRequestType> interruptRequestTypeMap = {
+    {"INTERRUPT_REQUEST_TYPE_DEFAULT", INTERRUPT_REQUEST_TYPE_DEFAULT},
+};
+static const std::map<std::string, AudioStandard::InterruptRequestResultType> interruptRequestResultTypeMap = {
+    {"INTERRUPT_REQUEST_GRANT", INTERRUPT_REQUEST_GRANT},
+    {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
 };
 } // namespace AudioStandard
 } // namespace OHOS

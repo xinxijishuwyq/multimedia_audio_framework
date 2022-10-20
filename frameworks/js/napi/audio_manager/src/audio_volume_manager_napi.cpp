@@ -262,12 +262,11 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfos(napi_env env, napi_callba
     GET_PARAMS(env, info, ARGS_TWO);
 
     unique_ptr<AudioVolumeManagerAsyncContext> asyncContext = make_unique<AudioVolumeManagerAsyncContext>();
-    if (argc < ARGS_ONE){
+    if (argc < ARGS_ONE) {
         asyncContext->status = ERR_NUMBER101;
     }
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
             napi_typeof(env, argv[i], &valueType);
@@ -344,7 +343,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupManager(napi_env env, napi_call
 
     unique_ptr<AudioVolumeManagerAsyncContext> asyncContext = make_unique<AudioVolumeManagerAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioVolumeManagerAsyncContext object creation failed");
-    if (argc < ARGS_ONE){
+    if (argc < ARGS_ONE) {
         asyncContext->status = ERR_NUMBER101;
     }
     for (size_t i = PARAM0; i < argc; i++) {
@@ -429,7 +428,6 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
 
-
     if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
         if (volumeManagerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
             volumeManagerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
@@ -449,7 +447,6 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         AudioCommonNapi::throwError(env, ERR_NUMBER101);
     }
     return undefinedResult;
- 
 }
 } // namespace AudioStandard
 } // namespace OHOS

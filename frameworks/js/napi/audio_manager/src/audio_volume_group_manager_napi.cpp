@@ -280,7 +280,7 @@ napi_value AudioVolumeGroupManagerNapi::CreateAudioVolumeGroupManagerWrapper(nap
     status = napi_get_reference_value(env, g_groupmanagerConstructor, &constructor);
 
     if (status == napi_ok) {
-        status = napi_new_instance(env, constructor,1 , args, &result);
+        status = napi_new_instance(env, constructor, PARAM1, args, &result);
         if (status == napi_ok) {
             return result;
         }
@@ -304,7 +304,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -313,7 +313,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {
@@ -339,7 +339,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetVolume(
                         GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
@@ -373,7 +373,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
     
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_TWO){
+        if (argc < ARGS_TWO) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -382,15 +382,15 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;                }
             } else if (i == PARAM2) {
-                if (valueType == napi_function){
+                if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
                 break;
@@ -412,7 +412,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioGroupMngr_->SetVolume(GetNativeAudioVolumeType(
                         context->volType), context->volLevel);
                 }
@@ -443,7 +443,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -452,11 +452,11 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {
-                if (valueType == napi_function){
+                if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
                 break;;
@@ -478,7 +478,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetMaxVolume(
                         GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
@@ -512,7 +512,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -521,11 +521,11 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {
-                if (valueType == napi_function){
+                if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
                 break;
@@ -547,7 +547,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetMinVolume(
                         GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
@@ -581,7 +581,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -590,13 +590,13 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1 && valueType == napi_boolean) {
                 napi_get_value_bool(env, argv[i], &asyncContext->isMute);
             } else if (i == PARAM2) {
-                if (valueType == napi_function){
+                if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
                 break;
@@ -618,7 +618,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioGroupMngr_->SetMute(GetNativeAudioVolumeType(
                         context->volType), context->isMute);
                 }
@@ -651,7 +651,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        if (argc < ARGS_ONE){
+        if (argc < ARGS_ONE) {
             asyncContext->status = ERR_NUMBER101;
         }
         for (size_t i = PARAM0; i < argc; i++) {
@@ -660,11 +660,11 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)){
+                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
                     asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {
-                if (valueType == napi_function){
+                if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
                 break;
@@ -686,7 +686,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if(context->status == 0){
+                if (context->status == SUCCESS) {
                     context->isMute =
                         context->objectInfo->audioGroupMngr_->IsStreamMute(GetNativeAudioVolumeType(context->volType));
                     context->isTrue = context->isMute;
@@ -731,7 +731,7 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->ringMode);
-                if(!AudioCommonNapi::IsLegalInputArgumentRingMode(asyncContext->ringMode)){
+                if(!AudioCommonNapi::IsLegalInputArgumentRingMode(asyncContext->ringMode)) {
                     asyncContext->status = asyncContext->status == ERR_NUMBER101 ? ERR_NUMBER101 : ERR_NUMBER104;
                 }
             } else if (i == PARAM1) {
@@ -761,7 +761,6 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
                     context->status =
                     context->objectInfo->audioGroupMngr_->SetRingerMode(GetNativeAudioRingerMode(context->ringMode));
                 }
-                
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -818,7 +817,6 @@ napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callbac
                     context->intValue = context->ringMode;
                     context->status = 0;
                 }
-
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -918,7 +916,7 @@ napi_value AudioVolumeGroupManagerNapi::IsMicrophoneMute(napi_env env, napi_call
             napi_typeof(env, argv[PARAM0], &valueType);
             if (valueType == napi_function) {
                 napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
-            }                
+            }
         }
 
         if (asyncContext->callbackRef == nullptr) {

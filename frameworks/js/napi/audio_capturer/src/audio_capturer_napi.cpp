@@ -719,7 +719,6 @@ napi_value AudioCapturerNapi::GetAudioStreamId(napi_env env, napi_callback_info 
             }
         }
     }
-
     return result;
 }
 

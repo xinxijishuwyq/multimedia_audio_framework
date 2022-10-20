@@ -39,7 +39,7 @@ std::string AudioCommonNapi::GetStringArgument(napi_env env, napi_value value)
     return strValue;
 }
 
-std::string AudioCommonNapi::getMessageByCode(int32_t &code){
+std::string AudioCommonNapi::getMessageByCode(int32_t &code) {
     std::string err_message;
     switch (code) {
         case ERR_NUMBER101:
@@ -59,7 +59,7 @@ std::string AudioCommonNapi::getMessageByCode(int32_t &code){
             break;
         case ERR_NUMBER201:
             err_message = ERR_MESSAGE201;
-            break;   
+            break;
         case ERR_NUMBER301:
             err_message = ERR_MESSAGE301;
             break;
@@ -74,14 +74,14 @@ std::string AudioCommonNapi::getMessageByCode(int32_t &code){
     return err_message;
 }
 
-void AudioCommonNapi::throwError(napi_env env,int32_t code){
+void AudioCommonNapi::throwError(napi_env env, int32_t code) {
     std::string messageValue = AudioCommonNapi::getMessageByCode(code);
     napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
 }
 
 bool AudioCommonNapi::IsLegalInputArgumentVolLevel(int32_t volLevel)
 {
-    return (volLevel < 0 || volLevel > 15) ? false : true;
+    return (volLevel < MIN_VOLUME_LEVEL || volLevel > MAX_VOLUME_LEVEL) ? false : true;
 }
 
 bool AudioCommonNapi::IsLegalInputArgumentVolType(int32_t inputType)
@@ -142,7 +142,7 @@ bool AudioCommonNapi::IsLegalInputArgumentCommunicationDeviceType(int32_t commun
 {
     bool result = false;
     switch (communicationDeviceType) {
-        case CommunicationDeviceType::COMMUNICATION_SPEAKER:    
+        case CommunicationDeviceType::COMMUNICATION_SPEAKER:
             result = true;
             break;
         default:

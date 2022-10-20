@@ -562,7 +562,6 @@ napi_value AudioRendererNapi::CreateAudioRenderer(napi_env env, napi_callback_in
             result = nullptr;
         }
     }
-
     return result;
 }
 
@@ -673,7 +672,6 @@ void AudioRendererNapi::PauseAsyncCallbackComplete(napi_env env, napi_status sta
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-
             // set pause result to doNotScheduleWrite_
             asyncContext->objectInfo->doNotScheduleWrite_ = asyncContext->isTrue;
             napi_get_undefined(env, &valueParam);
@@ -792,7 +790,6 @@ void AudioRendererNapi::StopAsyncCallbackComplete(napi_env env, napi_status stat
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-
             // set pause result to doNotScheduleWrite_
             asyncContext->objectInfo->doNotScheduleWrite_ = asyncContext->isTrue;
             napi_get_undefined(env, &valueParam);
@@ -1052,13 +1049,12 @@ napi_value AudioRendererNapi::SetRenderRate(napi_env env, napi_callback_info inf
                     context->intValue = context->objectInfo->audioRenderer_->SetRenderRate(audioRenderRate);
                     if (context->intValue == SUCCESS) {
                         context->status = SUCCESS;
-                    } else if (context->intValue == AUDIO_CLIENT_INVALID_PARAMS_ERR){
+                    } else if (context->intValue == AUDIO_CLIENT_INVALID_PARAMS_ERR) {
                         context->status = ERR_NUMBER104;
                     } else {
                         context->status = ERR_NUMBER301;
                     }
                 }
-
             },
             VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -1241,7 +1237,7 @@ napi_value AudioRendererNapi::Write(napi_env env, napi_callback_info info)
                     size_t minBytes = 4;
                     while ((totalBytesWritten < bufferLen) && ((bufferLen - totalBytesWritten) > minBytes)) {
                         bytesWritten = context->objectInfo->audioRenderer_->Write(buffer.get() + totalBytesWritten,
-                                                                                bufferLen - totalBytesWritten);
+                            bufferLen - totalBytesWritten);
                         if (bytesWritten < 0) {
                             break;
                         }
@@ -1688,10 +1684,10 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
             napi_typeof(env, argv[i], &valueType);
             if (i == PARAM0 && valueType == napi_number) {
                 AudioRendererInfo rendererInfo = {};
-                int32_t rendererInfoStatus;
-                rendererInfoStatus = asyncContext->objectInfo->audioRenderer_->GetRendererInfo(rendererInfo);
+                int32_t rendererInfoStatus = asyncContext->objectInfo->audioRenderer_->GetRendererInfo(rendererInfo);
                 if (rendererInfoStatus == SUCCESS) {
-                    asyncContext->volType = asyncContext->objectInfo->audioMngr_->GetStreamType(rendererInfo.contentType, rendererInfo.streamUsage);
+                    asyncContext->volType = asyncContext->objectInfo->audioMngr_->
+                        GetStreamType(rendererInfo.contentType, rendererInfo.streamUsage);
                 } else {
                     asyncContext->status = ERR_NUMBER301;
                 }
@@ -1720,11 +1716,11 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(context->volLevel)){
+                    if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(context->volLevel)) {
                         context->status = ERR_NUMBER101;
                     } else {
-                        context->status = context->objectInfo->audioMngr_->SetVolume(GetNativeAudioVolumeType(context->volType),
-                                                                                    context->volLevel);
+                        context->status = context->objectInfo->audioMngr_->
+                            SetVolume(GetNativeAudioVolumeType(context->volType),context->volLevel);
                     }
                 }
             },
@@ -1997,7 +1993,9 @@ napi_value AudioRendererNapi::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
 
-    if (!cbName.compare(INTERRUPT_CALLBACK_NAME) || !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME) || !cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
+    if (!cbName.compare(INTERRUPT_CALLBACK_NAME) ||
+        !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME) ||
+        !cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
         result = RegisterRendererCallback(env, argv, cbName, rendererNapi);
     } else if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
         result = RegisterPositionCallback(env, argv, cbName, rendererNapi);
@@ -2083,7 +2081,6 @@ napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     THROW_ERROR_ASSERT(env, status == napi_ok, ERR_NUMBER301);
     THROW_ERROR_ASSERT(env, argc >= requireArgc, ERR_NUMBER101);
-
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[0], &eventType);
