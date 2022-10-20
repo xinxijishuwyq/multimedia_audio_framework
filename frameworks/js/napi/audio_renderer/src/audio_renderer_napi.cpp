@@ -465,6 +465,8 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererOptions.streamInfo.encoding = sRendererOptions_->streamInfo.encoding;
     rendererOptions.streamInfo.format = sRendererOptions_->streamInfo.format;
     rendererOptions.streamInfo.channels = sRendererOptions_->streamInfo.channels;
+    rendererOptions.streamInfo.channelOut = sRendererOptions_->streamInfo.channelOut;
+    rendererOptions.streamInfo.channelIn = sRendererOptions_->streamInfo.channelIn;
 
     rendererOptions.rendererInfo.contentType = sRendererOptions_->rendererInfo.contentType;
     rendererOptions.rendererInfo.streamUsage = sRendererOptions_->rendererInfo.streamUsage;
@@ -933,6 +935,8 @@ void AudioRendererNapi::GetRendererAsyncCallbackComplete(napi_env env, napi_stat
             rendererOptions->streamInfo.encoding = asyncContext->rendererOptions.streamInfo.encoding;
             rendererOptions->streamInfo.format = asyncContext->rendererOptions.streamInfo.format;
             rendererOptions->streamInfo.channels = asyncContext->rendererOptions.streamInfo.channels;
+            rendererOptions->streamInfo.channelOut = asyncContext->rendererOptions.streamInfo.channelOut;
+            rendererOptions->streamInfo.channelIn = asyncContext->rendererOptions.streamInfo.channelIn;
             rendererOptions->rendererInfo.contentType = asyncContext->rendererOptions.rendererInfo.contentType;
             rendererOptions->rendererInfo.streamUsage = asyncContext->rendererOptions.rendererInfo.streamUsage;
             rendererOptions->rendererInfo.rendererFlags = asyncContext->rendererOptions.rendererInfo.rendererFlags;
@@ -988,6 +992,8 @@ void AudioRendererNapi::AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_
             (void)napi_create_object(env, &valueParam);
             SetValueInt32(env, "samplingRate", static_cast<int32_t>(asyncContext->samplingRate), valueParam);
             SetValueInt32(env, "channels", static_cast<int32_t>(asyncContext->channelCount), valueParam);
+            SetValueInt32(env, "channelOut", static_cast<int32_t>(asyncContext->audioChannelOut), valueParam);
+            SetValueInt32(env, "channelIn", static_cast<int32_t>(asyncContext->audioChannelIn), valueParam);
             SetValueInt32(env, "sampleFormat", static_cast<int32_t>(asyncContext->sampleFormat), valueParam);
             SetValueInt32(env, "encodingType", static_cast<int32_t>(asyncContext->encodingType), valueParam);
         }
@@ -1836,6 +1842,8 @@ napi_value AudioRendererNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                     context->sampleFormat = static_cast<AudioSampleFormat>(streamInfo.format);
                     context->samplingRate = streamInfo.samplingRate;
                     context->channelCount = streamInfo.channels;
+                    context->audioChannelOut = streamInfo.channelOut;
+                    context->audioChannelIn = streamInfo.channelIn;
                     context->encodingType = streamInfo.encoding;
                 }
             },
@@ -2137,6 +2145,16 @@ bool AudioRendererNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
     if (napi_get_named_property(env, root, "channels", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         streamInfo->channels = static_cast<AudioChannel>(intValue);
+    }
+
+    if (napi_get_named_property(env, root, "channelOut", &tempValue) == napi_ok) {
+        napi_get_value_int32(env, tempValue, &intValue);
+        streamInfo->channelOut = static_cast<AudioOutputChannelMask>(intValue);
+    }
+
+    if (napi_get_named_property(env, root, "channelIn", &tempValue) == napi_ok) {
+        napi_get_value_int32(env, tempValue, &intValue);
+        streamInfo->channelIn = static_cast<AudioInputChannelMask>(intValue);
     }
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {

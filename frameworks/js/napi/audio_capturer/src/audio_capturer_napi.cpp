@@ -193,6 +193,8 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.encoding = sCapturerOptions_->streamInfo.encoding;
     capturerOptions.streamInfo.format = sCapturerOptions_->streamInfo.format;
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
+    capturerOptions.streamInfo.channelOut = sCapturerOptions_->streamInfo.channelOut;
+    capturerOptions.streamInfo.channelIn = sCapturerOptions_->streamInfo.channelIn;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
@@ -356,6 +358,8 @@ void AudioCapturerNapi::GetCapturerAsyncCallbackComplete(napi_env env, napi_stat
             capturerOptions->streamInfo.encoding = asyncContext->capturerOptions.streamInfo.encoding;
             capturerOptions->streamInfo.format = asyncContext->capturerOptions.streamInfo.format;
             capturerOptions->streamInfo.channels = asyncContext->capturerOptions.streamInfo.channels;
+            capturerOptions->streamInfo.channelOut = asyncContext->capturerOptions.streamInfo.channelOut;
+            capturerOptions->streamInfo.channelIn = asyncContext->capturerOptions.streamInfo.channelIn;
             capturerOptions->capturerInfo.sourceType = asyncContext->capturerOptions.capturerInfo.sourceType;
             capturerOptions->capturerInfo.capturerFlags = asyncContext->capturerOptions.capturerInfo.capturerFlags;
 
@@ -420,6 +424,8 @@ void AudioCapturerNapi::AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_
             (void)napi_create_object(env, &valueParam);
             SetValueInt32(env, "samplingRate", static_cast<int32_t>(asyncContext->samplingRate), valueParam);
             SetValueInt32(env, "channels", static_cast<int32_t>(asyncContext->audioChannel), valueParam);
+            SetValueInt32(env, "channelOut", static_cast<int32_t>(asyncContext->audioChannelOut), valueParam);
+            SetValueInt32(env, "channelIn", static_cast<int32_t>(asyncContext->audioChannelIn), valueParam);
             SetValueInt32(env, "sampleFormat", static_cast<int32_t>(asyncContext->audioSampleFormat), valueParam);
             SetValueInt32(env, "encodingType", static_cast<int32_t>(asyncContext->audioEncoding), valueParam);
         }
@@ -635,6 +641,8 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                     context->audioSampleFormat = static_cast<AudioSampleFormat>(streamInfo.format);
                     context->samplingRate = streamInfo.samplingRate;
                     context->audioChannel = streamInfo.channels;
+                    context->audioChannelOut = streamInfo.channelOut;
+                    context->audioChannelIn = streamInfo.channelIn;
                     context->audioEncoding = streamInfo.encoding;
                 }
             },
@@ -1367,6 +1375,16 @@ bool AudioCapturerNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
     if (napi_get_named_property(env, root, "channels", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         streamInfo->channels = static_cast<AudioChannel>(intValue);
+    }
+
+    if (napi_get_named_property(env, root, "channelOut", &tempValue) == napi_ok) {
+        napi_get_value_int32(env, tempValue, &intValue);
+        streamInfo->channelOut = static_cast<AudioOutputChannelMask>(intValue);
+    }
+
+    if (napi_get_named_property(env, root, "channelIn", &tempValue) == napi_ok) {
+        napi_get_value_int32(env, tempValue, &intValue);
+        streamInfo->channelIn = static_cast<AudioInputChannelMask>(intValue);
     }
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {

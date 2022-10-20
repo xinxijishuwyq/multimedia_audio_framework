@@ -127,10 +127,8 @@ bool AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceF
 {
     bool result = false;
     switch (activeDeviceFlag) {
-
         case ActiveDeviceType::SPEAKER:
         case ActiveDeviceType::BLUETOOTH_SCO:
-    
             result = true;
             break;
         default:
@@ -144,7 +142,6 @@ bool AudioCommonNapi::IsLegalInputArgumentCommunicationDeviceType(int32_t commun
 {
     bool result = false;
     switch (communicationDeviceType) {
-
         case CommunicationDeviceType::COMMUNICATION_SPEAKER:    
             result = true;
             break;
