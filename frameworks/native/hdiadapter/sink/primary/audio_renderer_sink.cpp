@@ -134,21 +134,21 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
     }
 
     switch (attr_.format) {
-        case AUDIO_FORMAT_PCM_8_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_8_BIT: {
             // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case AUDIO_FORMAT_PCM_16_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_16_BIT: {
             AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
             break;
         }
-        case AUDIO_FORMAT_PCM_24_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
             // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case AUDIO_FORMAT_PCM_32_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
             AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
             break;
         }
@@ -170,21 +170,21 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
     }
 
     switch (attr_.format) {
-        case AUDIO_FORMAT_PCM_8_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_8_BIT: {
             // this function needs to be further tested for usability
             AdjustAudioBalanceForPCM8Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
-        case AUDIO_FORMAT_PCM_16_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_16_BIT: {
             AdjustAudioBalanceForPCM16Bit(reinterpret_cast<int16_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
-        case AUDIO_FORMAT_PCM_24_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
             // this function needs to be further tested for usability
             AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
-        case AUDIO_FORMAT_PCM_32_BIT: {
+        case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
             AdjustAudioBalanceForPCM32Bit(reinterpret_cast<int32_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
@@ -279,13 +279,13 @@ int32_t AudioRendererSink::InitAudioManager()
 uint32_t PcmFormatToBits(enum AudioFormat format)
 {
     switch (format) {
-        case AUDIO_FORMAT_PCM_8_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_8_BIT:
             return PCM_8_BIT;
-        case AUDIO_FORMAT_PCM_16_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_16_BIT:
             return PCM_16_BIT;
-        case AUDIO_FORMAT_PCM_24_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_24_BIT:
             return PCM_24_BIT;
-        case AUDIO_FORMAT_PCM_32_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_32_BIT:
             return PCM_32_BIT;
         default:
             AUDIO_INFO_LOG("PcmFormatToBits: Unkown format type,set it to default");

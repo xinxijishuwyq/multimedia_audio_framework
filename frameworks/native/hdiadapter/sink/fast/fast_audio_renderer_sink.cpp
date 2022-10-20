@@ -158,13 +158,13 @@ int32_t FastAudioRendererSink::InitAudioManager()
 uint32_t PcmFormatToBits(enum AudioFormat format)
 {
     switch (format) {
-        case AUDIO_FORMAT_PCM_8_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_8_BIT:
             return PCM_8_BIT;
-        case AUDIO_FORMAT_PCM_16_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_16_BIT:
             return PCM_16_BIT;
-        case AUDIO_FORMAT_PCM_24_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_24_BIT:
             return PCM_24_BIT;
-        case AUDIO_FORMAT_PCM_32_BIT:
+        case AUDIO_FORMAT_TYPE_PCM_32_BIT:
             return PCM_32_BIT;
         default:
             return PCM_24_BIT;

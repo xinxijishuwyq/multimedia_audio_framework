@@ -78,7 +78,7 @@ public:
         attr.adapterName = "primary";
         attr.sampleRate = 48000; // 48000hz
         attr.channel = 2;
-        attr.format = AUDIO_FORMAT_PCM_16_BIT; // 0x2u
+        attr.format = AUDIO_FORMAT_TYPE_PCM_16_BIT; // 0x2u
 
         hdiRenderSink_->Init(attr);
 

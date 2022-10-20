@@ -512,19 +512,19 @@ static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
     enum AudioFormat hdiAudioFormat;
     switch (format) {
         case PA_SAMPLE_U8:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_8_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
         case PA_SAMPLE_S16LE:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
         case PA_SAMPLE_S24LE:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_24_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case PA_SAMPLE_S32LE:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_32_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
 
