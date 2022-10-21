@@ -485,9 +485,8 @@ bool AudioStream::PauseAudioStream()
     while (isReadInProgress_ || isWriteInProgress_) {
         std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
-    
-    AUDIO_DEBUG_LOG("AudioStream::PauseAudioStream:renderMode_ : %{public}d state_: %{public}d", renderMode_, state_);
 
+    AUDIO_DEBUG_LOG("AudioStream::PauseAudioStream:renderMode_ : %{public}d state_: %{public}d", renderMode_, state_);
     int32_t ret = PauseStream();
     if (ret != SUCCESS) {
         AUDIO_DEBUG_LOG("StreamPause fail,ret:%{public}d", ret);
@@ -496,6 +495,9 @@ bool AudioStream::PauseAudioStream()
     }
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
+
+    // flush stream after stream paused
+    FlushAudioStream();
 
     if (audioStreamTracker_) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
