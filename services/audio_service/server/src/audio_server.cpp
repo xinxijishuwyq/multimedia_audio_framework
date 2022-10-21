@@ -26,8 +26,9 @@
 #include "system_ability_definition.h"
 #include "audio_manager_listener_proxy.h"
 #include "bluetooth_renderer_sink_intf.h"
-
 #include "audio_server.h"
+#include "xcollie/xcollie.h"
+#include "xcollie/xcollie_define.h"
 
 extern "C" {
 #include "renderer_sink_adapter.h"
@@ -46,6 +47,7 @@ namespace OHOS {
 namespace AudioStandard {
 std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
+const unsigned int TIME_OUT_SECONDS = 10;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -111,9 +113,12 @@ void AudioServer::OnStop()
 
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
+    int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
+        TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: set audio parameter");
     if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
         AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
 
@@ -122,6 +127,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
     AudioParamKey parmKey = AudioParamKey::NONE;
@@ -129,10 +135,12 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
     } else {
         AUDIO_ERR_LOG("SetAudioParameter: key %{publbic}s is invalid for hdi interface", key.c_str());
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
 #endif
+    HiviewDFX::XCollie::GetInstance().CancelTimer(id);
 }
 
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
@@ -149,6 +157,8 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
+    int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
+        TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: get audio parameter");
 #ifdef PRODUCT_M40
     AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
@@ -156,13 +166,16 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         AudioParamKey parmKey = AudioParamKey::NONE;
         if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
             parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+            HiviewDFX::XCollie::GetInstance().CancelTimer(id);
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
     }
 #endif
      if (AudioServer::audioParameters.count(key)) {
+         HiviewDFX::XCollie::GetInstance().CancelTimer(id);
          return AudioServer::audioParameters[key];
      } else {
+         HiviewDFX::XCollie::GetInstance().CancelTimer(id);
          return "";
      }
 }
@@ -305,6 +318,8 @@ int32_t AudioServer::SetVoiceVolume(float volume)
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
+    int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
+        TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
 
@@ -321,7 +336,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     }
 
     audioScene_ = audioScene;
-
+    HiviewDFX::XCollie::GetInstance().CancelTimer(id);
     return SUCCESS;
 }
 
