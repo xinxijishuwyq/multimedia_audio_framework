@@ -57,7 +57,7 @@ private:
     static napi_value IsMicrophoneMute(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
-    int32_t cachedClientId = -1;
+    int32_t cachedClientId_ = -1;
 
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;

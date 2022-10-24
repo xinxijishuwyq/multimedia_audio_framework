@@ -193,8 +193,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.encoding = sCapturerOptions_->streamInfo.encoding;
     capturerOptions.streamInfo.format = sCapturerOptions_->streamInfo.format;
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
-    capturerOptions.streamInfo.channelOut = sCapturerOptions_->streamInfo.channelOut;
-    capturerOptions.streamInfo.channelIn = sCapturerOptions_->streamInfo.channelIn;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
     capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
@@ -240,7 +238,7 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
     GET_PARAMS(env, info, ARGS_TWO);
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
     if (argc < ARGS_ONE) {
-        asyncContext->status = ERR_NUMBER101;
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
     }
 
     if (asyncContext == nullptr) {
@@ -261,7 +259,7 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
             }
             break;
         } else {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
     }
 
@@ -279,7 +277,7 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
-                context->status = ERR_NUMBER101;
+                context->status = NAPI_ERR_INVALID_PARAM;
                 HiLog::Error(LABEL, "ParseCapturerOptions fail, invalid param!");
             },
             CheckCapturerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -358,8 +356,6 @@ void AudioCapturerNapi::GetCapturerAsyncCallbackComplete(napi_env env, napi_stat
             capturerOptions->streamInfo.encoding = asyncContext->capturerOptions.streamInfo.encoding;
             capturerOptions->streamInfo.format = asyncContext->capturerOptions.streamInfo.format;
             capturerOptions->streamInfo.channels = asyncContext->capturerOptions.streamInfo.channels;
-            capturerOptions->streamInfo.channelOut = asyncContext->capturerOptions.streamInfo.channelOut;
-            capturerOptions->streamInfo.channelIn = asyncContext->capturerOptions.streamInfo.channelIn;
             capturerOptions->capturerInfo.sourceType = asyncContext->capturerOptions.capturerInfo.sourceType;
             capturerOptions->capturerInfo.capturerFlags = asyncContext->capturerOptions.capturerInfo.capturerFlags;
 
@@ -424,8 +420,6 @@ void AudioCapturerNapi::AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_
             (void)napi_create_object(env, &valueParam);
             SetValueInt32(env, "samplingRate", static_cast<int32_t>(asyncContext->samplingRate), valueParam);
             SetValueInt32(env, "channels", static_cast<int32_t>(asyncContext->audioChannel), valueParam);
-            SetValueInt32(env, "channelOut", static_cast<int32_t>(asyncContext->audioChannelOut), valueParam);
-            SetValueInt32(env, "channelIn", static_cast<int32_t>(asyncContext->audioChannelIn), valueParam);
             SetValueInt32(env, "sampleFormat", static_cast<int32_t>(asyncContext->audioSampleFormat), valueParam);
             SetValueInt32(env, "encodingType", static_cast<int32_t>(asyncContext->audioEncoding), valueParam);
         }
@@ -556,7 +550,7 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-    THROW_ERROR_ASSERT(env, asyncContext != nullptr, ERR_NUMBER102);
+    THROW_ERROR_ASSERT(env, asyncContext != nullptr, NAPI_ERR_NO_MEMORY);
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc > PARAM0) {
@@ -641,8 +635,6 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
                     context->audioSampleFormat = static_cast<AudioSampleFormat>(streamInfo.format);
                     context->samplingRate = streamInfo.samplingRate;
                     context->audioChannel = streamInfo.channels;
-                    context->audioChannelOut = streamInfo.channelOut;
-                    context->audioChannelIn = streamInfo.channelIn;
                     context->audioEncoding = streamInfo.encoding;
                 }
             },
@@ -671,7 +663,7 @@ napi_value AudioCapturerNapi::GetAudioStreamId(napi_env env, napi_callback_info 
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-    THROW_ERROR_ASSERT(env, asyncContext != nullptr, ERR_NUMBER102);
+    THROW_ERROR_ASSERT(env, asyncContext != nullptr, NAPI_ERR_NO_MEMORY);
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -699,9 +691,9 @@ napi_value AudioCapturerNapi::GetAudioStreamId(napi_env env, napi_callback_info 
                 int32_t streamIdStatus;
                 streamIdStatus = context->objectInfo->audioCapturer_->GetAudioStreamId(audioStreamId);
                 if (streamIdStatus == ERR_ILLEGAL_STATE) {
-                    context->status = ERR_NUMBER103;
+                    context->status = NAPI_ERR_ILLEGAL_STATE;
                 } else if (streamIdStatus == ERR_INVALID_INDEX) {
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 } else {
                     context->status = SUCCESS;
                 }
@@ -731,7 +723,7 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
     GET_PARAMS(env, info, ARGS_ONE);
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
-    THROW_ERROR_ASSERT(env, asyncContext != nullptr, ERR_NUMBER102);
+    THROW_ERROR_ASSERT(env, asyncContext != nullptr, NAPI_ERR_NO_MEMORY);
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -760,7 +752,7 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
                 if (context->isTrue) {
                     context->status = SUCCESS;
                 } else {
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -789,7 +781,7 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
 
     unique_ptr<AudioCapturerAsyncContext> asyncContext = make_unique<AudioCapturerAsyncContext>();
     if (argc < ARGS_TWO) {
-        asyncContext->status = ERR_NUMBER101;
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
@@ -808,7 +800,7 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -826,7 +818,7 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
                 if (context->status == SUCCESS) {
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                     uint32_t userSize = context->userSize;
                     auto buffer = std::make_unique<uint8_t[]>(userSize);
                     if (!buffer) {
@@ -903,7 +895,7 @@ napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioCapturerAsyncContext *>(data);
-                context->status = ERR_NUMBER301;
+                context->status = NAPI_ERR_SYSTEM;
                 Timestamp timestamp;
                 if (context->objectInfo->audioCapturer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
                     const uint64_t secToNanosecond = 1000000000;
@@ -964,7 +956,7 @@ napi_value AudioCapturerNapi::Stop(napi_env env, napi_callback_info info)
                 if (context->isTrue) {
                     context->status = SUCCESS;
                 } else {
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1020,7 +1012,7 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
                 if (context->isTrue) {
                     context->status = SUCCESS;
                 } else {
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1048,22 +1040,22 @@ napi_value AudioCapturerNapi::RegisterPeriodPositionCallback(napi_env env, napi_
     if (frameCount > 0) {
         if (capturerNapi->periodPositionCBNapi_ == nullptr) {
             capturerNapi->periodPositionCBNapi_ = std::make_shared<CapturerPeriodPositionCallbackNapi>(env);
-            THROW_ERROR_ASSERT(env, capturerNapi->periodPositionCBNapi_ != nullptr, ERR_NUMBER102);
+            THROW_ERROR_ASSERT(env, capturerNapi->periodPositionCBNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
 
             int32_t ret = capturerNapi->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount,
                 capturerNapi->periodPositionCBNapi_);
-            THROW_ERROR_ASSERT(env, ret == SUCCESS, ERR_NUMBER301);
+            THROW_ERROR_ASSERT(env, ret == SUCCESS, NAPI_ERR_SYSTEM);
 
             std::shared_ptr<CapturerPeriodPositionCallbackNapi> cb =
                 std::static_pointer_cast<CapturerPeriodPositionCallbackNapi>(capturerNapi->periodPositionCBNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
         } else {
             AUDIO_DEBUG_LOG("AudioCapturerNapi: periodReach already subscribed.");
-            THROW_ERROR_ASSERT(env, false, ERR_NUMBER103);
+            THROW_ERROR_ASSERT(env, false, NAPI_ERR_ILLEGAL_STATE);
         }
     } else {
-        AUDIO_ERR_LOG("AudioCapturerNapi: frameCount value not supported!!");
-        THROW_ERROR_ASSERT(env, false, ERR_NUMBER_401);
+        AUDIO_ERR_LOG("AudioCapturerNapi: frameCount value not supported!");
+        THROW_ERROR_ASSERT(env, false, NAPI_ERR_INPUT_INVALID);
     }
 
     napi_value result = nullptr;
@@ -1079,17 +1071,17 @@ napi_value AudioCapturerNapi::RegisterPositionCallback(napi_env env, napi_value*
 
     if (markPosition > 0) {
         capturerNapi->positionCBNapi_ = std::make_shared<CapturerPositionCallbackNapi>(env);
-        THROW_ERROR_ASSERT(env, capturerNapi->positionCBNapi_ != nullptr, ERR_NUMBER102);
+        THROW_ERROR_ASSERT(env, capturerNapi->positionCBNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
         int32_t ret = capturerNapi->audioCapturer_->SetCapturerPositionCallback(markPosition,
             capturerNapi->positionCBNapi_);
-        THROW_ERROR_ASSERT(env, ret == SUCCESS, ERR_NUMBER301);
+        THROW_ERROR_ASSERT(env, ret == SUCCESS, NAPI_ERR_SYSTEM);
 
         std::shared_ptr<CapturerPositionCallbackNapi> cb =
             std::static_pointer_cast<CapturerPositionCallbackNapi>(capturerNapi->positionCBNapi_);
         cb->SaveCallbackReference(cbName, argv[PARAM2]);
     } else {
         AUDIO_ERR_LOG("AudioCapturerNapi: Mark Position value not supported!!");
-        THROW_ERROR_ASSERT(env, false, ERR_NUMBER_401);
+        THROW_ERROR_ASSERT(env, false, NAPI_ERR_INPUT_INVALID);
     }
 
     napi_value result = nullptr;
@@ -1100,7 +1092,7 @@ napi_value AudioCapturerNapi::RegisterPositionCallback(napi_env env, napi_value*
 napi_value AudioCapturerNapi::RegisterCapturerCallback(napi_env env, napi_value* argv,
                                                        const std::string& cbName, AudioCapturerNapi *capturerNapi)
 {
-    THROW_ERROR_ASSERT(env, capturerNapi->callbackNapi_ != nullptr, ERR_NUMBER102);
+    THROW_ERROR_ASSERT(env, capturerNapi->callbackNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
 
     std::shared_ptr<AudioCapturerCallbackNapi> cb =
         std::static_pointer_cast<AudioCapturerCallbackNapi>(capturerNapi->callbackNapi_);
@@ -1123,9 +1115,9 @@ napi_value AudioCapturerNapi::RegisterCallback(napi_env env, napi_value jsThis,
 {
     AudioCapturerNapi *capturerNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    THROW_ERROR_ASSERT(env, status == napi_ok, ERR_NUMBER301);
-    THROW_ERROR_ASSERT(env, capturerNapi != nullptr, ERR_NUMBER102);
-    THROW_ERROR_ASSERT(env, capturerNapi->audioCapturer_ != nullptr, ERR_NUMBER102);
+    THROW_ERROR_ASSERT(env, status == napi_ok, NAPI_ERR_SYSTEM);
+    THROW_ERROR_ASSERT(env, capturerNapi != nullptr, NAPI_ERR_NO_MEMORY);
+    THROW_ERROR_ASSERT(env, capturerNapi->audioCapturer_ != nullptr, NAPI_ERR_NO_MEMORY);
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -1138,7 +1130,7 @@ napi_value AudioCapturerNapi::RegisterCallback(napi_env env, napi_value jsThis,
         result = RegisterPeriodPositionCallback(env, argv, cbName, capturerNapi);
     } else {
         bool unknownCallback = true;
-        THROW_ERROR_ASSERT(env, !unknownCallback, ERR_NUMBER_101);
+        THROW_ERROR_ASSERT(env, !unknownCallback, NAPI_ERROR_INVALID_PARAM);
     }
 
     return result;
@@ -1152,12 +1144,12 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
     napi_value argv[requireArgc + 1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    THROW_ERROR_ASSERT(env, status == napi_ok, ERR_NUMBER301);
-    THROW_ERROR_ASSERT(env, argc >= requireArgc, ERR_NUMBER_401);
+    THROW_ERROR_ASSERT(env, status == napi_ok, NAPI_ERR_SYSTEM);
+    THROW_ERROR_ASSERT(env, argc >= requireArgc, NAPI_ERR_INPUT_INVALID);
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[0], &eventType);
-    THROW_ERROR_ASSERT(env, eventType == napi_string, ERR_NUMBER_401);
+    THROW_ERROR_ASSERT(env, eventType == napi_string, NAPI_ERR_INPUT_INVALID);
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
     AUDIO_DEBUG_LOG("AudioCapturerNapi: On callbackName: %{public}s", callbackName.c_str());
@@ -1165,16 +1157,16 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
     napi_valuetype handler = napi_undefined;
     if (argc == requireArgc) {
         napi_typeof(env, argv[1], &handler);
-        THROW_ERROR_ASSERT(env, handler == napi_function, ERR_NUMBER_401);
+        THROW_ERROR_ASSERT(env, handler == napi_function, NAPI_ERR_INPUT_INVALID);
     } else {
         napi_valuetype paramArg1 = napi_undefined;
         napi_typeof(env, argv[1], &paramArg1);
         napi_valuetype expectedValType = napi_number;  // Default. Reset it with 'callbackName' if check, if required.
-        THROW_ERROR_ASSERT(env, paramArg1 == expectedValType, ERR_NUMBER_401);
+        THROW_ERROR_ASSERT(env, paramArg1 == expectedValType, NAPI_ERR_INPUT_INVALID);
 
         const int32_t arg2 = 2;
         napi_typeof(env, argv[arg2], &handler);
-        THROW_ERROR_ASSERT(env, handler == napi_function, ERR_NUMBER_401);
+        THROW_ERROR_ASSERT(env, handler == napi_function, NAPI_ERR_INPUT_INVALID);
     }
 
     return RegisterCallback(env, jsThis, argv, callbackName);
@@ -1184,9 +1176,9 @@ napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis
 {
     AudioCapturerNapi *capturerNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&capturerNapi));
-    THROW_ERROR_ASSERT(env, status == napi_ok, ERR_NUMBER301);
-    THROW_ERROR_ASSERT(env, capturerNapi != nullptr, ERR_NUMBER102);
-    THROW_ERROR_ASSERT(env, capturerNapi->audioCapturer_ != nullptr, ERR_NUMBER102);
+    THROW_ERROR_ASSERT(env, status == napi_ok, NAPI_ERR_SYSTEM);
+    THROW_ERROR_ASSERT(env, capturerNapi != nullptr, NAPI_ERR_NO_MEMORY);
+    THROW_ERROR_ASSERT(env, capturerNapi->audioCapturer_ != nullptr, NAPI_ERR_NO_MEMORY);
 
     if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
         capturerNapi->audioCapturer_->UnsetCapturerPositionCallback();
@@ -1196,7 +1188,7 @@ napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis
         capturerNapi->periodPositionCBNapi_ = nullptr;
     } else {
         bool unknownCallback = true;
-        THROW_ERROR_ASSERT(env, !unknownCallback, ERR_NUMBER104);
+        THROW_ERROR_ASSERT(env, !unknownCallback, NAPI_ERR_UNSUPPORTED);
     }
 
     napi_value result = nullptr;
@@ -1212,12 +1204,12 @@ napi_value AudioCapturerNapi::Off(napi_env env, napi_callback_info info)
     napi_value argv[requireArgc] = {nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
-    THROW_ERROR_ASSERT(env, status == napi_ok, ERR_NUMBER301);
-    THROW_ERROR_ASSERT(env, argc >= requireArgc, ERR_NUMBER101);
+    THROW_ERROR_ASSERT(env, status == napi_ok, NAPI_ERR_SYSTEM);
+    THROW_ERROR_ASSERT(env, argc >= requireArgc, NAPI_ERR_INVALID_PARAM);
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[0], &eventType);
-    THROW_ERROR_ASSERT(env, eventType == napi_string, ERR_NUMBER101);
+    THROW_ERROR_ASSERT(env, eventType == napi_string, NAPI_ERR_INVALID_PARAM);
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, argv[0]);
     AUDIO_DEBUG_LOG("AudioCapturerNapi: Off callbackName: %{public}s", callbackName.c_str());
@@ -1374,16 +1366,6 @@ bool AudioCapturerNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
     if (napi_get_named_property(env, root, "channels", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         streamInfo->channels = static_cast<AudioChannel>(intValue);
-    }
-
-    if (napi_get_named_property(env, root, "channelOut", &tempValue) == napi_ok) {
-        napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->channelOut = static_cast<AudioOutputChannelMask>(intValue);
-    }
-
-    if (napi_get_named_property(env, root, "channelIn", &tempValue) == napi_ok) {
-        napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->channelIn = static_cast<AudioInputChannelMask>(intValue);
     }
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {

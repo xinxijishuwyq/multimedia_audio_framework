@@ -47,7 +47,7 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     AudioSystemManager *audioSystemMngr_;
 
-    int32_t cachedClientId = -1;
+    int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
 
     napi_env env_;

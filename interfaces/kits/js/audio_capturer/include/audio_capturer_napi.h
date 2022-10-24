@@ -61,8 +61,6 @@ private:
         AudioSampleFormat audioSampleFormat;
         AudioSamplingRate samplingRate;
         AudioChannel audioChannel;
-        AudioOutputChannelMask audioChannelOut;
-        AudioInputChannelMask audioChannelIn;
         AudioEncodingType audioEncoding;
         ContentType contentType;
         StreamUsage usage;

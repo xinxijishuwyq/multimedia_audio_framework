@@ -46,7 +46,7 @@ void AudioManagerMicStateChangeCallbackNapi::SaveCallbackReference(const std::st
     if (callbackName == MIC_STATE_CHANGE_CALLBACK_NAME) {
         micStateChangeCallback_ = cb;
     } else {
-        AUDIO_ERR_LOG("AudioManagerMicStateChangeCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("AudioManagerMicStateChangeCallbackNapi:Unknown callback type:%{public}s", callbackName.c_str());
     }
 }
 
@@ -78,7 +78,8 @@ void AudioManagerMicStateChangeCallbackNapi::OnMicStateUpdated(const MicStateCha
     return OnJsCallbackMicStateChange(cb);
 }
 
-void AudioManagerMicStateChangeCallbackNapi::OnJsCallbackMicStateChange(std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb)
+void AudioManagerMicStateChangeCallbackNapi::OnJsCallbackMicStateChange
+    (std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb)
 {
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);
@@ -102,7 +103,8 @@ void AudioManagerMicStateChangeCallbackNapi::OnJsCallbackMicStateChange(std::uni
 
     int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
         // Js Thread
-        AudioManagerMicStateChangeJsCallback *event = reinterpret_cast<AudioManagerMicStateChangeJsCallback *>(work->data);
+        AudioManagerMicStateChangeJsCallback *event =
+            reinterpret_cast<AudioManagerMicStateChangeJsCallback *>(work->data);
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;

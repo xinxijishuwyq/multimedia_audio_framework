@@ -161,7 +161,7 @@ napi_value TonePlayerNapi::CreateTonePlayerWrapper(napi_env env, unique_ptr<Audi
 }
 
 void TonePlayerNapi::CommonCallbackRoutine(napi_env env, TonePlayerAsyncContext* &asyncContext,
-                                           const napi_value &valueParam)
+    const napi_value &valueParam)
 {
     napi_value result[ARGS_TWO] = {0};
     napi_value retVal;
@@ -230,7 +230,7 @@ napi_value TonePlayerNapi::CreateTonePlayer(napi_env env, napi_callback_info inf
 
     unique_ptr<TonePlayerAsyncContext> asyncContext = make_unique<TonePlayerAsyncContext>();
     if (argc < ARGS_ONE) {
-        asyncContext->status = ERR_NUMBER101;
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
     }
 
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "TonePlayerAsyncContext object creation failed");
@@ -268,7 +268,7 @@ napi_value TonePlayerNapi::CreateTonePlayer(napi_env env, napi_callback_info inf
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<TonePlayerAsyncContext *>(data);
-                context->status = ERR_NUMBER101;
+                context->status = NAPI_ERR_INVALID_PARAM;
                 HiLog::Error(LABEL, "CreateTonePlayer fail, invalid param!");
             },
             GetTonePlayerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -276,6 +276,8 @@ napi_value TonePlayerNapi::CreateTonePlayer(napi_env env, napi_callback_info inf
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
+                auto context = static_cast<TonePlayerAsyncContext *>(data);
+                context->status = SUCCESS;
             },
             GetTonePlayerAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
     }
@@ -369,7 +371,7 @@ napi_value TonePlayerNapi::Load(napi_env env, napi_callback_info info)
 
     unique_ptr<TonePlayerAsyncContext> asyncContext = make_unique<TonePlayerAsyncContext>();
     if (argc < ARGS_ONE) {
-        asyncContext->status = ERR_NUMBER101;
+        asyncContext->status = NAPI_ERR_INVALID_PARAM;
     }
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
@@ -409,7 +411,7 @@ napi_value TonePlayerNapi::Load(napi_env env, napi_callback_info info)
                 env, nullptr, resource,
                 [](napi_env env, void *data) {
                     auto context = static_cast<TonePlayerAsyncContext *>(data);
-                    context->status = ERR_NUMBER101;
+                    context->status = NAPI_ERR_INVALID_PARAM;
                     HiLog::Error(LABEL, "The Load parameter is invalid");
                 },
                 VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
@@ -424,7 +426,7 @@ napi_value TonePlayerNapi::Load(napi_env env, napi_callback_info info)
                         if (context->intValue) {
                             context->status = SUCCESS;
                         } else {
-                            context->status = ERR_NUMBER301;
+                            context->status = NAPI_ERR_SYSTEM;
                         }
                     }
                 },
@@ -482,7 +484,7 @@ napi_value TonePlayerNapi::Start(napi_env env, napi_callback_info info)
                     context->status = SUCCESS;
                 } else {
                     HiLog::Error(LABEL, "Start call failed, wrong timing!");
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -538,7 +540,7 @@ napi_value TonePlayerNapi::Stop(napi_env env, napi_callback_info info)
                     context->status = SUCCESS;
                 } else {
                     HiLog::Error(LABEL, "Stop call failed, wrong timing");
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -594,7 +596,7 @@ napi_value TonePlayerNapi::Release(napi_env env, napi_callback_info info)
                     context->status = SUCCESS;
                 } else {
                     HiLog::Error(LABEL, "Release call failed, wrong timing");
-                    context->status = ERR_NUMBER301;
+                    context->status = NAPI_ERR_SYSTEM;
                 }
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);

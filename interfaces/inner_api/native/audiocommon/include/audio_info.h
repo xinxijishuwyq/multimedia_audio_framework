@@ -346,33 +346,6 @@ enum AudioChannel {
     CHANNEL_8 = 8
 };
 
-/**
- * Enumerates the audio renderer channel mask.
- * @since 9
- * @syscap SystemCapability.Multimedia.Audio.Core
- */
-enum AudioOutputChannelMask {
-    CHANNEL_OUT_FRONT_LEFT = 0x1 << 0,
-    CHANNEL_OUT_FRONT_RIGHT = 0x1 << 1,
-    CHANNEL_OUT_FRONT_CENTER = 0x1 << 2,
-    CHANNEL_OUT_LOW_FREQUENCY = 0x1 << 3,
-    CHANNEL_OUT_SIDE_LEFT = 0x1 << 4,
-    CHANNEL_OUT_SIDE_RIGHT = 0x1 << 5,
-    CHANNEL_OUT_BACK_LEFT = 0x1 << 6,
-    CHANNEL_OUT_BACK_RIGHT = 0x1 << 7
-};
-
-/**
- * Enumerates the audio capturer channel mask.
- * @since 9
- * @syscap SystemCapability.Multimedia.Audio.Core
- */
-enum AudioInputChannelMask {
-    CHANNEL_IN_LEFT = 0x1 << 0,
-    CHANNEL_IN_RIGHT = 0x1 << 1,
-    CHANNEL_IN_FRONT = 0x1 << 2,
-    CHANNEL_IN_BACK = 0x1 << 3
-};
 
 /**
  * Enumerates the audio interrupt request type.
@@ -582,8 +555,6 @@ struct AudioStreamInfo {
     AudioEncodingType encoding;
     AudioSampleFormat format;
     AudioChannel channels;
-    AudioOutputChannelMask channelOut;
-    AudioInputChannelMask channelIn;
 };
 
 struct AudioRendererInfo {

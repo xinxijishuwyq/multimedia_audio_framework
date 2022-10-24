@@ -126,13 +126,13 @@ napi_value AudioInterruptManagerNapi::Init(napi_env env, napi_value exports)
     const int32_t refCount = 1;
     napi_get_undefined(env, &result);
 
-    napi_property_descriptor audio_routing_manager_properties[] = {
+    napi_property_descriptor audio_interrupt_manager_properties[] = {
 
     };
 
-    status = napi_define_class(env, AUDIO_INTERRUPT_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
-        sizeof(audio_routing_manager_properties) / sizeof(audio_routing_manager_properties[PARAM0]),
-        audio_routing_manager_properties, &constructor);
+    status = napi_define_class(env, AUDIO_INTERRUPT_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
+        nullptr, sizeof(audio_interrupt_manager_properties) / sizeof(audio_interrupt_manager_properties[PARAM0]),
+        audio_interrupt_manager_properties, &constructor);
     if (status != napi_ok) {
         return result;
     }

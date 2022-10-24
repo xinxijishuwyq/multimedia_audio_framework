@@ -159,18 +159,6 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
     napi_set_element(env, channelCounts, 0, value);
     napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
 
-    napi_value channelOut;
-    napi_create_array_with_length(env, 1, &channelOut);
-    napi_create_int32(env, deviceInfo.audioStreamInfo.channelOut, &value);
-    napi_set_element(env, channelOut, 0, value);
-    napi_set_named_property(env, valueParam, "channelOut", channelOut);
-
-    napi_value channelIn;
-    napi_create_array_with_length(env, 1, &channelIn);
-    napi_create_int32(env, deviceInfo.audioStreamInfo.channelIn, &value);
-    napi_set_element(env, channelIn, 0, value);
-    napi_set_named_property(env, valueParam, "channelIn", channelIn);
-
     napi_value channelMasks;
     napi_create_array_with_length(env, 1, &channelMasks);
     napi_create_int32(env, deviceInfo.channelMasks, &value);
@@ -430,7 +418,7 @@ void AudioStreamMgrNapi::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterCapturerStateChangeCallback(env, args, cbName, streamMgrNapi);
     } else {
         AUDIO_ERR_LOG("AudioStreamMgrNapi::No such callback supported");
-        AudioCommonNapi::throwError(env, ERR_NUMBER101);
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
     }
 }
 
@@ -445,11 +433,11 @@ napi_value AudioStreamMgrNapi::On(napi_env env, napi_callback_info info)
     napi_value args[requireArgc + 1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    THROW_ERROR_ASSERT(env, status == napi_ok && argc == requireArgc, ERR_NUMBER_401);
+    THROW_ERROR_ASSERT(env, status == napi_ok && argc == requireArgc, NAPI_ERR_INPUT_INVALID);
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[0], &eventType);
-    THROW_ERROR_ASSERT(env, eventType == napi_string, ERR_NUMBER_401);
+    THROW_ERROR_ASSERT(env, eventType == napi_string, NAPI_ERR_INPUT_INVALID);
 
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
     AUDIO_DEBUG_LOG("AudioStreamMgrNapi: On callbackName: %{public}s", callbackName.c_str());
@@ -457,7 +445,7 @@ napi_value AudioStreamMgrNapi::On(napi_env env, napi_callback_info info)
     napi_valuetype handler = napi_undefined;
  
     napi_typeof(env, args[1], &handler);
-    THROW_ERROR_ASSERT(env, handler == napi_function, ERR_NUMBER_401);
+    THROW_ERROR_ASSERT(env, handler == napi_function, NAPI_ERR_INPUT_INVALID);
   
     RegisterCallback(env, jsThis, args, callbackName);
 
@@ -554,7 +542,7 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioRendererInfos(napi_env env, napi_c
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -574,9 +562,8 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioRendererInfos(napi_env env, napi_c
                 if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioStreamMngr_->
                         GetCurrentRendererChangeInfos(context->audioRendererChangeInfos);
-                    context->status = context->status == SUCCESS ? SUCCESS : ERR_NUMBER301;
+                    context->status = context->status == SUCCESS ? SUCCESS : NAPI_ERR_SYSTEM;
                 }
-                
             },
             GetCurrentRendererChangeInfosCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -621,7 +608,7 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioCapturerInfos(napi_env env, napi_c
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -639,10 +626,10 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioCapturerInfos(napi_env env, napi_c
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioStreamMgrAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->objectInfo->audioStreamMngr_->GetCurrentCapturerChangeInfos(context->audioCapturerChangeInfos);
+                    context->objectInfo->audioStreamMngr_->
+                        GetCurrentCapturerChangeInfos(context->audioCapturerChangeInfos);
                     context->status = SUCCESS;
                 }
-
             },
             GetCurrentCapturerChangeInfosCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -679,7 +666,8 @@ napi_value AudioStreamMgrNapi::IsAudioRendererLowLatencySupported(napi_env env, 
         if (i == PARAM0 && valueType == napi_object) {
             if (!ParseAudioStreamInfo(env, argv[i], asyncContext->audioStreamInfo)) {
                 HiLog::Error(LABEL, "Parsing of audiostream failed");
-                asyncContext->status = asyncContext->status == ERR_NUMBER101 ? ERR_NUMBER101 : ERR_NUMBER104;
+                asyncContext->status = asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
             }
         } else if (i == PARAM1) {
             if (valueType == napi_function) {
@@ -687,7 +675,7 @@ napi_value AudioStreamMgrNapi::IsAudioRendererLowLatencySupported(napi_env env, 
             }
             break;
         } else {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
     }
     if (asyncContext->callbackRef == nullptr) {
@@ -701,14 +689,13 @@ napi_value AudioStreamMgrNapi::IsAudioRendererLowLatencySupported(napi_env env, 
     status = napi_create_async_work(
         env, nullptr, resource,
         [](napi_env env, void *data) {
-        auto context = static_cast<AudioStreamMgrAsyncContext*>(data);
-        if (context->status == SUCCESS) {
-            context->isLowLatencySupported =
-                context->objectInfo->audioStreamMngr_->IsAudioRendererLowLatencySupported(context->audioStreamInfo);
-            context->isTrue = context->isLowLatencySupported;
-            context->status = SUCCESS;
-        }
-
+            auto context = static_cast<AudioStreamMgrAsyncContext*>(data);
+            if (context->status == SUCCESS) {
+                context->isLowLatencySupported =
+                    context->objectInfo->audioStreamMngr_->IsAudioRendererLowLatencySupported(context->audioStreamInfo);
+                context->isTrue = context->isLowLatencySupported;
+                context->status = SUCCESS;
+            }
         },
         IsLowLatencySupportedCallback, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -738,16 +725,6 @@ bool AudioStreamMgrNapi::ParseAudioStreamInfo(napi_env env, napi_value root, Aud
     if (napi_get_named_property(env, root, "channels", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         audioStreamInfo.channels = static_cast<AudioChannel>(intValue);
-    }
-
-    if (napi_get_named_property(env, root, "channelOut", &tempValue) == napi_ok) {
-        napi_get_value_int32(env, tempValue, &intValue);
-        audioStreamInfo.channelOut = static_cast<AudioOutputChannelMask>(intValue);
-    }
-
-    if (napi_get_named_property(env, root, "channelIn", &tempValue) == napi_ok) {
-        napi_get_value_int32(env, tempValue, &intValue);
-        audioStreamInfo.channelIn = static_cast<AudioInputChannelMask>(intValue);
     }
 
     if (napi_get_named_property(env, root, "sampleFormat", &tempValue) == napi_ok) {
@@ -846,7 +823,7 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -854,8 +831,9 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
@@ -863,7 +841,7 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 

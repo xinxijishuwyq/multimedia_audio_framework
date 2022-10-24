@@ -293,7 +293,6 @@ public:
      */
     virtual int32_t GetAudioStreamId(uint32_t &sessionID) const = 0;
 
-
     /* @brief Obtains the number of frames required in the current condition, in bytes per sample.
      *
      * @param frameCount Indicates the pointer in which framecount will be written

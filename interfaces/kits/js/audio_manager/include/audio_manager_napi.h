@@ -126,13 +126,11 @@ private:
     static napi_ref connectTypeRef_;
     static napi_ref audioErrors_;
     static napi_ref communicationDeviceType_;
-    static napi_ref audioOutputChannelMask_;
-    static napi_ref audioInputChannelMask_;
     static napi_ref interruptRequestType_;
     static napi_ref interruptRequestResultType_;
 
     AudioSystemManager *audioMngr_;
-    int32_t cachedClientId = -1;
+    int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerCallback> interruptCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
@@ -191,22 +189,7 @@ static const std::map<std::string, AudioStandard::AudioErrors> audioErrorsMap = 
 static const std::map<std::string, AudioStandard::CommunicationDeviceType> communicationDeviceTypeMap = {
     {"SPEAKER", COMMUNICATION_SPEAKER}
 };
-static const std::map<std::string, AudioStandard::AudioOutputChannelMask> audioOutputChannelMaskMap = {
-    {"CHANNEL_OUT_FRONT_LEFT", CHANNEL_OUT_FRONT_LEFT},
-    {"CHANNEL_OUT_FRONT_RIGHT", CHANNEL_OUT_FRONT_RIGHT},
-    {"CHANNEL_OUT_FRONT_CENTER", CHANNEL_OUT_FRONT_CENTER},
-    {"CHANNEL_OUT_LOW_FREQUENCY", CHANNEL_OUT_LOW_FREQUENCY},
-    {"CHANNEL_OUT_SIDE_LEFT", CHANNEL_OUT_SIDE_LEFT},
-    {"CHANNEL_OUT_SIDE_RIGHT", CHANNEL_OUT_SIDE_RIGHT},
-    {"CHANNEL_OUT_BACK_LEFT", CHANNEL_OUT_BACK_LEFT},
-    {"CHANNEL_OUT_BACK_RIGHT", CHANNEL_OUT_BACK_RIGHT},
-};
-static const std::map<std::string, AudioStandard::AudioInputChannelMask> audioInputChannelMaskMap = {
-    {"CHANNEL_IN_LEFT", CHANNEL_IN_LEFT},
-    {"CHANNEL_IN_RIGHT", CHANNEL_IN_RIGHT},
-    {"CHANNEL_IN_FRONT", CHANNEL_IN_FRONT},
-    {"CHANNEL_IN_BACK", CHANNEL_IN_BACK},
-};
+
 static const std::map<std::string, AudioStandard::InterruptRequestType> interruptRequestTypeMap = {
     {"INTERRUPT_REQUEST_TYPE_DEFAULT", INTERRUPT_REQUEST_TYPE_DEFAULT},
 };

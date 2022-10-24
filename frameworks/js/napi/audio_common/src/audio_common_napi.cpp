@@ -39,42 +39,44 @@ std::string AudioCommonNapi::GetStringArgument(napi_env env, napi_value value)
     return strValue;
 }
 
-std::string AudioCommonNapi::getMessageByCode(int32_t &code) {
+std::string AudioCommonNapi::getMessageByCode(int32_t &code)
+{
     std::string err_message;
     switch (code) {
-        case ERR_NUMBER101:
-            err_message = ERR_MESSAGE101;
+        case NAPI_ERR_INVALID_PARAM:
+            err_message = NAPI_ERR_INVALID_PARAM_INFO;
             break;
-        case ERR_NUMBER102:
-            err_message = ERR_MESSAGE102;
+        case NAPI_ERR_NO_MEMORY:
+            err_message = NAPI_ERR_NO_MEMORY_INFO;
             break;
-        case ERR_NUMBER103:
-            err_message = ERR_MESSAGE103;
+        case NAPI_ERR_ILLEGAL_STATE:
+            err_message = NAPI_ERR_ILLEGAL_STATE_INFO;
             break;
-        case ERR_NUMBER104:
-            err_message = ERR_MESSAGE104;
+        case NAPI_ERR_UNSUPPORTED:
+            err_message = NAPI_ERR_UNSUPPORTED_INFO;
             break;
-        case ERR_NUMBER105:
-            err_message = ERR_MESSAGE105;
+        case NAPI_ERR_TIMEOUT:
+            err_message = NAPI_ERR_TIMEOUT_INFO;
             break;
-        case ERR_NUMBER201:
-            err_message = ERR_MESSAGE201;
+        case NAPI_ERR_STREAM_LIMIT:
+            err_message = NAPI_ERR_STREAM_LIMIT_INFO;
             break;
-        case ERR_NUMBER301:
-            err_message = ERR_MESSAGE301;
+        case NAPI_ERR_SYSTEM:
+            err_message = NAPI_ERR_SYSTEM_INFO;
             break;
-        case ERR_NUMBER_401:
-            err_message = ERR_MESSAGE_401;
+        case NAPI_ERR_INPUT_INVALID:
+            err_message = NAPI_ERR_INPUT_INVALID_INFO;
             break;
         default:
-            err_message = ERR_MESSAGE301;
-            code = ERR_NUMBER301;
+            err_message = NAPI_ERR_SYSTEM_INFO;
+            code = NAPI_ERR_SYSTEM;
             break;
     }
     return err_message;
 }
 
-void AudioCommonNapi::throwError(napi_env env, int32_t code) {
+void AudioCommonNapi::throwError(napi_env env, int32_t code)
+{
     std::string messageValue = AudioCommonNapi::getMessageByCode(code);
     napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
 }

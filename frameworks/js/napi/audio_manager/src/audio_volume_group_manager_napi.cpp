@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "audio_volume_group_manager_napi.h"
 #include "audio_common_napi.h"
 #include "audio_errors.h"
@@ -278,7 +279,6 @@ napi_value AudioVolumeGroupManagerNapi::CreateAudioVolumeGroupManagerWrapper(nap
     napi_create_int64(env, groupId, &groupId_);
     napi_value args[PARAM1] = {groupId_};
     status = napi_get_reference_value(env, g_groupmanagerConstructor, &constructor);
-
     if (status == napi_ok) {
         status = napi_new_instance(env, constructor, PARAM1, args, &result);
         if (status == napi_ok) {
@@ -305,7 +305,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -313,8 +313,9 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
@@ -322,7 +323,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -374,7 +375,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_TWO) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -382,20 +383,23 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;                }
+                if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                }
             } else if (i == PARAM2) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -444,7 +448,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -452,16 +456,17 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
                 }
-                break;;
+                break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -513,7 +518,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -521,8 +526,9 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
@@ -582,7 +588,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -590,8 +596,9 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1 && valueType == napi_boolean) {
                 napi_get_value_bool(env, argv[i], &asyncContext->isMute);
@@ -601,7 +608,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -652,7 +659,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -660,8 +667,9 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->volType);
-                if(!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                    asyncContext->status = (asyncContext->status == ERR_NUMBER101) ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
+                    asyncContext->status = (asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
@@ -669,7 +677,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -723,7 +731,7 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -731,8 +739,9 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->ringMode);
-                if(!AudioCommonNapi::IsLegalInputArgumentRingMode(asyncContext->ringMode)) {
-                    asyncContext->status = asyncContext->status == ERR_NUMBER101 ? ERR_NUMBER101 : ERR_NUMBER104;
+                if (!AudioCommonNapi::IsLegalInputArgumentRingMode(asyncContext->ringMode)) {
+                    asyncContext->status = asyncContext->status ==
+                        NAPI_ERR_INVALID_PARAM ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
                 }
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
@@ -740,7 +749,7 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -796,7 +805,7 @@ napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callbac
             napi_typeof(env, argv[PARAM0], &valueType);
             if (valueType == napi_function) {
                 napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
-            }                
+            }
         }
 
         if (asyncContext->callbackRef == nullptr) {
@@ -848,7 +857,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_cal
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_ONE) {
-            asyncContext->status = ERR_NUMBER101;
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
         for (size_t i = PARAM0; i < argc; i++) {
             napi_valuetype valueType = napi_undefined;
@@ -862,7 +871,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_cal
                 }
                 break;
             } else {
-                asyncContext->status = ERR_NUMBER101;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         }
 
@@ -965,12 +974,12 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
     napi_status status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     if (status != napi_ok || argCount < minArgCount) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
-        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
     }
 
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
-        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
@@ -982,16 +991,15 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
         AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi::On type mismatch for parameter 2");
-        AudioCommonNapi::throwError(env, ERR_NUMBER_401);
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
-
 
     if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (volumeGroupManagerNapi->ringerModecallbackNapi_ == nullptr) {
             volumeGroupManagerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
             int32_t ret = volumeGroupManagerNapi->audioGroupMngr_->SetRingerModeCallback(
-                volumeGroupManagerNapi->cachedClientId, volumeGroupManagerNapi->ringerModecallbackNapi_);
+                volumeGroupManagerNapi->cachedClientId_, volumeGroupManagerNapi->ringerModecallbackNapi_);
             if (ret) {
                 AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: SetRingerModeCallback Failed");
                 return undefinedResult;
@@ -1005,7 +1013,8 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else if (!callbackName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
         if (!volumeGroupManagerNapi->micStateChangeCallbackNapi_) {
-            volumeGroupManagerNapi->micStateChangeCallbackNapi_= std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
+            volumeGroupManagerNapi->micStateChangeCallbackNapi_=
+                std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
             if (!volumeGroupManagerNapi->micStateChangeCallbackNapi_) {
                 AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Memory Allocation Failed !!");
             }
@@ -1018,16 +1027,16 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
         }
 
         std::shared_ptr<AudioManagerMicStateChangeCallbackNapi> cb =
-            std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(volumeGroupManagerNapi->micStateChangeCallbackNapi_);
+            std::static_pointer_cast<AudioManagerMicStateChangeCallbackNapi>(volumeGroupManagerNapi->
+                micStateChangeCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
 
         AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi::On SetMicStateChangeCallback is successful");
     } else {
         AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi::No such callback supported");
-        AudioCommonNapi::throwError(env, ERR_NUMBER101);
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
     }
     return undefinedResult;
- 
 }
 
 napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
@@ -1054,7 +1063,8 @@ napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
 
     };
 
-    status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
+    status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(),
+        NAPI_AUTO_LENGTH, Construct, nullptr,
         sizeof(audio_svc_group_mngr_properties) / sizeof(audio_svc_group_mngr_properties[PARAM0]),
         audio_svc_group_mngr_properties, &constructor);
     if (status != napi_ok) {

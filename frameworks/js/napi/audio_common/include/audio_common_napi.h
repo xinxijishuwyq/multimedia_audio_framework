@@ -88,25 +88,25 @@ struct AutoRef {
     napi_ref cb_;
 };
 
-const int32_t  ERR_NUMBER_101 = 6800101;
-const int32_t  ERR_NUMBER_401 = 401;
-const int32_t  ERR_NUMBER101 = 6800101;
-const int32_t  ERR_NUMBER102 = 6800102;
-const int32_t  ERR_NUMBER103 = 6800103;
-const int32_t  ERR_NUMBER104 = 6800104;
-const int32_t  ERR_NUMBER105 = 6800105;
-const int32_t  ERR_NUMBER201 = 6800201;
-const int32_t  ERR_NUMBER301 = 6800301;
+const int32_t  NAPI_ERROR_INVALID_PARAM = 6800101;
+const int32_t  NAPI_ERR_INPUT_INVALID = 401;
+const int32_t  NAPI_ERR_INVALID_PARAM = 6800101;
+const int32_t  NAPI_ERR_NO_MEMORY = 6800102;
+const int32_t  NAPI_ERR_ILLEGAL_STATE = 6800103;
+const int32_t  NAPI_ERR_UNSUPPORTED = 6800104;
+const int32_t  NAPI_ERR_TIMEOUT = 6800105;
+const int32_t  NAPI_ERR_STREAM_LIMIT = 6800201;
+const int32_t  NAPI_ERR_SYSTEM = 6800301;
 
-const std::string ERR_MESSAGE_101 = "input parameter value error";
-const std::string ERR_MESSAGE_401 = "input parameter type or number mismatch";
-const std::string ERR_MESSAGE101 = "invalid parameter";
-const std::string ERR_MESSAGE102 = "allocate memory failed";
-const std::string ERR_MESSAGE103 = "Operation not permit at current state";
-const std::string ERR_MESSAGE104 = "unsupported option";
-const std::string ERR_MESSAGE105 = "time out";
-const std::string ERR_MESSAGE201 = "stream number limited";
-const std::string ERR_MESSAGE301 = "system error";
+const std::string NAPI_ERROR_INVALID_PARAM_INFO = "input parameter value error";
+const std::string NAPI_ERR_INPUT_INVALID_INFO = "input parameter type or number mismatch";
+const std::string NAPI_ERR_INVALID_PARAM_INFO = "invalid parameter";
+const std::string NAPI_ERR_NO_MEMORY_INFO = "allocate memory failed";
+const std::string NAPI_ERR_ILLEGAL_STATE_INFO = "Operation not permit at current state";
+const std::string NAPI_ERR_UNSUPPORTED_INFO = "unsupported option";
+const std::string NAPI_ERR_TIMEOUT_INFO = "time out";
+const std::string NAPI_ERR_STREAM_LIMIT_INFO = "stream number limited";
+const std::string NAPI_ERR_SYSTEM_INFO = "system error";
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_COMMON_NAPI_H_
