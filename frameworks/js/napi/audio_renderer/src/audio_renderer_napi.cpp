@@ -1629,7 +1629,7 @@ napi_value AudioRendererNapi::GetAudioStreamId(napi_env env, napi_callback_info 
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext *>(data);
-                size_t audioStreamId;
+                uint32_t audioStreamId;
                 int32_t streamIdStatus;
                 streamIdStatus = context->objectInfo->audioRenderer_->GetAudioStreamId(audioStreamId);
                 if (streamIdStatus == ERR_ILLEGAL_STATE) {
