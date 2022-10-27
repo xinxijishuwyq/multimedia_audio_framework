@@ -772,7 +772,7 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
 bool AudioPolicyService::IsMicrophoneMute() const
 {
     AUDIO_DEBUG_LOG("Enter IsMicrophoneMute");
-    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, false, "Service proxy unavailable");
     return g_sProxy->IsMicrophoneMute();
 }
 
