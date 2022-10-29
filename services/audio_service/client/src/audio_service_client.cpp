@@ -1015,6 +1015,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 {
+    AUDIO_DEBUG_LOG("AudioServiceClient::GetSessionID");
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         AUDIO_ERR_LOG("GetSessionID failed, pa_status is invalid");
         return AUDIO_CLIENT_PA_ERR;
