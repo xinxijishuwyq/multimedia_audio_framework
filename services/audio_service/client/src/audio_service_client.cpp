@@ -409,7 +409,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
     if (asClient->mAudioRendererCallbacks)
         asClient->mAudioRendererCallbacks->OnStreamStateChangeCb();
 
-    AUDIO_INFO_LOG("Current Stream State: %{private}d", pa_stream_get_state(stream));
+    AUDIO_INFO_LOG("Current Stream State: %{public}d", pa_stream_get_state(stream));
 
     switch (pa_stream_get_state(stream)) {
         case PA_STREAM_READY:
@@ -428,7 +428,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
-    AUDIO_INFO_LOG("Current Context State: %{private}d", pa_context_get_state(context));
+    AUDIO_INFO_LOG("Current Context State: %{public}d", pa_context_get_state(context));
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
@@ -934,7 +934,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
-    AUDIO_ERR_LOG("Creating stream of channels %{public}d", audioParams.channels);
+    AUDIO_INFO_LOG("Creating stream of channels %{public}d", audioParams.channels);
     pa_channel_map map;
     if (audioParams.channels > CHANNEL_6) {
         pa_channel_map_init(&map);
@@ -1749,7 +1749,7 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount) const
     }
 
     frameCount = minBufferSize / bytesPerSample;
-    AUDIO_INFO_LOG("frame count: %{private}d", frameCount);
+    AUDIO_INFO_LOG("frame count: %{public}d", frameCount);
     return AUDIO_CLIENT_SUCCESS;
 }
 
