@@ -18,6 +18,10 @@
 #include <cstddef>
 #include <cstdint>
 #include "message_parcel.h"
+#include "audio_info.h"
+#include "audio_stream_collector.h"
+#include "audio_client_tracker_callback_proxy.h"
+#include "audio_policy_proxy.h"
 using namespace std;
 
 namespace OHOS {
@@ -25,6 +29,7 @@ namespace OHOS {
     const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
     const int32_t SYSTEM_ABILITY_ID = 3009;
     const bool RUN_ON_CREATE = false;
+    const int32_t LIMITSIZE = 4;
     namespace AudioStandard {
         uint32_t Convert2Uint32(const uint8_t *ptr)
         {
@@ -36,7 +41,7 @@ namespace OHOS {
         }
         void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
         {
-            if (rawData == nullptr) {
+            if (rawData == nullptr || size < LIMITSIZE) {
                 std::cout << "Invalid data" << std::endl;
                 return;
             }
