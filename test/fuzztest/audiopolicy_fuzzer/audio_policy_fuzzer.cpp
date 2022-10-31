@@ -18,10 +18,6 @@
 #include <cstddef>
 #include <cstdint>
 #include "message_parcel.h"
-#include "audio_info.h"
-#include "audio_stream_collector.h"
-#include "audio_client_tracker_callback_proxy.h"
-#include "audio_policy_proxy.h"
 using namespace std;
 
 namespace OHOS {
