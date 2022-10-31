@@ -1545,6 +1545,10 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
 void AudioServiceClient::OnTimeOut()
 {
     AUDIO_ERR_LOG("Inside read timeout callback");
+    if (mainLoop == nullptr) {
+        AUDIO_ERR_LOG("AudioServiceClient::OnTimeOut failed: mainLoop == nullptr");
+        return;
+    }
     pa_threaded_mainloop_lock(mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
     pa_threaded_mainloop_unlock(mainLoop);
