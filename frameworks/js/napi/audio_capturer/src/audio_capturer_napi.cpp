@@ -1318,6 +1318,10 @@ bool AudioCapturerNapi::ParseCapturerOptions(napi_env env, napi_value root, Audi
         result = ParseStreamInfo(env, res, &(opts->streamInfo));
     }
 
+    if (result == false) {
+        return result;
+    }
+
     if (napi_get_named_property(env, root, "capturerInfo", &res) == napi_ok) {
         result = ParseCapturerInfo(env, res, &(opts->capturerInfo));
     }
@@ -1359,7 +1363,26 @@ bool AudioCapturerNapi::ParseStreamInfo(napi_env env, napi_value root, AudioStre
 
     if (napi_get_named_property(env, root, "samplingRate", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
-        streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+        switch (intValue) {
+            HiLog::Error(LABEL, "Unknown AudioSamplingRate4444444444: %{public}d", intValue);
+            case SAMPLE_RATE_8000:
+            case SAMPLE_RATE_11025:
+            case SAMPLE_RATE_12000:
+            case SAMPLE_RATE_16000:
+            case SAMPLE_RATE_22050:
+            case SAMPLE_RATE_24000:
+            case SAMPLE_RATE_32000:
+            case SAMPLE_RATE_44100:
+            case SAMPLE_RATE_48000:
+            case SAMPLE_RATE_64000:
+            case SAMPLE_RATE_96000:
+
+                streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+                break;
+            default:
+                HiLog::Error(LABEL, "Unknown AudioSamplingRate: %{public}d", intValue);
+                return false;
+        }
     }
 
     if (napi_get_named_property(env, root, "channels", &tempValue) == napi_ok) {
