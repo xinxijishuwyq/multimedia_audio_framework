@@ -656,6 +656,22 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     return ret;
 }
 
+void AudioSystemManager::SetAudioMonoState(bool monoState)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioMonoState::Audio service unavailable");
+    }
+    g_sProxy->SetAudioMonoState(monoState);
+}
+
+void AudioSystemManager::SetAudioBalanceValue(float balanceValue)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioBalanceValue::Audio service unavailable");
+    }
+    g_sProxy->SetAudioBalanceValue(balanceValue);
+}
+
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,
