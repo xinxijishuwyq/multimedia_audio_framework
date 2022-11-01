@@ -223,13 +223,13 @@ int32_t FastAudioRendererSink::PrepareMmapBuffer()
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
     int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
-    struct AudioMmapBufferDescripter desc = {0};
+    struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioRender_->attr.ReqMmapBuffer((AudioHandle)audioRender_, reqBufferFrameSize, &desc);
     if (ret != 0) {
         AUDIO_ERR_LOG("ReqMmapBuffer failed, ret:%{public}d", ret);
         return ERR_OPERATION_FAILED;
     }
-    AUDIO_INFO_LOG("AudioMmapBufferDescripter memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
+    AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
         "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]",desc.memoryAddress,
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable , desc.offset);
 
