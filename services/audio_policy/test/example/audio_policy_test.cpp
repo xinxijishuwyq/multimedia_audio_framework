@@ -78,6 +78,8 @@ static void PrintUsage(void)
     cout << "-N\n\tSet the discount volume factor" << endl << endl;
     cout << "-n\n\tGet the discount volume factor or Get single stream volume" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
+    cout << "-B\n\tSet AudioMonoState (using 1 or 0 instead of true of false)" << endl;
+    cout << "\tSet AudioBalanceValue (using [9, 11] instead of [-1, 1])" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }
@@ -473,6 +475,33 @@ static void HandleGetVolumeGroups(int argc, char* argv[])
         }
     }
 }
+
+static void HandleAudioBalanceState(int argc, char* argv[])
+{
+    if (argc != AudioPolicyTest::FOURTH_ARG) {
+        cout << "Incorrect number of test commands." << endl;
+        return;
+    }
+    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
+
+    int monoValue = atoi(argv[AudioPolicyTest::SECOND_ARG]);
+    if (monoValue != 1 && monoValue != 0) {
+        cout << "Audio mono state is valid." << endl;
+        return;
+    }
+    bool monoState = (monoValue != 0);
+    audioSystemMgr->SetAudioMonoState(monoState);
+    cout << "Audio mono state: " << (monoState? "true" : "false") << endl;
+
+    float balanceValue = atof(argv[AudioPolicyTest::THIRD_ARG]) - 10.0f;
+    if (balanceValue < -1.0f || balanceValue > 1.0f) {
+        cout << "Audio balance value is valid." << endl;
+        return;
+    }
+    audioSystemMgr->SetAudioBalanceValue(balanceValue);
+    cout << "Audio balance value: " << balanceValue << endl;
+}
+
 int main(int argc, char* argv[])
 {
     int opt = 0;
@@ -483,7 +512,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:vmrucOoIiGgNntp")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:vmrucOoIiGgNntp")) != -1) {
         switch (opt) {
             case 'G':
             case 'g':
@@ -553,6 +582,9 @@ int main(int argc, char* argv[])
                 break;
             case 'p':
                 HandleGetVolumeGroups(argc, argv);
+                break;
+            case 'B':
+                HandleAudioBalanceState(argc, argv);
                 break;
             default:
                 break;

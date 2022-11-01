@@ -246,6 +246,8 @@ public:
     int32_t RegisterVolumeKeyEventCallback(const int32_t clientPid,
                                            const std::shared_ptr<VolumeKeyEventCallback> &callback);
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
+    void SetAudioMonoState(bool monoState);
+    void SetAudioBalanceValue(float balanceValue);
 
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be removed
