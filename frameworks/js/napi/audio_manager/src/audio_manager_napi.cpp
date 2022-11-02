@@ -444,7 +444,6 @@ napi_value AudioManagerNapi::CreateDeviceRoleObject(napi_env env)
                     propName = "OUTPUT_DEVICE";
                     break;
                 default:
-                    HiLog::Error(LABEL, "CreateDeviceRoleObject: No prob with this value try next value!");
                     continue;
             }
             status = AddNamedProperty(env, result, propName, i);
@@ -540,7 +539,6 @@ napi_value AudioManagerNapi::CreateConnectTypeObject(napi_env env)
                     propName = "CONNECT_TYPE_DISTRIBUTED";
                     break;
                 default:
-                    HiLog::Error(LABEL, "CreateConnectTypeObject: No prob with this value try next value!");
                     continue;
             }
             status = AddNamedProperty(env, result, propName, i);
@@ -584,7 +582,6 @@ napi_value AudioManagerNapi::CreateAudioRingModeObject(napi_env env)
                     propName = "RINGER_MODE_NORMAL";
                     break;
                 default:
-                    HiLog::Error(LABEL, "CreateAudioRingModeObject: No prob with this value try next value!");
                     continue;
             }
             status = AddNamedProperty(env, result, propName, i);
