@@ -23,52 +23,53 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-    const int32_t SYSTEM_ABILITY_ID = 3001;
-    const bool RUN_ON_CREATE = false;
-    const int32_t LIMITSIZE = 4;
-    float Convert2Float(const uint8_t *ptr)
-    {
-        // 根据ptr的大小随机生成区间[-1, +1]内的float值
-        float floatValue = static_cast<float>(*ptr);
-        return floatValue / 128.0f - 1.0f;
-    }
+const int32_t SYSTEM_ABILITY_ID = 3001;
+const bool RUN_ON_CREATE = false;
+const int32_t LIMITSIZE = 4;
 
-    void AudioServerBalanceFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<AudioServer> AudioServerPtr)
-    {
-        float balanceValue = Convert2Float(rawData);
-        MessageParcel data;
-        data.WriteFloat(balanceValue);
-        MessageParcel reply;
-        MessageOption option;
-        AudioServerPtr->OnRemoteRequest(AudioManagerStub::SET_AUDIO_BALANCE_VALUE, data, reply, option);
-    }
+float Convert2Float(const uint8_t *ptr)
+{
+    // 根据ptr的大小随机生成区间[-1, +1]内的float值
+    float floatValue = static_cast<float>(*ptr);
+    return floatValue / 128.0f - 1.0f;
+}
 
-    bool Convert2Bool(const uint8_t *ptr)
-    {
-        // 根据ptr的值随机生成bool值
-        return (ptr[0] & 1) ? true : false;
-    }
+void AudioServerBalanceFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<AudioServer> AudioServerPtr)
+{
+    float balanceValue = Convert2Float(rawData);
+    MessageParcel data;
+    data.WriteFloat(balanceValue);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(AudioManagerStub::SET_AUDIO_BALANCE_VALUE, data, reply, option);
+}
 
-    void AudioServerMonoFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<AudioServer> AudioServerPtr)
-    {
-        bool monoState = Convert2Bool(rawData);
-        MessageParcel data;
-        data.WriteBool(monoState);
-        MessageParcel reply;
-        MessageOption option;
-        AudioServerPtr->OnRemoteRequest(AudioManagerStub::SET_AUDIO_MONO_STATE, data, reply, option);
-    }
+bool Convert2Bool(const uint8_t *ptr)
+{
+    // 根据ptr的值随机生成bool值
+    return (ptr[0] & 1) ? true : false;
+}
 
-    void AudioServerBalanceFuzzTest(const uint8_t *rawData, size_t size)
-    {
-        if (rawData == nullptr || size < LIMITSIZE) {
-            return;
-        }
-        std::shared_ptr<AudioServer> AudioServerPtr =
-            std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-        AudioServerBalanceFuzzer(rawData, size, AudioServerPtr);
-        AudioServerMonoFuzzer(rawData, size, AudioServerPtr);
+void AudioServerMonoFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<AudioServer> AudioServerPtr)
+{
+    bool monoState = Convert2Bool(rawData);
+    MessageParcel data;
+    data.WriteBool(monoState);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(AudioManagerStub::SET_AUDIO_MONO_STATE, data, reply, option);
+}
+
+void AudioServerBalanceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
     }
+    std::shared_ptr<AudioServer> AudioServerPtr =
+        std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioServerBalanceFuzzer(rawData, size, AudioServerPtr);
+    AudioServerMonoFuzzer(rawData, size, AudioServerPtr);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
