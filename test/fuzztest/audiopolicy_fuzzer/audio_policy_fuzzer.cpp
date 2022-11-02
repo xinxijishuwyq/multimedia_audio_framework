@@ -14,9 +14,9 @@
  */
 
 #include <iostream>
-#include "audio_policy_server.h"
 #include <cstddef>
 #include <cstdint>
+#include "audio_policy_server.h"
 #include "message_parcel.h"
 using namespace std;
 
@@ -46,7 +46,6 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     rawData = rawData + OFFSET;
     size = size - OFFSET;
 
-    //data build
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);

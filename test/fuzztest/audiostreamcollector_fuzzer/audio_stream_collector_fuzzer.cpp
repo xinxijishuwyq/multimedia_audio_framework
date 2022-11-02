@@ -16,9 +16,9 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-#include "message_parcel.h"
 #include "audio_info.h"
 #include "audio_stream_collector.h"
+#include "message_parcel.h"
 using namespace std;
 
 namespace OHOS {
@@ -32,7 +32,6 @@ void AudioStreamCollectorFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
-    //data build
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);

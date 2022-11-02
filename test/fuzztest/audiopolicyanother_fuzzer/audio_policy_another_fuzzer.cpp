@@ -14,11 +14,12 @@
  */
 
 #include <iostream>
-#include "audio_policy_server.h"
 #include <cstddef>
 #include <cstdint>
-#include "message_parcel.h"
 #include "audio_info.h"
+#include "audio_policy_server.h"
+#include "message_parcel.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -58,7 +59,6 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
         std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
-    //data build
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
@@ -99,7 +99,6 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
         std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
-    //data build
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
@@ -129,7 +128,6 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
         std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
-    //data build
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
