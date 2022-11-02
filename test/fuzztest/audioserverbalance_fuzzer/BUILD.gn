@@ -15,10 +15,9 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 
-ohos_fuzztest("AudioServerFuzzTest") {
-  module_out_path = "multimedia_audio_framework/audioserver"
-  fuzz_config_file =
-      "//foundation/multimedia/audio_framework/test/fuzztest/audioserver_fuzzer"
+ohos_fuzztest("AudioServerBalanceFuzzTest") {
+  module_out_path = "multimedia_audio_framework/audioserverbalance_fuzzer"
+  fuzz_config_file = "//foundation/multimedia/audio_framework/test/fuzztest/audioserverbalance_fuzzer"
 
   include_dirs = [ "//foundation/multimedia/audio_framework/services/audio_service/server/include" ]
 
@@ -29,7 +28,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "audio_server_fuzzer.cpp" ]
+  sources = [ "audio_server_balance_fuzzer.cpp" ]
 
   configs = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_service_config" ]
 
@@ -48,5 +47,5 @@ ohos_fuzztest("AudioServerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioServerFuzzTest" ]
+  deps = [ ":AudioServerBalanceFuzzTest" ]
 }
