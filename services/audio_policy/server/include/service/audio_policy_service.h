@@ -193,6 +193,8 @@ public:
 
     void SubscribeAccessibilityConfigObserver();
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+
 private:
     AudioPolicyService()
         : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
