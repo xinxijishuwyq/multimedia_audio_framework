@@ -33,7 +33,6 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
     if (ptr == nullptr) {
         return 0;
     }
-    // 将第0个数字左移24位，将第1个数字左移16位，将第2个数字左移8位，第3个数字不左移
     return (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | (ptr[3]);
 }
 

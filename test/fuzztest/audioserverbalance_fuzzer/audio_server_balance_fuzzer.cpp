@@ -29,7 +29,6 @@ const int32_t LIMITSIZE = 4;
 
 float Convert2Float(const uint8_t *ptr)
 {
-    // 根据ptr的大小随机生成区间[-1, +1]内的float值
     float floatValue = static_cast<float>(*ptr);
     return floatValue / 128.0f - 1.0f;
 }
@@ -46,7 +45,6 @@ void AudioServerBalanceFuzzer(const uint8_t *rawData, size_t size, std::shared_p
 
 bool Convert2Bool(const uint8_t *ptr)
 {
-    // 根据ptr的值随机生成bool值
     return (ptr[0] & 1) ? true : false;
 }
 
