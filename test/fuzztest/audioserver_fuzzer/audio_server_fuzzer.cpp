@@ -33,6 +33,8 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
     if (ptr == nullptr) {
         return 0;
     }
+    /* Move the 0th digit to the left by 24 bits, the 1st digit to the left by 16 bits,
+       the 2nd digit to the left by 8 bits, and the 3rd digit not to the left */
     return (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | (ptr[3]);
 }
 
