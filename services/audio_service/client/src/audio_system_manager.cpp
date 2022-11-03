@@ -168,7 +168,7 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 {
     ringModeBackup_ = ringMode;
     if (ringerModeCallback_ != nullptr) {
-        ringerModeCallback_->OnRingerModeUpdated(ringModeBackup);
+        ringerModeCallback_->OnRingerModeUpdated(ringModeBackup_);
     }
 
     return SUCCESS;
