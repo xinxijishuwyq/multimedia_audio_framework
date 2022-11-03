@@ -285,8 +285,10 @@ private:
     int32_t cbClientId_ = -1;
 
     int32_t volumeChangeClientPid_ = -1;
+    AudioRingerMode ringModeBackup_;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
+    std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;
 
     uint32_t GetCallingPid();
     std::mutex mutex_;
