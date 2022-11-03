@@ -443,6 +443,11 @@ int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice, AudioPortPin 
         .sinks = &sink,
     };
 
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("AudioCapturerSource: AudioAdapter object is null.");
+        return ERR_OPERATION_FAILED;
+    }
+
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioCapturerSource: UpdateAudioRoute failed");

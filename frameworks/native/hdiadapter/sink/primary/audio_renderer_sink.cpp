@@ -608,6 +608,11 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
         .sinks = &sink,
     };
 
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererSink: AudioAdapter object is null.");
+        return ERR_OPERATION_FAILED;
+    }
+
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRendererSink: UpdateAudioRoute failed");

@@ -595,6 +595,11 @@ int32_t RemoteAudioRendererSink::OpenOutput(DeviceType outputDevice)
         .sinks = &sink,
     };
 
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink: AudioAdapter object is null.");
+        return ERR_OPERATION_FAILED;
+    }
+
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
     if (ret != 0) {
