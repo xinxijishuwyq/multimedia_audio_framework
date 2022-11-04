@@ -23,15 +23,12 @@
 #include "ipc_skeleton.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
-#include "audio_renderer_sink.h"
-#include "remote_audio_renderer_sink.h"
-#include "i_standard_audio_server_manager_listener.h"
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub, public AudioSinkCallback {
+class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);

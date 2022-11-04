@@ -20,19 +20,16 @@
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_renderer_sink.h"
 #include "iservice_registry.h"
 #include "audio_log.h"
 #include "system_ability_definition.h"
 #include "audio_manager_listener_proxy.h"
-#include "bluetooth_renderer_sink_intf.h"
+#include "i_audio_renderer_sink.h"
+#include "i_standard_audio_server_manager_listener.h"
+
 #include "audio_server.h"
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
-
-extern "C" {
-#include "renderer_sink_adapter.h"
-}
 
 #define PA
 #ifdef PA
@@ -124,7 +121,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
 
     AudioServer::audioParameters[key] = value;
 #ifdef PRODUCT_M40
-    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
         HiviewDFX::XCollie::GetInstance().CancelTimer(id);
@@ -146,7 +143,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
         return;
@@ -161,7 +158,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: get audio parameter");
 #ifdef PRODUCT_M40
-    AudioRendererSink* audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
         AudioParamKey parmKey = AudioParamKey::NONE;
         if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
@@ -183,7 +180,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
     const std::string& condition)
 {
-    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
         return "";
@@ -222,28 +219,35 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
 {
     uint64_t transactionId = 0;
     AUDIO_INFO_LOG("GetTransactionId in: device type: %{public}d, device role: %{public}d", deviceType, deviceRole);
-
-    if (deviceRole == OUTPUT_DEVICE) {
-        struct RendererSinkAdapter *sinkAdapter;
-        int32_t ret = SUCCESS;
-        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            ret = LoadSinkAdapter("a2dp", "LocalDevice", &sinkAdapter);
-        } else {
-            ret = LoadSinkAdapter("primary", "LocalDevice", &sinkAdapter);
-        }
-
-        if (ret) {
-            AUDIO_ERR_LOG("Load adapter failed");
-            return transactionId;
-        }
-
-        sinkAdapter->RendererSinkGetTransactionId(&transactionId);
-        UnLoadSinkAdapter(sinkAdapter);
-    } else if (deviceRole == INPUT_DEVICE) {
+    if (deviceRole != INPUT_DEVICE && deviceRole != OUTPUT_DEVICE) {
+        AUDIO_ERR_LOG("AudioServer::GetTransactionId: error device role");
+        return ERR_INVALID_PARAM;
+    }
+    if (deviceRole == INPUT_DEVICE) {
         AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
         if (audioCapturerSourceInstance) {
             transactionId = audioCapturerSourceInstance->GetTransactionId();
         }
+        AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
+        return transactionId;
+    }
+
+    // deviceRole OUTPUT_DEVICE
+    IAudioRendererSink *iRendererInstance = nullptr;
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        iRendererInstance = IAudioRendererSink::GetInstance("a2dp", "");
+    } else {
+        iRendererInstance = IAudioRendererSink::GetInstance("primary", "");
+    }
+
+    int32_t ret = ERROR;
+    if (iRendererInstance != nullptr) {
+        ret = iRendererInstance->GetTransactionId(&transactionId);
+    }
+
+    if (ret) {
+        AUDIO_ERR_LOG("Get transactionId failed.");
+        return transactionId;
     }
 
     AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
@@ -306,7 +310,7 @@ bool AudioServer::IsMicrophoneMute()
 
 int32_t AudioServer::SetVoiceVolume(float volume)
 {
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
 
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_WARNING_LOG("Renderer is null.");
@@ -321,15 +325,15 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
 
-    if (!audioCapturerSourceInstance->capturerInited_) {
+    if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->capturerInited_) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
         audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);
     }
 
-    if (!audioRendererSinkInstance->rendererInited_) {
+    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
         audioRendererSinkInstance->SetAudioScene(audioScene, activeDevice);
@@ -344,7 +348,12 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType: %{public}d, flag: %{public}d", type, flag);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+
+    if (audioCapturerSourceInstance == nullptr || audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("UpdateActiveDeviceRoute null instance!");
+        return ERR_INVALID_PARAM;
+    }
 
     switch (flag) {
         case DeviceFlag::INPUT_DEVICES_FLAG: {
@@ -384,15 +393,20 @@ void AudioServer::SetAudioMonoState(bool audioMono)
     AUDIO_INFO_LOG("AudioServer::SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
 
     // Set mono for audio_renderer_sink(primary sink)
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
-    if (!audioRendererSinkInstance->rendererInited_) {
-        AUDIO_WARNING_LOG("Renderer is not initialized.");
-    } else {
+
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    if (audioRendererSinkInstance != nullptr) {
         audioRendererSinkInstance->SetAudioMonoState(audioMono);
+    } else {
+        AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: primary = null");
     }
 
-    // Set mono for bluetooth_renderer_sink
-    BluetoothRendererSinkSetAudioMonoState(audioMono);
+    IAudioRendererSink *a2dpIAudioRendererSink = IAudioRendererSink::GetInstance("a2dp", "");
+    if (a2dpIAudioRendererSink != nullptr) {
+        a2dpIAudioRendererSink->SetAudioMonoState(audioMono);
+    } else {
+        AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: a2dp = null");
+    }
 }
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
@@ -400,21 +414,25 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("AudioServer::SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
 
     // Set balance for audio_renderer_sink(primary sink)
-    AudioRendererSink *audioRendererSinkInstance = AudioRendererSink::GetInstance();
-    if (!audioRendererSinkInstance->rendererInited_) {
-        AUDIO_WARNING_LOG("Renderer is not initialized.");
-    } else {
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    if (audioRendererSinkInstance != nullptr) {
         audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
+    } else {
+        AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: primary = null");
     }
 
-    // Set balance for bluetooth_renderer_sink
-    BluetoothRendererSinkSetAudioBalanceValue(audioBalance);
+    IAudioRendererSink *a2dpIAudioRendererSink = IAudioRendererSink::GetInstance("a2dp", "");
+    if (a2dpIAudioRendererSink != nullptr) {
+        a2dpIAudioRendererSink->SetAudioBalanceValue(audioBalance);
+    } else {
+        AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: a2dp = null");
+    }
 }
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 {
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)", networkId.c_str(), connected);
-    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
     if (audioRendererSinkInstance != nullptr && connected) {
         audioRendererSinkInstance->RegisterParameterCallback(this);
     }
@@ -424,8 +442,8 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
         networkId.c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
-    RemoteAudioRendererSink* audioRendererSinkInstance = RemoteAudioRendererSink::GetInstance(networkId.c_str());
-    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->rendererInited_) {
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
+    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = SUCCESS;

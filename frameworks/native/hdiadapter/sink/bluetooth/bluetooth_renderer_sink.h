@@ -17,25 +17,16 @@
 #define BLUETOOTH_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "audio_proxy_manager.h"
-#include "running_lock.h"
-
-#include <cstdio>
-#include <list>
+#include "i_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct {
-    HDI::Audio_Bluetooth::AudioFormat format;
-    uint32_t sampleFmt;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-} BluetoothSinkAttr;
-
-class BluetoothRendererSink {
+class BluetoothRendererSink : public IAudioRendererSink {
 public:
-    int32_t Init(const BluetoothSinkAttr &atrr);
+    static BluetoothRendererSink *GetInstance(void);
+
+    int32_t Init(IAudioSinkAttr atrr);
+    bool IsInited(void);
     void DeInit(void);
     int32_t Start(void);
     int32_t Stop(void);
@@ -48,41 +39,20 @@ public:
     int32_t GetVolume(float &left, float &right);
     int32_t GetLatency(uint32_t *latency);
     int32_t GetTransactionId(uint64_t *transactionId);
-    static BluetoothRendererSink *GetInstance(void);
     bool GetAudioMonoState();
     float GetAudioBalanceValue();
     void SetAudioMonoState(bool audioMono);
     void SetAudioBalanceValue(float audioBalance);
-    bool rendererInited_;
 
-private:
-    BluetoothRendererSink();
-    ~BluetoothRendererSink();
-    BluetoothSinkAttr attr_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
-    struct HDI::Audio_Bluetooth::AudioProxyManager *audioManager_;
-    struct HDI::Audio_Bluetooth::AudioAdapter *audioAdapter_;
-    struct HDI::Audio_Bluetooth::AudioRender *audioRender_;
-    struct HDI::Audio_Bluetooth::AudioPort audioPort = {};
-    void *handle_;
-    bool audioMonoState_ = false;
-    bool audioBalanceState_ = false;
-    float audioBalanceValue_ = 0.0f;
-    float leftBalanceCoef_ = 1.0f;
-    float rightBalanceCoef_ = 1.0f;
+    int32_t SetVoiceVolume(float volume);
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
+    int32_t SetOutputRoute(DeviceType deviceType);
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
+    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
+    void RegisterParameterCallback(IAudioSinkCallback* callback);
 
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
-
-    int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
-    int32_t InitAudioManager();
-    void AdjustStereoToMono(char *data, uint64_t len);
-    void AdjustAudioBalance(char *data, uint64_t len);
-#ifdef BT_DUMPFILE
-    FILE *pfd;
-#endif // DUMPFILE
+    BluetoothRendererSink() = default;
+    ~BluetoothRendererSink() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -13,16 +13,21 @@
  * limitations under the License.
  */
 
+#include "audio_renderer_sink.h"
+
 #include <cstring>
+#include <cinttypes>
 #include <dlfcn.h>
 #include <string>
 #include <unistd.h>
-#include <cinttypes>
+
+#include "audio_manager.h"
+#include "power_mgr_client.h"
+#include "running_lock.h"
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "audio_renderer_sink.h"
-#include "power_mgr_client.h"
 
 using namespace std;
 
@@ -44,12 +49,72 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const uint32_t PARAM_VALUE_LENTH = 10;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 }
-#ifdef DUMPFILE
-// Note: accessing to this directory requires selinux permission
-const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
-#endif // DUMPFILE
+class AudioRendererSinkInner : public AudioRendererSink {
+public:
+    int32_t Init(IAudioSinkAttr attr) override;
+    bool IsInited(void) override;
+    void DeInit(void) override;
 
-AudioRendererSink::AudioRendererSink()
+    int32_t Flush(void) override;
+    int32_t Pause(void) override;
+    int32_t Reset(void) override;
+    int32_t Resume(void) override;
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
+    int32_t SetVolume(float left, float right) override;
+    int32_t GetVolume(float &left, float &right) override;
+    int32_t SetVoiceVolume(float volume) override;
+    int32_t GetLatency(uint32_t *latency) override;
+    int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
+    int32_t SetOutputRoute(DeviceType deviceType) override;
+
+    int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
+    AudioRendererSinkInner();
+    ~AudioRendererSinkInner();
+private:
+    IAudioSinkAttr attr_;
+    bool rendererInited_;
+    bool started_;
+    bool paused_;
+    float leftVolume_;
+    float rightVolume_;
+    int32_t routeHandle_ = -1;
+    uint32_t openSpeaker_;
+    std::string adapterNameCase_;
+    struct AudioManager *audioManager_;
+    struct AudioAdapter *audioAdapter_;
+    struct AudioRender *audioRender_;
+    struct AudioPort audioPort_ = {};
+    bool audioMonoState_ = false;
+    bool audioBalanceState_ = false;
+    float leftBalanceCoef_ = 1.0f;
+    float rightBalanceCoef_ = 1.0f;
+
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+
+    int32_t CreateRender(struct AudioPort &renderPort);
+    int32_t InitAudioManager();
+    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    void AdjustStereoToMono(char *data, uint64_t len);
+    void AdjustAudioBalance(char *data, uint64_t len);
+#ifdef DUMPFILE
+    FILE *pfd;
+    // Note: accessing to this directory requires selinux permission
+    const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
+#endif // DUMPFILE
+};
+
+AudioRendererSinkInner::AudioRendererSinkInner()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
       audioRender_(nullptr)
@@ -60,19 +125,19 @@ AudioRendererSink::AudioRendererSink()
 #endif // DUMPFILE
 }
 
-AudioRendererSink::~AudioRendererSink()
+AudioRendererSinkInner::~AudioRendererSinkInner()
 {
     DeInit();
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance()
 {
-    static AudioRendererSink audioRenderer_;
+    static AudioRendererSinkInner audioRenderer_;
 
     return &audioRenderer_;
 }
 
-void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
     AUDIO_INFO_LOG("AudioRendererSink::SetAudioParameter:key %{public}d, condition: %{public}s, value: %{public}s", key,
@@ -84,7 +149,7 @@ void AudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::st
     }
 }
 
-std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
     AUDIO_INFO_LOG("AudioRendererSink::GetAudioParameter: key %{public}d, condition: %{public}s", key,
         condition.c_str());
@@ -98,12 +163,12 @@ std::string AudioRendererSink::GetAudioParameter(const AudioParamKey key, const 
     return value;
 }
 
-void AudioRendererSink::SetAudioMonoState(bool audioMono)
+void AudioRendererSinkInner::SetAudioMonoState(bool audioMono)
 {
     audioMonoState_ = audioMono;
 }
 
-void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
+void AudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
 {
     // reset the balance coefficient value firstly
     leftBalanceCoef_ = 1.0f;
@@ -124,7 +189,7 @@ void AudioRendererSink::SetAudioBalanceValue(float audioBalance)
     }
 }
 
-void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
+void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
@@ -134,21 +199,21 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
     }
 
     switch (attr_.format) {
-        case AUDIO_FORMAT_TYPE_PCM_8_BIT: {
+        case SAMPLE_U8: {
             // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case AUDIO_FORMAT_TYPE_PCM_16_BIT: {
+        case SAMPLE_S16LE: {
             AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
             break;
         }
-        case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
+        case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
+        case SAMPLE_S32LE: {
             AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
             break;
         }
@@ -160,7 +225,7 @@ void AudioRendererSink::AdjustStereoToMono(char *data, uint64_t len)
     }
 }
 
-void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
+void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
@@ -170,21 +235,21 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
     }
 
     switch (attr_.format) {
-        case AUDIO_FORMAT_TYPE_PCM_8_BIT: {
+        case SAMPLE_U8: {
             // this function needs to be further tested for usability
             AdjustAudioBalanceForPCM8Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
-        case AUDIO_FORMAT_TYPE_PCM_16_BIT: {
+        case SAMPLE_S16LE: {
             AdjustAudioBalanceForPCM16Bit(reinterpret_cast<int16_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
-        case AUDIO_FORMAT_TYPE_PCM_24_BIT: {
+        case SAMPLE_S24LE: {
             // this function needs to be further tested for usability
             AdjustAudioBalanceForPCM24Bit(reinterpret_cast<int8_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
-        case AUDIO_FORMAT_TYPE_PCM_32_BIT: {
+        case SAMPLE_S32LE: {
             AdjustAudioBalanceForPCM32Bit(reinterpret_cast<int32_t *>(data), len, leftBalanceCoef_, rightBalanceCoef_);
             break;
         }
@@ -196,7 +261,17 @@ void AudioRendererSink::AdjustAudioBalance(char *data, uint64_t len)
     }
 }
 
-void AudioRendererSink::DeInit()
+bool AudioRendererSinkInner::IsInited()
+{
+    return rendererInited_;
+}
+
+void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
+{
+    AUDIO_ERR_LOG("AudioRendererSink RegisterParameterCallback not supported.");
+}
+
+void AudioRendererSinkInner::DeInit()
 {
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
@@ -264,7 +339,7 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
     return ERR_INVALID_INDEX;
 }
 
-int32_t AudioRendererSink::InitAudioManager()
+int32_t AudioRendererSinkInner::InitAudioManager()
 {
     AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
 
@@ -293,14 +368,38 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     }
 }
 
-int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
+AudioFormat AudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+{
+    AudioFormat hdiFormat;
+    switch (format) {
+        case SAMPLE_U8:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            break;
+        case SAMPLE_S16LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+        case SAMPLE_S24LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            break;
+        case SAMPLE_S32LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        default:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+    }
+
+    return hdiFormat;
+}
+
+int32_t AudioRendererSinkInner::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = attr_.format;
+    param.format = ConverToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
@@ -318,7 +417,7 @@ int32_t AudioRendererSink::CreateRender(struct AudioPort &renderPort)
     return 0;
 }
 
-int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
+int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information
@@ -385,7 +484,7 @@ int32_t AudioRendererSink::Init(AudioSinkAttr &attr)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int64_t stamp = GetNowTimeMs();
     int32_t ret;
@@ -420,7 +519,7 @@ int32_t AudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &write
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Start(void)
+int32_t AudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
 
@@ -451,7 +550,7 @@ int32_t AudioRendererSink::Start(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetVolume(float left, float right)
+int32_t AudioRendererSinkInner::SetVolume(float left, float right)
 {
     int32_t ret;
     float volume;
@@ -479,14 +578,14 @@ int32_t AudioRendererSink::SetVolume(float left, float right)
     return ret;
 }
 
-int32_t AudioRendererSink::GetVolume(float &left, float &right)
+int32_t AudioRendererSinkInner::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetVoiceVolume(float volume)
+int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
 {
     if (audioAdapter_ == nullptr) {
         AUDIO_ERR_LOG("AudioRendererSink: SetVoiceVolume failed audio adapter null");
@@ -496,7 +595,7 @@ int32_t AudioRendererSink::SetVoiceVolume(float volume)
     return audioAdapter_->SetVoiceVolume(audioAdapter_, volume);
 }
 
-int32_t AudioRendererSink::GetLatency(uint32_t *latency)
+int32_t AudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed audio render null");
@@ -571,13 +670,13 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice)
+int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 {
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
     return SetOutputRoute(outputDevice, outputPortPin);
 }
 
-int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
+int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
@@ -622,7 +721,7 @@ int32_t AudioRendererSink::SetOutputRoute(DeviceType outputDevice, AudioPortPin 
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
@@ -660,7 +759,7 @@ int32_t AudioRendererSink::SetAudioScene(AudioScene audioScene, DeviceType activ
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::GetTransactionId(uint64_t *transactionId)
+int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
     AUDIO_INFO_LOG("AudioRendererSink::GetTransactionId in");
 
@@ -678,7 +777,7 @@ int32_t AudioRendererSink::GetTransactionId(uint64_t *transactionId)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Stop(void)
+int32_t AudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
 
@@ -710,7 +809,7 @@ int32_t AudioRendererSink::Stop(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Pause(void)
+int32_t AudioRendererSinkInner::Pause(void)
 {
     int32_t ret;
 
@@ -738,7 +837,7 @@ int32_t AudioRendererSink::Pause(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Resume(void)
+int32_t AudioRendererSinkInner::Resume(void)
 {
     int32_t ret;
 
@@ -766,7 +865,7 @@ int32_t AudioRendererSink::Resume(void)
     return SUCCESS;
 }
 
-int32_t AudioRendererSink::Reset(void)
+int32_t AudioRendererSinkInner::Reset(void)
 {
     int32_t ret;
 
@@ -783,7 +882,7 @@ int32_t AudioRendererSink::Reset(void)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t AudioRendererSink::Flush(void)
+int32_t AudioRendererSinkInner::Flush(void)
 {
     int32_t ret;
 
@@ -801,154 +900,3 @@ int32_t AudioRendererSink::Flush(void)
 }
 } // namespace AudioStandard
 } // namespace OHOS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-using namespace OHOS::AudioStandard;
-
-AudioRendererSink *g_audioRendrSinkInstance = AudioRendererSink::GetInstance();
-
-int32_t FillinAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper)
-{
-    AudioRendererSink *instance = AudioRendererSink::GetInstance();
-    if (instance != nullptr) {
-        *wapper = static_cast<void *>(instance);
-    } else {
-        *wapper = nullptr;
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioRendererSinkInit(void *wapper, AudioSinkAttr *attr)
-{
-    (void)wapper;
-    int32_t ret;
-    if (g_audioRendrSinkInstance->rendererInited_)
-        return SUCCESS;
-
-    ret = g_audioRendrSinkInstance->Init(*attr);
-    return ret;
-}
-
-void AudioRendererSinkDeInit(void *wapper)
-{
-    (void)wapper;
-    if (g_audioRendrSinkInstance->rendererInited_)
-        g_audioRendrSinkInstance->DeInit();
-}
-
-int32_t AudioRendererSinkStop(void *wapper)
-{
-    (void)wapper;
-    int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_)
-        return SUCCESS;
-
-    ret = g_audioRendrSinkInstance->Stop();
-    return ret;
-}
-
-int32_t AudioRendererSinkStart(void *wapper)
-{
-    (void)wapper;
-    int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    ret = g_audioRendrSinkInstance->Start();
-    return ret;
-}
-
-int32_t AudioRendererSinkPause(void *wapper)
-{
-    (void)wapper;
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("Renderer pause failed");
-        return ERR_NOT_STARTED;
-    }
-
-    return g_audioRendrSinkInstance->Pause();
-}
-
-int32_t AudioRendererSinkResume(void *wapper)
-{
-    (void)wapper;
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("Renderer resume failed");
-        return ERR_NOT_STARTED;
-    }
-
-    return g_audioRendrSinkInstance->Resume();
-}
-
-int32_t AudioRendererRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
-{
-    (void)wapper;
-    int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    ret = g_audioRendrSinkInstance->RenderFrame(data, len, writeLen);
-    return ret;
-}
-
-int32_t AudioRendererSinkSetVolume(void *wapper, float left, float right)
-{
-    (void)wapper;
-    int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    ret = g_audioRendrSinkInstance->SetVolume(left, right);
-    return ret;
-}
-
-int32_t AudioRendererSinkGetLatency(void *wapper, uint32_t *latency)
-{
-    (void)wapper;
-    int32_t ret;
-
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    if (!latency) {
-        AUDIO_ERR_LOG("AudioRendererSinkGetLatency failed latency null");
-        return ERR_INVALID_PARAM;
-    }
-
-    ret = g_audioRendrSinkInstance->GetLatency(latency);
-    return ret;
-}
-
-int32_t AudioRendererSinkGetTransactionId(uint64_t *transactionId)
-{
-    if (!g_audioRendrSinkInstance->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first");
-        return ERR_NOT_STARTED;
-    }
-
-    if (!transactionId) {
-        AUDIO_ERR_LOG("AudioRendererSinkGetTransactionId failed transaction id null");
-        return ERR_INVALID_PARAM;
-    }
-
-    return g_audioRendrSinkInstance->GetTransactionId(transactionId);
-}
-#ifdef __cplusplus
-}
-#endif

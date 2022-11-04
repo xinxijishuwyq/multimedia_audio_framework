@@ -19,7 +19,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 typedef struct {
     const char *adapterName;
     uint32_t open_mic_speaker;

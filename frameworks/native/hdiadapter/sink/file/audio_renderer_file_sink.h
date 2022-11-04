@@ -16,30 +16,47 @@
 #ifndef AUDIO_RENDERER_FILE_SINK_H
 #define AUDIO_RENDERER_FILE_SINK_H
 
-#include "audio_info.h"
-
 #include <cstdio>
 #include <list>
 #include <iostream>
 #include <string>
 
+#include "audio_info.h"
+#include "i_audio_renderer_sink.h"
+
 namespace OHOS {
 namespace AudioStandard {
-class AudioRendererFileSink {
+class AudioRendererFileSink  : public IAudioRendererSink {
 public:
-    int32_t Init(const char *filePath);
-    void DeInit(void);
-    int32_t Start(void);
-    int32_t Stop(void);
-    int32_t Flush(void);
-    int32_t Reset(void);
-    int32_t Pause(void);
-    int32_t Resume(void);
-    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen);
-    int32_t SetVolume(float left, float right);
-    int32_t GetLatency(uint32_t *latency);
-    int32_t GetTransactionId(uint64_t *transactionId);
     static AudioRendererFileSink *GetInstance(void);
+
+    int32_t Init(IAudioSinkAttr attr) override;
+    bool IsInited(void) override;
+    void DeInit(void) override;
+
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+    int32_t Flush(void) override;
+    int32_t Reset(void) override;
+    int32_t Pause(void) override;
+    int32_t Resume(void) override;
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
+    int32_t SetVolume(float left, float right) override;
+    int32_t GetLatency(uint32_t *latency) override;
+    int32_t GetTransactionId(uint64_t *transactionId) override;
+
+    int32_t GetVolume(float &left, float &right) override;
+    int32_t SetVoiceVolume(float volume) override;
+
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetOutputRoute(DeviceType deviceType) override;
+
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
 private:
     AudioRendererFileSink();
     ~AudioRendererFileSink();
