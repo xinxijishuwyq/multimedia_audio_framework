@@ -28,30 +28,6 @@ class AudioRendererSink : public IAudioRendererSink {
 public:
     static AudioRendererSink *GetInstance(void);
 
-    int32_t Init(IAudioSinkAttr attr);
-    bool IsInited(void);
-    void DeInit(void);
-    int32_t Flush(void);
-    int32_t Pause(void);
-    int32_t Reset(void);
-    int32_t Resume(void);
-    int32_t Start(void);
-    int32_t Stop(void);
-    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen);
-    int32_t SetVolume(float left, float right);
-    int32_t GetVolume(float &left, float &right);
-    int32_t SetVoiceVolume(float volume);
-    int32_t GetLatency(uint32_t *latency);
-    int32_t GetTransactionId(uint64_t *transactionId);
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
-    int32_t SetOutputRoute(DeviceType deviceType);
-
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
-    void RegisterParameterCallback(IAudioSinkCallback* callback);
-
-    void SetAudioMonoState(bool audioMono);
-    void SetAudioBalanceValue(float audioBalance);
     AudioRendererSink() = default;
     ~AudioRendererSink() = default;
 };
