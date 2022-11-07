@@ -14,6 +14,8 @@
  */
 
 #include <chrono>
+#include <cinttypes>
+#include <ctime>
 #include <sstream>
 #include <ostream>
 #include "audio_utils.h"
@@ -22,6 +24,61 @@
 
 namespace OHOS {
 namespace AudioStandard {
+int64_t ClockTime::GetCurNano()
+{
+    int64_t result = -1; // -1 for bad result.
+    struct timespec time;
+    clockid_t clockId = CLOCK_MONOTONIC;
+    int ret = clock_gettime(clockId, &time);
+    if (ret < 0) {
+        AUDIO_WARNING_LOG("GetCurNanoTime fail, result:%{public}d", ret);
+        return result;
+    }
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
+int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
+{
+    int32_t ret = -1; // -1 for bad result.
+    if (nanoTime <= 0) {
+        AUDIO_WARNING_LOG("AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
+        return ret;
+    }
+    struct timespec time;
+    time.tv_sec = nanoTime / AUDIO_NS_PER_SECOND;
+    time.tv_nsec = nanoTime - (time.tv_sec * AUDIO_NS_PER_SECOND); // Avoids % operation.
+
+    clockid_t clockId = CLOCK_MONOTONIC;
+    ret = clock_nanosleep(clockId, TIMER_ABSTIME, &time, nullptr);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("AbsoluteSleep may failed, ret is :%{public}d", ret);
+    }
+
+    return ret;
+}
+
+int32_t ClockTime::RelativeSleep(int64_t nanoTime)
+{
+    int32_t ret = -1; // -1 for bad result.
+    if (nanoTime <= 0) {
+        AUDIO_WARNING_LOG("AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
+        return ret;
+    }
+    struct timespec time;
+    time.tv_sec = nanoTime / AUDIO_NS_PER_SECOND;
+    time.tv_nsec = nanoTime - (time.tv_sec * AUDIO_NS_PER_SECOND); // Avoids % operation.
+
+    clockid_t clockId = CLOCK_MONOTONIC;
+    const int relativeFlag = 0; // flag of relative sleep.
+    ret = clock_nanosleep(clockId, relativeFlag, &time, nullptr);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("RelativeSleep may failed, ret is :%{public}d", ret);
+    }
+
+    return ret;
+}
+
 int64_t GetNowTimeMs()
 {
     std::chrono::milliseconds nowMs =

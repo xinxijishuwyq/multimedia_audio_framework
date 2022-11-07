@@ -17,8 +17,18 @@
 
 #include <cstdint>
 
+#define AUDIO_MS_PER_SECOND 1000
+#define AUDIO_US_PER_SECOND 1000000
+#define AUDIO_NS_PER_SECOND ((int64_t)1000000000)
 namespace OHOS {
 namespace AudioStandard {
+class ClockTime {
+public:
+    static int64_t GetCurNano();
+    static int32_t AbsoluteSleep(int64_t nanoTime);
+    static int32_t RelativeSleep(int64_t nanoTime);
+};
+
 int64_t GetNowTimeMs();
 int64_t GetNowTimeUs();
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
