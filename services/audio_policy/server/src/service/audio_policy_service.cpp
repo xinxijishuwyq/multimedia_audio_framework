@@ -633,6 +633,7 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
             break;
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             portName = PRIMARY_SPEAKER;
@@ -811,6 +812,7 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
             break;
         }
+        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_SPEAKER: {
             ret = g_sProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
@@ -1145,7 +1147,8 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
         audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
         if ((deviceDescriptor.deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
-            || (deviceDescriptor.deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+            || (deviceDescriptor.deviceType_ == DEVICE_TYPE_USB_HEADSET)
+            || (deviceDescriptor.deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES)) {
             auto isSpeakerPresent = [](const sptr<AudioDeviceDescriptor> &devDesc) {
                 CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
                 return (DEVICE_TYPE_SPEAKER == devDesc->deviceType_);
@@ -1752,6 +1755,7 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
     AudioIOHandle ioHandle;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
@@ -1816,7 +1820,8 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
     for (auto deviceDescriptor : desc) {
         if (deviceDescriptor != nullptr) {
             if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
-                || (deviceDescriptor->deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+                || (deviceDescriptor->deviceType_ == DEVICE_TYPE_USB_HEADSET)
+                || (deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES)) {
                 HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_HEADSET_CHANGE",
                     HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
                     "ISCONNECT", isConnected ? 1 : 0,
@@ -2007,6 +2012,7 @@ DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
