@@ -88,13 +88,9 @@ private:
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioVolumeTypeObject(napi_env env);
     static napi_value CreateDeviceFlagObject(napi_env env);
-    static napi_value CreateDeviceRoleObject(napi_env env);
-    static napi_value CreateDeviceTypeObject(napi_env env);
     static napi_value CreateActiveDeviceTypeObject(napi_env env);
     static napi_value CreateConnectTypeObject(napi_env env);
     static napi_value CreateInterruptActionTypeObject(napi_env env);
-    static napi_value CreateInterruptHintObject(napi_env env);
-    static napi_value CreateInterruptTypeObject(napi_env env);
     static napi_value CreateAudioRingModeObject(napi_env env);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
@@ -151,19 +147,6 @@ static const std::map<std::string, AudioScene> AUDIO_SCENE_MAP = {
     {"AUDIO_SCENE_VOICE_CHAT", AUDIO_SCENE_PHONE_CHAT}
 };
 
-static const std::map<std::string, InterruptType> INTERRUPT_TYPE_MAP = {
-    {"INTERRUPT_TYPE_BEGIN", INTERRUPT_TYPE_BEGIN},
-    {"INTERRUPT_TYPE_END", INTERRUPT_TYPE_END}
-};
-
-static const std::map<std::string, InterruptHint> INTERRUPT_HINT_MAP = {
-    {"INTERRUPT_HINT_NONE", INTERRUPT_HINT_NONE},
-    {"INTERRUPT_HINT_PAUSE", INTERRUPT_HINT_PAUSE},
-    {"INTERRUPT_HINT_RESUME", INTERRUPT_HINT_RESUME},
-    {"INTERRUPT_HINT_STOP", INTERRUPT_HINT_STOP},
-    {"INTERRUPT_HINT_DUCK", INTERRUPT_HINT_DUCK},
-    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK}
-};
 static const std::map<std::string, InterruptActionType> INTERRUPT_ACTION_TYPE_MAP = {
     {"TYPE_ACTIVATED", TYPE_ACTIVATED},
     {"TYPE_INTERRUPT", TYPE_INTERRUPT}
@@ -174,18 +157,6 @@ static const std::map<std::string, AudioManagerNapi::AudioVolumeType> VOLUME_TYP
     {"RINGTONE", AudioManagerNapi::RINGTONE},
     {"MEDIA", AudioManagerNapi::MEDIA},
     {"VOICE_ASSISTANT", AudioManagerNapi::VOICE_ASSISTANT}
-};
-
-static const std::map<std::string, AudioStandard::DeviceType> DEVICE_TYPE_MAP = {
-    {"INVALID", DEVICE_TYPE_INVALID},
-    {"EARPIECE", DEVICE_TYPE_EARPIECE},
-    {"SPEAKER", DEVICE_TYPE_SPEAKER},
-    {"WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
-    {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
-    {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
-    {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
-    {"MIC", DEVICE_TYPE_MIC},
-    {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET}
 };
 
 static const std::map<std::string, AudioStandard::ActiveDeviceType> ACTIVE_DEVICE_TYPE = {
