@@ -326,8 +326,8 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
     }
 
     if (deviceInfoUpdated) {
-        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
-            audioRendererChangeInfos_);
+        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
+            audioCapturerChangeInfos_);
     }
 
     return SUCCESS;
