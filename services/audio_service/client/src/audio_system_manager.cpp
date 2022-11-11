@@ -141,16 +141,24 @@ void AudioSystemManager::init()
     }
 }
 
-int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode) const
+int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 {
-    /* Call Audio Policy SetRingerMode */
-    return AudioPolicyManager::GetInstance().SetRingerMode(ringMode);
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("SetRingerMode failed, groupManager is null");
+        return ERR_INVALID_PARAM;
+    }
+    return groupManager->SetRingerMode(ringMode);
 }
 
-AudioRingerMode AudioSystemManager::GetRingerMode() const
+AudioRingerMode AudioSystemManager::GetRingerMode()
 {
-    /* Call Audio Policy GetRingerMode */
-    return (AudioPolicyManager::GetInstance().GetRingerMode());
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("GetRingerMode failed, groupManager is null");
+        return AudioRingerMode::RINGER_MODE_NORMAL;
+    }
+    return groupManager->GetRingerMode();
 }
 
 int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
@@ -499,7 +507,12 @@ int32_t AudioSystemManager::SetMicrophoneMute(bool isMute)
 
 bool AudioSystemManager::IsMicrophoneMute()
 {
-    return AudioPolicyManager::GetInstance().IsMicrophoneMute();
+    std::shared_ptr<AudioGroupManager> groupManager = GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
+    if (groupManager == nullptr) {
+        AUDIO_ERR_LOG("IsMicrophoneMute failed, groupManager is null");
+        return false;
+    }
+    return groupManager->IsMicrophoneMute();
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
@@ -617,6 +630,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
     return AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDeviceDescriptors()
+{
+    return AudioPolicyManager::GetInstance().GetActiveOutputDeviceDescriptors();
+}
+
 int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
                                                            const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
@@ -641,6 +659,22 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     }
 
     return ret;
+}
+
+void AudioSystemManager::SetAudioMonoState(bool monoState)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioMonoState::Audio service unavailable");
+    }
+    g_sProxy->SetAudioMonoState(monoState);
+}
+
+void AudioSystemManager::SetAudioBalanceValue(float balanceValue)
+{
+    if (!IsAlived()) {
+        CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "SetAudioBalanceValue::Audio service unavailable");
+    }
+    g_sProxy->SetAudioBalanceValue(balanceValue);
 }
 
 // Below stub implementation is added to handle compilation error in call manager

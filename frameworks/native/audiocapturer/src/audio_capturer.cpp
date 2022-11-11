@@ -127,7 +127,9 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
-    if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId, appInfo_.appUid)) {
+    AUDIO_INFO_LOG("AudioCapturer::SetParams");
+    if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId, appInfo_.appUid,
+        true, AUDIO_PERMISSION_START)) {
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }
@@ -254,6 +256,11 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
+    AUDIO_INFO_LOG("AudioCapturer::Start");
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_START)) {
+        AUDIO_ERR_LOG("Start monitor permission failed");
+    }
     return audioStream_->StartAudioStream();
 }
 
@@ -274,27 +281,48 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioCapturerPrivate::Pause() const
 {
+    AUDIO_INFO_LOG("AudioCapturer::Pause");
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_STOP)) {
+        AUDIO_ERR_LOG("Pause monitor permission failed");
+    }
     return audioStream_->PauseAudioStream();
 }
 
 bool AudioCapturerPrivate::Stop() const
 {
+    AUDIO_INFO_LOG("AudioCapturer::Stop");
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_STOP)) {
+        AUDIO_ERR_LOG("Stop monitor permission failed");
+    }
     return audioStream_->StopAudioStream();
 }
 
 bool AudioCapturerPrivate::Flush() const
 {
+    AUDIO_INFO_LOG("AudioCapturer::Flush");
     return audioStream_->FlushAudioStream();
 }
 
 bool AudioCapturerPrivate::Release() const
 {
+    AUDIO_INFO_LOG("AudioCapturer::Release");
+    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
+        AUDIO_PERMISSION_STOP)) {
+        AUDIO_ERR_LOG("Release monitor permission failed");
+    }
     return audioStream_->ReleaseAudioStream();
 }
 
 int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const
 {
     return audioStream_->GetBufferSize(bufferSize);
+}
+
+int32_t AudioCapturerPrivate::GetAudioStreamId(uint32_t &sessionID) const
+{
+    return audioStream_->GetAudioSessionID(sessionID);
 }
 
 int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
@@ -316,7 +344,8 @@ void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturer
     callback_ = callback;
 }
 
-void AudioStreamCallbackCapturer::OnStateChange(const State state)
+void AudioStreamCallbackCapturer::OnStateChange(const State state,
+    const StateChangeCmdType __attribute__((unused)) cmdType)
 {
     std::shared_ptr<AudioCapturerCallback> cb = callback_.lock();
     if (cb == nullptr) {

@@ -16,7 +16,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
-
+#include <cinttypes>
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -87,7 +87,7 @@ void AudioCapturerSource::DeInit()
 void InitAttrsCapture(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
-    attrs.format = AUDIO_FORMAT_PCM_16_BIT;
+    attrs.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
@@ -442,6 +442,11 @@ int32_t AudioCapturerSource::SetInputRoute(DeviceType inputDevice, AudioPortPin 
         .sinksNum = 1,
         .sinks = &sink,
     };
+
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("AudioCapturerSource: AudioAdapter object is null.");
+        return ERR_OPERATION_FAILED;
+    }
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     if (ret != 0) {

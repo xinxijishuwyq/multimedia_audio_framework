@@ -16,6 +16,11 @@ import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_capturer_source") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
   sources = [ "primary/audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
@@ -39,6 +44,11 @@ ohos_shared_library("audio_capturer_source") {
 }
 
 ohos_shared_library("remote_audio_capturer_source") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
   sources = [ "remote/remote_audio_capturer_source.cpp" ]
   cflags = [ "-fPIC" ]
@@ -67,6 +77,11 @@ ohos_shared_library("remote_audio_capturer_source") {
 }
 
 ohos_shared_library("audio_capturer_file_source") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "file/audio_capturer_file_source.cpp" ]
@@ -89,6 +104,11 @@ ohos_shared_library("audio_capturer_file_source") {
 }
 
 ohos_shared_library("capturer_source_adapter") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [

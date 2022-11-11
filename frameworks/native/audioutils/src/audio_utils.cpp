@@ -13,20 +13,176 @@
  * limitations under the License.
  */
 
-#include "audio_utils.h"
-
 #include <chrono>
+#include <cinttypes>
+#include <ctime>
 #include <sstream>
-
-#include "parameter.h"
+#include <ostream>
+#include "audio_utils.h"
 #include "audio_log.h"
+#include "parameter.h"
+
 namespace OHOS {
 namespace AudioStandard {
+int64_t ClockTime::GetCurNano()
+{
+    int64_t result = -1; // -1 for bad result.
+    struct timespec time;
+    clockid_t clockId = CLOCK_MONOTONIC;
+    int ret = clock_gettime(clockId, &time);
+    if (ret < 0) {
+        AUDIO_WARNING_LOG("GetCurNanoTime fail, result:%{public}d", ret);
+        return result;
+    }
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
+int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
+{
+    int32_t ret = -1; // -1 for bad result.
+    if (nanoTime <= 0) {
+        AUDIO_WARNING_LOG("AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
+        return ret;
+    }
+    struct timespec time;
+    time.tv_sec = nanoTime / AUDIO_NS_PER_SECOND;
+    time.tv_nsec = nanoTime - (time.tv_sec * AUDIO_NS_PER_SECOND); // Avoids % operation.
+
+    clockid_t clockId = CLOCK_MONOTONIC;
+    ret = clock_nanosleep(clockId, TIMER_ABSTIME, &time, nullptr);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("AbsoluteSleep may failed, ret is :%{public}d", ret);
+    }
+
+    return ret;
+}
+
+int32_t ClockTime::RelativeSleep(int64_t nanoTime)
+{
+    int32_t ret = -1; // -1 for bad result.
+    if (nanoTime <= 0) {
+        AUDIO_WARNING_LOG("AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
+        return ret;
+    }
+    struct timespec time;
+    time.tv_sec = nanoTime / AUDIO_NS_PER_SECOND;
+    time.tv_nsec = nanoTime - (time.tv_sec * AUDIO_NS_PER_SECOND); // Avoids % operation.
+
+    clockid_t clockId = CLOCK_MONOTONIC;
+    const int relativeFlag = 0; // flag of relative sleep.
+    ret = clock_nanosleep(clockId, relativeFlag, &time, nullptr);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("RelativeSleep may failed, ret is :%{public}d", ret);
+    }
+
+    return ret;
+}
+
 int64_t GetNowTimeMs()
 {
     std::chrono::milliseconds nowMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
     return nowMs.count();
+}
+
+int64_t GetNowTimeUs()
+{
+    std::chrono::microseconds nowUs =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    return nowUs.count();
+}
+
+void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
+        data[0] = data[0] / 2 + data[1] / 2;
+        data[1] = data[0];
+        data += 2;
+    }
+}
+
+void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
+        data[0] = data[0] / 2 + data[1] / 2;
+        data[1] = data[0];
+        data += 2;
+    }
+}
+
+void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
+{
+    // int8_t is used for reading data of PCM24BIT here
+    // 24 / 8 = 3, so we need repeat the calculation three times in each loop
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels, 2 * 3 = 6
+        data[0] = data[0] / 2 + data[3] / 2;
+        data[3] = data[0];
+        data[1] = data[1] / 2 + data[4] / 2;
+        data[4] = data[1];
+        data[2] = data[2] / 2 + data[5] / 2;
+        data[5] = data[2];
+        data += 6;
+    }
+}
+
+void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
+        data[0] = data[0] / 2 + data[1] / 2;
+        data[1] = data[0];
+        data += 2;
+    }
+}
+
+void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
+        data[0] *= left;
+        data[1] *= right;
+        data += 2;
+    }
+}
+
+void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
+        data[0] *= left;
+        data[1] *= right;
+        data += 2;
+    }
+}
+
+void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
+{
+    // int8_t is used for reading data of PCM24BIT here
+    // 24 / 8 = 3, so we need repeat the calculation three times in each loop
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels, 2 * 3 = 6
+        data[0] *= left;
+        data[1] *= left;
+        data[2] *= left;
+        data[3] *= right;
+        data[4] *= right;
+        data[5] *= right;
+        data += 6;
+    }
+}
+
+void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
+{
+    for (unsigned i = len >> 1; i > 0; i--) {
+        // the number 2 is the count of stereo audio channels
+        data[0] *= left;
+        data[1] *= right;
+        data += 2;
+    }
 }
 
 template <typename T>

@@ -74,6 +74,8 @@ public:
 
     int32_t SetMicrophoneMute(bool isMute) override;
 
+    int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
+
     bool IsMicrophoneMute(void) override;
 
     AudioScene GetAudioScene() override;
@@ -113,7 +115,11 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid) override;
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+        bool privacyFlag, AudioPermissionState state) override;
+
+    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -146,6 +152,8 @@ public:
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

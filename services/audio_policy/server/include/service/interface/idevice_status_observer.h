@@ -28,8 +28,9 @@ public:
     virtual void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo) = 0;
-    virtual void OnDeviceStatusUpdated(DStatusInfo statusInfo);
+    virtual void OnDeviceStatusUpdated(DStatusInfo statusInfo) = 0;
     virtual void OnServiceConnected(AudioServiceIndex serviceIndex) = 0;
+    virtual void OnServiceDisconnected(AudioServiceIndex serviceIndex) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

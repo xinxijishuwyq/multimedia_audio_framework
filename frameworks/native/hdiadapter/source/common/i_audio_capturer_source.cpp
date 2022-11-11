@@ -14,15 +14,14 @@
  */
 
 #include <cstring>
-#include <dlfcn.h>
 #include <string>
-
+#include "audio_capturer_file_source.h"
+#include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_capturer_source.h"
-#include "audio_capturer_file_source.h"
 #include "remote_audio_capturer_source.h"
 #include "i_audio_capturer_source.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -31,14 +30,14 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *devceClass, 
 {
     AUDIO_DEBUG_LOG("%{public}s Source:GetInstance[%{public}s]", devceClass, deviceNetworkId);
     const char *g_deviceClassPrimary = "primary";
-    const char *g_deviceClassA2Dp = "a2dp";
+    const char *g_deviceClassA2DP = "a2dp";
     const char *g_deviceClassFile = "file_io";
     const char *g_deviceClassRemote = "remote";
 
     if (!strcmp(devceClass, g_deviceClassPrimary)) {
         return AudioCapturerSource::GetInstance();
     }
-    if (!strcmp(devceClass, g_deviceClassA2Dp)) {
+    if (!strcmp(devceClass, g_deviceClassA2DP)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }

@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
-
+#include <pulsecore/log.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/module.h>
 #include <pulsecore/sink.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSinkFree(pa_sink *s);

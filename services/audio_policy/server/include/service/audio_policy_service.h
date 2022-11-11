@@ -26,6 +26,7 @@
 #include "audio_stream_collector.h"
 #include "audio_tone_parser.h"
 
+#include "accessibility_config_listener.h"
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
@@ -33,7 +34,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver {
+class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
+    public IAudioAccessibilityConfigObserver {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -134,6 +136,12 @@ public:
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
+    void OnServiceDisconnected(AudioServiceIndex serviceIndex);
+
+    void OnMonoAudioConfigChanged(bool audioMono);
+
+    void OnAudioBalanceChanged(float audioBalance);
+
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object);
@@ -183,12 +191,17 @@ public:
 
     void UnregisterBluetoothListener();
 
+    void SubscribeAccessibilityConfigObserver();
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+
 private:
     AudioPolicyService()
         : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
           configParser_(ParserFactory::GetInstance().CreateParser(*this)),
           streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
     {
+        accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
 
@@ -229,13 +242,15 @@ private:
 
     DeviceRole GetDeviceRole(const std::string &role);
 
+    int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
-    DeviceType FetchHighPriorityDevice();
+    DeviceType FetchHighPriorityDevice(bool isOutputDevice);
 
     void UpdateConnectedDevices(const AudioDeviceDescriptor& deviceDescriptor,
         std::vector<sptr<AudioDeviceDescriptor>>& desc, bool status);
@@ -266,6 +281,8 @@ private:
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
+    bool isCurrentRemoteRenderer = false;
+    bool remoteCapturerSwitch = false;
     bool isOpenRemoteDevice = false;
     bool isBtListenerRegistered = false;
     const int32_t G_UNKNOWN_PID = -1;
@@ -280,6 +297,7 @@ private:
     Parser& configParser_;
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
     AudioStreamCollector& streamCollector_;
+    std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
@@ -297,12 +315,19 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET
     };
-    std::vector<DeviceType> priorityList = {
+    std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER
+    };
+    std::vector<DeviceType> inputPriorityList_ = {
+        DEVICE_TYPE_BLUETOOTH_SCO,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_MIC
     };
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;

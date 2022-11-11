@@ -23,14 +23,12 @@
 #include "ipc_skeleton.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
-#include "audio_renderer_sink.h"
-#include "remote_audio_renderer_sink.h"
-#include "i_standard_audio_server_manager_listener.h"
 #include "audio_manager_base.h"
+#include "audio_server_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub, public AudioSinkCallback {
+class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -56,6 +54,8 @@ public:
     const char *RetrieveCookie(int32_t &size) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 
@@ -66,12 +66,16 @@ public:
         const std::string& condition, const std::string value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
+protected:
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
     bool VerifyClientPermission(const std::string &permissionName);
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
+    void AudioServerDied(pid_t pid);
+    void RegisterPolicyServerDeathRecipient();
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;

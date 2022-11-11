@@ -177,7 +177,7 @@
 	  <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
 	</ToneInfo>
 
-	<ToneInfo name="TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOTAVAIL" toneType="104" >
+	<ToneInfo name="TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE" toneType="104" >
 	  <RepeatCount value="2"/>
 	  <RepeatSegment value="0"/>
 	  <SegmentCount value="3" />
@@ -231,7 +231,7 @@
 	  <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
 	</ToneInfo>
 
-	<ToneInfo name="TONE_TYPE_COMMON_PROPRIETARY_BEEP2" toneType="204" >
+	<ToneInfo name="TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP" toneType="204" >
 	  <RepeatCount value="0"/>
 	  <RepeatSegment value="0"/>
 	  <SegmentCount value="4" />

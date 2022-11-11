@@ -16,10 +16,12 @@
 #ifndef AUDIO_INTERRUPT_TEST_H
 #define AUDIO_INTERRUPT_TEST_H
 
+#include <cstdint>
+#include <cstdio>
 #include <thread>
-
+#include <memory>
+#include "audio_info.h"
 #include "audio_renderer.h"
-#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +34,7 @@ public:
 
     int32_t TestPlayback();
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
-    void OnStateChange(const RendererState state) override;
+    void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
     void SaveStreamInfo(ContentType contentType, StreamUsage streamUsage);
     FILE *wavFile_ = nullptr;
 private:

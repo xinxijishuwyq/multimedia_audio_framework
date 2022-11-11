@@ -412,5 +412,41 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
 
     return reply.ReadInt32();
 }
+
+void AudioManagerProxy::SetAudioMonoState(bool audioMono)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return;
+    }
+    (void)data.WriteBool(audioMono);
+    int error = Remote()->SendRequest(SET_AUDIO_MONO_STATE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioMonoState failed, error: %{public}d", error);
+        return;
+    }
+}
+
+void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return;
+    }
+    (void)data.WriteFloat(audioBalance);
+    int error = Remote()->SendRequest(SET_AUDIO_BALANCE_VALUE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %{public}d", error);
+        return;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

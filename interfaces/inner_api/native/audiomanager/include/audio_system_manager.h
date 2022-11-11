@@ -188,18 +188,6 @@ public:
         const std::string& condition, const std::string& value) = 0;
 };
 
-class AudioRingerModeCallback {
-public:
-    virtual ~AudioRingerModeCallback() = default;
-    /**
-     * Called when ringer mode is updated.
-     *
-     * @param ringerMode Indicates the updated ringer mode value.
-     * For details, refer RingerMode enum in audio_info.h
-     */
-    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
-};
-
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
@@ -245,8 +233,8 @@ public:
     DeviceType GetActiveOutputDevice();
     DeviceType GetActiveInputDevice();
     bool IsStreamActive(AudioVolumeType volumeType) const;
-    int32_t SetRingerMode(AudioRingerMode ringMode) const;
-    AudioRingerMode GetRingerMode() const;
+    int32_t SetRingerMode(AudioRingerMode ringMode);
+    AudioRingerMode GetRingerMode();
     int32_t SetAudioScene(const AudioScene &scene);
     AudioScene GetAudioScene() const;
     int32_t SetDeviceChangeCallback(const DeviceFlag flag, const std::shared_ptr<AudioManagerDeviceChangeCallback>
@@ -258,6 +246,8 @@ public:
     int32_t RegisterVolumeKeyEventCallback(const int32_t clientPid,
                                            const std::shared_ptr<VolumeKeyEventCallback> &callback);
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
+    void SetAudioMonoState(bool monoState);
+    void SetAudioBalanceValue(float balanceValue);
 
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be removed
@@ -281,6 +271,7 @@ public:
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
     std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

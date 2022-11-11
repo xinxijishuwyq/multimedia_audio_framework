@@ -12,17 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ST_AUDIO_SINK_CALLBACK_H
-#define ST_AUDIO_SINK_CALLBACK_H
+
+#ifndef FAST_AUDIO_RENDERER_SINK_H
+#define FAST_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
+#include "i_audio_renderer_sink.h"
+
 namespace OHOS {
 namespace AudioStandard {
-class AudioSinkCallback {
+class FastAudioRendererSink : public IAudioRendererSink {
 public:
-    virtual void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
-        const std::string value) = 0;
+    static FastAudioRendererSink *GetInstance(void);
+
+    uint32_t frameSizeInByte_ = 1;
+    uint32_t eachReadFrameSize_ = 0;
+    virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
+
+    FastAudioRendererSink() = default;
+    ~FastAudioRendererSink() = default;
 };
-} // namespace AudioStandard
-} // namespace OHOS
-#endif // ST_AUDIO_SINK_CALLBACK_H
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif // FAST_AUDIO_RENDERER_SINK_H

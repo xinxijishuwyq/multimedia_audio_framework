@@ -31,7 +31,7 @@ const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t READ_WRITE_WAIT_TIME_IN_US = 500;
-constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_US = 500;
+constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_US = 500;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::streamTypeMap_ = AudioStream::CreateStreamMap();
@@ -279,9 +279,16 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
-bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioStream::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+    bool privacyFlag, AudioPermissionState state)
 {
-    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId, appUid);
+    return AudioServiceClient::VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
+}
+
+bool AudioStream::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    return AudioServiceClient::getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
 }
 
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
@@ -340,14 +347,14 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     return SUCCESS;
 }
 
-bool AudioStream::StartAudioStream()
+bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 {
     if ((state_ != PREPARED) && (state_ != STOPPED) && (state_ != PAUSED)) {
         AUDIO_ERR_LOG("StartAudioStream Illegal state:%{public}u", state_);
         return false;
     }
 
-    int32_t ret = StartStream();
+    int32_t ret = StartStream(cmdType);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("StartStream Start failed:%{public}d", ret);
         return false;
@@ -451,14 +458,15 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     return bytesWritten;
 }
 
-bool AudioStream::PauseAudioStream()
+bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("PauseAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
     }
     State oldState = state_;
-    state_ = PAUSED; // Set it before stopping as Read/Write and Stop can be called from different threads
+    // Update state to stop write thread
+    state_ = PAUSED;
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
         isReadyToRead_ = false;
@@ -470,6 +478,8 @@ bool AudioStream::PauseAudioStream()
     // Ends the WriteCb thread
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
+        // wake write thread to make pause faster
+        bufferQueueCV_.notify_all();
         if (writeThread_ && writeThread_->joinable()) {
             writeThread_->join();
         }
@@ -478,10 +488,9 @@ bool AudioStream::PauseAudioStream()
     while (isReadInProgress_ || isWriteInProgress_) {
         std::this_thread::sleep_for(std::chrono::microseconds(READ_WRITE_WAIT_TIME_IN_US));
     }
-    
-    AUDIO_DEBUG_LOG("AudioStream::PauseAudioStream:renderMode_ : %{public}d state_: %{public}d", renderMode_, state_);
 
-    int32_t ret = PauseStream();
+    AUDIO_DEBUG_LOG("AudioStream::PauseAudioStream:renderMode_ : %{public}d state_: %{public}d", renderMode_, state_);
+    int32_t ret = PauseStream(cmdType);
     if (ret != SUCCESS) {
         AUDIO_DEBUG_LOG("StreamPause fail,ret:%{public}d", ret);
         state_ = oldState;
@@ -489,6 +498,9 @@ bool AudioStream::PauseAudioStream()
     }
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
+
+    // flush stream after stream paused
+    FlushAudioStream();
 
     if (audioStreamTracker_) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
@@ -877,7 +889,7 @@ void AudioStream::WriteCbTheadLoop()
 
         while (true) {
             if (state_ != RUNNING) {
-                AUDIO_ERR_LOG("Write: Illegal  state:%{public}u", state_);
+                AUDIO_INFO_LOG("Write: not running state: %{public}u", state_);
                 isReadyToWrite_ = false;
                 break;
             }
@@ -886,7 +898,7 @@ void AudioStream::WriteCbTheadLoop()
 
             if (filledBufferQ_.empty()) {
                 // wait signal with timeout
-                bufferQueueCV_.wait_for(lock, chrono::milliseconds(CB_WRITE_BUFFERS_WAIT_IN_US));
+                bufferQueueCV_.wait_for(lock, chrono::milliseconds(CB_WRITE_BUFFERS_WAIT_IN_MS));
                 continue;
             }
             stream.buffer = filledBufferQ_.front().buffer;

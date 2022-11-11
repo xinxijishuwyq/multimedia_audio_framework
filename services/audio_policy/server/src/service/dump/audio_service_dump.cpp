@@ -504,6 +504,11 @@ void AudioServiceDump::DevicesInfoDump(string& dumpString)
         AppendFormat(dumpString, "device type:%s ", GetDeviceTypeName(devicesInfo.deviceType).c_str());
         AppendFormat(dumpString, "connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
     }
+
+    AppendFormat(dumpString, "\nHighest priority output device: %s",
+        GetDeviceTypeName(audioData_.policyData.priorityOutputDevice).c_str());
+    AppendFormat(dumpString, "\nHighest priority input device: %s \n\n",
+        GetDeviceTypeName(audioData_.policyData.priorityInputDevice).c_str());
 }
 
 void AudioServiceDump::DataDump(string &dumpString)

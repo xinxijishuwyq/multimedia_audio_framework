@@ -29,6 +29,7 @@
 #include "key_event.h"
 #include "key_option.h"
 
+#include "privacy_kit.h"
 #include "accesstoken_kit.h"
 #include "audio_log.h"
 #include "ipc_skeleton.h"
@@ -39,6 +40,8 @@
 #include "audio_policy_server.h"
 #include "permission_state_change_info.h"
 #include "token_setproc.h"
+
+using OHOS::Security::AccessToken::PrivacyKit;
 using namespace std;
 
 namespace OHOS {
@@ -82,9 +85,9 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
 
     mPolicyService.Init();
-    RegisterAudioServerDeathRecipient();
 
     Security::AccessToken::PermStateChangeScope scopeInfo;
     scopeInfo.permList = {"ohos.permission.MICROPHONE"};
@@ -125,6 +128,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
             RegisterBluetoothListener();
             break;
+        case ACCESSIBILITY_MANAGER_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
+            SubscribeAccessibilityConfigObserver();
+            break;
         default:
             AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
@@ -134,31 +141,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
-}
-
-void AudioPolicyServer::RegisterAudioServerDeathRecipient()
-{
-    AUDIO_INFO_LOG("Register audio server death recipient");
-    pid_t pid = IPCSkeleton::GetCallingPid();
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
-    if (deathRecipient_ != nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain system ability manager");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_DISTRIBUTED_SERVICE_ID);
-        CHECK_AND_RETURN_LOG(object != nullptr, "Audio service unavailable");
-
-        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyServer::AudioServerDied, this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add deathRecipient");
-        }
-    }
-}
-
-void AudioPolicyServer::AudioServerDied(pid_t pid)
-{
-    AUDIO_INFO_LOG("Audio server died: restart policy server pid %{public}d", pid);
-    kill(pid, SIGKILL);
 }
 
 void AudioPolicyServer::SubscribeKeyEvents()
@@ -174,6 +156,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
     keyOption_down->SetFinalKeyDown(true);
     keyOption_down->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
     im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        AUDIO_INFO_LOG("receive key down event");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = GetStreamInFocus();
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
@@ -189,7 +172,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                     continue;
                 }
 
-                AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                AUDIO_DEBUG_LOG("volume lower than min, trigger volumeChangeCb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = streamInFocus;
                 volumeEvent.volume = MIN_VOLUME_LEVEL;
@@ -208,6 +191,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
     keyOption_up->SetFinalKeyDown(true);
     keyOption_up->SetFinalKeyDownDuration(0);
     im->SubscribeKeyEvent(keyOption_up, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        AUDIO_INFO_LOG("receive key up event");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = GetStreamInFocus();
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
@@ -223,7 +207,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                     continue;
                 }
 
-                AUDIO_DEBUG_LOG("AudioPolicyServer:: trigger volumeChangeCb clientPid : %{public}d", it->first);
+                AUDIO_DEBUG_LOG("volume greater than max, trigger volumeChangeCb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = streamInFocus;
                 volumeEvent.volume = MAX_VOLUME_LEVEL;
@@ -320,6 +304,8 @@ int32_t AudioPolicyServer::SetStreamVolume(AudioStreamType streamType, float vol
         }
     }
 
+    AUDIO_INFO_LOG("SetStreamVolume streamType: %{public}d, volume: %{public}f, updateUi: %{public}d",
+        streamType, volume, isUpdateUi);
     int ret = mPolicyService.SetStreamVolume(streamType, volume);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
@@ -375,6 +361,23 @@ int32_t AudioPolicyServer::SelectInputDevice(sptr<AudioCapturerFilter> audioCapt
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = mPolicyService.GetDevices(deviceFlag);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
+    if (!hasBTPermission) {
+        for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
+            if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
+                || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
+                desc->deviceName_ = "";
+                desc->macAddress_ = "";
+            }
+        }
+    }
+
+    return deviceDescs;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetActiveOutputDeviceDescriptors()
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = mPolicyService.GetActiveOutputDeviceDescriptors();
     bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
@@ -461,14 +464,10 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
     return mPolicyService.GetSupportedTones();
 }
 
-int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
+
+int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
-        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
-        return ERR_PERMISSION_DENIED;
-    }
-    
     bool isMicrophoneMute = IsMicrophoneMute();
     int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {
@@ -486,6 +485,26 @@ int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
         }
     }
     return ret;
+}
+
+int32_t AudioPolicyServer::SetMicrophoneMute(bool isMute)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!VerifyClientPermission(MICROPHONE_PERMISSION)) {
+        AUDIO_ERR_LOG("SetMicrophoneMute: MICROPHONE permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+    return SetMicrophoneMuteCommon(isMute);
+}
+
+int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (!VerifyClientPermission(MANAGE_AUDIO_CONFIG)) {
+        AUDIO_ERR_LOG("SetMicrophoneMuteAudioConfig: MANAGE_AUDIO_CONFIG permission denied");
+        return ERR_PERMISSION_DENIED;
+    }
+    return SetMicrophoneMuteCommon(isMute);
 }
 
 bool AudioPolicyServer::IsMicrophoneMute()
@@ -1186,7 +1205,8 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return SUCCESS;
 }
 
-bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+    bool privacyFlag, AudioPermissionState state)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_DEBUG_LOG("[%{public}s] [tid:%{public}d] [uid:%{public}d]", permissionName.c_str(), appTokenId, callerUid);
@@ -1213,6 +1233,43 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
     if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
         return false;
+    }
+    if (privacyFlag) {
+        if (!PrivacyKit::IsAllowedUsingPermission(clientTokenId, MICROPHONE_PERMISSION)) {
+            AUDIO_ERR_LOG("app background, not allow using perm for client %{public}d", clientTokenId);
+        }
+    }
+
+    return true;
+}
+
+bool AudioPolicyServer::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_DEBUG_LOG("[%{public}s] [tid:%{public}d] [uid:%{public}d]", permissionName.c_str(), appTokenId, callerUid);
+
+    Security::AccessToken::AccessTokenID clientTokenId = 0;
+    if (callerUid == MEDIA_SERVICE_UID) {
+        if (appTokenId == 0) {
+            AUDIO_ERR_LOG("Invalid token received. Permission rejected");
+            return false;
+        }
+        clientTokenId = appTokenId;
+    } else {
+        clientTokenId = IPCSkeleton::GetCallingTokenID();
+    }
+    
+    if (state == AUDIO_PERMISSION_START) {
+        int res = PrivacyKit::StartUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_ERR_LOG("start using perm error for client %{public}d", clientTokenId);
+        }
+    } else {
+        int res = PrivacyKit::StopUsingPermission(clientTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_ERR_LOG("stop using perm error for client %{public}d", clientTokenId);
+        }
     }
 
     return true;
@@ -1317,6 +1374,9 @@ void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
         deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
         policyData.outputDevices.push_back(deviceInfo);
     }
+
+    policyData.priorityOutputDevice = GetActiveOutputDevice();
+    policyData.priorityInputDevice = GetActiveInputDevice();
 }
 
 void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
@@ -1483,6 +1543,12 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
     } else {
         uid = IPCSkeleton::GetCallingPid();
     }
+    if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), uid)
+        != clientDiedListenerState_.end())
+    {
+        AUDIO_INFO_LOG("Tracker has been registered for %{public}d!", uid);
+        return;
+    }
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(uid);
     if (deathRecipient_ != nullptr) {
         if (id == TRACKER_CLIENT) {
@@ -1494,6 +1560,9 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
                 this, std::placeholders::_1));
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
+        if (result && id == TRACKER_CLIENT) {
+            clientDiedListenerState_.push_back(uid);
+        }
         if (!result) {
             AUDIO_ERR_LOG("failed to add deathRecipient");
         }
@@ -1504,6 +1573,11 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
 {
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
     mPolicyService.RegisteredTrackerClientDied(pid);
+    auto filter = [&pid](int val) {
+        return pid == val;
+    };
+    clientDiedListenerState_.erase(std::remove_if(clientDiedListenerState_.begin(), clientDiedListenerState_.end(),
+        filter), clientDiedListenerState_.end());
 }
 
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
@@ -1693,6 +1767,12 @@ void AudioPolicyServer::RegisterBluetoothListener()
 {
     AUDIO_INFO_LOG("AudioPolicyServer::RegisterBluetoothListener");
     mPolicyService.RegisterBluetoothListener();
+}
+
+void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
+{
+    AUDIO_INFO_LOG("AudioPolicyServer::SubscribeAccessibilityConfigObserver");
+    mPolicyService.SubscribeAccessibilityConfigObserver();
 }
 
 bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)

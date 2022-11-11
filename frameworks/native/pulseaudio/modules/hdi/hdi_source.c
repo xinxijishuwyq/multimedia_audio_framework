@@ -14,32 +14,26 @@
  */
 
 #include <audio_manager.h>
-
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
-
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/util.h>
 #include <pulse/xmalloc.h>
-
 #include <pulsecore/core.h>
-#include <pulsecore/core-rtclock.h>
-#include <pulsecore/core-util.h>
 #include <pulsecore/log.h>
-#include <pulsecore/macro.h>
 #include <pulsecore/memchunk.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/module.h>
 #include <pulsecore/rtpoll.h>
-#include <pulsecore/thread.h>
 #include <pulsecore/thread-mq.h>
-
-#include <signal.h>
-
-#include "capturer_source_adapter.h"
+#include <pulsecore/thread.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include "audio_log.h"
+#include "audio_types.h"
+#include "capturer_source_adapter.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -350,22 +344,22 @@ static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
     enum AudioFormat hdiAudioFormat;
     switch (format) {
         case PA_SAMPLE_U8:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_8_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
         case PA_SAMPLE_S16LE:
         case PA_SAMPLE_S16BE:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
         case PA_SAMPLE_S24LE:
         case PA_SAMPLE_S24BE:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_24_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case PA_SAMPLE_S32LE:
         case PA_SAMPLE_S32BE:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_32_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
-            hdiAudioFormat = AUDIO_FORMAT_PCM_16_BIT;
+            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
 

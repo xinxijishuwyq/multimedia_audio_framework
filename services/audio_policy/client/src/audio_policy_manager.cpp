@@ -97,6 +97,11 @@ int32_t AudioPolicyManager::SetMicrophoneMute(bool isMute)
     return g_sProxy->SetMicrophoneMute(isMute);
 }
 
+int32_t AudioPolicyManager::SetMicrophoneMuteAudioConfig(bool isMute)
+{
+    return g_sProxy->SetMicrophoneMuteAudioConfig(isMute);
+}
+
 bool AudioPolicyManager::IsMicrophoneMute()
 {
     return g_sProxy->IsMicrophoneMute();
@@ -162,6 +167,11 @@ int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)
 {
     return g_sProxy->GetDevices(deviceFlag);
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetActiveOutputDeviceDescriptors()
+{
+    return g_sProxy->GetActiveOutputDeviceDescriptors();
 }
 
 std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
@@ -504,9 +514,16 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return g_sProxy->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName,
+    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
 {
-    return g_sProxy->VerifyClientPermission(permissionName, appTokenId, appUid);
+    return g_sProxy->VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
+}
+
+bool AudioPolicyManager::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    return g_sProxy->getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
 }
 
 int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)

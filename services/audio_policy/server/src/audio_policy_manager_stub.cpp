@@ -89,6 +89,10 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
+    if (ltoneInfo == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: GetToneInfoInternal obj is null");
+        return;
+    }
     reply.WriteUint32(ltoneInfo->segmentCnt);
     reply.WriteUint32(ltoneInfo->repeatCnt);
     reply.WriteUint32(ltoneInfo->repeatSegment);
@@ -130,6 +134,13 @@ void AudioPolicyManagerStub::SetMicrophoneMuteInternal(MessageParcel &data, Mess
 {
     bool isMute = data.ReadBool();
     int32_t result = SetMicrophoneMute(isMute);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isMute = data.ReadBool();
+    int32_t result = SetMicrophoneMuteAudioConfig(isMute);
     reply.WriteInt32(result);
 }
 
@@ -210,6 +221,18 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevices(deviceFlagConfig);
     int32_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
+void AudioPolicyManagerStub::GetActiveOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetActiveOutputDeviceDescriptors();
+    int32_t size = static_cast<int32_t>(devices.size());
+    AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
@@ -474,7 +497,18 @@ void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data,
     std::string permissionName = data.ReadString();
     uint32_t appTokenId = data.ReadUint32();
     uint32_t appUid = data.ReadInt32();
-    bool ret = VerifyClientPermission(permissionName, appTokenId, appUid);
+    bool privacyFlag = data.ReadBool();
+    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
+    bool ret = VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
+    reply.WriteBool(ret);
+}
+
+void AudioPolicyManagerStub::getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string permissionName = data.ReadString();
+    uint32_t appTokenId = data.ReadUint32();
+    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
+    bool ret = getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
     reply.WriteBool(ret);
 }
 
@@ -722,6 +756,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case SET_MICROPHONE_MUTE:
             SetMicrophoneMuteInternal(data, reply);
             break;
+                    
+        case SET_MICROPHONE_MUTE_AUDIO_CONFIG:
+            SetMicrophoneMuteAudioConfigInternal(data, reply);
+            break;
 
         case IS_MICROPHONE_MUTE:
             IsMicrophoneMuteInternal(reply);
@@ -919,6 +957,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:
              IsAudioRendererLowLatencySupportedInternal(data, reply);
              break;
+
+        case GET_USING_PEMISSION_FROM_PRIVACY:
+             getUsingPemissionFromPrivacyInternal(data, reply);
+             break;
+
+        case GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS:
+            GetActiveOutputDeviceDescriptorsInternal(data, reply);
+            break;
 
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

@@ -17,82 +17,17 @@
 #define REMOTE_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "audio_manager.h"
-#include "audio_sink_callback.h"
-
-#include <cstdio>
-#include <list>
-#include <string>
-#include <map>
+#include "i_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct {
-    const char *adapterName;
-    uint32_t openMicSpeaker;
-    AudioFormat format;
-    uint32_t sampleFmt;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-    const char *filePath;
-    const char *deviceNetworkId;
-    int32_t device_type;
-} RemoteAudioSinkAttr;
-
-class RemoteAudioRendererSink {
+class RemoteAudioRendererSink : public IAudioRendererSink {
 public:
-    int32_t Init(RemoteAudioSinkAttr &attr);
-    void DeInit(void);
-    int32_t Start(void);
-    int32_t Stop(void);
-    int32_t Flush(void);
-    int32_t Reset(void);
-    int32_t Pause(void);
-    int32_t Resume(void);
-    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen);
-    int32_t SetVolume(float left, float right);
-    int32_t GetVolume(float &left, float &right);
-    int32_t GetLatency(uint32_t *latency);
-    int32_t SetAudioScene(AudioScene audioScene);
-    int32_t OpenOutput(DeviceType deviceType);
     static RemoteAudioRendererSink *GetInstance(const char *deviceNetworkId);
-    bool rendererInited_;
-    void RegisterParameterCallback(AudioSinkCallback* callback);
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
-    static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
-        void *cookie);
-    std::string GetNetworkId();
-    AudioSinkCallback* GetParamCallback();
-private:
-    static std::map<std::string, RemoteAudioRendererSink *> allsinks;
-    explicit RemoteAudioRendererSink(std::string deviceNetworkId);
-    ~RemoteAudioRendererSink();
-    RemoteAudioSinkAttr attr_;
-    std::string deviceNetworkId_;
-    bool isRenderCreated = false;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
-    int32_t routeHandle_ = -1;
-    int32_t openSpeaker_;
-    std::string adapterNameCase_;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioRender *audioRender_;
-    struct AudioPort audioPort_;
-    AudioSinkCallback* callback_;
-    bool paramCallbackRegistered_ = false;
 
-    int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
-    int32_t CreateRender(struct AudioPort &renderPort);
-    struct AudioManager *GetAudioManager();
-#ifdef DEBUG_DUMP_FILE
-    FILE *pfd;
-#endif // DEBUG_DUMP_FILE
+    RemoteAudioRendererSink() = default;
+    ~RemoteAudioRendererSink() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_RENDERER_SINK_H
+#endif // REMOTE_AUDIO_RENDERER_SINK_H

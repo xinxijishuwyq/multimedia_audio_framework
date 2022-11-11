@@ -155,8 +155,9 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(asClient->state_);
+        streamCb->OnStateChange(asClient->state_, asClient->stateChangeCmdType_);
     }
+    asClient->stateChangeCmdType_ = CMD_FROM_CLIENT;
     asClient->streamCmdStatus = success;
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -195,8 +196,9 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(asClient->state_);
+        streamCb->OnStateChange(asClient->state_, asClient->stateChangeCmdType_);
     }
+    asClient->stateChangeCmdType_ = CMD_FROM_CLIENT;
     asClient->streamCmdStatus = success;
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -409,7 +411,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
     if (asClient->mAudioRendererCallbacks)
         asClient->mAudioRendererCallbacks->OnStreamStateChangeCb();
 
-    AUDIO_INFO_LOG("Current Stream State: %{private}d", pa_stream_get_state(stream));
+    AUDIO_INFO_LOG("Current Stream State: %{public}d", pa_stream_get_state(stream));
 
     switch (pa_stream_get_state(stream)) {
         case PA_STREAM_READY:
@@ -428,7 +430,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
-    AUDIO_INFO_LOG("Current Context State: %{private}d", pa_context_get_state(context));
+    AUDIO_INFO_LOG("Current Context State: %{public}d", pa_context_get_state(context));
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
@@ -624,13 +626,26 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
-{   // for capturer check for MICROPHONE PERMISSION
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId, appUid)) {
-        AUDIO_DEBUG_LOG("Client doesn't have MICROPHONE permission");
+bool AudioServiceClient::VerifyClientPermission(const std::string &permissionName,
+    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
+{
+    // for capturer check for MICROPHONE PERMISSION
+    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId, appUid,
+        privacyFlag, state)) {
+        AUDIO_ERR_LOG("Client doesn't have MICROPHONE permission");
         return false;
     }
 
+    return true;
+}
+
+bool AudioServiceClient::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    if (!AudioPolicyManager::GetInstance().getUsingPemissionFromPrivacy(permissionName, appTokenId, state)) {
+        AUDIO_ERR_LOG("Failed to obtain privacy framework permission");
+        return false;
+    }
     return true;
 }
 
@@ -921,7 +936,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
-    AUDIO_ERR_LOG("Creating stream of channels %{public}d", audioParams.channels);
+    AUDIO_INFO_LOG("Creating stream of channels %{public}d", audioParams.channels);
     pa_channel_map map;
     if (audioParams.channels > CHANNEL_6) {
         pa_channel_map_init(&map);
@@ -1002,9 +1017,16 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 {
-    AUDIO_DEBUG_LOG("AudioServiceClient: GetSessionID");
+    AUDIO_DEBUG_LOG("AudioServiceClient::GetSessionID");
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("GetSessionID failed, pa_status is invalid");
+        return AUDIO_CLIENT_PA_ERR;
+    }
+    pa_threaded_mainloop_lock(mainLoop);
     uint32_t client_index = pa_context_get_index(context);
+    pa_threaded_mainloop_unlock(mainLoop);
     if (client_index == PA_INVALID_INDEX) {
+        AUDIO_ERR_LOG("GetSessionID failed, sessionID is invalid");
         return AUDIO_CLIENT_ERR;
     }
 
@@ -1013,7 +1035,7 @@ int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::StartStream()
+int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
 {
     int error;
 
@@ -1035,6 +1057,7 @@ int32_t AudioServiceClient::StartStream()
     }
 
     streamCmdStatus = 0;
+    stateChangeCmdType_ = cmdType;
     operation = pa_stream_cork(paStream, 0, PAStreamStartSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
@@ -1053,10 +1076,12 @@ int32_t AudioServiceClient::StartStream()
     }
 }
 
-int32_t AudioServiceClient::PauseStream()
+int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 {
     lock_guard<mutex> lock(ctrlMutex);
     PAStreamCorkSuccessCb = PAStreamPauseSuccessCb;
+    stateChangeCmdType_ = cmdType;
+
     int32_t ret = CorkStream();
     if (ret) {
         return ret;
@@ -1525,6 +1550,10 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
 void AudioServiceClient::OnTimeOut()
 {
     AUDIO_ERR_LOG("Inside read timeout callback");
+    if (mainLoop == nullptr) {
+        AUDIO_ERR_LOG("AudioServiceClient::OnTimeOut failed: mainLoop == nullptr");
+        return;
+    }
     pa_threaded_mainloop_lock(mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
     pa_threaded_mainloop_unlock(mainLoop);
@@ -1729,7 +1758,7 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount) const
     }
 
     frameCount = minBufferSize / bytesPerSample;
-    AUDIO_INFO_LOG("frame count: %{private}d", frameCount);
+    AUDIO_INFO_LOG("frame count: %{public}d", frameCount);
     return AUDIO_CLIENT_SUCCESS;
 }
 

@@ -200,6 +200,26 @@ int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteBool(isMute);
+    int32_t error = Remote()->SendRequest(SET_MICROPHONE_MUTE_AUDIO_CONFIG, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set microphoneMute failed, error: %d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 bool AudioPolicyProxy::IsMicrophoneMute()
 {
     MessageParcel data;
@@ -423,6 +443,31 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     int32_t error = Remote()->SendRequest(GET_DEVICES, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get devices failed, error: %d", error);
+        return deviceInfo;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
+    return deviceInfo;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetActiveOutputDeviceDescriptors()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return deviceInfo;
+    }
+    int32_t error = Remote()->SendRequest(GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get out devices failed, error: %d", error);
         return deviceInfo;
     }
 
@@ -987,7 +1032,8 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+    bool privacyFlag, AudioPermissionState state)
 {
     AUDIO_DEBUG_LOG("Proxy [permission : %{public}s] | [tid : %{public}d]", permissionName.c_str(), appTokenId);
     MessageParcel data;
@@ -1002,10 +1048,38 @@ bool AudioPolicyProxy::VerifyClientPermission(const std::string &permissionName,
     data.WriteString(permissionName);
     data.WriteUint32(appTokenId);
     data.WriteInt32(appUid);
+    data.WriteBool(privacyFlag);
+    data.WriteInt32(state);
 
     int result = Remote()->SendRequest(QUERY_PERMISSION, data, reply, option);
     if (result != ERR_NONE) {
         AUDIO_ERR_LOG("VerifyClientPermission failed, result: %{public}d", result);
+        return false;
+    }
+
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    AudioPermissionState state)
+{
+    AUDIO_DEBUG_LOG("Proxy [permission : %{public}s] | [tid : %{public}d]", permissionName.c_str(), appTokenId);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy: WriteInterfaceToken failed");
+        return false;
+    }
+
+    data.WriteString(permissionName);
+    data.WriteUint32(appTokenId);
+    data.WriteInt32(state);
+
+    int result = Remote()->SendRequest(GET_USING_PEMISSION_FROM_PRIVACY, data, reply, option);
+    if (result != ERR_NONE) {
+        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy failed, result: %{public}d", result);
         return false;
     }
 

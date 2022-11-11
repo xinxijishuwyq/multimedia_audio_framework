@@ -38,6 +38,7 @@ public:
     bool Flush() const override;
     bool Release() const override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
+    int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetCapturerPositionCallback(int64_t markPosition,
         const std::shared_ptr<CapturerPositionCallback> &callback) override;
     void UnsetCapturerPositionCallback() override;
@@ -70,7 +71,7 @@ class AudioStreamCallbackCapturer : public AudioStreamCallback {
 public:
     virtual ~AudioStreamCallbackCapturer() = default;
 
-    void OnStateChange(const State state) override;
+    void OnStateChange(const State state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
 private:
     std::weak_ptr<AudioCapturerCallback> callback_;

@@ -88,13 +88,9 @@ private:
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioVolumeTypeObject(napi_env env);
     static napi_value CreateDeviceFlagObject(napi_env env);
-    static napi_value CreateDeviceRoleObject(napi_env env);
-    static napi_value CreateDeviceTypeObject(napi_env env);
     static napi_value CreateActiveDeviceTypeObject(napi_env env);
     static napi_value CreateConnectTypeObject(napi_env env);
     static napi_value CreateInterruptActionTypeObject(napi_env env);
-    static napi_value CreateInterruptHintObject(napi_env env);
-    static napi_value CreateInterruptTypeObject(napi_env env);
     static napi_value CreateAudioRingModeObject(napi_env env);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
@@ -104,11 +100,9 @@ private:
     static napi_value AbandonIndependentInterrupt(napi_env env, napi_callback_info info);
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
     static napi_value GetRoutingManager(napi_env env, napi_callback_info info);
-    static void GetStreamMgrAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static napi_value GetVolumeManager(napi_env env, napi_callback_info info);
+    static napi_value GetInterruptManager(napi_env env, napi_callback_info info);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
-    static napi_value GetVolumeGroups(napi_env env, napi_callback_info info);
-    static napi_value GetGroupManager(napi_env env, napi_callback_info info);
-    static void GetGroupMgrAsyncCallbackComplete(napi_env env, napi_status status, void* data);
 
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
 
@@ -126,9 +120,13 @@ private:
     static napi_ref interruptMode_;
     static napi_ref focusType_;
     static napi_ref connectTypeRef_;
+    static napi_ref audioErrors_;
+    static napi_ref communicationDeviceType_;
+    static napi_ref interruptRequestType_;
+    static napi_ref interruptRequestResultType_;
 
     AudioSystemManager *audioMngr_;
-    int32_t cachedClientId = -1;
+    int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerCallback> interruptCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
@@ -137,41 +135,64 @@ private:
     napi_ref wrapper_;
 };
 
-static const std::map<std::string, DeviceChangeType> deviceChangeTypeMap = {
+static const std::map<std::string, DeviceChangeType> DEVICE_CHANGE_TYPE_MAP = {
     {"CONNECT", CONNECT},
     {"DISCONNECT", DISCONNECT}
 };
 
-static const std::map<std::string, AudioScene> audioSceneMap = {
+static const std::map<std::string, AudioScene> AUDIO_SCENE_MAP = {
     {"AUDIO_SCENE_DEFAULT", AUDIO_SCENE_DEFAULT},
     {"AUDIO_SCENE_RINGING", AUDIO_SCENE_RINGING},
     {"AUDIO_SCENE_PHONE_CALL", AUDIO_SCENE_PHONE_CALL},
     {"AUDIO_SCENE_VOICE_CHAT", AUDIO_SCENE_PHONE_CHAT}
 };
 
-static const std::map<std::string, InterruptType> interruptTypeMap = {
-    {"INTERRUPT_TYPE_BEGIN", INTERRUPT_TYPE_BEGIN},
-    {"INTERRUPT_TYPE_END", INTERRUPT_TYPE_END}
-};
-
-static const std::map<std::string, InterruptHint> interruptHintMap = {
-    {"INTERRUPT_HINT_NONE", INTERRUPT_HINT_NONE},
-    {"INTERRUPT_HINT_PAUSE", INTERRUPT_HINT_PAUSE},
-    {"INTERRUPT_HINT_RESUME", INTERRUPT_HINT_RESUME},
-    {"INTERRUPT_HINT_STOP", INTERRUPT_HINT_STOP},
-    {"INTERRUPT_HINT_DUCK", INTERRUPT_HINT_DUCK},
-    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK}
-};
-static const std::map<std::string, InterruptActionType> interruptActionTypeMap = {
+static const std::map<std::string, InterruptActionType> INTERRUPT_ACTION_TYPE_MAP = {
     {"TYPE_ACTIVATED", TYPE_ACTIVATED},
     {"TYPE_INTERRUPT", TYPE_INTERRUPT}
 };
-static const std::map<std::string, AudioStandard::InterruptMode> interruptModeMap = {
+
+static const std::map<std::string, AudioManagerNapi::AudioVolumeType> VOLUME_TYPE_MAP = {
+    {"VOICE_CALL", AudioManagerNapi::VOICE_CALL},
+    {"RINGTONE", AudioManagerNapi::RINGTONE},
+    {"MEDIA", AudioManagerNapi::MEDIA},
+    {"VOICE_ASSISTANT", AudioManagerNapi::VOICE_ASSISTANT}
+};
+
+static const std::map<std::string, AudioStandard::ActiveDeviceType> ACTIVE_DEVICE_TYPE = {
+    {"SPEAKER", SPEAKER},
+    {"BLUETOOTH_SCO", BLUETOOTH_SCO}
+};
+
+static const std::map<std::string, AudioStandard::InterruptMode> INTERRUPT_MODE_MAP = {
     {"SHARE_MODE", SHARE_MODE},
     {"INDEPENDENT_MODE", INDEPENDENT_MODE}
 };
-static const std::map<std::string, AudioStandard::FocusType> focusTypeMap = {
+
+static const std::map<std::string, AudioStandard::FocusType> FOCUS_TYPE_MAP = {
     {"FOCUS_TYPE_RECORDING", FOCUS_TYPE_RECORDING}
+};
+
+static const std::map<std::string, AudioStandard::AudioErrors> AUDIO_ERRORS_MAP = {
+    {"ERROR_INVALID_PARAM", ERROR_INVALID_PARAM},
+    {"ERROR_NO_MEMORY", ERROR_NO_MEMORY},
+    {"ERROR_ILLEGAL_STATE", ERROR_ILLEGAL_STATE},
+    {"ERROR_UNSUPPORTED", ERROR_UNSUPPORTED},
+    {"ERROR_TIMEOUT", ERROR_TIMEOUT},
+    {"ERROR_STREAM_LIMIT", ERROR_STREAM_LIMIT},
+    {"ERROR_SYSTEM", ERROR_SYSTEM}
+};
+
+static const std::map<std::string, AudioStandard::CommunicationDeviceType> COMMUNICATION_DEVICE_TYPE_MAP = {
+    {"SPEAKER", COMMUNICATION_SPEAKER}
+};
+
+static const std::map<std::string, AudioStandard::InterruptRequestType> INTERRUPT_REQUEST_TYPE_MAP = {
+    {"INTERRUPT_REQUEST_TYPE_DEFAULT", INTERRUPT_REQUEST_TYPE_DEFAULT},
+};
+static const std::map<std::string, AudioStandard::InterruptRequestResultType> INTERRUPT_REQUEST_RESULT_TYPE_MAP = {
+    {"INTERRUPT_REQUEST_GRANT", INTERRUPT_REQUEST_GRANT},
+    {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+#include <cstddef>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
 #include "audio_interrupt_test.h"
 #include "audio_log.h"
 #include "pcm2wav.h"
@@ -27,7 +32,8 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 }
-void AudioInterruptTest::OnStateChange(const RendererState state)
+void AudioInterruptTest::OnStateChange(const RendererState state,
+    const StateChangeCmdType __attribute__((unused)) cmdType)
 {
     AUDIO_DEBUG_LOG("AudioInterruptTest:: OnStateChange");
 

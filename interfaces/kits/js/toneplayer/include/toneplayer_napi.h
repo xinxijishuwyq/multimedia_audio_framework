@@ -24,6 +24,8 @@
 namespace OHOS {
 namespace AudioStandard {
 static const std::string TONE_PLAYER_NAPI_CLASS_NAME = "TonePlayer";
+static const std::int32_t toneTypeArr[27] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    100, 101, 102, 103, 104, 106, 107, 200, 201, 203, 204};
 
 static const std::map<std::string, ToneType> toneTypeMap = {
     {"TONE_TYPE_DIAL_0", TONE_TYPE_DIAL_0},
@@ -42,12 +44,17 @@ static const std::map<std::string, ToneType> toneTypeMap = {
     {"TONE_TYPE_DIAL_B", TONE_TYPE_DIAL_B},
     {"TONE_TYPE_DIAL_C", TONE_TYPE_DIAL_C},
     {"TONE_TYPE_DIAL_D", TONE_TYPE_DIAL_D},
-    {"TONE_TYPE_DIAL_P", TONE_TYPE_DIAL_P},
-    {"TONE_TYPE_DIAL_A", TONE_TYPE_DIAL_A},
-    {"TONE_TYPE_DIAL_B", TONE_TYPE_DIAL_B},
-    {"TONE_TYPE_DIAL_C", TONE_TYPE_DIAL_C},
-    {"TONE_TYPE_DIAL_D", TONE_TYPE_DIAL_D},
-    {"TONE_TYPE_DIAL_P", TONE_TYPE_DIAL_P},
+    {"TONE_TYPE_COMMON_SUPERVISORY_DIAL", TONE_TYPE_COMMON_SUPERVISORY_DIAL},
+    {"TONE_TYPE_COMMON_SUPERVISORY_BUSY", TONE_TYPE_COMMON_SUPERVISORY_BUSY},
+    {"TONE_TYPE_COMMON_SUPERVISORY_CONGESTION", TONE_TYPE_COMMON_SUPERVISORY_CONGESTION},
+    {"TONE_TYPE_COMMON_SUPERVISORY_RADIO_ACK", TONE_TYPE_COMMON_SUPERVISORY_RADIO_ACK},
+    {"TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE", TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE},
+    {"TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING", TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING},
+    {"TONE_TYPE_COMMON_SUPERVISORY_RINGTONE", TONE_TYPE_COMMON_SUPERVISORY_RINGTONE},
+    {"TONE_TYPE_COMMON_PROPRIETARY_BEEP", TONE_TYPE_COMMON_PROPRIETARY_BEEP},
+    {"TONE_TYPE_COMMON_PROPRIETARY_ACK", TONE_TYPE_COMMON_PROPRIETARY_ACK},
+    {"TONE_TYPE_COMMON_PROPRIETARY_PROMPT", TONE_TYPE_COMMON_PROPRIETARY_PROMPT},
+    {"TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP", TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP},
 };
 
 class TonePlayerNapi {
@@ -72,6 +79,7 @@ private:
     static napi_value Construct(napi_env env, napi_callback_info info);
     static bool ParseRendererInfo(napi_env env, napi_value root, AudioRendererInfo *rendererInfo);
     static napi_value CreateTonePlayer(napi_env env, napi_callback_info info);
+    static bool toneTypeCheck(napi_env env, int32_t type);
     static napi_value Load(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Stop(napi_env env, napi_callback_info info);

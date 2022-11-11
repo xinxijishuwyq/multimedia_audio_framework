@@ -16,6 +16,11 @@ import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "primary/audio_renderer_sink.cpp" ]
@@ -44,7 +49,47 @@ ohos_shared_library("audio_renderer_sink") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("fast_audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+  install_enable = true
+
+  sources = [ "fast/fast_audio_renderer_sink.cpp" ]
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "//commonlibrary/c_utils/base/include",
+    "//drivers/peripheral/audio/interfaces/include",
+  ]
+
+  deps = [
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
+    "//third_party/bounds_checking_function:libsec_static",
+  ]
+
+  deps += [ multimedia_audio_framework_hdi_audio_client ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "power_manager:powermgr_client",
+  ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("bluetooth_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "bluetooth/bluetooth_renderer_sink.cpp" ]
@@ -56,6 +101,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
     "//drivers/peripheral/bluetooth/audio/interfaces/include",
     "//drivers/peripheral/bluetooth/audio/hal/hdi_binder/proxy/include",
@@ -63,6 +109,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 
   deps = [
     "$hdf_uhdf_path/hdi:libhdi",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//third_party/bounds_checking_function:libsec_static",
   ]
 
@@ -76,6 +123,11 @@ ohos_shared_library("bluetooth_renderer_sink") {
 }
 
 ohos_shared_library("remote_audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "remote/remote_audio_renderer_sink.cpp" ]
@@ -113,6 +165,11 @@ ohos_shared_library("remote_audio_renderer_sink") {
 }
 
 ohos_shared_library("audio_renderer_file_sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
   sources = [ "file/audio_renderer_file_sink.cpp" ]
@@ -122,7 +179,10 @@ ohos_shared_library("audio_renderer_file_sink") {
 
   cflags_cc = cflags
 
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
@@ -131,9 +191,17 @@ ohos_shared_library("audio_renderer_file_sink") {
 }
 
 ohos_shared_library("renderer_sink_adapter") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
   install_enable = true
 
-  sources = [ "common/renderer_sink_adapter.c" ]
+  sources = [
+    "common/i_audio_renderer_sink.cpp",
+    "common/renderer_sink_adapter.c",
+  ]
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
@@ -154,6 +222,7 @@ ohos_shared_library("renderer_sink_adapter") {
     ":audio_renderer_file_sink",
     ":audio_renderer_sink",
     ":bluetooth_renderer_sink",
+    ":fast_audio_renderer_sink",
     ":remote_audio_renderer_sink",
   ]
 

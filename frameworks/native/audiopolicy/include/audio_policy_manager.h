@@ -96,6 +96,8 @@ public:
 
     int32_t SetMicrophoneMute(bool isMute);
 
+    int32_t SetMicrophoneMuteAudioConfig(bool isMute);
+
     bool IsMicrophoneMute(void);
 
     AudioScene GetAudioScene();
@@ -139,8 +141,12 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+        bool privacyFlag, AudioPermissionState state);
 
+    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state);
+    
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
     int32_t GetAudioLatencyFromXml();
@@ -174,6 +180,8 @@ public:
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 private:
     AudioPolicyManager()
     {

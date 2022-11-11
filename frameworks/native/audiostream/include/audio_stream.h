@@ -17,11 +17,11 @@
 
 #include <mutex>
 #include <condition_variable>
+#include "timestamp.h"
 #include "event_handler.h"
 #include "event_runner.h"
 #include "audio_info.h"
-#include "audio_session.h"
-#include "timestamp.h"
+#include "audio_service_client.h"
 #include "audio_stream_tracker.h"
 
 namespace OHOS {
@@ -29,7 +29,7 @@ namespace AudioStandard {
 static constexpr int32_t MAX_WRITECB_NUM_BUFFERS = 1;
 static constexpr int32_t MAX_READCB_NUM_BUFFERS = 3;
 
-class AudioStream : public AppExecFwk::EventHandler, public AudioSession {
+class AudioStream : public AppExecFwk::EventHandler, public AudioServiceClient {
 public:
     AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid);
     virtual ~AudioStream();
@@ -39,8 +39,10 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj);
     int32_t GetAudioStreamInfo(AudioStreamParams &info);
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid);
-
+    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
+        bool privacyFlag, AudioPermissionState state);
+    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state);
     int32_t GetAudioSessionID(uint32_t &sessionID);
     State GetState();
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
@@ -79,8 +81,8 @@ public:
     std::vector<AudioSamplingRate> GetSupportedSamplingRates() const;
 
     // Common APIs
-    bool StartAudioStream();
-    bool PauseAudioStream();
+    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT);
+    bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT);
     bool StopAudioStream();
     bool ReleaseAudioStream();
     bool FlushAudioStream();

@@ -14,7 +14,6 @@
  */
 
 #include "audio_capturer_proxy_obj.h"
-
 #include "audio_log.h"
 
 using namespace std;

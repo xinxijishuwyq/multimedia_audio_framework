@@ -12,13 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <chrono>
 #include <thread>
-
+#include <climits>
+#include <cstdlib>
+#include <unistd.h>
 #include "audio_log.h"
-#include "pcm2wav.h"
-
 #include "interrupt_multi_renderer_test.h"
+#include "pcm2wav.h"
 
 using namespace std;
 
@@ -39,7 +41,8 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 }
 
-void AudioRendererCallbackTestImpl::OnStateChange(const RendererState state)
+void AudioRendererCallbackTestImpl::OnStateChange(const RendererState state,
+    const StateChangeCmdType __attribute__((unused)) cmdType)
 {
     AUDIO_DEBUG_LOG("AudioRendererCallbackTestImpl:: OnStateChange");
 

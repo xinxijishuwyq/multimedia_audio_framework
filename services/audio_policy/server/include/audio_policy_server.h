@@ -101,7 +101,11 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene) override;
 
+    int32_t SetMicrophoneMuteCommon(bool isMute);
+
     int32_t SetMicrophoneMute(bool isMute) override;
+
+    int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
 
     bool IsMicrophoneMute() override;
 
@@ -146,8 +150,11 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0,
-        int32_t appUid = INVALID_UID) override;
+    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0, int32_t appUid = INVALID_UID,
+        bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START) override;
+
+    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state = AUDIO_PERMISSION_START) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -186,6 +193,8 @@ public:
         AudioStreamType audioStreamType) override;
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -232,8 +241,6 @@ private:
     void NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi);
-    void RegisterAudioServerDeathRecipient();
-    void AudioServerDied(pid_t pid);
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
@@ -241,6 +248,7 @@ private:
     void InitKVStore();
     void ConnectServiceAdapter();
     void RegisterBluetoothListener();
+    void SubscribeAccessibilityConfigObserver();
 
     static float MapVolumeToHDI(int32_t volume);
     static int32_t ConvertVolumeToInt(float volume);
@@ -261,6 +269,7 @@ private:
     std::unordered_map<AudioStreamType, int32_t> interruptPriorityMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
+    std::vector<pid_t> clientDiedListenerState_;
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;

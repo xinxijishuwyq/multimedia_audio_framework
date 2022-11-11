@@ -45,6 +45,8 @@ public:
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -68,6 +68,8 @@ public:
 
     virtual int32_t SetMicrophoneMute(bool isMute) = 0;
 
+    virtual int32_t SetMicrophoneMuteAudioConfig(bool isMute) = 0;
+
     virtual bool IsMicrophoneMute() = 0;
 
     virtual AudioScene GetAudioScene() = 0;
@@ -107,7 +109,11 @@ public:
 
     virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) = 0;
 
-    virtual bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId, int32_t appUid) = 0;
+    virtual bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId, int32_t appUid,
+        bool privacyFlag, AudioPermissionState state) = 0;
+
+    virtual bool getUsingPemissionFromPrivacy(const std::string &permission, uint32_t appTokenId,
+        AudioPermissionState state) = 0;
 
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
 
@@ -148,6 +154,8 @@ public:
     virtual std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
+
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
