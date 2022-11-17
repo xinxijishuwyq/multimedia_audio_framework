@@ -566,6 +566,11 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
 
 std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
 {
+    if (g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfos failed, g_sProxy is nullptr.");
+        std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
+        return volumeGroupInfos;
+    }
     return g_sProxy->GetVolumeGroupInfos();
 }
 
