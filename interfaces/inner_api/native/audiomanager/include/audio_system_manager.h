@@ -271,27 +271,27 @@ public:
     DeviceType GetTypeValueFromPin(AudioPin pin) const;
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroups(std::string networkId);
     std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
+    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 private:
-    AudioSystemManager();
-    virtual ~AudioSystemManager();
-    void init();
-    bool IsAlived();
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
+
+    AudioSystemManager();
+    virtual ~AudioSystemManager();
+
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
+    bool CheckProxy();
+    uint32_t GetCallingPid();
+    void AudioServerDied(pid_t pid);
 
     int32_t cbClientId_ = -1;
-
     int32_t volumeChangeClientPid_ = -1;
     AudioRingerMode ringModeBackup_;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;
-
-    uint32_t GetCallingPid();
-    std::mutex mutex_;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
 };
 } // namespace AudioStandard

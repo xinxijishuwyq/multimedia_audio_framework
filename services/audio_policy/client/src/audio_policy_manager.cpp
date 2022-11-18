@@ -169,6 +169,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFl
     return g_sProxy->GetDevices(deviceFlag);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetActiveOutputDeviceDescriptors()
+{
+    return g_sProxy->GetActiveOutputDeviceDescriptors();
+}
+
 std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
 {
     return g_sProxy->GetSupportedTones();
@@ -561,6 +566,11 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
 
 std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
 {
+    if (g_sProxy == nullptr) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfos failed, g_sProxy is nullptr.");
+        std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
+        return volumeGroupInfos;
+    }
     return g_sProxy->GetVolumeGroupInfos();
 }
 

@@ -17,81 +17,19 @@
 #define AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "audio_manager.h"
-#include "audio_sink_callback.h"
-#include "running_lock.h"
+#include "i_audio_renderer_sink.h"
 
 #include <cstdio>
 #include <list>
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct {
-    const char *adapterName;
-    uint32_t openMicSpeaker;
-    AudioFormat format;
-    uint32_t sampleFmt;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-    const char *filePath;
-} AudioSinkAttr;
-
-class AudioRendererSink {
+class AudioRendererSink : public IAudioRendererSink {
 public:
-    int32_t Init(AudioSinkAttr &attr);
-    void DeInit(void);
-    int32_t Flush(void);
-    int32_t Pause(void);
-    int32_t Reset(void);
-    int32_t Resume(void);
-    int32_t Start(void);
-    int32_t Stop(void);
-    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen);
-    int32_t SetVolume(float left, float right);
-    int32_t GetVolume(float &left, float &right);
-    int32_t SetVoiceVolume(float volume);
-    int32_t GetLatency(uint32_t *latency);
-    int32_t GetTransactionId(uint64_t *transactionId);
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice);
-    int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
-    int32_t SetOutputRoute(DeviceType deviceType);
     static AudioRendererSink *GetInstance(void);
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value);
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition);
-    void SetAudioMonoState(bool audioMono);
-    void SetAudioBalanceValue(float audioBalance);
-    bool rendererInited_;
 
-private:
-    AudioRendererSink();
-    ~AudioRendererSink();
-    AudioSinkAttr attr_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
-    int32_t routeHandle_ = -1;
-    uint32_t openSpeaker_;
-    std::string adapterNameCase_;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioRender *audioRender_;
-    struct AudioPort audioPort_ = {};
-    bool audioMonoState_ = false;
-    bool audioBalanceState_ = false;
-    float leftBalanceCoef_ = 1.0f;
-    float rightBalanceCoef_ = 1.0f;
-
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
-
-    int32_t CreateRender(struct AudioPort &renderPort);
-    int32_t InitAudioManager();
-    void AdjustStereoToMono(char *data, uint64_t len);
-    void AdjustAudioBalance(char *data, uint64_t len);
-#ifdef DUMPFILE
-    FILE *pfd;
-#endif // DUMPFILE
+    AudioRendererSink() = default;
+    ~AudioRendererSink() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

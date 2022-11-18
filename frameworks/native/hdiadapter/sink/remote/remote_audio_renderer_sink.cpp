@@ -13,18 +13,25 @@
  * limitations under the License.
  */
 
+#include "remote_audio_renderer_sink.h"
+
 #include <chrono>
+#include <cinttypes>
+#include <cstdio>
 #include <cstring>
 #include <dlfcn.h>
+#include <list>
 #include <string>
 #include <sstream>
 #include <unistd.h>
-#include <cinttypes>
+#include <map>
 #include "securec.h"
+
+#include "audio_manager.h"
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "remote_audio_renderer_sink.h"
 
 using namespace std;
 
@@ -47,10 +54,70 @@ constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
 const uint32_t PARAM_VALUE_LENTH = 20;
 #endif
 }
+class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink {
+public:
+    explicit RemoteAudioRendererSinkInner(std::string deviceNetworkId);
+    ~RemoteAudioRendererSinkInner();
 
-std::map<std::string, RemoteAudioRendererSink *> RemoteAudioRendererSink::allsinks;
+    int32_t Init(IAudioSinkAttr attr) override;
+    bool IsInited(void) override;
+    void DeInit(void) override;
 
-RemoteAudioRendererSink::RemoteAudioRendererSink(std::string deviceNetworkId)
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+    int32_t Flush(void) override;
+    int32_t Reset(void) override;
+    int32_t Pause(void) override;
+    int32_t Resume(void) override;
+
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
+    int32_t SetVolume(float left, float right) override;
+    int32_t GetVolume(float &left, float &right) override;
+    int32_t SetVoiceVolume(float volume) override;
+    int32_t GetTransactionId(uint64_t *transactionId) override;
+    int32_t GetLatency(uint32_t *latency) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetOutputRoute(DeviceType deviceType) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioMonoState(bool audioMono) override;
+    void SetAudioBalanceValue(float audioBalance) override;
+    void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+
+    int32_t OpenOutput(DeviceType deviceType);
+    static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
+        void *cookie);
+    std::string GetNetworkId();
+    IAudioSinkCallback* GetParamCallback();
+private:
+    IAudioSinkAttr attr_;
+    std::string deviceNetworkId_;
+    bool rendererInited_;
+    bool isRenderCreated = false;
+    bool started_;
+    bool paused_;
+    float leftVolume_;
+    float rightVolume_;
+    int32_t routeHandle_ = -1;
+    int32_t openSpeaker_;
+    std::string adapterNameCase_;
+    struct AudioManager *audioManager_;
+    struct AudioAdapter *audioAdapter_;
+    struct AudioRender *audioRender_;
+    struct AudioPort audioPort_;
+    IAudioSinkCallback* callback_;
+    bool paramCallbackRegistered_ = false;
+
+    int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
+    int32_t CreateRender(struct AudioPort &renderPort);
+    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    struct AudioManager *GetAudioManager();
+#ifdef DEBUG_DUMP_FILE
+    FILE *pfd;
+#endif // DEBUG_DUMP_FILE
+};
+
+RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(std::string deviceNetworkId)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), audioAdapter_(nullptr), audioRender_(nullptr)
 {
@@ -63,7 +130,7 @@ RemoteAudioRendererSink::RemoteAudioRendererSink(std::string deviceNetworkId)
 #endif // DEBUG_DUMP_FILE
 }
 
-RemoteAudioRendererSink::~RemoteAudioRendererSink()
+RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
 {
     if (rendererInited_ == true) {
         DeInit();
@@ -72,10 +139,11 @@ RemoteAudioRendererSink::~RemoteAudioRendererSink()
     }
 }
 
+std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
-    RemoteAudioRendererSink *audioRenderer_ = nullptr;
+    RemoteAudioRendererSinkInner *audioRenderer_ = nullptr;
     if (deviceNetworkId == nullptr) {
         return audioRenderer_;
     }
@@ -84,7 +152,7 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     if (allsinks.count(deviceName)) {
         return allsinks[deviceName];
     } else {
-        audioRenderer_ = new(std::nothrow) RemoteAudioRendererSink(deviceName);
+        audioRenderer_ = new(std::nothrow) RemoteAudioRendererSinkInner(deviceName);
         AUDIO_DEBUG_LOG("new Daudio device sink:[%{public}s]", deviceNetworkId);
         allsinks[deviceName] = audioRenderer_;
     }
@@ -92,7 +160,7 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *device
     return audioRenderer_;
 }
 
-void RemoteAudioRendererSink::RegisterParameterCallback(AudioSinkCallback* callback)
+void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: register params callback");
     callback_ = callback;
@@ -101,7 +169,7 @@ void RemoteAudioRendererSink::RegisterParameterCallback(AudioSinkCallback* callb
     }
 #ifdef PRODUCT_M40
     // register to adapter
-    ParamCallback adapterCallback = &RemoteAudioRendererSink::ParamEventCallback;
+    ParamCallback adapterCallback = &RemoteAudioRendererSinkInner::ParamEventCallback;
     if (audioAdapter_ == nullptr) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::RegisterParameterCallback audioAdapter_ is null");
         return;
@@ -116,7 +184,7 @@ void RemoteAudioRendererSink::RegisterParameterCallback(AudioSinkCallback* callb
 #endif
 }
 
-void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
+void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
 #ifdef PRODUCT_M40
@@ -134,7 +202,7 @@ void RemoteAudioRendererSink::SetAudioParameter(const AudioParamKey key, const s
 #endif
 }
 
-std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
 #ifdef PRODUCT_M40
     AUDIO_INFO_LOG("RemoteAudioRendererSink::GetParameter: key %{public}d, condition: %{public}s", key,
@@ -156,12 +224,12 @@ std::string RemoteAudioRendererSink::GetAudioParameter(const AudioParamKey key, 
 #endif
 }
 
-int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
+int32_t RemoteAudioRendererSinkInner::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
     void* reserved, void* cookie)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink::ParamEventCallback:key:%{public}d, condition:%{public}s, value:%{public}s",
         key, condition, value);
-    RemoteAudioRendererSink* sink = reinterpret_cast<RemoteAudioRendererSink*>(cookie);
+    RemoteAudioRendererSinkInner* sink = reinterpret_cast<RemoteAudioRendererSinkInner*>(cookie);
     std::string networkId = sink->GetNetworkId();
     AudioParamKey audioKey = AudioParamKey(key);
     // render state change to invalid.
@@ -182,22 +250,22 @@ int32_t RemoteAudioRendererSink::ParamEventCallback(AudioExtParamKey key, const 
             sink->isRenderCreated = false;
         }
     }
-    AudioSinkCallback* callback = sink->GetParamCallback();
+    IAudioSinkCallback* callback = sink->GetParamCallback();
     callback->OnAudioParameterChange(networkId, audioKey, condition, value);
     return 0;
 }
 
-std::string RemoteAudioRendererSink::GetNetworkId()
+std::string RemoteAudioRendererSinkInner::GetNetworkId()
 {
     return deviceNetworkId_;
 }
 
-OHOS::AudioStandard::AudioSinkCallback* RemoteAudioRendererSink::GetParamCallback()
+OHOS::AudioStandard::IAudioSinkCallback* RemoteAudioRendererSinkInner::GetParamCallback()
 {
     return callback_;
 }
 
-void RemoteAudioRendererSink::DeInit()
+void RemoteAudioRendererSinkInner::DeInit()
 {
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
@@ -222,7 +290,7 @@ void RemoteAudioRendererSink::DeInit()
     }
 #endif // DEBUG_DUMP_FILE
     // remove map recorder.
-    RemoteAudioRendererSink *temp = allsinks[this->deviceNetworkId_];
+    RemoteAudioRendererSinkInner *temp = allsinks[this->deviceNetworkId_];
     if (temp != nullptr) {
         delete temp;
         temp = nullptr;
@@ -245,7 +313,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.silenceThreshold = 0;
 }
 
-struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
+struct AudioManager *RemoteAudioRendererSinkInner::GetAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
@@ -280,7 +348,31 @@ struct AudioManager *RemoteAudioRendererSink::GetAudioManager()
     return audioManager;
 }
 
-int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
+AudioFormat RemoteAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+{
+    AudioFormat hdiFormat;
+    switch (format) {
+        case SAMPLE_U8:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            break;
+        case SAMPLE_S16LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+        case SAMPLE_S24LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            break;
+        case SAMPLE_S32LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        default:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+    }
+
+    return hdiFormat;
+}
+
+int32_t RemoteAudioRendererSinkInner::CreateRender(struct AudioPort &renderPort)
 {
     int32_t ret;
     int64_t start = GetNowTimeMs();
@@ -288,7 +380,7 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = attr_.format;
+    param.format = ConverToHdiFormat(attr_.format);
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_INFO_LOG("RemoteAudioRendererSink Create render format: %{public}d", param.format);
@@ -309,7 +401,7 @@ int32_t RemoteAudioRendererSink::CreateRender(struct AudioPort &renderPort)
     return 0;
 }
 
-inline std::string printRemoteAttr(RemoteAudioSinkAttr attr_)
+inline std::string printRemoteAttr(IAudioSinkAttr attr_)
 {
     std::stringstream value;
     value << "adapterName[" << attr_.adapterName << "] openMicSpeaker[" << attr_.openMicSpeaker << "] ";
@@ -320,7 +412,7 @@ inline std::string printRemoteAttr(RemoteAudioSinkAttr attr_)
     return value.str();
 }
 
-int32_t RemoteAudioRendererSink::GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size,
+int32_t RemoteAudioRendererSinkInner::GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size,
     const char *networkId)
 {
     int32_t targetIdx = -1;
@@ -345,7 +437,12 @@ int32_t RemoteAudioRendererSink::GetTargetAdapterPort(struct AudioAdapterDescrip
     return targetIdx;
 }
 
-int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
+bool RemoteAudioRendererSinkInner::IsInited()
+{
+    return rendererInited_;
+}
+
+int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Init start.");
     attr_ = attr;
@@ -389,7 +486,7 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
     rendererInited_ = true;
 
 #ifdef DEBUG_DUMP_FILE
-    AUDIO_INFO_LOG("dump RemoteAudioSinkAttr:%{public}s", printRemoteAttr(attr_).c_str());
+    AUDIO_INFO_LOG("dump IAudioSinkAttr:%{public}s", printRemoteAttr(attr_).c_str());
     std::string fileName = attr_.filePath;
     std::string filePath = "/data/local/tmp/remote_test_001.pcm";
     const char *g_audioOutTestFilePath = filePath.c_str();
@@ -403,7 +500,7 @@ int32_t RemoteAudioRendererSink::Init(RemoteAudioSinkAttr &attr)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
+int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int64_t start = GetNowTimeMs();
     int32_t ret;
@@ -432,7 +529,7 @@ int32_t RemoteAudioRendererSink::RenderFrame(char &data, uint64_t len, uint64_t 
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::Start(void)
+int32_t RemoteAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
     if (!isRenderCreated) {
@@ -457,7 +554,7 @@ int32_t RemoteAudioRendererSink::Start(void)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::SetVolume(float left, float right)
+int32_t RemoteAudioRendererSinkInner::SetVolume(float left, float right)
 {
     int32_t ret;
     float volume;
@@ -485,14 +582,14 @@ int32_t RemoteAudioRendererSink::SetVolume(float left, float right)
     return ret;
 }
 
-int32_t RemoteAudioRendererSink::GetVolume(float &left, float &right)
+int32_t RemoteAudioRendererSinkInner::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::GetLatency(uint32_t *latency)
+int32_t RemoteAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink: GetLatency failed audio render null");
@@ -566,7 +663,7 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t RemoteAudioRendererSink::OpenOutput(DeviceType outputDevice)
+int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
 {
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
@@ -595,6 +692,11 @@ int32_t RemoteAudioRendererSink::OpenOutput(DeviceType outputDevice)
         .sinks = &sink,
     };
 
+    if (audioAdapter_ == nullptr) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink: AudioAdapter object is null.");
+        return ERR_OPERATION_FAILED;
+    }
+
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink: UpdateAudioRoute returns: %{public}d", ret);
     if (ret != 0) {
@@ -605,9 +707,45 @@ int32_t RemoteAudioRendererSink::OpenOutput(DeviceType outputDevice)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::SetAudioScene(AudioScene audioScene)
+int32_t RemoteAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSink::SetAudioScene in");
+    (void)transactionId;
+    AUDIO_ERR_LOG("RemoteAudioRendererSink: GetTransactionId not supported");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteAudioRendererSinkInner::SetVoiceVolume(float volume)
+{
+    (void)volume;
+    AUDIO_ERR_LOG("RemoteAudioRendererSink: SetVoiceVolume not supported");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteAudioRendererSinkInner::SetOutputRoute(DeviceType deviceType)
+{
+    (void)deviceType;
+    AUDIO_ERR_LOG("RemoteAudioRendererSink: SetOutputRoute not supported");
+    return ERR_NOT_SUPPORTED;
+}
+
+void RemoteAudioRendererSinkInner::SetAudioMonoState(bool audioMono)
+{
+    (void)audioMono;
+    AUDIO_ERR_LOG("RemoteAudioRendererSink: SetAudioMonoState not supported");
+    return;
+}
+
+void RemoteAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
+{
+    (void)audioBalance;
+    AUDIO_ERR_LOG("RemoteAudioRendererSink: SetAudioBalanceValue not supported");
+    return;
+}
+
+int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+{
+    AUDIO_INFO_LOG("RemoteAudioRendererSink::SetAudioScene scene: %{public}d, device: %{public}d",
+        audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
@@ -639,7 +777,7 @@ int32_t RemoteAudioRendererSink::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::Stop(void)
+int32_t RemoteAudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
     int32_t ret;
@@ -663,7 +801,7 @@ int32_t RemoteAudioRendererSink::Stop(void)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::Pause(void)
+int32_t RemoteAudioRendererSinkInner::Pause(void)
 {
     AUDIO_INFO_LOG("Pause.");
     int32_t ret;
@@ -691,7 +829,7 @@ int32_t RemoteAudioRendererSink::Pause(void)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::Resume(void)
+int32_t RemoteAudioRendererSinkInner::Resume(void)
 {
     AUDIO_INFO_LOG("Pause.");
     int32_t ret;
@@ -719,7 +857,7 @@ int32_t RemoteAudioRendererSink::Resume(void)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSink::Reset(void)
+int32_t RemoteAudioRendererSinkInner::Reset(void)
 {
     AUDIO_INFO_LOG("Reset.");
     int32_t ret;
@@ -736,7 +874,7 @@ int32_t RemoteAudioRendererSink::Reset(void)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t RemoteAudioRendererSink::Flush(void)
+int32_t RemoteAudioRendererSinkInner::Flush(void)
 {
     AUDIO_INFO_LOG("Flush.");
     int32_t ret;
@@ -754,149 +892,3 @@ int32_t RemoteAudioRendererSink::Flush(void)
 }
 } // namespace AudioStandard
 } // namespace OHOS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-using namespace OHOS::AudioStandard;
-
-int32_t FillinRemoteAudioRenderSinkWapper(const char *deviceNetworkId, void **wapper)
-{
-    RemoteAudioRendererSink *instance = RemoteAudioRendererSink::GetInstance(deviceNetworkId);
-    if (instance != nullptr) {
-        *wapper = static_cast<void *>(instance);
-    } else {
-        *wapper = nullptr;
-    }
-
-    return SUCCESS;
-}
-
-int32_t RemoteAudioRendererSinkInit(void *wapper, RemoteAudioSinkAttr *attr)
-{
-    int32_t ret;
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (audioRendererSink->rendererInited_)
-        return SUCCESS;
-
-    ret = audioRendererSink->Init(*attr);
-    return ret;
-}
-
-void RemoteAudioRendererSinkDeInit(void *wapper)
-{
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_LOG(audioRendererSink != nullptr, "null audioRendererSink");
-    // remove the sink in allsinks.
-    if (audioRendererSink->rendererInited_)
-        audioRendererSink->DeInit();
-}
-
-int32_t RemoteAudioRendererSinkStop(void *wapper)
-{
-    int32_t ret;
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_)
-        return SUCCESS;
-
-    ret = audioRendererSink->Stop();
-    return ret;
-}
-
-int32_t RemoteAudioRendererSinkStart(void *wapper)
-{
-    int32_t ret;
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    ret = audioRendererSink->Start();
-    return ret;
-}
-
-int32_t RemoteAudioRendererSinkPause(void *wapper)
-{
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_) {
-        AUDIO_ERR_LOG("Renderer pause failed");
-        return ERR_NOT_STARTED;
-    }
-
-    return audioRendererSink->Pause();
-}
-
-int32_t RemoteAudioRendererSinkResume(void *wapper)
-{
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_) {
-        AUDIO_ERR_LOG("Renderer resume failed");
-        return ERR_NOT_STARTED;
-    }
-
-    return audioRendererSink->Resume();
-}
-
-int32_t RemoteAudioRendererRenderFrame(void *wapper, char &data, uint64_t len, uint64_t &writeLen)
-{
-    int32_t ret;
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    ret = audioRendererSink->RenderFrame(data, len, writeLen);
-    return ret;
-}
-
-int32_t RemoteAudioRendererSinkSetVolume(void *wapper, float left, float right)
-{
-    int32_t ret;
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    ret = audioRendererSink->SetVolume(left, right);
-    return ret;
-}
-
-int32_t RemoteAudioRendererSinkGetLatency(void *wapper, uint32_t *latency)
-{
-    int32_t ret;
-    RemoteAudioRendererSink *audioRendererSink = static_cast<RemoteAudioRendererSink *>(wapper);
-    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
-    if (!audioRendererSink->rendererInited_) {
-        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
-        return ERR_NOT_STARTED;
-    }
-
-    if (!latency) {
-        AUDIO_ERR_LOG("RemoteAudioRendererSinkGetLatency failed latency null");
-        return ERR_INVALID_PARAM;
-    }
-
-    ret = audioRendererSink->GetLatency(latency);
-    return ret;
-}
-
-int32_t RemoteAudioRendererSinkGetTransactionId(uint64_t *transactionId)
-{
-    // as we can not get wapper initialized, we dont know which sink address we should return.
-    *transactionId = static_cast<uint16_t>(-1);
-    return SUCCESS;
-}
-#ifdef __cplusplus
-}
-#endif

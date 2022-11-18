@@ -77,6 +77,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
   external_deps = [
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
+    "power_manager:powermgr_client",
   ]
 
   part_name = "multimedia_audio_framework"
@@ -178,7 +179,10 @@ ohos_shared_library("audio_renderer_file_sink") {
 
   cflags_cc = cflags
 
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+  ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
@@ -194,7 +198,10 @@ ohos_shared_library("renderer_sink_adapter") {
   }
   install_enable = true
 
-  sources = [ "common/renderer_sink_adapter.c" ]
+  sources = [
+    "common/i_audio_renderer_sink.cpp",
+    "common/renderer_sink_adapter.c",
+  ]
 
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
