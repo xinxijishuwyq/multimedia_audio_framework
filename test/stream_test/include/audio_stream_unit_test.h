@@ -17,8 +17,8 @@
 #define AUDIO_CAPTURER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_stream.h"
 #include "audio_info.h"
+#include "audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {

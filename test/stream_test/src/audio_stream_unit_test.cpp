@@ -32,7 +32,8 @@ void AudioStreamUnitTest::TearDownTestCase(void) {}
 void AudioStreamUnitTest::SetUp(void) {}
 void AudioStreamUnitTest::TearDown(void) {}
 
-void AudioStreamUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStream){
+void AudioStreamUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStream)
+{
     AppInfo appInfo_ = {};
     if (!(appInfo_.appPid)) {
         appInfo_.appPid = getpid();
@@ -247,4 +248,4 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_GetCaptureMode_001, TestSize.Level1)
     EXPECT_EQ(captureMode, AudioCaptureMode::CAPTURE_MODE_NORMAL);
 }
 } // namespace AudioStandard
-} // namespace OHOS 
+} // namespace OHOS

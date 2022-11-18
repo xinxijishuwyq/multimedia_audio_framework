@@ -29,14 +29,14 @@ class AudioManagerDeviceChangeCallbackTest : public AudioManagerDeviceChangeCall
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) {}
 };
 
-class AudioRendererStateChangeCallbackTest : public AudioRendererStateChangeCallback{
+class AudioRendererStateChangeCallbackTest : public AudioRendererStateChangeCallback {
     virtual void OnRendererStateChange(
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
 };
 
 class AudioCapturerStateChangeCallbackTest : public AudioCapturerStateChangeCallback {
     virtual void OnCapturerStateChange(
-        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {} 
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 };
 class AudioPolicyUnitTest : public testing::Test {
 public:

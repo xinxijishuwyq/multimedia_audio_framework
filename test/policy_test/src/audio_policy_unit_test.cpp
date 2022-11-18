@@ -17,9 +17,9 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_unit_test.h"
+#include "audio_system_manager.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include "audio_system_manager.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -30,7 +30,8 @@ void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
 void AudioPolicyUnitTest::SetUp(void) {}
 void AudioPolicyUnitTest::TearDown(void) {}
-void AudioPolicyUnitTest::InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy> &audioPolicyProxy) {
+void AudioPolicyUnitTest::InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy> &audioPolicyProxy)
+{
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
         AUDIO_ERR_LOG("AudioSystemManager::init failed");
@@ -45,7 +46,8 @@ void AudioPolicyUnitTest::InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy>
     audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
 }
 
-void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object) {
+void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object)
+{
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
         AUDIO_ERR_LOG("AudioSystemManager::init failed");
@@ -59,7 +61,8 @@ void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object) {
     }
 }
 
-void AudioPolicyUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStream) {
+void AudioPolicyUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStream)
+{
     AppInfo appInfo_ = {};
     if (!(appInfo_.appPid)) {
         appInfo_.appPid = getpid();
@@ -75,7 +78,8 @@ void AudioPolicyUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStr
     }
 }
 
-uint32_t AudioPolicyUnitTest::GetSessionId(std::shared_ptr<AudioStream> &audioStream){
+uint32_t AudioPolicyUnitTest::GetSessionId(std::shared_ptr<AudioStream> &audioStream)
+{
     uint32_t sessionID_ = static_cast<uint32_t>(-1);
     if (audioStream->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID Failed");
@@ -164,7 +168,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = DeviceFlag::INPUT_DEVICES_FLAG;
 
-    int32_t ret = audioPolicyProxy->SelectInputDevice(audioCapturerFilter,audioDeviceDescriptorsVector);
+    int32_t ret = audioPolicyProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorsVector);
     EXPECT_EQ(OPEN_PORT_FAILURE, ret);
 }
 
@@ -294,7 +298,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SelectInputDevice_001, TestSize
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = DeviceFlag::INPUT_DEVICES_FLAG;
 
-    bool isStreamActive = AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorsVector);
+    bool isStreamActive = AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter,
+        audioDeviceDescriptorsVector);
     EXPECT_EQ(false, isStreamActive);
 }
 
@@ -341,7 +346,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_001, Te
 {
     int32_t clientId = getpid();
     DeviceFlag flag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-    std::shared_ptr<AudioManagerDeviceChangeCallback> callback = std::make_shared<AudioManagerDeviceChangeCallbackTest>();
+    std::shared_ptr<AudioManagerDeviceChangeCallback> callback =
+        std::make_shared<AudioManagerDeviceChangeCallbackTest>();
 
     int32_t ret = AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
     EXPECT_EQ(SUCCESS, ret);
@@ -358,7 +364,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_001, Te
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetStreamInFocus_001, TestSize.Level1)
 {
     AudioPolicyManager::GetInstance().GetStreamInFocus();
-    //ASSERT_NE(nullptr, streamType);
 }
 
 /**
@@ -391,7 +396,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, Test
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
-    std::shared_ptr<AudioRendererStateChangeCallback> callback = std::make_shared<AudioRendererStateChangeCallbackTest>();
+    std::shared_ptr<AudioRendererStateChangeCallback> callback =
+        std::make_shared<AudioRendererStateChangeCallbackTest>();
     int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientId, callback);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -407,7 +413,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListe
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListener_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
-    std::shared_ptr<AudioCapturerStateChangeCallback> callback = std::make_shared<AudioCapturerStateChangeCallbackTest>();
+    std::shared_ptr<AudioCapturerStateChangeCallback> callback =
+        std::make_shared<AudioCapturerStateChangeCallbackTest>();
     int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientId, callback);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -431,4 +438,4 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySuppor
     EXPECT_EQ(true, ret);
 }
 } // namespace AudioStandard
-} // namespace OHOS 
+} // namespace OHOS
