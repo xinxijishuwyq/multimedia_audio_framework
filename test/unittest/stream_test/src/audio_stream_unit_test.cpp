@@ -23,6 +23,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+const int32_t ERROR = -1;
 const uint32_t DEFAULT_SAMPLING_RATE = 44100;
 const uint8_t DEFAULT_CHANNEL_COUNT = 2;
 const uint8_t DEFAULT_SAMPLE_SIZE = 2;
@@ -139,7 +140,7 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetStreamType_001, TestSize.Level1)
     AudioStreamUnitTest::InitAudioStream(audioStream_);
     AudioStreamType audioStreamType = AudioStreamType::STREAM_MEDIA;
     int32_t ret = audioStream_->SetStreamType(audioStreamType);
-    EXPECT_EQ(OPEN_PORT_FAILURE, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**

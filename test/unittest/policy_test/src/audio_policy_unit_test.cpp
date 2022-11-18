@@ -26,6 +26,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+const int32_t ERROR = -1;
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
 void AudioPolicyUnitTest::SetUp(void) {}
@@ -169,7 +170,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
     audioCapturerFilter->uid = DeviceFlag::INPUT_DEVICES_FLAG;
 
     int32_t ret = audioPolicyProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorsVector);
-    EXPECT_EQ(OPEN_PORT_FAILURE, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -189,10 +190,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
     AudioPolicyUnitTest::GetIRemoteObject(object);
 
     int32_t ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
-    EXPECT_EQ(OPEN_PORT_FAILURE, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = audioPolicyProxy->UnsetDeviceChangeCallback(clientId);
-    EXPECT_EQ(OPEN_PORT_FAILURE, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
