@@ -41,7 +41,7 @@ void AudioPolicyUnitTest::InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy>
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        AUDIO_DEBUG_LOG("InitAudioPolicyProxy::object is NULL.");
+        AUDIO_ERR_LOG("InitAudioPolicyProxy::object is NULL.");
         return;
     }
     audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
@@ -57,7 +57,7 @@ void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object)
 
     object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        AUDIO_DEBUG_LOG("GetIRemoteObject::object is NULL.");
+        AUDIO_ERR_LOG("GetIRemoteObject::object is NULL.");
         return;
     }
 }

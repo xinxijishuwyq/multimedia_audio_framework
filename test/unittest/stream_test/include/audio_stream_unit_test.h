@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_CAPTURER_UNIT_TEST_H
-#define AUDIO_CAPTURER_UNIT_TEST_H
+#ifndef AUDIO_STREAM_UNIT_TEST_H
+#define AUDIO_STREAM_UNIT_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_info.h"
@@ -72,4 +72,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_CAPTURER_UNIT_TEST_H
+#endif // AUDIO_STREAM_UNIT_TEST_H
