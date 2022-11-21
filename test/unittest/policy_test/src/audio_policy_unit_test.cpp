@@ -285,26 +285,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Le
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SelectInputDevice_001 via illegal state
-* @tc.number: Audio_Policy_Manager_SelectInputDevice_001
-* @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
-*/
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SelectInputDevice_001, TestSize.Level1)
-{
-    AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
-    DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
-    audioDeviceDescriptorsVector = audioSystemMgr->GetDevices(deviceFlag);
-
-    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
-    audioCapturerFilter->uid = DeviceFlag::INPUT_DEVICES_FLAG;
-
-    bool isStreamActive = AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter,
-        audioDeviceDescriptorsVector);
-    EXPECT_EQ(false, isStreamActive);
-}
-
-/**
 * @tc.name  : Test Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001 via legal state
 * @tc.number: Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001
 * @tc.desc  : Test SetMicrophoneMuteAudioConfig interface. Returns success.
