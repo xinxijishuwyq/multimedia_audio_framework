@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,13 +35,13 @@ void AudioPolicyUnitTest::InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy>
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
-        AUDIO_ERR_LOG("AudioSystemManager::init failed");
+        AUDIO_ERR_LOG("InitAudioPolicyProxy::GetSystemAbilityManager failed");
         return;
     }
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        AUDIO_DEBUG_LOG("InitAudioPolicyProxy::object is NULL.");
         return;
     }
     audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
@@ -51,13 +51,13 @@ void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object)
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
-        AUDIO_ERR_LOG("AudioSystemManager::init failed");
+        AUDIO_ERR_LOG("GetIRemoteObject::GetSystemAbilityManager failed");
         return;
     }
 
     object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     if (object == nullptr) {
-        AUDIO_DEBUG_LOG("AudioSystemManager::object is NULL.");
+        AUDIO_DEBUG_LOG("GetIRemoteObject::object is NULL.");
         return;
     }
 }
@@ -75,7 +75,7 @@ void AudioPolicyUnitTest::InitAudioStream(std::shared_ptr<AudioStream> &audioStr
     
     audioStream = std::make_shared<AudioStream>(STREAM_NOTIFICATION, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
     if (audioStream) {
-        AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
+        AUDIO_DEBUG_LOG("InitAudioStream::Audio stream created");
     }
 }
 
@@ -83,7 +83,7 @@ uint32_t AudioPolicyUnitTest::GetSessionId(std::shared_ptr<AudioStream> &audioSt
 {
     uint32_t sessionID_ = static_cast<uint32_t>(-1);
     if (audioStream->GetAudioSessionID(sessionID_) != 0) {
-        AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID Failed");
+        AUDIO_ERR_LOG("AudioPolicyUnitTest::GetSessionId Failed");
     }
     return sessionID_;
 }
