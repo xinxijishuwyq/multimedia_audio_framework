@@ -16,7 +16,9 @@
 #include <sys/time.h>
 #include <utility>
 
+#include <climits>
 #include <cmath>
+#include <cfloat>
 #include "securec.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
@@ -621,15 +623,19 @@ int32_t TonePlayerPrivate::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t 
     uint32_t index;
     uint8_t *data;
     uint16_t freqVal;
+    float pi = 3.1428f;
     for (uint32_t i = 0; i <= TONEINFO_MAX_WAVES; i++) {
         if (freqs[i] == 0) {
             break;
         }
         freqVal = freqs[i];
-        AUDIO_INFO_LOG("GetSamples Freq: %{public}d sampleCount_: %{public}d", freqVal, sampleCount_);
         index = sampleCount_;
         data = (uint8_t*)buffer;
-        double factor = freqVal * 2 * 3.1428 / samplingRate_;
+        if (freqVal / samplingRate_ >= DBL_MAX / 2 / pi) {// 2 is a parameter in the sine wave formula
+            break;
+        }
+
+        double factor = freqVal * 2 * pi / samplingRate_;
         for (uint32_t idx = 0; idx < reqSamples; idx++) {
             int16_t sample = AMPLITUDE * sin(factor * index);
             uint32_t result;

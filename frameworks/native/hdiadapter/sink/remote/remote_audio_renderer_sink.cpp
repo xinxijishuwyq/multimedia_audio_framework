@@ -119,7 +119,8 @@ private:
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(std::string deviceNetworkId)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), audioAdapter_(nullptr), audioRender_(nullptr)
+    rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(-1), audioAdapter_(nullptr),
+    audioRender_(nullptr), callback_(nullptr)
 {
     AUDIO_INFO_LOG("Constract.");
     attr_ = {};
