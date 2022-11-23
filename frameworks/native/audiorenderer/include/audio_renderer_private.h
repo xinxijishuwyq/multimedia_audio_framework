@@ -90,6 +90,9 @@ private:
     uint32_t sessionID_ = INVALID_SESSION_ID;
     AudioStandard::InterruptMode mode_ = AudioStandard::InterruptMode::SHARE_MODE;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
+#ifdef DUMP_CLIENT_PCM
+    FILE *dcp_ = nullptr;
+#endif
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {

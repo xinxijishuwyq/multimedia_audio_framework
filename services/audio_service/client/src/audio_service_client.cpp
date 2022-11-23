@@ -373,6 +373,7 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     asClient->underFlowCount++;
+    AUDIO_WARNING_LOG("AudioServiceClient underrun: %{public}d!", asClient->underFlowCount);
 }
 
 void AudioServiceClient::PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata)
