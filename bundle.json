@@ -126,9 +126,9 @@
                   "audio_parameters_napi.h"
                 ],
                 "header_base": [
-                     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
-                     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
-                     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include"
+                  "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
+                  "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
+                  "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include"
                 ]
               }
             }
@@ -137,15 +137,13 @@
             "//foundation/multimedia/audio_framework/test:audio_unit_test",
             "//foundation/multimedia/audio_framework/test:audio_module_test",
             "//foundation/multimedia/audio_framework/test:audio_fuzz_test",
+            "//foundation/multimedia/audio_framework/test:audio_benchmark_test",
             "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer_test",
             "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",
-            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test_packages",
-            "//foundation/multimedia/audio_framework/test/benchmarktest/audiorenderer:benchmarktest",
-            "//foundation/multimedia/audio_framework/test/benchmarktest/audiocapturer:benchmarktest",
-            "//foundation/multimedia/audio_framework/test/benchmarktest/audiomanager:benchmarktest"
+            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test_packages"
           ]
         }
     }
