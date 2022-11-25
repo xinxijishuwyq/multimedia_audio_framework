@@ -424,7 +424,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         for (uint32_t i = 0; i < activeStreams; i++) {
             const auto &audioCapturerChangeInfo = audioCapturerChangeInfos_.at(i);
             if (audioCapturerChangeInfo == nullptr || audioCapturerChangeInfo->clientUID != uid) {
-                break;  
+                break;
             }
             sessionID = audioCapturerChangeInfo->sessionId;
             audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
