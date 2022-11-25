@@ -26,6 +26,7 @@
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
+#include "audio_manager_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -282,7 +283,7 @@ private:
     virtual ~AudioSystemManager();
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    bool CheckProxy();
+    const sptr<IStandardAudioService> GetAudioSystemManagerProxy();
     uint32_t GetCallingPid();
     void AudioServerDied(pid_t pid);
 
