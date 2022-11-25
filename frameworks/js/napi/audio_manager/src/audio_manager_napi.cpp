@@ -1163,11 +1163,10 @@ napi_value AudioManagerNapi::SetAudioScene(napi_env env, napi_callback_info info
 
             if (i == PARAM0 && valueType == napi_number) {
                 napi_get_value_int32(env, argv[i], &asyncContext->scene);
-                if ((asyncContext->scene >= AUDIO_SCENE_DEFAULT) || (asyncContext->scene <= AUDIO_SCENE_PHONE_CHAT)) {
+                if ((asyncContext->scene >= AUDIO_SCENE_DEFAULT) && (asyncContext->scene <= AUDIO_SCENE_PHONE_CHAT)) {
                     break;    
                 }
                 asyncContext->status = NAPI_ERR_UNSUPPORTED;
-
             } else if (i == PARAM1) {
                 if (valueType == napi_function) {
                     napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);

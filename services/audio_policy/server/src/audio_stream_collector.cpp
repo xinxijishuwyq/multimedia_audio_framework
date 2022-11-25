@@ -423,20 +423,20 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         activeStreams = audioCapturerChangeInfos_.size();
         for (uint32_t i = 0; i < activeStreams; i++) {
             const auto &audioCapturerChangeInfo = audioCapturerChangeInfos_.at(i);
-            if (audioCapturerChangeInfo != nullptr && audioCapturerChangeInfo->clientUID == uid) {
-                sessionID = audioCapturerChangeInfo->sessionId;
-                audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
-                mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-                    audioCapturerChangeInfos_);
-                capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
-                    audioCapturerChangeInfo->sessionId));
-                audioCapturerChangeInfos_.erase(audioCapturerChangeInfos_.begin() + i);
-                if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
-                    AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
-                }
-                checkActiveStreams = true; // all entries are not checked yet
-                break;
+            if (audioCapturerChangeInfo == nullptr || audioCapturerChangeInfo->clientUID != uid) {
+                break;  
             }
+            sessionID = audioCapturerChangeInfo->sessionId;
+            audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
+            mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
+                audioCapturerChangeInfos_);
+            capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
+                audioCapturerChangeInfo->sessionId));
+            audioCapturerChangeInfos_.erase(audioCapturerChangeInfos_.begin() + i);
+            if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
+                AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
+            }
+            checkActiveStreams = true; // all entries are not checked yet
         }
     }
 }
