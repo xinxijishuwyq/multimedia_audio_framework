@@ -17,7 +17,6 @@
 #define ST_AUDIO_POLICY_MANAGER_H
 
 #include <cstdint>
-#include "audio_policy_base.h"
 #include "audio_capturer_state_change_listener_stub.h"
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_info.h"
@@ -44,10 +43,12 @@ public:
     static AudioPolicyManager& GetInstance()
     {
         static AudioPolicyManager policyManager;
+        if (!serverConnected) {
+            policyManager.Init();
+        }
+
         return policyManager;
     }
-
-    const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
 
     int32_t SetStreamVolume(AudioStreamType streamType, float volume);
 
@@ -182,7 +183,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 private:
-    AudioPolicyManager() {}
+    AudioPolicyManager()
+    {
+        Init();
+    }
     ~AudioPolicyManager() {}
 
     void Init();
@@ -196,6 +200,7 @@ private:
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
+    static bool serverConnected;
     void RegisterAudioPolicyServerDeathRecipient();
     void AudioPolicyServerDied(pid_t pid);
 };
