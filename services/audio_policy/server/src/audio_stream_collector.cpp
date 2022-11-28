@@ -393,7 +393,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
     vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRenderBegin = audioRendererChangeInfos_.begin();
-    for (; audioRenderBegin != audioRendererChangeInfos_.end();) {
+    while (audioRenderBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRenderBegin;
         if (audioRendererChangeInfo == nullptr || audioRendererChangeInfo->clientUID != uid) {
             audioRenderBegin++;
@@ -415,7 +415,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
 
     sessionID = -1;
     vector<std::unique_ptr<AudioCapturerChangeInfo>>::iterator audioCapturerBegin = audioCapturerChangeInfos_.begin();
-    for (; audioCapturerBegin != audioCapturerChangeInfos_.end();) {
+    while (audioCapturerBegin != audioCapturerChangeInfos_.end()) {
         const auto &audioCapturerChangeInfo = *audioCapturerBegin;
         if (audioCapturerChangeInfo == nullptr || audioCapturerChangeInfo->clientUID != uid) {
             audioCapturerBegin++;
