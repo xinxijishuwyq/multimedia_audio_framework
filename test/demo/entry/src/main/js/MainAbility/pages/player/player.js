@@ -76,7 +76,7 @@ export default {
             console.log("[JSAR] In onShow part, volume is " + value);
             this.volume = value;
             this.volumeImageUrl = 'common/images/volumezero.png';
-            if (value == 0) {
+            if (value === 0) {
                 this.volumeImageUrl = 'common/images/volumezero.png';
             } else {
                 this.volumeImageUrl = 'common/images/volume.png';
@@ -109,28 +109,28 @@ export default {
     },
 
     async createRender() {
-        var audioStreamInfo = {
+        const audioStreamInfo = {
             samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_48000,
             channels: audio.AudioChannel.CHANNEL_1,
             sampleFormat: audio.AudioSampleFormat.SAMPLE_FORMAT_S16LE,
             encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
-        }
-        var audioRendererInfo = {
+        };
+        const audioRendererInfo = {
             content: audio.ContentType.CONTENT_TYPE_MUSIC,
             usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
             rendererFlags: 0
-        }
-        var audioRendererOptions = {
+        };
+        const audioRendererOptions = {
             streamInfo: audioStreamInfo,
             rendererInfo: audioRendererInfo
-        }
+        };
         await audio.createAudioRenderer(audioRendererOptions).then((data) => {
             this.audioRenderer = data;
             console.info('[JSAR] AudioRenderer Created : Success : Stream Type: SUCCESS');
         }).catch((err) => {
             console.info('[JSAR] AudioRenderer Created : ERROR : ' + err.message);
         });
-        if (this.currentRate != audio.AudioRendererRate.RENDER_RATE_NORMAL) {
+        if (this.currentRate !== audio.AudioRendererRate.RENDER_RATE_NORMAL) {
             this.audioRenderer.setRenderRate(this.currentRate).then(() => {
                 console.log('[JSAR] Set renderer rate SUCCESS');
             }).catch((err) => {
@@ -139,7 +139,7 @@ export default {
         }
         // Test the API .on('stateChange')
         this.audioRenderer.on('stateChange', (state) => {
-            var renderStateStr = '';
+            let renderStateStr = '';
             switch (state) {
                 case 1:
                     renderStateStr = 'Renderer STATE_PREPARED';
@@ -289,7 +289,7 @@ export default {
         this.isPlaying = false;
         this.audioUrl = 'common/images/play.png';
         // If the play is finished, play from the beginning
-        if (this.readTimes == len) {
+        if (this.readTimes === len) {
             this.readTimes = 0;
             await this.audioRenderer.stop();
             await this.startPlay();
@@ -347,8 +347,8 @@ export default {
     },
 
     async onChangeRate() {
-        var tempRate = 0;
-        var tempUrl = '';
+        let tempRate = 0;
+        let tempUrl = '';
         switch (this.currentRate) {
             case audio.AudioRendererRate.RENDER_RATE_NORMAL:
                 tempRate = audio.AudioRendererRate.RENDER_RATE_DOUBLE;
@@ -400,7 +400,7 @@ export default {
         this.volume = e.value;
         this.audioManager.setVolume(audio.AudioVolumeType.MEDIA, this.volume).then(() => {
             console.log('[JSAR] Promise returned to indicate a successful volume setting. ' + this.volume);
-            if (this.volume == 0) {
+            if (this.volume === 0) {
                 this.volumeImageUrl = 'common/images/volumezero.png';
             } else {
                 this.volumeImageUrl = 'common/images/volume.png';
