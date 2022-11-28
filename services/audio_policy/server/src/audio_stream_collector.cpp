@@ -388,7 +388,6 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
 
     // Send the release state event notification for all streams of died client to registered app
-    bool checkActiveStreams = true;
     int32_t sessionID = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
