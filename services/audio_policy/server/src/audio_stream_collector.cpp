@@ -388,46 +388,62 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
 
     // Send the release state event notification for all streams of died client to registered app
-    uint32_t activeStreams = 0;
+    bool checkActiveStreams = true;
     int32_t sessionID = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
-    sessionID = -1;
-    activeStreams = audioRendererChangeInfos_.size();
-    for (uint32_t i = 0; i < activeStreams; i++) {
-        const auto &audioRendererChangeInfo = audioRendererChangeInfos_.at(i);
-        if (audioRendererChangeInfo != nullptr && audioRendererChangeInfo->clientUID == uid) {
+    while (checkActiveStreams) {
+        sessionID = -1;
+        checkActiveStreams = false;
+        vector<std::unique_ptr<AudioRendererChangeInfo>> audioRenderBegin = audioRendererChangeInfos_.begin();
+        for (; audioRenderBegin != audioRendererChangeInfos_.end();) {
+            const auto &audioRendererChangeInfo = audioRenderBegin.at(0);
+            if (audioRendererChangeInfo == nullptr || audioRendererChangeInfo->clientUID != uid) {
+                continue;
+                audioRenderBegin++;
+            }
             sessionID = audioRendererChangeInfo->sessionId;
             audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
             mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
                 audioRendererChangeInfos_);
             rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
                 audioRendererChangeInfo->sessionId));
-            audioRendererChangeInfos_.erase(audioRendererChangeInfos_.begin() + i);
+            vector<std::unique_ptr<AudioRendererChangeInfo>> temp = audioRenderBegin;
+            audioRendererChangeInfos_.erase(temp);
+            clientTracker_.erase(sessionID);
             if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
                 AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
             }
+            checkActiveStreams = true; // all entries are not checked yet
             break;
         }
     }
 
-    sessionID = -1;
-    activeStreams = audioCapturerChangeInfos_.size();
-    for (uint32_t i = 0; i < activeStreams; i++) {
-        const auto &audioCapturerChangeInfo = audioCapturerChangeInfos_.at(i);
-        if (audioCapturerChangeInfo != nullptr && audioCapturerChangeInfo->clientUID == uid) {
+    checkActiveStreams = true;
+    while (checkActiveStreams) {
+        sessionID = -1;
+        checkActiveStreams = false;
+        activeStreams = audioCapturerChangeInfos_.size();
+        vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerBegin = audioCapturerChangeInfos_.begin();
+        for (; audioCapturerBegin != audioCapturerChangeInfos_.end();) {
+            const auto &audioCapturerChangeInfo = audioCapturerBegin.at(0);
+            if (audioCapturerChangeInfo == nullptr || audioCapturerChangeInfo->clientUID != uid) {
+                continue;
+            }
             sessionID = audioCapturerChangeInfo->sessionId;
             audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
             mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
                 audioCapturerChangeInfos_);
             capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
                 audioCapturerChangeInfo->sessionId));
-            audioCapturerChangeInfos_.erase(audioCapturerChangeInfos_.begin() + i);
+            vector<std::unique_ptr<AudioCapturerChangeInfo>> temp = audioCapturerBegin;
+            audioCapturerChangeInfos_.erase(temp);
             if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
                 AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
             }
-            break;
-        }  
+            checkActiveStreams = true; // all entries are not checked yet
+            break;  
+        }
     }
 }
 
