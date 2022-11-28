@@ -397,7 +397,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         checkActiveStreams = false;
         vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRenderBegin = audioRendererChangeInfos_.begin();
         for (; audioRenderBegin != audioRendererChangeInfos_.end();) {
-            const auto &audioRendererChangeInfo = audioRenderBegin.at(0);
+            const auto &audioRendererChangeInfo = *audioRenderBegin;
             if (audioRendererChangeInfo == nullptr || audioRendererChangeInfo->clientUID != uid) {
                 continue;
                 audioRenderBegin++;
@@ -425,7 +425,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         checkActiveStreams = false;
         vector<std::unique_ptr<AudioCapturerChangeInfo>>::iterator audioCapturerBegin = audioCapturerChangeInfos_.begin();
         for (; audioCapturerBegin != audioCapturerChangeInfos_.end();) {
-            const auto &audioCapturerChangeInfo = audioCapturerBegin.at(0);
+            const auto &audioCapturerChangeInfo = *audioCapturerBegin;
             if (audioCapturerChangeInfo == nullptr || audioCapturerChangeInfo->clientUID != uid) {
                 continue;
             }
