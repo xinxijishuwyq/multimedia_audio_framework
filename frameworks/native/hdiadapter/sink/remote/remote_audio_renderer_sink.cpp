@@ -84,7 +84,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
-    int32_t OpenOutput(DeviceType deviceType);
+    int32_t OpenOutput(DeviceType outputDevice);
     static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
         void *cookie);
     std::string GetNetworkId();

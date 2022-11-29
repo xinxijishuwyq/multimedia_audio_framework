@@ -76,9 +76,9 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    int32_t SetOutputRoute(DeviceType deviceType) override;
+    int32_t SetOutputRoute(DeviceType outputDevice) override;
 
-    int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
+    int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
     AudioRendererSinkInner();
     ~AudioRendererSinkInner();
 private:
