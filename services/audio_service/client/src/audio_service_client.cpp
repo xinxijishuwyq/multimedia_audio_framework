@@ -892,6 +892,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
 int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
 {
     int error;
+    lock_guard<mutex> lockdata(dataMutex);
     if (CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR) < 0) {
         return AUDIO_CLIENT_ERR;
     }
@@ -899,7 +900,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_CONTROLLER) {
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
-    lock_guard<mutex> lockdata(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
     mStreamType = audioType;
     const std::string streamName = GetStreamName(audioType);
@@ -1032,14 +1032,12 @@ int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
 {
     int error;
-
+    lock_guard<mutex> lockdata(dataMutex);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-
     pa_operation *operation = nullptr;
 
-    lock_guard<mutex> lockdata(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_stream_state_t state = pa_stream_get_state(paStream);
@@ -1148,13 +1146,12 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
+    lock_guard<mutex> lock(dataMutex);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
     pa_operation *operation = nullptr;
-
-    lock_guard<mutex> lock(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
 
     pa_stream_state_t state = pa_stream_get_state(paStream);
@@ -1211,9 +1208,6 @@ int32_t AudioServiceClient::DrainStream()
         return AUDIO_CLIENT_PA_ERR;
     }
 
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
-        return AUDIO_CLIENT_PA_ERR;
-    }
     pa_operation *operation = nullptr;
 
     pa_threaded_mainloop_lock(mainLoop);
@@ -1604,11 +1598,11 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
     uint8_t *buffer = stream.buffer;
     size_t length = stream.bufferLen;
     size_t readSize = 0;
+    lock_guard<mutex> lock(dataMutex);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
 
-    lock_guard<mutex> lock(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
     while (length > 0) {
         while (!internalReadBuffer) {
@@ -1794,11 +1788,10 @@ uint32_t AudioServiceClient::GetStreamVolume(uint32_t sessionID)
 
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
+    lock_guard<mutex> lock(dataMutex);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-
-    lock_guard<mutex> lock(dataMutex);
     pa_threaded_mainloop_lock(mainLoop);
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -1844,10 +1837,10 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 
 int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 {
+    lock_guard<mutex> lock(dataMutex);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-    lock_guard<mutex> lock(dataMutex);
     pa_usec_t paLatency {0};
     pa_usec_t cacheLatency {0};
     int negative {0};
