@@ -1653,7 +1653,7 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
     return readSize;
 }
 
-int32_t AudioServiceClient::ReleaseStream()
+int32_t AudioServiceClient::ReleaseStream(bool releaseRunner)
 {
     state_ = RELEASED;
     lock_guard<mutex> lockdata(dataMutex);
@@ -1663,6 +1663,15 @@ int32_t AudioServiceClient::ReleaseStream()
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(state_);
+    }
+
+    {
+        lock_guard<mutex> runnerlock(runnerMutex_);
+        if (releaseRunner) {
+            AUDIO_INFO_LOG("runner remove");
+            SetEventRunner(nullptr);
+            runnerReleased_ = true;
+        }
     }
 
     return AUDIO_CLIENT_SUCCESS;
@@ -2345,6 +2354,11 @@ float AudioServiceClient::GetSingleStreamVol()
 // OnRenderMarkReach by eventHandler
 void AudioServiceClient::SendRenderMarkReachedRequestEvent(uint64_t mFrameMarkPosition)
 {
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendRenderMarkReachedRequestEvent runner released");
+        return;
+    }
     SendEvent(AppExecFwk::InnerEvent::Get(RENDERER_MARK_REACHED_REQUEST, mFrameMarkPosition));
 }
 
@@ -2359,7 +2373,12 @@ void AudioServiceClient::HandleRenderMarkReachedEvent(uint64_t mFrameMarkPositio
 void AudioServiceClient::SendSetRenderMarkReachedRequestEvent(
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(SET_RENDERER_MARK_REACHED_REQUEST, callback));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendSetRenderMarkReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(SET_RENDERER_MARK_REACHED_REQUEST, callback));
 }
 
 void AudioServiceClient::HandleSetRenderMarkReachedEvent(const std::shared_ptr<RendererPositionCallback> &callback)
@@ -2370,7 +2389,12 @@ void AudioServiceClient::HandleSetRenderMarkReachedEvent(const std::shared_ptr<R
 // UnsetRenderMarkReach by eventHandler
 void AudioServiceClient::SendUnsetRenderMarkReachedRequestEvent()
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(UNSET_RENDERER_MARK_REACHED_REQUEST));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendUnsetRenderMarkReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(UNSET_RENDERER_MARK_REACHED_REQUEST));
 }
 
 void AudioServiceClient::HandleUnsetRenderMarkReachedEvent()
@@ -2381,6 +2405,11 @@ void AudioServiceClient::HandleUnsetRenderMarkReachedEvent()
 // OnRenderPeriodReach by eventHandler
 void AudioServiceClient::SendRenderPeriodReachedRequestEvent(uint64_t mFramePeriodNumber)
 {
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendRenderPeriodReachedRequestEvent runner released");
+        return;
+    }
     SendEvent(AppExecFwk::InnerEvent::Get(RENDERER_PERIOD_REACHED_REQUEST, mFramePeriodNumber));
 }
 
@@ -2395,7 +2424,12 @@ void AudioServiceClient::HandleRenderPeriodReachedEvent(uint64_t mFramePeriodNum
 void AudioServiceClient::SendSetRenderPeriodReachedRequestEvent(
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(SET_RENDERER_PERIOD_REACHED_REQUEST, callback));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendSetRenderPeriodReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(SET_RENDERER_PERIOD_REACHED_REQUEST, callback));
 }
 
 void AudioServiceClient::HandleSetRenderPeriodReachedEvent(
@@ -2409,7 +2443,12 @@ void AudioServiceClient::HandleSetRenderPeriodReachedEvent(
 // UnsetRenderPeriodReach by eventHandler
 void AudioServiceClient::SendUnsetRenderPeriodReachedRequestEvent()
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(UNSET_RENDERER_PERIOD_REACHED_REQUEST));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendUnsetRenderPeriodReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(UNSET_RENDERER_PERIOD_REACHED_REQUEST));
 }
 
 void AudioServiceClient::HandleUnsetRenderPeriodReachedEvent()
@@ -2420,6 +2459,11 @@ void AudioServiceClient::HandleUnsetRenderPeriodReachedEvent()
 // OnCapturerMarkReach by eventHandler
 void AudioServiceClient::SendCapturerMarkReachedRequestEvent(uint64_t mFrameMarkPosition)
 {
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendCapturerMarkReachedRequestEvent runner released");
+        return;
+    }
     SendEvent(AppExecFwk::InnerEvent::Get(CAPTURER_MARK_REACHED_REQUEST, mFrameMarkPosition));
 }
 
@@ -2434,7 +2478,12 @@ void AudioServiceClient::HandleCapturerMarkReachedEvent(uint64_t mFrameMarkPosit
 void AudioServiceClient::SendSetCapturerMarkReachedRequestEvent(
     const std::shared_ptr<CapturerPositionCallback> &callback)
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(SET_CAPTURER_MARK_REACHED_REQUEST, callback));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendSetCapturerMarkReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(SET_CAPTURER_MARK_REACHED_REQUEST, callback));
 }
 
 void AudioServiceClient::HandleSetCapturerMarkReachedEvent(const std::shared_ptr<CapturerPositionCallback> &callback)
@@ -2445,7 +2494,12 @@ void AudioServiceClient::HandleSetCapturerMarkReachedEvent(const std::shared_ptr
 // UnsetCapturerMarkReach by eventHandler
 void AudioServiceClient::SendUnsetCapturerMarkReachedRequestEvent()
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(UNSET_CAPTURER_MARK_REACHED_REQUEST));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendUnsetCapturerMarkReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(UNSET_CAPTURER_MARK_REACHED_REQUEST));
 }
 
 void AudioServiceClient::HandleUnsetCapturerMarkReachedEvent()
@@ -2456,6 +2510,11 @@ void AudioServiceClient::HandleUnsetCapturerMarkReachedEvent()
 // OnCapturerPeriodReach by eventHandler
 void AudioServiceClient::SendCapturerPeriodReachedRequestEvent(uint64_t mFramePeriodNumber)
 {
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendCapturerPeriodReachedRequestEvent runner released");
+        return;
+    }
     SendEvent(AppExecFwk::InnerEvent::Get(CAPTURER_PERIOD_REACHED_REQUEST, mFramePeriodNumber));
 }
 
@@ -2470,7 +2529,12 @@ void AudioServiceClient::HandleCapturerPeriodReachedEvent(uint64_t mFramePeriodN
 void AudioServiceClient::SendSetCapturerPeriodReachedRequestEvent(
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(SET_CAPTURER_PERIOD_REACHED_REQUEST, callback));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendSetCapturerPeriodReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(SET_CAPTURER_PERIOD_REACHED_REQUEST, callback));
 }
 
 void AudioServiceClient::HandleSetCapturerPeriodReachedEvent(
@@ -2482,7 +2546,12 @@ void AudioServiceClient::HandleSetCapturerPeriodReachedEvent(
 // UnsetCapturerPeriodReach by eventHandler
 void AudioServiceClient::SendUnsetCapturerPeriodReachedRequestEvent()
 {
-    SendEvent(AppExecFwk::InnerEvent::Get(UNSET_CAPTURER_PERIOD_REACHED_REQUEST));
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendUnsetCapturerPeriodReachedRequestEvent runner released");
+        return;
+    }
+    SendSyncEvent(AppExecFwk::InnerEvent::Get(UNSET_CAPTURER_PERIOD_REACHED_REQUEST));
 }
 
 void AudioServiceClient::HandleUnsetCapturerPeriodReachedEvent()
@@ -2502,6 +2571,11 @@ int32_t AudioServiceClient::SetRendererWriteCallback(const std::shared_ptr<Audio
 void AudioServiceClient::SendWriteBufferRequestEvent()
 {
     // send write event to handler
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("AudioServiceClient::SendWriteBufferRequestEvent runner released");
+        return;
+    }
     SendEvent(AppExecFwk::InnerEvent::Get(WRITE_BUFFER_REQUEST));
 }
 

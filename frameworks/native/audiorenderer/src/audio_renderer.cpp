@@ -15,13 +15,13 @@
 
 #include <sstream>
 
+#include "audio_renderer.h"
+
+#include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_renderer_private.h"
 #include "audio_stream.h"
-#include "audio_log.h"
-
-#include "audio_renderer.h"
+#include "audio_renderer_private.h"
 
 namespace OHOS {
 namespace AudioStandard {
