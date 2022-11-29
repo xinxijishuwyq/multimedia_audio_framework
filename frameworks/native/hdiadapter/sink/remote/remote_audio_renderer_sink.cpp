@@ -56,7 +56,7 @@ const uint32_t PARAM_VALUE_LENTH = 20;
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink {
 public:
-    explicit RemoteAudioRendererSinkInner(std::string deviceNetworkId);
+    explicit RemoteAudioRendererSinkInner(const std::string deviceNetworkId);
     ~RemoteAudioRendererSinkInner();
 
     int32_t Init(IAudioSinkAttr attr) override;
@@ -84,7 +84,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
-    int32_t OpenOutput(DeviceType deviceType);
+    int32_t OpenOutput(DeviceType outputDevice);
     static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
         void *cookie);
     std::string GetNetworkId();
@@ -109,7 +109,7 @@ private:
     bool paramCallbackRegistered_ = false;
 
     int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
-    int32_t CreateRender(struct AudioPort &renderPort);
+    int32_t CreateRender(const struct AudioPort &renderPort);
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     struct AudioManager *GetAudioManager();
 #ifdef DEBUG_DUMP_FILE
@@ -117,7 +117,7 @@ private:
 #endif // DEBUG_DUMP_FILE
 };
 
-RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(std::string deviceNetworkId)
+RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string deviceNetworkId)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
     rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(-1), audioAdapter_(nullptr),
     audioRender_(nullptr), callback_(nullptr)
@@ -134,7 +134,7 @@ RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(std::string deviceNet
 RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
 {
     if (rendererInited_ == true) {
-        DeInit();
+        RemoteAudioRendererSinkInner::DeInit();
     } else {
         AUDIO_INFO_LOG("RemoteAudioRendererSink has already DeInit.");
     }
@@ -373,7 +373,7 @@ AudioFormat RemoteAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat fo
     return hdiFormat;
 }
 
-int32_t RemoteAudioRendererSinkInner::CreateRender(struct AudioPort &renderPort)
+int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     int32_t ret;
     int64_t start = GetNowTimeMs();
