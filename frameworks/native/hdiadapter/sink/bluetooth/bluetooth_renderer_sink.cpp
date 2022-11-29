@@ -67,7 +67,7 @@ typedef struct {
 
 class BluetoothRendererSinkInner : public BluetoothRendererSink {
 public:
-    int32_t Init(IAudioSinkAttr atrr) override;
+    int32_t Init(IAudioSinkAttr attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
     int32_t Start(void) override;
@@ -139,7 +139,7 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner()
 
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 {
-    DeInit();
+    BluetoothRendererSinkInner::DeInit();
 }
 
 BluetoothRendererSink *BluetoothRendererSink::GetInstance()

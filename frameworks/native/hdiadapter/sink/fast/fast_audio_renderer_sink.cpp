@@ -120,7 +120,7 @@ private:
     void PreparePosition();
 
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
-    int32_t CreateRender(struct AudioPort &renderPort);
+    int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
 #ifdef DUMPFILE
     FILE *pfd_;
@@ -141,7 +141,7 @@ FastAudioRendererSinkInner::FastAudioRendererSinkInner()
 
 FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
 {
-    DeInit();
+    FastAudioRendererSinkInner::DeInit();
 }
 
 FastAudioRendererSink *FastAudioRendererSink::GetInstance()
@@ -364,7 +364,7 @@ AudioFormat FastAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat form
     return hdiFormat;
 }
 
-int32_t FastAudioRendererSinkInner::CreateRender(struct AudioPort &renderPort)
+int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;

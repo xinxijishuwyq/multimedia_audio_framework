@@ -102,7 +102,7 @@ private:
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
-    int32_t CreateRender(struct AudioPort &renderPort);
+    int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
@@ -389,7 +389,7 @@ AudioFormat AudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
     return hdiFormat;
 }
 
-int32_t AudioRendererSinkInner::CreateRender(struct AudioPort &renderPort)
+int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
