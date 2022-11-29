@@ -391,11 +391,11 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     int32_t sessionID = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
-    vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRenderBegin = audioRendererChangeInfos_.begin();
-    while (audioRenderBegin != audioRendererChangeInfos_.end()) {
-        const auto &audioRendererChangeInfo = *audioRenderBegin;
+    vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRendererBegin = audioRendererChangeInfos_.begin();
+    while (audioRendererBegin != audioRendererChangeInfos_.end()) {
+        const auto &audioRendererChangeInfo = *audioRendererBegin;
         if (audioRendererChangeInfo == nullptr || audioRendererChangeInfo->clientUID != uid) {
-            audioRenderBegin++;
+            audioRendererBegin++;
             continue;
         }
         sessionID = audioRendererChangeInfo->sessionId;
@@ -404,8 +404,8 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
             audioRendererChangeInfos_);
         rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
             audioRendererChangeInfo->sessionId));
-        vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRenderBegin;
-        audioRenderBegin = audioRendererChangeInfos_.erase(temp);
+        vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRendererBegin;
+        audioRendererBegin = audioRendererChangeInfos_.erase(temp);
         clientTracker_.erase(sessionID);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
             AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
