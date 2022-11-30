@@ -56,7 +56,7 @@ const uint32_t PARAM_VALUE_LENTH = 20;
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink {
 public:
-    explicit RemoteAudioRendererSinkInner(const std::string deviceNetworkId);
+    explicit RemoteAudioRendererSinkInner(const std::string &deviceNetworkId);
     ~RemoteAudioRendererSinkInner();
 
     int32_t Init(IAudioSinkAttr attr) override;
@@ -117,7 +117,7 @@ private:
 #endif // DEBUG_DUMP_FILE
 };
 
-RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string deviceNetworkId)
+RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
     rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(-1), audioAdapter_(nullptr),
     audioRender_(nullptr), callback_(nullptr)
