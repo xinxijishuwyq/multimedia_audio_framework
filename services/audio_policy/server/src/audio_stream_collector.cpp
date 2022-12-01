@@ -394,7 +394,6 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     // Send the release state event notification for all streams of died client to registered app
     int32_t sessionID = -1;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-
     vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRendererBegin = audioRendererChangeInfos_.begin();
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRendererBegin;
@@ -410,7 +409,6 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
             audioRendererChangeInfo->sessionId));
         vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
-        clientTracker_.erase(sessionID);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
             AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
         }
