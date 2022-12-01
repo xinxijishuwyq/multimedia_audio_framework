@@ -72,7 +72,7 @@ void RendererPeriodPositionCallbackNapi::OnJsRendererPeriodPositionCallback(
     std::unique_ptr<RendererPeriodPositionJsCallback> &jsCb)
 {
     uv_loop_s *loop = nullptr;
-    CHECK_AND_RETURN_LOG(env_ != nullptr, 
+    CHECK_AND_RETURN_LOG(env_ != nullptr,
                          "RendererPeriodPositionCallbackNapi: OnJsRendererPeriodPositionCallback: env_ is null");
 
     napi_get_uv_event_loop(env_, &loop);
@@ -80,7 +80,7 @@ void RendererPeriodPositionCallbackNapi::OnJsRendererPeriodPositionCallback(
         return;
     }
     uv_work_t *work = new(std::nothrow) uv_work_t;
-    CHECK_AND_RETURN_LOG(work != nullptr, 
+    CHECK_AND_RETURN_LOG(work != nullptr,
                          "RendererPeriodPositionCallbackNapi: OnJsRendererPeriodPositionCallback: No memory");
 
     if (jsCb.get() == nullptr) {
