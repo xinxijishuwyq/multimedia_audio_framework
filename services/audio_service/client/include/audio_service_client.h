@@ -515,7 +515,6 @@ public:
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
-    virtual void ProcessEventCapturer(const AppExecFwk::InnerEvent::Pointer &event);
 private:
     pa_threaded_mainloop *mainLoop;
     pa_mainloop_api *api;
@@ -712,6 +711,8 @@ private:
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback);
     void SendUnsetCapturerPeriodReachedRequestEvent();
     void HandleUnsetCapturerPeriodReachedEvent();
+
+    void ProcessEventCapturer(const AppExecFwk::InnerEvent::Pointer &event);
 
     enum {
         WRITE_BUFFER_REQUEST = 0,
