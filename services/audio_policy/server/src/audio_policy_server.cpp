@@ -1722,7 +1722,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
         AUDIO_ERR_LOG("Call GetHapTokenInfo fail.");
     }
     bool bSetMute;
-    if (result.PermStateChangeType > 0) {
+    if (result.permStateChangeType > 0) {
         bSetMute = false;
     } else {
         bSetMute = true;
