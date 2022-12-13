@@ -33,6 +33,7 @@ public:
 
 class AudioCapturerCallbackTest : public AudioCapturerCallback {
 public:
+    void OnInterrupt(const InterruptEvent &interruptEvent) override {}
     void OnStateChange(const CapturerState state) override {}
 };
 

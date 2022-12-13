@@ -44,6 +44,15 @@ struct AudioCapturerParams {
 class AudioCapturerCallback {
 public:
     virtual ~AudioCapturerCallback() = default;
+
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptEvent Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_info.h
+     */
+    virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
+
     /**
     * Called when renderer state is updated.
      *

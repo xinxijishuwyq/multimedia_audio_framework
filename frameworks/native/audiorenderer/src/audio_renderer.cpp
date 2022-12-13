@@ -134,8 +134,8 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
         AUDIO_ERR_LOG("AudioRendererProxyObj Memory Allocation Failed !!");
     }
 
-    audioInterrupt_.streamType = audioStreamType;
-    sharedInterrupt_.streamType = audioStreamType;
+    audioInterrupt_.audioFocusType.streamType = audioStreamType;
+    sharedInterrupt_.audioFocusType.streamType = audioStreamType;
 
 #ifdef DUMP_CLIENT_PCM
     std::stringstream strStream;
@@ -178,7 +178,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     sessionID_ = interrupt.sessionID;
 
     AUDIO_INFO_LOG("InitAudioInterruptCallback::interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
-        mode_, interrupt.streamType, interrupt.sessionID);
+        mode_, interrupt.audioFocusType.streamType, interrupt.sessionID);
 
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackImpl>(audioStream_, interrupt);
@@ -217,7 +217,7 @@ int32_t AudioRendererPrivate::InitSharedInterrupt()
                 AUDIO_ERR_LOG("AudioRendererPrivate::GetAudioSessionID interruptId Failed");
                 return ERR_INVALID_INDEX;
             }
-            AudioInterrupt interrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, sharedInterrupt_.streamType,
+            AudioInterrupt interrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, sharedInterrupt_.audioFocusType,
                 interruptId};
             interrupts.insert(std::make_pair(type, interrupt));
         }
@@ -227,7 +227,7 @@ int32_t AudioRendererPrivate::InitSharedInterrupt()
     }
 
     sharedInterrupt_ = AudioRendererPrivate::sharedInterrupts_.find(appInfo_.appPid)
-        ->second.find(sharedInterrupt_.streamType)->second;
+        ->second.find(sharedInterrupt_.audioFocusType.streamType)->second;
     return SUCCESS;
 }
 
@@ -396,9 +396,9 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
             break;
     }
     AUDIO_INFO_LOG("AudioRenderer::Start::interruptMode: %{public}d, streamType: %{public}d, sessionID: %{public}d",
-        mode_, audioInterrupt.streamType, audioInterrupt.sessionID);
+        mode_, audioInterrupt.audioFocusType.streamType, audioInterrupt.sessionID);
 
-    if (audioInterrupt.streamType == STREAM_DEFAULT || audioInterrupt.sessionID == INVALID_SESSION_ID) {
+    if (audioInterrupt.audioFocusType.streamType == STREAM_DEFAULT || audioInterrupt.sessionID == INVALID_SESSION_ID) {
         return false;
     }
 
@@ -585,7 +585,7 @@ void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEven
 
 bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.streamType);
+    float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.audioFocusType.streamType);
     float duckVolume = interruptEvent.duckVolume;
     int32_t ret = 0;
 

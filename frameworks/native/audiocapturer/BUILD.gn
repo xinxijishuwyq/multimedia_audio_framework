@@ -22,6 +22,7 @@ config("audio_capturer_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -47,11 +48,17 @@ ohos_shared_library("audio_capturer") {
     "src/audio_capturer_proxy_obj.cpp",
   ]
 
-  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
+  deps = [
+    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+  ]
 
   public_configs = [ ":audio_external_library_config" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"

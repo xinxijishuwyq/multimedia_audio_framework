@@ -789,8 +789,8 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamUsage >= STREAM_USAGE_UNKNOWN
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
-    CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
+    CHECK_AND_RETURN_RET_LOG(audioInterrupt.audioFocusType.streamType >= AudioStreamType::STREAM_VOICE_CALL
+                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().RequestAudioFocus(clientID, audioInterrupt);
 }
@@ -805,8 +805,8 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamUsage >= STREAM_USAGE_UNKNOWN
                              && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
                              ERR_INVALID_PARAM, "Invalid stream usage");
-    CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.streamType <= AudioStreamType::STREAM_RECORDING,
+    CHECK_AND_RETURN_RET_LOG(audioInterrupt.audioFocusType.streamType >= AudioStreamType::STREAM_VOICE_CALL
+                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_RECORDING,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
 }
@@ -889,7 +889,7 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     uint32_t clientID = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 
@@ -903,7 +903,7 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     uint32_t clientID = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    audioInterrupt.streamType = AudioStreamType::STREAM_RECORDING;
+    audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientID;
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : result -> %{public}d", result);

@@ -43,10 +43,99 @@ void AudioCapturerCallbackNapi::SaveCallbackReference(const std::string &callbac
                          "AudioCapturerCallbackNapi: creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+    if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+        interruptCallback_ = cb;
+    } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
         stateChangeCallback_ = cb;
     } else {
         AUDIO_ERR_LOG("AudioCapturerCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+    }
+}
+
+static void SetValueInt32(const napi_env& env, const std::string& fieldStr, const int intValue, napi_value& result)
+{
+    napi_value value = nullptr;
+    napi_create_int32(env, intValue, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
+static void NativeInterruptEventToJsObj(const napi_env& env, napi_value& jsObj,
+    const InterruptEvent& interruptEvent)
+{
+        napi_create_object(env, &jsObj);
+        SetValueInt32(env, "eventType", static_cast<int32_t>(interruptEvent.eventType), jsObj);
+        SetValueInt32(env, "forceType", static_cast<int32_t>(interruptEvent.forceType), jsObj);
+        SetValueInt32(env, "hintType", static_cast<int32_t>(interruptEvent.hintType), jsObj);
+}
+
+void AudioCapturerCallbackNapi::OnInterrupt(const InterruptEvent &interruptEvent)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: OnInterrupt is called, hintType: %{public}d", interruptEvent.hintType);
+    CHECK_AND_RETURN_LOG(interruptCallback_ != nullptr, "Cannot find the reference of interrupt callback");
+
+    std::unique_ptr<AudioCapturerJsCallback> cb = std::make_unique<AudioCapturerJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+    cb->callback = interruptCallback_;
+    cb->callbackName = INTERRUPT_CALLBACK_NAME;
+    cb->interruptEvent = interruptEvent;
+    return OnJsCallbackInterrupt(cb);
+}
+
+void AudioCapturerCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb)
+{
+    uv_loop_s *loop = nullptr;
+    napi_get_uv_event_loop(env_, &loop);
+    if (loop == nullptr) {
+        return;
+    }
+
+    uv_work_t *work = new(std::nothrow) uv_work_t;
+    if (work == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: No memory");
+        return;
+    }
+    if (jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
+        delete work;
+        return;
+    }
+    work->data = reinterpret_cast<void *>(jsCb.get());
+
+    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
+        // Js Thread
+        AudioCapturerJsCallback *event = reinterpret_cast<AudioCapturerJsCallback *>(work->data);
+        std::string request = event->callbackName;
+        napi_env env = event->callback->env_;
+        napi_ref callback = event->callback->cb_;
+        AUDIO_DEBUG_LOG("AudioCapturerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        do {
+            CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s cancelled", request.c_str());
+
+            napi_value jsCallback = nullptr;
+            napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value fail",
+                request.c_str());
+
+            // Call back function
+            napi_value args[1] = { nullptr };
+            NativeInterruptEventToJsObj(env, args[0], event->interruptEvent);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
+                "%{public}s fail to create Interrupt callback", request.c_str());
+
+            const size_t argCount = 1;
+            napi_value result = nullptr;
+            nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
+        } while (0);
+        delete event;
+        delete work;
+    });
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Failed to execute libuv work queue");
+        delete work;
+    } else {
+        jsCb.release();
     }
 }
 

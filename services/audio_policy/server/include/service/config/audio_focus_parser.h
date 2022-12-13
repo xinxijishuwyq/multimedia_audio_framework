@@ -31,22 +31,22 @@ class AudioFocusParser {
 public:
     AudioFocusParser();
     virtual ~AudioFocusParser();
-    int32_t LoadConfig(std::map<std::pair<AudioStreamType, AudioStreamType>, AudioFocusEntry> &focusMap);
+    int32_t LoadConfig(std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
 
 private:
     std::map<std::string, InterruptHint> actionMap;
-    std::map<std::string, AudioStreamType> streamMap;
+    std::map<std::string, AudioFocusType> audioFocusMap;
     std::map<std::string, ActionTarget> targetMap;
     std::map<std::string, InterruptForceType> forceMap;
 
-    void LoadDefaultConfig(std::map<std::pair<AudioStreamType, AudioStreamType>, AudioFocusEntry> &focusMap);
-    void ParseFocusMap(xmlNode *node, char *curStream, std::map<std::pair<AudioStreamType, AudioStreamType>,
+    void LoadDefaultConfig(std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
+    void ParseFocusMap(xmlNode *node, char *curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
-    void ParseStreams(xmlNode *node, std::map<std::pair<AudioStreamType, AudioStreamType>,
+    void ParseStreams(xmlNode *node, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
-    void ParseAllowedStreams(xmlNode *node, char *curStream, std::map<std::pair<AudioStreamType, AudioStreamType>,
+    void ParseAllowedStreams(xmlNode *node, char *curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
-    void ParseRejectedStreams(xmlNode *node, char *curStream, std::map<std::pair<AudioStreamType, AudioStreamType>,
+    void ParseRejectedStreams(xmlNode *node, char *curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
 };
 } // namespace AudioStandard

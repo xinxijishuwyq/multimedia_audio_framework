@@ -115,7 +115,7 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
     audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
-    audioInterrupt.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+    audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     AudioPolicyServerPtr->RequestAudioFocus(clientID, audioInterrupt);
     AudioPolicyServerPtr->AbandonAudioFocus(clientID, audioInterrupt);
 }

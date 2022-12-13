@@ -84,10 +84,10 @@ private:
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AppInfo appInfo_ = {};
-    AudioInterrupt audioInterrupt_ =
-        {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
-    AudioInterrupt sharedInterrupt_ =
-        {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, AudioStreamType::STREAM_DEFAULT, 0};
+    AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
+    AudioInterrupt sharedInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
     uint32_t sessionID_ = INVALID_SESSION_ID;
     AudioStandard::InterruptMode mode_ = AudioStandard::InterruptMode::SHARE_MODE;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
