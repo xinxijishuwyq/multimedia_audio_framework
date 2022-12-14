@@ -41,8 +41,8 @@ static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pConte
     FILE *wavFile = (FILE *)pContext;
     if (!feof(wavFile)) {
         SLuint8 *buffer = nullptr;
-        SLuint32 pSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        SLuint32 bufferSize = 0;
+        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, bufferSize);
         fread(buffer, 1, size, wavFile);
         (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
     }
