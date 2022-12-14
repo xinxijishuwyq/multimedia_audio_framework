@@ -1547,8 +1547,7 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
         uid = IPCSkeleton::GetCallingPid();
     }
     if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), uid)
-        != clientDiedListenerState_.end())
-    {
+        != clientDiedListenerState_.end()) {
         AUDIO_INFO_LOG("Tracker has been registered for %{public}d!", uid);
         return;
     }
@@ -1723,7 +1722,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
         AUDIO_ERR_LOG("Call GetHapTokenInfo fail.");
     }
     bool bSetMute;
-    if (result.PermStateChangeType > 0) {
+    if (result.permStateChangeType > 0) {
         bSetMute = false;
     } else {
         bSetMute = true;

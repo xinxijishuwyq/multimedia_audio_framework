@@ -76,9 +76,9 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    int32_t SetOutputRoute(DeviceType deviceType) override;
+    int32_t SetOutputRoute(DeviceType outputDevice) override;
 
-    int32_t SetOutputRoute(DeviceType deviceType, AudioPortPin &outputPortPin);
+    int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
     AudioRendererSinkInner();
     ~AudioRendererSinkInner();
 private:
@@ -102,7 +102,7 @@ private:
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
-    int32_t CreateRender(struct AudioPort &renderPort);
+    int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
@@ -127,7 +127,7 @@ AudioRendererSinkInner::AudioRendererSinkInner()
 
 AudioRendererSinkInner::~AudioRendererSinkInner()
 {
-    DeInit();
+    AUDIO_ERR_LOG("~AudioRendererSinkInner");
 }
 
 AudioRendererSink *AudioRendererSink::GetInstance()
@@ -282,9 +282,6 @@ void AudioRendererSinkInner::DeInit()
     audioRender_ = nullptr;
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
-        if (routeHandle_ != -1) {
-            audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
-        }
         audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
     }
     audioAdapter_ = nullptr;
@@ -392,7 +389,7 @@ AudioFormat AudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
     return hdiFormat;
 }
 
-int32_t AudioRendererSinkInner::CreateRender(struct AudioPort &renderPort)
+int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;

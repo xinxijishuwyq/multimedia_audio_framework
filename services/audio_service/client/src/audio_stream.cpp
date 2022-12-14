@@ -80,8 +80,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMa
 }
 
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
-    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("AudioStreamRunner")),
-      eStreamType_(eStreamType),
+    : eStreamType_(eStreamType),
       eMode_(eMode),
       state_(NEW),
       isReadInProgress_(false),
@@ -114,7 +113,7 @@ AudioStream::~AudioStream()
     }
 
     if (state_ != RELEASED && state_ != NEW) {
-        ReleaseAudioStream();
+        ReleaseAudioStream(false);
     }
 
     if (audioStreamTracker_) {
@@ -302,9 +301,9 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         return ERR_NOT_SUPPORTED;
     }
     if (state_ != NEW) {
-        AUDIO_DEBUG_LOG("AudioStream: State is not new, release existing stream");
+        AUDIO_INFO_LOG("AudioStream: State is not new, release existing stream");
         StopAudioStream();
-        ReleaseAudioStream();
+        ReleaseAudioStream(false);
     }
     int32_t ret = 0;
     switch (eMode_) {
@@ -593,7 +592,7 @@ bool AudioStream::DrainAudioStream()
     return true;
 }
 
-bool AudioStream::ReleaseAudioStream()
+bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 {
     if (state_ == RELEASED || state_ == NEW) {
         AUDIO_ERR_LOG("Illegal state: state = %{public}u", state_);
@@ -604,7 +603,7 @@ bool AudioStream::ReleaseAudioStream()
         StopAudioStream();
     }
 
-    ReleaseStream();
+    ReleaseStream(releaseRunner);
     state_ = RELEASED;
     AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS");
 
@@ -751,9 +750,7 @@ int32_t AudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRendere
         AUDIO_ERR_LOG("SetRendererWriteCallback callback is nullptr");
         return ERR_INVALID_PARAM;
     }
-    writeCallback_ = callback;
-
-    return SUCCESS;
+    return AudioServiceClient::SetRendererWriteCallback(callback);
 }
 
 int32_t AudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
@@ -981,35 +978,6 @@ void AudioStream::SubmitAllFreeBuffers()
     lock_guard<mutex> lock(bufferQueueLock_);
     for (size_t i = 0; i < freeBufferQ_.size(); ++i) {
         SendWriteBufferRequestEvent();
-    }
-}
-
-void AudioStream::SendWriteBufferRequestEvent()
-{
-    // send write event to handler
-    SendEvent(AppExecFwk::InnerEvent::Get(WRITE_BUFFER_REQUEST));
-}
-
-void AudioStream::HandleWriteRequestEvent()
-{
-    // do callback to application
-    if (writeCallback_) {
-        size_t requestSize;
-        GetMinimumBufferSize(requestSize);
-        writeCallback_->OnWriteData(requestSize);
-    }
-}
-
-void AudioStream::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
-{
-    uint32_t eventId = event->GetInnerEventId();
-    switch (eventId) {
-        case WRITE_BUFFER_REQUEST: {
-            HandleWriteRequestEvent();
-            break;
-        }
-        default:
-            break;
     }
 }
 } // namespace AudioStandard

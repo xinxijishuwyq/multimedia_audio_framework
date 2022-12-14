@@ -909,7 +909,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     }
     AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume : %{public}f for stream : %{public}s, volumeInt%{public}d",
         vol, i->name, volume);
-    HiviewDFX::HiSysEvent::Write("AUDIO", "AUDIO_VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "AUDIO_VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "STREAMTYPE", streamID, "VOLUME", vol);
 }
 

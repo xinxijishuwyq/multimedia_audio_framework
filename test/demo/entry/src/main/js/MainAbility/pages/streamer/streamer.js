@@ -69,24 +69,24 @@ export default {
 	},
 	
     async onRendererChangeWithPlay() {
-        var AudioStreamInfo = {
+        const AudioStreamInfo = {
             samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
             channels: audio.AudioChannel.CHANNEL_1,
             sampleFormat: audio.AudioSampleFormat.SAMPLE_FORMAT_S16LE,
             encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
-        }
+        };
 
-        var AudioRendererInfo = {
+        const AudioRendererInfo = {
             content: audio.ContentType.CONTENT_TYPE_SPEECH,
             usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
             rendererFlags: 1
-        }
+        };
 
-        var AudioRendererOptions = {
+        const AudioRendererOptions = {
             streamInfo: AudioStreamInfo,
             rendererInfo: AudioRendererInfo
-        }
-        var audioStreamManager;
+        };
+        let audioStreamManager;
         await this.audioManager.getStreamManager().then(async function (data) {
             audioStreamManager = data;
             console.info('AudioFrameworkChange: Get AudioStream Manager : Success ');
@@ -96,7 +96,7 @@ export default {
 
         audioStreamManager.on('audioRendererChange',(AudioFrameworkChangeInfoArray) =>{
             console.info('AudioFrameworkChange: [RENDERER-CHANGE-ON-PLAY] ######### Entered On Listener Loop ##########');
-            var varStr;
+            let varStr;
             for (let i=0;i<AudioFrameworkChangeInfoArray.length;i++) {
                 prompt.showToast({
 					message:["Ren On StreamId : " + AudioFrameworkChangeInfoArray[i].streamId + " ; ClientUid : " + AudioFrameworkChangeInfoArray[i].clientUid + " ; Content : " + AudioFrameworkChangeInfoArray[i].rendererInfo.content + " ; Usage : " + AudioFrameworkChangeInfoArray[i].rendererInfo.usage + " ; Renderer Flag : " + AudioFrameworkChangeInfoArray[i].rendererInfo.rendererFlags + " ; StateChange : " +AudioFrameworkChangeInfoArray[i].rendererState],
@@ -106,8 +106,8 @@ export default {
         });
 
         await this.sleep (500);
-        var resultFlag;
-        var audioRen;
+        let resultFlag;
+        let audioRen;
         await audio.createAudioRenderer(AudioRendererOptions).then(async function (data) {
             audioRen = data;
             console.info('AudioFrameworkChange: AudioRender Created : Success : Stream Type: SUCCESS');
@@ -126,7 +126,7 @@ export default {
             resultFlag=false;
         });
         
-        if (resultFlag == false){
+        if (resultFlag === false){
             console.info('AudioFrameworkChange: resultFlag : '+resultFlag);
             return resultFlag;
         }
@@ -135,7 +135,7 @@ export default {
 
         console.info('AudioFrameworkChange: AudioRenderer : STATE : '+audioRen.state);
 
-        var bufferSize;
+        let bufferSize;
         await audioRen.getBufferSize().then(async function (data) {
             console.info('AudioFrameworkChange: getBufferSize :SUCCESS '+data);
             bufferSize=data;
@@ -143,15 +143,15 @@ export default {
             console.info('AudioFrameworkChange: getBufferSize :ERROR : '+err.message);
             resultFlag=false;
         });
-        if (resultFlag == false){
+        if (resultFlag === false){
             console.info('AudioFrameworkChange: resultFlag : '+resultFlag);
             return resultFlag;
         }
 
         console.info("AudioFrameworkChange: getCacheDir before Start $$$$$");
-        var context = featureAbility.getContext();
-        var path1 = await context.getCacheDir();
-        var fpath2 = path1 + "/PinkPanther60-44100-1c.wav";
+        const context = featureAbility.getContext();
+        const path1 = await context.getCacheDir();
+        const fpath2 = path1 + "/PinkPanther60-44100-1c.wav";
         console.info("AudioFrameworkChange: getCacheDir after Start $$$$$");
         console.info('AudioFrameworkChange: Path $$$$$: ' + fpath2);
 
@@ -178,7 +178,7 @@ export default {
             console.error('AudioFrameworkChange: Renderer drain: ERROR : '+err.message);
             resultFlag=false;
         });
-        if (resultFlag == false){
+        if (resultFlag === false){
             console.info('AudioFrameworkChange: resultFlag : '+resultFlag);
             return resultFlag;
         }
@@ -211,7 +211,7 @@ export default {
         console.info('AudioFrameworkChange: resultFlag : '+resultFlag);
     },
     async offRendererChange() {
-        var audioStreamManager;
+        let audioStreamManager;
         await this.audioManager.getStreamManager().then(async function (data) {
             audioStreamManager = data;
             console.info('AudioFrameworkChange: Get AudioStream Manager : Success ');
@@ -226,7 +226,7 @@ export default {
         });
     },
     async getRendererChangePromise() {
-        var audioStreamManager;
+        let audioStreamManager;
         this.audioManager.getStreamManager((err, data) => {
             if (err) {
                 console.error('AudioFrameworkChange: Get AudioStream Manager : ERROR : '+err.message);
@@ -251,26 +251,26 @@ export default {
     },
 
 	async onCapturerChangeRecord() {
-		var audioStreamManager;
-        var AudioStreamInfo = {
+        let audioStreamManager;
+        const AudioStreamInfo = {
             samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_8000,
             channels: audio.AudioChannel.CHANNEL_1,
             sampleFormat: audio.AudioSampleFormat.SAMPLE_FORMAT_U8,
             encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW,
         };
-        var AudioCapturerInfo = {
+        const AudioCapturerInfo = {
             source: audio.SourceType.SOURCE_TYPE_MIC,
-            capturerFlags : 1,
-        }
-        var AudioCapturerOptions = {
+            capturerFlags: 1,
+        };
+        const AudioCapturerOptions = {
             streamInfo: AudioStreamInfo,
             capturerInfo: AudioCapturerInfo,
-        }
+        };
 
-        var fpath = '/data/storage/el2/base/haps/entry/cache/capture_js-8000-1C-8B.pcm';
-		
-        var resultFlag;
-		var audioCap;
+        const fpath = '/data/storage/el2/base/haps/entry/cache/capture_js-8000-1C-8B.pcm';
+
+        let resultFlag;
+        let audioCap;
         console.info('AudioFrameworkChange: Promise : Audio Recording Function');
 		await this.audioManager.getStreamManager().then(async function (data) {
             audioStreamManager = data;
@@ -309,7 +309,7 @@ export default {
             console.info('AudioFrameworkChange: Capturer start :ERROR : '+err.message);
             resultFlag=false;
         });
-        if (resultFlag == false){
+        if (resultFlag === false){
             console.info('AudioFrameworkChange: resultFlag : '+resultFlag);
             return resultFlag;
         }
@@ -317,10 +317,10 @@ export default {
 		await this.sleep (500);
         console.info('AudioFrameworkChange: AudioCapturer : STATE : '+audioCap.state);
 
-        var bufferSize = await audioCap.getBufferSize();
+        const bufferSize = await audioCap.getBufferSize();
         console.info('AudioFrameworkChange: buffer size: ' + bufferSize);
 
-        var fd = fileio.openSync(fpath, 0o102, 0o777);
+        let fd = fileio.openSync(fpath, 0o102, 0o777);
         if (fd !== null) {
             console.info('AudioFrameworkChange: file fd created');
         }
@@ -340,11 +340,11 @@ export default {
             return resultFlag;
         }
         await this.sleep(100);
-        var numBuffersToCapture = 50;
+        let numBuffersToCapture = 50;
         while (numBuffersToCapture) {
-            var buffer = await audioCap.read(bufferSize, true);
+            const buffer = await audioCap.read(bufferSize, true);
             await this.sleep(50);
-            var number = fileio.writeSync(fd, buffer);
+            const number = fileio.writeSync(fd, buffer);
             await this.sleep(50);
             numBuffersToCapture--;
         }
@@ -375,8 +375,8 @@ export default {
         console.info('AudioFrameworkChange: resultFlag : '+resultFlag);
     },
     async offCapturerChange() {
-		var audioStreamManager;
-		await this.audioManager.getStreamManager().then(async function (data) {
+        let audioStreamManager;
+        await this.audioManager.getStreamManager().then(async function (data) {
             audioStreamManager = data;
             console.info('AudioFrameworkChange: getStreamManager : Success ');
         }).catch((err) => {
@@ -390,8 +390,8 @@ export default {
         });
     },
 	async getCapturerChangePromise() {
-		var audioStreamManager;
-		this.audioManager.getStreamManager((err, data) => {
+        let audioStreamManager;
+        this.audioManager.getStreamManager((err, data) => {
             if (err) {
                 console.error('AudioCapturerChange: Get AudioStream Manager : ERROR : '+err.message);
             }

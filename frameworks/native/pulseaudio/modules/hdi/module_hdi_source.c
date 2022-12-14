@@ -38,7 +38,7 @@ PA_MODULE_USAGE(
         "channel_map=<channel map>"
         "buffer_size=<custom buffer size>"
         "file_path=<file path for data reading>"
-        "adapter_name=<primary1>"
+        "adapter_name=<primary>"
         "open_mic_speaker<open mic>"
         "network_id<device network id>"
         "device_type<device type or port>"
