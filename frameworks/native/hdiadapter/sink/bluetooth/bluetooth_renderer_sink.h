@@ -25,9 +25,6 @@ class BluetoothRendererSink : public IAudioRendererSink {
 public:
     static BluetoothRendererSink *GetInstance(void);
 
-    bool GetAudioMonoState();
-    float GetAudioBalanceValue();
-
     BluetoothRendererSink() = default;
     ~BluetoothRendererSink() = default;
 };
