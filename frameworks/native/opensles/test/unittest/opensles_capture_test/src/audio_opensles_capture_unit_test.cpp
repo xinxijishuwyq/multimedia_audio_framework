@@ -35,10 +35,10 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
-        SLuint32 pSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        SLuint32 bufferSize = 0;
+        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, bufferSize);
         if (buffer != nullptr) {
-            fwrite(buffer, 1, pSize, wavFile);
+            fwrite(buffer, 1, bufferSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         }
     }
@@ -183,8 +183,8 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetState_002, TestSi
 
 HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetBuffer_001, TestSize.Level1)
 {
-    SLuint32 pSize = 0;
-    SLresult result = (*bufferQueueItf_)->GetBuffer(nullptr, nullptr, pSize);
+    SLuint32 bufferSize = 0;
+    SLresult result = (*bufferQueueItf_)->GetBuffer(nullptr, nullptr, bufferSize);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
