@@ -19,7 +19,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "audio_info.h"
-
+#include "audio_errors.h"
 
 #define THROW_ERROR_ASSERT(env, assertion, code)        \
     do {                                                \
@@ -89,6 +89,7 @@ struct AutoRef {
 };
 
 const int32_t  NAPI_ERROR_INVALID_PARAM = 6800101;
+const int32_t  NAPI_ERR_PERMISSION_DENIED = 202;
 const int32_t  NAPI_ERR_INPUT_INVALID = 401;
 const int32_t  NAPI_ERR_INVALID_PARAM = 6800101;
 const int32_t  NAPI_ERR_NO_MEMORY = 6800102;
@@ -99,6 +100,7 @@ const int32_t  NAPI_ERR_STREAM_LIMIT = 6800201;
 const int32_t  NAPI_ERR_SYSTEM = 6800301;
 
 const std::string NAPI_ERROR_INVALID_PARAM_INFO = "input parameter value error";
+const std::string NAPI_ERROR_PERMISSION_DENIED_INFO = "not system app";
 const std::string NAPI_ERR_INPUT_INVALID_INFO = "input parameter type or number mismatch";
 const std::string NAPI_ERR_INVALID_PARAM_INFO = "invalid parameter";
 const std::string NAPI_ERR_NO_MEMORY_INFO = "allocate memory failed";

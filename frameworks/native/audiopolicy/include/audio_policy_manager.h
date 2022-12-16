@@ -49,7 +49,7 @@ public:
 
     const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume);
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9);
 
     float GetStreamVolume(AudioStreamType streamType);
 
@@ -59,7 +59,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9);
 
     bool GetStreamMute(AudioStreamType streamType);
 
@@ -83,7 +83,7 @@ public:
 
     DeviceType GetActiveInputDevice();
 
-    int32_t SetRingerMode(AudioRingerMode ringMode);
+    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9);
 
     std::vector<int32_t> GetSupportedTones();
 
@@ -107,7 +107,7 @@ public:
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
     int32_t SetRingerModeCallback(const int32_t clientId,
-                                  const std::shared_ptr<AudioRingerModeCallback> &callback);
+        const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v = API_9);
 
     int32_t UnsetRingerModeCallback(const int32_t clientId);
 
@@ -136,7 +136,8 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt);
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
@@ -176,7 +177,7 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
                                     AudioStreamType audioStreamType);
 
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision = true);
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 

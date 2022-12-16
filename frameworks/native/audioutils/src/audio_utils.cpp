@@ -21,6 +21,12 @@
 #include "audio_utils.h"
 #include "audio_log.h"
 #include "parameter.h"
+#include "tokenid_kit.h"
+#include "ipc_skeleton.h"
+#include "access_token.h"
+#include "accesstoken_kit.h"
+
+using OHOS::Security::AccessToken::AccessTokenKit;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -77,6 +83,37 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+bool PermissionUtil::VerifyIsSystemApp()
+{
+    uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
+        return true;
+    }
+
+    AUDIO_ERR_LOG("Check system app permission reject");
+    return false;
+}
+
+bool PermissionUtil::VerifySystemPermission()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (tokenTypeFlag == Security::AccessToken::TOKEN_NATIVE) {
+        return true;
+    }
+
+    if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
+        return true;
+    }
+
+    if (VerifyIsSystemApp()) {
+        return true;
+    }
+
+    AUDIO_ERR_LOG("Check system permission reject");
+    return false;
 }
 
 int64_t GetNowTimeMs()

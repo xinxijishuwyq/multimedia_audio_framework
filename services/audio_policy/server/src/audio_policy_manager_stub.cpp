@@ -72,17 +72,16 @@ void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, Messag
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     float volume = data.ReadFloat();
-    int result = SetStreamVolume(streamType, volume);
-    if (result == SUCCESS)
-        reply.WriteInt32(AUDIO_OK);
-    else
-        reply.WriteInt32(AUDIO_ERR);
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    int result = SetStreamVolume(streamType, volume, api_v);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRingerMode rMode = static_cast<AudioRingerMode>(data.ReadInt32());
-    int32_t result = SetRingerMode(rMode);
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    int32_t result = SetRingerMode(rMode, api_v);
     reply.WriteInt32(result);
 }
 
@@ -192,11 +191,9 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     bool mute = data.ReadBool();
-    int result = SetStreamMute(streamType, mute);
-    if (result == SUCCESS)
-        reply.WriteInt32(AUDIO_OK);
-    else
-        reply.WriteInt32(AUDIO_ERR);
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+    int result = SetStreamMute(streamType, mute, api_v);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
@@ -273,11 +270,12 @@ void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, 
 {
     int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
         return;
     }
-    int32_t result = SetRingerModeCallback(clientId, object);
+    int32_t result = SetRingerModeCallback(clientId, object, api_v);
     reply.WriteInt32(result);
 }
 
@@ -477,11 +475,12 @@ void AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal(MessageParcel &da
 {
     int32_t clientPid =  data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
+    API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
     if (remoteObject == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioManagerCallback obj is null");
         return;
     }
-    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject);
+    int ret = SetVolumeKeyEventCallback(clientPid, remoteObject, api_v);
     reply.WriteInt32(ret);
 }
 
@@ -704,14 +703,22 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply)
 {
     AUDIO_DEBUG_LOG("GetVolumeGroupInfoInternal entered");
-    std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
+    bool needVerifyPermision = data.ReadBool();
+    std::vector<sptr<VolumeGroupInfo>> groupInfos;
+    int32_t ret = GetVolumeGroupInfos(groupInfos, needVerifyPermision);
     int32_t size = static_cast<int32_t>(groupInfos.size());
     AUDIO_DEBUG_LOG("GET_DEVICES size= %{public}d", size);
-    reply.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        groupInfos[i]->Marshalling(reply);
+    
+    if (ret == SUCCESS && size > 0) {
+        reply.WriteInt32(size);
+        for (int i = 0; i < size; i++) {
+            groupInfos[i]->Marshalling(reply);
+        }
+    } else {
+        reply.WriteInt32(ret);
     }
-    AUDIO_DEBUG_LOG("AudioPolicyManagerStub:GetVolumeGroups internal exit");
+    
+    AUDIO_DEBUG_LOG("GetVolumeGroups internal exit");
 }
 
 void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply)
