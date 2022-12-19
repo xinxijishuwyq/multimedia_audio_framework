@@ -193,8 +193,7 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported channel number. Channel: %{public}d",
-            attr_.channel);
+        AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported channel number: %{public}d", attr_.channel);
         return;
     }
 
@@ -219,7 +218,7 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported audio format");
+            AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported audio format: %{public}d", attr_.format);
             break;
         }
     }
@@ -229,8 +228,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported channel number. Channel: %{public}d",
-            attr_.channel);
+        AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported channel number: %{public}d", attr_.channel);
         return;
     }
 
@@ -255,7 +253,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported audio format");
+            AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported audio format: %{public}d", attr_.format);
             break;
         }
     }
