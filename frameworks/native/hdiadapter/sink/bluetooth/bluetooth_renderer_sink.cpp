@@ -462,8 +462,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
         break;
     }
-    usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
-
     return ret;
 }
 
