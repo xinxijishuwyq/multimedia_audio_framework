@@ -22,6 +22,9 @@
 #include "audio_policy_manager.h"
 #include "audio_stream.h"
 #include "audio_renderer_private.h"
+#ifdef OHCORE
+#include "audio_renderer_gateway.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +53,11 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
+#ifdef OHCORE
+    return std::make_unique<AudioRendererGateway>(audioStreamType);
+#else
     return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
+#endif
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
@@ -84,7 +91,11 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
                              nullptr, "Invalid stream usage");
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
-    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
+#ifdef OHCORE
+        auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
+#else
+        auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
+#endif
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
