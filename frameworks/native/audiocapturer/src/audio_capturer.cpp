@@ -17,6 +17,9 @@
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
+#ifdef OHCORE
+#include "audio_capturer_gateway.h"
+#endif
 #include "audio_stream.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
@@ -34,7 +37,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
+#ifdef OHCORE
+    return std::make_unique<AudioCapturerGateway>(audioStreamType);
+#else
     return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo);
+#endif
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options)
@@ -78,8 +85,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         params.audioChannel = capturerOptions.streamInfo.channels;
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
-
+#ifdef OHCORE
+    auto capturer = std::make_unique<AudioCapturerGateway>(audioStreamType);
+#else
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo);
+#endif
     if (capturer == nullptr) {
         return capturer;
     }

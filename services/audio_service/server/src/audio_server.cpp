@@ -392,8 +392,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 {
     AUDIO_INFO_LOG("AudioServer::SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
 
-    // Set mono for audio_renderer_sink(primary sink)
-
+    // Set mono for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
         audioRendererSinkInstance->SetAudioMonoState(audioMono);
@@ -401,6 +400,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
         AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: primary = null");
     }
 
+    // Set mono for bluetooth_renderer_sink (a2dp)
     IAudioRendererSink *a2dpIAudioRendererSink = IAudioRendererSink::GetInstance("a2dp", "");
     if (a2dpIAudioRendererSink != nullptr) {
         a2dpIAudioRendererSink->SetAudioMonoState(audioMono);
@@ -411,9 +411,13 @@ void AudioServer::SetAudioMonoState(bool audioMono)
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
 {
+    if (audioBalance < -1.0f || audioBalance > 1.0f) {
+        AUDIO_ERR_LOG("AudioServer:: audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
+        return;
+    }
     AUDIO_INFO_LOG("AudioServer::SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
 
-    // Set balance for audio_renderer_sink(primary sink)
+    // Set balance for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
         audioRendererSinkInstance->SetAudioBalanceValue(audioBalance);
@@ -421,6 +425,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         AUDIO_ERR_LOG("AudioServer::SetAudioBalanceValue: primary = null");
     }
 
+    // Set balance for bluetooth_renderer_sink (a2dp)
     IAudioRendererSink *a2dpIAudioRendererSink = IAudioRendererSink::GetInstance("a2dp", "");
     if (a2dpIAudioRendererSink != nullptr) {
         a2dpIAudioRendererSink->SetAudioBalanceValue(audioBalance);

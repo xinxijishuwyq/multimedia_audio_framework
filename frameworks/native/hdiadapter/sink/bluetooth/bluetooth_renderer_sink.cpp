@@ -110,7 +110,6 @@ private:
     void *handle_;
     bool audioMonoState_ = false;
     bool audioBalanceState_ = false;
-    float audioBalanceValue_ = 0.0f;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
 
@@ -463,8 +462,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
         break;
     }
-    usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
-
     return ret;
 }
 
@@ -697,16 +694,6 @@ int32_t BluetoothRendererSinkInner::Flush(void)
     return ERR_OPERATION_FAILED;
 }
 
-bool BluetoothRendererSinkInner::GetAudioMonoState()
-{
-    return audioMonoState_;
-}
-
-float BluetoothRendererSinkInner::GetAudioBalanceValue()
-{
-    return audioBalanceValue_;
-}
-
 void BluetoothRendererSinkInner::SetAudioMonoState(bool audioMono)
 {
     audioMonoState_ = audioMono;
@@ -715,7 +702,6 @@ void BluetoothRendererSinkInner::SetAudioMonoState(bool audioMono)
 void BluetoothRendererSinkInner::SetAudioBalanceValue(float audioBalance)
 {
     // reset the balance coefficient value firstly
-    audioBalanceValue_ = 0.0f;
     leftBalanceCoef_ = 1.0f;
     rightBalanceCoef_ = 1.0f;
 
@@ -725,7 +711,6 @@ void BluetoothRendererSinkInner::SetAudioBalanceValue(float audioBalance)
     } else {
         // audioBalance is not equal to 0.0f
         audioBalanceState_ = true;
-        audioBalanceValue_ = audioBalance;
         // calculate the balance coefficient
         if (audioBalance > 0.0f) {
             leftBalanceCoef_ -= audioBalance;
@@ -739,7 +724,7 @@ void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("BluetoothRendererSink::AdjustStereoToMono: Unsupported channel number. Channel: %{public}d",
+        AUDIO_ERR_LOG("BluetoothRendererSink::AdjustStereoToMono: Unsupported channel number: %{public}d",
             attr_.channel);
         return;
     }
@@ -764,7 +749,8 @@ void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("BluetoothRendererSink::AdjustStereoToMono: Unsupported audio format");
+            AUDIO_ERR_LOG("BluetoothRendererSink::AdjustStereoToMono: Unsupported audio format: %{public}d",
+                attr_.format);
             break;
         }
     }
@@ -774,7 +760,7 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("BluetoothRendererSink::AdjustAudioBalance: Unsupported channel number. Channel: %{public}d",
+        AUDIO_ERR_LOG("BluetoothRendererSink::AdjustAudioBalance: Unsupported channel number: %{public}d",
             attr_.channel);
         return;
     }
@@ -800,7 +786,8 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("BluetoothRendererSink::AdjustAudioBalance: Unsupported audio format");
+            AUDIO_ERR_LOG("BluetoothRendererSink::AdjustAudioBalance: Unsupported audio format: %{public}d",
+                attr_.format);
             break;
         }
     }

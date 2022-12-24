@@ -68,7 +68,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMa
     streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_MEDIA)] = STREAM_NOTIFICATION;
     streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_MUSIC;
     streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
 
     streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
     streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
@@ -511,7 +511,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
 bool AudioStream::StopAudioStream()
 {
-    AUDIO_INFO_LOG("AudioStream: StopAudioStream begin");
+    AUDIO_INFO_LOG("AudioStream: begin StopAudioStream for sessionId %{public}d", sessionId_);
     if (state_ == PAUSED) {
         state_ = STOPPED;
         AUDIO_INFO_LOG("StopAudioStream SUCCESS");

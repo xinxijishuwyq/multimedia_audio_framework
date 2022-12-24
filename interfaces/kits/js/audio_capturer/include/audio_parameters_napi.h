@@ -65,6 +65,7 @@ static const std::map<std::string, ContentType> contentTypeMap = {
 static const std::map<std::string, StreamUsage> streamUsageMap = {
     {"STREAM_USAGE_UNKNOWN", STREAM_USAGE_UNKNOWN},
     {"STREAM_USAGE_MEDIA", STREAM_USAGE_MEDIA},
+    {"STREAM_USAGE_VOICE_ASSISTANT", STREAM_USAGE_VOICE_ASSISTANT},
     {"STREAM_USAGE_VOICE_COMMUNICATION", STREAM_USAGE_VOICE_COMMUNICATION},
     {"STREAM_USAGE_NOTIFICATION_RINGTONE", STREAM_USAGE_NOTIFICATION_RINGTONE}
 };
@@ -150,7 +151,6 @@ private:
 
     std::unique_ptr<AudioParameters> audioParameters_;
     napi_env env_;
-    napi_ref wrapper_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

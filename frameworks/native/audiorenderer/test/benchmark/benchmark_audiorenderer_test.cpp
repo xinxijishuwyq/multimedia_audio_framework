@@ -190,7 +190,7 @@ namespace {
             size_t bufferLen;
             ret = audioRenderer->GetBufferSize(bufferLen);
 
-            uint8_t *buffer = (uint8_t *)malloc(bufferLen);
+            uint8_t *buffer = reinterpret_cast<uint8_t *>(malloc(bufferLen));
             if (buffer == nullptr)
             {
                 state.SkipWithError("WriteAbilityTestCase getbuffer fail");
