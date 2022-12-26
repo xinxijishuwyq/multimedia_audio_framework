@@ -20,9 +20,51 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_service_packages") {
   deps = [
+    ":audio_common",
     ":audio_service",
     ":audio_service_init",
   ]
+}
+
+ohos_shared_library("audio_common") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+
+  install_enable = true
+
+  include_dirs = [
+    "common/include",
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [
+    "common/src/audio_process_config.cpp",
+    "common/src/linear_pos_time_model.cpp",
+    "common/src/oh_audio_buffer.cpp",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hisysevent_native:libhisysevent",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
 }
 
 config("audio_client_public_config") {
@@ -64,6 +106,8 @@ ohos_shared_library("audio_client") {
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
+    "client/src/audio_process_in_client.cpp",
+    "client/src/audio_process_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_service_client.cpp",
     "client/src/audio_stream.cpp",
@@ -75,6 +119,7 @@ ohos_shared_library("audio_client") {
   public_configs = [ ":audio_client_public_config" ]
 
   deps = [
+    ":audio_common",
     "$pulseaudio_build_path/src/pulse:pulse",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
@@ -126,9 +171,11 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "${fwk_native_hdiadapter_path}/sink/bluetooth",
     "${fwk_native_hdiadapter_path}/sink/common",
     "${fwk_native_hdiadapter_path}/sink/file",
+    "${fwk_native_hdiadapter_path}/sink/fast",
     "${fwk_native_hdiadapter_path}/sink/primary",
     "${fwk_native_hdiadapter_path}/sink/remote",
     "${fwk_native_hdiadapter_path}/source/common",
@@ -139,6 +186,46 @@ config("audio_service_config") {
   if (target_cpu == "arm") {
     cflags = [ "-DBINDER_IPC_32BIT" ]
   }
+}
+
+ohos_shared_library("audio_process_service") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+  }
+  install_enable = true
+
+  sources = [
+    "server/src/audio_endpoint.cpp",
+    "server/src/audio_process_in_server.cpp",
+    "server/src/audio_process_stub.cpp",
+    "server/src/audio_service.cpp",
+  ]
+
+  configs = [ ":audio_service_config" ]
+
+  if ("${product_name}" == "m40") {
+    cflags = [ "-DPRODUCT_M40" ]
+  }
+
+  deps = [
+    ":audio_common",
+    "./../../frameworks/native/audioutils:audio_utils",
+    "./../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+  ]
+
+  public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hicollie_native:libhicollie",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
 }
 
 ohos_shared_library("audio_service") {
@@ -162,6 +249,8 @@ ohos_shared_library("audio_service") {
   }
 
   deps = [
+    ":audio_common",
+    ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
@@ -190,9 +279,34 @@ group("audio_service_test_packages") {
   deps = [
     ":audio_hdi_device_test",
     ":audio_multichannel_test",
+    ":audio_process_client_test",
     ":audio_service_playback_test",
     ":audio_service_record_test",
   ]
+}
+
+ohos_executable("audio_process_client_test") {
+  install_enable = false
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//commonlibrary/c_utils/base/include",
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+  ]
+
+  sources = [ "test/example/audio_process_client_test.cpp" ]
+
+  deps = [
+    ":audio_client",
+    "./../../frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_hdi_device_test") {
@@ -203,20 +317,31 @@ ohos_executable("audio_hdi_device_test") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/fast",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",
     "//commonlibrary/c_utils/base/include",
   ]
 
-  sources = [ "test/example/audio_hdi_device_test.cpp" ]
+  cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
+
+  sources = [
+    "../../frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp",
+    "test/example/audio_hdi_device_test.cpp",
+  ]
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    multimedia_audio_framework_hdi_audio_client,
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "power_manager:powermgr_client",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"

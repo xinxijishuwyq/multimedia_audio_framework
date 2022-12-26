@@ -315,7 +315,7 @@ void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void 
     }
 
     auto asClient = static_cast<AudioServiceClient *>(userdata);
-    int64_t now = GetNowTimeMs();
+    int64_t now = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("AudioServiceClient::Inside PA write callback cost[%{public}" PRId64 "]",
         (now - asClient->mWriteCbStamp));
     asClient->mWriteCbStamp = now;

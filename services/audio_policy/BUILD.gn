@@ -241,6 +241,7 @@ ohos_prebuilt_etc("audio_config.para.dac") {
 config("audio_policy_client_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
@@ -279,6 +280,8 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_volume_group_info.cpp",
     "client/src/audio_volume_key_event_callback_stub.cpp",
   ]
+
+  deps = [ "../audio_service:audio_common" ]
 
   public_configs = [ ":audio_policy_client_config" ]
 

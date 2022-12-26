@@ -837,6 +837,25 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+struct AudioProcessConfig {
+    AppInfo appInfo;
+
+    AudioStreamInfo streamInfo;
+
+    AudioMode audioMode;
+
+    AudioRendererInfo rendererInfo;
+
+    AudioCapturerInfo capturerInfo;
+};
+
+struct AudioStreamData {
+    AudioStreamInfo streamInfo;
+    BufferDesc bufferDesc;
+    int32_t volumeStart;
+    int32_t volumeEnd;
+};
+
 struct DeviceInfo {
     DeviceType deviceType;
     DeviceRole deviceRole;

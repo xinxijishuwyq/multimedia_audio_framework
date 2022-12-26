@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <chrono>
 #include <cinttypes>
 #include <ctime>
 #include <sstream>
@@ -86,16 +85,6 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     return ret;
 }
 
-bool PermissionUtil::VerifyIsSystemApp()
-{
-    uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
-    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
-        return true;
-    }
-
-    AUDIO_ERR_LOG("Check system app permission reject");
-    return false;
-}
 void Trace::Count(const std::string &value, int64_t count, bool isEnable)
 {
     CountTraceDebug(isEnable, HITRACE_TAG_ZAUDIO, value, count);
@@ -117,6 +106,17 @@ void Trace::End()
 Trace::~Trace()
 {
     End();
+}
+
+bool PermissionUtil::VerifyIsSystemApp()
+{
+    uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
+        return true;
+    }
+
+    AUDIO_ERR_LOG("Check system app permission reject");
+    return false;
 }
 
 bool PermissionUtil::VerifySelfPermission()
@@ -158,20 +158,6 @@ bool PermissionUtil::VerifySystemPermission()
 
     AUDIO_ERR_LOG("Check system permission reject");
     return false;
-}
-
-int64_t GetNowTimeMs()
-{
-    std::chrono::milliseconds nowMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    return nowMs.count();
-}
-
-int64_t GetNowTimeUs()
-{
-    std::chrono::microseconds nowUs =
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
-    return nowUs.count();
 }
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
