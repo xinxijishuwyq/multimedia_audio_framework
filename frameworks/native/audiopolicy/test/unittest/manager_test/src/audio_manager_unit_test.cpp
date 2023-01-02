@@ -516,7 +516,7 @@ HWTEST(AudioManagerUnitTest, RegisterVolumeKeyEventCallback_001, TestSize.Level1
 {
     int32_t clientPid = 1;
     std::shared_ptr<VolumeKeyEventCallback> callback = nullptr;
-    auto ret = AudioSystemManager::GetInstance()->RegisterVolumeKeyEventCallback(clientPid, callback);
+    auto ret = AudioSystemManager::GetInstance()->RegisterVolumeKeyEventCallback(clientPid, callback, API_8);
     EXPECT_LT(ret, SUCCESS);
 }
 

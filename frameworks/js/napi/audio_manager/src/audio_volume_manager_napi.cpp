@@ -290,9 +290,8 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfos(napi_env env, napi_callba
             [](napi_env env, void* data) {
                 auto context = static_cast<AudioVolumeManagerAsyncContext*>(data);
                 if (!context->status) {
-                    context->volumeGroupInfos = context->objectInfo->audioSystemMngr_->
-                        GetVolumeGroups(context->networkId);
-                    context->status = 0;
+                    context->status = context->objectInfo->audioSystemMngr_->
+                        GetVolumeGroups(context->networkId, context->volumeGroupInfos);
                 }
             },
             GetVolumeGroupInfosAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);

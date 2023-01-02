@@ -1080,9 +1080,18 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
-AudioScene AudioPolicyService::GetAudioScene() const
+AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
 {
     AUDIO_INFO_LOG("GetAudioScene return value: %{public}d", audioScene_);
+    if (!hasSystemPermission) {
+        switch (audioScene_) {
+            case AUDIO_SCENE_RINGING:
+            case AUDIO_SCENE_PHONE_CALL:
+                return AUDIO_SCENE_DEFAULT;
+            default:
+                break;
+        }
+    }
     return audioScene_;
 }
 
@@ -1588,9 +1597,9 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId)
 }
 
 int32_t AudioPolicyService::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
-    bool hasBTPermission)
+    bool hasBTPermission, bool hasSysPermission)
 {
-    return streamCollector_.RegisterAudioRendererEventListener(clientUID, object, hasBTPermission);
+    return streamCollector_.RegisterAudioRendererEventListener(clientUID, object, hasBTPermission, hasSysPermission);
 }
 
 int32_t AudioPolicyService::UnregisterAudioRendererEventListener(int32_t clientUID)
@@ -1599,9 +1608,9 @@ int32_t AudioPolicyService::UnregisterAudioRendererEventListener(int32_t clientU
 }
 
 int32_t AudioPolicyService::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
-    bool hasBTPermission)
+    bool hasBTPermission, bool hasSysPermission)
 {
-    return streamCollector_.RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission);
+    return streamCollector_.RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission, hasSysPermission);
 }
 
 int32_t AudioPolicyService::UnregisterAudioCapturerEventListener(int32_t clientUID)
@@ -1609,13 +1618,31 @@ int32_t AudioPolicyService::UnregisterAudioCapturerEventListener(int32_t clientU
     return streamCollector_.UnregisterAudioCapturerEventListener(clientUID);
 }
 
-static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission)
+static void UpdateRendererInfoWhenNoPermission(unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
+    bool hasSystemPermission)
+{
+    if (!hasSystemPermission) {
+        audioRendererChangeInfos->clientUID = 0;
+        audioRendererChangeInfos->rendererState = RENDERER_INVALID;
+    }
+}
+
+static void UpdateCapturerInfoWhenNoPermission(unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
+    bool hasSystemPermission)
+{
+    if (!hasSystemPermission) {
+        audioCapturerChangeInfos->clientUID = 0;
+        audioCapturerChangeInfos->capturerState = CAPTURER_INVALID;
+    }
+}
+
+static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
+    bool hasSystemPermission)
 {
     deviceInfo.deviceType = desc->deviceType_;
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
-    deviceInfo.networkId = desc->networkId_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
@@ -1625,6 +1652,11 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
         deviceInfo.macAddress = "";
     }
 
+    if (hasSystemPermission) {
+        deviceInfo.networkId = desc->networkId_;
+    } else {
+        deviceInfo.networkId = "";
+    }
     deviceInfo.audioStreamInfo.samplingRate = desc->audioStreamInfo_.samplingRate;
     deviceInfo.audioStreamInfo.encoding = desc->audioStreamInfo_.encoding;
     deviceInfo.audioStreamInfo.format = desc->audioStreamInfo_.format;
@@ -1639,7 +1671,7 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStre
         DeviceRole activeDeviceRole = OUTPUT_DEVICE;
         for (sptr<AudioDeviceDescriptor> desc : outputDevices) {
             if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
-                UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo, desc, true);
+                UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo, desc, true, true);
                 break;
             }
         }
@@ -1649,7 +1681,7 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStre
         DeviceRole activeDeviceRole = INPUT_DEVICE;
         for (sptr<AudioDeviceDescriptor> desc : inputDevices) {
             if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
-                UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo, desc, true);
+                UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo, desc, true, true);
                 break;
             }
         }
@@ -1670,8 +1702,8 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return streamCollector_.UpdateTracker(mode, streamChangeInfo);
 }
 
-int32_t AudioPolicyService::GetCurrentRendererChangeInfos(
-    vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos, bool hasBTPermission)
+int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>>
+    &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
     int32_t status = streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     if (status != SUCCESS) {
@@ -1686,7 +1718,9 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             size_t rendererInfosSize = audioRendererChangeInfos.size();
             for (size_t i = 0; i < rendererInfosSize; i++) {
-                UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, desc, hasBTPermission);
+                UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
+                UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, desc, hasBTPermission,
+                    hasSystemPermission);
             }
         }
 
@@ -1696,8 +1730,8 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(
     return status;
 }
 
-int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(
-    vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos, bool hasBTPermission)
+int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>>
+    &audioCapturerChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
     int status = streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     if (status != SUCCESS) {
@@ -1712,7 +1746,9 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
-                UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc, hasBTPermission);
+                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
+                UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc, hasBTPermission,
+                    hasSystemPermission);
             }
         }
 
@@ -1895,7 +1931,7 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
             auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
             if (itr != connectedDevices_.end()) {
                 DeviceInfo outputDevice = {};
-                UpdateDeviceInfo(outputDevice, *itr, true);
+                UpdateDeviceInfo(outputDevice, *itr, true, true);
                 streamCollector_.UpdateTracker(AUDIO_MODE_PLAYBACK, outputDevice);
             }
         }
@@ -1910,7 +1946,7 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
             auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
             if (itr != connectedDevices_.end()) {
                 DeviceInfo inputDevice = {};
-                UpdateDeviceInfo(inputDevice, *itr, true);
+                UpdateDeviceInfo(inputDevice, *itr, true, true);
                 streamCollector_.UpdateTracker(AUDIO_MODE_RECORD, inputDevice);
             }
         }

@@ -83,8 +83,8 @@ void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
 }
 
 AudioRendererStateChangeListenerCallback::AudioRendererStateChangeListenerCallback(
-    const sptr<IStandardRendererStateChangeListener> &listener, bool hasBTPermission)
-    : listener_(listener), hasBTPermission_(hasBTPermission)
+    const sptr<IStandardRendererStateChangeListener> &listener, bool hasBTPermission, bool hasSystemPermission)
+    : listener_(listener), hasBTPermission_(hasBTPermission), hasSystemPermission_(hasSystemPermission)
 {
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerCallback: Instance create");
 }
@@ -105,6 +105,15 @@ void AudioRendererStateChangeListenerCallback::UpdateDeviceInfo(
                 audioRendererChangeInfos[i]->outputDeviceInfo.deviceName = "";
                 audioRendererChangeInfos[i]->outputDeviceInfo.macAddress = "";
             }
+        }
+    }
+
+    if (!hasSystemPermission_) {
+        size_t rendererChangeInfoLength = audioRendererChangeInfos.size();
+        for (size_t i = 0; i < rendererChangeInfoLength; i++) {
+            audioRendererChangeInfos[i]->clientUID = 0;
+            audioRendererChangeInfos[i]->rendererState = RENDERER_INVALID;
+            audioRendererChangeInfos[i]->outputDeviceInfo.networkId = "";
         }
     }
 }

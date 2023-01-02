@@ -28,7 +28,7 @@ public:
     explicit AudioPolicyProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyProxy() = default;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume) override;
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v) override;
 
     float GetStreamVolume(AudioStreamType streamType) override;
 
@@ -38,7 +38,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
 
@@ -62,7 +62,7 @@ public:
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
-    int32_t SetRingerMode(AudioRingerMode ringMode) override;
+    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v) override;
 
     std::vector<int32_t> GetSupportedTones() override;
 
@@ -80,7 +80,8 @@ public:
 
     AudioScene GetAudioScene() override;
 
-    int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetRingerModeCallback(const int32_t clientId,
+        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
@@ -107,7 +108,8 @@ public:
 
     int32_t AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object) override;
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
 
@@ -149,7 +151,7 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
 
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision) override;
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 

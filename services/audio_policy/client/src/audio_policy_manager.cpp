@@ -88,24 +88,25 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
     g_apProxy = nullptr;
 }
 
-int32_t AudioPolicyManager::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyManager::SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetStreamVolume: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->SetStreamVolume(streamType, volume);
+
+    return gsp->SetStreamVolume(streamType, volume, api_v);
 }
 
-int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode)
+int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetRingerMode: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->SetRingerMode(ringMode);
+    return gsp->SetRingerMode(ringMode, api_v);
 }
 
 AudioRingerMode AudioPolicyManager::GetRingerMode()
@@ -178,14 +179,14 @@ float AudioPolicyManager::GetStreamVolume(AudioStreamType streamType)
     return gsp->GetStreamVolume(streamType);
 }
 
-int32_t AudioPolicyManager::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyManager::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetStreamMute: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->SetStreamMute(streamType, mute);
+    return gsp->SetStreamMute(streamType, mute, api_v);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType)
@@ -356,7 +357,7 @@ DeviceType AudioPolicyManager::GetActiveInputDevice()
 }
 
 int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
-                                                  const std::shared_ptr<AudioRingerModeCallback> &callback)
+    const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -382,7 +383,7 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
         return ERROR;
     }
 
-    return gsp->SetRingerModeCallback(clientId, object);
+    return gsp->SetRingerModeCallback(clientId, object, api_v);
 }
 
 int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
@@ -612,7 +613,7 @@ int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt
 }
 
 int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
-                                                      const std::shared_ptr<VolumeKeyEventCallback> &callback)
+    const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -638,7 +639,7 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
         AUDIO_ERR_LOG("SetVolumeKeyEventCallback: volumeKeyEventListenerStub_->AsObject is nullptr.");
         return ERROR;
     }
-    return gsp->SetVolumeKeyEventCallback(clientPid, object);
+    return gsp->SetVolumeKeyEventCallback(clientPid, object, api_v);
 }
 
 int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
@@ -869,15 +870,14 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
     return  gsp->UpdateStreamState(clientUid, streamSetState, audioStreamType);
 }
 
-std::vector<sptr<VolumeGroupInfo>> AudioPolicyManager::GetVolumeGroupInfos()
+int32_t AudioPolicyManager::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos failed, g_apProxy is nullptr.");
-        std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
-        return volumeGroupInfos;
+        return ERROR;
     }
-    return gsp->GetVolumeGroupInfos();
+    return gsp->GetVolumeGroupInfos(infos, needVerifyPermision);
 }
 
 bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)

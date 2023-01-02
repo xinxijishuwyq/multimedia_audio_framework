@@ -67,7 +67,7 @@ public:
     int32_t GetMaxVolume(AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioVolumeType volumeType);
     int32_t SetMute(AudioVolumeType volumeType, bool mute);
-    bool IsStreamMute(AudioVolumeType volumeType);
+    int32_t IsStreamMute(AudioVolumeType volumeType, bool &isMute);
     int32_t Init();
     bool IsAlived();
     int32_t GetGroupId();

@@ -36,6 +36,8 @@ static __thread napi_ref g_tonePlayerConstructor = nullptr;
 std::unique_ptr<AudioRendererInfo> TonePlayerNapi::sRendererInfo_ = nullptr;
 napi_ref TonePlayerNapi::toneType_ = nullptr;
 mutex TonePlayerNapi::createMutex_;
+int32_t TonePlayerNapi::isConstructSuccess_ = SUCCESS;
+
 namespace {
     const int ARGS_ONE = 1;
     const int ARGS_TWO = 2;
@@ -209,6 +211,8 @@ void TonePlayerNapi::GetTonePlayerAsyncCallbackComplete(napi_env env, napi_statu
             rendererInfo->rendererFlags = asyncContext->rendererInfo.rendererFlags;
 
             valueParam = CreateTonePlayerWrapper(env, rendererInfo);
+            asyncContext->status = TonePlayerNapi::isConstructSuccess_;
+            TonePlayerNapi::isConstructSuccess_ = SUCCESS;
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
@@ -335,7 +339,10 @@ napi_value TonePlayerNapi::Construct(napi_env env, napi_callback_info info)
     }
     tonePlayerNapi->tonePlayer_ = TonePlayer::Create(cacheDir, rendererInfo);
 
-    CHECK_AND_RETURN_RET_LOG(tonePlayerNapi->tonePlayer_ != nullptr, result, "Toneplayer Create failed");
+    if (tonePlayerNapi->tonePlayer_  == nullptr) {
+        HiLog::Error(LABEL, "Toneplayer Create failed");
+        TonePlayerNapi::isConstructSuccess_ = NAPI_ERR_PERMISSION_DENIED;
+    }
 
     status = napi_wrap(env, thisVar, static_cast<void*>(tonePlayerNapi.get()),
                        TonePlayerNapi::Destructor, nullptr, nullptr);

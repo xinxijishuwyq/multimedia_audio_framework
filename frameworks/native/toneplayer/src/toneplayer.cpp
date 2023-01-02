@@ -23,6 +23,7 @@
 #include "audio_log.h"
 #include "audio_policy_manager.h"
 #include "tone_player_private.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,11 +42,19 @@ const char *g_tonePlayerTestFilePath = "/data/local/tmp/toneplayer_test.pcm";
 
 std::shared_ptr<TonePlayer> TonePlayer::Create(const AudioRendererInfo &rendererInfo)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        return nullptr;
+    }
     return std::make_shared <TonePlayerPrivate>("", rendererInfo);
 }
 
 std::shared_ptr<TonePlayer> TonePlayer::Create(const std::string cachePath, const AudioRendererInfo &rendererInfo)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        return nullptr;
+    }
     return std::make_shared <TonePlayerPrivate>(cachePath, rendererInfo);
 }
 
@@ -194,6 +203,10 @@ bool TonePlayerPrivate::LoadTone(ToneType toneType)
 {
     AUDIO_INFO_LOG("LoadTone type: %{public}d, tonePlayerState_ %{public}d", toneType, tonePlayerState_);
     bool result = false;
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("LoadTone: No system permission");
+        return false;
+    }
     if (toneType >= NUM_TONES) {
         return result;
     }

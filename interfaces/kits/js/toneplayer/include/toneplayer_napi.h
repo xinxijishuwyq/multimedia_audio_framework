@@ -94,6 +94,7 @@ private:
     static std::unique_ptr<AudioRendererInfo> sRendererInfo_;
     static napi_ref toneType_;
     static std::mutex createMutex_;
+    static int32_t isConstructSuccess_;
     napi_env env_;
     std::shared_ptr<TonePlayer> tonePlayer_;
 };

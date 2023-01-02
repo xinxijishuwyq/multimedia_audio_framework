@@ -32,7 +32,7 @@ using InternalDeviceType = DeviceType;
 class IAudioPolicy : public IRemoteBroker {
 public:
 
-    virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume) = 0;
+    virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9) = 0;
 
     virtual float GetStreamVolume(AudioStreamType streamType) = 0;
 
@@ -42,7 +42,7 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
+    virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;
 
@@ -62,7 +62,7 @@ public:
 
     virtual std::vector<int32_t> GetSupportedTones() = 0;
 
-    virtual int32_t SetRingerMode(AudioRingerMode ringMode) = 0;
+    virtual int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) = 0;
 
     virtual AudioRingerMode GetRingerMode() = 0;
 
@@ -76,7 +76,8 @@ public:
 
     virtual AudioScene GetAudioScene() = 0;
 
-    virtual int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetRingerModeCallback(const int32_t clientId,
+        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
 
     virtual int32_t UnsetRingerModeCallback(const int32_t clientId) = 0;
 
@@ -107,7 +108,8 @@ public:
 
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
 
     virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) = 0;
 
@@ -153,7 +155,7 @@ public:
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
-    virtual std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() = 0;
+    virtual int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision) = 0;
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
