@@ -1228,7 +1228,12 @@ AudioStreamType AudioPolicyServer::GetStreamInFocus()
         // So we set streamInFocus to call manually.
         streamInFocus = STREAM_VOICE_CALL;
     } else if (!curActiveOwnersList_.empty()) {
-        streamInFocus = curActiveOwnersList_.front().streamType;
+        for (auto it = curActiveOwnersList_.begin(); it != curActiveOwnersList_.end(); it++) {
+            if (it->streamType != STREAM_ULTRASONIC) {
+                streamInFocus = it->streamType;
+                break;
+            }
+        }
     }
 
     return streamInFocus;

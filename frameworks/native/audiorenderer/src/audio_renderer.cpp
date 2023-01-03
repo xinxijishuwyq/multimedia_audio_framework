@@ -222,6 +222,7 @@ int32_t AudioRendererPrivate::InitSharedInterrupt()
         types.push_back(AudioStreamType::STREAM_DTMF);
         types.push_back(AudioStreamType::STREAM_TTS);
         types.push_back(AudioStreamType::STREAM_ACCESSIBILITY);
+        types.push_back(AudioStreamType::STREAM_ULTRASONIC);
         for (auto type : types) {
             uint32_t interruptId;
             if (audioStream_->GetAudioSessionID(interruptId) != 0) {
