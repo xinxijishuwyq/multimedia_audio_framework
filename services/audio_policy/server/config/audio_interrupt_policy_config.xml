@@ -20,6 +20,7 @@
             <deny>nil</deny>
             <shared>
                 <stream_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="DUCK" action_on="existing"/>
+                <stream_type value="STREAM_ULTRASONIC" is_forced="true" action_type="DUCK" action_on="new"/>
             </shared>
             <private>
                 <stream_type value="STREAM_MUSIC"  is_forced="true" action_type="STOP" action_on="existing"/>
@@ -37,6 +38,7 @@
             </deny>
             <shared>
                 <stream_type value="STREAM_MUSIC" is_forced="true" action_type="DUCK" action_on="new"/>
+                <stream_type value="STREAM_ULTRASONIC" is_forced="true" action_type="DUCK" action_on="new"/>
             </shared>
             <private>nil</private>
         </focus_table>
@@ -49,6 +51,7 @@
             </deny>
             <shared>
                 <stream_type value="STREAM_MUSIC" is_forced="true" action_type="DUCK" action_on="new"/>
+                <stream_type value="STREAM_ULTRASONIC" is_forced="true" action_type="DUCK" action_on="new"/>
             </shared>
             <private>
                 <stream_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
@@ -58,13 +61,28 @@
     <stream_type value="STREAM_VOICE_ASSISTANT">
         <focus_table>
             <deny>nil</deny>
-            <shared>nil</shared>
+            <shared>
+                <stream_type value="STREAM_ULTRASONIC" is_forced="true" action_type="DUCK" action_on="new"/>
+            </shared>
             <private>
                 <stream_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
                 <stream_type value="STREAM_RING" is_forced="true" action_type="STOP" action_on="existing"/>
                 <stream_type value="STREAM_MUSIC" is_forced="true" action_type="STOP" action_on="existing"/>
                 <stream_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="STOP" action_on="existing"/>
             </private>
+        </focus_table>
+    </stream_type>
+    <stream_type value="STREAM_ULTRASONIC">
+        <focus_table>
+            <deny>nil</deny>
+            <shared>
+                <stream_type value="STREAM_MUSIC" is_forced="true" action_type="DUCK" action_on="new"/>
+                <stream_type value="STREAM_VOICE_CALL" is_forced="true" action_type="DUCK" action_on="new"/>
+                <stream_type value="STREAM_RING" is_forced="true" action_type="DUCK" action_on="new"/>
+                <stream_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="DUCK" action_on="new"/>
+                <stream_type value="STREAM_ULTRASONIC" is_forced="true" action_type="DUCK" action_on="new"/>
+            </shared>
+            <private>nil</private>
         </focus_table>
     </stream_type>
 </audio_focus_policy>

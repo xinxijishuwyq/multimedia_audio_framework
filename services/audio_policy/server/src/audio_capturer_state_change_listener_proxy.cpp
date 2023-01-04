@@ -82,8 +82,8 @@ void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
 }
 
 AudioCapturerStateChangeListenerCallback::AudioCapturerStateChangeListenerCallback(
-    const sptr<IStandardCapturerStateChangeListener> &listener, bool hasBTPermission)
-    : listener_(listener), hasBTPermission_(hasBTPermission)
+    const sptr<IStandardCapturerStateChangeListener> &listener, bool hasBTPermission, bool hasSystemPermission)
+    : listener_(listener), hasBTPermission_(hasBTPermission), hasSystemPermission_(hasSystemPermission)
 {
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerCallback: Instance create");
 }
@@ -104,6 +104,15 @@ void AudioCapturerStateChangeListenerCallback::UpdateDeviceInfo(
                 audioCapturerChangeInfos[i]->inputDeviceInfo.deviceName = "";
                 audioCapturerChangeInfos[i]->inputDeviceInfo.macAddress = "";
             }
+        }
+    }
+
+    if (!hasSystemPermission_) {
+        size_t capturerChangeInfoLength = audioCapturerChangeInfos.size();
+        for (size_t i = 0; i < capturerChangeInfoLength; i++) {
+            audioCapturerChangeInfos[i]->clientUID = 0;
+            audioCapturerChangeInfos[i]->capturerState = CAPTURER_INVALID;
+            audioCapturerChangeInfos[i]->inputDeviceInfo.networkId = "";
         }
     }
 }

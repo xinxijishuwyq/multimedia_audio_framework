@@ -83,7 +83,7 @@ void AudioPolicyProxy::WriteAudioStreamInfoParams(MessageParcel &data, const Aud
     data.WriteInt32(static_cast<int32_t>(audioStreamInfo.encoding));
 }
 
-int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -95,6 +95,7 @@ int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volu
 
     data.WriteInt32(static_cast<int32_t>(streamType));
     data.WriteFloat(volume);
+    data.WriteInt32(static_cast<int32_t>(api_v));
     int32_t error = Remote()->SendRequest(SET_STREAM_VOLUME, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set volume failed, error: %d", error);
@@ -103,7 +104,7 @@ int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volu
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
+int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -114,6 +115,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode)
         return -1;
     }
     data.WriteInt32(static_cast<int>(ringMode));
+    data.WriteInt32(static_cast<int32_t>(api_v));
     int32_t error = Remote()->SendRequest(SET_RINGER_MODE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set ringermode failed, error: %d", error);
@@ -376,7 +378,7 @@ float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
     return reply.ReadFloat();
 }
 
-int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -388,6 +390,7 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute)
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
     data.WriteBool(mute);
+    data.WriteInt32(static_cast<int32_t>(api_v));
     int32_t error = Remote()->SendRequest(SET_STREAM_MUTE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set mute failed, error: %d", error);
@@ -659,7 +662,8 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -675,6 +679,7 @@ int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId, const sp
     }
     data.WriteInt32(clientId);
     (void)data.WriteRemoteObject(object);
+    data.WriteInt32(static_cast<int32_t>(api_v));
     int error = Remote()->SendRequest(SET_RINGERMODE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: set ringermode callback failed, error: %{public}d", error);
@@ -991,7 +996,8 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid,
+    const sptr<IRemoteObject> &object, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1008,6 +1014,7 @@ int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid, con
 
     data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
+    data.WriteInt32(static_cast<int32_t>(api_v));
     int result = Remote()->SendRequest(SET_VOLUME_KEY_EVENT_CALLBACK, data, reply, option);
     if (result != ERR_NONE) {
         AUDIO_ERR_LOG("SetAudioVolumeKeyEventCallback failed, result: %{public}d", result);
@@ -1451,31 +1458,32 @@ int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetSt
     return SUCCESS;
 }
 
-std::vector<sptr<VolumeGroupInfo>> AudioPolicyProxy::GetVolumeGroupInfos()
+int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    std::vector<sptr<VolumeGroupInfo>> infos;
-
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: GetVolumeGroupById WriteInterfaceToken failed");
-        return infos;
+        AUDIO_ERR_LOG(" GetVolumeGroupById WriteInterfaceToken failed");
+        return ERROR;
     }
-
+    data.WriteBool(needVerifyPermision);
     int32_t error = Remote()->SendRequest(GET_VOLUME_GROUP_INFO, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("GetVolumeGroupInfo, error: %d", error);
-        return infos;
+        return error;
     }
 
-    int32_t size = reply.ReadInt32();
-    for (int32_t i = 0; i < size; i++) {
-        infos.push_back(VolumeGroupInfo::Unmarshalling(reply));
+    int32_t ret = reply.ReadInt32();
+    if (ret > 0) {
+        for (int32_t i = 0; i < ret; i++) {
+            infos.push_back(VolumeGroupInfo::Unmarshalling(reply));
+        }
+        return SUCCESS;
+    } else {
+        return ret;
     }
-
-    return infos;
 }
 
 bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)

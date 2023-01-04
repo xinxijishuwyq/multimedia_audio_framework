@@ -234,7 +234,8 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
     if (option == 'v' && argc == AudioPolicyTest::THIRD_ARG) {
         networkId = argv[AudioPolicyTest::SECOND_ARG];
         cout << "handle volume networkId: " << networkId << endl;
-        std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
+        std::vector<sptr<VolumeGroupInfo>> groups;
+        audioSystemMgr->GetVolumeGroups(networkId, groups);
         if (groups.size() > 0) {
             int32_t groupId = groups[0]->volumeGroupId_;
             std::shared_ptr<AudioGroupManager> groupManager = audioSystemMgr->GetGroupManager(groupId);
@@ -244,7 +245,8 @@ static void HandleVolume(int argc, char* argv[], int streamType, char option)
     } else if (option == 'V' && argc == AudioPolicyTest::FOURTH_ARG) {
         networkId = argv[AudioPolicyTest::THIRD_ARG];
         cout << "handle volume networkId: " << networkId << endl;
-        std::vector<sptr<VolumeGroupInfo>> groups = audioSystemMgr->GetVolumeGroups(networkId);
+        std::vector<sptr<VolumeGroupInfo>> groups;
+        audioSystemMgr->GetVolumeGroups(networkId, groups);
         if (groups.size() > 0) {
             int32_t groupId = groups[0]->volumeGroupId_;
             std::shared_ptr<AudioGroupManager> groupManager = audioSystemMgr->GetGroupManager(groupId);
@@ -465,7 +467,8 @@ static void HandleGetVolumeGroups(int argc, char* argv[])
     if (argc == AudioPolicyTest::THIRD_ARG) {
         std::string networkId = argv[AudioPolicyTest::SECOND_ARG];
         cout << "networkId: "<< networkId << endl;
-        std::vector<sptr<VolumeGroupInfo>> volumeGroups = audioSystemMgr->GetVolumeGroups(networkId);
+        std::vector<sptr<VolumeGroupInfo>> volumeGroups;
+        audioSystemMgr->GetVolumeGroups(networkId, volumeGroups);
         for (auto iter : volumeGroups) {
             cout << "===============id:" << iter->volumeGroupId_ << "=================" << endl;
             cout << "name: " << iter->groupName_ << endl;

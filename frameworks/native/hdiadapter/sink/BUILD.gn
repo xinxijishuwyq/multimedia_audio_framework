@@ -69,7 +69,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//third_party/bounds_checking_function:libsec_static",
+    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
   deps += [ multimedia_audio_framework_hdi_audio_client ]
@@ -110,7 +110,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
   deps = [
     "$hdf_uhdf_path/hdi:libhdi",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//third_party/bounds_checking_function:libsec_static",
+    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [
@@ -148,11 +148,11 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//third_party/bounds_checking_function:libsec_static",
+    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
   if ("${product_name}" == "m40") {
-    deps += [ "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client" ]
+    deps += [ "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client" ]
   } else {
     deps +=
         [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]

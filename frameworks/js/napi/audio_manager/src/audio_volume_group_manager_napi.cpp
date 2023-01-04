@@ -84,7 +84,9 @@ static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
         case AudioCommonNapi::VOICE_ASSISTANT:
             result = STREAM_VOICE_ASSISTANT;
             break;
-
+        case AudioManagerNapi::ALL:
+            result = STREAM_ALL;
+            break;
         default:
             result = STREAM_MUSIC;
             HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
@@ -343,7 +345,9 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetVolume(
                         GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
-                    context->status = 0;
+                    if (context->volLevel < 0) {
+                        context->status = context->volLevel;
+                    }
                 }
             }, GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
@@ -486,7 +490,9 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetMaxVolume(
                         GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
-                    context->status = 0;
+                    if (context->volLevel < 0) {
+                        context->status = context->volLevel;
+                    }
                 }
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -556,7 +562,9 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
                     context->volLevel = context->objectInfo->audioGroupMngr_->GetMinVolume(
                         GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
-                    context->status = 0;
+                    if (context->volLevel < 0) {
+                        context->status = context->volLevel;
+                    }
                 }
             },
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -694,10 +702,9 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->isMute =
-                        context->objectInfo->audioGroupMngr_->IsStreamMute(GetNativeAudioVolumeType(context->volType));
+                    context->status = context->objectInfo->audioGroupMngr_->IsStreamMute(
+                        GetNativeAudioVolumeType(context->volType), context->isMute);
                     context->isTrue = context->isMute;
-                    context->status = 0;
                 }
             },
             IsTrueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);

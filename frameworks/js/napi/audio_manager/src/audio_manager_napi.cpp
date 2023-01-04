@@ -605,7 +605,6 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
     size_t argCount = 0;
-    int32_t ret = 0;
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
     if (status == napi_ok) {
@@ -614,15 +613,6 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
             managerNapi->env_ = env;
             managerNapi->audioMngr_ = AudioSystemManager::GetInstance();
             managerNapi->cachedClientId_ = getpid();
-
-            managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
-            ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId_,
-                                                                          managerNapi->volumeKeyEventCallbackNapi_);
-            if (ret) {
-                AUDIO_ERR_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Failed");
-            } else {
-                AUDIO_DEBUG_LOG("AudioManagerNapi: RegisterVolumeKeyEventCallback Success");
-            }
 
             status = napi_wrap(env, jsThis, static_cast<void*>(managerNapi.get()),
                                AudioManagerNapi::Destructor, nullptr, nullptr);
@@ -1191,7 +1181,6 @@ napi_value AudioManagerNapi::SetAudioScene(napi_env env, napi_callback_info info
             if (context->status == SUCCESS) {
                 context->status =
                     context->objectInfo->audioMngr_->SetAudioScene(static_cast<AudioScene>(context->scene));
-                context->status = SUCCESS;
             }
         },
         SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -2322,10 +2311,11 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
             int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
                 managerNapi->cachedClientId_, managerNapi->ringerModecallbackNapi_);
             if (ret) {
-                AUDIO_ERR_LOG("AudioManagerNapi: SetRingerModeCallback Failed");
+                AUDIO_ERR_LOG("SetRingerModeCallback Failed %{public}d", ret);
+                AudioCommonNapi::throwError(env, ret);
                 return undefinedResult;
             } else {
-                AUDIO_INFO_LOG("AudioManagerNapi: SetRingerModeCallback Success");
+                AUDIO_INFO_LOG("SetRingerModeCallback Success");
             }
         }
 
@@ -2333,6 +2323,18 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
             std::static_pointer_cast<AudioRingerModeCallbackNapi>(managerNapi->ringerModecallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
+        if (managerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
+            managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
+            int32_t ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId_,
+                managerNapi->volumeKeyEventCallbackNapi_, API_8);
+            if (ret) {
+                AUDIO_ERR_LOG("RegisterVolumeKeyEventCallback Failed %{public}d", ret);
+                AudioCommonNapi::throwError(env, ret);
+            } else {
+                AUDIO_DEBUG_LOG("RegisterVolumeKeyEventCallback Success");
+            }
+        }
+
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =
             std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
@@ -2343,7 +2345,8 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
             managerNapi->deviceChangeCallbackNapi_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed");
+            AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed %{public}d", ret);
+            AudioCommonNapi::throwError(env, ret);
             return undefinedResult;
         }
         std::shared_ptr<AudioManagerCallbackNapi> cb =

@@ -107,7 +107,7 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene);
 
-    AudioScene GetAudioScene() const;
+    AudioScene GetAudioScene(bool hasSystemPermission = true) const;
 
     int32_t GetAudioLatencyFromXml() const;
 
@@ -153,12 +153,12 @@ public:
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
     int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+        bool hasBTPermission, bool hasSysPermission);
 
     int32_t UnregisterAudioRendererEventListener(int32_t clientUID);
 
     int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+        bool hasBTPermission, bool hasSysPermission);
 
     int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
 
@@ -168,10 +168,10 @@ public:
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
 
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
-        bool hasBTPermission);
+        bool hasBTPermission, bool hasSystemPermission);
 
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
-        bool hasBTPermission);
+        bool hasBTPermission, bool hasSystemPermission);
 
     void RegisteredTrackerClientDied(pid_t pid);
 

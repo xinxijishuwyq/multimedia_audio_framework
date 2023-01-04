@@ -266,6 +266,10 @@ enum AudioStreamType {
      */
     STREAM_RECORDING = 13,
     /**
+     * Indicates audio streams used for ultrasonic ranging.
+     */
+    STREAM_ULTRASONIC = 14,
+    /**
      * Indicates audio streams used for only one volume bar of a device.
      */
     STREAM_ALL = 100
@@ -278,6 +282,12 @@ enum FocusType {
      * Recording type.
      */
     FOCUS_TYPE_RECORDING = 0,
+};
+
+enum API_VERSION {
+    API_7 = 7,
+    API_8 = 8,
+    API_9 = 9
 };
 
 enum AudioErrors {
@@ -440,6 +450,7 @@ enum StreamUsage {
     STREAM_USAGE_MEDIA = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_VOICE_ASSISTANT = 3,
+    STREAM_USAGE_RANGING = 4,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 6
 };
 

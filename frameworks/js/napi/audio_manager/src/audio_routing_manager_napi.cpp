@@ -937,7 +937,8 @@ void AudioRoutingManagerNapi::RegisterDeviceChangeCallback(napi_env env, napi_va
         int32_t ret = routingMgrNapi->audioMngr_->SetDeviceChangeCallback(deviceFlag,
             routingMgrNapi->deviceChangeCallbackNapi_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioRoutingMgrNapi: Registering Device Change Callback Failed");
+            AUDIO_ERR_LOG("AudioRoutingMgrNapi: Registering Device Change Callback Failed %{public}d", ret);
+            AudioCommonNapi::throwError(env, ret);
             return;
         }
     }

@@ -16,7 +16,6 @@
 #include "audio_common_napi.h"
 #include "audio_log.h"
 #include "audio_manager_napi.h"
-#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,6 +65,11 @@ std::string AudioCommonNapi::getMessageByCode(int32_t &code)
             break;
         case NAPI_ERR_INPUT_INVALID:
             err_message = NAPI_ERR_INPUT_INVALID_INFO;
+            break;
+        case ERR_PERMISSION_DENIED:
+        case NAPI_ERR_PERMISSION_DENIED:
+            err_message = NAPI_ERROR_PERMISSION_DENIED_INFO;
+            code = NAPI_ERR_PERMISSION_DENIED;
             break;
         default:
             err_message = NAPI_ERR_SYSTEM_INFO;

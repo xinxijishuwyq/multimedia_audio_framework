@@ -57,7 +57,7 @@ public:
     void OnStart() override;
     void OnStop() override;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume) override;
+    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9) override;
 
     float GetStreamVolume(AudioStreamType streamType) override;
 
@@ -67,7 +67,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) override;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9) override;
 
     bool GetStreamMute(AudioStreamType streamType) override;
 
@@ -91,7 +91,7 @@ public:
 
     InternalDeviceType GetActiveInputDevice() override;
 
-    int32_t SetRingerMode(AudioRingerMode ringMode) override;
+    int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) override;
 
     std::vector<int32_t> GetSupportedTones() override;
 
@@ -111,7 +111,8 @@ public:
 
     AudioScene GetAudioScene() override;
 
-    int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetRingerModeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
+        API_VERSION api_v = API_9) override;
 
     int32_t UnsetRingerModeCallback(const int32_t clientId) override;
 
@@ -142,7 +143,8 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid, const sptr<IRemoteObject> &object) override;
+    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+        const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) override;
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
 
@@ -192,7 +194,7 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
 
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos() override;
+    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision = true) override;
 
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() override;
 

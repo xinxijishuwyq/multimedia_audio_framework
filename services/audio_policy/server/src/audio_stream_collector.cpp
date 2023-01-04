@@ -39,7 +39,7 @@ AudioStreamCollector::~AudioStreamCollector()
 }
 
 int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
-    bool hasBTPermission)
+    bool hasBTPermission, bool hasSystemPermission)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientUID);
 
@@ -51,7 +51,7 @@ int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientU
         "AudioStreamCollector: renderer listener obj cast failed");
 
     std::shared_ptr<AudioRendererStateChangeCallback> callback =
-         std::make_shared<AudioRendererStateChangeListenerCallback>(listener, hasBTPermission);
+         std::make_shared<AudioRendererStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: failed to  create cb obj");
 
     mDispatcherService.addRendererListener(clientUID, callback);
@@ -66,7 +66,7 @@ int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clien
 }
 
 int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
-    bool hasBTPermission)
+    bool hasBTPermission, bool hasSystemPermission)
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientUID);
 
@@ -77,7 +77,7 @@ int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientU
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: capturer obj cast failed");
 
     std::shared_ptr<AudioCapturerStateChangeCallback> callback =
-        std::make_shared<AudioCapturerStateChangeListenerCallback>(listener, hasBTPermission);
+        std::make_shared<AudioCapturerStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector: failed to create capturer cb obj");
 

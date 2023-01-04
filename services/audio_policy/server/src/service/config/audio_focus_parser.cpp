@@ -25,7 +25,8 @@ AudioFocusParser::AudioFocusParser()
         {"STREAM_RING", {AudioStreamType::STREAM_RING, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_MUSIC", {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_VOICE_ASSISTANT", {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_VOICE_CALL", {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}}
+        {"STREAM_VOICE_CALL", {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}}   
     };
 
     // Initialize action map with string vs InterruptActionType

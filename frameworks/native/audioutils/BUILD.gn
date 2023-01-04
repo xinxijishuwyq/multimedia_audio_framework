@@ -29,7 +29,12 @@ ohos_shared_library("audio_utils") {
   sources = [ "./src/audio_utils.cpp" ]
 
   deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
-  external_deps = [ "init:libbegetutil" ]
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+  ]
 
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"

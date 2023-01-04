@@ -668,6 +668,8 @@ string PulseAudioServiceAdapterImpl::GetNameByStreamType(AudioStreamType streamT
             return "voice_call";
         case STREAM_VOICE_ASSISTANT:
             return "voice_assistant";
+        case STREAM_ULTRASONIC:
+            return "ultrasonic";
         default:
             return "";
     }
@@ -691,6 +693,8 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
         stream = STREAM_VOICE_CALL;
     }  else if (!streamType.compare(string("voice_assistant"))) {
         stream = STREAM_VOICE_ASSISTANT;
+    }  else if (!streamType.compare(string("ultrasonic"))) {
+        stream = STREAM_ULTRASONIC;
     } else {
         stream = STREAM_MUSIC;
     }
@@ -902,9 +906,9 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
-    pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
 
     if (streamID == userData->streamType) {
+        pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
         if (i->mute) {
             pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
         }
@@ -912,7 +916,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume : %{public}f for stream : %{public}s, volumeInt%{public}d",
         vol, i->name, volume);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "AUDIO_VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "STREAMTYPE", streamID, "VOLUME", vol);
 }
 
