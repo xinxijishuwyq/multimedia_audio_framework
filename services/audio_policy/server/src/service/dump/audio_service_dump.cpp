@@ -177,10 +177,10 @@ bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
     }
 }
 
-const std::string AudioServiceDump::GetStreamName(AudioStreamType audioType)
+const std::string AudioServiceDump::GetStreamName(AudioStreamType streamType)
 {
     string name;
-    switch (audioType) {
+    switch (streamType) {
         case STREAM_VOICE_ASSISTANT:
             name = "VOICE_ASSISTANT";
             break;
@@ -217,6 +217,30 @@ const std::string AudioServiceDump::GetStreamName(AudioStreamType audioType)
 
     const string streamName = name;
     return streamName;
+}
+
+const std::string AudioServiceDump::GetSourceName(SourceType sourceType)
+{
+    string name;
+    switch (sourceType) {
+        case SOURCE_TYPE_INVALID:
+            name = "INVALID";
+            break;
+        case SOURCE_TYPE_MIC:
+            name = "MIC";
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            name = "VOICE_RECOGNITION";
+            break;
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            name = "VOICE_COMMUNICATION";
+            break;
+        default:
+            name = "UNKNOWN";
+    }
+
+    const string sourceName = name;
+    return sourceName;
 }
 
 const std::string AudioServiceDump::GetStreamUsgaeName(StreamUsage streamUsage)
@@ -449,6 +473,8 @@ void AudioServiceDump::StreamVolumesDump (string &dumpString)
         ++it) {
         AppendFormat(dumpString, "%s: %d\n", GetStreamName(it->first).c_str(), it->second);
     }
+
+    return;
 }
 
 void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
@@ -456,19 +482,20 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
     dumpString += "\nAudio In Focus Info:\n";
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
 
-    if (audioData_.policyData.audioFocusInfo.sessionID == invalidSessionID) {
-        AUDIO_DEBUG_LOG("No streams in focus");
-        dumpString += "Not available\n";
-        return;
-    }
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = audioData_.policyData.audioFocusInfoList;
 
-    AppendFormat(dumpString, "Stream Id: %d\n", audioData_.policyData.audioFocusInfo.sessionID);
-    AppendFormat(dumpString, "Stream Usage: %s\n",
-        GetStreamUsgaeName(audioData_.policyData.audioFocusInfo.streamUsage).c_str());
-    AppendFormat(dumpString, "Content Type: %s\n",
-        GetContentTypeName(audioData_.policyData.audioFocusInfo.contentType).c_str());
-    AppendFormat(dumpString, "Stream Name: %s\n",
-        GetStreamName(audioData_.policyData.audioFocusInfo.streamType).c_str());
+    for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+        if ((iter->first).sessionID == invalidSessionID) {
+            continue;
+        }
+        AppendFormat(dumpString, "Session Id: %d\n", (iter->first).sessionID);
+        AppendFormat(dumpString, "AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
+        AppendFormat(dumpString, "Stream Name: %s\n",
+            GetStreamName((iter->first).audioFocusType.streamType).c_str());
+        AppendFormat(dumpString, "Source Name: %s\n",
+            GetSourceName((iter->first).audioFocusType.sourceType).c_str());
+        AppendFormat(dumpString, "AudioFocus State: %d\n", iter->second);
+    }
 
 	return;
 }

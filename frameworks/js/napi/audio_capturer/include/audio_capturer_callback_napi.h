@@ -28,18 +28,22 @@ public:
     explicit AudioCapturerCallbackNapi(napi_env env);
     virtual ~AudioCapturerCallbackNapi();
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const CapturerState state) override;
 private:
     struct AudioCapturerJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
+        InterruptEvent interruptEvent;
         CapturerState state;
     };
 
+    void OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
     void OnJsCallbackStateChange(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
+    std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
 };
 }  // namespace AudioStandard

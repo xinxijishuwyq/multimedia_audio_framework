@@ -555,7 +555,7 @@ HWTEST(AudioManagerUnitTest, ActivateAudioInterrupt_001, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     auto ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -570,7 +570,7 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     auto ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1239,7 +1239,7 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_001, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
     EXPECT_EQ(SUCCESS, ret);
@@ -1258,7 +1258,7 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_002, TestSize.Level1)
     constexpr int32_t INVALID_CONTENT_TYPE = 10;
     audioInterrupt.contentType = static_cast<ContentType>(INVALID_CONTENT_TYPE);
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
     EXPECT_EQ(SUCCESS, ret);
@@ -1277,7 +1277,7 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_003, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = static_cast<ContentType>(CONTENT_TYPE_UPPER_INVALID);
     audioInterrupt.streamUsage = STREAM_USAGE_UNKNOWN;
-    audioInterrupt.streamType = STREAM_VOICE_CALL;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
 
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
@@ -1297,22 +1297,22 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_003, TestSize.Level1)
     EXPECT_NE(SUCCESS, ret);
 
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = static_cast<AudioStreamType>(STREAM_TYPE_UPPER_INVALID);
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(STREAM_TYPE_UPPER_INVALID);
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_NE(SUCCESS, ret);
-    audioInterrupt.streamType = static_cast<AudioStreamType>(STREAM_TYPE_LOWER_INVALID);
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(STREAM_TYPE_LOWER_INVALID);
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_NE(SUCCESS, ret);
 
     audioInterrupt.contentType = CONTENT_TYPE_UNKNOWN;
     audioInterrupt.streamUsage = STREAM_USAGE_UNKNOWN;
-    audioInterrupt.streamType = STREAM_VOICE_CALL;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_EQ(SUCCESS, ret);
 
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1327,7 +1327,7 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_004, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
     EXPECT_EQ(SUCCESS, ret);
@@ -1352,7 +1352,7 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_001, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
     EXPECT_EQ(SUCCESS, ret);
@@ -1372,7 +1372,7 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_002, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
     EXPECT_EQ(SUCCESS, ret);
@@ -1394,7 +1394,7 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_003, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
 
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
@@ -1418,17 +1418,17 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_003, TestSize.Level1)
     EXPECT_NE(SUCCESS, ret);
 
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = static_cast<AudioStreamType>(STREAM_TYPE_UPPER_INVALID);
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(STREAM_TYPE_UPPER_INVALID);
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_NE(SUCCESS, ret);
-    audioInterrupt.streamType = static_cast<AudioStreamType>(STREAM_TYPE_LOWER_INVALID);
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(STREAM_TYPE_LOWER_INVALID);
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_NE(SUCCESS, ret);
 
 
     audioInterrupt.contentType = CONTENT_TYPE_UNKNOWN;
     audioInterrupt.streamUsage = STREAM_USAGE_UNKNOWN;
-    audioInterrupt.streamType = STREAM_VOICE_CALL;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
@@ -1436,7 +1436,7 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_003, TestSize.Level1)
 
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_VOICE_CALL;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     ret = AudioSystemManager::GetInstance()->RequestAudioFocus(audioInterrupt);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->AbandonAudioFocus(audioInterrupt);
@@ -1453,7 +1453,7 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_004, TestSize.Level1)
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
     shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
     EXPECT_EQ(SUCCESS, ret);

@@ -22,6 +22,7 @@
 #endif
 #include "audio_stream.h"
 #include "audio_log.h"
+#include "audio_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -156,7 +157,25 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
-    return audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
+    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::SetParams SetAudioStreamInfo Failed");
+        return ret;
+    }
+    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
+        AUDIO_ERR_LOG("InitAudioInterruptCallback::GetAudioSessionID failed for INDEPENDENT_MODE");
+        return ERR_INVALID_INDEX;
+    }
+    audioInterrupt_.sessionID = sessionID_;
+    audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
+    if (audioInterruptCallback_ == nullptr) {
+        audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackImpl>(audioStream_);
+        if (audioInterruptCallback_ == nullptr) {
+            AUDIO_ERR_LOG("AudioCapturerPrivate::Failed to allocate memory for audioInterruptCallback_");
+            return ERROR;
+        }
+    }
+    return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
 
 int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback)
@@ -172,6 +191,15 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
         AUDIO_ERR_LOG("AudioCapturerPrivate::SetCapturerCallback callback param is null");
         return ERR_INVALID_PARAM;
     }
+
+    // Save reference for interrupt callback
+    if (audioInterruptCallback_ == nullptr) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::SetCapturerCallback audioInterruptCallback_ == nullptr");
+        return ERROR;
+    }
+    std::shared_ptr<AudioInterruptCallbackImpl> cbInterrupt =
+        std::static_pointer_cast<AudioInterruptCallbackImpl>(audioInterruptCallback_);
+    cbInterrupt->SaveCallback(callback);
 
     // Save and Set reference for stream callback. Order is important here.
     if (audioStreamCallback_ == nullptr) {
@@ -271,6 +299,7 @@ bool AudioCapturerPrivate::Start() const
         AUDIO_PERMISSION_START)) {
         AUDIO_ERR_LOG("Start monitor permission failed");
     }
+
     return audioStream_->StartAudioStream();
 }
 
@@ -296,6 +325,7 @@ bool AudioCapturerPrivate::Pause() const
         AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Pause monitor permission failed");
     }
+
     return audioStream_->PauseAudioStream();
 }
 
@@ -306,6 +336,7 @@ bool AudioCapturerPrivate::Stop() const
         AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Stop monitor permission failed");
     }
+
     return audioStream_->StopAudioStream();
 }
 
@@ -347,6 +378,82 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
 void AudioCapturerPrivate::SetApplicationCachePath(const std::string cachePath)
 {
     audioStream_->SetApplicationCachePath(cachePath);
+}
+
+AudioInterruptCallbackImpl::AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream)
+    : audioStream_(audioStream)
+{
+    AUDIO_INFO_LOG("AudioInterruptCallbackImpl constructor");
+}
+
+AudioInterruptCallbackImpl::~AudioInterruptCallbackImpl()
+{
+    AUDIO_DEBUG_LOG("AudioInterruptCallbackImpl: instance destroy");
+}
+
+void AudioInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
+{
+    callback_ = callback;
+}
+
+void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
+{
+    AUDIO_DEBUG_LOG("AudioCapturerPrivate: NotifyEvent: Hint: %{public}d, eventType: %{public}d",
+        interruptEvent.hintType, interruptEvent.eventType);
+
+    if (cb_ != nullptr) {
+        cb_->OnInterrupt(interruptEvent);
+        AUDIO_DEBUG_LOG("AudioCapturerPrivate: OnInterrupt : NotifyEvent to app complete");
+    } else {
+        AUDIO_DEBUG_LOG("AudioCapturerPrivate: cb_ == nullptr cannont NotifyEvent to app");
+    }
+}
+
+void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
+{
+    InterruptHint hintType = interruptEvent.hintType;
+    AUDIO_DEBUG_LOG("AudioCapturerPrivate HandleAndNotifyForcedEvent: Force handle the event and notify the app,\
+        Hint: %{public}d eventType: %{public}d", interruptEvent.hintType, interruptEvent.eventType);
+
+    switch (hintType) {
+        case INTERRUPT_HINT_PAUSE:
+            if (audioStream_->GetState() != RUNNING) {
+                AUDIO_DEBUG_LOG("AudioCapturerPrivate::OnInterrupt state is not running no need to pause");
+                return;
+            }
+            (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+            break;
+        case INTERRUPT_HINT_STOP:
+            (void)audioStream_->StopAudioStream();
+            break;
+        default:
+            break;
+    }
+    // Notify valid forced event callbacks to app
+    InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
+    NotifyEvent(interruptEventForced);
+}
+
+void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+{
+    cb_ = callback_.lock();
+    InterruptForceType forceType = interruptEvent.forceType;
+    AUDIO_DEBUG_LOG("AudioCapturerPrivate: OnInterrupt InterruptForceType: %{public}d", forceType);
+
+    if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
+        AUDIO_DEBUG_LOG("AudioCapturerPrivate ForceType: INTERRUPT_SHARE. Let app handle the event");
+        InterruptEvent interruptEventShared {interruptEvent.eventType, interruptEvent.forceType,
+                                             interruptEvent.hintType};
+        NotifyEvent(interruptEventShared);
+        return;
+    }
+
+    if (audioStream_ == nullptr) {
+        AUDIO_DEBUG_LOG("AudioInterruptCallbackImpl::OnInterrupt stream is not alive. No need to take forced action");
+        return;
+    }
+
+    HandleAndNotifyForcedEvent(interruptEvent);
 }
 
 void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)

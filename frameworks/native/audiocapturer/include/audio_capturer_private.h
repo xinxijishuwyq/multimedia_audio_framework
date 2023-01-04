@@ -16,11 +16,14 @@
 #ifndef AUDIO_CAPTURER_PRIVATE_H
 #define AUDIO_CAPTURER_PRIVATE_H
 
+#include "audio_interrupt_callback.h"
 #include "audio_stream.h"
 #include "audio_capturer_proxy_obj.h"
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
+
 class AudioCapturerPrivate : public AudioCapturer {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
@@ -63,8 +66,27 @@ public:
     bool isChannelChange_ = false; 
 private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+    std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     AppInfo appInfo_ = {};
+    AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
+    uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
+};
+
+class AudioInterruptCallbackImpl : public AudioInterruptCallback {
+public:
+    explicit AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream);
+    virtual ~AudioInterruptCallbackImpl();
+
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
+private:
+    void NotifyEvent(const InterruptEvent &interruptEvent);
+    void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    std::shared_ptr<AudioStream> audioStream_;
+    std::weak_ptr<AudioCapturerCallback> callback_;
+    std::shared_ptr<AudioCapturerCallback> cb_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

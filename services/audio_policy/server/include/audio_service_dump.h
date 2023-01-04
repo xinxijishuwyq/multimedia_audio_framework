@@ -21,6 +21,7 @@
 #include <audio_timer.h>
 #include <audio_errors.h>
 #include <vector>
+#include <list>
 #include <pwd.h>
 #include <map>
 #include "securec.h"
@@ -76,6 +77,7 @@ typedef struct {
     AudioRingerMode ringerMode;
     AudioScene callStatus;
     AudioInterrupt audioFocusInfo;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
     std::vector<GroupInfo> groupInfos;
 } PolicyData;
 
@@ -118,7 +120,8 @@ private:
     void AudioFocusInfoDump(std::string &dumpString);
     void GroupInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
-    static const std::string GetStreamName(AudioStreamType audioType);
+    static const std::string GetStreamName(AudioStreamType streamType);
+    static const std::string GetSourceName(SourceType sourceType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);
     static const std::string GetContentTypeName(ContentType contentType);
     static const std::string GetDeviceTypeName(DeviceType deviceType);

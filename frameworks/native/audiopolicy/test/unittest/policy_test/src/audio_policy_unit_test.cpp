@@ -363,7 +363,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, Test
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
 
     std::shared_ptr<AudioStream> audioStream;
     AudioPolicyUnitTest::InitAudioStream(audioStream);
@@ -490,7 +490,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
 
     std::shared_ptr<AudioStream> audioStream;
     AudioPolicyUnitTest::InitAudioStream(audioStream);
@@ -574,7 +574,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioInterruptCallback_001, 
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.streamType = STREAM_ACCESSIBILITY;
+    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
 
     std::shared_ptr<AudioStream> audioStream;
     AudioPolicyUnitTest::InitAudioStream(audioStream);

@@ -21,12 +21,12 @@ AudioFocusParser::AudioFocusParser()
     AUDIO_INFO_LOG("AudioFocusParser ctor");
 
     // Initialize stream map with string vs AudioStreamType
-    streamMap = {
-        {"STREAM_RING", STREAM_RING},
-        {"STREAM_MUSIC", STREAM_MUSIC},
-        {"STREAM_VOICE_ASSISTANT", STREAM_VOICE_ASSISTANT},
-        {"STREAM_VOICE_CALL", STREAM_VOICE_CALL},
-        {"STREAM_ULTRASONIC", STREAM_ULTRASONIC},
+    audioFocusMap = {
+        {"STREAM_RING", {AudioStreamType::STREAM_RING, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_MUSIC", {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_VOICE_ASSISTANT", {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_VOICE_CALL", {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}}
     };
 
     // Initialize action map with string vs InterruptActionType
@@ -52,18 +52,18 @@ AudioFocusParser::AudioFocusParser()
 
 AudioFocusParser::~AudioFocusParser()
 {
-    streamMap.clear();
+    audioFocusMap.clear();
     actionMap.clear();
     targetMap.clear();
     forceMap.clear();
 }
 
-void AudioFocusParser::LoadDefaultConfig(std::map<std::pair<AudioStreamType, AudioStreamType>,
+void AudioFocusParser::LoadDefaultConfig(std::map<std::pair<AudioFocusType, AudioFocusType>,
     AudioFocusEntry> &focusMap)
 {
 }
 
-int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioStreamType, AudioStreamType>,
+int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFocusType>,
     AudioFocusEntry> &focusMap)
 {
     xmlDoc *doc = nullptr;
@@ -97,7 +97,7 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioStreamType, AudioSt
 }
 
 void AudioFocusParser::ParseFocusMap(xmlNode *node, char *curStream,
-    std::map<std::pair<AudioStreamType, AudioStreamType>, AudioFocusEntry> &focusMap)
+    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
     xmlNode *currNode = node;
     while (currNode != nullptr) {
@@ -122,15 +122,15 @@ void AudioFocusParser::ParseFocusMap(xmlNode *node, char *curStream,
 }
 
 void AudioFocusParser::ParseStreams(xmlNode *node,
-    std::map<std::pair<AudioStreamType, AudioStreamType>, AudioFocusEntry> &focusMap)
+    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
     xmlNode *currNode = node;
     while (currNode) {
         if (currNode->type == XML_ELEMENT_NODE) {
             char *sType = reinterpret_cast<char*>(xmlGetProp(currNode,
                 reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
-            std::map<std::string, AudioStreamType>::iterator it = streamMap.find(sType);
-            if (it != streamMap.end()) {
+            std::map<std::string, AudioFocusType>::iterator it = audioFocusMap.find(sType);
+            if (it != audioFocusMap.end()) {
                 AUDIO_INFO_LOG("stream type: %{public}s",  sType);
                 ParseFocusMap(currNode->children, sType, focusMap);
             }
@@ -141,7 +141,7 @@ void AudioFocusParser::ParseStreams(xmlNode *node,
 }
 
 void AudioFocusParser::ParseRejectedStreams(xmlNode *node, char *curStream,
-    std::map<std::pair<AudioStreamType, AudioStreamType>, AudioFocusEntry> &focusMap)
+    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
     xmlNode *currNode = node;
 
@@ -151,10 +151,10 @@ void AudioFocusParser::ParseRejectedStreams(xmlNode *node, char *curStream,
                 char *newStream = reinterpret_cast<char*>(xmlGetProp(currNode,
                     reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
 
-                std::map<std::string, AudioStreamType>::iterator it1 = streamMap.find(newStream);
-                if (it1 != streamMap.end()) {
-                    std::pair<AudioStreamType, AudioStreamType> rejectedStreamsPair =
-                        std::make_pair(streamMap[curStream], streamMap[newStream]);
+                std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStream);
+                if (it1 != audioFocusMap.end()) {
+                    std::pair<AudioFocusType, AudioFocusType> rejectedStreamsPair =
+                        std::make_pair(audioFocusMap[curStream], audioFocusMap[newStream]);
                     AudioFocusEntry rejectedFocusEntry;
                     rejectedFocusEntry.actionOn = INCOMING;
                     rejectedFocusEntry.hintType = INTERRUPT_HINT_NONE;
@@ -175,7 +175,7 @@ void AudioFocusParser::ParseRejectedStreams(xmlNode *node, char *curStream,
 }
 
 void AudioFocusParser::ParseAllowedStreams(xmlNode *node, char *curStream,
-    std::map<std::pair<AudioStreamType, AudioStreamType>, AudioFocusEntry> &focusMap)
+    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap)
 {
     xmlNode *currNode = node;
 
@@ -191,14 +191,14 @@ void AudioFocusParser::ParseAllowedStreams(xmlNode *node, char *curStream,
                 char *isForced = reinterpret_cast<char*>(xmlGetProp(currNode,
                     reinterpret_cast<xmlChar*>(const_cast<char*>("is_forced"))));
 
-                std::map<std::string, AudioStreamType>::iterator it1 = streamMap.find(newStream);
+                std::map<std::string, AudioFocusType>::iterator it1 = audioFocusMap.find(newStream);
                 std::map<std::string, ActionTarget>::iterator it2 = targetMap.find(aTarget);
                 std::map<std::string, InterruptHint>::iterator it3 = actionMap.find(aType);
                 std::map<std::string, InterruptForceType>::iterator it4 = forceMap.find(isForced);
-                if ((it1 != streamMap.end()) && (it2 != targetMap.end()) && (it3 != actionMap.end()) &&
+                if ((it1 != audioFocusMap.end()) && (it2 != targetMap.end()) && (it3 != actionMap.end()) &&
                     (it4 != forceMap.end())) {
-                    std::pair<AudioStreamType, AudioStreamType> allowedStreamsPair =
-                        std::make_pair(streamMap[curStream], streamMap[newStream]);
+                    std::pair<AudioFocusType, AudioFocusType> allowedStreamsPair =
+                        std::make_pair(audioFocusMap[curStream], audioFocusMap[newStream]);
                     AudioFocusEntry allowedFocusEntry;
                     allowedFocusEntry.actionOn = targetMap[aTarget];
                     allowedFocusEntry.hintType = actionMap[aType];

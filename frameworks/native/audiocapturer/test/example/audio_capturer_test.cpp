@@ -43,6 +43,12 @@ namespace AudioTestConstants {
 
 class AudioCapturerCallbackTestImpl : public AudioCapturerCallback {
 public:
+    void OnInterrupt(const InterruptEvent &interruptEvent) override
+    {
+        AUDIO_DEBUG_LOG("AudioCapturerCallbackTestImpl: OnInterrupt Hint : %{public}d eventType : %{public}d,\
+            forceType : %{public}d", interruptEvent.hintType, interruptEvent.eventType, interruptEvent.forceType);
+    }
+
     void OnStateChange(const CapturerState state) override
     {
         AUDIO_DEBUG_LOG("AudioCapturerCallbackTestImpl:: OnStateChange");

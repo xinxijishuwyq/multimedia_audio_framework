@@ -27,7 +27,9 @@ void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, Audio
 {
     audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     audioInterrupt.contentType = static_cast<ContentType>(data.ReadInt32());
-    audioInterrupt.streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
+    audioInterrupt.audioFocusType.isPlay = data.ReadBool();
     audioInterrupt.sessionID = data.ReadUint32();
 }
 
@@ -35,7 +37,9 @@ void AudioPolicyManagerStub::ReadAudioManagerInterruptParams(MessageParcel &data
 {
     audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     audioInterrupt.contentType = static_cast<ContentType>(data.ReadInt32());
-    audioInterrupt.streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
+    audioInterrupt.audioFocusType.isPlay = data.ReadBool();
     audioInterrupt.pauseWhenDucked = data.ReadBool();
 }
 
@@ -43,7 +47,9 @@ void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, cons
 {
     reply.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
     reply.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
-    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.streamType));
+    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.streamType));
+    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
+    reply.WriteBool(audioInterrupt.audioFocusType.isPlay);
     reply.WriteUint32(audioInterrupt.sessionID);
 }
 
@@ -465,7 +471,8 @@ void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &reply)
 void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply)
 {
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
-    AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN, STREAM_DEFAULT, invalidSessionID};
+    AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
     int32_t ret = GetSessionInfoInFocus(audioInterrupt);
     WriteAudioInteruptParams(reply, audioInterrupt);
     reply.WriteInt32(ret);

@@ -504,6 +504,12 @@ enum ActionTarget {
     BOTH
 };
 
+enum AudioFocuState {
+    ACTIVE = 0,
+    DUCK,
+    PAUSE
+};
+
 struct InterruptEvent {
     /**
      * Interrupt event type, begin or end
@@ -535,10 +541,30 @@ struct AudioFocusEntry {
     bool isReject;
 };
 
+struct AudioFocusType {
+    AudioStreamType streamType;
+    SourceType sourceType;
+    bool isPlay;
+    bool operator==(const AudioFocusType &value) const
+    {
+        return streamType == value.streamType && sourceType == value.sourceType && isPlay == value.isPlay;
+    }
+
+    bool operator<(const AudioFocusType &value) const
+    {
+        return streamType < value.streamType || (streamType == value.streamType && sourceType < value.sourceType);
+    }
+
+    bool operator>(const AudioFocusType &value) const
+    {
+        return streamType > value.streamType || (streamType == value.streamType && sourceType > value.sourceType);
+    }
+};
+
 struct AudioInterrupt {
     StreamUsage streamUsage;
     ContentType contentType;
-    AudioStreamType streamType;
+    AudioFocusType audioFocusType;
     uint32_t sessionID;
     bool pauseWhenDucked;
 };

@@ -2226,10 +2226,10 @@ napi_status JsObjToAudioInterrupt(const napi_env& env, const napi_value& object,
         return status;
     }
     // Update Stream type based on Content type and Stream Usage type
-    audioInterrupt.streamType = AudioSystemManager::GetStreamType(audioInterrupt.contentType,
+    audioInterrupt.audioFocusType.streamType = AudioSystemManager::GetStreamType(audioInterrupt.contentType,
         audioInterrupt.streamUsage);
     AUDIO_INFO_LOG("JsObjToAudioInterrupt: ContentType %{public}d, streamUsage %{public}d, streamType %{public}d ",
-        audioInterrupt.contentType, audioInterrupt.streamUsage, audioInterrupt.streamType);
+        audioInterrupt.contentType, audioInterrupt.streamUsage, audioInterrupt.audioFocusType.streamType);
     return status;
 }
 
