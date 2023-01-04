@@ -26,6 +26,7 @@ AudioFocusParser::AudioFocusParser()
         {"STREAM_MUSIC", STREAM_MUSIC},
         {"STREAM_VOICE_ASSISTANT", STREAM_VOICE_ASSISTANT},
         {"STREAM_VOICE_CALL", STREAM_VOICE_CALL},
+        {"STREAM_ULTRASONIC", STREAM_ULTRASONIC},
     };
 
     // Initialize action map with string vs InterruptActionType
