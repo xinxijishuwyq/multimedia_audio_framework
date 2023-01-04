@@ -65,7 +65,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   ]
 
   if ("${product_name}" == "m40") {
-    deps = [ "//foundation/distributedhardware/distributed_audio/hdf_service/distributed_audio/audio_client:daudio_client" ]
+    deps = [ "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client" ]
   } else {
     deps = [ multimedia_audio_framework_hdi_audio_client ]
   }
