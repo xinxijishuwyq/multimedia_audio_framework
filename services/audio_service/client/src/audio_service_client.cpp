@@ -297,17 +297,6 @@ AudioCaptureMode AudioServiceClient::GetAudioCaptureMode()
     return captureMode_;
 }
 
-int32_t AudioServiceClient::SaveReadCallback(const std::weak_ptr<AudioCapturerReadCallback> &callback)
-{
-    if (callback.lock() == nullptr) {
-        AUDIO_ERR_LOG("AudioServiceClient::SaveReadCallback callback == nullptr");
-        return AUDIO_CLIENT_INIT_ERR;
-    }
-    readCallback_ = callback;
-
-    return AUDIO_CLIENT_SUCCESS;
-}
-
 void AudioServiceClient::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
     if (!userdata) {
@@ -334,21 +323,6 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
     auto asClient = static_cast<AudioServiceClient *>(userdata);
     auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
-
-    if (asClient->captureMode_ != CAPTURE_MODE_CALLBACK) {
-        return;
-    }
-
-    std::shared_ptr<AudioCapturerReadCallback> cb = asClient->readCallback_.lock();
-    if (cb != nullptr) {
-        size_t requestSize;
-        asClient->GetMinimumBufferSize(requestSize);
-        AUDIO_INFO_LOG("AudioServiceClient::PAStreamReadCb: cb != nullptr firing OnReadData");
-        AUDIO_INFO_LOG("AudioServiceClient::OnReadData requestSize : %{public}zu", requestSize);
-        cb->OnReadData(requestSize);
-    } else {
-        AUDIO_ERR_LOG("AudioServiceClient::PAStreamReadCb: cb == nullptr not firing OnReadData");
-    }
 }
 
 void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
@@ -2571,21 +2545,43 @@ void AudioServiceClient::HandleUnsetCapturerPeriodReachedEvent()
 int32_t AudioServiceClient::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
     if (!callback) {
-        AUDIO_ERR_LOG("AudioServiceClient::SetRendererWriteCallback callback is nullptr");
+        AUDIO_ERR_LOG("SetRendererWriteCallback callback is nullptr");
         return ERR_INVALID_PARAM;
     }
     writeCallback_ = callback;
     return SUCCESS;
 }
+
+int32_t AudioServiceClient::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
+{
+    if (!callback) {
+        AUDIO_ERR_LOG("SetCapturerReadCallback callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+    readCallback_ = callback;
+    return SUCCESS;
+}
+
 void AudioServiceClient::SendWriteBufferRequestEvent()
 {
     // send write event to handler
     lock_guard<mutex> runnerlock(runnerMutex_);
     if (runnerReleased_) {
-        AUDIO_WARNING_LOG("AudioServiceClient::SendWriteBufferRequestEvent runner released");
+        AUDIO_WARNING_LOG("SendWriteBufferRequestEvent after runner released");
         return;
     }
     SendEvent(AppExecFwk::InnerEvent::Get(WRITE_BUFFER_REQUEST));
+}
+
+void AudioServiceClient::SendReadBufferRequestEvent()
+{
+    // send write event to handler
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("SendReadBufferRequestEvent after runner released");
+        return;
+    }
+    SendEvent(AppExecFwk::InnerEvent::Get(READ_BUFFER_REQUEST));
 }
 
 void AudioServiceClient::HandleWriteRequestEvent()
@@ -2595,6 +2591,16 @@ void AudioServiceClient::HandleWriteRequestEvent()
         size_t requestSize;
         GetMinimumBufferSize(requestSize);
         writeCallback_->OnWriteData(requestSize);
+    }
+}
+
+void AudioServiceClient::HandleReadRequestEvent()
+{
+    // do callback to application
+    if (readCallback_) {
+        size_t requestSize;
+        GetMinimumBufferSize(requestSize);
+        readCallback_->OnReadData(requestSize);
     }
 }
 
@@ -2611,6 +2617,9 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
     switch (eventId) {
         case WRITE_BUFFER_REQUEST:
             HandleWriteRequestEvent();
+            break;
+        case READ_BUFFER_REQUEST:
+            HandleReadRequestEvent();
             break;
 
         // RenderMarkReach
