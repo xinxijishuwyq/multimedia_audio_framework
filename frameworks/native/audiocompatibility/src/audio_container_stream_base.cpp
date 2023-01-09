@@ -807,11 +807,6 @@ void AudioContainerStreamBase::WriteBuffers()
     int32_t writeError;
     int rate = 1;
     while (isReadyToWrite_) {
-        if (renderRate_ == RENDER_RATE_DOUBLE) {
-            rate = 1;
-        } else {
-            rate = 1;
-        }
         while (!filledBufferQ_.empty()) {
             if (state_ != RUNNING) {
                 AUDIO_ERR_LOG("Write: Illegal state:%{public}u", state_);
