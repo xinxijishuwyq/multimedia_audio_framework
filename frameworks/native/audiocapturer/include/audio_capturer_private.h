@@ -72,6 +72,11 @@ private:
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
+    std::map<AudioStreamType, SourceType> streamToSource_ = {
+        {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
+        {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
+        {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION}
+    };
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {
@@ -84,8 +89,10 @@ public:
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     std::shared_ptr<AudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;
+    bool isForcePaused_ = false;
     std::shared_ptr<AudioCapturerCallback> cb_;
 };
 

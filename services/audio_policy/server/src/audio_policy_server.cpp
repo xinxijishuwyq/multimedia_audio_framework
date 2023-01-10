@@ -821,11 +821,26 @@ int32_t AudioPolicyServer::NotifyFocusAbandoned(const uint32_t clientID, const A
     return SUCCESS;
 }
 
+bool AudioPolicyServer::IsSameAppInShareMode(const AudioInterrupt incomingInterrupt,
+    const AudioInterrupt activateInterrupt)
+{
+    if (incomingInterrupt.mode != SHARE_MODE || activateInterrupt.mode != SHARE_MODE) {
+        return false;
+    }
+    if (incomingInterrupt.pid == DEFAULT_APP_PID || activateInterrupt.pid == DEFAULT_APP_PID) {
+        return false;
+    }
+    return incomingInterrupt.pid == activateInterrupt.pid;
+}
+
 void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt)
 {
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end();) {
+        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
+            continue;
+        }
         bool iterActiveErased = false;
         AudioFocusType activeFocusType = (iterActive->first).audioFocusType;
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
@@ -874,6 +889,9 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[incomingSessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
+        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
+            continue;
+        }
         AudioFocusType activeFocusType = (iterActive->first).audioFocusType;
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
             std::make_pair(activeFocusType, incomingFocusType);
@@ -886,23 +904,22 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
             continue;
         }
         if (focusEntry.isReject) {
-            AUDIO_INFO_LOG("AudioPolicyServer: focusEntry.isReject : ActivateAudioInterrupt request rejected");
             incomingState = PAUSE;
             break;
         }
-
         AudioFocuState newState = ACTIVE;
         auto pos = HINTSTATEMAP.find(focusEntry.hintType);
         if (pos != HINTSTATEMAP.end()) {
             newState = pos->second;
         }
         incomingState = newState > incomingState ? newState : incomingState;
-    }
-
-    audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
+    } 
     if (incomingState == PAUSE) {
         interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    } else {
+        ProcessCurrentInterrupt(incomingInterrupt);
     }
+    audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
     if (incomingState == DUCK) {
         float volume = GetStreamVolume(incomingFocusType.streamType);
         interruptEvent.hintType = INTERRUPT_HINT_DUCK;
@@ -911,10 +928,6 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     if (policyListenerCb != nullptr) {
         policyListenerCb->OnInterrupt(interruptEvent);
     }
-    if (incomingState != PAUSE) {
-        ProcessCurrentInterrupt(incomingInterrupt);
-    }
-
     return SUCCESS;
 }
 
@@ -965,7 +978,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::Simulate
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpAudioFocuInfoList = newAudioFocuInfoList;
         for (auto iter = newAudioFocuInfoList.begin(); iter != newAudioFocuInfoList.end(); ++iter) {
             AudioInterrupt inprocessing = iter->first;
-            if (iter->second == PAUSE) {
+            if (iter->second == PAUSE || IsSameAppInShareMode(incoming, inprocessing)) {
                 continue;
             }
             AudioFocusType activeFocusType = inprocessing.audioFocusType;

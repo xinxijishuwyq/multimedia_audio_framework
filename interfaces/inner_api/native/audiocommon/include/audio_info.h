@@ -567,6 +567,8 @@ struct AudioInterrupt {
     AudioFocusType audioFocusType;
     uint32_t sessionID;
     bool pauseWhenDucked;
+    int32_t pid { -1 };
+    InterruptMode mode { INDEPENDENT_MODE };
 };
 
 struct VolumeEvent {
