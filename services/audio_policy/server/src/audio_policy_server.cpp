@@ -922,33 +922,35 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    AUDIO_DEBUG_LOG("AudioPolicyServer: ActivateAudioInterrupt audioInterrupt: sessionID: %{public}u,\
-        isPlay: %{public}d, streamType: %{public}d, sourceType: %{public}d", audioInterrupt.sessionID,
-        (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).streamType,
-        (audioInterrupt.audioFocusType).sourceType);
+    AUDIO_INFO_LOG("ActivateAudioInterrupt audioInterrupt:streamType: %{public}d, sessionID: %{public}u, "\
+        "isPlay: %{public}d, sourceType: %{public}d", (audioInterrupt.audioFocusType).streamType,
+        audioInterrupt.sessionID, (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to ActivateAudioInterrupt");
+        AUDIO_DEBUG_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         return SUCCESS;
     }
 
     uint32_t incomingSessionID = audioInterrupt.sessionID;
-    // If audioFocusInfoList_ owners list is empty, directly activate interrupt
-    if (audioFocusInfoList_.empty()) {
-        audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
-        return SUCCESS;
-    } else {
-        AUDIO_DEBUG_LOG("incomingSessionID is already in audioFocusInfoList");
+    if (!audioFocusInfoList_.empty()) {
+        // If the session is present in audioFocusInfoList_, remove and treat it as a new request
+        AUDIO_DEBUG_LOG("audioFocusInfoList_ is not empty, check whether the session is present");
         audioFocusInfoList_.remove_if([&incomingSessionID](std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
             return (audioFocus.first).sessionID == incomingSessionID;
         });
+    }
+    if (audioFocusInfoList_.empty()) {
+        // If audioFocusInfoList_ is empty, directly activate interrupt
+        AUDIO_DEBUG_LOG("audioFocusInfoList_ is empty, add the session into it");
+        audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+        return SUCCESS;
     }
 
     // Process ProcessFocusEntryTable for current audioFocusInfoList_
     int32_t ret = ProcessFocusEntry(audioInterrupt);
     if (ret) {
-        AUDIO_ERR_LOG("AudioPolicyServer:  ActivateAudioInterrupt request rejected");
+        AUDIO_ERR_LOG("ActivateAudioInterrupt request rejected");
         return ERR_FOCUS_DENIED;
     }
 
