@@ -678,7 +678,8 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
             isForceDucked_ = false;
             break;
         default:
-            break;
+            // If the hintType is NONE, don't need to send callbacks
+            return;
     }
     // Notify valid forced event callbacks to app
     InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
