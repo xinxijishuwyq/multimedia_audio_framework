@@ -102,9 +102,13 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         audioRenderer->SetApplicationCachePath(cachePath);
     }
 
+    int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d",
+        streamUsage, contentType, rendererFlags);
+
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
-    audioRenderer->rendererInfo_.rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
 
     AudioRendererParams params;
     params.sampleFormat = rendererOptions.streamInfo.format;
