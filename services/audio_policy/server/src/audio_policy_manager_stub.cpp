@@ -767,11 +767,11 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_AUDIO_SCENE:
             GetAudioSceneInternal(reply);
             break;
-        
+
         case SET_MICROPHONE_MUTE:
             SetMicrophoneMuteInternal(data, reply);
             break;
-                    
+
         case SET_MICROPHONE_MUTE_AUDIO_CONFIG:
             SetMicrophoneMuteAudioConfigInternal(data, reply);
             break;

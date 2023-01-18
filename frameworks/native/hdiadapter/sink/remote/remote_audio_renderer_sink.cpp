@@ -319,9 +319,9 @@ struct AudioManager *RemoteAudioRendererSinkInner::GetAudioManager()
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
 #ifdef __aarch64__
-    char resolvedPath[100] = "/vendor/lib64/libdaudio_client.z.so";
+    char resolvedPath[100] = "/system/lib64/libdaudio_client.z.so";
 #else
-    char resolvedPath[100] = "/vendor/lib/libdaudio_client.z.so";
+    char resolvedPath[100] = "/system/lib/libdaudio_client.z.so";
 #endif
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
