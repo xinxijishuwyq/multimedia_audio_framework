@@ -234,6 +234,7 @@ protected:
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
+    bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
     void ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt);
     void ResumeAudioFocusList();
@@ -278,6 +279,7 @@ private:
     static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+    static constexpr int32_t DEFAULT_APP_PID = -1;
 };
 } // namespace AudioStandard
 } // namespace OHOS

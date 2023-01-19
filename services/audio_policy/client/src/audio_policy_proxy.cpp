@@ -34,6 +34,8 @@ void AudioPolicyProxy::WriteAudioInteruptParams(MessageParcel &data, const Audio
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
     data.WriteBool(audioInterrupt.audioFocusType.isPlay);
     data.WriteUint32(audioInterrupt.sessionID);
+    data.WriteInt32(audioInterrupt.pid);
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
 }
 
 void AudioPolicyProxy::WriteAudioManagerInteruptParams(MessageParcel &data, const AudioInterrupt &audioInterrupt)
@@ -44,6 +46,8 @@ void AudioPolicyProxy::WriteAudioManagerInteruptParams(MessageParcel &data, cons
     data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
     data.WriteBool(audioInterrupt.audioFocusType.isPlay);
     data.WriteBool(audioInterrupt.pauseWhenDucked);
+    data.WriteInt32(audioInterrupt.pid);
+    data.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
 }
 
 void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt)
@@ -54,6 +58,8 @@ void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInter
     audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(reply.ReadInt32());
     audioInterrupt.audioFocusType.isPlay = reply.ReadBool();
     audioInterrupt.sessionID = reply.ReadUint32();
+    audioInterrupt.pid = reply.ReadInt32();
+    audioInterrupt.mode = static_cast<InterruptMode>(reply.ReadInt32());
 }
 
 void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data,

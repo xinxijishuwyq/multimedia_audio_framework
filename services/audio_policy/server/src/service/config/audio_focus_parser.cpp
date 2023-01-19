@@ -26,7 +26,10 @@ AudioFocusParser::AudioFocusParser()
         {"STREAM_MUSIC", {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_VOICE_ASSISTANT", {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_VOICE_CALL", {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}}
+        {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"SOURCE_TYPE_MIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
+        {"SOURCE_TYPE_VOICE_RECOGNITION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION, false}},
+        {"SOURCE_TYPE_VOICE_COMMUNICATION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION, false}}
     };
 
     // Initialize action map with string vs InterruptActionType
@@ -34,7 +37,8 @@ AudioFocusParser::AudioFocusParser()
         {"DUCK", INTERRUPT_HINT_DUCK},
         {"PAUSE", INTERRUPT_HINT_PAUSE},
         {"REJECT", INTERRUPT_HINT_NONE},
-        {"STOP", INTERRUPT_HINT_STOP}
+        {"STOP", INTERRUPT_HINT_STOP},
+        {"PLAY", INTERRUPT_HINT_NONE}
     };
 
     // Initialize target map with string vs InterruptActionTarget
@@ -147,7 +151,7 @@ void AudioFocusParser::ParseRejectedStreams(xmlNode *node, char *curStream,
 
     while (currNode) {
         if (currNode->type == XML_ELEMENT_NODE) {
-            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("stream_type"))) {
+            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type"))) {
                 char *newStream = reinterpret_cast<char*>(xmlGetProp(currNode,
                     reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
 
@@ -181,7 +185,7 @@ void AudioFocusParser::ParseAllowedStreams(xmlNode *node, char *curStream,
 
     while (currNode) {
         if (currNode->type == XML_ELEMENT_NODE) {
-            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("stream_type"))) {
+            if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type"))) {
                 char *newStream = reinterpret_cast<char*>(xmlGetProp(currNode,
                     reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
                 char *aType = reinterpret_cast<char*>(xmlGetProp(currNode,

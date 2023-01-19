@@ -112,6 +112,13 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
+    if (audioStreamType < STREAM_VOICE_CALL || audioStreamType > STREAM_ALL) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate audioStreamType is invalid!");
+    }
+    auto iter = streamToSource_.find(audioStreamType);
+    if (iter != streamToSource_.end()) {
+        capturerInfo_.sourceType = iter->second;
+    }
     appInfo_ = appInfo;
     if (!(appInfo_.appPid)) {
         appInfo_.appPid = getpid();
@@ -300,6 +307,17 @@ bool AudioCapturerPrivate::Start() const
         AUDIO_ERR_LOG("Start monitor permission failed");
     }
 
+    if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_INVALID ||
+        audioInterrupt_.sessionID == INVALID_SESSION_ID) {
+        return false;
+    }
+
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioCapturerPrivate::ActivateAudioInterrupt Failed");
+        return false;
+    }
+
     return audioStream_->StartAudioStream();
 }
 
@@ -326,6 +344,12 @@ bool AudioCapturerPrivate::Pause() const
         AUDIO_ERR_LOG("Pause monitor permission failed");
     }
 
+    // When user is intentionally pausing , Deactivate to remove from audio focus info list
+    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRenderer: DeactivateAudioInterrupt Failed");
+    }
+
     return audioStream_->PauseAudioStream();
 }
 
@@ -335,6 +359,11 @@ bool AudioCapturerPrivate::Stop() const
     if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
         AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Stop monitor permission failed");
+    }
+
+    int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioCapturer: DeactivateAudioInterrupt Failed");
     }
 
     return audioStream_->StopAudioStream();
@@ -353,6 +382,12 @@ bool AudioCapturerPrivate::Release() const
         AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Release monitor permission failed");
     }
+
+    (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+
+    // Unregister the callaback in policy server
+    (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
+
     return audioStream_->ReleaseAudioStream();
 }
 
@@ -409,6 +444,14 @@ void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEven
     }
 }
 
+void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
+{
+    // Change InterruptForceType to Share, Since app will take care of resuming
+    InterruptEvent interruptEventResume {interruptEvent.eventType, INTERRUPT_SHARE,
+                                         interruptEvent.hintType};
+    NotifyEvent(interruptEventResume);
+}
+
 void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
     InterruptHint hintType = interruptEvent.hintType;
@@ -416,12 +459,21 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
         Hint: %{public}d eventType: %{public}d", interruptEvent.hintType, interruptEvent.eventType);
 
     switch (hintType) {
+        case INTERRUPT_HINT_RESUME:
+            if (audioStream_->GetState() != PAUSED || !isForcePaused_) {
+                AUDIO_DEBUG_LOG("AudioRendererPrivate::OnInterrupt state is not paused or not forced paused");
+                return;
+            }
+            isForcePaused_ = false;
+            NotifyForcePausedToResume(interruptEvent);
+            return;
         case INTERRUPT_HINT_PAUSE:
             if (audioStream_->GetState() != RUNNING) {
                 AUDIO_DEBUG_LOG("AudioCapturerPrivate::OnInterrupt state is not running no need to pause");
                 return;
             }
             (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+            isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_STOP:
             (void)audioStream_->StopAudioStream();
