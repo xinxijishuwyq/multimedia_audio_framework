@@ -18,11 +18,25 @@
 
 #include <iostream>
 
+#include "audio_system_manager.h"
 #include "audio_info.h"
 #include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class AudioDeviceDescriptor;
+class AudioRendererFilter;
+class AudioPreferOutputDeviceChangeCallback {
+public:
+    virtual ~AudioPreferOutputDeviceChangeCallback() = default;
+    /**
+     * Called when the prefer output device changes
+     *
+     * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
+     */
+    virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+};
 
 class AudioRoutingManager {
 public:
@@ -31,9 +45,17 @@ public:
 
     static AudioRoutingManager *GetInstance();
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+    int32_t GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc);
+    int32_t GetPreferOutputDeviceByFilter(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<DeviceType> &deviceTypes);
+    int32_t SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
+        const std::shared_ptr<AudioPreferOutputDeviceChangeCallback>& callback);
+    int32_t UnsetPreferOutputDeviceChangeCallback();
 private:
     uint32_t GetCallingPid();
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_ROUTING_MANAGER_H

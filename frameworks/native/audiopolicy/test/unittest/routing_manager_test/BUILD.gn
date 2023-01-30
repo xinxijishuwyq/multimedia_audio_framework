@@ -31,7 +31,10 @@ ohos_unittest("audio_routing_manager_test") {
     "-Wall",
     "-Werror",
   ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
   deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
 }

@@ -35,6 +35,13 @@ public:
     void OnCapturerStateChange(
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 };
+
+class AudioPreferOutputDeviceChangeCallbackFuzz : public AudioPreferOutputDeviceChangeCallback {
+public:
+    explicit AudioPreferOutputDeviceChangeCallbackFuzz() = default;
+    virtual ~AudioPreferOutputDeviceChangeCallbackFuzz() = default;
+    virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+};
 } // namespace AudioStandard
 } // namesapce OHOS
 

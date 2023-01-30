@@ -155,8 +155,13 @@ public:
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() override;
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo) override;
 
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+        const sptr<IRemoteObject>& object) override;
+
+    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

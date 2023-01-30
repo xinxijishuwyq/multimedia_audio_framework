@@ -426,18 +426,18 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySuppor
 }
 
 /**
-* @tc.name  : Test Audio_Policy_GetActiveOutputDeviceDescriptors_001 via legal state
-* @tc.number: Audio_Policy_GetActiveOutputDeviceDescriptors_001
-* @tc.desc  : Test GetActiveOutputDeviceDescriptors interface. Returns success.
+* @tc.name  : Test Audio_Policy_GetPreferOutputDeviceDescriptors_001 via legal state
+* @tc.number: Audio_Policy_GetPreferOutputDeviceDescriptors_001
+* @tc.desc  : Test GetPreferOutputDeviceDescriptors interface. Returns success.
 */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_GetActiveOutputDeviceDescriptors_001, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferOutputDeviceDescriptors_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
-
+    AudioRendererInfo rendererInfo;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-    deviceInfo = audioPolicyProxy->GetActiveOutputDeviceDescriptors();
+    deviceInfo = audioPolicyProxy->GetPreferOutputDeviceDescriptors(rendererInfo);
     EXPECT_EQ(true, deviceInfo.size() >= 0);
 }
 

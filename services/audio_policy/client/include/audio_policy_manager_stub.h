@@ -88,7 +88,9 @@ private:
     void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
     void getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply);
-    void GetActiveOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

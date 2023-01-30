@@ -15,6 +15,7 @@
 
 #include "audio_routing_manager_listener_proxy.h"
 #include "audio_routing_manager.h"
+#include "audio_system_manager.h"
 #include "audio_log.h"
 
 namespace OHOS {
@@ -44,6 +45,29 @@ void AudioRoutingManagerListenerProxy::OnMicStateUpdated(const MicStateChangeEve
     int error = Remote()->SendRequest(ON_MIC_STATE_UPDATED, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("OnMicStateUpdated failed, error: %{public}d", error);
+    }
+}
+
+
+void AudioRoutingManagerListenerProxy::OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    int32_t size = static_cast<int32_t>(desc.size());
+    AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
+    data.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        desc[i]->Marshalling(data);
+    }
+    int error = Remote()->SendRequest(ON_ACTIVE_OUTPUT_DEVICE_UPDATED, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnPreferOutputDeviceUpdated failed, error: %{public}d", error);
     }
 }
 
