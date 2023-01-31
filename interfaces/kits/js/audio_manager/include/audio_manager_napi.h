@@ -39,6 +39,8 @@ public:
         VOICE_CALL = 0,
         RINGTONE = 2,
         MEDIA = 3,
+        ALARM = 4,
+        ACCESSIBILITY = 5,
         VOICE_ASSISTANT = 9,
         VOLUMETYPE_MAX,
         ALL = 100

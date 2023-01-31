@@ -508,6 +508,8 @@ std::string AudioAdapterManager::GetStreamNameByStreamType(DeviceType deviceType
             return type + "voice_call";
         case STREAM_VOICE_ASSISTANT:
             return type + "voice_assistant";
+        case STREAM_ACCESSIBILITY:
+            return type + "accessibility";
         case STREAM_ULTRASONIC:
             return type + "ultrasonic";
         default:
@@ -533,6 +535,8 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
         stream = STREAM_ALARM;
     else if (!streamType.compare(std::string("voice_assistant")))
         stream = STREAM_VOICE_ASSISTANT;
+    else if (!streamType.compare(std::string("accessibility")))
+        stream = STREAM_ACCESSIBILITY;
     else if (!streamType.compare(std::string("ultrasonic")))
         stream = STREAM_ULTRASONIC;
 
@@ -555,6 +559,8 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
             return STREAM_VOICE_CALL;
         case STREAM_VOICE_ASSISTANT:
             return STREAM_VOICE_ASSISTANT;
+        case STREAM_ACCESSIBILITY:
+            return STREAM_ACCESSIBILITY;
         case STREAM_ULTRASONIC:
             return STREAM_ULTRASONIC;
         default:

@@ -27,6 +27,8 @@ AudioFocusParser::AudioFocusParser()
         {"STREAM_VOICE_ASSISTANT", {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_VOICE_CALL", {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_ALARM", {AudioStreamType::STREAM_ALARM, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_ACCESSIBILITY", {AudioStreamType::STREAM_ACCESSIBILITY, SourceType::SOURCE_TYPE_INVALID, true}},
         {"SOURCE_TYPE_MIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
         {"SOURCE_TYPE_VOICE_RECOGNITION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION, false}},
         {"SOURCE_TYPE_VOICE_COMMUNICATION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION, false}}

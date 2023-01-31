@@ -75,6 +75,9 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             break;
         default:
@@ -119,6 +122,9 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_ULTRASONIC:
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
@@ -212,6 +218,9 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             break;
         default:
@@ -254,6 +263,9 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_ULTRASONIC:
             break;
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {

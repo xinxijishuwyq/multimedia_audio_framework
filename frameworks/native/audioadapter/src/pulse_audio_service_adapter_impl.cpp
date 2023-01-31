@@ -668,6 +668,8 @@ string PulseAudioServiceAdapterImpl::GetNameByStreamType(AudioStreamType streamT
             return "voice_call";
         case STREAM_VOICE_ASSISTANT:
             return "voice_assistant";
+        case STREAM_ACCESSIBILITY:
+            return "accessibility";
         case STREAM_ULTRASONIC:
             return "ultrasonic";
         default:
@@ -693,7 +695,9 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
         stream = STREAM_VOICE_CALL;
     }  else if (!streamType.compare(string("voice_assistant"))) {
         stream = STREAM_VOICE_ASSISTANT;
-    }  else if (!streamType.compare(string("ultrasonic"))) {
+    } else if (!streamType.compare(string("accessibility"))) {
+        stream = STREAM_ACCESSIBILITY;
+    } else if (!streamType.compare(string("ultrasonic"))) {
         stream = STREAM_ULTRASONIC;
     } else {
         stream = STREAM_MUSIC;
