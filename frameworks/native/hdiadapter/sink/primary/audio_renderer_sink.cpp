@@ -505,9 +505,11 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     }
 
 #ifdef DUMPFILE
-    size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-    if (writeResult != len) {
-        AUDIO_ERR_LOG("Failed to write the file.");
+    if (pfd) {
+        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
+        if (writeResult != len) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
     }
 #endif // DUMPFILE
 
