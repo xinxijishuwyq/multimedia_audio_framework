@@ -16,7 +16,6 @@
 #include "audio_interrupt_manager_napi.h"
 
 #include "audio_common_napi.h"
-#include "audio_micstatechange_callback_napi.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "hilog/log.h"

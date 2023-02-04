@@ -122,6 +122,10 @@ public:
         override;
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId) override;
+    
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
 
@@ -196,7 +200,8 @@ public:
 
     int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision = true) override;
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() override;
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

@@ -429,9 +429,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     return deviceDescs;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetActiveOutputDeviceDescriptors()
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDeviceDescriptors(
+    AudioRendererInfo &rendererInfo)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = mPolicyService.GetActiveOutputDeviceDescriptors();
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
+        mPolicyService.GetPreferOutputDeviceDescriptors(rendererInfo);
     bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
@@ -672,6 +674,18 @@ int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t clientId, const
 }
 
 int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t clientId)
+{
+    return mPolicyService.UnsetDeviceChangeCallback(clientId);
+}
+
+int32_t AudioPolicyServer::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer:set listener object is nullptr");
+    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientId, object);
+}
+
+int32_t AudioPolicyServer::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
 {
     return mPolicyService.UnsetDeviceChangeCallback(clientId);
 }

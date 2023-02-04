@@ -13,9 +13,14 @@
  * limitations under the License.
  */
 
+
 #include "audio_errors.h"
+#include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
 #include "audio_log.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+
 #include "audio_routing_manager.h"
 
 namespace OHOS {
@@ -42,6 +47,36 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
         return ERR_INVALID_PARAM;
     }
     return groupManager->SetMicStateChangeCallback(callback);
+}
+
+int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
+    std::vector<sptr<AudioDeviceDescriptor>> &desc)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    desc = AudioPolicyManager::GetInstance().GetPreferOutputDeviceDescriptors(rendererInfo);
+
+    return SUCCESS;
+}
+
+int32_t AudioRoutingManager::SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
+    const std::shared_ptr<AudioPreferOutputDeviceChangeCallback>& callback)
+{
+    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    return AudioPolicyManager::GetInstance().SetPreferOutputDeviceChangeCallback(clientId, callback);
+}
+
+int32_t AudioRoutingManager::UnsetPreferOutputDeviceChangeCallback()
+{
+    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    return AudioPolicyManager::GetInstance().UnsetPreferOutputDeviceChangeCallback(clientId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

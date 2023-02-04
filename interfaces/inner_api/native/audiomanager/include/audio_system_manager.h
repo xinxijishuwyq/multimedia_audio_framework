@@ -26,6 +26,7 @@
 #include "audio_info.h"
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
+#include "audio_routing_manager.h"
 #include "audio_manager_base.h"
 
 namespace OHOS {
@@ -188,6 +189,7 @@ public:
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) = 0;
 };
+class AudioPreferOutputDeviceChangeCallback;
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.

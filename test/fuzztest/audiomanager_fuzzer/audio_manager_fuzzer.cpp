@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_system_manager.h"
+#include "audio_routing_manager.h"
 #include "audio_stream_manager.h"
 #include "audio_manager_fuzzer.h"
 
@@ -53,6 +54,24 @@ void AudioManagerFuzzTest(const uint8_t* data, size_t size)
     AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
 }
 
+void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
+{
+    if ((data == nullptr) || (size < LIMITSIZE)) {
+        return;
+    }
+
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = *reinterpret_cast<const ContentType *>(data);
+    rendererInfo.streamUsage = *reinterpret_cast<const StreamUsage *>(data);
+    rendererInfo.rendererFlags = *reinterpret_cast<const int32_t *>(data);
+    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    shared_ptr<AudioPreferOutputDeviceChangeCallbackFuzz> preferOutputCallbackFuzz =
+        std::make_shared<AudioPreferOutputDeviceChangeCallbackFuzz>();
+    AudioRoutingManager::GetInstance()->GetPreferOutputDeviceForRendererInfo(rendererInfo, desc);
+    AudioRoutingManager::GetInstance()->SetPreferOutputDeviceChangeCallback(rendererInfo, preferOutputCallbackFuzz);
+    AudioRoutingManager::GetInstance()->UnsetPreferOutputDeviceChangeCallback();
+}
+
 void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
 {
     if ((data == nullptr) || (size < LIMITSIZE)) {
@@ -83,6 +102,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
+    OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
     return 0;
 }

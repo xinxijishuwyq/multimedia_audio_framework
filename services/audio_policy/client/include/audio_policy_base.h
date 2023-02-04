@@ -159,7 +159,13 @@ public:
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors() = 0;
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+        AudioRendererInfo &rendererInfo) = 0;
+
+    virtual int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+        const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

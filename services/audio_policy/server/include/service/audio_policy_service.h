@@ -152,6 +152,10 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId);
 
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object);
+
+    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
+
     int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
 
@@ -197,7 +201,8 @@ public:
 
     void SubscribeAccessibilityConfigObserver();
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
+        std::string networkId = LOCAL_NETWORK_ID);
 
 private:
     AudioPolicyService()
@@ -281,6 +286,8 @@ private:
 
     void AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType);
 
+    void OnPreferOutputDeviceUpdated(InternalDeviceType devType, std::string networkId);
+
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     bool interruptEnabled_ = true;
@@ -311,6 +318,9 @@ private:
 
     std::unordered_map<int32_t, std::pair<DeviceFlag, sptr<IStandardAudioPolicyManagerListener>>>
         deviceChangeCallbackMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>>
+        activeOutputDeviceListenerCbsMap_;
+    std::unordered_map<AudioStreamType, std::pair<string, DeviceType>> outputStreamDeviceMap_;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};

@@ -48,11 +48,18 @@ private:
     static napi_value SetCommunicationDevice(napi_env env, napi_callback_info info);
     static napi_value IsCommunicationDeviceActive(napi_env env, napi_callback_info info);
     static napi_value GetActiveOutputDeviceDescriptors(napi_env env, napi_callback_info info);
+    static napi_value GetPreferOutputDeviceForRendererInfo(napi_env env, napi_callback_info info);
+    static napi_value GetPreferOutputDeviceByFilter(napi_env env, napi_callback_info info);
 
-    static void RegisterDeviceChangeCallback(napi_env env, napi_value* args, const std::string& cbName, int32_t flag,
+    static void CheckPreferOutputDeviceForRendererInfo(napi_env env,
+        std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, size_t argc, napi_value* argv);
+    static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value* args, const std::string& cbName,
         AudioRoutingManagerNapi* routingMgrNapi);
-    static void RegisterCallback(napi_env env, napi_value jsThis, napi_value* args, const std::string& cbName,
-        int32_t flag);
+    static void RegisterPreferOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
+        const std::string& cbName, AudioRoutingManagerNapi* routingMgrNapi);
+    static void RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* args,
+        const std::string& cbName);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& callbackName);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
 
@@ -62,6 +69,8 @@ private:
     AudioRoutingManager *audioRoutingMngr_;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioPreferOutputDeviceChangeCallback> preferOutputDeviceCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioPreferOutputDeviceChangeCallback> preferOutputDeviceByFilterCallbackNapi_ = nullptr;
 
     napi_env env_;
 };

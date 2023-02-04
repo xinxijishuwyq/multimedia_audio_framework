@@ -42,5 +42,38 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetMicStateChangeCallb
     ret = AudioRoutingManager::GetInstance()->SetMicStateChangeCallback(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test Audio_Routing_Manager_getPreferOutputDeviceForRendererInfo_001 via legal state
+* @tc.number: Audio_Routing_Manager_getPreferOutputDeviceForRendererInfo_001
+* @tc.desc  : Test getPreferOutputDeviceForRendererInfo interface. Returns success.
+*/
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferOutputDeviceForRendererInfo_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererInfo rendererInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    ret = AudioRoutingManager::GetInstance()->GetPreferOutputDeviceForRendererInfo(rendererInfo, desc);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test Audio_Routing_Manager_PreferOutputDeviceChangeCallback_001 via legal state
+* @tc.number: Audio_Routing_Manager_PreferOutputDeviceChangeCallback_001
+* @tc.desc  : Test PreferOutputDeviceChangeCallback interface. Returns success.
+*/
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferOutputDeviceChangeCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererInfo rendererInfo;
+    std::shared_ptr<AudioPreferOutputDeviceChangeCallbackTest> callback =
+        std::make_shared<AudioPreferOutputDeviceChangeCallbackTest>();
+    ret = AudioRoutingManager::GetInstance()->SetPreferOutputDeviceChangeCallback(rendererInfo, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioRoutingManager::GetInstance()->UnsetPreferOutputDeviceChangeCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

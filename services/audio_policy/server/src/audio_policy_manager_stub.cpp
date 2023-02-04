@@ -237,10 +237,11 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     }
 }
 
-void AudioPolicyManagerStub::GetActiveOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
-    std::vector<sptr<AudioDeviceDescriptor>> devices = GetActiveOutputDeviceDescriptors();
+    AudioRendererInfo rendererInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferOutputDeviceDescriptors(rendererInfo);
     int32_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
     reply.WriteInt32(size);
@@ -277,6 +278,25 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
 {
     InternalDeviceType deviceType = GetActiveInputDevice();
     reply.WriteInt32(static_cast<int>(deviceType));
+}
+
+void AudioPolicyManagerStub::SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        return;
+    }
+    int32_t result = SetPreferOutputDeviceChangeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    int32_t result = UnsetPreferOutputDeviceChangeCallback(clientId);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
@@ -984,7 +1004,15 @@ int AudioPolicyManagerStub::OnRemoteRequest(
              break;
 
         case GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS:
-            GetActiveOutputDeviceDescriptorsInternal(data, reply);
+            GetPreferOutputDeviceDescriptorsInternal(data, reply);
+            break;
+
+        case SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
+            SetPreferOutputDeviceChangeCallbackInternal(data, reply);
+            break;
+
+        case UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
+            UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
         default:

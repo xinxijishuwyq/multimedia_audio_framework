@@ -470,7 +470,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     return deviceInfo;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetActiveOutputDeviceDescriptors()
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDeviceDescriptors(
+    AudioRendererInfo &rendererInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -481,6 +482,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetActiveOutputDevice
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return deviceInfo;
     }
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = -1;
     int32_t error = Remote()->SendRequest(GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get out devices failed, error: %d", error);
@@ -784,6 +787,53 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId)
     int error = Remote()->SendRequest(UNSET_DEVICE_CHANGE_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy: unset device change callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientId);
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(clientId);
+    int error = Remote()->SendRequest(UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("unset active output device change callback failed, error: %{public}d", error);
         return error;
     }
 
