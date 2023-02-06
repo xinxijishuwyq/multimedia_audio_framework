@@ -144,6 +144,12 @@ static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
         case AudioManagerNapi::VOICE_ASSISTANT:
             result = STREAM_VOICE_ASSISTANT;
             break;
+        case AudioManagerNapi::ALARM:
+            result = STREAM_ALARM;
+            break;
+        case AudioManagerNapi::ACCESSIBILITY:
+            result = STREAM_ACCESSIBILITY;
+            break;
         case AudioManagerNapi::ALL:
             result = STREAM_ALL;
             break;
