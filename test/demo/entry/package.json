@@ -1,8 +1,6 @@
 {
 	"license": "ISC",
-	"devDependencies": {
-		"@types/libnative.so": "file:./src/main/cpp/types/libnative"
-	},
+	"devDependencies": {},
 	"name": "entry",
 	"ohos": {
 		"org": "huawei",
