@@ -1,0 +1,41 @@
+{
+  "src": [
+    "pages/Index",
+
+    "pages/AudioCapturer",
+    "pages/capturer/SingleInstanceCallback",
+    "pages/capturer/SingleInstancePromise",
+    "pages/capturer/MultiInstance",
+    "pages/capturer/OnOff",
+
+    "pages/AudioRenderer",
+    "pages/renderer/SingleInstanceCallback",
+    "pages/renderer/SingleInstancePromise",
+    "pages/renderer/MultiInstance",
+    "pages/renderer/OnOff",
+    "pages/renderer/Setting",
+    "pages/renderer/Interrupt",
+
+    "pages/AudioManager",
+    "pages/audio_manager/Settings",
+
+    "pages/AudioRoutingManager",
+    "pages/routing_manager/BasicDevice",
+    "pages/routing_manager/CommunicationDevice",
+    "pages/routing_manager/OutputDeviceByFilter",
+
+    "pages/AudioStreamManager",
+    "pages/stream_manager/CapturerStream",
+    "pages/stream_manager/RendererStream",
+
+    "pages/AudioVolumeManager",
+    "pages/AudioVolumeGroupManager",
+    "pages/volume_group_manager/Microphone",
+    "pages/volume_group_manager/Ringer",
+    "pages/volume_group_manager/Volume",
+
+    "pages/TonePlayer",
+    "pages/toneplayer/TonePlayerCallback",
+    "pages/toneplayer/TonePlayerPromise"
+  ]
+}
