@@ -287,17 +287,6 @@ static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, F
 {
     AUDIO_INFO_LOG("PlayerStart");
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
-    if (!feof(wavFile)) {
-        SLuint8* buffer = nullptr;
-        SLuint32 pSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        if (buffer != nullptr) {
-            fread(buffer, 1, pSize, wavFile);
-            (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
-        } else {
-            AUDIO_ERR_LOG("PlayerStart, get buffer is null.");
-        }
-    }
     return;
 }
 
