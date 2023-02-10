@@ -572,7 +572,7 @@ struct AudioInterrupt {
     uint32_t sessionID;
     bool pauseWhenDucked;
     int32_t pid { -1 };
-    InterruptMode mode { INDEPENDENT_MODE };
+    InterruptMode mode { SHARE_MODE };
 };
 
 struct VolumeEvent {

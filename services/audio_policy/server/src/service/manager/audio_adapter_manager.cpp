@@ -308,7 +308,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
     mRingerMode = ringerMode;
 
-    // In case if KvStore didnot connect during  bootup
+    // In case if KvStore didnot connect during bootup
     if (mAudioPolicyKvStore == nullptr) {
         bool isFirstBoot = false;
         InitAudioPolicyKvStore(isFirstBoot);

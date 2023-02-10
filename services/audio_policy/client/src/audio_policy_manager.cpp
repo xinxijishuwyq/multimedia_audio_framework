@@ -513,7 +513,7 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
 }
 
 int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
-                                                      const std::shared_ptr<AudioInterruptCallback> &callback)
+    const std::shared_ptr<AudioInterruptCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {

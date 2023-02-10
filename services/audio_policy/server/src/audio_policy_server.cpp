@@ -853,6 +853,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end();) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
+            ++iterActive;
             continue;
         }
         bool iterActiveErased = false;
@@ -885,7 +886,9 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
             default:
                 break;
         }
-        if (policyListenerCb != nullptr) {
+        if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+            AUDIO_INFO_LOG("OnInterrupt for processing sessionID: %{public}d, hintType: %{public}d",
+                activeSessionID, interruptEvent.hintType);
             policyListenerCb->OnInterrupt(interruptEvent);
         }
         if (!iterActiveErased) {
@@ -898,19 +901,18 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
 {
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
+    bool isRejected = false;
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
-    uint32_t incomingSessionID = incomingInterrupt.sessionID;
-    std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[incomingSessionID];
+    std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) {
             continue;
         }
-        AudioFocusType activeFocusType = (iterActive->first).audioFocusType;
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
-            std::make_pair(activeFocusType, incomingFocusType);
+            std::make_pair((iterActive->first).audioFocusType, incomingFocusType);
         if (focusMap.find(audioFocusTypePair) == focusMap.end()) {
-            AUDIO_WARNING_LOG("AudioPolicyServer: Audio Focus type is invalid");
+            AUDIO_ERR_LOG("ProcessFocusEntry: audio focus type pair is invalid");
             return ERR_INVALID_PARAM;
         }
         AudioFocusEntry focusEntry = focusMap[audioFocusTypePair];
@@ -919,6 +921,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
         if (focusEntry.isReject) {
             incomingState = PAUSE;
+            isRejected = true;
             break;
         }
         AudioFocuState newState = ACTIVE;
@@ -927,22 +930,22 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
             newState = pos->second;
         }
         incomingState = newState > incomingState ? newState : incomingState;
-    } 
+    }
     if (incomingState == PAUSE) {
         interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    } else if (incomingState == DUCK) {
+        interruptEvent.hintType = INTERRUPT_HINT_DUCK;
+        interruptEvent.duckVolume = DUCK_FACTOR * GetStreamVolume(incomingFocusType.streamType);
     } else {
         ProcessCurrentInterrupt(incomingInterrupt);
     }
     audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
-    if (incomingState == DUCK) {
-        float volume = GetStreamVolume(incomingFocusType.streamType);
-        interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-        interruptEvent.duckVolume = DUCK_FACTOR * volume;
-    }
-    if (policyListenerCb != nullptr) {
+    if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+        AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d, isRejected: %{public}d",
+            incomingInterrupt.sessionID, interruptEvent.hintType, isRejected);
         policyListenerCb->OnInterrupt(interruptEvent);
     }
-    return SUCCESS;
+    return isRejected ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
@@ -954,7 +957,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         audioInterrupt.sessionID, (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        AUDIO_DEBUG_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
+        AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         return SUCCESS;
     }
@@ -969,7 +972,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     }
     if (audioFocusInfoList_.empty()) {
         // If audioFocusInfoList_ is empty, directly activate interrupt
-        AUDIO_DEBUG_LOG("audioFocusInfoList_ is empty, add the session into it");
+        AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         return SUCCESS;
     }
@@ -1079,6 +1082,8 @@ void AudioPolicyServer::ResumeAudioFocusList()
         AudioFocuState oldState = iterActive->second;
         AudioFocuState newState = iterNew->second;
         if (oldState != newState) {
+            AUDIO_INFO_LOG("ResumeAudioFocusList: State change: sessionID %{public}d, oldstate %{public}d, "\
+                "newState %{public}d", (iterActive->first).sessionID, oldState, newState);
             NotifyStateChangedEvent(oldState, newState, iterActive);
         }
     }
@@ -1089,7 +1094,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: interrupt is not enabled. No need to DeactivateAudioInterrupt");
+        AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
         audioFocusInfoList_.remove_if([&exitSessionID](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
             return (audioFocusInfo.first).sessionID == exitSessionID;
@@ -1097,10 +1102,9 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("AudioPolicyServer: DeactivateAudioInterrupt audioInterrupt: sessionID: %{public}u, isPlay:\
-        %{public}d, streamType: %{public}d, sourceType: %{public}d", audioInterrupt.sessionID,
-        (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).streamType,
-        (audioInterrupt.audioFocusType).sourceType);
+    AUDIO_INFO_LOG("DeactivateAudioInterrupt audioInterrupt:streamType: %{public}d, sessionID: %{public}u, "\
+        "isPlay: %{public}d, sourceType: %{public}d", (audioInterrupt.audioFocusType).streamType,
+        audioInterrupt.sessionID, (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
 
     bool isInterruptActive = false;
     for (auto it = audioFocusInfoList_.begin(); it != audioFocusInfoList_.end();) {
@@ -1114,7 +1118,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     // If it was not in the audioFocusInfoList_, no need to take any action on other sessions, just return.
     if (!isInterruptActive) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: Session : %{public}d is not currently active. return success",
+        AUDIO_INFO_LOG("DeactivateAudioInterrupt: the stream (sessionID %{public}d) is not active now, return success",
             audioInterrupt.sessionID);
         return SUCCESS;
     }
@@ -1501,8 +1505,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
     const sptr<IRemoteObject> &object)
 {
     // update the clientUID
-    auto callerUid =  IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("  AudioPolicyServer::RegisterTracker : [caller uid:%{public}d]==", callerUid);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
@@ -1521,8 +1525,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     // update the clientUID
-    auto callerUid =  IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("  AudioPolicyServer::UpdateTracker : [caller uid:%{public}d]==", callerUid);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("UpdateTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
