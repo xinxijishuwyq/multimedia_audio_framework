@@ -18,14 +18,13 @@
 
 #include <cstdint>
 #include "audio_info.h"
-#include "audio_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
 typedef struct {
     const char *adapterName;
     uint32_t open_mic_speaker;
-    AudioFormat format;
+    AudioSampleFormat format;
     uint32_t sampleFmt;
     uint32_t sampleRate;
     uint32_t channel;

@@ -264,7 +264,7 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
     }
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
-    if (!audioCapturerSourceInstance->capturerInited_) {
+    if (!audioCapturerSourceInstance->IsInited()) {
             AUDIO_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
             AudioCapturerSource::micMuteState_ = isMute;
             return 0;
@@ -284,7 +284,7 @@ bool AudioServer::IsMicrophoneMute()
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     bool isMute = false;
 
-    if (!audioCapturerSourceInstance->capturerInited_) {
+    if (!audioCapturerSourceInstance->IsInited()) {
         AUDIO_INFO_LOG("Capturer is not initialized. Get the mic mute state flag value!");
         return AudioCapturerSource::micMuteState_;
     }
@@ -315,7 +315,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
 
-    if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->capturerInited_) {
+    if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
         audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);

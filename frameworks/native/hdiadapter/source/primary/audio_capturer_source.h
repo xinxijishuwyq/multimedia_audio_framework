@@ -17,7 +17,6 @@
 #define AUDIO_CAPTURER_SOURCE_H
 
 #include "audio_info.h"
-#include "audio_manager.h"
 #include "i_audio_capturer_source.h"
 
 #include <cstdio>
@@ -38,62 +37,11 @@ namespace AudioStandard {
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:
-    int32_t Init(IAudioSourceAttr &atrr) override;
-    bool IsInited(void) override;
-    void DeInit(void) override;
-
-    int32_t Start(void) override;
-    int32_t Stop(void) override;
-    int32_t Flush(void) override;
-    int32_t Reset(void) override;
-    int32_t Pause(void) override;
-    int32_t Resume(void) override;
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
-    int32_t SetVolume(float left, float right) override;
-    int32_t GetVolume(float &left, float &right) override;
-    int32_t SetMute(bool isMute) override;
-    int32_t GetMute(bool &isMute) override;
-
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-
-    int32_t SetInputRoute(DeviceType deviceType, AudioPortPin &inputPortPin);
-
-    int32_t SetInputRoute(DeviceType deviceType) override;
-
-    uint64_t GetTransactionId() override;
-
     static AudioCapturerSource *GetInstance(void);
-    bool capturerInited_;
     static bool micMuteState_;
 
-private:
-    const int32_t HALF_FACTOR = 2;
-    const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
-    const float MAX_VOLUME_LEVEL = 15.0f;
-
-    IAudioSourceAttr attr_;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
-
-    int32_t routeHandle_ = -1;
-    uint32_t openMic_;
-    std::string adapterNameCase_;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioCapture *audioCapture_;
-    struct AudioPort audioPort;
-
-    int32_t CreateCapture(struct AudioPort &capturePort);
-    int32_t InitAudioManager();
-
-#ifdef CAPTURE_DUMP
-    FILE *pfd;
-#endif
-
-    AudioCapturerSource();
-    ~AudioCapturerSource();
+    AudioCapturerSource() = default;;
+    ~AudioCapturerSource() = default;;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
