@@ -50,6 +50,8 @@
 #define AUDIO_POINT_NUM  1024
 #define AUDIO_FRAME_NUM_IN_BUF 30
 
+const char *DEVICE_CLASS_REMOTE = "remote";
+
 struct Userdata {
     pa_core *core;
     pa_module *module;
@@ -270,10 +272,13 @@ static int pa_capturer_init(struct Userdata *u)
         return ret;
     }
 
-    ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Audio capturer start failed!");
-        goto fail;
+    // No start test for remote device.
+    if (strcmp(GetDeviceClass(u->sourceAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
+        ret = u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("Audio capturer start failed!");
+            goto fail;
+        }
     }
 
     u->IsCapturerStarted = true;

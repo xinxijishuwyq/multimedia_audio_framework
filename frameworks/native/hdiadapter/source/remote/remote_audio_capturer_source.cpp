@@ -71,6 +71,7 @@ void RemoteAudioCapturerSource::DeInit()
         audioAdapter_->DestroyCapture(audioAdapter_, audioCapture_);
     }
     audioCapture_ = nullptr;
+    isCapturerCreated_.store(false);
 
     if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
         if (routeHandle_ != -1) {
@@ -150,10 +151,11 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_);
     if (audioCapture_ == nullptr || ret < 0) {
-        AUDIO_ERR_LOG("Create capture failed");
+        AUDIO_ERR_LOG("Create capture failed, error code %{public}d.", ret);
         return ERR_NOT_STARTED;
     }
 
+    isCapturerCreated_.store(true);
     return SUCCESS;
 }
 
@@ -197,10 +199,6 @@ int32_t RemoteAudioCapturerSource::Init(IAudioSourceAttr &attr)
         AUDIO_ERR_LOG("InitAllPorts failed");
         return ERR_DEVICE_INIT;
     }
-    if (CreateCapture(audioPort) != 0) {
-        AUDIO_ERR_LOG("Create capture failed");
-        return ERR_NOT_STARTED;
-    }
     capturerInited_ = true;
 
 #ifdef DEBUG_CAPTURE_DUMP
@@ -223,9 +221,9 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Initialize audio proxy manager");
 #ifdef PRODUCT_M40
 #ifdef __aarch64__
-    char resolvedPath[100] = "/vendor/lib64/libdaudio_client.z.so";
+    char resolvedPath[100] = "/system/lib64/libdaudio_client.z.so";
 #else
-    char resolvedPath[100] = "/vendor/lib/libdaudio_client.z.so";
+    char resolvedPath[100] = "/system/lib/libdaudio_client.z.so";
 #endif
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
@@ -282,12 +280,19 @@ int32_t RemoteAudioCapturerSource::CaptureFrame(char *frame, uint64_t requestByt
 
 int32_t RemoteAudioCapturerSource::Start(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource::Start in");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSource start enter.");
+    if (!isCapturerCreated_.load()) {
+        if (CreateCapture(audioPort) != SUCCESS) {
+            AUDIO_ERR_LOG("Create capture failed.");
+            return ERR_NOT_STARTED;
+        }
+    }
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
     if (!started_) {
         ret = audioCapture_->control.Start((AudioHandle)audioCapture_);
         if (ret < 0) {
+            AUDIO_ERR_LOG("Remote audio capturer start fail, error code %{public}d", ret);
             return ERR_NOT_STARTED;
         }
         started_ = true;
@@ -320,6 +325,7 @@ int32_t RemoteAudioCapturerSource::SetVolume(float left, float right)
 
 int32_t RemoteAudioCapturerSource::GetVolume(float &left, float &right)
 {
+    CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
     float val = 0.0;
     audioCapture_->volume.GetVolume((AudioHandle)audioCapture_, &val);
     left = val;
