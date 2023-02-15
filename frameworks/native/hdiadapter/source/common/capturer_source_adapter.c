@@ -15,6 +15,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "audio_log.h"
 #include "capturer_source_adapter.h"
 #include "i_audio_capturer_source_intf.h"
@@ -26,13 +28,13 @@ extern "C" {
 const int32_t  SUCCESS = 0;
 const int32_t  ERROR = -1;
 
-const int32_t CLASS_TYPE_A2DP = 1;
 const int32_t CLASS_TYPE_PRIMARY = 0;
+const int32_t CLASS_TYPE_A2DP = 1;
 const int32_t CLASS_TYPE_FILE = 2;
 const int32_t CLASS_TYPE_REMOTE = 3;
 
-const char *g_deviceClassA2DP = "a2dp";
 const char *g_deviceClassPrimary = "primary";
+const char *g_deviceClassA2DP = "a2dp";
 const char *g_deviceClassFile = "file_io";
 const char *g_deviceClassRemote = "remote";
 
@@ -68,6 +70,19 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, struc
         free(adapter);
         return ERROR;
     }
+    // fill deviceClass for hdi_source.c
+    if (!strcmp(device, g_deviceClassPrimary)) {
+        adapter->deviceClass = CLASS_TYPE_PRIMARY;
+    }
+    if (!strcmp(device, g_deviceClassA2DP)) {
+        adapter->deviceClass = CLASS_TYPE_A2DP;
+    }
+    if (!strcmp(device, g_deviceClassFile)) {
+        adapter->deviceClass = CLASS_TYPE_FILE;
+    }
+    if (!strcmp(device, g_deviceClassRemote)) {
+        adapter->deviceClass = CLASS_TYPE_REMOTE;
+    }
     adapter->CapturerSourceInit = CapturerSourceInitInner;
     adapter->CapturerSourceDeInit = IAudioCapturerSourceDeInit;
     adapter->CapturerSourceStart = IAudioCapturerSourceStart;
@@ -95,14 +110,18 @@ int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter)
     return SUCCESS;
 }
 
-const char *GetDeviceClass(void)
+const char *GetDeviceClass(int32_t deviceClass)
 {
-    if (g_deviceClass == CLASS_TYPE_PRIMARY) {
+    if (deviceClass == CLASS_TYPE_PRIMARY) {
         return g_deviceClassPrimary;
-    } else if (g_deviceClass == CLASS_TYPE_FILE) {
+    } else if (deviceClass == CLASS_TYPE_A2DP) {
+        return g_deviceClassA2DP;
+    } else if (deviceClass == CLASS_TYPE_FILE) {
         return g_deviceClassFile;
+    } else if (deviceClass == CLASS_TYPE_REMOTE) {
+        return g_deviceClassRemote;
     } else {
-        return NULL;
+        return "";
     }
 }
 #ifdef __cplusplus

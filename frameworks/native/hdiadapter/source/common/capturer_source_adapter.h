@@ -54,7 +54,7 @@ struct CapturerSourceAdapter {
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId,
     struct CapturerSourceAdapter **sourceAdapter);
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
-const char *GetDeviceClass(void);
+const char *GetDeviceClass(int32_t deviceClass);
 #ifdef __cplusplus
 }
 #endif
