@@ -1967,7 +1967,7 @@ void AudioServiceClient::SetCapturerPeriodPositionCallback(int64_t periodPositio
     std::lock_guard<std::mutex> lock(capturerPeriodReachedMutex_);
     AUDIO_INFO_LOG("Registering period position callback");
     mFramePeriodNumber = periodPosition;
-    if ((mFrameSize != 0) && (mFramePeriodNumber) != 0) {
+    if ((mFrameSize != 0) && (mFramePeriodNumber != 0)) {
         mFramePeriodRead = (mTotalBytesRead / mFrameSize) % mFramePeriodNumber;
     } else {
         AUDIO_INFO_LOG("AudioServiceClient::SetCapturerPeriodPositionCallback failed");
