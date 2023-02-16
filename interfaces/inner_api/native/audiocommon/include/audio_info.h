@@ -330,9 +330,9 @@ enum AudioEncodingType {
 
 // Ringer Mode
 enum AudioRingerMode {
-    RINGER_MODE_NORMAL = 0,
-    RINGER_MODE_SILENT = 1,
-    RINGER_MODE_VIBRATE = 2
+    RINGER_MODE_SILENT = 0,
+    RINGER_MODE_VIBRATE = 1,
+    RINGER_MODE_NORMAL = 2
 };
 
 // format

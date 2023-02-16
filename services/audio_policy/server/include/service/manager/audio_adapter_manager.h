@@ -104,7 +104,7 @@ private:
     };
 
     AudioAdapterManager()
-        : mRingerMode(RINGER_MODE_NORMAL),
+        : ringerMode_(RINGER_MODE_NORMAL),
           mAudioPolicyKvStore(nullptr)
     {
         mVolumeMap[STREAM_MUSIC] = MAX_VOLUME;
@@ -135,7 +135,7 @@ private:
     std::unordered_map<AudioStreamType, float> mVolumeMap;
     std::unordered_map<AudioStreamType, int> mMuteStatusMap;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    AudioRingerMode mRingerMode;
+    AudioRingerMode ringerMode_;
     std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
 
     AudioSessionCallback *sessionCallback_;
@@ -166,7 +166,7 @@ public:
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(
             audioAdapterManager_->GetStreamIDByType(streamType));
-        if (audioAdapterManager_->mRingerMode != RINGER_MODE_NORMAL) {
+        if (audioAdapterManager_->ringerMode_ != RINGER_MODE_NORMAL) {
             if (streamForVolumeMap == STREAM_RING) {
                 return AudioAdapterManager::MIN_VOLUME;
             }
