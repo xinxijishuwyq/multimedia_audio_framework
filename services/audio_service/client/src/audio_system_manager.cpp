@@ -690,6 +690,111 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDevi
     return AudioPolicyManager::GetInstance().GetPreferOutputDeviceDescriptors(rendererInfo);
 }
 
+
+int32_t AudioSystemManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    return AudioPolicyManager::GetInstance().GetAudioFocusInfoList(focusInfoList);
+}
+
+int32_t AudioSystemManager::RegisterFocusInfoChangeCallback(
+    const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManager::callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    uint32_t clientId = GetCallingPid();
+    AUDIO_DEBUG_LOG("RegisterFocusInfoChangeCallback clientId:%{public}d", clientId);
+    if (audioFocusInfoCallback_ == nullptr) {
+        audioFocusInfoCallback_ = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+        if (audioFocusInfoCallback_ == nullptr) {
+            AUDIO_ERR_LOG("AudioSystemManager::Failed to allocate memory for audioInterruptCallback");
+            return ERROR;
+        }
+        int32_t ret = AudioPolicyManager::GetInstance().RegisterFocusInfoChangeCallback(clientId,
+            audioFocusInfoCallback_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("AudioSystemManager::Failed set callback");
+            return ERROR;
+        }
+    }
+
+    std::shared_ptr<AudioFocusInfoChangeCallbackImpl> cbFocusInfo =
+        std::static_pointer_cast<AudioFocusInfoChangeCallbackImpl>(audioFocusInfoCallback_);
+    cbFocusInfo->SaveCallback(callback);
+
+    return SUCCESS;
+}
+
+int32_t AudioSystemManager::UnregisterFocusInfoChangeCallback(
+    const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    uint32_t clientId = GetCallingPid();
+    int32_t ret = 0;
+
+    if (callback == nullptr) {
+        ret = AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
+        audioFocusInfoCallback_.reset();
+        audioFocusInfoCallback_ = nullptr;
+        if (!ret) {
+            AUDIO_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
+        }
+        return ret;
+    }
+    if (audioFocusInfoCallback_ == nullptr) {
+        AUDIO_ERR_LOG("Failed to allocate memory for audioInterruptCallback");
+        return ERROR;
+    }
+    std::shared_ptr<AudioFocusInfoChangeCallbackImpl> cbFocusInfo =
+        std::static_pointer_cast<AudioFocusInfoChangeCallbackImpl>(audioFocusInfoCallback_);
+    cbFocusInfo->RemoveCallback(callback);
+
+    return ret;
+}
+
+AudioFocusInfoChangeCallbackImpl::AudioFocusInfoChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl constructor");
+}
+
+AudioFocusInfoChangeCallbackImpl::~AudioFocusInfoChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl: destroy");
+}
+
+void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    callbackList_.push_back(callback);
+}
+
+void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
+        return callback_.lock() == callback.lock();
+    });
+}
+
+void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    AUDIO_DEBUG_LOG("on callback Entered AudioFocusInfoChangeCallbackImpl %{public}s", __func__);
+    
+    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
+        cb_ = (*callback).lock();
+        if (cb_ != nullptr) {
+            AUDIO_DEBUG_LOG("OnAudioFocusInfoChange : Notify event to app complete");
+            cb_->OnAudioFocusInfoChange(focusInfoList);
+        } else {
+            AUDIO_ERR_LOG("OnAudioFocusInfoChange: callback is null");
+        }
+    }
+    return;
+}
+
 int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
     const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {

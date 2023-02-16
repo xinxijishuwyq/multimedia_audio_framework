@@ -79,6 +79,7 @@ static void PrintUsage(void)
     cout << "-n\n\tGet the discount volume factor or Get single stream volume" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
     cout << "-B\n\tSet AudioMonoState (using 1 or 0 instead of true of false)" << endl;
+    cout << "-F\n\tAudioFocusInfoListTest (using 1 or 0 instead of true of false)" << endl;
     cout << "\tSet AudioBalanceValue (using [9, 11] instead of [-1, 1])" << endl << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
@@ -505,6 +506,123 @@ static void HandleAudioBalanceState(int argc, char* argv[])
     cout << "Audio balance value: " << balanceValue << endl;
 }
 
+static void PrintFocusInfoList(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    cout << "===============FocusInfoList============== size:"<< focusInfoList.size() << endl;
+    for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
+        cout <<"| streamUsage: \t\t\t"          << it->first.streamUsage              << "\t |" << endl;
+        cout <<"| contentType: \t\t\t"          << it->first.contentType              << "\t |" << endl;
+        cout <<"| audioFocusType.streamType: \t"<< it->first.audioFocusType.streamType<< "\t |" << endl;
+        cout <<"| audioFocusType.sourceType: \t"<< it->first.audioFocusType.sourceType<< "\t |" << endl;
+        cout <<"| audioFocusType.isPlay: \t"    << it->first.audioFocusType.isPlay    << "\t |" << endl;
+        cout <<"| sessionID: \t\t\t"            << it->first.sessionID                << "\t |" << endl;
+        cout <<"| pauseWhenDucked: \t\t"        << it->first.pauseWhenDucked          << "\t |" << endl;
+        cout <<"| pid: \t\t\t\t"                << it->first.pid                      << "\t |" << endl;
+        cout <<"| mode: \t\t\t"                 << it->first.mode                     << "\t |" << endl;
+
+        cout <<"| AudioFocuState: \t\t"         << it->second                         << "\t |" << endl;
+        cout << "------------------------------------------" << endl;
+    }
+}
+class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
+public:
+    AudioFocusInfoChangeCallbackTest()
+    {
+        cout <<"AudioFocusInfoChangeCallbackTest cosntruct" << endl;
+    }
+    ~AudioFocusInfoChangeCallbackTest()
+    {
+        cout <<"AudioFocusInfoChangeCallbackTest destroy" << endl;
+    }
+    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+    {
+        cout << "OnAudioFocusInfoChange" << endl;
+        PrintFocusInfoList(focusInfoList);
+    };
+};
+
+static void RegisterFocusInfoChangeCallback(AudioSystemManager * audioSystemMgr_,
+    std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    if (callback == nullptr) {
+        cout << "RegisterFocusInfoChangeCallback::Failed to allocate memory for callback";
+        return;
+    }
+    auto ret = audioSystemMgr_->RegisterFocusInfoChangeCallback(callback);
+    cout << (ret == SUCCESS ? "Register callback success" : "Register callback fail") << endl;
+}
+
+static void UnregisterFocusInfoChangeCallback(AudioSystemManager * audioSystemMgr_,
+    std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    auto ret = audioSystemMgr_->UnregisterFocusInfoChangeCallback(callback);
+    cout << (ret == SUCCESS ? "Unregister callback success" : "Unregister callback fail") << endl;
+}
+
+static void GetAudioFocusInfoList(AudioSystemManager * audioSystemMgr_)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+    int32_t ret = audioSystemMgr_->GetAudioFocusInfoList(focusInfoList);
+    cout << (ret == SUCCESS ? "GetAudioFocusInfoList success" : "GetAudioFocusInfoList fail") << endl;
+    PrintFocusInfoList(focusInfoList);
+}
+
+static void HandleAudioFocusInfoTest()
+{
+    auto audioSystemMgr_ = AudioSystemManager::GetInstance();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback1 = std::make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback2 = std::make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback3 = nullptr;
+
+    cout << "*******************************************************" << endl;
+    cout << "0 \t exit" << endl;
+    cout << "1 \t GetAudioFocusInfoList" << endl;
+    cout << "2 \t RegisterFocusInfoChange callback1" << endl;
+    cout << "3 \t UnregisterFocusInfoChange callback1" << endl;
+    cout << "4 \t RegisterFocusInfoChange callback2" << endl;
+    cout << "5 \t UnregisterFocusInfoChange callback2" << endl;
+    cout << "6 \t UnregisterFocusInfoChange nullptr" << endl;
+    cout << "*******************************************************" << endl << endl;
+
+    int num;
+    while (true) {
+        cin >> num;
+        switch (num) {
+            case 1:
+                GetAudioFocusInfoList(audioSystemMgr_);
+                break;
+
+            case 2:
+                RegisterFocusInfoChangeCallback(audioSystemMgr_, callback1);
+                break;
+
+            case 3:
+                UnregisterFocusInfoChangeCallback(audioSystemMgr_, callback1);
+                break;
+
+            case 4:
+                RegisterFocusInfoChangeCallback(audioSystemMgr_, callback2);
+                break;
+
+            case 5:
+                UnregisterFocusInfoChangeCallback(audioSystemMgr_, callback2);
+                break;
+
+            case 6:
+                UnregisterFocusInfoChangeCallback(audioSystemMgr_, callback3);
+                break;
+
+            case 0:
+                return;
+            default:
+                cout << "unknow cin: " << endl;
+                break;
+        }
+    }
+
+    return;
+}
+
 int main(int argc, char* argv[])
 {
     int opt = 0;
@@ -515,7 +633,7 @@ int main(int argc, char* argv[])
     }
 
     int streamType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
-    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:vmrucOoIiGgNntp")) != -1) {
+    while ((opt = getopt(argc, argv, ":V:U:S:D:M:R:C:X:Z:d:s:T:B:F:vmrucOoIiGgNntp")) != -1) {
         switch (opt) {
             case 'G':
             case 'g':
@@ -588,6 +706,9 @@ int main(int argc, char* argv[])
                 break;
             case 'B':
                 HandleAudioBalanceState(argc, argv);
+                break;
+            case 'F':
+                HandleAudioFocusInfoTest();
                 break;
             default:
                 break;

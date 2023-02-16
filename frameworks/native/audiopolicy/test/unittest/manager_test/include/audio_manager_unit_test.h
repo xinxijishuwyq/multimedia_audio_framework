@@ -39,6 +39,12 @@ public:
     ~AudioManagerCallbackImpl() {}
     void OnInterrupt(const InterruptAction &interruptAction) override {}
 };
+
+class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
+public:
+    virtual ~AudioFocusInfoChangeCallbackTest() = default;
+    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) {};
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

@@ -316,6 +316,58 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferOutputDevi
     return gsp->GetPreferOutputDeviceDescriptors(rendererInfo);
 }
 
+int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetAudioFocusInfoList: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->GetAudioFocusInfoList(focusInfoList);
+}
+
+int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
+    const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    if (focusListenerStub == nullptr) {
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback: object null");
+        return ERROR;
+    }
+    focusListenerStub->SetFocusInfoChangeCallback(callback);
+
+    sptr<IRemoteObject> object = focusListenerStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback: focusListenerStub->AsObject is nullptr.");
+        return ERROR;
+    }
+    lock.unlock();
+
+    return gsp->RegisterFocusInfoChangeCallback(clientId, object);
+}
+
+int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clientId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
+        return -1;
+    }
+
+    return gsp->UnregisterFocusInfoChangeCallback(clientId);
+}
+
 std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

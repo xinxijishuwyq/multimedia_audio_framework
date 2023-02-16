@@ -191,6 +191,31 @@ public:
 };
 class AudioPreferOutputDeviceChangeCallback;
 
+class AudioFocusInfoChangeCallback {
+public:
+    virtual ~AudioFocusInfoChangeCallback() = default;
+    /**
+     * Called when focus info change.
+     *
+     * @param focusInfoList Indicates the focusInfoList information needed by client.
+     * For details, refer audioFocusInfoList_ struct in audio_policy_server.h
+     */
+    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
+};
+
+class AudioFocusInfoChangeCallbackImpl : public AudioFocusInfoChangeCallback {
+public:
+    explicit AudioFocusInfoChangeCallbackImpl();
+    virtual ~AudioFocusInfoChangeCallbackImpl();
+
+    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+    void SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
+    void RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
+private:
+    std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
+    std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
+};
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
@@ -273,6 +298,10 @@ public:
     int32_t GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &info);
     std::shared_ptr<AudioGroupManager> GetGroupManager(int32_t groupId);
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+    int32_t RegisterFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
+    int32_t UnregisterFocusInfoChangeCallback(
+        const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
@@ -293,6 +322,7 @@ private:
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;
+    std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
 };
 } // namespace AudioStandard

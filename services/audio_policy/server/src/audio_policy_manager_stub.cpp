@@ -313,6 +313,55 @@ void AudioPolicyManagerStub::UnsetPreferOutputDeviceChangeCallbackInternal(Messa
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::WriteAudioFocusInfo(MessageParcel &reply,
+    const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
+{
+    reply.WriteInt32(focusInfo.first.streamUsage);
+    reply.WriteInt32(focusInfo.first.contentType);
+    reply.WriteInt32(focusInfo.first.audioFocusType.streamType);
+    reply.WriteInt32(focusInfo.first.audioFocusType.sourceType);
+    reply.WriteBool(focusInfo.first.audioFocusType.isPlay);
+    reply.WriteInt32(focusInfo.first.sessionID);
+    reply.WriteBool(focusInfo.first.pauseWhenDucked);
+    reply.WriteInt32(focusInfo.first.mode);
+
+    reply.WriteInt32(focusInfo.second);
+}
+
+void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+    int32_t result = GetAudioFocusInfoList(focusInfoList);
+    int32_t size = static_cast<int32_t>(focusInfoList.size());
+    reply.WriteInt32(result);
+    reply.WriteInt32(size);
+    if (result == SUCCESS) {
+        AUDIO_DEBUG_LOG("GetAudioFocusInfoList size= %{public}d", size);
+        for (std::pair<AudioInterrupt, AudioFocuState> focusInfo : focusInfoList) {
+            WriteAudioFocusInfo(reply, focusInfo);
+        }
+    }
+}
+
+void AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioFocusInfoCallback obj is null");
+        return;
+    }
+    int32_t result = RegisterFocusInfoChangeCallback(clientId, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    int32_t result = UnregisterFocusInfoChangeCallback(clientId);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
@@ -1035,6 +1084,18 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
             UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
+            break;
+
+        case GET_AUDIO_FOCUS_INFO_LIST:
+            GetAudioFocusInfoListInternal(data, reply);
+            break;
+
+        case REGISTER_FOCUS_INFO_CHANGE_CALLBACK:
+            RegisterFocusInfoChangeCallbackInternal(data, reply);
+            break;
+            
+        case UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK:
+            UnregisterFocusInfoChangeCallbackInternal(data, reply);
             break;
 
         default:

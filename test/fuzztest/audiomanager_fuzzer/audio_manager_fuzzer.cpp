@@ -52,6 +52,26 @@ void AudioManagerFuzzTest(const uint8_t* data, size_t size)
     std::string key(reinterpret_cast<const char*>(data), size);
     std::string value(reinterpret_cast<const char*>(data), size);
     AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
+    std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
+    focusInfo.first.streamUsage = *reinterpret_cast<const StreamUsage *>(data);
+    focusInfo.first.contentType = *reinterpret_cast<const ContentType *>(data);
+    focusInfo.first.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(data);
+    focusInfo.first.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(data);
+    focusInfo.first.audioFocusType.isPlay = *reinterpret_cast<const bool *>(data);
+    focusInfo.first.sessionID = *reinterpret_cast<const int32_t *>(data);
+    focusInfo.first.pauseWhenDucked = *reinterpret_cast<const bool *>(data);
+    focusInfo.first.pid = *reinterpret_cast<const int32_t *>(data);
+    focusInfo.first.mode = *reinterpret_cast<const InterruptMode *>(data);
+    focusInfo.second = *reinterpret_cast<const AudioFocuState *>(data);
+    focusInfoList.push_back(focusInfo);
+    AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
+
+    shared_ptr<AudioFocusInfoChangeCallbackFuzz> focusInfoChangeCallbackFuzz =
+        std::make_shared<AudioFocusInfoChangeCallbackFuzz>();
+    AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(focusInfoChangeCallbackFuzz);
+    AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback();
 }
 
 void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)

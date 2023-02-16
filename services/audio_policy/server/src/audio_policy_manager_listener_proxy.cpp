@@ -84,6 +84,46 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
     }
 }
 
+void AudioPolicyManagerListenerProxy::WriteAudioFocusInfo(MessageParcel &data,
+    const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
+{
+    data.WriteInt32(focusInfo.first.streamUsage);
+    data.WriteInt32(focusInfo.first.contentType);
+    data.WriteInt32(focusInfo.first.audioFocusType.streamType);
+    data.WriteInt32(focusInfo.first.audioFocusType.sourceType);
+    data.WriteBool(focusInfo.first.audioFocusType.isPlay);
+    data.WriteInt32(focusInfo.first.sessionID);
+    data.WriteBool(focusInfo.first.pauseWhenDucked);
+    data.WriteInt32(focusInfo.first.mode);
+
+    data.WriteInt32(focusInfo.second);
+}
+
+void AudioPolicyManagerListenerProxy::OnAudioFocusInfoChange(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    AUDIO_DEBUG_LOG("OnAudioFocusInfoChange at listener proxy");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    size_t size = focusInfoList.size();
+    data.WriteInt32(static_cast<int32_t>(size));
+    for (auto focusInfo : focusInfoList) {
+        WriteAudioFocusInfo(data, focusInfo);
+    }
+
+    int error = Remote()->SendRequest(ON_FOCUS_INFO_CHANGED, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnAudioFocusInfoChange failed, error: %{public}d", error);
+    }
+}
+
 AudioPolicyManagerListenerCallback::AudioPolicyManagerListenerCallback(
     const sptr<IStandardAudioPolicyManagerListener> &listener) : listener_(listener)
 {

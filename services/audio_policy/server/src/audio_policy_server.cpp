@@ -641,7 +641,7 @@ int32_t AudioPolicyServer::UnsetRingerModeCallback(const int32_t clientId)
         AUDIO_ERR_LOG("UnsetRingerModeCallback for client %{public}d done", clientId);
         return SUCCESS;
     } else {
-        AUDIO_ERR_LOG("UnsetRingerModeCallback Cb does not exit for client %{public}d cannot unregister", clientId);
+        AUDIO_ERR_LOG("UnsetRingerModeCallback Cb does not exist for client %{public}d cannot unregister", clientId);
         return ERR_INVALID_OPERATION;
     }
 }
@@ -890,6 +890,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
             case INTERRUPT_HINT_STOP:
                 iterActive = audioFocusInfoList_.erase(iterActive);
                 iterActiveErased = true;
+                OnAudioFocusInfoChange();
                 break;
             case INTERRUPT_HINT_PAUSE:
                 iterActive->second = PAUSE;
@@ -906,6 +907,9 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
             AUDIO_INFO_LOG("OnInterrupt for processing sessionID: %{public}d, hintType: %{public}d",
                 activeSessionID, interruptEvent.hintType);
             policyListenerCb->OnInterrupt(interruptEvent);
+            if (!iterActiveErased) {
+                OnAudioFocusInfoChange();
+            }
         }
         if (!iterActiveErased) {
             ++iterActive;
@@ -956,6 +960,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         ProcessCurrentInterrupt(incomingInterrupt);
     }
     audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
+    OnAudioFocusInfoChange();
     if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
         AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d, isRejected: %{public}d",
             incomingInterrupt.sessionID, interruptEvent.hintType, isRejected);
@@ -990,6 +995,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         // If audioFocusInfoList_ is empty, directly activate interrupt
         AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+        OnAudioFocusInfoChange();
         return SUCCESS;
     }
 
@@ -1112,8 +1118,12 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
-        audioFocusInfoList_.remove_if([&exitSessionID](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
-            return (audioFocusInfo.first).sessionID == exitSessionID;
+        audioFocusInfoList_.remove_if([&](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
+            if ((audioFocusInfo.first).sessionID != exitSessionID) {
+                return false;
+            }
+            OnAudioFocusInfoChange();
+            return true;
         });
         return SUCCESS;
     }
@@ -1127,6 +1137,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         if ((it->first).sessionID == audioInterrupt.sessionID) {
             it = audioFocusInfoList_.erase(it);
             isInterruptActive = true;
+            OnAudioFocusInfoChange();
         } else {
             ++it;
         }
@@ -1246,6 +1257,50 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     }
 
     return SUCCESS;
+}
+
+void AudioPolicyServer::OnAudioFocusInfoChange()
+{
+    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    for (auto it = focusInfoChangeCallbackMap_.begin(); it != focusInfoChangeCallbackMap_.end(); ++it) {
+        it->second->OnAudioFocusInfoChange(audioFocusInfoList_);
+    }
+}
+
+int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+
+    focusInfoList = audioFocusInfoList_;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+
+    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    if (callback != nullptr) {
+        focusInfoChangeCallbackMap_[clientId] = callback;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallback(const int32_t clientId)
+{
+    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
+
+    if (focusInfoChangeCallbackMap_.find(clientId) != focusInfoChangeCallbackMap_.end()) {
+        focusInfoChangeCallbackMap_.erase(clientId);
+        AUDIO_INFO_LOG("UnregisterFocusInfoChangeCallback for client %{public}d done", clientId);
+        return SUCCESS;
+    }
+
+    AUDIO_ERR_LOG("Cb does not exist for client %{public}d cannot unregister", clientId);
+    return ERR_INVALID_OPERATION;
 }
 
 bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
