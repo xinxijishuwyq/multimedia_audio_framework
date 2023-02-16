@@ -205,8 +205,6 @@ public:
         STREAM_VOICE_ASSISTANT
     };
     static AudioSystemManager *GetInstance();
-    static float MapVolumeToHDI(int32_t volume);
-    static int32_t MapVolumeFromHDI(float volume);
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
     int32_t GetVolume(AudioVolumeType volumeType) const;

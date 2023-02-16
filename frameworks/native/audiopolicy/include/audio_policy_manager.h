@@ -49,9 +49,13 @@ public:
 
     const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 
-    float GetStreamVolume(AudioStreamType streamType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9);
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 

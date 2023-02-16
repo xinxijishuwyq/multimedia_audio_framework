@@ -27,7 +27,6 @@
 
 #include "audio_policy_service.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -153,22 +152,38 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
     return audioPolicyManager_.SetAudioSessionCallback(callback);
 }
 
-int32_t AudioPolicyService::SetStreamVolume(AudioStreamType streamType, float volume)
+int32_t AudioPolicyService::GetMaxVolumeLevel(AudioVolumeType volumeType) const
+{
+    return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
+{
+    return audioPolicyManager_.GetMinVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     if (streamType == STREAM_VOICE_CALL) {
         const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
         if (gsp == nullptr) {
-            AUDIO_ERR_LOG("AudioPolicyService: SetVoiceVolume gsp null");
+            AUDIO_ERR_LOG("SetVoiceVolumeLevel gsp null");
         } else {
-            gsp->SetVoiceVolume(volume);
+            float volumeDb = audioPolicyManager_.CalculateVolumeDb(volumeLevel);
+            gsp->SetVoiceVolume(volumeDb);
         }
     }
-    return audioPolicyManager_.SetStreamVolume(streamType, volume);
+    return audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
 }
 
-float AudioPolicyService::GetStreamVolume(AudioStreamType streamType) const
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType) const
 {
-    return audioPolicyManager_.GetStreamVolume(streamType);
+    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
+}
+
+float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
+{
+    return audioPolicyManager_.GetSystemVolumeDb(streamType);
 }
 
 int32_t AudioPolicyService::SetLowPowerVolume(int32_t streamId, float volume) const

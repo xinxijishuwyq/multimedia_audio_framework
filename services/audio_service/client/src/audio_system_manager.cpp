@@ -290,12 +290,12 @@ uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole 
     return gasp->GetTransactionId(deviceType, deviceRole);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
 {
     AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
 
     /* Validate and return INVALID_PARAMS error */
-    if ((volume < MIN_VOLUME_LEVEL) || (volume > MAX_VOLUME_LEVEL)) {
+    if ((volumeLevel < MIN_VOLUME_LEVEL) || (volumeLevel > MAX_VOLUME_LEVEL)) {
         AUDIO_ERR_LOG("Invalid Volume Input!");
         return ERR_INVALID_PARAM;
     }
@@ -321,14 +321,13 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
             return ERR_NOT_SUPPORTED;
     }
 
-    /* Call Audio Policy SetStreamVolume */
+    /* Call Audio Policy SetSystemVolumeLevel */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeToHdi = MapVolumeToHDI(volume);
 
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_7);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volumeLevel, API_7);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -337,7 +336,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_7);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volumeLevel, API_7);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
@@ -359,20 +358,17 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
             }
             break;
         default:
-            AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("GetVolume volumeType = %{public}d not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
-        AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType=%{public}d ", volumeType);
+        AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType = %{public}d ", volumeType);
     }
 
-    /* Call Audio Policy SetStreamMute */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
-
-    return MapVolumeFromHDI(volumeFromHdi);
+    AudioStreamType streamVolType = (AudioStreamType)volumeType;
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(streamVolType);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -396,20 +392,6 @@ float AudioSystemManager::GetSingleStreamVolume(int32_t streamId) const
     return AudioPolicyManager::GetInstance().GetSingleStreamVolume(streamId);
 }
 
-float AudioSystemManager::MapVolumeToHDI(int32_t volume)
-{
-    float value = (float)volume / MAX_VOLUME_LEVEL;
-    float roundValue = (int)(value * CONST_FACTOR);
-
-    return (float)roundValue / CONST_FACTOR;
-}
-
-int32_t AudioSystemManager::MapVolumeFromHDI(float volume)
-{
-    float value = (float)volume * MAX_VOLUME_LEVEL;
-    return nearbyint(value);
-}
-
 int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {
@@ -419,12 +401,8 @@ int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
         }
         volumeType = STREAM_MUSIC;
     }
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    if (gasp == nullptr) {
-        AUDIO_ERR_LOG("GetMaxVolume::Audio service unavailable.");
-        return ERR_OPERATION_FAILED;
-    }
-    return gasp->GetMaxVolume(volumeType);
+
+    return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
 }
 
 int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
@@ -436,12 +414,8 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
         }
         volumeType = STREAM_MUSIC;
     }
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    if (gasp == nullptr) {
-        AUDIO_ERR_LOG("GetMinVolume::Audio service unavailable.");
-        return ERR_OPERATION_FAILED;
-    }
-    return gasp->GetMinVolume(volumeType);
+
+    return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
 int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
@@ -515,7 +489,6 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         volumeType = STREAM_MUSIC;
     }
 
-    /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
 }

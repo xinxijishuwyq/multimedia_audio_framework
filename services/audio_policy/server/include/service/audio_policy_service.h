@@ -52,9 +52,15 @@ public:
 
     const sptr<IStandardAudioService> GetAudioPolicyServiceProxy();
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
 
-    float GetStreamVolume(AudioStreamType streamType) const;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+
+    float GetSystemVolumeDb(AudioStreamType streamType) const;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 

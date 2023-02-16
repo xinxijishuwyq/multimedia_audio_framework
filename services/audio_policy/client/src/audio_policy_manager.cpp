@@ -88,15 +88,37 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
     g_apProxy = nullptr;
 }
 
-int32_t AudioPolicyManager::SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v)
+int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetStreamVolume: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("GetMaxVolumeLevel: audio policy manager proxy is NULL.");
         return -1;
     }
 
-    return gsp->SetStreamVolume(streamType, volume, api_v);
+    return gsp->GetMaxVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetMinVolumeLevel: audio policy manager proxy is NULL.");
+        return -1;
+    }
+
+    return gsp->GetMinVolumeLevel(volumeType);
+}
+
+int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetSystemVolumeLevel: audio policy manager proxy is NULL.");
+        return -1;
+    }
+
+    return gsp->SetSystemVolumeLevel(streamType, volumeLevel, api_v);
 }
 
 int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
@@ -169,14 +191,14 @@ AudioScene AudioPolicyManager::GetAudioScene()
     return gsp->GetAudioScene();
 }
 
-float AudioPolicyManager::GetStreamVolume(AudioStreamType streamType)
+int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("GetStreamVolume: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("GetSystemVolumeLevel: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->GetStreamVolume(streamType);
+    return gsp->GetSystemVolumeLevel(streamType);
 }
 
 int32_t AudioPolicyManager::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)

@@ -37,7 +37,6 @@ public:
     static constexpr std::string_view PIPE_SOURCE = "libmodule-pipe-source.z.so";
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_COUNT = 5;
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
-    static constexpr float MAX_VOLUME = 1.0f;
     static constexpr float MIN_VOLUME = 0.0f;
 
     bool Init();
@@ -53,9 +52,17 @@ public:
         return audioAdapterManager;
     }
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume);
+    virtual ~AudioAdapterManager() {}
 
-    float GetStreamVolume(AudioStreamType streamType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+
+    float GetSystemVolumeDb(AudioStreamType streamType);
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
@@ -91,9 +98,16 @@ public:
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
-    virtual ~AudioAdapterManager() {}
+    float CalculateVolumeDb(int32_t volumeLevel);
 
 private:
+    friend class PolicyCallbackImpl;
+
+    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
+    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
+    static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
+    static constexpr int32_t CONST_FACTOR = 100;
+
     struct UserData {
         AudioAdapterManager *thiz;
         AudioStreamType streamType;
@@ -104,13 +118,16 @@ private:
     };
 
     AudioAdapterManager()
-        : mRingerMode(RINGER_MODE_NORMAL),
-          mAudioPolicyKvStore(nullptr)
+        : ringerMode_(RINGER_MODE_NORMAL),
+          audioPolicyKvStore_(nullptr)
     {
-        mVolumeMap[STREAM_MUSIC] = MAX_VOLUME;
-        mVolumeMap[STREAM_RING] = MAX_VOLUME;
-        mVolumeMap[STREAM_VOICE_CALL] = MAX_VOLUME;
-        mVolumeMap[STREAM_VOICE_ASSISTANT] = MAX_VOLUME;
+        volumeLevelMap_[STREAM_MUSIC] = DEFAULT_VOLUME_LEVEL;
+        volumeLevelMap_[STREAM_RING] = DEFAULT_VOLUME_LEVEL;
+        volumeLevelMap_[STREAM_VOICE_CALL] = DEFAULT_VOLUME_LEVEL;
+        volumeLevelMap_[STREAM_VOICE_ASSISTANT] = DEFAULT_VOLUME_LEVEL;
+        volumeLevelMap_[STREAM_ALARM] = DEFAULT_VOLUME_LEVEL;
+        volumeLevelMap_[STREAM_ACCESSIBILITY] = DEFAULT_VOLUME_LEVEL;
+        volumeLevelMap_[STREAM_ULTRASONIC] = MAX_VOLUME_LEVEL;
     }
 
     bool ConnectToPulseAudio(void);
@@ -131,15 +148,14 @@ private:
     bool LoadMuteStatusFromKvStore(AudioStreamType streamType);
     void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
     std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
-    std::unique_ptr<AudioServiceAdapter> mAudioServiceAdapter;
-    std::unordered_map<AudioStreamType, float> mVolumeMap;
-    std::unordered_map<AudioStreamType, int> mMuteStatusMap;
-    DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    AudioRingerMode mRingerMode;
-    std::shared_ptr<SingleKvStore> mAudioPolicyKvStore;
 
+    std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
+    std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;
+    std::unordered_map<AudioStreamType, int> muteStatusMap_;
+    DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioRingerMode ringerMode_;
+    std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;
-    friend class PolicyCallbackImpl;
     bool testModeOn_ {false};
 
     std::vector<DeviceType> deviceList_ = {
@@ -162,11 +178,11 @@ public:
         audioAdapterManager_ = nullptr;
     }
 
-    float OnGetVolumeCb(std::string streamType)
+    float OnGetVolumeDbCb(std::string streamType)
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(
             audioAdapterManager_->GetStreamIDByType(streamType));
-        if (audioAdapterManager_->mRingerMode != RINGER_MODE_NORMAL) {
+        if (audioAdapterManager_->ringerMode_ != RINGER_MODE_NORMAL) {
             if (streamForVolumeMap == STREAM_RING) {
                 return AudioAdapterManager::MIN_VOLUME;
             }
@@ -175,15 +191,17 @@ public:
         if (audioAdapterManager_->GetStreamMute(streamForVolumeMap)) {
             return AudioAdapterManager::MIN_VOLUME;
         }
-        return audioAdapterManager_->mVolumeMap[streamForVolumeMap];
+
+        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
+        return CalculateVolumeDb(volumeLevel);
     }
 
     void OnSessionRemoved(const uint32_t sessionID)
     {
-        AUDIO_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl OnSessionRemoved: Session ID %{public}d", sessionID);
+        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnSessionRemoved: Session ID %{public}d", sessionID);
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            AUDIO_DEBUG_LOG("AudioAdapterManager: PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
-                            "not firing OnSessionRemoved");
+            AUDIO_DEBUG_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
+                "not firing OnSessionRemoved");
         } else {
             audioAdapterManager_->sessionCallback_->OnSessionRemoved(sessionID);
         }
