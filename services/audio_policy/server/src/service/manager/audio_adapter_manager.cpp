@@ -112,9 +112,21 @@ int32_t AudioAdapterManager::SetStreamVolume(AudioStreamType streamType, float v
         InitAudioPolicyKvStore(isFirstBoot);
     }
 
-    if (GetStreamMute(streamType) && volume > 0.0f) {
-        SetStreamMute(streamType, 0);
+    if (streamType == STREAM_RING) {
+        if (volume > 0.0f && (ringerMode_ == RINGER_MODE_SILENT || ringerMode_ == RINGER_MODE_VIBRATE)) {
+            // ring volume > 0, change the ringer mode to RINGER_MODE_NORMAL
+            SetRingerMode(RINGER_MODE_NORMAL);
+        } else if (FLOAT_COMPARE_EQ(volume, 0.0f) && ringerMode_ == RINGER_MODE_NORMAL) {
+            // ring volume == 0, change the ringer mode to RINGER_MODE_VIBRATE and don't wirte ring volume data
+            SetRingerMode(RINGER_MODE_VIBRATE);
+            return mAudioServiceAdapter->SetVolume(streamType, volume);
+        }
     }
+
+    if (volume > 0.0f && GetStreamMute(streamType)) {
+        SetStreamMute(streamType, false);
+    }
+
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     mVolumeMap[streamForVolumeMap] = volume;
     WriteVolumeToKvStore(currentActiveDevice_, streamType, volume);
@@ -306,7 +318,19 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
-    mRingerMode = ringerMode;
+    AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
+    ringerMode_ = ringerMode;
+
+    switch (ringerMode) {
+        case RINGER_MODE_SILENT:
+        case RINGER_MODE_VIBRATE:
+            SetStreamMute(STREAM_RING, true);
+            break;
+        case RINGER_MODE_NORMAL:
+            SetStreamMute(STREAM_RING, false);
+        default:
+            break;
+    }
 
     // In case if KvStore didnot connect during bootup
     if (mAudioPolicyKvStore == nullptr) {
@@ -320,7 +344,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 
 AudioRingerMode AudioAdapterManager::GetRingerMode() const
 {
-    return mRingerMode;
+    return ringerMode_;
 }
 
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
@@ -654,7 +678,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     }
 
     if (isFirstBoot == true) {
-        mRingerMode = RINGER_MODE_NORMAL;
+        ringerMode_ = RINGER_MODE_NORMAL;
         WriteRingerModeToKvStore(RINGER_MODE_NORMAL);
         AUDIO_INFO_LOG("[AudioAdapterManager] Wrote default ringer mode to KvStore");
     } else {
@@ -750,8 +774,8 @@ bool AudioAdapterManager::LoadRingerMode(void)
     Value value;
     Status status = mAudioPolicyKvStore->Get(key, value);
     if (status == Status::SUCCESS) {
-        mRingerMode = static_cast<AudioRingerMode>(TransferByteArrayToType<int>(value.Data()));
-        AUDIO_DEBUG_LOG("[AudioAdapterManager] Ringer Mode from kvStore %{public}d", mRingerMode);
+        ringerMode_ = static_cast<AudioRingerMode>(TransferByteArrayToType<int>(value.Data()));
+        AUDIO_DEBUG_LOG("[AudioAdapterManager] Ringer Mode from kvStore %{public}d", ringerMode_);
     }
 
     return true;
