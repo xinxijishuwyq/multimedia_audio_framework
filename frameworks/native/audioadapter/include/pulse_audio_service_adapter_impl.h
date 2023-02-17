@@ -77,6 +77,7 @@ private:
         std::vector<SourceOutput> sourceOutputList;
         std::vector<SinkInfo> sinkInfos;
         int32_t moveResult;
+        bool isSubscribingCb = false;
     };
 
     bool ConnectToPulseAudio();

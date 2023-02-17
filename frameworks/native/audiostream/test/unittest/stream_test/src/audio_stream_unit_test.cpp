@@ -27,7 +27,6 @@ const int32_t FAILURE = -1;
 const uint32_t DEFAULT_SAMPLING_RATE = 44100;
 const uint8_t DEFAULT_CHANNEL_COUNT = 2;
 const uint8_t DEFAULT_SAMPLE_SIZE = 2;
-const uint32_t DEFAULT_STREAM_VOLUME = 0;
 const int32_t AUDIO_CLIENT_ERR = -1;
 const int32_t AUDIO_CLIENT_INVALID_PARAMS_ERR = -2;
 

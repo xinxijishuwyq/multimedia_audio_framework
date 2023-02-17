@@ -896,7 +896,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     uint32_t sessionID;
     sessionStr << sessionCStr;
     sessionStr >> sessionID;
-    AUDIO_INFO_LOG("PulseAudioServiceAdapterImpl: PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
+    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
 
     sinkIndexSessionIDMap[i->index] = sessionID;
 
@@ -911,7 +911,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
-    if (streamID == userData->streamType) {
+    if (streamID == userData->streamType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
         if (i->mute) {
             pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
@@ -1074,6 +1074,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
     unique_ptr<UserData> userData = make_unique<UserData>();
     PulseAudioServiceAdapterImpl *thiz = reinterpret_cast<PulseAudioServiceAdapterImpl*>(userdata);
     userData->thiz = thiz;
+    userData->isSubscribingCb = true;
     switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
         case PA_SUBSCRIPTION_EVENT_SINK:
             break;
