@@ -37,9 +37,9 @@ public:
 
     virtual bool ConnectServiceAdapter() = 0;
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) = 0;
+    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
+    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
 

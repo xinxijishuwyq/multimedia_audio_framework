@@ -26,6 +26,17 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
+
+static float VolumeToDb(int32_t volumeLevel)
+{
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
+    float roundValue = static_cast<int>(value * CONST_FACTOR);
+
+    return static_cast<float>(roundValue) / CONST_FACTOR;
+}
+
 void AudioContainerClientBase::InitializeClientGa()
 {
     mVolumeFactor = 1.0f;
@@ -644,10 +655,9 @@ int32_t AudioContainerClientBase::SetStreamVolumeGa(float volume, const int32_t 
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
     mVolumeFactor = volume;
-    int32_t systemVolumeInt
-        = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
-    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * mVolumeFactor;
+    int32_t systemVolumeLevel = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float vol = systemVolumeDb * mVolumeFactor;
 
     AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
     if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {

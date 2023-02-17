@@ -117,11 +117,6 @@ AudioRenderMode AudioContainerBase::GetAudioRenderMode()
     return g_sProxy->GetAudioRenderModeGa();
 }
 
-int32_t AudioContainerBase::SetStreamVolume(uint32_t sessionID, uint32_t volume)
-{
-    return g_sProxy->SetStreamVolumeGa(sessionID, volume);
-}
-
 size_t AudioContainerBase::WriteStreamInCb(const StreamBuffer &stream, int32_t &pError, const int32_t &trackId)
 {
     return g_sProxy->WriteStreamInCbGa(stream, pError, trackId);
@@ -155,11 +150,6 @@ int32_t AudioContainerBase::GetMinimumFrameCount(uint32_t &frameCount, const int
 int32_t AudioContainerBase::GetAudioStreamParams(AudioStreamParams& audioParams, const int32_t &trackId)
 {
     return g_sProxy->GetAudioStreamParamsGa(audioParams, trackId);
-}
-
-uint32_t AudioContainerBase::GetStreamVolume(uint32_t sessionID)
-{
-    return g_sProxy->GetStreamVolumeGa();
 }
 
 int32_t AudioContainerBase::GetCurrentTimeStamp(uint64_t &timeStamp, const int32_t &trackId)

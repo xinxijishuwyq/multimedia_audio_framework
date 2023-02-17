@@ -42,7 +42,7 @@ bool AudioAdapterManager::Init()
     if (ret > 0) {
         int32_t mediaVolumeLevel = atoi(currentVolumeValue);
         volumeLevelMap_[STREAM_MUSIC] = mediaVolumeLevel;
-        AUDIO_INFO_LOG("Init: Get music volume to map success %{public}f", volumeLevelMap_[STREAM_MUSIC]);
+        AUDIO_INFO_LOG("Init: Get music volume to map success %{public}d", volumeLevelMap_[STREAM_MUSIC]);
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
@@ -106,7 +106,7 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 
 int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
-    if (volumeType == AudioStreamType.STREAM_VOICE_ASSISTANT || volumeType == AudioStreamType.STREAM_VOICE_CALL) {
+    if (volumeType == STREAM_VOICE_ASSISTANT || volumeType == STREAM_VOICE_CALL) {
         return (MIN_VOLUME_LEVEL + 1);
     }
     return MIN_VOLUME_LEVEL;
@@ -115,7 +115,7 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     if (volumeLevel == 0 &&
-        (streamType == AudioStreamType.STREAM_VOICE_ASSISTANT || streamType == AudioStreamType.STREAM_VOICE_CALL)) {
+        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetSystemVolumeLevel this type can not set mute");
         return SUCCESS;
@@ -174,7 +174,7 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     if (mute &&
-        (streamType == AudioStreamType.STREAM_VOICE_ASSISTANT || streamType == AudioStreamType.STREAM_VOICE_CALL)) {
+        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
@@ -1009,12 +1009,12 @@ void AudioAdapterManager::WriteMuteStatusToKvStore(DeviceType deviceType, AudioS
     return;
 }
 
-float CalculateVolumeDb(int32_t volumeLevel)
+float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
 {
-    float value = static_cast<float>volume / MAX_VOLUME_LEVEL;
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
     float roundValue = static_cast<int>(value * CONST_FACTOR);
 
-    return static_cast<float>roundValue / CONST_FACTOR;
+    return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 } // namespace AudioStandard
 } // namespace OHOS

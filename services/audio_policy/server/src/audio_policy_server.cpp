@@ -260,7 +260,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
         return ERR_PERMISSION_DENIED;
     }
-    return SetSystemVolumeLevel(streamType, volumeLevel, false);
+    return SetSystemVolumeLevelForKey(streamType, volumeLevel, false);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -324,7 +324,7 @@ float AudioPolicyServer::GetSystemVolumeDb(AudioStreamType streamType)
 int32_t AudioPolicyServer::SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevelForKey streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
-        streamType, volume, isUpdateUi);
+        streamType, volumeLevel, isUpdateUi);
 
     if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
         int32_t curRingVolumeLevel = GetSystemVolumeLevel(AudioStreamType::STREAM_RING);
@@ -951,7 +951,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
     } else if (incomingState == DUCK) {
         interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-        interruptEvent.duckVolume = DUCK_FACTOR * GetStreamVolume(incomingFocusType.streamType);
+        interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(incomingFocusType.streamType);
     } else {
         ProcessCurrentInterrupt(incomingInterrupt);
     }

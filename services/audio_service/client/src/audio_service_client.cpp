@@ -42,6 +42,8 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
 
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
@@ -72,6 +74,14 @@ static int32_t CheckPaStatusIfinvalid(pa_threaded_mainloop *mainLoop, pa_context
         return -1;
     }
     return retVal;
+}
+
+static float VolumeToDb(int32_t volumeLevel)
+{
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
+    float roundValue = static_cast<int>(value * CONST_FACTOR);
+
+    return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
 AudioStreamParams AudioServiceClient::ConvertFromPAAudioParams(pa_sample_spec paSampleSpec)
@@ -1223,11 +1233,6 @@ int32_t AudioServiceClient::DrainStream()
     }
 }
 
-int32_t AudioServiceClient::SetStreamVolume(uint32_t sessionID, uint32_t volume)
-{
-    return AUDIO_CLIENT_SUCCESS;
-}
-
 int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 {
     int error = 0;
@@ -1775,11 +1780,6 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-uint32_t AudioServiceClient::GetStreamVolume(uint32_t sessionID)
-{
-    return DEFAULT_STREAM_VOLUME;
-}
-
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
     lock_guard<mutex> lock(dataMutex);
@@ -2034,9 +2034,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
 
-    int32_t volumeFactor = AudioSystemManager::MapVolumeFromHDI(mVolumeFactor);
-    int32_t newVolumeFactor = AudioSystemManager::MapVolumeFromHDI(volume);
-    if (newVolumeFactor > volumeFactor) {
+    if ((volume - mVolumeFactor) > std::numeric_limits<float>::epsilon()) {
         mUnMute_ = true;
     }
     AUDIO_INFO_LOG("mUnMute_ %{public}d", mUnMute_);
@@ -2139,10 +2137,9 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
-    int32_t systemVolumeInt
-        = client.mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(client.mStreamType));
-    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * client.mVolumeFactor * client.mPowerVolumeFactor;
+    int32_t systemVolumeLevel = AudioSystemManager::GetInstance()->GetVolume(client.mStreamType);
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float vol = systemVolumeDb * client.mVolumeFactor * client.mPowerVolumeFactor;
 
     AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
     if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
@@ -2316,9 +2313,9 @@ float AudioServiceClient::GetStreamLowPowerVolume()
 
 float AudioServiceClient::GetSingleStreamVol()
 {
-    int32_t systemVolumeInt = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
-    float systemVolume = AudioSystemManager::MapVolumeToHDI(systemVolumeInt);
-    float vol = systemVolume * mVolumeFactor * mPowerVolumeFactor;
+    int32_t systemVolumeLevel = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float vol = systemVolumeDb * mVolumeFactor * mPowerVolumeFactor;
 
     AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
     if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {

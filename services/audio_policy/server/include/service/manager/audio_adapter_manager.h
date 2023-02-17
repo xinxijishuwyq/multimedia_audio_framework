@@ -138,7 +138,7 @@ private:
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
-    void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, float volume);
+    void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
@@ -193,7 +193,7 @@ public:
         }
 
         int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
-        return CalculateVolumeDb(volumeLevel);
+        return audioAdapterManager_->CalculateVolumeDb(volumeLevel);
     }
 
     void OnSessionRemoved(const uint32_t sessionID)

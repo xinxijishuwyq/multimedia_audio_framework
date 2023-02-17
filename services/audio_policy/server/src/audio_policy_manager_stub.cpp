@@ -94,7 +94,7 @@ void AudioPolicyManagerStub::GetMinVolumeLevelInternal(MessageParcel &data, Mess
     reply.WriteInt32(minLevel);
 }
 
-void AudioPolicyManagerStub::SetSystemVolumeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();

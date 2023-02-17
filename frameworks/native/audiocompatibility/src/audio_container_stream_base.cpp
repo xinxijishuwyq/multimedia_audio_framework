@@ -578,7 +578,7 @@ int32_t AudioContainerStreamBase::SetVolume(float volume)
 
 float AudioContainerStreamBase::GetVolume()
 {
-    return GetStreamVolume(trackId_);
+    return GetStreamVolume();
 }
 
 int32_t AudioContainerStreamBase::SetRenderRate(AudioRendererRate renderRate)

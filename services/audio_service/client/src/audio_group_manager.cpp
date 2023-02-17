@@ -37,20 +37,6 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
-float AudioGroupManager::MapVolumeToHDI(int32_t volume)
-{
-    float value = (float)volume / MAX_VOLUME_LEVEL;
-    float roundValue = (int)(value * CONST_FACTOR);
-
-    return (float)roundValue / CONST_FACTOR;
-}
-
-int32_t AudioGroupManager::MapVolumeFromHDI(float volume)
-{
-    float value = (float)volume * MAX_VOLUME_LEVEL;
-    return nearbyint(value);
-}
-
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
