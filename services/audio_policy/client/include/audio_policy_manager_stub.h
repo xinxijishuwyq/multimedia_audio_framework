@@ -23,10 +23,12 @@ namespace AudioStandard {
 class AudioPolicyManagerStub : public IRemoteStub<IAudioPolicy> {
 public:
     virtual int32_t OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option) override;
+        MessageParcel &reply, MessageOption &option) override;
 
 private:
-    void SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
@@ -36,7 +38,7 @@ private:
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
-    void GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);

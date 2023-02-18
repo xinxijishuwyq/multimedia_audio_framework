@@ -29,6 +29,17 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
+
+static float VolumeToDb(int32_t volumeLevel)
+{
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
+    float roundValue = static_cast<int>(value * CONST_FACTOR);
+
+    return static_cast<float>(roundValue) / CONST_FACTOR;
+}
+
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
@@ -512,18 +523,20 @@ void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEven
 
 bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.audioFocusType.streamType);
-    float duckVolume = interruptEvent.duckVolume;
+    int32_t systemVolumeLevel =
+        AudioPolicyManager::GetInstance().GetSystemVolumeLevel(audioInterrupt_.audioFocusType.streamType);
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float duckVolumeDb = interruptEvent.duckVolume;
     int32_t ret = 0;
 
-    if (streamVolume <= duckVolume || FLOAT_COMPARE_EQ(streamVolume, 0.0f)) {
-        AUDIO_INFO_LOG("HandleForceDucking: StreamVolume %{public}f <= duckVolume %{public}f. No need to duck further",
-            streamVolume, duckVolume);
+    if (systemVolumeDb <= duckVolumeDb || FLOAT_COMPARE_EQ(systemVolumeDb, 0.0f)) {
+        AUDIO_INFO_LOG("HandleForceDucking: StreamVolume %{public}f <= duckVolumeDb %{public}f. "
+            "No need to duck further", systemVolumeDb, duckVolumeDb);
         return false;
     }
 
     instanceVolBeforeDucking_ = audioStream_->GetVolume();
-    float duckInstanceVolume = duckVolume / streamVolume;
+    float duckInstanceVolume = duckVolumeDb / systemVolumeDb;
     if (FLOAT_COMPARE_EQ(instanceVolBeforeDucking_, 0.0f) || instanceVolBeforeDucking_ < duckInstanceVolume) {
         AUDIO_INFO_LOG("HandleForceDucking: No need to duck further");
         return false;
@@ -531,11 +544,11 @@ bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal
 
     ret = audioStream_->SetVolume(duckInstanceVolume);
     if (ret) {
-        AUDIO_ERR_LOG("HandleForceDucking: Failed to set duckVolume(instance) %{pubic}f", duckInstanceVolume);
+        AUDIO_ERR_LOG("HandleForceDucking: Failed to set duckVolumeDb(instance) %{pubic}f", duckInstanceVolume);
         return false;
     }
 
-    AUDIO_INFO_LOG("HandleForceDucking: Set duckVolume(instance) %{pubic}f successfully", duckInstanceVolume);
+    AUDIO_INFO_LOG("HandleForceDucking: Set duckVolumeDb(instance) %{pubic}f successfully", duckInstanceVolume);
     return true;
 }
 

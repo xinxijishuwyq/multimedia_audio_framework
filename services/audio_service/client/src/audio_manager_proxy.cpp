@@ -26,49 +26,6 @@ AudioManagerProxy::AudioManagerProxy(const sptr<IRemoteObject> &impl)
 {
 }
 
-int32_t AudioManagerProxy::GetMaxVolume(AudioVolumeType volumeType)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
-    data.WriteInt32(static_cast<int>(volumeType));
-    int32_t error = Remote()->SendRequest(GET_MAX_VOLUME, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get max volume failed, error: %d", error);
-        return error;
-    }
-
-    int32_t volume = reply.ReadInt32();
-    return volume;
-}
-
-int32_t AudioManagerProxy::GetMinVolume(AudioVolumeType volumeType)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
-    data.WriteInt32(static_cast<int32_t>(volumeType));
-
-    int32_t error = Remote()->SendRequest(GET_MIN_VOLUME, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get min volume failed, error: %d", error);
-        return error;
-    }
-
-    int32_t volume = reply.ReadInt32();
-    return volume;
-}
-
 int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
 {
     MessageParcel data;

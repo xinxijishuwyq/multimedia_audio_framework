@@ -30,28 +30,6 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
     }
 
     switch (code) {
-        case GET_MAX_VOLUME: {
-            AUDIO_DEBUG_LOG("GET_MAX_VOLUME AudioManagerStub");
-            int volumeType = data.ReadInt32();
-            AUDIO_DEBUG_LOG("GET_MAX_VOLUME volumeType received from client= %{public}d", volumeType);
-            AudioVolumeType volumeStreamConfig =
-                   static_cast<AudioVolumeType>(volumeType);
-            AUDIO_DEBUG_LOG("GET_MAX_VOLUME volumeType= %{public}d", volumeStreamConfig);
-            int32_t ret = GetMaxVolume(volumeStreamConfig);
-            reply.WriteInt32(ret);
-            return AUDIO_OK;
-        }
-        case GET_MIN_VOLUME: {
-            AUDIO_DEBUG_LOG("GET_MIN_VOLUME AudioManagerStub");
-            int volumeType = data.ReadInt32();
-            AUDIO_DEBUG_LOG("GET_MIN_VOLUME volumeType received from client= %{public}d", volumeType);
-            AudioVolumeType volumeStreamConfig =
-                   static_cast<AudioVolumeType>(volumeType);
-            AUDIO_DEBUG_LOG("GET_MIN_VOLUME volumeType= %{public}d", volumeStreamConfig);
-            int32_t ret = GetMinVolume(volumeStreamConfig);
-            reply.WriteInt32(ret);
-            return AUDIO_OK;
-        }
         case SET_AUDIO_PARAMETER: {
             AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER AudioManagerStub");
             const std::string key = data.ReadString();
@@ -80,7 +58,6 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 free((void *)cookieInfo);
                 cookieInfo = nullptr;
             }
-
             return AUDIO_OK;
         }
         case GET_TRANSACTION_ID: {

@@ -38,11 +38,11 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
         std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     AudioStreamType streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-    float volume = *reinterpret_cast<const float *>(rawData);
+    int32_t volume = *reinterpret_cast<const int32_t *>(rawData);
     int32_t streamId = *reinterpret_cast<const int32_t *>(rawData);
     bool mute = *reinterpret_cast<const bool *>(rawData);
-    AudioPolicyServerPtr->SetStreamVolume(streamType, volume);
-    AudioPolicyServerPtr->GetStreamVolume(streamType);
+    AudioPolicyServerPtr->SetSystemVolumeLevel(streamType, volume);
+    AudioPolicyServerPtr->GetSystemVolumeLevel(streamType);
     AudioPolicyServerPtr->SetLowPowerVolume(streamId, volume);
     AudioPolicyServerPtr->GetLowPowerVolume(streamId);
     AudioPolicyServerPtr->GetSingleStreamVolume(streamId);

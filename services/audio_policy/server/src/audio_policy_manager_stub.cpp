@@ -80,12 +80,26 @@ void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const Aud
     }
 }
 
-void AudioPolicyManagerStub::SetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t maxLevel = GetMaxVolumeLevel(volumeType);
+    reply.WriteInt32(maxLevel);
+}
+
+void AudioPolicyManagerStub::GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t minLevel = GetMinVolumeLevel(volumeType);
+    reply.WriteInt32(minLevel);
+}
+
+void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    float volume = data.ReadFloat();
+    int32_t volumeLevel = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int result = SetStreamVolume(streamType, volume, api_v);
+    int result = SetSystemVolumeLevel(streamType, volumeLevel, api_v);
     reply.WriteInt32(result);
 }
 
@@ -168,11 +182,11 @@ void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
     reply.WriteInt32(static_cast<int>(audioScene));
 }
 
-void AudioPolicyManagerStub::GetStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    float volume = GetStreamVolume(streamType);
-    reply.WriteFloat(volume);
+    int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+    reply.WriteInt32(volumeLevel);
 }
 
 void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -770,12 +784,20 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: ReadInterfaceToken failed");
+        AUDIO_ERR_LOG("OnRemoteRequest: ReadInterfaceToken failed");
         return -1;
     }
     switch (code) {
-        case SET_STREAM_VOLUME:
-            SetStreamVolumeInternal(data, reply);
+        case GET_MAX_VOLUMELEVEL:
+            GetMaxVolumeLevelInternal(data, reply);
+            break;
+
+        case GET_MIN_VOLUMELEVEL:
+            GetMinVolumeLevelInternal(data, reply);
+            break;
+
+        case SET_SYSTEM_VOLUMELEVEL:
+            SetSystemVolumeLevelInternal(data, reply);
             break;
 
         case SET_RINGER_MODE:
@@ -806,8 +828,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             IsMicrophoneMuteInternal(data, reply);
             break;
 
-        case GET_STREAM_VOLUME:
-            GetStreamVolumeInternal(data, reply);
+        case GET_SYSTEM_VOLUMELEVEL:
+            GetSystemVolumeLevelInternal(data, reply);
             break;
 
         case SET_STREAM_MUTE:

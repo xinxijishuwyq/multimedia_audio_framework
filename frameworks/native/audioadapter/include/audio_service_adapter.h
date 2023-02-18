@@ -33,7 +33,7 @@ public:
      * @param streamType streamType for which volume will be computed
      * @return Returns volume level in float
      */
-    virtual float OnGetVolumeCb(std::string streamType) = 0;
+    virtual float OnGetVolumeDbCb(std::string streamType) = 0;
 
     virtual void OnSessionRemoved(const uint32_t sessionID) = 0;
 
@@ -121,14 +121,14 @@ public:
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
     /**
-     * @brief sets audio volume
+     * @brief sets audio volume db
      *
      * @param streamType the streamType for which volume will be set, streamType defined in{@link audio_info.h}
      * @param volume the volume level to be set
      * @return Returns {@link SUCCESS} if volume is set successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t SetVolume(AudioStreamType streamType, float volume) = 0;
+    virtual int32_t SetVolumeDb(AudioStreamType streamType, float volume) = 0;
 
     /**
      * @brief set mute for give streamType

@@ -57,9 +57,13 @@ public:
     void OnStart() override;
     void OnStop() override;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v = API_9) override;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) override;
 
-    float GetStreamVolume(AudioStreamType streamType) override;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) override;
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -239,6 +243,7 @@ protected:
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
+    // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
     void ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt);
@@ -248,18 +253,21 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, bool isUpdateUi);
+
+    // for audio volume
+    int32_t SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    float GetSystemVolumeDb(AudioStreamType streamType);
+
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
+
+    // externel function call
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
-
-    static float MapVolumeToHDI(int32_t volume);
-    static int32_t ConvertVolumeToInt(float volume);
 
     AudioPolicyService& mPolicyService;
     std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
@@ -278,9 +286,9 @@ private:
     std::vector<pid_t> clientDiedListenerState_;
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
+
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t CONST_FACTOR = 100;
     static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

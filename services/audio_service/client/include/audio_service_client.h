@@ -207,23 +207,6 @@ public:
     int32_t SetStreamType(AudioStreamType audioStreamType);
 
     /**
-    * Sets the volume of the stream associated with session ID
-    *
-    * @param sessionID indicates the ID for the active stream to be controlled
-    * @param volume indicates volume level between 0 to 65536
-    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
-    */
-    int32_t SetStreamVolume(uint32_t sessionID, uint32_t volume);
-
-    /**
-    * Get the volume of the stream associated with session ID
-    *
-    * @param sessionID indicates the ID for the active stream to be controlled
-    * @return returns volume level between 0 to 65536
-    */
-    uint32_t GetStreamVolume(uint32_t sessionID);
-
-    /**
     * Writes audio data of the stream created using CreateStream to active sink device
     *
     * @param buffer contains audio data to write

@@ -38,8 +38,7 @@ public:
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
-    int32_t GetMaxVolume(AudioVolumeType volumeType) override;
-    int32_t GetMinVolume(AudioVolumeType volumeType) override;
+
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
@@ -71,8 +70,7 @@ protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:
     bool VerifyClientPermission(const std::string &permissionName);
-    static constexpr int32_t MAX_VOLUME = 15;
-    static constexpr int32_t MIN_VOLUME = 0;
+
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
     void AudioServerDied(pid_t pid);

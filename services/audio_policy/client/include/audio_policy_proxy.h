@@ -28,9 +28,13 @@ public:
     explicit AudioPolicyProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioPolicyProxy() = default;
 
-    int32_t SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v) override;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) override;
 
-    float GetStreamVolume(AudioStreamType streamType) override;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
+
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v) override;
+
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 

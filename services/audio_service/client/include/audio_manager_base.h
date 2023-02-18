@@ -28,20 +28,6 @@ class AudioDeviceDescriptor;
 class IStandardAudioService : public IRemoteBroker {
 public:
     /**
-     * Obtains max volume.
-     *
-     * @return Returns the max volume.
-     */
-    virtual int32_t GetMaxVolume(AudioVolumeType volumeType) = 0;
-
-    /**
-     * Obtains min volume.
-     *
-     * @return Returns the min volume.
-     */
-    virtual int32_t GetMinVolume(AudioVolumeType volumeType) = 0;
-
-    /**
      * Sets Microphone Mute status.
      *
      * @param isMute Mute status true or false to be set.

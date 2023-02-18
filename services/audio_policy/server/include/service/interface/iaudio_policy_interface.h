@@ -37,9 +37,15 @@ public:
 
     virtual bool ConnectServiceAdapter() = 0;
 
-    virtual int32_t SetStreamVolume(AudioStreamType streamType, float volume) = 0;
+    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    virtual float GetStreamVolume(AudioStreamType streamType) = 0;
+    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
+
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
+
+    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+
+    virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute) = 0;
 
@@ -74,6 +80,8 @@ public:
     virtual int32_t SetAudioSessionCallback(AudioSessionCallback *callback) = 0;
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
+
+    virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

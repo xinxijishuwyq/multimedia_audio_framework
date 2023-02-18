@@ -22,6 +22,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+static const int32_t MAX_VOLUME_LEVEL = 15;
+static const int32_t CONST_FACTOR = 100;
+
+static float VolumeToDb(int32_t volumeLevel)
+{
+    float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
+    float roundValue = static_cast<int>(value * CONST_FACTOR);
+
+    return static_cast<float>(roundValue) / CONST_FACTOR;
+}
+
 std::map<pid_t, std::map<AudioStreamType, AudioInterrupt>> AudioRendererGateway::sharedInterrupts_;
 
 AudioRenderer::~AudioRenderer() = default;
@@ -394,19 +406,20 @@ void AudioInterruptCallbackGateway::NotifyEvent(const InterruptEvent &interruptE
 
 bool AudioInterruptCallbackGateway::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    float streamVolume = AudioPolicyManager::GetInstance().GetStreamVolume(audioInterrupt_.streamType);
-    float duckVolume = interruptEvent.duckVolume;
+    int32_t systemVolumeLevel = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(audioInterrupt_.streamType);
+    float systemVolumeDb = VolumeToDb(systemVolumeLevel);
+    float duckVolumeDb = interruptEvent.duckVolume;
     int32_t ret = 0;
 
-    if (streamVolume <= duckVolume || FLOAT_COMPARE_EQ(streamVolume, 0.0f)) {
-        AUDIO_INFO_LOG("AudioRendererGateway: StreamVolume: %{public}f <= duckVolume: %{public}f",
-                       streamVolume, duckVolume);
+    if (systemVolumeDb <= duckVolumeDb || FLOAT_COMPARE_EQ(systemVolumeDb, 0.0f)) {
+        AUDIO_INFO_LOG("AudioRendererGateway: systemVolumeDb: %{public}f <= duckVolumeDb: %{public}f",
+            systemVolumeDb, duckVolumeDb);
         AUDIO_INFO_LOG("AudioRendererGateway: No need to duck further return");
         return false;
     }
 
     instanceVolBeforeDucking_ = audioStream_->GetVolume();
-    float duckInstanceVolume = duckVolume / streamVolume;
+    float duckInstanceVolume = duckVolumeDb / systemVolumeDb;
     if (FLOAT_COMPARE_EQ(instanceVolBeforeDucking_, 0.0f) || instanceVolBeforeDucking_ < duckInstanceVolume) {
         AUDIO_INFO_LOG("AudioRendererGateway: No need to duck further return");
         return false;
@@ -414,11 +427,11 @@ bool AudioInterruptCallbackGateway::HandleForceDucking(const InterruptEventInter
 
     ret = audioStream_->SetVolume(duckInstanceVolume);
     if (ret) {
-        AUDIO_DEBUG_LOG("AudioRendererGateway: set duckVolume(instance) %{pubic}f failed", duckInstanceVolume);
+        AUDIO_DEBUG_LOG("AudioRendererGateway: set duckVolumeDb(instance) %{pubic}f failed", duckInstanceVolume);
         return false;
     }
 
-    AUDIO_DEBUG_LOG("AudioRendererGateway: set duckVolume(instance) %{pubic}f succeeded", duckInstanceVolume);
+    AUDIO_DEBUG_LOG("AudioRendererGateway: set duckVolumeDb(instance) %{pubic}f succeeded", duckInstanceVolume);
     return true;
 }
 

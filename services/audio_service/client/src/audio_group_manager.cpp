@@ -37,20 +37,6 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
-float AudioGroupManager::MapVolumeToHDI(int32_t volume)
-{
-    float value = (float)volume / MAX_VOLUME_LEVEL;
-    float roundValue = (int)(value * CONST_FACTOR);
-
-    return (float)roundValue / CONST_FACTOR;
-}
-
-int32_t AudioGroupManager::MapVolumeFromHDI(float volume)
-{
-    float value = (float)volume * MAX_VOLUME_LEVEL;
-    return nearbyint(value);
-}
-
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
@@ -85,14 +71,13 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
             return ERR_NOT_SUPPORTED;
     }
 
-    /* Call Audio Policy SetStreamVolume */
+    /* Call Audio Policy SetSystemVolumeLevel */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeToHdi = MapVolumeToHDI(volume);
 
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_9);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volume, API_9);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -101,7 +86,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         return SUCCESS;
     }
 
-    return AudioPolicyManager::GetInstance().SetStreamVolume(StreamVolType, volumeToHdi, API_9);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volume, API_9);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
@@ -134,7 +119,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             break;
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
-            return (float)ERR_NOT_SUPPORTED;
+            return ERR_NOT_SUPPORTED;
     }
 
     if (volumeType == STREAM_ALL) {
@@ -142,11 +127,8 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType=%{public}d ", volumeType);
     }
 
-    /* Call Audio Policy SetStreamMute */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    float volumeFromHdi = AudioPolicyManager::GetInstance().GetStreamVolume(StreamVolType);
-
-    return MapVolumeFromHDI(volumeFromHdi);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(StreamVolType);
 }
 
 int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
@@ -172,7 +154,7 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
         }
         volumeType = STREAM_MUSIC;
     }
-    return g_sProxy->GetMaxVolume(volumeType);
+    return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
 }
 
 int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
@@ -198,7 +180,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
         }
         volumeType = STREAM_MUSIC;
     }
-    return g_sProxy->GetMinVolume(volumeType);
+    return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
 int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
@@ -282,7 +264,6 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         volumeType = STREAM_MUSIC;
     }
 
-    /* Call Audio Policy SetStreamVolume */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
     return SUCCESS;

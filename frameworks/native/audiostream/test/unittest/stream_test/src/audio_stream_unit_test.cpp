@@ -27,7 +27,6 @@ const int32_t FAILURE = -1;
 const uint32_t DEFAULT_SAMPLING_RATE = 44100;
 const uint8_t DEFAULT_CHANNEL_COUNT = 2;
 const uint8_t DEFAULT_SAMPLE_SIZE = 2;
-const uint32_t DEFAULT_STREAM_VOLUME = 0;
 const int32_t AUDIO_CLIENT_ERR = -1;
 const int32_t AUDIO_CLIENT_INVALID_PARAMS_ERR = -2;
 
@@ -90,20 +89,6 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_GetSampleSize_001, TestSize.Level1)
     AudioStreamUnitTest::InitAudioStream(audioStream_);
     uint8_t sampleSize = audioStream_->GetSampleSize();
     EXPECT_EQ(DEFAULT_SAMPLE_SIZE, sampleSize);
-}
-
-/**
-* @tc.name  : Test Audio_Stream_GetStreamVolume_001 via legal state
-* @tc.number: Audio_Stream_GetStreamVolume_001
-* @tc.desc  : Test GetStreamVolume interface. Returns success.
-*/
-HWTEST(AudioStreamUnitTest, Audio_Stream_GetStreamVolume_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioStream> audioStream_;
-    AudioStreamUnitTest::InitAudioStream(audioStream_);
-    uint32_t sessionID = 0;
-    uint8_t streamVolume = audioStream_->GetStreamVolume(sessionID);
-    EXPECT_EQ(DEFAULT_STREAM_VOLUME, streamVolume);
 }
 
 /**
@@ -359,23 +344,6 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_GetBufQueueState_001, TestSize.Level1)
     BufferQueueState bufState;
     ret = audioStream_->GetBufQueueState(bufState);
     EXPECT_EQ(ERR_INCORRECT_MODE, ret);
-}
-
-/**
-* @tc.name  : Test Audio_Stream_SetStreamVolume_001 via legal state
-* @tc.number: Audio_Stream_SetStreamVolume_001
-* @tc.desc  : Test SetStreamVolume interface. Returns success.
-*/
-HWTEST(AudioStreamUnitTest, Audio_Stream_SetStreamVolume_001, TestSize.Level1)
-{
-    int32_t ret = -1;
-    std::shared_ptr<AudioStream> audioStream_;
-    AudioStreamUnitTest::InitAudioStream(audioStream_);
-
-    uint32_t sessionID = 1;
-    uint32_t volume =1;
-    ret = audioStream_->SetStreamVolume(sessionID, volume);
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

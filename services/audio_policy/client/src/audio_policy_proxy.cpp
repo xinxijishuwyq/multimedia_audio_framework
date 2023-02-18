@@ -89,7 +89,45 @@ void AudioPolicyProxy::WriteAudioStreamInfoParams(MessageParcel &data, const Aud
     data.WriteInt32(static_cast<int32_t>(audioStreamInfo.encoding));
 }
 
-int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volume, API_VERSION api_v)
+int32_t AudioPolicyProxy::GetMaxVolumeLevel(AudioVolumeType volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMaxVolumeLevel: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    int32_t error = Remote()->SendRequest(GET_MAX_VOLUMELEVEL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get max volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetMinVolumeLevel(AudioVolumeType volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMinVolumeLevel: WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    int32_t error = Remote()->SendRequest(GET_MIN_VOLUMELEVEL, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get min volume failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -100,9 +138,9 @@ int32_t AudioPolicyProxy::SetStreamVolume(AudioStreamType streamType, float volu
     }
 
     data.WriteInt32(static_cast<int32_t>(streamType));
-    data.WriteFloat(volume);
+    data.WriteInt32(volumeLevel);
     data.WriteInt32(static_cast<int32_t>(api_v));
-    int32_t error = Remote()->SendRequest(SET_STREAM_VOLUME, data, reply, option);
+    int32_t error = Remote()->SendRequest(SET_SYSTEM_VOLUMELEVEL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("set volume failed, error: %d", error);
         return error;
@@ -308,7 +346,7 @@ AudioScene AudioPolicyProxy::GetAudioScene()
     return static_cast<AudioScene>(reply.ReadInt32());
 }
 
-float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
+int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -319,12 +357,12 @@ float AudioPolicyProxy::GetStreamVolume(AudioStreamType streamType)
         return -1;
     }
     data.WriteInt32(static_cast<int32_t>(streamType));
-    int32_t error = Remote()->SendRequest(GET_STREAM_VOLUME, data, reply, option);
+    int32_t error = Remote()->SendRequest(GET_SYSTEM_VOLUMELEVEL, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("get volume failed, error: %d", error);
         return error;
     }
-    return reply.ReadFloat();
+    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
