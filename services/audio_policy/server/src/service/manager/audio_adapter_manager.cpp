@@ -106,7 +106,8 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 
 int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
-    if (volumeType == STREAM_VOICE_ASSISTANT || volumeType == STREAM_VOICE_CALL) {
+    if (volumeType == STREAM_VOICE_ASSISTANT || volumeType == STREAM_VOICE_CALL ||
+        volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY) {
         return (MIN_VOLUME_LEVEL + 1);
     }
     return MIN_VOLUME_LEVEL;
@@ -115,7 +116,8 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     if (volumeLevel == 0 &&
-        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL)) {
+        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
+        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetSystemVolumeLevel this type can not set mute");
         return SUCCESS;
@@ -186,7 +188,8 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     if (mute &&
-        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL)) {
+        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
+        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
