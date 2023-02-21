@@ -1419,6 +1419,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
+    if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
+        return; // not support input device.
+    }
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
