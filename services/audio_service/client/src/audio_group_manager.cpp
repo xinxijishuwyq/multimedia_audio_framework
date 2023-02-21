@@ -109,11 +109,11 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
             break;
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
-                AUDIO_ERR_LOG("GetVolume: STREAM_ALL No system permission");
+                AUDIO_ERR_LOG("GetVolume: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
             break;
@@ -154,6 +154,13 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
         }
         volumeType = STREAM_MUSIC;
     }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMaxVolume: STREAM_ULTRASONIC No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
 }
 
@@ -179,6 +186,13 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
             return ERR_PERMISSION_DENIED;
         }
         volumeType = STREAM_MUSIC;
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMinVolume: STREAM_ULTRASONIC No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
     }
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
@@ -247,8 +261,8 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
             break;
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
                 AUDIO_ERR_LOG("IsStreamMute: No system permission");

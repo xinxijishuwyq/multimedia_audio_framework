@@ -22,6 +22,7 @@
 #include "audio_policy_manager.h"
 #include "audio_stream.h"
 #include "audio_renderer_private.h"
+#include "audio_utils.h"
 #ifdef OHCORE
 #include "audio_renderer_gateway.h"
 #endif
@@ -99,6 +100,12 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_SYSTEM,
                              nullptr, "Invalid stream usage");
+    if (contentType == CONTENT_TYPE_ULTRASONIC || streamUsage == STREAM_USAGE_SYSTEM) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("Create: CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM No system permission");
+            return nullptr;
+        }
+    }
 
     AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
 #ifdef OHCORE
