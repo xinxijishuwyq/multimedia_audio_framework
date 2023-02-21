@@ -42,6 +42,7 @@ public:
         ALARM = 4,
         ACCESSIBILITY = 5,
         VOICE_ASSISTANT = 9,
+        ULTRASONIC = 10,
         VOLUMETYPE_MAX,
         ALL = 100
     };

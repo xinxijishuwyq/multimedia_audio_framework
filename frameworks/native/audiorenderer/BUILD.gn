@@ -58,6 +58,7 @@ ohos_shared_library("audio_renderer") {
   ]
 
   deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]

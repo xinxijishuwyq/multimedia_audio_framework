@@ -100,6 +100,7 @@ bool AudioCommonNapi::IsLegalInputArgumentVolType(int32_t inputType)
         case AudioManagerNapi::VOICE_ASSISTANT:
         case AudioManagerNapi::ALARM:
         case AudioManagerNapi::ACCESSIBILITY:
+        case AudioManagerNapi::ULTRASONIC:
         case AudioManagerNapi::ALL:
             result = true;
             break;

@@ -308,11 +308,11 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
             break;
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
-                AUDIO_ERR_LOG("SetVolume: STREAM_ALL No system permission");
+                AUDIO_ERR_LOG("SetVolume: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
             break;
@@ -349,8 +349,8 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
             break;
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
                 AUDIO_ERR_LOG("SetMute: No system permission");
@@ -402,6 +402,13 @@ int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
         volumeType = STREAM_MUSIC;
     }
 
+    if (volumeType == STREAM_ULTRASONIC) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMaxVolume: STREAM_ULTRASONIC No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
 }
 
@@ -413,6 +420,13 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
             return ERR_PERMISSION_DENIED;
         }
         volumeType = STREAM_MUSIC;
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AUDIO_ERR_LOG("GetMinVolume: STREAM_ULTRASONIC No system permission");
+            return ERR_PERMISSION_DENIED;
+        }
     }
 
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
@@ -429,11 +443,11 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
             break;
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
-                AUDIO_ERR_LOG("SetMute: STREAM_ALL No system permission");
+                AUDIO_ERR_LOG("SetMute: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
             break;
@@ -472,11 +486,11 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
-        case STREAM_ULTRASONIC:
             break;
+        case STREAM_ULTRASONIC:
         case STREAM_ALL:
             if (!PermissionUtil::VerifySystemPermission()) {
-                AUDIO_ERR_LOG("IsStreamMute: STREAM_ALL No system permission");
+                AUDIO_ERR_LOG("IsStreamMute: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
             break;
@@ -803,13 +817,13 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
     uint32_t clientID = GetCallingPid();
     AUDIO_INFO_LOG("AudioSystemManager:: RequestAudioFocus client id: %{public}d", clientID);
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.contentType >= CONTENT_TYPE_UNKNOWN
-                             && audioInterrupt.contentType <= CONTENT_TYPE_RINGTONE, ERR_INVALID_PARAM,
+                             && audioInterrupt.contentType <= CONTENT_TYPE_ULTRASONIC, ERR_INVALID_PARAM,
                              "Invalid content type");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamUsage >= STREAM_USAGE_UNKNOWN
-                             && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
+                             && audioInterrupt.streamUsage <= STREAM_USAGE_SYSTEM,
                              ERR_INVALID_PARAM, "Invalid stream usage");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.audioFocusType.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_RECORDING,
+                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_ULTRASONIC,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().RequestAudioFocus(clientID, audioInterrupt);
 }
@@ -819,13 +833,13 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
     uint32_t clientID = GetCallingPid();
     AUDIO_INFO_LOG("AudioSystemManager:: AbandonAudioFocus client id: %{public}d", clientID);
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.contentType >= CONTENT_TYPE_UNKNOWN
-                             && audioInterrupt.contentType <= CONTENT_TYPE_RINGTONE, ERR_INVALID_PARAM,
+                             && audioInterrupt.contentType <= CONTENT_TYPE_ULTRASONIC, ERR_INVALID_PARAM,
                              "Invalid content type");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.streamUsage >= STREAM_USAGE_UNKNOWN
-                             && audioInterrupt.streamUsage <= STREAM_USAGE_NOTIFICATION_RINGTONE,
+                             && audioInterrupt.streamUsage <= STREAM_USAGE_SYSTEM,
                              ERR_INVALID_PARAM, "Invalid stream usage");
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.audioFocusType.streamType >= AudioStreamType::STREAM_VOICE_CALL
-                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_RECORDING,
+                             && audioInterrupt.audioFocusType.streamType <= AudioStreamType::STREAM_ULTRASONIC,
                              ERR_INVALID_PARAM, "Invalid stream type");
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientID, audioInterrupt);
 }
