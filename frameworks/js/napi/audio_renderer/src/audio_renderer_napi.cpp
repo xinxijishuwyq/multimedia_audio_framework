@@ -1843,16 +1843,21 @@ napi_value AudioRendererNapi::RegisterPeriodPositionCallback(napi_env env, napi_
     napi_get_value_int64(env, argv[PARAM1], &frameCount);
 
     if (frameCount > 0) {
-        rendererNapi->periodPositionCBNapi_ = std::make_shared<RendererPeriodPositionCallbackNapi>(env);
-        THROW_ERROR_ASSERT(env, rendererNapi->periodPositionCBNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
-
-        int32_t ret = rendererNapi->audioRenderer_->SetRendererPeriodPositionCallback(frameCount,
-            rendererNapi->periodPositionCBNapi_);
-        THROW_ERROR_ASSERT(env, ret == SUCCESS, NAPI_ERR_SYSTEM);
-
-        std::shared_ptr<RendererPeriodPositionCallbackNapi> cb =
-            std::static_pointer_cast<RendererPeriodPositionCallbackNapi>(rendererNapi->periodPositionCBNapi_);
-        cb->SaveCallbackReference(cbName, argv[PARAM2]);
+        if (rendererNapi->periodPositionCBNapi_ == nullptr) {
+            rendererNapi->periodPositionCBNapi_ = std::make_shared<RendererPeriodPositionCallbackNapi>(env);
+            THROW_ERROR_ASSERT(env, rendererNapi->periodPositionCBNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
+    
+            int32_t ret = rendererNapi->audioRenderer_->SetRendererPeriodPositionCallback(frameCount,
+                rendererNapi->periodPositionCBNapi_);
+            THROW_ERROR_ASSERT(env, ret == SUCCESS, NAPI_ERR_SYSTEM);
+    
+            std::shared_ptr<RendererPeriodPositionCallbackNapi> cb =
+                std::static_pointer_cast<RendererPeriodPositionCallbackNapi>(rendererNapi->periodPositionCBNapi_);
+            cb->SaveCallbackReference(cbName, argv[PARAM2]);
+        } else {
+            AUDIO_DEBUG_LOG("AudioRendererNapi: periodReach already subscribed.");
+            THROW_ERROR_ASSERT(env, false, NAPI_ERR_ILLEGAL_STATE);
+        }
     } else {
         AUDIO_ERR_LOG("AudioRendererNapi: frameCount value not supported!!");
         THROW_ERROR_ASSERT(env, false, NAPI_ERR_INPUT_INVALID);
