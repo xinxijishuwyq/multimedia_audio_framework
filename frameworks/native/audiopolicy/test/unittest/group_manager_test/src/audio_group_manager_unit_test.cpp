@@ -90,9 +90,10 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_002, TestSize.Level1)
         ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ALARM, mute);
         EXPECT_EQ(SUCCESS, ret);
 
+        // stream alarm can not set mute
         bool isMute;
         ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ALARM, isMute);
-        EXPECT_EQ(true, isMute);
+        EXPECT_EQ(false, isMute);
     }
 }
 
@@ -121,9 +122,10 @@ HWTEST(AudioGroupManagerUnitTest, AudioVolume_003, TestSize.Level1)
         ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_ACCESSIBILITY, mute);
         EXPECT_EQ(SUCCESS, ret);
 
+        // stream accessibility can not set mute
         bool isMute;
         ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_ACCESSIBILITY, isMute);
-        EXPECT_EQ(true, isMute);
+        EXPECT_EQ(false, isMute);
     }
 }
 
