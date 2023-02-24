@@ -207,6 +207,12 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
 
+    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+
+    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
+
+    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -253,6 +259,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
+    void OnAudioFocusInfoChange();
 
     // for audio volume
     int32_t SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
@@ -275,12 +282,14 @@ private:
     std::mutex interruptMutex_;
     std::mutex volumeKeyEventMutex_;
     std::mutex micStateChangeMutex_;
+    std::mutex focusInfoChangeMutex_;
     uint32_t clientOnFocus_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> policyListenerCbsMap_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> audioManagerListenerCbsMap_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
+    std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCallbackMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
     std::vector<pid_t> clientDiedListenerState_;

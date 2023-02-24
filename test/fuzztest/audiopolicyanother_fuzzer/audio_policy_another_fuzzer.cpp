@@ -118,6 +118,24 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     AudioPolicyServerPtr->RequestAudioFocus(clientID, audioInterrupt);
     AudioPolicyServerPtr->AbandonAudioFocus(clientID, audioInterrupt);
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
+    std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
+    focusInfo.first.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    focusInfo.first.contentType = *reinterpret_cast<const ContentType *>(rawData);
+    focusInfo.first.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+    focusInfo.first.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    focusInfo.first.audioFocusType.isPlay = *reinterpret_cast<const bool *>(rawData);
+    focusInfo.first.sessionID = *reinterpret_cast<const int32_t *>(rawData);
+    focusInfo.first.pauseWhenDucked = *reinterpret_cast<const bool *>(rawData);
+    focusInfo.first.pid = *reinterpret_cast<const int32_t *>(rawData);
+    focusInfo.first.mode = *reinterpret_cast<const InterruptMode *>(rawData);
+    focusInfo.second = *reinterpret_cast<const AudioFocuState *>(rawData);
+    focusInfoList.push_back(focusInfo);
+    AudioPolicyServerPtr->GetAudioFocusInfoList(focusInfoList);
+
+    AudioPolicyServerPtr->RegisterFocusInfoChangeCallback(clientID, object);
+    AudioPolicyServerPtr->UnregisterFocusInfoChangeCallback(clientID);
 }
 
 void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)

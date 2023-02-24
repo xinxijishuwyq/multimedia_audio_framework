@@ -29,10 +29,12 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioPolicyManagerListenerProxy);
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;
     void WriteInterruptEventParams(MessageParcel &data, const InterruptEventInternal &interruptEvent);
+    void WriteAudioFocusInfo(MessageParcel &data, const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
 };
 
 class AudioPolicyManagerListenerCallback : public AudioInterruptCallback {

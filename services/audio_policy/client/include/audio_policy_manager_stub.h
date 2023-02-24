@@ -93,6 +93,12 @@ private:
     void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+
+    void WriteAudioFocusInfo(MessageParcel &data,
+        const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
 };
 } // namespace AudioStandard
 } // namespace OHOS

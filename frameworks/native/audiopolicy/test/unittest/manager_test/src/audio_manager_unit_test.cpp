@@ -2026,5 +2026,35 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
         StreamSetState::STREAM_RESUME, AudioStreamType::STREAM_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name : GetAudioFocusInfoList_001
+ * @tc.desc : Test get audio focus info list
+ * @tc.type : FUNC
+ * @tc.require : issueI6GYJT
+ */
+HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_001, TestSize.Level1)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+    int32_t ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
+
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name : RegisterFocusInfoChangeCallback_001
+ * @tc.desc : Test register focus info change callback
+ * @tc.type : FUNC
+ * @tc.require : issueI6GYJT
+ */
+HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = make_shared<AudioFocusInfoChangeCallbackImpl>();
+    auto ret = AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

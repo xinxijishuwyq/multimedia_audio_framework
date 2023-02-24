@@ -878,6 +878,98 @@ int32_t AudioPolicyProxy::UnsetPreferOutputDeviceChangeCallback(const int32_t cl
     return reply.ReadInt32();
 }
 
+void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    std::pair<AudioInterrupt, AudioFocuState> focusInfo;
+
+    focusInfo.first.streamUsage = static_cast<StreamUsage>(reply.ReadInt32());
+    focusInfo.first.contentType = static_cast<ContentType>(reply.ReadInt32());
+    focusInfo.first.audioFocusType.streamType = static_cast<AudioStreamType>(reply.ReadInt32());
+    focusInfo.first.audioFocusType.sourceType = static_cast<SourceType>(reply.ReadInt32());
+    focusInfo.first.audioFocusType.isPlay = reply.ReadBool();
+    focusInfo.first.sessionID = reply.ReadInt32();
+    focusInfo.first.pauseWhenDucked = reply.ReadBool();
+    focusInfo.first.mode = static_cast<InterruptMode>(reply.ReadInt32());
+    focusInfo.second = static_cast<AudioFocuState>(reply.ReadInt32());
+
+    focusInfoList.push_back(focusInfo);
+}
+
+int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" GetAudioFocusInfoList WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(GET_AUDIO_FOCUS_INFO_LIST, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetAudioFocusInfoList, error: %d", error);
+        return error;
+    }
+    int32_t ret = reply.ReadInt32();
+    int32_t size = reply.ReadInt32();
+    if (ret < 0) {
+        return ret;
+    } else {
+        for (int32_t i = 0; i < size; i++) {
+            ReadAudioFocusInfo(reply, focusInfoList);
+        }
+        return SUCCESS;
+    }
+}
+
+int32_t AudioPolicyProxy::RegisterFocusInfoChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(clientId);
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(REGISTER_FOCUS_INFO_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallback(const int32_t clientId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(clientId);
+    int error = Remote()->SendRequest(UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("unset focus info change callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;

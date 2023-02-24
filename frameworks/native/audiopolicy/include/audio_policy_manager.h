@@ -191,6 +191,12 @@ public:
         const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback);
 
     int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
+
+    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
+
+    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

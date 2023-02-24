@@ -166,6 +166,12 @@ public:
         const sptr<IRemoteObject>& object) override;
 
     int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) override;
+
+    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+
+    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
+
+    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
@@ -178,6 +184,7 @@ private:
     void ReadAudioCapturerChangeInfo(MessageParcel &reply,
         std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     void WriteAudioStreamInfoParams(MessageParcel &parcel, const AudioStreamInfo &audioStreamInfo);
+    void ReadAudioFocusInfo(MessageParcel &reply, std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 };
 } // namespace AudioStandard
 } // namespace OHOS

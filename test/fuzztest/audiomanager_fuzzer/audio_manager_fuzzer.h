@@ -42,6 +42,13 @@ public:
     virtual ~AudioPreferOutputDeviceChangeCallbackFuzz() = default;
     virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
 };
+
+class AudioFocusInfoChangeCallbackFuzz : public AudioFocusInfoChangeCallback {
+public:
+    explicit AudioFocusInfoChangeCallbackFuzz() = default;
+    virtual ~AudioFocusInfoChangeCallbackFuzz() = default;
+    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) {};
+};
 } // namespace AudioStandard
 } // namesapce OHOS
 
