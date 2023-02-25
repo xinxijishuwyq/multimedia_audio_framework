@@ -20,6 +20,7 @@
 
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream.h"
@@ -123,7 +124,7 @@ AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, Strea
     return streamType;
 }
 
-const sptr<IStandardAudioService> AudioSystemManager::GetAudioSystemManagerProxy()
+inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 {
     lock_guard<mutex> lock(g_asProxyMutex);
     if (g_asProxy == nullptr) {
@@ -146,7 +147,7 @@ const sptr<IStandardAudioService> AudioSystemManager::GetAudioSystemManagerProxy
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
         if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb(std::bind(&AudioSystemManager::AudioServerDied, this,
+            asDeathRecipient->SetNotifyCb(std::bind(&AudioSystemManager::AudioServerDied,
                 std::placeholders::_1));
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {

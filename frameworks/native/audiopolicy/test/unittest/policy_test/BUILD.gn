@@ -41,7 +41,7 @@ ohos_unittest("audio_policy_unit_test") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

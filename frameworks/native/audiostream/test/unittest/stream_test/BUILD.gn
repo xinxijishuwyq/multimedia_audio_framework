@@ -31,7 +31,13 @@ ohos_unittest("audio_stream_unit_test") {
     "-Wall",
     "-Werror",
   ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_single",
+  ]
+
   sources = [ "src/audio_stream_unit_test.cpp" ]
+
   deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
 }

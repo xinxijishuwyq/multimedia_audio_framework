@@ -15,6 +15,7 @@
 
 #include "audio_policy_manager.h"
 #include "audio_errors.h"
+#include "audio_policy_base.h"
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "iservice_registry.h"
@@ -28,7 +29,7 @@ using namespace std;
 static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
 
-const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy()
+inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
     AUDIO_DEBUG_LOG("GetAudioPolicyManagerProxy Start to get audio manager service proxy.");
     lock_guard<mutex> lock(g_apProxyMutex);
@@ -53,32 +54,21 @@ const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy()
         }
 
         AUDIO_DEBUG_LOG("GetAudioPolicyManagerProxy Init g_apProxy is assigned.");
-        RegisterAudioPolicyServerDeathRecipient();
+        pid_t pid = 0;
+        sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
+        if (deathRecipient_ != nullptr) {
+            deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied,
+                std::placeholders::_1));
+            AUDIO_INFO_LOG("Register audio policy server death recipient");
+            bool result = object->AddDeathRecipient(deathRecipient_);
+            if (!result) {
+                AUDIO_ERR_LOG("failed to add deathRecipient");
+            }
+        }
     }
 
     const sptr<IAudioPolicy> gsp = g_apProxy;
     return gsp;
-}
-
-void AudioPolicyManager::RegisterAudioPolicyServerDeathRecipient()
-{
-    AUDIO_INFO_LOG("Register audio policy server death recipient");
-    pid_t pid = 0;
-    sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid);
-    if (deathRecipient_ != nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_LOG(samgr != nullptr, "Failed to obtain samgr");
-
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(OHOS::AUDIO_POLICY_SERVICE_ID);
-        CHECK_AND_RETURN_LOG(object != nullptr, "Policy service unavailable");
-
-        deathRecipient_->SetNotifyCb(std::bind(&AudioPolicyManager::AudioPolicyServerDied, this,
-                                               std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add deathRecipient");
-        }
-    }
 }
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)

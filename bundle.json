@@ -32,7 +32,7 @@
               "ability_manager",
               "appexecfwk_base",
               "ace_napi",
-              "ipc_core",
+              "ipc_single",
               "libhilog",
               "native_dataability",
               "native_rdb",

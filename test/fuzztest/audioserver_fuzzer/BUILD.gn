@@ -43,7 +43,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]

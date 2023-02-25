@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -37,7 +38,6 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_framework/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//utils/system/safwk/native/include",
     "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
@@ -46,6 +46,8 @@ config("audio_client_public_config") {
     "$pulseaudio_build_path/include",
     "//third_party/bounds_checking_function/include",
   ]
+
+  include_dirs += [ ipc_dir ]
 
   cflags = [
     "-Wall",
@@ -90,7 +92,7 @@ ohos_shared_library("audio_client") {
     "eventhandler:libeventhandler",
     "hisysevent_native:libhisysevent",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
@@ -163,7 +165,7 @@ ohos_shared_library("audio_service") {
     "c_utils:utils",
     "hicollie_native:libhicollie",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -218,7 +220,10 @@ ohos_executable("audio_service_playback_test") {
 
   deps = [ ":audio_client" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_single",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
@@ -233,8 +238,10 @@ ohos_executable("audio_service_record_test") {
 
   deps = [ ":audio_client" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_single",
+  ]
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
@@ -248,7 +255,10 @@ ohos_executable("audio_multichannel_test") {
 
   deps = [ ":audio_client" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_single",
+  ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
