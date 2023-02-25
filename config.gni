@@ -14,4 +14,6 @@
 declare_args() {
   multimedia_audio_framework_hdi_audio_client =
       "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client"
+  ipc_dir =
+      "//foundation/communication/ipc/interfaces/innerkits/ipc_single/include"
 }

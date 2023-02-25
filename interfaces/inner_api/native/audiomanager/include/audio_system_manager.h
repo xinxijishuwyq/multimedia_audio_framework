@@ -17,6 +17,7 @@
 #define ST_AUDIO_SYSTEM_MANAGER_H
 
 #include <cstdlib>
+#include <list>
 #include <map>
 #include <mutex>
 #include <vector>
@@ -27,7 +28,6 @@
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
-#include "audio_manager_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -302,6 +302,7 @@ public:
     int32_t RegisterFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
     int32_t UnregisterFocusInfoChangeCallback(
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
+    static void AudioServerDied(pid_t pid);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
@@ -312,9 +313,7 @@ private:
     virtual ~AudioSystemManager();
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    const sptr<IStandardAudioService> GetAudioSystemManagerProxy();
     uint32_t GetCallingPid();
-    void AudioServerDied(pid_t pid);
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;
