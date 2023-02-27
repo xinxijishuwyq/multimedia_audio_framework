@@ -913,6 +913,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     }
     int32_t ret = reply.ReadInt32();
     int32_t size = reply.ReadInt32();
+    focusInfoList = {};
     if (ret < 0) {
         return ret;
     } else {

@@ -31,6 +31,12 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+    // Init Renderer Options for music
+    static AudioRendererOptions InitializeRendererOptionsForMusic();
+    // Init Renderer Options for ring
+    static AudioRendererOptions InitializeRendererOptionsForRing();
+    // Wait for Callback invoke
+    static void WaitForCallback();
 };
 
 class AudioManagerCallbackImpl : public AudioManagerCallback {
@@ -42,8 +48,8 @@ public:
 
 class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
 public:
-    virtual ~AudioFocusInfoChangeCallbackTest() = default;
-    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) {};
+    ~AudioFocusInfoChangeCallbackTest() = default;
+    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS
