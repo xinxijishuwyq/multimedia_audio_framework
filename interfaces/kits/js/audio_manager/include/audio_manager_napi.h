@@ -158,7 +158,10 @@ static const std::map<std::string, AudioManagerNapi::AudioVolumeType> VOLUME_TYP
     {"VOICE_CALL", AudioManagerNapi::VOICE_CALL},
     {"RINGTONE", AudioManagerNapi::RINGTONE},
     {"MEDIA", AudioManagerNapi::MEDIA},
-    {"VOICE_ASSISTANT", AudioManagerNapi::VOICE_ASSISTANT}
+    {"VOICE_ASSISTANT", AudioManagerNapi::VOICE_ASSISTANT},
+    {"ALARM", AudioManagerNapi::ALARM},
+    {"ACCESSIBILITY", AudioManagerNapi::ACCESSIBILITY},
+    {"ULTRASONIC", AudioManagerNapi::ULTRASONIC}
 };
 
 static const std::map<std::string, AudioStandard::ActiveDeviceType> ACTIVE_DEVICE_TYPE = {
