@@ -28,6 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 /**
  * @brief Defines information about audio renderer parameters.
+ * @since 8
  */
 
 struct AudioRendererParams {
@@ -50,6 +51,7 @@ public:
      *
      * @param interruptEvent Indicates the InterruptEvent information needed by client.
      * For details, refer InterruptEvent struct in audio_info.h
+     * @since 8
      */
     virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
 
@@ -70,6 +72,7 @@ public:
      * Called when the requested frame number is reached.
      *
      * @param framePosition requested frame position.
+     * @since 8
      */
     virtual void OnMarkReached(const int64_t &framePosition) = 0;
 };
@@ -82,6 +85,7 @@ public:
      * Called when the requested frame count is written.
      *
      * @param frameCount requested frame frame count for callback.
+     * @since 8
      */
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
 };
@@ -94,12 +98,14 @@ public:
      * Called when buffer to be enqueued.
      *
      * @param length Indicates requested buffer length.
+     * @since 8
      */
     virtual void OnWriteData(size_t length) = 0;
 };
 
 /**
  * @brief Provides functions for applications to implement audio rendering.
+ * @since 8
  */
 class AudioRenderer {
 public:
@@ -109,6 +115,7 @@ public:
      * @param audioStreamType The audio streamtype to be created.
      * refer AudioStreamType in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
+     * @since 8
     */
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType);
 
@@ -119,6 +126,7 @@ public:
      * refer AudioStreamType in audio_info.h.
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioRenderer object
+     * @since 9
     */
     static std::unique_ptr<AudioRenderer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
@@ -128,6 +136,7 @@ public:
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
+     * @since 8
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &rendererOptions);
 
@@ -138,6 +147,7 @@ public:
      * refer AudioRendererOptions in audio_info.h.
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioRenderer object
+     * @since 9
     */
     static std::unique_ptr<AudioRenderer> Create(const AudioRendererOptions &options, const AppInfo &appInfo);
 
@@ -148,6 +158,7 @@ public:
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
      * @return Returns unique pointer to the AudioRenderer object
+     * @since 8
     */
     static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions);
@@ -160,6 +171,7 @@ public:
      * refer AudioRendererOptions in audio_info.h.
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioRenderer object
+     * @since 9
     */
     static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
@@ -171,6 +183,7 @@ public:
      * {@link AudioRendererParams}.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetParams(const AudioRendererParams params) = 0;
 
@@ -183,6 +196,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) = 0;
 
@@ -195,6 +209,7 @@ public:
      * {@link AudioRendererParams}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetParams(AudioRendererParams &params) const = 0;
 
@@ -207,6 +222,7 @@ public:
      * {@link AudioRendererInfo}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const = 0;
 
@@ -219,6 +235,7 @@ public:
      * {@link AudioStreamInfo}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const = 0;
 
@@ -226,6 +243,7 @@ public:
      * @brief Starts audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
+     * @since 10
      */
     virtual bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const = 0;
 
@@ -241,6 +259,7 @@ public:
      * <b>ERR_ILLEGAL_STATE</b>: The <b>AudioRenderer</b> instance is not initialized.
      * <b>ERR_INVALID_WRITE</b>: The written audio data size is < 0.
      * <b>ERR_WRITE_FAILED</b>: The audio data write failed .
+     * @since 8
      */
     virtual int32_t Write(uint8_t *buffer, size_t bufferSize) = 0;
 
@@ -248,6 +267,7 @@ public:
      * @brief Obtains the audio renderer state.
      *
      * @return Returns the audio renderer state defined in {@link RendererState}.
+     * @since 8
      */
     virtual RendererState GetStatus() const = 0;
 
@@ -258,6 +278,7 @@ public:
      * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
      * {@link Timestamp.Timestampbase#MONOTONIC}.
      * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
@@ -267,6 +288,7 @@ public:
      * @param latency Indicates the reference variable into which latency value will be written.
      * @return Returns {@link SUCCESS} if latency is successfully obtained, returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetLatency(uint64_t &latency) const = 0;
 
@@ -274,6 +296,7 @@ public:
      * @brief drain renderer buffer.
      *
      * @return Returns <b>true</b> if the buffer is successfully drained; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Drain() const = 0;
 
@@ -281,6 +304,7 @@ public:
      * @brief flush renderer stream.
      *
      * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Flush() const = 0;
 
@@ -288,6 +312,7 @@ public:
      * @brief Pauses audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
+     * @since 10
      */
     virtual bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const = 0;
 
@@ -295,6 +320,7 @@ public:
      * @brief Stops audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully stopped; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Stop() const = 0;
 
@@ -302,6 +328,7 @@ public:
      * @brief Releases a local <b>AudioRenderer</b> object.
      *
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Release() const = 0;
 
@@ -312,6 +339,7 @@ public:
      * @param bufferSize Indicates the reference variable into which buffer size value will be written.
      * @return Returns {@link SUCCESS} if bufferSize is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
 
@@ -321,6 +349,7 @@ public:
      * @param sessionId Indicates the reference variable into which stream id value will be written.
      * @return Returns {@link SUCCESS} if stream id is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 10
      */
     virtual int32_t GetAudioStreamId(uint32_t &sessionID) const = 0;
 
@@ -330,6 +359,7 @@ public:
      * @param frameCount Indicates the reference variable in which framecount will be written
      * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
 
@@ -339,6 +369,7 @@ public:
      * @param audioRendererDesc Audio renderer descriptor
      * @return Returns {@link SUCCESS} if attribute is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) const = 0;
 
@@ -348,6 +379,7 @@ public:
      * @param audioStreamType Audio stream type
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetStreamType(AudioStreamType audioStreamType) const = 0;
 
@@ -357,6 +389,7 @@ public:
      * @param volume The volume to be set for the current track.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetVolume(float volume) const = 0;
 
@@ -364,6 +397,7 @@ public:
      * @brief Obtains the current track volume
      *
      * @return Returns current track volume
+     * @since 8
      */
     virtual float GetVolume() const = 0;
 
@@ -373,6 +407,7 @@ public:
      * @param renderRate The rate at which the stream needs to be rendered.
      * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) const = 0;
 
@@ -380,6 +415,7 @@ public:
      * @brief Obtains the current render rate
      *
      * @return Returns current render rate
+     * @since 8
      */
     virtual AudioRendererRate GetRenderRate() const = 0;
 
@@ -388,12 +424,14 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetRendererPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPositionCallback> &callback) = 0;
 
     /**
      * @brief Unregisters the renderer position callback listener
+     * @since 8
      *
      */
     virtual void UnsetRendererPositionCallback() = 0;
@@ -403,6 +441,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetRendererPeriodPositionCallback(int64_t frameNumber,
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) = 0;
@@ -410,6 +449,7 @@ public:
     /**
      * @brief Unregisters the renderer period position callback listener
      *
+     * @since 8
      */
     virtual void UnsetRendererPeriodPositionCallback() = 0;
 
@@ -420,6 +460,7 @@ public:
      * @param bufferDuration  Indicates a buffer duration to be set for renderer
      * @return Returns {@link SUCCESS} if bufferDuration is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
 
@@ -427,6 +468,7 @@ public:
      * @brief Obtains the formats supported by renderer.
      *
      * @return Returns vector with supported formats.
+     * @since 8
      */
     static std::vector<AudioSampleFormat> GetSupportedFormats();
 
@@ -434,6 +476,7 @@ public:
      * @brief Obtains the SupportedSamplingRates supported by renderer.
      *
      * @return Returns vector with supported SupportedSamplingRates.
+     * @since 8
      */
     static std::vector<AudioSamplingRate> GetSupportedSamplingRates();
 
@@ -441,6 +484,7 @@ public:
      * @brief Obtains the channels supported by renderer.
      *
      * @return Returns vector with supported channels.
+     * @since 8
      */
     static std::vector<AudioChannel> GetSupportedChannels();
 
@@ -448,6 +492,7 @@ public:
      * @brief Obtains the encoding types supported by renderer.
      *
      * @return Returns vector with supported encoding types.
+     * @since 8
      */
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
 
@@ -458,6 +503,7 @@ public:
      * * @param renderMode The mode of render.
      * @return  Returns {@link SUCCESS} if render mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) const = 0;
 
@@ -465,6 +511,7 @@ public:
      * @brief Obtains the render mode.
      *
      * @return  Returns current render mode.
+     * @since 8
      */
     virtual AudioRenderMode GetRenderMode() const = 0;
 
@@ -474,6 +521,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) = 0;
 
@@ -485,6 +533,7 @@ public:
      * refer BufferQueueState in audio_info.h.
      * @return Returns {@link SUCCESS} if bufDesc is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
 
@@ -496,6 +545,7 @@ public:
      * refer BufferQueueState in audio_info.h.
      * @return Returns {@link SUCCESS} if bufDesc is successfully enqued; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
 
@@ -505,6 +555,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t Clear() const = 0;
 
@@ -516,6 +567,7 @@ public:
      * refer BufferQueueState in audio_info.h.
      * @return Returns {@link SUCCESS} if bufState is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
 
@@ -524,6 +576,7 @@ public:
      *
      * @param cachePath Indicates application cache path.
      * @return none
+     * @since 8
      */
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
 
@@ -532,6 +585,7 @@ public:
      *
      * @param mode The interrupt mode.
      * @return none
+     * @since 9
      */
     virtual void SetInterruptMode(InterruptMode mode) = 0;
 
@@ -540,6 +594,7 @@ public:
      *
      * @param volume Adjustment percentage.
      * @return Whether the operation is effective
+     * @since 9
      */
     virtual int32_t SetLowPowerVolume(float volume) const = 0;
 
@@ -548,6 +603,7 @@ public:
      *
      * @param none.
      * @return volume adjustment percentage.
+     * @since 9
      */
     virtual float GetLowPowerVolume() const = 0;
 
@@ -556,6 +612,7 @@ public:
      *
      * @param none.
      * @return single stream volume.
+     * @since 9
      */
     virtual float GetSingleStreamVolume() const = 0;
     

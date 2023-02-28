@@ -49,20 +49,40 @@ public:
 class AudioClientTracker {
 public:
     virtual ~AudioClientTracker() = default;
+
     /**
      * Paused Stream was controlled by system application
      *
      * @param streamSetStateEventInternal Contains the set even information.
      */
     virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
+
      /**
      * Resumed Stream was controlled by system application
      *
      * @param streamSetStateEventInternal Contains the set even information.
      */
     virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
+
+    /**
+     * Set low power volume was controlled by system application
+     *
+     * @param volume volume value.
+     */
     virtual void SetLowPowerVolumeImpl(float volume) = 0;
+
+    /**
+     * Get low power volume was controlled by system application
+     *
+     * @param volume volume value.
+     */
     virtual void GetLowPowerVolumeImpl(float &volume) = 0;
+
+    /**
+     * Get single stream was controlled by system application
+     *
+     * @param volume volume value.
+     */
     virtual void GetSingleStreamVolumeImpl(float &volume) = 0;
 };
 
@@ -72,16 +92,78 @@ public:
     virtual ~AudioStreamManager() = default;
 
     static AudioStreamManager *GetInstance();
+
+    /**
+     * @brief Registers the renderer event callback listener.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
                                               const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer event callback listener.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+
+    /**
+     * @brief Registers the capturer event callback listener.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t RegisterAudioCapturerEventListener(const int32_t clientUID,
                                               const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the capturer event callback listener.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t UnregisterAudioCapturerEventListener(const int32_t clientUID);
+
+    /**
+     * @brief Get current renderer change Infos.
+     *
+     * @param audioRendererChangeInfos  audioRendererChangeInfos
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t GetCurrentRendererChangeInfos(
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+
+    /**
+     * @brief Get current capturer change Infos.
+     *
+     * @param audioRendererChangeInfos  audioRendererChangeInfos
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
+    /**
+     * @brief Is audio renderer low latency supported.
+     *
+     * @param audioStreamInfo  audioStreamInfo
+     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 9
+     */
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 };
 } // namespace AudioStandard

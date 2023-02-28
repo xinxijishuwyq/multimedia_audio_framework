@@ -16,4 +16,11 @@ declare_args() {
       "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client"
   ipc_dir =
       "//foundation/communication/ipc/interfaces/innerkits/ipc_single/include"
+
+  multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
+
+  multimedia_audio_framework_pulse_audio_src = "//third_party/pulseaudio/src"
+
+  multimedia_audio_framework_drivers =
+      "//drivers/peripheral/audio/interfaces/include/"
 }

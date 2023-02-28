@@ -66,6 +66,9 @@ ohos_shared_library("audio_toneplayer") {
     "ipc:ipc_single",
   ]
 
+  version_script = "../../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"
 }
