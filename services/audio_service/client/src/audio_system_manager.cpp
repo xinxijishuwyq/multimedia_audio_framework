@@ -768,7 +768,15 @@ AudioFocusInfoChangeCallbackImpl::~AudioFocusInfoChangeCallbackImpl()
 void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    callbackList_.push_back(callback);
+    bool hasCallback = false;
+    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
+        if ((*it).lock() == callback.lock()) {
+            hasCallback = true;
+        }
+    }
+    if (!hasCallback) {
+        callbackList_.push_back(callback);
+    }
 }
 
 void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)

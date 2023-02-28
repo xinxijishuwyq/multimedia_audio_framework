@@ -2100,11 +2100,20 @@ HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_002, TestSize.Level1)
     AudioRendererOptions ringOptions = AudioManagerUnitTest::InitializeRendererOptionsForRing();
     unique_ptr<AudioRenderer> audioRendererForRing = AudioRenderer::Create(ringOptions);
     ASSERT_NE(nullptr, audioRendererForRing);
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
+    AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
+    EXPECT_EQ(focusInfoList.size(), 0);
+
     bool isStartedforRing = audioRendererForRing->Start();
     EXPECT_EQ(true, isStartedforRing);
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+
     int32_t ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
     EXPECT_EQ(focusInfoList.size(), 1);
+    for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
+        EXPECT_EQ(it->first.audioFocusType.streamType, AudioStreamType::STREAM_RING);
+        EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+    }
 
     AudioRendererOptions musicOptions = AudioManagerUnitTest::InitializeRendererOptionsForMusic();
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(musicOptions);
@@ -2114,12 +2123,28 @@ HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_002, TestSize.Level1)
     ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 2);
+    for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
+        if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_RING) {
+            EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+        } else if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
+            EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+        } else {
+            EXPECT_TRUE(false);
+        }
+    }
 
     audioRendererForRing->Stop();
     audioRendererForRing->Release();
     ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 1);
+    for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
+        if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
+            EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+        } else {
+            EXPECT_TRUE(false);
+        }
+    }
 
     audioRenderer->Stop();
     audioRenderer->Release();
@@ -2156,6 +2181,77 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
     auto ret = AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(callback);
     EXPECT_EQ(ret, SUCCESS);
 
+    AudioRendererOptions musicOptions1 = AudioManagerUnitTest::InitializeRendererOptionsForMusic();
+    AudioRendererOptions musicOptions2 = AudioManagerUnitTest::InitializeRendererOptionsForMusic();
+    unique_ptr<AudioRenderer> audioRenderer1 = AudioRenderer::Create(musicOptions1);
+    ASSERT_NE(nullptr, audioRenderer1);
+
+    bool isStarted = audioRenderer1->Start();
+    EXPECT_EQ(true, isStarted);
+
+    uint32_t sessionID1 = -1;
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRenderer1 != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 1);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
+                sessionID1 = it->first.sessionID;
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            } else {
+                EXPECT_TRUE(false);
+            }
+        }
+    }
+
+    unique_ptr<AudioRenderer> audioRenderer2 = AudioRenderer::Create(musicOptions2);
+    ASSERT_NE(nullptr, audioRenderer2);
+    isStarted = audioRenderer2->Start();
+    EXPECT_EQ(true, isStarted);
+    audioRenderer1->Stop();
+    audioRenderer1->Release();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRenderer1 != nullptr && audioRenderer2 != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 1);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+                EXPECT_TRUE(sessionID1 != it->first.sessionID);
+            }
+        }
+    }
+
+    audioRenderer2->Stop();
+    audioRenderer2->Release();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRenderer1 != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 0);
+    }
+
+    ret = AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name : RegisterFocusInfoChangeCallback_003
+ * @tc.desc : Test register focus info change callback
+ * @tc.type : FUNC
+ * @tc.require : issueI6GYJT
+ */
+HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = make_shared<AudioFocusInfoChangeCallbackTest>();
+    auto ret = AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+
     AudioRendererOptions ringOptions = AudioManagerUnitTest::InitializeRendererOptionsForRing();
     unique_ptr<AudioRenderer> audioRendererForRing = AudioRenderer::Create(ringOptions);
     ASSERT_NE(nullptr, audioRendererForRing);
@@ -2168,6 +2264,13 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         AudioManagerUnitTest::WaitForCallback();
         g_isCallbackReceived = false;
         EXPECT_EQ(g_audioFocusInfoList.size(), 1);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_RING) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            } else {
+                EXPECT_TRUE(false);
+            }
+        }
     }
 
     AudioRendererOptions musicOptions = AudioManagerUnitTest::InitializeRendererOptionsForMusic();
@@ -2176,17 +2279,17 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
-    ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(focusInfoList.size(), 2);
-
     std::this_thread::sleep_for(std::chrono::seconds(2));
     if (audioRenderer != nullptr && audioRendererForRing != nullptr) {
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         AudioManagerUnitTest::WaitForCallback();
         g_isCallbackReceived = false;
         EXPECT_EQ(g_audioFocusInfoList.size(), 2);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_RING) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            }
+        }
     }
 
     audioRenderer->Stop();
@@ -2197,6 +2300,13 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         AudioManagerUnitTest::WaitForCallback();
         g_isCallbackReceived = false;
         EXPECT_EQ(g_audioFocusInfoList.size(), 1);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_RING) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            } else {
+                EXPECT_TRUE(false);
+            }
+        }
     }
 
     audioRendererForRing->Stop();
@@ -2214,12 +2324,95 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
 }
 
 /**
- * @tc.name : RegisterFocusInfoChangeCallback_003
+ * @tc.name : RegisterFocusInfoChangeCallback_004
+ * @tc.desc : Test register focus info change callback
+ * @tc.type : FUNC
+ * @tc.require : issueI6GYJT
+ */
+HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = make_shared<AudioFocusInfoChangeCallbackTest>();
+    auto ret = AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioRendererOptions musicOptions = AudioManagerUnitTest::InitializeRendererOptionsForMusic();
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(musicOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRenderer != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 1);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            } else {
+                EXPECT_TRUE(false);
+            }
+        }
+    }
+
+    AudioRendererOptions ringOptions = AudioManagerUnitTest::InitializeRendererOptionsForRing();
+    unique_ptr<AudioRenderer> audioRendererForRing = AudioRenderer::Create(ringOptions);
+    ASSERT_NE(nullptr, audioRendererForRing);
+    bool isStartedforRing = audioRendererForRing->Start();
+    EXPECT_EQ(true, isStartedforRing);
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRendererForRing != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 2);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_RING) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            }
+        }
+    }
+
+    audioRendererForRing->Stop();
+    audioRendererForRing->Release();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRenderer != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 1);
+        for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
+            if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
+                EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
+            } else {
+                EXPECT_TRUE(false);
+            }
+        }
+    }
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    if (audioRenderer != nullptr) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioManagerUnitTest::WaitForCallback();
+        g_isCallbackReceived = false;
+        EXPECT_EQ(g_audioFocusInfoList.size(), 0);
+    }
+
+    ret = AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name : RegisterFocusInfoChangeCallback_005
  * @tc.desc : Test register two focus info change callback
  * @tc.type : FUNC
  * @tc.require : issueI6GYJT
  */
-HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_003, TestSize.Level1)
+HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_005, TestSize.Level1)
 {
     std::shared_ptr<AudioFocusInfoChangeCallback> callback1 = make_shared<AudioFocusInfoChangeCallbackTest>();
     std::shared_ptr<AudioFocusInfoChangeCallback> callback2 = make_shared<AudioFocusInfoChangeCallbackTest>();
