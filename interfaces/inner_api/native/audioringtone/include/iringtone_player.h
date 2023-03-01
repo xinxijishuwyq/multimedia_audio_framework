@@ -49,7 +49,7 @@ public:
      * @brief Returns the current ringtone state
      *
      * @return Returns the current state of ringtone player.
-     * @since 8
+     * @since 1.0
      * @version 1.0
      */
     virtual RingtoneState GetRingtoneState() = 0;
@@ -71,7 +71,7 @@ public:
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * returns an error code defined in {@link media_errors.h} otherwise.
-     * @since 8
+     * @since 1.0
      * @version 1.0
      */
     virtual int32_t Start() = 0;
@@ -81,7 +81,7 @@ public:
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * returns an error code defined in {@link media_errors.h} otherwise.
-     * @since 8
+     * @since 1.0
      * @version 1.0
      */
     virtual int32_t Stop() = 0;
@@ -91,7 +91,7 @@ public:
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * returns an error code defined in {@link media_errors.h} otherwise.
-     * @since 8
+     * @since 1.0
      * @version 1.0
      */
     virtual int32_t GetAudioRendererInfo(AudioStandard::AudioRendererInfo &rendererInfo) const = 0;
@@ -101,7 +101,7 @@ public:
      *
      * @return Returns title as string if the title is obtained successfully from media library.
      * returns an empty string otherwise.
-     * @since 8
+     * @since 1.0
      * @version 1.0
      */
     virtual std::string GetTitle() = 0;
@@ -111,7 +111,7 @@ public:
      *
      * @return Returns {@link MSERR_OK} if the looping parameter is set successfully to player;
      * returns an error code defined in {@link media_errors.h} otherwise.
-     * @since 8
+     * @since 1.0
      * @version 1.0
      */
     virtual int32_t Release() = 0;

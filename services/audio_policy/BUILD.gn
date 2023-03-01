@@ -14,7 +14,6 @@
 import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 import("//foundation/multimedia/audio_framework/bluetooth_part.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
@@ -55,6 +54,20 @@ config("audio_policy_public_config") {
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
+    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
+    "//foundation/systemabilitymgr/safwk/services/safwk/include",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "//drivers/peripheral/audio/interfaces/include",
+    "//third_party/libxml2/include",
+    "//third_party/pulseaudio/src",
+    "//third_party/pulseaudio/confgure/src",
+    "//third_party/pulseaudio/include",
+    "$pulseaudio_build_path/include",
+    "//utils/system/safwk/native/include",
+    "//commonlibrary/c_utils/base/include",
+    "//third_party/bounds_checking_function/include",
+    "//third_party/cJSON",
+    "//foundation/communication/bluetooth/interfaces/inner_api/include",
   ]
 
   cflags = [
@@ -87,23 +100,6 @@ ohos_shared_library("audio_dump") {
   deps = [
     "$pulseaudio_build_path/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_shared",
-  ]
-
-  include_dirs = [
-    "../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "../../../../foundation/systemabilitymgr/safwk/services/safwk/include",
-    "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "../../../../drivers/peripheral/audio/interfaces/include",
-    "//third_party/libxml2/include",
-    "//third_party/pulseaudio/src",
-    "//third_party/pulseaudio/confgure/src",
-    "//third_party/pulseaudio/include",
-    "$pulseaudio_build_path/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-    "//third_party/cJSON",
-    "../../../../foundation/communication/bluetooth/interfaces/inner_api/include",
   ]
 
   external_deps = [
@@ -161,31 +157,11 @@ ohos_shared_library("audio_policy_service") {
     "//third_party/libxml2:xml2",
   ]
 
-  include_dirs = [
-    "../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "../../../../foundation/systemabilitymgr/safwk/services/safwk/include",
-    "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "../../../../drivers/peripheral/audio/interfaces/include",
-    "//third_party/libxml2/include",
-    "//third_party/pulseaudio/src",
-    "//third_party/pulseaudio/confgure/src",
-    "//third_party/pulseaudio/include",
-    "$pulseaudio_build_path/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-    "//third_party/cJSON",
-    "../../../../foundation/communication/bluetooth/interfaces/inner_api/include",
-  ]
-
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtoken_setproc",
-    "bluetooth:btframework",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -243,6 +219,7 @@ config("audio_policy_client_config") {
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
+    "//third_party/bounds_checking_function/include",
   ]
 
   cflags = [
@@ -278,8 +255,6 @@ ohos_shared_library("audio_policy_client") {
 
   public_configs = [ ":audio_policy_client_config" ]
 
-  include_dirs = [ "//third_party/bounds_checking_function/include" ]
-
   external_deps = [
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
@@ -307,12 +282,9 @@ ohos_executable("audio_policy_test") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  include_dirs = [ "//third_party/bounds_checking_function/include" ]
-
   external_deps = [
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_single",
   ]
 
   part_name = "multimedia_audio_framework"
