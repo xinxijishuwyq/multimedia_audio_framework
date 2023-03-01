@@ -38,13 +38,6 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_framework/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
-    "//utils/system/safwk/native/include",
-    "//commonlibrary/c_utils/base/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
-    "//third_party/bounds_checking_function/include",
   ]
 
   include_dirs += [ ipc_dir ]
@@ -87,6 +80,19 @@ ohos_shared_library("audio_client") {
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
   ]
 
+  include_dirs = [
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_build_path/include",
+    "//third_party/bounds_checking_function/include",
+  ]
+
+  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
@@ -95,6 +101,10 @@ ohos_shared_library("audio_client") {
     "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
+
+  version_script = "../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
 }
@@ -220,6 +230,17 @@ ohos_executable("audio_service_playback_test") {
 
   deps = [ ":audio_client" ]
 
+  include_dirs = [
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_build_path/include",
+    "//third_party/bounds_checking_function/include",
+  ]
+
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_single",
@@ -235,6 +256,17 @@ ohos_executable("audio_service_record_test") {
   sources = [ "test/example/record_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
+
+  include_dirs = [
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_build_path/include",
+    "//third_party/bounds_checking_function/include",
+  ]
 
   deps = [ ":audio_client" ]
 
@@ -252,6 +284,17 @@ ohos_executable("audio_multichannel_test") {
   sources = [ "test/example/audio_multichannel_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
+
+  include_dirs = [
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_build_path/include",
+    "//third_party/bounds_checking_function/include",
+  ]
 
   deps = [ ":audio_client" ]
 

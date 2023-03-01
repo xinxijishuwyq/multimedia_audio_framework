@@ -110,28 +110,11 @@
               "name": "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
               "header": {
                 "header_files": [
-                  "audio_toneplayer_private.h",
+                  "tone_player.h",
                   "audio_renderer.h",
                   "audio_info.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include"
-              }
-            },
-            {
-              "type": "none",
-              "name": "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
-              "header": {
-                "header_files": [
-                  "audio_manager_napi.h",
-                  "audio_capturer_napi.h",
-                  "audio_renderer_napi.h",
-                  "audio_parameters_napi.h"
-                ],
-                "header_base": [
-                  "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_manager/include",
-                  "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
-                  "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include"
-                ]
               }
             }
           ],

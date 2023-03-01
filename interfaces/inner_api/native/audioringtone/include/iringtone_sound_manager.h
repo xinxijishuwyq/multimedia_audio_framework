@@ -40,7 +40,7 @@ public:
      * @param context Indicates the Context object on OHOS.
      * @param type Indicates the type of tone for which player instance has to be returned
      * @return Returns IRingtonePlayer
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual std::shared_ptr<IRingtonePlayer> GetRingtonePlayer(const std::shared_ptr<AbilityRuntime::Context> &context,
@@ -52,7 +52,7 @@ public:
      * @param ctx Indicates the Context object on OHOS.
      * @param uri Indicates which uri to be set for the tone type
      * @return Returns IRingtonePlayer
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual int32_t SetSystemRingtoneUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, const std::string &uri,
@@ -63,7 +63,7 @@ public:
      *
      * @param context Indicates the Context object on OHOS.
      * @return Returns the system ringtone uri
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual std::string GetSystemRingtoneUri(const std::shared_ptr<AbilityRuntime::Context> &context,
@@ -74,7 +74,7 @@ public:
      *
      * @param context Indicates the Context object on OHOS.
      * @return Returns the system notification uri
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual std::string GetSystemNotificationUri(const std::shared_ptr<AbilityRuntime::Context> &context)= 0;
@@ -84,7 +84,7 @@ public:
      *
      * @param context Indicates the Context object on OHOS.
      * @return Returns system alarm uri
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual std::string GetSystemAlarmUri(const std::shared_ptr<AbilityRuntime::Context> &context) = 0;
@@ -94,7 +94,7 @@ public:
      *
      * @param context Indicates the Context object on OHOS.
      * @param uri indicates which uri to be set for notification
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual int32_t SetSystemNotificationUri(const std::shared_ptr<AbilityRuntime::Context> &context,
@@ -106,7 +106,7 @@ public:
      * @param ctx Indicates the Context object on OHOS.
      * @param uri indicates which uri to be set for alarm
      * @return Returns IRingtonePlayer
-     * @since 1.0
+     * @since 8
      * @version 1.0
      */
     virtual int32_t SetSystemAlarmUri(const std::shared_ptr<AbilityRuntime::Context> &ctx, const std::string &uri) = 0;
