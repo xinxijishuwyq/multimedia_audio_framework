@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 /**
  * @brief Defines information about audio capturer parameters
+ * @since 8
  */
 struct AudioCapturerParams {
     /** Audio source type */
@@ -50,6 +51,7 @@ public:
      *
      * @param interruptEvent Indicates the InterruptEvent information needed by client.
      * For details, refer InterruptEvent struct in audio_info.h
+     * @since 10
      */
     virtual void OnInterrupt(const InterruptEvent &interruptEvent) = 0;
 
@@ -58,6 +60,7 @@ public:
      *
      * @param state Indicates updated state of the capturer.
      * For details, refer enum CapturerState.
+     * @since 8
      */
     virtual void OnStateChange(const CapturerState state) = 0;
 };
@@ -70,6 +73,7 @@ public:
      * Called when the requested frame number is read.
      *
      * @param framePosition requested frame position.
+     * @since 8
      */
     virtual void OnMarkReached(const int64_t &framePosition) = 0;
 };
@@ -82,6 +86,7 @@ public:
      * Called when the requested frame count is read.
      *
      * @param frameCount requested frame frame count for callback.
+     * @since 8
      */
     virtual void OnPeriodReached(const int64_t &frameNumber) = 0;
 };
@@ -94,6 +99,7 @@ public:
      * Called when buffer to be enqueued.
      *
      * @param length Indicates requested buffer length.
+     * @since 9
      */
     virtual void OnReadData(size_t length) = 0;
 };
@@ -109,6 +115,7 @@ public:
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
+     * @since 8
     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
@@ -119,6 +126,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
+     * @since 9
     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
@@ -128,6 +136,7 @@ public:
      * @param options The audio capturer configuration to be used while creating capturer instance.
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
+     * @since 8
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options);
 
@@ -138,6 +147,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
+     * @since 9
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const AppInfo &appInfo);
 
@@ -148,6 +158,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @param cachePath Application cache path
      * @return Returns unique pointer to the AudioCapturer object
+     * @since 9
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath);
 
@@ -159,6 +170,7 @@ public:
      * @param cachePath Application cache path
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
+     * @since 9
     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
         const AppInfo &appInfo);
@@ -170,6 +182,7 @@ public:
      * {@link AudioCapturerParams}.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetParams(const AudioCapturerParams params) = 0;
 
@@ -182,6 +195,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback) = 0;
 
@@ -194,6 +208,7 @@ public:
      * {@link AudioCapturerParams}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetParams(AudioCapturerParams &params) const = 0;
 
@@ -206,6 +221,7 @@ public:
      * {@link AudioCapturerInfo}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const = 0;
 
@@ -218,6 +234,7 @@ public:
      * {@link AudioStreamInfo}.
      * @return Returns {@link SUCCESS} if the parameter information is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const = 0;
 
@@ -225,6 +242,7 @@ public:
      * @brief Starts audio capturing.
      *
      * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Start() const = 0;
 
@@ -241,6 +259,7 @@ public:
      * <b>ERR_INVALID_PARAM</b>: The input parameter is incorrect.
      * <b>ERR_ILLEGAL_STATE</b>: The <b>AudioCapturer</b> instance is not initialized.
      * <b>ERR_INVALID_READ</b>: The read size < 0.
+     * @since 8
      */
     virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const = 0;
 
@@ -248,6 +267,7 @@ public:
      * @brief Obtains the audio capture state.
      *
      * @return Returns the audio capture state defined in {@link CapturerState}.
+     * @since 9
      */
     virtual CapturerState GetStatus() const = 0;
 
@@ -258,21 +278,30 @@ public:
      * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
      * {@link Timestamp.Timestampbase#MONOTONIC}.
      * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
+    /**
+     * @brief Pause audio capturing.
+     *
+     * @return Returns <b>true</b> if the capturing is successfully Paused; returns <b>false</b> otherwise.
+     * @since 9
+     */
     virtual bool Pause() const = 0;
 
     /**
      * @brief Stops audio capturing.
      *
      * @return Returns <b>true</b> if the capturing is successfully stopped; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Stop() const = 0;
     /**
      * @brief flush capture stream.
      *
      * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Flush() const = 0;
 
@@ -280,6 +309,7 @@ public:
      * @brief Releases a local <b>AudioCapturer</b> object.
      *
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
+     * @since 8
      */
     virtual bool Release() const = 0;
 
@@ -289,6 +319,7 @@ public:
      *
      * @param bufferSize Indicates a buffersize pointer value that wil be written.
      * @return Returns {@link SUCCESS} if bufferSize is successfully obtained; returns an error code
+     * @since 8
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual int32_t GetBufferSize(size_t &bufferSize) const = 0;
@@ -299,6 +330,7 @@ public:
      * @param sessionId Indicates the reference variable into which stream id value will be written.
      * @return Returns {@link SUCCESS} if stream id is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 10
      */
     virtual int32_t GetAudioStreamId(uint32_t &sessionID) const = 0;
 
@@ -307,6 +339,7 @@ public:
      * @param frameCount Indicates the pointer in which framecount will be written
      * @return Returns {@link SUCCESS} if frameCount is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
 
     virtual int32_t GetFrameCount(uint32_t &frameCount) const = 0;
@@ -315,6 +348,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
 
     virtual int32_t SetCapturerPositionCallback(int64_t markPosition,
@@ -323,6 +357,7 @@ public:
     /**
      * @brief Unregisters the capturer position callback listener
      *
+     * @since 8
      */
     virtual void UnsetCapturerPositionCallback() = 0;
 
@@ -331,6 +366,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetCapturerPeriodPositionCallback(int64_t frameNumber,
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) = 0;
@@ -338,6 +374,7 @@ public:
     /**
      * @brief Unregisters the capturer period position callback listener
      *
+     * @since 8
      */
     virtual void UnsetCapturerPeriodPositionCallback() = 0;
 
@@ -348,6 +385,7 @@ public:
      * @param bufferDuration  Indicates a buffer duration to be set for capturer
      * @return Returns {@link SUCCESS} if bufferDuration is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 8
      */
     virtual int32_t SetBufferDuration(uint64_t bufferDuration) const = 0;
 
@@ -356,6 +394,7 @@ public:
      *
      * @param cachePath Indicates application cache path.
      * @return none
+     * @since 8
      */
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
 
@@ -363,6 +402,7 @@ public:
      * @brief Obtains the capturer supported formats.
      *
      * @return vector with capturer supported formats.
+     * @since 8
      */
     static std::vector<AudioSampleFormat> GetSupportedFormats();
 
@@ -370,6 +410,7 @@ public:
      * @brief Obtains the capturer supported channels.
      *
      * @return vector with capturer supported channels.
+     * @since 8
      */
     static std::vector<AudioChannel> GetSupportedChannels();
 
@@ -377,6 +418,7 @@ public:
      * @brief Obtains the capturer supported encoding types.
      *
      * @return vector with capturer supported encoding types.
+     * @since 8
      */
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
 
@@ -384,6 +426,7 @@ public:
      * @brief Obtains the capturer supported SupportedSamplingRates.
      *
      * @return vector with capturer supported SupportedSamplingRates.
+     * @since 8
      */
     static std::vector<AudioSamplingRate> GetSupportedSamplingRates();
 
@@ -394,6 +437,7 @@ public:
      * * @param captureMode The mode of capture.
      * @return  Returns {@link SUCCESS} if capture mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 9
      */
     virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) const = 0;
 
@@ -401,6 +445,7 @@ public:
      * @brief Obtains the capture mode.
      *
      * @return  Returns current capture mode.
+     * @since 9
      */
     virtual AudioCaptureMode GetCaptureMode() const = 0;
 
@@ -410,6 +455,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 9
      */
     virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
 
@@ -421,6 +467,7 @@ public:
      * refer BufferQueueState in audio_info.h.
      * @return Returns {@link SUCCESS} if bufDesc is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 9
      */
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
 
@@ -430,6 +477,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if bufDesc is successfully enqueued; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 9
      */
     virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
 
@@ -439,6 +487,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 9
      */
     virtual int32_t Clear() const = 0;
 
@@ -450,6 +499,7 @@ public:
      * refer BufferQueueState in audio_info.h.
      * @return Returns {@link SUCCESS} if bufState is successfully obtained; returns an error code
      * defined in {@link audio_errors.h} otherwise.
+     * @since 9
      */
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) const = 0;
 
