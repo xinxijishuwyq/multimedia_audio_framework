@@ -2136,7 +2136,7 @@ HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_002, TestSize.Level1)
  */
 HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioFocusInfoChangeCallback> callback = make_shared<AudioFocusInfoChangeCallbackTest>();
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = make_shared<AudioFocusInfoChangeCallbackImpl>();
     auto ret = AudioSystemManager::GetInstance()->RegisterFocusInfoChangeCallback(callback);
     EXPECT_EQ(ret, SUCCESS);
 
