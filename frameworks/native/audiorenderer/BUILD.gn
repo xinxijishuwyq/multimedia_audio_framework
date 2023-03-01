@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//foundation/multimedia/audio_framework/audio_ohcore.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
@@ -52,6 +53,8 @@ ohos_shared_library("audio_renderer") {
 
   include_dirs = audio_gateway_include_dirs
 
+  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+
   sources = [
     "src/audio_renderer.cpp",
     "src/audio_renderer_proxy_obj.cpp",
@@ -72,6 +75,9 @@ ohos_shared_library("audio_renderer") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_single",
   ]
+
+  version_script = "../../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
 
   part_name = "multimedia_audio_framework"
   subsystem_name = "multimedia"

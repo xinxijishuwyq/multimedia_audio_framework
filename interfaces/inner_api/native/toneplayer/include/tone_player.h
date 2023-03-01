@@ -68,11 +68,58 @@ enum ToneType {
     };
 class TonePlayer {
 public:
+
+    /**
+     * @brief create tonePlayer instance.
+     *
+     * @param cachePath Application cache path
+     * @param rendererInfo Indicates information about audio renderer. For details, see
+     * {@link AudioRendererInfo}.
+     * @return Returns unique pointer to the TonePlayer object
+     * @since 9
+    */
     static std::shared_ptr<TonePlayer> Create(const std::string cachePath, const AudioRendererInfo &rendererInfo);
+
+    /**
+     * @brief create tonePlayer instance.
+     *
+     * @param rendererInfo Indicates information about audio renderer. For details, see
+     * {@link AudioRendererInfo}.
+     * @return Returns unique pointer to the TonePlayer object
+     * @since 9
+    */
     static std::shared_ptr<TonePlayer> Create(const AudioRendererInfo &rendererInfo);
+
+    /**
+     * @brief Load audio tonePlayer.
+     *
+     * @return Returns <b>true</b> if the tonePlayer is successfully started; returns <b>false</b> otherwise.
+     * @since 9
+     */
     virtual bool LoadTone(ToneType toneType) = 0;
+
+    /**
+     * @brief Starts audio tonePlayer.
+     *
+     * @return Returns <b>true</b> if the tonePlayer is successfully started; returns <b>false</b> otherwise.
+     * @since 9
+     */
     virtual bool StartTone() = 0;
+
+    /**
+     * @brief Stop audio tonePlayer.
+     *
+     * @return Returns <b>true</b> if the tonePlayer is successfully started; returns <b>false</b> otherwise.
+     * @since 9
+     */
     virtual bool StopTone() = 0;
+
+    /**
+     * @brief Release audio tonePlayer.
+     *
+     * @return Returns <b>true</b> if the tonePlayer is successfully started; returns <b>false</b> otherwise.
+     * @since 9
+     */
     virtual bool Release() = 0;
     virtual ~TonePlayer();
 };
