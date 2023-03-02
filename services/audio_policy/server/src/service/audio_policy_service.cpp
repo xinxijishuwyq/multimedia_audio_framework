@@ -338,7 +338,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // move all sink-input.
     bool moveAll = false;
     if (targetUid == -1) {
-        AUDIO_INFO_LOG("move all sink.");
+        AUDIO_INFO_LOG("Move all sink inputs.");
         moveAll = true;
         routerMap_.clear();
     }
@@ -551,7 +551,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     // move all source-output.
     bool moveAll = false;
     if (targetUid == -1) {
-        AUDIO_DEBUG_LOG("move all sink.");
+        AUDIO_DEBUG_LOG("Move all source outputs.");
         moveAll = true;
     }
 

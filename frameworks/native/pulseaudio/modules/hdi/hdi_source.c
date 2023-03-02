@@ -71,20 +71,20 @@ struct Userdata {
 static int pa_capturer_init(struct Userdata *u);
 static void pa_capturer_exit(struct Userdata *u);
 
-static char *GetStateInfo(pa_sink_state_t state)
+static char *GetStateInfo(pa_source_state_t state)
 {
     switch (state) {
-        case PA_SINK_INVALID_STATE:
+        case PA_SOURCE_INVALID_STATE:
             return "INVALID";
-        case PA_SINK_RUNNING:
+        case PA_SOURCE_RUNNING:
             return "RUNNING";
-        case PA_SINK_IDLE:
+        case PA_SOURCE_IDLE:
             return "IDLE";
-        case PA_SINK_SUSPENDED:
+        case PA_SOURCE_SUSPENDED:
             return "SUSPENDED";
-        case PA_SINK_INIT:
+        case PA_SOURCE_INIT:
             return "INIT";
-        case PA_SINK_UNLINKED:
+        case PA_SOURCE_UNLINKED:
             return "UNLINKED";
         default:
             return "error state";
@@ -142,7 +142,6 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
 static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newState,
     pa_suspend_cause_t newSuspendCause)
 {
-    AUDIO_INFO_LOG("Capturer current state: %{public}d new state: %{public}d", s->thread_info.state, newState);
     struct Userdata *u = NULL;
     pa_assert(s);
     pa_assert_se(u = s->userdata);
