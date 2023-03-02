@@ -299,7 +299,7 @@ private:
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
-    bool remoteCapturerSwitch = false;
+    bool remoteCapturerSwitch_ = false;
     bool isOpenRemoteDevice = false;
     bool isBtListenerRegistered = false;
     const int32_t G_UNKNOWN_PID = -1;
