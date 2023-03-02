@@ -537,7 +537,7 @@ bool PulseAudioServiceAdapterImpl::IsStreamActive(AudioStreamType streamType)
 {
     lock_guard<mutex> lock(mMutex);
     if (!isSetDefaultSink_) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsStreamActive not SetDefaultSink frist");
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsStreamActive not SetDefaultSink first");
         return false;
     }
 
