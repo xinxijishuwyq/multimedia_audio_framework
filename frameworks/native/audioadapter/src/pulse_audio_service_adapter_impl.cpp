@@ -500,7 +500,7 @@ bool PulseAudioServiceAdapterImpl::IsMute(AudioStreamType streamType)
 {
     lock_guard<mutex> lock(mMutex);
     if (!isSetDefaultSink_) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsMute not SetDefaultSink frist");
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsMute not SetDefaultSink first");
         return false;
     }
     unique_ptr<UserData> userData = make_unique<UserData>();
