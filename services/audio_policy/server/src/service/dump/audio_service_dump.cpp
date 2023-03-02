@@ -232,6 +232,9 @@ const std::string AudioServiceDump::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_VOICE_RECOGNITION:
             name = "VOICE_RECOGNITION";
             break;
+        case SOURCE_TYPE_ULTRASONIC:
+            name = "ULTRASONIC";
+            break;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
             name = "VOICE_COMMUNICATION";
             break;
