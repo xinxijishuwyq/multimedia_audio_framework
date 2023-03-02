@@ -230,6 +230,11 @@ inline std::string PrintSinkInput(SinkInput sinkInput)
     return value.str();
 }
 
+inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
+{
+    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+}
+
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
     (void)streamType;
@@ -257,7 +262,7 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
     // check if connected.
     bool isConnected = false;
     for (auto device : connectedDevices_) {
-        if (device->networkId_ == selectedDevice) {
+        if (GetRemoteModuleName(device->networkId_, device->deviceRole_) == selectedDevice) {
             isConnected = true;
             break;
         }
@@ -373,11 +378,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
-}
-
-inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
-{
-    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
 }
 
 int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
@@ -499,7 +499,7 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
             AUDIO_ERR_LOG("move [%{public}d] failed", sinkInputIds[i].streamId);
             return ERROR;
         }
-        routerMap_[sinkInputIds[i].uid] = std::pair(networkId, sinkInputIds[i].pid);
+        routerMap_[sinkInputIds[i].uid] = std::pair(moduleName, sinkInputIds[i].pid);
     }
 
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
