@@ -1123,7 +1123,8 @@ napi_value AudioCapturerNapi::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
 
-    if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
+    if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME) ||
+        !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
         result = RegisterCapturerCallback(env, argv, cbName, capturerNapi);
     } else if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
         result = RegisterPositionCallback(env, argv, cbName, capturerNapi);
