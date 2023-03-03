@@ -27,6 +27,7 @@
     *AudioRoutingManager*;
     *AudioCapturerFilter*;
     *AudioManagerProxy*;
+    **;
   local:
     *;
 };
