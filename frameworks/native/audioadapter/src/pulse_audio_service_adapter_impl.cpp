@@ -31,6 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
+std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
@@ -968,6 +969,45 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
     }
 }
 
+void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol,
+    void *userdata)
+{
+    AUDIO_INFO_LOG("[PaGetSourceOutputCb] in eol[%{public}d]", eol);
+    UserData *userData = reinterpret_cast<UserData*>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
+
+    if (eol < 0) {
+        delete userData;
+        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Failed to get source output information: %{public}s",
+            pa_strerror(pa_context_errno(c)));
+        return;
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
+        delete userData;
+        return;
+    }
+
+    if (i->proplist == nullptr) {
+        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Invalid proplist for source output (%{public}d).", i->index);
+        return;
+    }
+
+    const char *streamSession = pa_proplist_gets(i->proplist, "stream.sessionID");
+    if (streamSession == nullptr) {
+        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Invalid stream parameter:sessionID.");
+        return;
+    }
+
+    std::stringstream sessionStr;
+    uint32_t sessionID;
+    sessionStr << streamSession;
+    sessionStr >> sessionID;
+    AUDIO_INFO_LOG("[PaGetSourceOutputCb] sessionID %{public}u", sessionID);
+    sourceIndexSessionIDMap[i->index] = sessionID;
+}
+
 template <typename T>
 inline void CastValue(T &a, const char *raw)
 {
@@ -1076,6 +1116,32 @@ void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const 
     userData->sourceOutputList.push_back(sourceOutput);
 }
 
+void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_subscription_event_type_t t, uint32_t idx,
+    void *userdata)
+{
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    PulseAudioServiceAdapterImpl *thiz = reinterpret_cast<PulseAudioServiceAdapterImpl*>(userdata);
+    userData->thiz = thiz;
+    if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_NEW) {
+        pa_threaded_mainloop_lock(thiz->mMainLoop);
+        pa_operation *operation = pa_context_get_source_output_info(c, idx,
+            PulseAudioServiceAdapterImpl::PaGetSourceOutputCb, reinterpret_cast<void*>(userData.get()));
+        if (operation == nullptr) {
+            AUDIO_ERR_LOG("[ProcessSourceOutputEvent] pa_context_get_source_output_info nullptr");
+            pa_threaded_mainloop_unlock(thiz->mMainLoop);
+            return;
+        }
+        userData.release();
+        pa_threaded_mainloop_accept(thiz->mMainLoop);
+        pa_operation_unref(operation);
+        pa_threaded_mainloop_unlock(thiz->mMainLoop);
+    } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
+        uint32_t sessionID = sourceIndexSessionIDMap[idx];
+        AUDIO_ERR_LOG("[ProcessSourceOutputEvent] sessionID: %{public}d removed", sessionID);
+        g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
+    }
+}
+
 void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_event_type_t t, uint32_t idx,
     void *userdata)
 {
@@ -1112,6 +1178,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
             break;
 
         case PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT:
+            ProcessSourceOutputEvent(c, t, idx, userdata);
             break;
 
         default:
