@@ -24,8 +24,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
             <private>
                 <focus_type value="STREAM_MUSIC"  is_forced="true" action_type="STOP" action_on="existing"/>
@@ -49,8 +49,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
             <private>nil</private>
         </focus_table>
@@ -67,8 +67,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
             <private>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
@@ -83,8 +83,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
             <private>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
@@ -107,8 +107,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="STREAM_ALARM" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
@@ -123,8 +123,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
             <private>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
@@ -148,8 +148,8 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="new"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="new"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="new"/>
             </shared>
             <private>
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="STOP" action_on="existing"/>
