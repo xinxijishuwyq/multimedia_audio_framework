@@ -82,6 +82,10 @@ public:
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
     virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
+
+    virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
+
+    virtual std::string GetSystemSoundUri(const std::string &key) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

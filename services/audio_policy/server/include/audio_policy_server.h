@@ -213,6 +213,10 @@ public:
 
     int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
 
+    int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
+
+    std::string GetSystemSoundUri(const std::string &key) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

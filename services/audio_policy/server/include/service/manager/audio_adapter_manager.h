@@ -100,6 +100,10 @@ public:
 
     float CalculateVolumeDb(int32_t volumeLevel);
 
+    int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
+
+    std::string GetSystemSoundUri(const std::string &key);
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -148,6 +152,8 @@ private:
     bool LoadMuteStatusFromKvStore(AudioStreamType streamType);
     void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
     std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
+    int32_t WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri);
+    std::string LoadSystemSoundUriFromKvStore(const std::string &key);
 
     std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;

@@ -87,6 +87,8 @@ enum AudioPolicyCommand {
     GET_AUDIO_FOCUS_INFO_LIST,
     REGISTER_FOCUS_INFO_CHANGE_CALLBACK,
     UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK,
+    SET_SYSTEM_SOUND_URI,
+    GET_SYSTEM_SOUND_URI,
 };
 } // namespace AudioStandard
 } // namespace OHOS

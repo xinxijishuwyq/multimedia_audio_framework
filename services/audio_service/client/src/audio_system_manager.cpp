@@ -850,6 +850,16 @@ void AudioSystemManager::SetAudioBalanceValue(float balanceValue)
     gasp->SetAudioBalanceValue(balanceValue);
 }
 
+int32_t AudioSystemManager::SetSystemSoundUri(const std::string &key, const std::string &uri)
+{
+    return AudioPolicyManager::GetInstance().SetSystemSoundUri(key, uri);
+}
+
+std::string AudioSystemManager::GetSystemSoundUri(const std::string &key)
+{
+    return AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
+}
+
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,

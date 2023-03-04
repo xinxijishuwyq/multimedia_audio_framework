@@ -829,6 +829,21 @@ void AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal(MessageP
     reply.WriteBool(isSupported);
 }
 
+void AudioPolicyManagerStub::SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string key = data.ReadString();
+    std::string value = data.ReadString();
+    int32_t result =  SetSystemSoundUri(key, value);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string key = data.ReadString();
+    std::string result = GetSystemSoundUri(key);
+    reply.WriteString(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1096,6 +1111,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             
         case UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK:
             UnregisterFocusInfoChangeCallbackInternal(data, reply);
+            break;
+
+        case SET_SYSTEM_SOUND_URI:
+            SetSystemSoundUriInternal(data, reply);
+            break;
+
+        case GET_SYSTEM_SOUND_URI:
+            GetSystemSoundUriInternal(data, reply);
             break;
 
         default:

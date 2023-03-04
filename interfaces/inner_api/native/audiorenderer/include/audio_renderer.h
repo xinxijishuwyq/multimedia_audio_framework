@@ -371,7 +371,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) const = 0;
+    virtual int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) = 0;
 
     /**
      * @brief Update the stream type
@@ -381,7 +381,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t SetStreamType(AudioStreamType audioStreamType) const = 0;
+    virtual int32_t SetStreamType(AudioStreamType audioStreamType) = 0;
 
     /**
      * @brief Set the track volume

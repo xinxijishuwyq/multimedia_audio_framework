@@ -458,16 +458,18 @@ int32_t AudioRendererPrivate::GetAudioStreamId(uint32_t &sessionID) const
     return audioStream_->GetAudioSessionID(sessionID);
 }
 
-int32_t AudioRendererPrivate::SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) const
+int32_t AudioRendererPrivate::SetAudioRendererDesc(AudioRendererDesc audioRendererDesc)
 {
     ContentType contentType = audioRendererDesc.contentType;
     StreamUsage streamUsage = audioRendererDesc.streamUsage;
     AudioStreamType audioStreamType = audioStream_->GetStreamType(contentType, streamUsage);
+    audioInterrupt_.audioFocusType.streamType = audioStreamType;
     return audioStream_->SetAudioStreamType(audioStreamType);
 }
 
-int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType) const
+int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
 {
+    audioInterrupt_.audioFocusType.streamType = audioStreamType;
     return audioStream_->SetAudioStreamType(audioStreamType);
 }
 

@@ -998,5 +998,29 @@ bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
     }
     return gsp->IsAudioRendererLowLatencySupported(audioStreamInfo);
 }
+
+int32_t AudioPolicyManager::SetSystemSoundUri(const std::string &key, const std::string &uri)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::SetSystemSoundUri: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetSystemSoundUri: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->SetSystemSoundUri(key, uri);
+}
+
+std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::GetSystemSoundUri: %{public}s", key.c_str());
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetSystemSoundUri: audio policy manager proxy is NULL.");
+        return "";
+    }
+
+    return gsp->GetSystemSoundUri(key);
+}
 } // namespace AudioStandard
 } // namespace OHOS

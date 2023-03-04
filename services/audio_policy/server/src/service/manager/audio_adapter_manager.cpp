@@ -1043,5 +1043,51 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
 
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
+
+int32_t AudioAdapterManager::SetSystemSoundUri(const std::string &key, const std::string &uri)
+{
+    AUDIO_INFO_LOG("SetSystemSoundUri:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
+    return WriteSystemSoundUriToKvStore(key, uri);
+}
+
+std::string AudioAdapterManager::GetSystemSoundUri(const std::string &key)
+{
+    AUDIO_INFO_LOG("GetSystemSoundUri:: key: %{public}s", key.c_str());
+    return LoadSystemSoundUriFromKvStore(key);
+}
+
+int32_t AudioAdapterManager::WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri)
+{
+    AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore in:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
+    if (audioPolicyKvStore_ == nullptr) {
+        AUDIO_ERR_LOG("WriteSystemSoundUriToKvStore failed: audioPolicyKvStore_ is nullptr");
+        return ERROR;
+    }
+
+    Status status = audioPolicyKvStore_->Put(key, uri);
+    if (status == Status::SUCCESS) {
+        AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore: Wrote [%{public}s]: [%{public}s] to kvStore",
+            key.c_str(), uri.c_str());
+    } else {
+        AUDIO_ERR_LOG("WriteSystemSoundUriToKvStore: Writing [%{public}s]: [%{public}s] to kvStore failed",
+            key.c_str(), uri.c_str());
+    }
+
+    AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore out:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
+    return SUCCESS;
+}
+
+std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string &key)
+{
+    AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore in:: key: %{public}s", key.c_str());
+    Value value;
+    Status status = audioPolicyKvStore_->Get(key, value);
+    std::string uri = "";
+    if (status == Status::SUCCESS) {
+        uri = value.ToString();
+    }
+    AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore out:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
+    return uri;
+}
 } // namespace AudioStandard
 } // namespace OHOS

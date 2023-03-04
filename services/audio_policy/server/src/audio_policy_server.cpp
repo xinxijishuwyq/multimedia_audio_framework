@@ -1871,5 +1871,17 @@ bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo
     AUDIO_INFO_LOG("IsAudioRendererLowLatencySupported server call");
     return true;
 }
+
+int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::string &uri)
+{
+    AUDIO_INFO_LOG("SetSystemSoundUri:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
+    return mPolicyService.SetSystemSoundUri(key, uri);
+}
+
+std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
+{
+    AUDIO_INFO_LOG("GetSystemSoundUri:: key: %{public}s", key.c_str());
+    return mPolicyService.GetSystemSoundUri(key);
+}
 } // namespace AudioStandard
 } // namespace OHOS
