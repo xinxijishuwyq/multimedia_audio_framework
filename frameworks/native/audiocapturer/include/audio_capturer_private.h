@@ -75,7 +75,8 @@ private:
     std::map<AudioStreamType, SourceType> streamToSource_ = {
         {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
         {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
-        {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION}
+        {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
+        {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC}
     };
 };
 

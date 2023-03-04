@@ -65,7 +65,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     const std::string cachePath, const AppInfo &appInfo)
 {
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_VOICE_COMMUNICATION) {
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_ULTRASONIC) {
         return nullptr;
     }
 
