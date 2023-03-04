@@ -32,7 +32,7 @@ AudioFocusParser::AudioFocusParser()
         {"SOURCE_TYPE_MIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
         {"SOURCE_TYPE_VOICE_RECOGNITION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION, false}},
         {"SOURCE_TYPE_VOICE_COMMUNICATION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION, false}},
-        {"", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_ULTRASONIC, false}}
+        {"SOURCE_TYPE_ULTRASONIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_ULTRASONIC, false}}
     };
 
     // Initialize action map with string vs InterruptActionType
