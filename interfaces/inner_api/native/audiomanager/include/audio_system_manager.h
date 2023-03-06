@@ -687,6 +687,26 @@ public:
      */
     void SetAudioBalanceValue(float balanceValue);
 
+    /**
+     * @brief Set system sound uri
+     *
+     * @param key the key of uri
+     * @param uri the value of uri
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
+
+    /**
+     * @brief Get system sound uri
+     *
+     * @param key the key of uri
+     * @return Returns the value of uri for the key
+     * @since 10
+     */
+    std::string GetSystemSoundUri(const std::string &key);
+
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be removed
 

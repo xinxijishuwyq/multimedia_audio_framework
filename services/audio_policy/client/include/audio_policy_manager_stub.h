@@ -96,9 +96,10 @@ private:
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
+    void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

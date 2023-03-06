@@ -119,6 +119,10 @@ public:
 
     uint32_t GetSinkLatencyFromXml() const;
 
+    int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
+
+    std::string GetSystemSoundUri(const std::string &key);
+
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 

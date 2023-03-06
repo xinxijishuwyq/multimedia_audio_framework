@@ -846,6 +846,16 @@ bool AudioPolicyService::IsMicrophoneMute()
     return gsp->IsMicrophoneMute();
 }
 
+int32_t AudioPolicyService::SetSystemSoundUri(const std::string &key, const std::string &uri)
+{
+    return audioPolicyManager_.SetSystemSoundUri(key, uri);
+}
+
+std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
+{
+    return audioPolicyManager_.GetSystemSoundUri(key);
+}
+
 void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);
