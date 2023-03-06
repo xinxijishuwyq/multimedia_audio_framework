@@ -137,7 +137,7 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     param.silenceThreshold = audioBufferSize;
     // User needs to set
     param.sampleRate = attr_.sampleRate;
-    param.format = attr_.format;
+    param.format = (AudioFormat)(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
