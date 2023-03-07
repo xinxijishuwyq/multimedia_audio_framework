@@ -230,6 +230,11 @@ inline std::string PrintSinkInput(SinkInput sinkInput)
     return value.str();
 }
 
+inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
+{
+    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
+}
+
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
     (void)streamType;
@@ -257,7 +262,7 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
     // check if connected.
     bool isConnected = false;
     for (auto device : connectedDevices_) {
-        if (device->networkId_ == selectedDevice) {
+        if (GetRemoteModuleName(device->networkId_, device->deviceRole_) == selectedDevice) {
             isConnected = true;
             break;
         }
@@ -338,7 +343,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // move all sink-input.
     bool moveAll = false;
     if (targetUid == -1) {
-        AUDIO_INFO_LOG("move all sink.");
+        AUDIO_INFO_LOG("Move all sink inputs.");
         moveAll = true;
         routerMap_.clear();
     }
@@ -375,11 +380,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return ret;
 }
 
-inline std::string GetRemoteModuleName(std::string networkId, DeviceRole role)
-{
-    return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
-}
-
 int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
     sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
@@ -403,7 +403,7 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
     int32_t ret = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
-    routerMap_[audioRendererFilter->uid] = std::pair(networkId, G_UNKNOWN_PID);
+    routerMap_[audioRendererFilter->uid] = std::pair(moduleName, G_UNKNOWN_PID);
     return SUCCESS;
 }
 
@@ -494,11 +494,12 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
 
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
-        if (audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, networkId) != SUCCESS) {
+        if (audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId,
+            sinkId, moduleName) != SUCCESS) {
             AUDIO_ERR_LOG("move [%{public}d] failed", sinkInputIds[i].streamId);
             return ERROR;
         }
-        routerMap_[sinkInputIds[i].uid] = std::pair(networkId, sinkInputIds[i].pid);
+        routerMap_[sinkInputIds[i].uid] = std::pair(moduleName, sinkInputIds[i].pid);
     }
 
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
@@ -542,7 +543,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         return SelectNewDevice(DeviceRole::INPUT_DEVICE, deviceType);
     }
 
-    if (!remoteCapturerSwitch) {
+    if (!remoteCapturerSwitch_) {
         AUDIO_DEBUG_LOG("remote capturer capbility is not open now");
         return SUCCESS;
     }
@@ -550,7 +551,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     // move all source-output.
     bool moveAll = false;
     if (targetUid == -1) {
-        AUDIO_DEBUG_LOG("move all sink.");
+        AUDIO_DEBUG_LOG("Move all source outputs.");
         moveAll = true;
     }
 
@@ -634,7 +635,7 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<uint32_t> source
 
     // start move.
     for (size_t i = 0; i < sourceOutputIds.size(); i++) {
-        if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputIds[i], sourceId, networkId) != SUCCESS) {
+        if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputIds[i], sourceId, moduleName) != SUCCESS) {
             AUDIO_DEBUG_LOG("move [%{public}d] failed", sourceOutputIds[i]);
             return ERROR;
         }
@@ -700,7 +701,7 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
         AUDIO_ERR_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
     }
 
-    audioModuleInfo.name = networkId; // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.name = GetRemoteModuleName(networkId, deviceRole); // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
     audioModuleInfo.networkId = networkId;
 
     std::stringstream typeValue;
@@ -1429,9 +1430,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
-    if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
-        return; // not support input device.
-    }
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
@@ -1469,7 +1467,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             audioPolicyManager_.CloseAudioPort(IOHandles_[moduleName]);
             IOHandles_.erase(moduleName);
         }
-        RemoveDeviceInRouterMap(networkId, routerMap_);
+        RemoveDeviceInRouterMap(moduleName, routerMap_);
     }
 
     UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId, statusInfo.isConnected,
@@ -1478,6 +1476,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.isConnected, statusInfo.mappingInterruptId);
     UpdateConnectedDevices(deviceDesc, deviceChangeDescriptor, statusInfo.isConnected);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
+    if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
+        remoteCapturerSwitch_ = true;
+    }
 }
 
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
