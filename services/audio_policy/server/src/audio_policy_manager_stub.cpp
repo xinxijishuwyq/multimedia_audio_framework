@@ -1108,7 +1108,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case REGISTER_FOCUS_INFO_CHANGE_CALLBACK:
             RegisterFocusInfoChangeCallbackInternal(data, reply);
             break;
-            
+
         case UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK:
             UnregisterFocusInfoChangeCallbackInternal(data, reply);
             break;
