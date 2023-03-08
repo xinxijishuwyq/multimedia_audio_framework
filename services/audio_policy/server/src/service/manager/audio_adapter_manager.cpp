@@ -1046,19 +1046,16 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
 
 int32_t AudioAdapterManager::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
-    AUDIO_INFO_LOG("SetSystemSoundUri:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
     return WriteSystemSoundUriToKvStore(key, uri);
 }
 
 std::string AudioAdapterManager::GetSystemSoundUri(const std::string &key)
 {
-    AUDIO_INFO_LOG("GetSystemSoundUri:: key: %{public}s", key.c_str());
     return LoadSystemSoundUriFromKvStore(key);
 }
 
 int32_t AudioAdapterManager::WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri)
 {
-    AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore in:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
     if (audioPolicyKvStore_ == nullptr) {
         AUDIO_ERR_LOG("WriteSystemSoundUriToKvStore failed: audioPolicyKvStore_ is nullptr");
         return ERROR;
@@ -1073,20 +1070,22 @@ int32_t AudioAdapterManager::WriteSystemSoundUriToKvStore(const std::string &key
             key.c_str(), uri.c_str());
     }
 
-    AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore out:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
     return SUCCESS;
 }
 
 std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string &key)
 {
-    AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore in:: key: %{public}s", key.c_str());
+    std::string uri = "";
+    if (audioPolicyKvStore_ == nullptr) {
+        AUDIO_ERR_LOG("LoadSystemSoundUriFromKvStore failed: audioPolicyKvStore_ is nullptr");
+        return uri;
+    }
     Value value;
     Status status = audioPolicyKvStore_->Get(key, value);
-    std::string uri = "";
     if (status == Status::SUCCESS) {
         uri = value.ToString();
     }
-    AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore out:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
+    AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
     return uri;
 }
 } // namespace AudioStandard
