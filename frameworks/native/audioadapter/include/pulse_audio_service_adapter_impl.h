@@ -65,6 +65,8 @@ public:
     static void PaGetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
+    static void PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
+    static void ProcessSourceOutputEvent(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
 private:
     struct UserData {
         PulseAudioServiceAdapterImpl *thiz;
@@ -88,6 +90,7 @@ private:
     pa_context *mContext = NULL;
     pa_threaded_mainloop *mMainLoop = NULL;
     static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
+    static std::unordered_map<uint32_t, uint32_t> sourceIndexSessionIDMap;
     std::mutex mMutex;
     bool isSetDefaultSink_ = false;
 };
