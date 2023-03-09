@@ -132,6 +132,10 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+    } else if (key == "bt_headset_nrec") {
+        parmKey = AudioParamKey::BT_HEADSET_NREC;
+    } else if (key == "bt_wbs") {
+        parmKey = AudioParamKey::BT_WBS;
     } else {
         AUDIO_ERR_LOG("SetAudioParameter: key %{publbic}s is invalid for hdi interface", key.c_str());
         HiviewDFX::XCollie::GetInstance().CancelTimer(id);

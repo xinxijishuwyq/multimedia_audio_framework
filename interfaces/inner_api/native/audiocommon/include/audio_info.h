@@ -898,6 +898,8 @@ enum AudioParamKey {
     VOLUME = 1,
     INTERRUPT = 2,
     RENDER_STATE = 5,
+    BT_HEADSET_NREC = 7,
+    BT_WBS = 8,
     PARAM_KEY_LOWPOWER = 1000,
 };
 
