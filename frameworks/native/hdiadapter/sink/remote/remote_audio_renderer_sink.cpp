@@ -602,15 +602,13 @@ int32_t RemoteAudioRendererSinkInner::GetLatency(uint32_t *latency)
         return ERR_INVALID_PARAM;
     }
 
-    uint32_t hdiLatency;
-    if (audioRender_->GetLatency(audioRender_, &hdiLatency) == 0) {
-        *latency = hdiLatency;
-        return SUCCESS;
-    } else {
+    uint32_t hdiLatency = 0;
+    if (audioRender_->GetLatency(audioRender_, &hdiLatency) != 0) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink: GetLatency failed.");
         return ERR_OPERATION_FAILED;
     }
-    *latency = 21; // 4096 bytes ~ 21ms.
+
+    *latency = hdiLatency;
     return SUCCESS;
 }
 
