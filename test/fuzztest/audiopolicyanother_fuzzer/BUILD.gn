@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -39,7 +39,6 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
   sources = [ "audio_policy_another_fuzzer.cpp" ]
 
   deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
     "//foundation/barrierfree/accessibility/interfaces/innerkits/acfwk:accessibilityconfig",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_service",
   ]
@@ -50,6 +49,9 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
