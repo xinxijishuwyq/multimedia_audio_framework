@@ -42,7 +42,7 @@ const char *g_tonePlayerTestFilePath = "/data/local/tmp/toneplayer_test.pcm";
 
 std::shared_ptr<TonePlayer> TonePlayer::Create(const AudioRendererInfo &rendererInfo)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySelfPermission()) {
         AUDIO_ERR_LOG("Create: No system permission");
         return nullptr;
     }
@@ -51,7 +51,7 @@ std::shared_ptr<TonePlayer> TonePlayer::Create(const AudioRendererInfo &renderer
 
 std::shared_ptr<TonePlayer> TonePlayer::Create(const std::string cachePath, const AudioRendererInfo &rendererInfo)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySelfPermission()) {
         AUDIO_ERR_LOG("Create: No system permission");
         return nullptr;
     }
@@ -203,7 +203,7 @@ bool TonePlayerPrivate::LoadTone(ToneType toneType)
 {
     AUDIO_INFO_LOG("LoadTone type: %{public}d, tonePlayerState_ %{public}d", toneType, tonePlayerState_);
     bool result = false;
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySelfPermission()) {
         AUDIO_ERR_LOG("LoadTone: No system permission");
         return false;
     }

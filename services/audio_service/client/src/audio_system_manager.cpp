@@ -312,7 +312,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
-            if (!PermissionUtil::VerifySystemPermission()) {
+            if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("SetVolume: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
@@ -353,7 +353,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
-            if (!PermissionUtil::VerifySystemPermission()) {
+            if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("SetMute: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
@@ -396,7 +396,7 @@ float AudioSystemManager::GetSingleStreamVolume(int32_t streamId) const
 int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMaxVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -404,7 +404,7 @@ int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMaxVolume: STREAM_ULTRASONIC No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -416,7 +416,7 @@ int32_t AudioSystemManager::GetMaxVolume(AudioVolumeType volumeType)
 int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMinVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -424,7 +424,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMinVolume: STREAM_ULTRASONIC No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -447,7 +447,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
-            if (!PermissionUtil::VerifySystemPermission()) {
+            if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("SetMute: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
@@ -490,7 +490,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
-            if (!PermissionUtil::VerifySystemPermission()) {
+            if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("IsStreamMute: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
@@ -531,7 +531,7 @@ int32_t AudioSystemManager::UnsetDeviceChangeCallback()
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySelfPermission()) {
         AUDIO_ERR_LOG("SetRingerModeCallback: No system permission");
         return ERR_PERMISSION_DENIED;
     }

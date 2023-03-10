@@ -101,7 +101,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_SYSTEM,
                              nullptr, "Invalid stream usage");
     if (contentType == CONTENT_TYPE_ULTRASONIC || streamUsage == STREAM_USAGE_SYSTEM) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("Create: CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM No system permission");
             return nullptr;
         }
