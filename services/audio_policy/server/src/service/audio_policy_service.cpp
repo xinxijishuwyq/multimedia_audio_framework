@@ -1254,6 +1254,22 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
     }
 }
 
+void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected)
+{
+    CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
+    if (serviceFlag_.count() < MIN_SERVICE_COUNT) {
+        AUDIO_WARNING_LOG("hdi service or audio service not up. Cannot updata pnp device");
+        pnpDevice_ = devType;
+        isPnpDeviceConnected = isConnected;
+        return;
+    }
+    AudioStreamInfo streamInfo = {};
+    if (g_adProxy == nullptr) {
+        GetAudioPolicyServiceProxy();
+    }
+    OnDeviceStatusUpdated(devType, isConnected, "", "", streamInfo);
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo)
 {
@@ -1526,6 +1542,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         activeInputDevice_ = DEVICE_TYPE_MIC;
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
+        OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
     }
 }
 

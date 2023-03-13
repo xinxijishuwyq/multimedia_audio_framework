@@ -142,6 +142,8 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
+    void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
+
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
@@ -306,6 +308,7 @@ private:
     bool remoteCapturerSwitch_ = false;
     bool isOpenRemoteDevice = false;
     bool isBtListenerRegistered = false;
+    bool isPnpDeviceConnected = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t switchVolumeDelay_ = 500000; // us
@@ -315,6 +318,7 @@ private:
     std::mutex serviceFlagMutex_;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
+    DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
