@@ -1135,7 +1135,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
 /**
 * @tc.name  : Test GetCurrentCapturerChangeInfos API
 * @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007
-* @tc.desc  : Test GetCurrentCapturerChangeInfos interface. Returns current two active capturer stream information
+* @tc.desc  : Test GetCurrentCapturerChangeInfos interface. Returns current two capturer stream information
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
 HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007, TestSize.Level1)
@@ -1153,20 +1153,19 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
     bool isStarted = audioFirstCapturer->Start();
     EXPECT_EQ(true, isStarted);
     isStarted = audioSecondCapturer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     audioCapturerChangeInfos.clear();
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(2, static_cast<int32_t>(audioCapturerChangeInfos.size()));
     EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
-    EXPECT_EQ(2, audioCapturerChangeInfos[1]->capturerState);
 
     bool isStopped = audioFirstCapturer->Stop();
     EXPECT_EQ(true, isStopped);
 
     isStopped = audioSecondCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_EQ(false, isStopped);
 
     bool isReleased = audioFirstCapturer->Release();
     EXPECT_EQ(true, isReleased);
