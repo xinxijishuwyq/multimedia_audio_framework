@@ -226,7 +226,7 @@ void AudioCapturerGateway::SetApplicationCachePath(const std::string cachePath)
 void AudioStreamCapturerCallback::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
 {
     std::shared_ptr<AudioCapturerCallback> cb = callback.lock();
-    AUDIO_ERR_LOG("AudioCapturerGateway AudioStreamCapturerCallback::SaveCallback cb %p", cb.get());
+    AUDIO_ERR_LOG("AudioCapturerGateway AudioStreamCapturerCallback::SaveCallback cb");
     callback_ = callback;
 }
 
@@ -238,7 +238,7 @@ void AudioStreamCapturerCallback::OnStateChange(const State state, StateChangeCm
         return;
     }
 
-    AUDIO_ERR_LOG("AudioCapturerGateway AudioStreamCapturerCallback::OnStateChange cb %p", cb.get());
+    AUDIO_ERR_LOG("AudioCapturerGateway AudioStreamCapturerCallback::OnStateChange cb");
     cb->OnStateChange(static_cast<CapturerState>(state));
 }
 
