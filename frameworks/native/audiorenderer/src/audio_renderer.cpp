@@ -93,6 +93,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath,
     const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
 {
+    Trace trace("AudioRenderer::Create");
     ContentType contentType = rendererOptions.rendererInfo.contentType;
     CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_ULTRASONIC, nullptr,
                              "Invalid content type");
@@ -223,6 +224,7 @@ int32_t AudioRendererPrivate::GetLatency(uint64_t &latency) const
 
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
+    Trace trace("AudioRenderer::SetParams");
     AudioStreamParams audioStreamParams;
     AudioRenderer *renderer = this;
     rendererProxyObj_->SaveRendererObj(renderer);
@@ -383,6 +385,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
+    Trace trace("Write");
 #ifdef DUMP_CLIENT_PCM
     if (dcp_ != nullptr) {
         fwrite((void *)buffer, 1, bufferSize, dcp_);

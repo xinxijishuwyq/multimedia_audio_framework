@@ -20,6 +20,7 @@
 #include <ostream>
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "hitrace_meter.h"
 #include "parameter.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
@@ -94,6 +95,28 @@ bool PermissionUtil::VerifyIsSystemApp()
 
     AUDIO_ERR_LOG("Check system app permission reject");
     return false;
+}
+void Trace::Count(const std::string &value, int64_t count, bool isEnable)
+{
+    CountTraceDebug(isEnable, HITRACE_TAG_ZAUDIO, value, count);
+}
+
+Trace::Trace(const std::string &value, bool isEnable) : isEnable_(isEnable)
+{
+    StartTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO, value);
+}
+
+void Trace::End()
+{
+    if (!isFinished_) {
+        FinishTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO);
+        isFinished_ = true;
+    }
+}
+
+Trace::~Trace()
+{
+    End();
 }
 
 bool PermissionUtil::VerifySelfPermission()

@@ -22,6 +22,17 @@
 #define AUDIO_NS_PER_SECOND ((int64_t)1000000000)
 namespace OHOS {
 namespace AudioStandard {
+class Trace {
+public:
+    static void Count(const std::string &value, int64_t count, bool isEnable = true);
+    Trace(const std::string &value, bool isEnable = true);
+    void End();
+    ~Trace();
+private:
+    bool isEnable_ = true;
+    bool isFinished_ = false;
+};
+
 class ClockTime {
 public:
     static int64_t GetCurNano();
