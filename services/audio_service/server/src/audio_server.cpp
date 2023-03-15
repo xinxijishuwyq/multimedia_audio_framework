@@ -122,6 +122,23 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     }
 
     AudioServer::audioParameters[key] = value;
+
+    // send it to hal
+    AudioParamKey parmKey = AudioParamKey::NONE;
+    if (key == "A2dpSuspended") {
+        parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
+        IAudioRendererSink* bluetoothSinkInstance= IAudioRendererSink::GetInstance("a2dp", "");
+        if (bluetoothSinkInstance == nullptr) {
+            AUDIO_ERR_LOG("has no valid sink");
+            HiviewDFX::XCollie::GetInstance().CancelTimer(id);
+            return;
+        }
+        std::string renderValue = key + "=" + value + ";";
+        bluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
+        return;
+    }
+
 #ifdef PRODUCT_M40
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance == nullptr) {
@@ -129,7 +146,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
-    AudioParamKey parmKey = AudioParamKey::NONE;
+
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
     } else if (key == "bt_headset_nrec") {

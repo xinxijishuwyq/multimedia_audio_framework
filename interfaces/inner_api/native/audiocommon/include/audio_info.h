@@ -898,6 +898,7 @@ enum AudioParamKey {
     VOLUME = 1,
     INTERRUPT = 2,
     RENDER_STATE = 5,
+    A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
     PARAM_KEY_LOWPOWER = 1000,
