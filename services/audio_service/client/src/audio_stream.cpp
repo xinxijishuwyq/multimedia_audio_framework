@@ -120,7 +120,7 @@ AudioStream::~AudioStream()
         ReleaseAudioStream(false);
     }
 
-    if (audioStreamTracker_) {
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:~AudioStream:Calling update tracker");
         AudioRendererInfo rendererInfo = {};
         AudioCapturerInfo capturerInfo = {};
@@ -342,7 +342,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
     AUDIO_INFO_LOG("AudioStream:Set stream Info SUCCESS");
 
-    if (audioStreamTracker_) {
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
         (void)GetSessionID(sessionId_);
         AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
         audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
@@ -383,7 +383,7 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     AUDIO_INFO_LOG("StartAudioStream SUCCESS");
 
-    if (audioStreamTracker_) {
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
@@ -506,7 +506,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     // flush stream after stream paused
     FlushAudioStream();
 
-    if (audioStreamTracker_) {
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
@@ -556,7 +556,7 @@ bool AudioStream::StopAudioStream()
 
     AUDIO_INFO_LOG("StopAudioStream SUCCESS");
 
-    if (audioStreamTracker_) {
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
@@ -612,7 +612,7 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
     state_ = RELEASED;
     AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS");
 
-    if (audioStreamTracker_) {
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
