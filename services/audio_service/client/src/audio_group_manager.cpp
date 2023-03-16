@@ -112,7 +112,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
-            if (!PermissionUtil::VerifySystemPermission()) {
+            if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("GetVolume: No system permission");
                 return ERR_PERMISSION_DENIED;
             }
@@ -148,7 +148,7 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ALL) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMaxVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -156,7 +156,7 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMaxVolume: STREAM_ULTRASONIC No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -181,7 +181,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ALL) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMinVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -189,7 +189,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
-        if (!PermissionUtil::VerifySystemPermission()) {
+        if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("GetMinVolume: STREAM_ULTRASONIC No system permission");
             return ERR_PERMISSION_DENIED;
         }
@@ -264,7 +264,7 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
-            if (!PermissionUtil::VerifySystemPermission()) {
+            if (!PermissionUtil::VerifySelfPermission()) {
                 AUDIO_ERR_LOG("IsStreamMute: No system permission");
                 return ERR_PERMISSION_DENIED;
             }

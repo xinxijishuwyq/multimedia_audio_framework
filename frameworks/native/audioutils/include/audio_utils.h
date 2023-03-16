@@ -32,6 +32,7 @@ public:
 class PermissionUtil {
 public:
     static bool VerifyIsSystemApp();
+    static bool VerifySelfPermission();
     static bool VerifySystemPermission();
 };
 

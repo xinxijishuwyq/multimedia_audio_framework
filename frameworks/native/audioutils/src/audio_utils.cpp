@@ -96,6 +96,27 @@ bool PermissionUtil::VerifyIsSystemApp()
     return false;
 }
 
+bool PermissionUtil::VerifySelfPermission()
+{
+    Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
+
+    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
+    if (tokenTypeFlag == Security::AccessToken::TOKEN_NATIVE) {
+        return true;
+    }
+
+    if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
+        return true;
+    }
+
+    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(selfToken)) {
+        return true;
+    }
+
+    AUDIO_ERR_LOG("Check self app permission reject");
+    return false;
+}
+
 bool PermissionUtil::VerifySystemPermission()
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
