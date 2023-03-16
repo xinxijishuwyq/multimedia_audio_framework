@@ -512,7 +512,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         }
     }
 #endif // DUMPFILE
-
+    Trace trace("RenderFrame");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret != 0) {
@@ -528,7 +528,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
 int32_t AudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
-
+    Trace trace("Sink::Start");
     if (mKeepRunningLock == nullptr) {
         mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
