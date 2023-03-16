@@ -810,6 +810,11 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
             PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
+        if (bufferAttr.maxlength < 0) {
+            AUDIO_ERR_LOG("maxlength err.");
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_INIT_ERR;
+        }
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
         if (preBuf_ == nullptr) {
             AUDIO_ERR_LOG("Allocate memory for buffer failed.");
