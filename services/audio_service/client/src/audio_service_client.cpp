@@ -41,6 +41,7 @@ const uint32_t T_LENGTH_FACTOR = 4;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
+const int32_t PRE_BUFFER_MAX_LENTH = 200000;
 
 static const int32_t MAX_VOLUME_LEVEL = 15;
 static const int32_t CONST_FACTOR = 100;
@@ -810,7 +811,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
             PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
-        if (bufferAttr.maxlength < 0) {
+        if (bufferAttr.maxlength > PRE_BUFFER_MAX_LENTH) {
             AUDIO_ERR_LOG("maxlength err.");
             pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_INIT_ERR;
