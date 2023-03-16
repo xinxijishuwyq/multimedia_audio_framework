@@ -32,6 +32,7 @@
 #include "hilog/log.h"
 #include "audio_log.h"
 #include "toneplayer_napi.h"
+#include "xpower_event_js.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -1794,6 +1795,7 @@ napi_value AudioManagerNapi::SetVolume(napi_env env, napi_callback_info info)
             napi_get_undefined(env, &result);
         }
 
+        HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
 
