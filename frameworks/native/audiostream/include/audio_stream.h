@@ -96,8 +96,6 @@ private:
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
-    std::atomic<bool> isReadInProgress_;
-    std::atomic<bool> isWriteInProgress_;
     bool resetTime_;
     uint64_t resetTimestamp_;
     struct timespec baseTimestamp_ = {0};
