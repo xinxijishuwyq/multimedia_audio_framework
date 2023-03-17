@@ -69,12 +69,12 @@ private:
 
     int32_t routeHandle_ = -1;
     uint32_t openMic_;
+    uint32_t captureId_ = 0;
     std::string adapterNameCase_;
     struct IAudioManager *audioManager_;
     struct IAudioAdapter *audioAdapter_;
     struct IAudioCapture *audioCapture_;
     struct AudioAdapterDescriptor adapterDesc_;
-    struct AudioDeviceDescriptor deviceDesc_;
     struct AudioPort audioPort;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
@@ -124,7 +124,7 @@ void AudioCapturerSourceInner::DeInit()
     capturerInited_ = false;
 
     if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyCapture(audioAdapter_, &deviceDesc_);
+        audioAdapter_->DestroyCapture(audioAdapter_, captureId_);
     }
     audioCapture_ = nullptr;
 
@@ -218,7 +218,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     deviceDesc.pins = PIN_IN_MIC;
     deviceDesc.desc = (char *)"";
 
-    ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_);
+    ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
     if (audioCapture_ == nullptr || ret < 0) {
         AUDIO_ERR_LOG("Create capture failed");
         return ERR_NOT_STARTED;
