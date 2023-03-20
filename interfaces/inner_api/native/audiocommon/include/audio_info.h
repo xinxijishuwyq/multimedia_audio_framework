@@ -512,7 +512,8 @@ enum ActionTarget {
 enum AudioFocuState {
     ACTIVE = 0,
     DUCK,
-    PAUSE
+    PAUSE,
+    STOP
 };
 
 struct InterruptEvent {

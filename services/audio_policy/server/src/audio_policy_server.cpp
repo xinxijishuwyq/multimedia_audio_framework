@@ -921,7 +921,6 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
 {
     auto focusMap = mPolicyService.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
-    bool isRejected = false;
     AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = policyListenerCbsMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
@@ -931,17 +930,14 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
             std::make_pair((iterActive->first).audioFocusType, incomingFocusType);
-        if (focusMap.find(audioFocusTypePair) == focusMap.end()) {
-            AUDIO_ERR_LOG("ProcessFocusEntry: audio focus type pair is invalid");
-            return ERR_INVALID_PARAM;
-        }
+        CHECK_AND_RETURN_RET_LOG(focusMap.find(audioFocusTypePair) != focusMap.end(), ERR_INVALID_PARAM,
+            "ProcessFocusEntry: audio focus type pair is invalid");
         AudioFocusEntry focusEntry = focusMap[audioFocusTypePair];
         if (iterActive->second == PAUSE || focusEntry.actionOn == CURRENT) {
             continue;
         }
         if (focusEntry.isReject) {
-            incomingState = PAUSE;
-            isRejected = true;
+            incomingState = STOP;
             break;
         }
         AudioFocuState newState = ACTIVE;
@@ -951,7 +947,9 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
         incomingState = newState > incomingState ? newState : incomingState;
     }
-    if (incomingState == PAUSE) {
+    if (incomingState == STOP) {
+        interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    } else if (incomingState == PAUSE) {
         interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
     } else if (incomingState == DUCK) {
         interruptEvent.hintType = INTERRUPT_HINT_DUCK;
@@ -959,14 +957,16 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     } else {
         ProcessCurrentInterrupt(incomingInterrupt);
     }
-    audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
-    OnAudioFocusInfoChange();
+    if (incomingState != STOP) {
+        audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
+        OnAudioFocusInfoChange();
+    }
     if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
-        AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d, isRejected: %{public}d",
-            incomingInterrupt.sessionID, interruptEvent.hintType, isRejected);
+        AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d",
+            incomingInterrupt.sessionID, interruptEvent.hintType);
         policyListenerCb->OnInterrupt(interruptEvent);
     }
-    return isRejected ? ERR_FOCUS_DENIED : SUCCESS;
+    return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)

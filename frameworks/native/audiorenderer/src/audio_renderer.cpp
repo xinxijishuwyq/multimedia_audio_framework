@@ -417,6 +417,10 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     AUDIO_INFO_LOG("AudioRenderer::Pause");
+    if (audioStream_->GetState() != RUNNING) {
+        AUDIO_INFO_LOG("AudioRenderer::Pause: State of stream is not running.No need to pause");
+        return true;
+    }
     bool result = audioStream_->PauseAudioStream(cmdType);
     // When user is intentionally pausing, deactivate to remove from audioFocusInfoList_
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
@@ -579,15 +583,18 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
     InterruptHint hintType = interruptEvent.hintType;
     switch (hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if (audioStream_->GetState() != RUNNING) {
+            if (audioStream_->GetState() == PREPARED) {
+                AUDIO_INFO_LOG("HandleAndNotifyForcedEvent: To pause incoming, no need to pause");
+            } else if (audioStream_->GetState() == RUNNING) {
+                (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+            } else {
                 AUDIO_WARNING_LOG("HandleAndNotifyForcedEvent: State of stream is not running.No need to pause");
                 return;
             }
-            (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
             isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_RESUME:
-            if (audioStream_->GetState() != PAUSED || !isForcePaused_) {
+            if ((audioStream_->GetState() != PAUSED && audioStream_->GetState() != PREPARED) || !isForcePaused_) {
                 AUDIO_WARNING_LOG("HandleAndNotifyForcedEvent: State of stream is not paused or pause is not forced");
                 return;
             }
@@ -614,8 +621,7 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
                 instanceVolBeforeDucking_);
             isForceDucked_ = false;
             break;
-        default:
-            // If the hintType is NONE, don't need to send callbacks
+        default: // If the hintType is NONE, don't need to send callbacks
             return;
     }
     // Notify valid forced event callbacks to app
@@ -639,7 +645,7 @@ void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &inter
     }
 
     if (audioStream_ == nullptr) {
-        AUDIO_DEBUG_LOG("AudioInterruptCallbackImpl::OnInterrupt stream is not alive. No need to take forced action");
+        AUDIO_ERR_LOG("AudioInterruptCallbackImpl::OnInterrupt stream is not alive. No need to take forced action");
         return;
     }
 
