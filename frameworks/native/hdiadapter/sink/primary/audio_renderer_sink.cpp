@@ -90,12 +90,12 @@ private:
     float rightVolume_;
     int32_t routeHandle_ = -1;
     uint32_t openSpeaker_;
+    uint32_t renderId_ = 0;
     std::string adapterNameCase_;
     struct IAudioManager *audioManager_;
     struct IAudioAdapter *audioAdapter_;
     struct IAudioRender *audioRender_;
     struct AudioAdapterDescriptor adapterDesc_;
-    struct AudioDeviceDescriptor deviceDesc_;
     struct AudioPort audioPort_ = {};
     bool audioMonoState_ = false;
     bool audioBalanceState_ = false;
@@ -285,7 +285,7 @@ void AudioRendererSinkInner::DeInit()
     started_ = false;
     rendererInited_ = false;
     if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyRender(audioAdapter_, &deviceDesc_);
+        audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
 
@@ -400,6 +400,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
+    struct AudioDeviceDescriptor deviceDesc;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
@@ -407,10 +408,10 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
-    deviceDesc_.portId = renderPort.portId;
-    deviceDesc_.desc = (char *)"";
-    deviceDesc_.pins = PIN_OUT_SPEAKER;
-    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc_, &param, &audioRender_);
+    deviceDesc.portId = renderPort.portId;
+    deviceDesc.desc = (char *)"";
+    deviceDesc.pins = PIN_OUT_SPEAKER;
+    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
