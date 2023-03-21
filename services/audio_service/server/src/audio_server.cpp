@@ -470,7 +470,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
 }
 
 void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
-    const std::string value)
+    const std::string& value)
 {
     AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
 
