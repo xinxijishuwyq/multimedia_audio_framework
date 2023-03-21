@@ -1252,8 +1252,8 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
 void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected)
 {
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
-    if (serviceFlag_.count() < MIN_SERVICE_COUNT) {
-        AUDIO_WARNING_LOG("hdi service or audio service not up. Cannot updata pnp device");
+    if (!hasModulesLoaded) {
+        AUDIO_WARNING_LOG("modules has not loaded");
         pnpDevice_ = devType;
         isPnpDeviceConnected = isConnected;
         return;
@@ -1534,6 +1534,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 
     if (result == SUCCESS) {
         AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
+        hasModulesLoaded = true;
         currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         activeInputDevice_ = DEVICE_TYPE_MIC;
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);

@@ -309,6 +309,7 @@ private:
     bool isOpenRemoteDevice = false;
     bool isBtListenerRegistered = false;
     bool isPnpDeviceConnected = false;
+    bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t switchVolumeDelay_ = 500000; // us
