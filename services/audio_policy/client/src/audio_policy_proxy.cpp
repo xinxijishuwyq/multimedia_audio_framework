@@ -1056,7 +1056,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const uint32_t clientID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1070,7 +1070,7 @@ int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const uint32_t client
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteUint32(clientID);
+    data.WriteInt32(clientId);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_INTERRUPT_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
@@ -1081,7 +1081,7 @@ int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const uint32_t client
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const uint32_t clientID)
+int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const int32_t clientId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1092,7 +1092,7 @@ int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const uint32_t clie
         return -1;
     }
 
-    data.WriteUint32(clientID);
+    data.WriteInt32(clientId);
 
     int error = Remote()->SendRequest(UNSET_INTERRUPT_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
@@ -1103,7 +1103,7 @@ int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const uint32_t clie
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RequestAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1114,7 +1114,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const uint32_t clientID, const Audio
         return -1;
     }
 
-    data.WriteUint32(clientID);
+    data.WriteInt32(clientId);
     WriteAudioManagerInteruptParams(data, audioInterrupt);
 
     int error = Remote()->SendRequest(REQUEST_AUDIO_FOCUS, data, reply, option);
@@ -1126,7 +1126,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const uint32_t clientID, const Audio
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1136,7 +1136,7 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const uint32_t clientID, const Audio
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteUint32(clientID);
+    data.WriteInt32(clientId);
     WriteAudioManagerInteruptParams(data, audioInterrupt);
 
     int error = Remote()->SendRequest(ABANDON_AUDIO_FOCUS, data, reply, option);
@@ -1311,13 +1311,13 @@ int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceT
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clientUID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterAudioRendererEventListener");
+    AUDIO_INFO_LOG("RegisterAudioRendererEventListener");
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
         return ERROR;
@@ -1327,7 +1327,7 @@ int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clien
         return ERR_NULL_OBJECT;
     }
 
-    data.WriteInt32(clientUID);
+    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(REGISTER_PLAYBACK_EVENT, data, reply, option);
     if (error != ERR_NONE) {
@@ -1338,7 +1338,7 @@ int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clien
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t clientUID)
+int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1350,7 +1350,7 @@ int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t cli
         return ERROR;
     }
 
-    data.WriteInt32(clientUID);
+    data.WriteInt32(clientPid);
     int32_t error = Remote() ->SendRequest(UNREGISTER_PLAYBACK_EVENT, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("UnregisterAudioRendererEventListener unregister playback event failed , error: %d", error);
@@ -1400,7 +1400,7 @@ uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
     return reply.ReadUint32();
 }
 
-int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clientUID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1417,7 +1417,7 @@ int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clien
         return ERR_NULL_OBJECT;
     }
 
-    data.WriteInt32(clientUID);
+    data.WriteInt32(clientPid);
     data.WriteRemoteObject(object);
     int32_t error = Remote() ->SendRequest(REGISTER_RECORDING_EVENT, data, reply, option);
     if (error != ERR_NONE) {
@@ -1428,7 +1428,7 @@ int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clien
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t clientUID)
+int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1441,7 +1441,7 @@ int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t cli
         return ERROR;
     }
 
-    data.WriteInt32(clientUID);
+    data.WriteInt32(clientPid);
     int32_t error = Remote() ->SendRequest(UNREGISTER_RECORDING_EVENT, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener recording event failed , error: %d", error);

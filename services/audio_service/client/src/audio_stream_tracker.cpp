@@ -17,11 +17,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioStreamTracker::AudioStreamTracker(AudioMode mode, int32_t clientUID)
+AudioStreamTracker::AudioStreamTracker(AudioMode mode, int32_t clientUid)
 {
     AUDIO_DEBUG_LOG("AudioStreamtracker:CTOR");
     eMode_ = mode;
-    clientUID_ = clientUID;
+    clientUid_ = clientUid;
     state_ = INVALID;
 }
 
@@ -37,12 +37,12 @@ void AudioStreamTracker::RegisterTracker(const int32_t sessionId, const State st
     state_ = state;
 
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
-        streamChangeInfo.audioRendererChangeInfo.clientUID = clientUID_;
+        streamChangeInfo.audioRendererChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
         streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(state);
         streamChangeInfo.audioRendererChangeInfo.rendererInfo = rendererInfo;
     } else {
-        streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUID_;
+        streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioCapturerChangeInfo.sessionId = sessionId;
         streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(state);
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo = capturerInfo;
@@ -63,12 +63,12 @@ void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State stat
 
     state_ = state;
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
-        streamChangeInfo.audioRendererChangeInfo.clientUID = clientUID_;
+        streamChangeInfo.audioRendererChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
         streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(state);
         streamChangeInfo.audioRendererChangeInfo.rendererInfo = rendererInfo;
     } else {
-        streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUID_;
+        streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioCapturerChangeInfo.sessionId = sessionId;
         streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(state);
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo = capturerInfo;

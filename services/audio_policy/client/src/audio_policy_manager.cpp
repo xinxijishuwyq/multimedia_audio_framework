@@ -639,7 +639,7 @@ int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return gsp->DeactivateAudioInterrupt(audioInterrupt);
 }
 
-int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const uint32_t clientID,
+int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -667,37 +667,37 @@ int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const uint32_t clie
     }
     lock.unlock();
 
-    return gsp->SetAudioManagerInterruptCallback(clientID, object);
+    return gsp->SetAudioManagerInterruptCallback(clientId, object);
 }
 
-int32_t AudioPolicyManager::UnsetAudioManagerInterruptCallback(const uint32_t clientID)
+int32_t AudioPolicyManager::UnsetAudioManagerInterruptCallback(const int32_t clientId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("UnsetAudioManagerInterruptCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetAudioManagerInterruptCallback(clientID);
+    return gsp->UnsetAudioManagerInterruptCallback(clientId);
 }
 
-int32_t AudioPolicyManager::RequestAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyManager::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("RequestAudioFocus: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->RequestAudioFocus(clientID, audioInterrupt);
+    return gsp->RequestAudioFocus(clientId, audioInterrupt);
 }
 
-int32_t AudioPolicyManager::AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyManager::AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("AbandonAudioFocus: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->AbandonAudioFocus(clientID, audioInterrupt);
+    return gsp->AbandonAudioFocus(clientId, audioInterrupt);
 }
 
 AudioStreamType AudioPolicyManager::GetStreamInFocus()
@@ -760,7 +760,7 @@ int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return gsp->UnsetVolumeKeyEventCallback(clientPid);
 }
 
-int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientUID,
+int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -791,10 +791,10 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
     }
     lock.unlock();
 
-    return gsp->RegisterAudioRendererEventListener(clientUID, object);
+    return gsp->RegisterAudioRendererEventListener(clientPid, object);
 }
 
-int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientUID)
+int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -802,10 +802,10 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t c
         AUDIO_ERR_LOG("UnregisterAudioRendererEventListener: audio policy manager proxy is NULL.");
         return ERROR;
     }
-    return gsp->UnregisterAudioRendererEventListener(clientUID);
+    return gsp->UnregisterAudioRendererEventListener(clientPid);
 }
 
-int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t clientUID,
+int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("AudioPolicyManager::RegisterAudioCapturerEventListener");
@@ -836,10 +836,10 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
     }
     lock.unlock();
 
-    return gsp->RegisterAudioCapturerEventListener(clientUID, object);
+    return gsp->RegisterAudioCapturerEventListener(clientPid, object);
 }
 
-int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientUID)
+int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
     AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -847,7 +847,7 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
         AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener: audio policy manager proxy is NULL.");
         return ERROR;
     }
-    return gsp->UnregisterAudioCapturerEventListener(clientUID);
+    return gsp->UnregisterAudioCapturerEventListener(clientPid);
 }
 
 int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,

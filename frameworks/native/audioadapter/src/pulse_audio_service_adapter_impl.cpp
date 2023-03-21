@@ -569,7 +569,7 @@ bool PulseAudioServiceAdapterImpl::IsStreamActive(AudioStreamType streamType)
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    AUDIO_INFO_LOG("[IsStreamActive] cork for stream %s : %d",
+    AUDIO_DEBUG_LOG("[IsStreamActive] cork for stream %s : %d",
         GetNameByStreamType(streamType).c_str(), userData->isCorked);
 
     return (userData->isCorked) ? false : true;

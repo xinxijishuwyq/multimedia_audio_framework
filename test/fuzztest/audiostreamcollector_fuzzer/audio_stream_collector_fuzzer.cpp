@@ -38,14 +38,14 @@ void AudioStreamCollectorFuzzTest(const uint8_t *rawData, size_t size)
     data.RewindRead(0);
     
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    int32_t clientUID = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t clientPid = *reinterpret_cast<const int32_t *>(rawData);
     bool hasBTPermission = *reinterpret_cast<const bool *>(rawData);
     AudioStreamCollector::GetAudioStreamCollector()
-        .RegisterAudioRendererEventListener(clientUID, object, hasBTPermission);
-    AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioRendererEventListener(clientUID);
+        .RegisterAudioRendererEventListener(clientPid, object, hasBTPermission);
+    AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioRendererEventListener(clientPid);
     AudioStreamCollector::GetAudioStreamCollector()
-        .RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission);
-    AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioCapturerEventListener(clientUID);
+        .RegisterAudioCapturerEventListener(clientPid, object, hasBTPermission);
+    AudioStreamCollector::GetAudioStreamCollector().UnregisterAudioCapturerEventListener(clientPid);
 
     int32_t uid = *reinterpret_cast<const int32_t *>(rawData);
     AudioStreamCollector::GetAudioStreamCollector().RegisteredTrackerClientDied(uid);

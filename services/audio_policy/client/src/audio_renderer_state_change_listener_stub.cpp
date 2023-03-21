@@ -60,7 +60,7 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, sessionid = %{public}d", rendererChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererState = %{public}d",
         rendererChangeInfo->rendererState);
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, clientUID = %{public}d", rendererChangeInfo->clientUID);
+    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, clientUid = %{public}d", rendererChangeInfo->clientUID);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, contentType = %{public}d",
         rendererChangeInfo->rendererInfo.contentType);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, streamUsage = %{public}d",

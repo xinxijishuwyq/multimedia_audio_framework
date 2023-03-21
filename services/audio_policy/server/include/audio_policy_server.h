@@ -19,23 +19,24 @@
 #include <mutex>
 #include <pthread.h>
 
-#include "audio_interrupt_callback.h"
-#include "audio_policy_manager_stub.h"
-#include "audio_policy_service.h"
-#include "audio_server_death_recipient.h"
-#include "audio_session_callback.h"
-#include "i_audio_volume_key_event_callback.h"
-#include "iremote_stub.h"
+#include "system_ability_definition.h"
+#include "ipc_skeleton.h"
 #include "system_ability.h"
-#include "audio_service_dump.h"
-#include "audio_info.h"
+#include "iservice_registry.h"
+
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
+
 #include "bundle_mgr_interface.h"
-#include "system_ability_definition.h"
-#include "iservice_registry.h"
-#include "ipc_skeleton.h"
 #include "bundle_mgr_proxy.h"
+
+#include "audio_info.h"
+#include "audio_policy_service.h"
+#include "audio_session_callback.h"
+#include "audio_interrupt_callback.h"
+#include "audio_policy_manager_stub.h"
+#include "audio_server_death_recipient.h"
+#include "audio_service_dump.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -139,22 +140,22 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetAudioManagerInterruptCallback(const uint32_t clientID, const sptr<IRemoteObject> &object) override;
+    int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnsetAudioManagerInterruptCallback(const uint32_t clientID) override;
+    int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
 
-    int32_t RequestAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) override;
+    int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
-    int32_t AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) override;
+    int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     AudioStreamType GetStreamInFocus() override;
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+    int32_t SetVolumeKeyEventCallback(const int32_t clientId,
         const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) override;
 
-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
+    int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) override;
 
     void OnSessionRemoved(const uint32_t sessionID) override;
 
@@ -172,13 +173,13 @@ public:
 
     uint32_t GetSinkLatencyFromXml() override;
 
-    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
+    int32_t UnregisterAudioRendererEventListener(int32_t clientPid) override;
 
-    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) override;
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid) override;
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
@@ -252,7 +253,18 @@ protected:
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+
 private:
+    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
+    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
+    static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
+    static constexpr int32_t VOLUME_KEY_DURATION = 0;
+    static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+    static constexpr int32_t DEFAULT_APP_PID = -1;
+
+    static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
+    static std::map<InterruptHint, AudioFocuState> CreateStateMap();
+
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
@@ -261,14 +273,15 @@ private:
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry();
     void NotifyStateChangedEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
-    void NotifyFocusGranted(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
-    int32_t NotifyFocusAbandoned(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
+    void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
+    int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     void OnAudioFocusInfoChange();
 
     // for audio volume
     int32_t SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
     float GetSystemVolumeDb(AudioStreamType streamType);
 
+    // common
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
@@ -281,31 +294,23 @@ private:
     void SubscribeAccessibilityConfigObserver();
 
     AudioPolicyService& mPolicyService;
-    std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
-    std::mutex ringerModeMutex_;
-    std::mutex interruptMutex_;
-    std::mutex volumeKeyEventMutex_;
-    std::mutex micStateChangeMutex_;
-    std::mutex focusInfoChangeMutex_;
-    uint32_t clientOnFocus_;
+    int32_t clientOnFocus_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
-
-    std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> policyListenerCbsMap_;
-    std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> audioManagerListenerCbsMap_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
-    std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCallbackMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeListenerCbsMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeListenerCbsMap_;
     std::vector<pid_t> clientDiedListenerState_;
-    static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
-    static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
-    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
-    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
-    static constexpr int32_t VOLUME_KEY_DURATION = 0;
-    static constexpr int32_t MEDIA_SERVICE_UID = 1013;
-    static constexpr int32_t DEFAULT_APP_PID = -1;
+    std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioPolicyManagerListener>> focusInfoChangeCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
+
+    std::mutex volumeKeyEventMutex_;
+    std::mutex interruptMutex_;
+    std::mutex focusInfoChangeMutex_;
+    std::mutex ringerModeMutex_;
+    std::mutex micStateChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

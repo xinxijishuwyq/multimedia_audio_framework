@@ -31,12 +31,12 @@ public:
 
     AudioStreamCollector();
     ~AudioStreamCollector();
-    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSystemPermission = true);
-    int32_t UnregisterAudioRendererEventListener(int32_t clientUID);
-    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    int32_t UnregisterAudioRendererEventListener(int32_t clientPid);
+    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSystemPermission = true);
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
