@@ -24,3 +24,7 @@ declare_args() {
   multimedia_audio_framework_drivers =
       "//drivers/peripheral/audio/interfaces/include/"
 }
+
+audio_fwk_path = "//foundation/multimedia/audio_framework"
+
+fwk_native_hdiadapter_path = "${audio_fwk_path}/frameworks/native/hdiadapter"
