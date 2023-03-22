@@ -188,7 +188,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("71.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -206,7 +206,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async (eventAction) => {
-            console.log("2.eventAction=" + JSON.stringify(eventAction))
+            console.log("72.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -229,7 +229,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("3.eventAction=" + JSON.stringify(eventAction))
+            console.log("73.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -252,7 +252,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("4.eventAction=" + JSON.stringify(eventAction))
+            console.log("74.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -276,7 +276,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("5.eventAction=" + JSON.stringify(eventAction))
+            console.log("75.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render1, done)
@@ -284,7 +284,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render2 = await createAudioRenderer(renderInfo['ULTRASONIC'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("5_2.eventAction=" + JSON.stringify(eventAction))
+            console.log("75_2.eventAction=" + JSON.stringify(eventAction))
             render2_callback = true
         })
         await start(render2, done)
@@ -301,7 +301,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("6.eventAction=" + JSON.stringify(eventAction))
+            console.log("76.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -324,7 +324,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("7.eventAction=" + JSON.stringify(eventAction))
+            console.log("77.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -347,7 +347,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("78.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -365,7 +365,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("79.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -383,7 +383,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['SPEECH'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("80.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -402,7 +402,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("81.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -420,7 +420,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async (eventAction) => {
-            console.log("2.eventAction=" + JSON.stringify(eventAction))
+            console.log("82.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -443,7 +443,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("3.eventAction=" + JSON.stringify(eventAction))
+            console.log("83.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -466,7 +466,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("4.eventAction=" + JSON.stringify(eventAction))
+            console.log("84.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -490,7 +490,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("5.eventAction=" + JSON.stringify(eventAction))
+            console.log("85.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render1, done)
@@ -498,7 +498,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render2 = await createAudioRenderer(renderInfo['ULTRASONIC'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("5_2.eventAction=" + JSON.stringify(eventAction))
+            console.log("85_2.eventAction=" + JSON.stringify(eventAction))
             render2_callback = true
         })
         await start(render2, done)
@@ -515,7 +515,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("6.eventAction=" + JSON.stringify(eventAction))
+            console.log("86.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -538,7 +538,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("7.eventAction=" + JSON.stringify(eventAction))
+            console.log("87.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -561,7 +561,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("88.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -579,7 +579,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("89.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -597,7 +597,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MOVIE'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("90.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -616,7 +616,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("91.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -634,7 +634,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async (eventAction) => {
-            console.log("2.eventAction=" + JSON.stringify(eventAction))
+            console.log("92.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -657,7 +657,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("3.eventAction=" + JSON.stringify(eventAction))
+            console.log("93.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -680,7 +680,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("4.eventAction=" + JSON.stringify(eventAction))
+            console.log("94.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -704,7 +704,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("5.eventAction=" + JSON.stringify(eventAction))
+            console.log("95.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render1, done)
@@ -712,7 +712,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render2 = await createAudioRenderer(renderInfo['ULTRASONIC'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("5_2.eventAction=" + JSON.stringify(eventAction))
+            console.log("95_2.eventAction=" + JSON.stringify(eventAction))
             render2_callback = true
         })
         await start(render2, done)
@@ -729,7 +729,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("6.eventAction=" + JSON.stringify(eventAction))
+            console.log("96.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -752,7 +752,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("7.eventAction=" + JSON.stringify(eventAction))
+            console.log("97.eventAction=" + JSON.stringify(eventAction))
             if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
                 expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_PAUSE)
             } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
@@ -775,7 +775,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("98.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -793,7 +793,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("99.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -811,7 +811,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['UNKNOW'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt",async (eventAction) => {
-            console.log("1.eventAction=" + JSON.stringify(eventAction))
+            console.log("100.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
         await start(render1, done)
@@ -832,7 +832,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.SHARE_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("50.eventAction=" + JSON.stringify(eventAction))
+            console.log("101.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render1, done)
@@ -840,7 +840,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render2 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.SHARE_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("50_2.eventAction=" + JSON.stringify(eventAction))
+            console.log("101_2.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render2, done)
@@ -860,7 +860,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.SHARE_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("51.eventAction=" + JSON.stringify(eventAction))
+            console.log("102.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render1, done)
@@ -868,7 +868,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render2 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("51_2.eventAction=" + JSON.stringify(eventAction))
+            console.log("102_2.eventAction=" + JSON.stringify(eventAction))
             render2_callback == true
         })
         await start(render2, done)
@@ -888,7 +888,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render1 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
-            console.log("52.eventAction=" + JSON.stringify(eventAction))
+            console.log("103.eventAction=" + JSON.stringify(eventAction))
             render1_callback = true
         })
         await start(render1, done)
@@ -896,7 +896,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         let render2 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['48000'])
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
-            console.log("52_2.eventAction=" + JSON.stringify(eventAction))
+            console.log("103_2.eventAction=" + JSON.stringify(eventAction))
             render2_callback = true
         })
         await start(render2, done)
