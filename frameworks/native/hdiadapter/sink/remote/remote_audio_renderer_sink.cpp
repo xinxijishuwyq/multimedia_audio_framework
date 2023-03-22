@@ -89,23 +89,24 @@ public:
         void *cookie);
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
+
 private:
     IAudioSinkAttr attr_;
     std::string deviceNetworkId_;
-    bool rendererInited_;
-    bool isRenderCreated = false;
-    bool started_;
-    bool paused_;
-    float leftVolume_;
-    float rightVolume_;
+    std::atomic<bool> rendererInited_ = false;
+    std::atomic<bool> isRenderCreated_ = false;
+    std::atomic<bool> started_ = false;
+    std::atomic<bool> paused_ = false;
+    float leftVolume_ = DEFAULT_VOLUME_LEVEL;
+    float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     int32_t routeHandle_ = -1;
-    int32_t openSpeaker_;
+    int32_t openSpeaker_ = -1;
     std::string adapterNameCase_;
     struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioRender *audioRender_;
+    struct AudioAdapter *audioAdapter_ = nullptr;
+    struct AudioRender *audioRender_ = nullptr;
     struct AudioPort audioPort_;
-    IAudioSinkCallback* callback_;
+    IAudioSinkCallback* callback_ = nullptr;
     bool paramCallbackRegistered_ = false;
 
     int32_t GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size, const char *networkId);
@@ -118,9 +119,6 @@ private:
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
-    : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-    rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(-1), audioAdapter_(nullptr),
-    audioRender_(nullptr), callback_(nullptr)
 {
     AUDIO_INFO_LOG("Constract.");
     attr_ = {};
@@ -133,7 +131,7 @@ RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &de
 
 RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
 {
-    if (rendererInited_ == true) {
+    if (rendererInited_.load()) {
         RemoteAudioRendererSinkInner::DeInit();
     } else {
         AUDIO_INFO_LOG("RemoteAudioRendererSink has already DeInit.");
@@ -248,7 +246,7 @@ int32_t RemoteAudioRendererSinkInner::ParamEventCallback(AudioExtParamKey key, c
                 sink->audioAdapter_->DestroyRender(sink->audioAdapter_, sink->audioRender_);
             }
             sink->audioRender_ = nullptr;
-            sink->isRenderCreated = false;
+            sink->isRenderCreated_.store(false);
         }
     }
     IAudioSinkCallback* callback = sink->GetParamCallback();
@@ -269,8 +267,8 @@ OHOS::AudioStandard::IAudioSinkCallback* RemoteAudioRendererSinkInner::GetParamC
 void RemoteAudioRendererSinkInner::DeInit()
 {
     AUDIO_INFO_LOG("DeInit.");
-    started_ = false;
-    rendererInited_ = false;
+    started_.store(false);
+    rendererInited_.store(false);
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
         audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
     }
@@ -395,7 +393,7 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
         return ERR_NOT_STARTED;
     }
 
-    isRenderCreated = true;
+    isRenderCreated_.store(true);
     int64_t cost = GetNowTimeMs() - start;
     AUDIO_INFO_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
 
@@ -440,7 +438,7 @@ int32_t RemoteAudioRendererSinkInner::GetTargetAdapterPort(struct AudioAdapterDe
 
 bool RemoteAudioRendererSinkInner::IsInited()
 {
-    return rendererInited_;
+    return rendererInited_.load();
 }
 
 int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
@@ -484,7 +482,7 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     }
 
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Init end.");
-    rendererInited_ = true;
+    rendererInited_.store(true);
 
 #ifdef DEBUG_DUMP_FILE
     AUDIO_INFO_LOG("dump IAudioSinkAttr:%{public}s", printRemoteAttr(attr_).c_str());
@@ -533,25 +531,21 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
 int32_t RemoteAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
-    if (!isRenderCreated) {
+    if (!isRenderCreated_.load()) {
         if (CreateRender(audioPort_) != 0) {
             AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
             return ERR_NOT_STARTED;
         }
     }
-    int32_t ret;
 
-    if (!started_) {
-        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            started_ = true;
-            return SUCCESS;
-        } else {
+    if (!started_.load()) {
+        int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+        if (ret) {
             AUDIO_ERR_LOG("RemoteAudioRendererSink::Start failed!");
             return ERR_NOT_STARTED;
         }
+        started_.store(true);
     }
-    started_ = true;
     return SUCCESS;
 }
 
@@ -779,51 +773,42 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devic
 int32_t RemoteAudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
-    if (started_) {
-        ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            started_ = false;
-            return SUCCESS;
-        } else {
+    if (started_.load()) {
+        int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        if (ret) {
             AUDIO_ERR_LOG("RemoteAudioRendererSink::Stop failed!");
             return ERR_OPERATION_FAILED;
         }
+        started_.store(false);
     }
-    started_ = false;
     return SUCCESS;
 }
 
 int32_t RemoteAudioRendererSinkInner::Pause(void)
 {
     AUDIO_INFO_LOG("Pause.");
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
-    if (!started_) {
+    if (!started_.load()) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::Pause invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
-    if (!paused_) {
-        ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            paused_ = true;
-            return SUCCESS;
-        } else {
+    if (!paused_.load()) {
+        int32_t ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+        if (ret) {
             AUDIO_ERR_LOG("RemoteAudioRendererSink::Pause failed!");
             return ERR_OPERATION_FAILED;
         }
+        paused_.store(true);
     }
     return SUCCESS;
 }
@@ -831,27 +816,23 @@ int32_t RemoteAudioRendererSinkInner::Pause(void)
 int32_t RemoteAudioRendererSinkInner::Resume(void)
 {
     AUDIO_INFO_LOG("Pause.");
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
-    if (!started_) {
+    if (!started_.load()) {
         AUDIO_ERR_LOG("RemoteAudioRendererSink::Resume invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
-    if (paused_) {
-        ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            paused_ = false;
-            return SUCCESS;
-        } else {
+    if (paused_.load()) {
+        int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+        if (ret) {
             AUDIO_ERR_LOG("RemoteAudioRendererSink::Resume failed!");
             return ERR_OPERATION_FAILED;
         }
+        paused_.store(false);
     }
     return SUCCESS;
 }
@@ -859,35 +840,33 @@ int32_t RemoteAudioRendererSinkInner::Resume(void)
 int32_t RemoteAudioRendererSinkInner::Reset(void)
 {
     AUDIO_INFO_LOG("Reset.");
-    int32_t ret;
-
-    if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            return SUCCESS;
-        } else {
-            AUDIO_ERR_LOG("RemoteAudioRendererSink::Reset failed!");
-            return ERR_OPERATION_FAILED;
-        }
+    if (!started_.load() || audioRender_ == nullptr) {
+        AUDIO_ERR_LOG("%{public}s remote renderer start state %{public}d.", __func__, started_.load());
+        return ERR_OPERATION_FAILED;
     }
-    return ERR_OPERATION_FAILED;
+
+    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    if (ret) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Reset failed, ret %{public}d.", ret);
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
 }
 
 int32_t RemoteAudioRendererSinkInner::Flush(void)
 {
     AUDIO_INFO_LOG("Flush.");
-    int32_t ret;
-
-    if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
-        if (!ret) {
-            return SUCCESS;
-        } else {
-            AUDIO_ERR_LOG("RemoteAudioRendererSink::Flush failed!");
-            return ERR_OPERATION_FAILED;
-        }
+    if (!started_.load() || audioRender_ == nullptr) {
+        AUDIO_ERR_LOG("%{public}s remote renderer start state %{public}d.", __func__, started_.load());
+        return ERR_OPERATION_FAILED;
     }
-    return ERR_OPERATION_FAILED;
+
+    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    if (ret) {
+        AUDIO_ERR_LOG("RemoteAudioRendererSink::Flush failed, ret %{public}d.", ret);
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

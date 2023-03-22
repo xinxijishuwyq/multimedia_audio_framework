@@ -168,6 +168,7 @@ ohos_shared_library("audio_service") {
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",
+    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:capturer_source_adapter",
   ]
 
   external_deps = [

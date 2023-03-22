@@ -17,6 +17,7 @@
 #define I_AUDIO_CAPTURER_SOURCE_H
 
 #include <cstdint>
+
 #include "audio_info.h"
 
 namespace OHOS {

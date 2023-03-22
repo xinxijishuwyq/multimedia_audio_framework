@@ -65,6 +65,7 @@ RemoteAudioCapturerSource::~RemoteAudioCapturerSource()
 
 void RemoteAudioCapturerSource::DeInit()
 {
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     capturerInited_ = false;
 
     if ((audioCapture_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -501,9 +502,9 @@ int32_t RemoteAudioCapturerSource::Stop(void)
 
 int32_t RemoteAudioCapturerSource::Pause(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     if (started_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->control.Pause(reinterpret_cast<AudioHandle>(audioCapture_));
+        int32_t ret = audioCapture_->control.Pause(reinterpret_cast<AudioHandle>(audioCapture_));
         if (ret != 0) {
             AUDIO_ERR_LOG("pause capture Failed");
             return ERR_OPERATION_FAILED;
@@ -515,9 +516,9 @@ int32_t RemoteAudioCapturerSource::Pause(void)
 
 int32_t RemoteAudioCapturerSource::Resume(void)
 {
-    int32_t ret;
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     if (paused_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->control.Resume(reinterpret_cast<AudioHandle>(audioCapture_));
+        int32_t ret = audioCapture_->control.Resume(reinterpret_cast<AudioHandle>(audioCapture_));
         if (ret != 0) {
             AUDIO_ERR_LOG("resume capture Failed");
             return ERR_OPERATION_FAILED;
@@ -529,6 +530,7 @@ int32_t RemoteAudioCapturerSource::Resume(void)
 
 int32_t RemoteAudioCapturerSource::Reset(void)
 {
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->control.Flush(reinterpret_cast<AudioHandle>(audioCapture_));
     }
@@ -537,6 +539,7 @@ int32_t RemoteAudioCapturerSource::Reset(void)
 
 int32_t RemoteAudioCapturerSource::Flush(void)
 {
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     if (started_ && audioCapture_ != nullptr) {
         audioCapture_->control.Flush(reinterpret_cast<AudioHandle>(audioCapture_));
     }

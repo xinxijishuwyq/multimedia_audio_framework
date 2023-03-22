@@ -13,24 +13,25 @@
  * limitations under the License.
  */
 
+#include "audio_server.h"
+
 #include <cinttypes>
 #include <csignal>
 #include <fstream>
 #include <sstream>
+#include <thread>
+
+#include "xcollie/xcollie.h"
+#include "xcollie/xcollie_define.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
-#include "iservice_registry.h"
 #include "audio_log.h"
-#include "system_ability_definition.h"
 #include "audio_manager_listener_proxy.h"
-#include "i_audio_renderer_sink.h"
+#include "i_audio_capturer_source.h"
 #include "i_standard_audio_server_manager_listener.h"
-
-#include "audio_server.h"
-#include "xcollie/xcollie.h"
-#include "xcollie/xcollie_define.h"
-#include <thread>
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 #define PA
 #ifdef PA
@@ -458,13 +459,38 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
         networkId.c_str(), static_cast<int32_t>(deviceRole), (isStartDevice ? "true" : "false"));
-    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
-    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
-        return ERR_ILLEGAL_STATE;
+    if (!isStartDevice) {
+        return SUCCESS;
     }
+
     int32_t ret = SUCCESS;
-    if (isStartDevice) {
-        ret = audioRendererSinkInstance->Start();
+    switch (deviceRole) {
+        case OUTPUT_DEVICE:
+            {
+                IAudioRendererSink* rendererInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
+                if (rendererInstance == nullptr || !rendererInstance->IsInited()) {
+                    AUDIO_ERR_LOG("Remote renderer[%{public}s] is uninit.", networkId.c_str());
+                    return ERR_ILLEGAL_STATE;
+                }
+                ret = rendererInstance->Start();
+                break;
+            }
+        case INPUT_DEVICE:
+            {
+                IAudioCapturerSource *capturerInstance = IAudioCapturerSource::GetInstance("remote", networkId.c_str());
+                if (capturerInstance == nullptr || !capturerInstance->IsInited()) {
+                    AUDIO_ERR_LOG("Remote capturer[%{public}s] is uninit.", networkId.c_str());
+                    return ERR_ILLEGAL_STATE;
+                }
+                ret = capturerInstance->Start();
+                break;
+            }
+        default:
+            AUDIO_ERR_LOG("Remote device role %{public}d is not supported.", deviceRole);
+            return ERR_NOT_SUPPORTED;
+    }
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Check remote device[%{public}s] fail, ret %{public}d.", networkId.c_str(), ret);
     }
     return ret;
 }

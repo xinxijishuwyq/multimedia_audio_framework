@@ -106,7 +106,7 @@ public:
     }
 
     AudioRingerMode GetRingerMode() const;
-	
+
     int32_t SetMicrophoneMute(bool isMute);
 
     bool IsMicrophoneMute();
