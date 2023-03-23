@@ -537,7 +537,7 @@ int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 
 float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 {
-    float ret = -1.0; // invalue volume
+    float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ret, "AudioStreamCollector:GetLowPowerVolume streamId invalid.");
     float volume;
@@ -550,7 +550,7 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 
 float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
 {
-    float ret = -1.0; // invalue volume
+    float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ret, "AudioStreamCollector:GetSingleStreamVolume streamId invalid.");
     float volume;
