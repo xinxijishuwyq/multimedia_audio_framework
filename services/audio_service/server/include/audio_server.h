@@ -63,7 +63,7 @@ public:
 
     // ISinkParameterCallback
     void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key,
-        const std::string& condition, const std::string value) override;
+        const std::string& condition, const std::string& value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 protected:
