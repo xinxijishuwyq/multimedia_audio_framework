@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
+#include "i_audio_capturer_source.h"
+
 #include <cstring>
 #include <string>
+
 #include "audio_capturer_file_source.h"
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "remote_audio_capturer_source.h"
-#include "i_audio_capturer_source.h"
 
 using namespace std;
 

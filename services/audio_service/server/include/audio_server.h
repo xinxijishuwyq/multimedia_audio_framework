@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,15 +17,18 @@
 #define ST_AUDIO_SERVER_H
 
 #include <mutex>
-#include <unordered_map>
 #include <pthread.h>
+#include <unordered_map>
+
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
+
 #include "audio_manager_base.h"
-#include "audio_system_manager.h"
 #include "audio_server_death_recipient.h"
+#include "audio_system_manager.h"
+#include "i_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {

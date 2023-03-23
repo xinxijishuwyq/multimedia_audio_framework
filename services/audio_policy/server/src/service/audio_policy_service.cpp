@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
+#include "audio_policy_service.h"
+
 #include "audio_errors.h"
 #include "audio_focus_parser.h"
-#include "iservice_registry.h"
 #include "audio_log.h"
-#include "hisysevent.h"
-#include "system_ability_definition.h"
 #include "audio_manager_listener_stub.h"
+#include "hisysevent.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
 #endif
-
-#include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -326,7 +326,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_));
         return ERR_INVALID_OPERATION;
     }
-
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
@@ -525,6 +524,7 @@ inline std::string PrintSourceOutput(SourceOutput sourceOutput)
 int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
+    AUDIO_INFO_LOG("Select input device start for uid[%{public}d]", audioCapturerFilter->uid);
     // check size == 1 && output device
     int deviceSize = audioDeviceDescriptors.size();
     if (deviceSize != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::INPUT_DEVICE) {
@@ -544,7 +544,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     }
 
     if (!remoteCapturerSwitch_) {
-        AUDIO_DEBUG_LOG("remote capturer capbility is not open now");
+        AUDIO_DEBUG_LOG("remote capturer capbility is not open now.");
         return SUCCESS;
     }
     int32_t targetUid = audioCapturerFilter->uid;
@@ -614,8 +614,7 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<uint32_t> source
     DeviceRole deviceRole = remoteDeviceDescriptor->deviceRole_;
     DeviceType deviceType = remoteDeviceDescriptor->deviceType_;
 
-    // check: networkid
-    if (networkId == LOCAL_NETWORK_ID) {
+    if (networkId == LOCAL_NETWORK_ID) { // check: networkid
         AUDIO_ERR_LOG("MoveToRemoteInputDevice failed: not a remote device.");
         return ERR_INVALID_OPERATION;
     }
@@ -632,6 +631,11 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<uint32_t> source
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
+
+    const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    CHECK_AND_RETURN_RET_LOG((gsp->CheckRemoteDeviceState(networkId, deviceRole, true) == SUCCESS),
+        ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sourceOutputIds.size(); i++) {
@@ -701,7 +705,8 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
         AUDIO_ERR_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
     }
 
-    audioModuleInfo.name = GetRemoteModuleName(networkId, deviceRole); // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.name = GetRemoteModuleName(networkId, deviceRole);
     audioModuleInfo.networkId = networkId;
 
     std::stringstream typeValue;

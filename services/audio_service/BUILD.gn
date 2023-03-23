@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -126,13 +126,13 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/primary",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/file",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/bluetooth",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
+    "${fwk_native_hdiadapter_path}/sink/bluetooth",
+    "${fwk_native_hdiadapter_path}/sink/common",
+    "${fwk_native_hdiadapter_path}/sink/file",
+    "${fwk_native_hdiadapter_path}/sink/primary",
+    "${fwk_native_hdiadapter_path}/sink/remote",
+    "${fwk_native_hdiadapter_path}/source/common",
+    "${fwk_native_hdiadapter_path}/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
   ]
 
@@ -163,11 +163,12 @@ ohos_shared_library("audio_service") {
 
   deps = [
     "$pulseaudio_build_path/src/daemon:pulseaudio",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:audio_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:audio_capturer_source",
+    "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
+    "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
+    "${fwk_native_hdiadapter_path}/sink:remote_audio_renderer_sink",
+    "${fwk_native_hdiadapter_path}/sink:renderer_sink_adapter",
+    "${fwk_native_hdiadapter_path}/source:audio_capturer_source",
+    "${fwk_native_hdiadapter_path}/source:capturer_source_adapter",
   ]
 
   external_deps = [
