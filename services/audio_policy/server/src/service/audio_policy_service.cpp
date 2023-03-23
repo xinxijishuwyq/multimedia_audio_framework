@@ -705,7 +705,8 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
         AUDIO_ERR_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
     }
 
-    audioModuleInfo.name = GetRemoteModuleName(networkId, deviceRole); // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.name = GetRemoteModuleName(networkId, deviceRole);
     audioModuleInfo.networkId = networkId;
 
     std::stringstream typeValue;
