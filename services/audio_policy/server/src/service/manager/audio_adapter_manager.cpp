@@ -369,6 +369,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
             break;
         case RINGER_MODE_NORMAL:
             SetStreamMute(STREAM_RING, false);
+            break;
         default:
             break;
     }

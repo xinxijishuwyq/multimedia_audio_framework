@@ -362,7 +362,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     AUDIO_INFO_LOG("AudioRenderer::Start");
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
-        AUDIO_ERR_LOG("AudioRendererPrivate::Start() Illegal state:%{public}u, Start failed", state);
+        AUDIO_ERR_LOG("AudioRenderer::Start failed. Illegal state:%{public}u", state);
         return false;
     }
 
@@ -376,7 +376,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRendererPrivate::ActivateAudioInterrupt Failed");
+        AUDIO_ERR_LOG("AudioRenderer::ActivateAudioInterrupt Failed");
         return false;
     }
 
@@ -417,15 +417,18 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     AUDIO_INFO_LOG("AudioRenderer::Pause");
-    if (audioStream_->GetState() != RUNNING) {
-        AUDIO_INFO_LOG("AudioRenderer::Pause: State of stream is not running.No need to pause");
-        return true;
+    RendererState state = GetStatus();
+    if (state != RENDERER_RUNNING) {
+        // If the stream is not running, there is no need to pause and deactive audio interrupt
+        AUDIO_ERR_LOG("AudioRenderer::Pause: State of stream is not running. Illegal state:%{public}u", state);
+        return false;
     }
     bool result = audioStream_->PauseAudioStream(cmdType);
+
     // When user is intentionally pausing, deactivate to remove from audioFocusInfoList_
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRenderer: DeactivateAudioInterrupt Failed");
+        AUDIO_ERR_LOG("AudioRenderer::DeactivateAudioInterrupt Failed");
     }
 
     return result;

@@ -36,7 +36,7 @@ typedef struct {
 class IAudioSinkCallback {
 public:
     virtual void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
-        const std::string value) = 0;
+        const std::string& value) = 0;
 };
 
 class IAudioRendererSink {
