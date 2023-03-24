@@ -26,6 +26,7 @@
 #include "hilog/log.h"
 #include "napi_base_context.h"
 #include "securec.h"
+#include "xpower_event_js.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -742,6 +743,7 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
             napi_get_undefined(env, &result);
         }
 
+        HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "Start", NAPI_AUTO_LENGTH, &resource);
 

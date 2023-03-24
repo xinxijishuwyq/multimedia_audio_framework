@@ -2171,8 +2171,13 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1,
         "STREAMID", client.sessionID,
+        "APP_UID", client.clientUid_,
+        "APP_PID", client.clientPid_,
         "STREAMTYPE", client.mStreamType,
-        "VOLUME", vol);
+        "VOLUME", vol,
+        "SYSVOLUME", systemVolumeDb,
+        "VOLUMEFACTOR", client.mVolumeFactor,
+        "POWERVOLUMEFACTOR", client.mPowerVolumeFactor);
 }
 
 int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererRate)

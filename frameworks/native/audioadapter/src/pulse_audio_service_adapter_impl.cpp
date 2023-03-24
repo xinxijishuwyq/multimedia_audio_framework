@@ -866,6 +866,17 @@ void PulseAudioServiceAdapterImpl::PaModuleLoadCb(pa_context *c, uint32_t idx, v
     return;
 }
 
+template <typename T>
+inline void CastValue(T &a, const char *raw)
+{
+    if (raw == nullptr) {
+        return;
+    }
+    std::stringstream valueStr;
+    valueStr << raw;
+    valueStr >> a;
+}
+
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol,
     void *userdata)
 {
@@ -895,6 +906,10 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
+    int32_t uid = -1;
+    int32_t pid = -1;
+    CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
+    CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
     if ((streamtype == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
         (sessionCStr == nullptr)) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Stream parameter info.");
@@ -930,7 +945,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
         vol, i->name, volume);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1, "STREAMID", sessionID, "STREAMTYPE", streamID, "VOLUME", vol);
+        "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamID, "VOLUME", vol,
+        "SYSVOLUME", volumeDbCb, "VOLUMEFACTOR", volumeFactor, "POWERVOLUMEFACTOR", powerVolumeFactor);
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -1006,17 +1022,6 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     sessionStr >> sessionID;
     AUDIO_INFO_LOG("[PaGetSourceOutputCb] sessionID %{public}u", sessionID);
     sourceIndexSessionIDMap[i->index] = sessionID;
-}
-
-template <typename T>
-inline void CastValue(T &a, const char *raw)
-{
-    if (raw == nullptr) {
-        return;
-    }
-    std::stringstream valueStr;
-    valueStr << raw;
-    valueStr >> a;
 }
 
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,

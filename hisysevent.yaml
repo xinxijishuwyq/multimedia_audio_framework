@@ -24,8 +24,13 @@ VOLUME_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: audio input device}
   ISOUTPUT: {type: INT32, desc: output device}
   STREAMID: {type: INT32, desc: stream id}
+  APP_UID: {type: INT32, desc: user id}
+  APP_PID: {type: INT32, desc: process id}
   STREAMTYPE: {type: INT32, desc: stream type}
   VOLUME: {type: FLOAT, desc: audio volume}
+  SYSVOLUME: {type: FLOAT, desc: sys volume}
+  VOLUMEFACTOR: {type: FLOAT, desc: stream volume factor}
+  POWERVOLUMEFACTOR: {type: FLOAT, desc: power volume factor}
 
 STREAM_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: capturer state change}
