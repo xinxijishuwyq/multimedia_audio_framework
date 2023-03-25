@@ -325,7 +325,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 
 int32_t AudioCapturerSourceInner::Start(void)
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner Start.");
+    AUDIO_INFO_LOG("Start.");
     if (mKeepRunningLock == nullptr) {
         mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
@@ -334,7 +334,7 @@ int32_t AudioCapturerSourceInner::Start(void)
         AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock lock");
         mKeepRunningLock->Lock(0); // 0 for lasting.
     } else {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner mKeepRunningLock is null, start can not work well!");
+        AUDIO_ERR_LOG("mKeepRunningLock is null, start can not work well!");
     }
 
     int32_t ret;
@@ -579,7 +579,7 @@ int32_t AudioCapturerSourceInner::Stop(void)
         AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock UnLock");
         mKeepRunningLock->UnLock();
     } else {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner mKeepRunningLock is null, stop can not work well!");
+        AUDIO_ERR_LOG("mKeepRunningLock is null, stop can not work well!");
     }
 
     int32_t ret;
