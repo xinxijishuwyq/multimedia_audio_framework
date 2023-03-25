@@ -17,6 +17,8 @@
 #include <dlfcn.h>
 #include <string>
 #include <cinttypes>
+#include "power_mgr_client.h"
+#include "running_lock.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -76,6 +78,8 @@ private:
     struct IAudioCapture *audioCapture_;
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort;
+
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
@@ -321,6 +325,18 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 
 int32_t AudioCapturerSourceInner::Start(void)
 {
+    AUDIO_INFO_LOG("AudioCapturerSourceInner Start.");
+    if (mKeepRunningLock == nullptr) {
+        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+    }
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock lock");
+        mKeepRunningLock->Lock(0); // 0 for lasting.
+    } else {
+        AUDIO_ERR_LOG("AudioCapturerSourceInner mKeepRunningLock is null, start can not work well!");
+    }
+
     int32_t ret;
     if (!started_) {
         ret = audioCapture_->Start(audioCapture_);
@@ -557,6 +573,15 @@ uint64_t AudioCapturerSourceInner::GetTransactionId()
 
 int32_t AudioCapturerSourceInner::Stop(void)
 {
+    AUDIO_INFO_LOG("Stop.");
+
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock UnLock");
+        mKeepRunningLock->UnLock();
+    } else {
+        AUDIO_ERR_LOG("AudioCapturerSourceInner mKeepRunningLock is null, stop can not work well!");
+    }
+
     int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
         ret = audioCapture_->Stop(audioCapture_);
