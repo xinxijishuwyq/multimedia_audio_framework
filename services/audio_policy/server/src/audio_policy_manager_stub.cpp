@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "audio_errors.h"
-#include "audio_policy_server.h"
-#include "audio_policy_types.h"
-#include "audio_log.h"
 #include "audio_policy_manager_stub.h"
+
+#include "audio_errors.h"
+#include "audio_log.h"
+#include "audio_policy_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -517,38 +517,38 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
 
 void AudioPolicyManagerStub::SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t clientID = data.ReadUint32();
+    int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetAudioManagerInterruptCallback(clientID, object);
+    int32_t result = SetAudioManagerInterruptCallback(clientId, object);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t clientID = data.ReadUint32();
-    int32_t result = UnsetAudioManagerInterruptCallback(clientID);
+    int32_t clientId = data.ReadInt32();
+    int32_t result = UnsetAudioManagerInterruptCallback(clientId);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioInterrupt audioInterrupt = {};
-    uint32_t clientID = data.ReadUint32();
+    int32_t clientId = data.ReadInt32();
     ReadAudioManagerInterruptParams(data, audioInterrupt);
-    int32_t result = RequestAudioFocus(clientID, audioInterrupt);
+    int32_t result = RequestAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioInterrupt audioInterrupt = {};
-    uint32_t clientID = data.ReadUint32();
+    int32_t clientId = data.ReadInt32();
     ReadAudioManagerInterruptParams(data, audioInterrupt);
-    int32_t result = AbandonAudioFocus(clientID, audioInterrupt);
+    int32_t result = AbandonAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
 
@@ -631,13 +631,13 @@ void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data
 void AudioPolicyManagerStub::RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register event listener entered");
-    int32_t clientUID =  data.ReadInt32();
+    int32_t clientUid =  data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioRendererStateCallback obj is null");
         return;
     }
-    int ret = RegisterAudioRendererEventListener(clientUID, remoteObject);
+    int ret = RegisterAudioRendererEventListener(clientUid, remoteObject);
     reply.WriteInt32(ret);
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:register event listener exit");
 }
@@ -645,8 +645,8 @@ void AudioPolicyManagerStub::RegisterAudioRendererEventListenerInternal(MessageP
 void AudioPolicyManagerStub::UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:unregister event listener entered");
-    int32_t clientUID = data.ReadInt32();
-    int ret = UnregisterAudioRendererEventListener(clientUID);
+    int32_t clientUid = data.ReadInt32();
+    int ret = UnregisterAudioRendererEventListener(clientUid);
     reply.WriteInt32(ret);
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:unregister event listener exit");
 }
@@ -654,13 +654,13 @@ void AudioPolicyManagerStub::UnregisterAudioRendererEventListenerInternal(Messag
 void AudioPolicyManagerStub::RegisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap register event listener entered");
-    int32_t clientUID =  data.ReadInt32();
+    int32_t clientUid =  data.ReadInt32();
     sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
     if (remoteObject == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioCapturerStateCallback obj is null");
         return;
     }
-    int ret = RegisterAudioCapturerEventListener(clientUID, remoteObject);
+    int ret = RegisterAudioCapturerEventListener(clientUid, remoteObject);
     reply.WriteInt32(ret);
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap register event listener exit");
 }
@@ -668,8 +668,8 @@ void AudioPolicyManagerStub::RegisterAudioCapturerEventListenerInternal(MessageP
 void AudioPolicyManagerStub::UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap unnregister event listener entered");
-    int32_t clientUID = data.ReadInt32();
-    int ret = UnregisterAudioCapturerEventListener(clientUID);
+    int32_t clientUid = data.ReadInt32();
+    int ret = UnregisterAudioCapturerEventListener(clientUid);
     reply.WriteInt32(ret);
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:cap unregister event listener exit");
 }

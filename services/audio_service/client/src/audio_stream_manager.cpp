@@ -27,57 +27,57 @@ AudioStreamManager *AudioStreamManager::GetInstance()
     return &audioStreamManager;
 }
 
-int32_t AudioStreamManager::RegisterAudioRendererEventListener(const int32_t clientUID,
+int32_t AudioStreamManager::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("AudioStreamManager:: RegisterAudioRendererEventListener client id: %{public}d", clientUID);
+    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientPid);
     if (callback == nullptr) {
-        AUDIO_ERR_LOG("AudioStreamManager::callback is null");
+        AUDIO_ERR_LOG("callback is null");
         return ERR_INVALID_PARAM;
     }
-    return AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientUID, callback);
+    return AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, callback);
 }
 
-int32_t AudioStreamManager::UnregisterAudioRendererEventListener(const int32_t clientUID)
+int32_t AudioStreamManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioStreamManager:: UnregisterAudioRendererEventListener client id: %{public}d", clientUID);
-    return AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientUID);
+    AUDIO_INFO_LOG("UnregisterAudioRendererEventListener client id: %{public}d", clientPid);
+    return AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
 }
 
-int32_t AudioStreamManager::RegisterAudioCapturerEventListener(const int32_t clientUID,
+int32_t AudioStreamManager::RegisterAudioCapturerEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("AudioStreamManager:: RegisterAudioCapturerEventListener client id: %{public}d", clientUID);
+    AUDIO_INFO_LOG("RegisterAudioCapturerEventListener client id: %{public}d", clientPid);
     if (callback == nullptr) {
-        AUDIO_ERR_LOG("AudioStreamManager::callback is null");
+        AUDIO_ERR_LOG("callback is null");
         return ERR_INVALID_PARAM;
     }
-    return AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientUID, callback);
+    return AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientPid, callback);
 }
 
-int32_t AudioStreamManager::UnregisterAudioCapturerEventListener(const int32_t clientUID)
+int32_t AudioStreamManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioStreamManager:: UnregisterAudioCapturerEventListener client id: %{public}d", clientUID);
-    return AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientUID);
+    AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener client id: %{public}d", clientPid);
+    return AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientPid);
 }
 
 int32_t AudioStreamManager::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    AUDIO_INFO_LOG("AudioStreamManager:: GetCurrentRendererChangeInfos");
+    AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos");
     return AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 }
 
 int32_t AudioStreamManager::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    AUDIO_INFO_LOG("AudioStreamManager:: GetCurrentCapturerChangeInfos");
+    AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
 bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
 {
-    AUDIO_INFO_LOG("AudioStreamManager::IsAudioRendererLowLatencySupported");
+    AUDIO_DEBUG_LOG("IsAudioRendererLowLatencySupported");
     return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
 }
 } // namespace AudioStandard

@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioStreamTracker {
 public:
-    AudioStreamTracker(AudioMode mode, int32_t clientUID);
+    AudioStreamTracker(AudioMode mode, int32_t clientUid);
     virtual ~AudioStreamTracker();
     void RegisterTracker(const int32_t sessionId, const State state,
         const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo,
@@ -32,7 +32,7 @@ public:
         const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo);
 
 private:
-    int32_t clientUID_ = -1;
+    int32_t clientUid_ = -1;
     AudioMode eMode_; // to determine renderer or capturer
     State state_;
 };

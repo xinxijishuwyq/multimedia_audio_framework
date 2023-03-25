@@ -104,13 +104,13 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetAudioManagerInterruptCallback(const uint32_t clientID, const sptr<IRemoteObject> &object) override;
+    int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnsetAudioManagerInterruptCallback(const uint32_t clientID) override;
+    int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) override;
 
-    int32_t RequestAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) override;
+    int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
-    int32_t AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) override;
+    int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const sptr<IRemoteObject> &object, API_VERSION api_v) override;
@@ -133,13 +133,13 @@ public:
 
     uint32_t GetSinkLatencyFromXml() override;
 
-    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterAudioRendererEventListener(int32_t clientUID) override;
+    int32_t UnregisterAudioRendererEventListener(int32_t clientPid) override;
 
-    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) override;
+    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) override;
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid) override;
 
     int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;

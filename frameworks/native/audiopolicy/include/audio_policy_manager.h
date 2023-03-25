@@ -124,14 +124,14 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
-    int32_t SetAudioManagerInterruptCallback(const uint32_t clientID,
+    int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
 
-    int32_t UnsetAudioManagerInterruptCallback(const uint32_t clientID);
+    int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId);
 
-    int32_t RequestAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
+    int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt);
 
-    int32_t AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt);
+    int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt);
 
     AudioStreamType GetStreamInFocus();
 
@@ -154,15 +154,15 @@ public:
 
     uint32_t GetSinkLatencyFromXml();
 
-    int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
 
-    int32_t RegisterAudioCapturerEventListener(const int32_t clientUID,
+    int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
 
-    int32_t UnregisterAudioCapturerEventListener(const int32_t clientUID);
+    int32_t UnregisterAudioCapturerEventListener(const int32_t clientPid);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const std::shared_ptr<AudioClientTracker> &clientTrackerObj);

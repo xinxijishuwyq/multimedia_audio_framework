@@ -98,15 +98,15 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
         return;
     }
 
-    int32_t clientUID = *reinterpret_cast<const int32_t *>(data);
+    int32_t clientPid = *reinterpret_cast<const int32_t *>(data);
     shared_ptr<AudioRendererStateCallbackFuzz> audioRendererStateCallbackFuzz =
         std::make_shared<AudioRendererStateCallbackFuzz>();
     shared_ptr<AudioCapturerStateCallbackFuzz> audioCapturerStateCallbackFuzz =
         std::make_shared<AudioCapturerStateCallbackFuzz>();
-    AudioStreamManager::GetInstance()->RegisterAudioRendererEventListener(clientUID, audioRendererStateCallbackFuzz);
-    AudioStreamManager::GetInstance()->UnregisterAudioRendererEventListener(clientUID);
-    AudioStreamManager::GetInstance()->RegisterAudioCapturerEventListener(clientUID, audioCapturerStateCallbackFuzz);
-    AudioStreamManager::GetInstance()->UnregisterAudioCapturerEventListener(clientUID);
+    AudioStreamManager::GetInstance()->RegisterAudioRendererEventListener(clientPid, audioRendererStateCallbackFuzz);
+    AudioStreamManager::GetInstance()->UnregisterAudioRendererEventListener(clientPid);
+    AudioStreamManager::GetInstance()->RegisterAudioCapturerEventListener(clientPid, audioCapturerStateCallbackFuzz);
+    AudioStreamManager::GetInstance()->UnregisterAudioCapturerEventListener(clientPid);
 
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);

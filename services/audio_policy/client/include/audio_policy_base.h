@@ -100,22 +100,22 @@ public:
 
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t SetAudioManagerInterruptCallback(const uint32_t clientID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetAudioManagerInterruptCallback(const uint32_t clientID) = 0;
+    virtual int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) = 0;
 
-    virtual int32_t RequestAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) = 0;
+    virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t AbandonAudioFocus(const uint32_t clientID, const AudioInterrupt &audioInterrupt) = 0;
+    virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
     virtual AudioStreamType GetStreamInFocus() = 0;
 
     virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
 
-    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
+    virtual int32_t SetVolumeKeyEventCallback(const int32_t clientId,
         const sptr<IRemoteObject> &object, API_VERSION api_v = API_9) = 0;
 
-    virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) = 0;
+    virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
 
     virtual bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId, int32_t appUid,
         bool privacyFlag, AudioPermissionState state) = 0;
@@ -129,13 +129,13 @@ public:
 
     virtual uint32_t GetSinkLatencyFromXml() = 0;
 
-    virtual int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnregisterAudioRendererEventListener(int32_t clientUID) = 0;
+    virtual int32_t UnregisterAudioRendererEventListener(int32_t clientPid) = 0;
 
-    virtual int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnregisterAudioCapturerEventListener(int32_t clientUID) = 0;
+    virtual int32_t UnregisterAudioCapturerEventListener(int32_t clientPid) = 0;
 
     virtual int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;

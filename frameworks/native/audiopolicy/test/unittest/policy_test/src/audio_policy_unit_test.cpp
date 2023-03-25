@@ -619,9 +619,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetVolumeKeyEventCallback_001, 
 */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_002, TestSize.Level1)
 {
-    int32_t clientUID = getpid();
+    int32_t clientPid = getpid();
     std::shared_ptr<AudioRendererStateChangeCallback> callback = nullptr;
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientUID, callback);
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, callback);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 

@@ -244,7 +244,7 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
 
 2. Call **RegisterAudioRendererEventListener()** to register a listener for renderer state changes. A callback will be invoked when the renderer state changes. You can override **OnRendererStateChange()** in the **AudioRendererStateChangeCallback** class.
     ```
-    const int32_t clientUID;
+    const int32_t clientPid;
 
     class RendererStateChangeCallback : public AudioRendererStateChangeCallback {
     public:
@@ -258,13 +258,13 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     };
 
     std::shared_ptr<AudioRendererStateChangeCallback> callback = std::make_shared<RendererStateChangeCallback>();
-    int32_t state = audioStreamMgr->RegisterAudioRendererEventListener(clientUID, callback);
-    int32_t result = audioStreamMgr->UnregisterAudioRendererEventListener(clientUID);
+    int32_t state = audioStreamMgr->RegisterAudioRendererEventListener(clientPid, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioRendererEventListener(clientPid);
     ```
 
 3. Call **RegisterAudioCapturerEventListener()** to register a listener for capturer state changes. A callback will be invoked when the capturer state changes. You can override **OnCapturerStateChange()** in the **AudioCapturerStateChangeCallback** class.
     ```
-    const int32_t clientUID;
+    const int32_t clientPid;
 
     class CapturerStateChangeCallback : public AudioCapturerStateChangeCallback {
     public:
@@ -278,8 +278,8 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     };
 
     std::shared_ptr<AudioCapturerStateChangeCallback> callback = std::make_shared<CapturerStateChangeCallback>();
-    int32_t state = audioStreamMgr->RegisterAudioCapturerEventListener(clientUID, callback);
-    int32_t result = audioStreamMgr->UnregisterAudioCapturerEventListener(clientUID);
+    int32_t state = audioStreamMgr->RegisterAudioCapturerEventListener(clientPid, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioCapturerEventListener(clientPid);
     ```
 4. Call **GetCurrentRendererChangeInfos()** to obtain information about all running renderers, including the client UID, session ID, renderer information, renderer state, and output device details.
     ```

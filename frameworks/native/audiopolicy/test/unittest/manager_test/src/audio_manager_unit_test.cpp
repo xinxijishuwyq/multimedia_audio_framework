@@ -1263,7 +1263,7 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_002, TestSize.Le
     ret = AudioSystemManager::GetInstance()->UnsetAudioManagerInterruptCallback();
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioSystemManager::GetInstance()->UnsetAudioManagerInterruptCallback();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
 
 /**
@@ -1274,7 +1274,7 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_002, TestSize.Le
 HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_003, TestSize.Level1)
 {
     auto ret = AudioSystemManager::GetInstance()->UnsetAudioManagerInterruptCallback();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
 
 /**

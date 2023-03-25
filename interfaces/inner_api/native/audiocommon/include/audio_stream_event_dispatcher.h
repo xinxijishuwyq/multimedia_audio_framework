@@ -47,12 +47,12 @@ public:
     AudioStreamEventDispatcher();
     ~AudioStreamEventDispatcher();
 
-    void addRendererListener(int32_t clientUID,
+    void addRendererListener(int32_t clientPid,
                                 const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
-    void removeRendererListener(int32_t clientUID);
-    void addCapturerListener(int32_t clientUID,
+    void removeRendererListener(int32_t clientPid);
+    void addCapturerListener(int32_t clientPid,
                                 const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
-    void removeCapturerListener(int32_t clientUID);
+    void removeCapturerListener(int32_t clientPid);
     void SendRendererInfoEventToDispatcher(AudioMode mode,
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     void SendCapturerInfoEventToDispatcher(AudioMode mode,

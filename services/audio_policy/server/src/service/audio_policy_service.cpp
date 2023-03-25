@@ -15,13 +15,15 @@
 
 #include "audio_policy_service.h"
 
-#include "audio_errors.h"
-#include "audio_focus_parser.h"
-#include "audio_log.h"
-#include "audio_manager_listener_stub.h"
+#include "ipc_skeleton.h"
 #include "hisysevent.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+
+#include "audio_errors.h"
+#include "audio_log.h"
+#include "audio_focus_parser.h"
+#include "audio_manager_listener_stub.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
@@ -726,9 +728,9 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 
 void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std::string networkId)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    for (auto it = activeOutputDeviceListenerCbsMap_.begin(); it != activeOutputDeviceListenerCbsMap_.end(); ++it) {
+    for (auto it = activeOutputDeviceCbsMap_.begin(); it != activeOutputDeviceCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
@@ -737,7 +739,7 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
 
     if (deviceFlag < DeviceFlag::OUTPUT_DEVICES_FLAG || deviceFlag > DeviceFlag::ALL_L_D_DEVICES_FLAG) {
@@ -777,14 +779,14 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
         }
     }
 
-    AUDIO_INFO_LOG("GetDevices list size = [%{public}zu]", deviceList.size());
+    AUDIO_DEBUG_LOG("GetDevices list size = [%{public}zu]", deviceList.size());
     return deviceList;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     for (const auto& device : connectedDevices_) {
@@ -812,7 +814,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDevi
 
 DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = true)
 {
-    AUDIO_DEBUG_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     DeviceType priorityDevice = isOutputDevice ? DEVICE_TYPE_SPEAKER : DEVICE_TYPE_MIC;
     std::vector<DeviceType> priorityList = isOutputDevice ? outputPriorityList_ : inputPriorityList_;
     for (const auto &device : priorityList) {
@@ -1641,11 +1643,11 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
 int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const sptr<IRemoteObject> &object)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
     if (callback != nullptr) {
-        deviceChangeCallbackMap_[clientId] = std::make_pair(flag, callback);
+        deviceChangeCbsMap_[clientId] = std::make_pair(flag, callback);
     }
 
     return SUCCESS;
@@ -1653,13 +1655,11 @@ int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, cons
 
 int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    if (deviceChangeCallbackMap_.erase(clientId)) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer:UnsetDeviceChangeCallback for clientID %{public}d done", clientId);
-    } else {
-        AUDIO_DEBUG_LOG("AudioPolicyServer:UnsetDeviceChangeCallback clientID %{public}d not present/unset already",
-                        clientId);
+    if (deviceChangeCbsMap_.erase(clientId) == 0) {
+        AUDIO_ERR_LOG("client not present in %{public}s", __func__);
+        return ERR_INVALID_OPERATION;
     }
 
     return SUCCESS;
@@ -1668,12 +1668,11 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId)
 int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
-
     if (callback != nullptr) {
-        activeOutputDeviceListenerCbsMap_[clientId] = callback;
+        activeOutputDeviceCbsMap_[clientId] = callback;
     }
 
     return SUCCESS;
@@ -1681,38 +1680,36 @@ int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t cl
 
 int32_t AudioPolicyService::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    if (activeOutputDeviceListenerCbsMap_.erase(clientId)) {
-        AUDIO_DEBUG_LOG("UnsetPreferOutputDeviceChangeCallback for clientID %{public}d done", clientId);
-    } else {
-        AUDIO_DEBUG_LOG("UnsetPreferOutputDeviceChangeCallback clientID %{public}d not present or already erase",
-            clientId);
+    if (activeOutputDeviceCbsMap_.erase(clientId) == 0) {
+        AUDIO_ERR_LOG("client not present in %{public}s", __func__);
+        return ERR_INVALID_OPERATION;
     }
 
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+int32_t AudioPolicyService::RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
     bool hasBTPermission, bool hasSysPermission)
 {
-    return streamCollector_.RegisterAudioRendererEventListener(clientUID, object, hasBTPermission, hasSysPermission);
+    return streamCollector_.RegisterAudioRendererEventListener(clientPid, object, hasBTPermission, hasSysPermission);
 }
 
-int32_t AudioPolicyService::UnregisterAudioRendererEventListener(int32_t clientUID)
+int32_t AudioPolicyService::UnregisterAudioRendererEventListener(int32_t clientPid)
 {
-    return streamCollector_.UnregisterAudioRendererEventListener(clientUID);
+    return streamCollector_.UnregisterAudioRendererEventListener(clientPid);
 }
 
-int32_t AudioPolicyService::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+int32_t AudioPolicyService::RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
     bool hasBTPermission, bool hasSysPermission)
 {
-    return streamCollector_.RegisterAudioCapturerEventListener(clientUID, object, hasBTPermission, hasSysPermission);
+    return streamCollector_.RegisterAudioCapturerEventListener(clientPid, object, hasBTPermission, hasSysPermission);
 }
 
-int32_t AudioPolicyService::UnregisterAudioCapturerEventListener(int32_t clientUID)
+int32_t AudioPolicyService::UnregisterAudioCapturerEventListener(int32_t clientPid)
 {
-    return streamCollector_.UnregisterAudioCapturerEventListener(clientUID);
+    return streamCollector_.UnregisterAudioCapturerEventListener(clientPid);
 }
 
 static void UpdateRendererInfoWhenNoPermission(unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
@@ -2125,7 +2122,7 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
 
     WriteDeviceChangedSysEvents(desc, isConnected);
 
-    for (auto it = deviceChangeCallbackMap_.begin(); it != deviceChangeCallbackMap_.end(); ++it) {
+    for (auto it = deviceChangeCbsMap_.begin(); it != deviceChangeCbsMap_.end(); ++it) {
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->second.first, desc);
         if (it->second.second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second.second->OnDeviceChange(deviceChangeAction);
@@ -2330,26 +2327,26 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
-    AUDIO_INFO_LOG("Enter AudioPolicyService::SetParameterCallback");
+    AUDIO_INFO_LOG("Enter SetParameterCallback");
     auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
     if (parameterChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("SetDeviceChangeCallback: parameterChangeCbStub null");
+        AUDIO_ERR_LOG("SetParameterCallback parameterChangeCbStub null");
         return;
     }
     const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetDeviceChangeCallback: g_adProxy null");
+        AUDIO_ERR_LOG("SetParameterCallback g_adProxy null");
         return;
     }
     parameterChangeCbStub->SetParameterCallback(callback);
 
     sptr<IRemoteObject> object = parameterChangeCbStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyService: listenerStub->AsObject is nullptr..");
+        AUDIO_ERR_LOG("SetParameterCallback listenerStub object is nullptr");
         delete parameterChangeCbStub;
         return;
     }
-    AUDIO_INFO_LOG("AudioPolicyService: SetParameterCallback call SetParameterCallback.");
+    AUDIO_INFO_LOG("SetParameterCallback done");
     gsp->SetParameterCallback(object);
 }
 

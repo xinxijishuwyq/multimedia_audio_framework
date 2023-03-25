@@ -96,44 +96,44 @@ public:
     /**
      * @brief Registers the renderer event callback listener.
      *
-     * @param clientUID client UID
+     * @param clientPid client PID
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
                                               const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
     /**
      * @brief Unregisters the renderer event callback listener.
      *
-     * @param clientUID client UID
+     * @param clientPid client PID
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
 
     /**
      * @brief Registers the capturer event callback listener.
      *
-     * @param clientUID client UID
+     * @param clientPid client PID
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t RegisterAudioCapturerEventListener(const int32_t clientUID,
+    int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
                                               const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
 
     /**
      * @brief Unregisters the capturer event callback listener.
      *
-     * @param clientUID client UID
+     * @param clientPid client PID
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t UnregisterAudioCapturerEventListener(const int32_t clientUID);
+    int32_t UnregisterAudioCapturerEventListener(const int32_t clientPid);
 
     /**
      * @brief Get current renderer change Infos.

@@ -112,7 +112,7 @@ void AudioFocusParser::ParseFocusMap(xmlNode *node, char *curStream,
     while (currNode != nullptr) {
         if (currNode->type == XML_ELEMENT_NODE) {
             if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_table"))) {
-                AUDIO_INFO_LOG("node type: Element, name: %s", currNode->name);
+                AUDIO_DEBUG_LOG("node type: Element, name: %s", currNode->name);
                 xmlNode *sNode = currNode->children;
                 while (sNode) {
                     if (sNode->type == XML_ELEMENT_NODE) {
@@ -140,7 +140,7 @@ void AudioFocusParser::ParseStreams(xmlNode *node,
                 reinterpret_cast<xmlChar*>(const_cast<char*>("value"))));
             std::map<std::string, AudioFocusType>::iterator it = audioFocusMap.find(sType);
             if (it != audioFocusMap.end()) {
-                AUDIO_INFO_LOG("stream type: %{public}s",  sType);
+                AUDIO_DEBUG_LOG("stream type: %{public}s",  sType);
                 ParseFocusMap(currNode->children, sType, focusMap);
             }
             xmlFree(sType);
@@ -171,8 +171,8 @@ void AudioFocusParser::ParseRejectedStreams(xmlNode *node, char *curStream,
                     rejectedFocusEntry.isReject = true;
                     focusMap.emplace(rejectedStreamsPair, rejectedFocusEntry);
 
-                    AUDIO_INFO_LOG("current stream: %s, incoming stream: %s", curStream, newStream);
-                    AUDIO_INFO_LOG("actionOn: %d, hintType: %d, forceType: %d isReject: %d",
+                    AUDIO_DEBUG_LOG("current stream: %s, incoming stream: %s", curStream, newStream);
+                    AUDIO_DEBUG_LOG("actionOn: %d, hintType: %d, forceType: %d isReject: %d",
                         rejectedFocusEntry.actionOn, rejectedFocusEntry.hintType,
                         rejectedFocusEntry.forceType, rejectedFocusEntry.isReject);
                 }
@@ -215,8 +215,8 @@ void AudioFocusParser::ParseAllowedStreams(xmlNode *node, char *curStream,
                     allowedFocusEntry.isReject = false;
                     focusMap.emplace(allowedStreamsPair, allowedFocusEntry);
 
-                    AUDIO_INFO_LOG("current stream: %s, incoming stream: %s", curStream, newStream);
-                    AUDIO_INFO_LOG("actionOn: %d, hintType: %d, forceType: %d isReject: %d",
+                    AUDIO_DEBUG_LOG("current stream: %s, incoming stream: %s", curStream, newStream);
+                    AUDIO_DEBUG_LOG("actionOn: %d, hintType: %d, forceType: %d isReject: %d",
                         allowedFocusEntry.actionOn, allowedFocusEntry.hintType,
                         allowedFocusEntry.forceType, allowedFocusEntry.isReject);
                 }

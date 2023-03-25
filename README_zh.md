@@ -261,7 +261,7 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
 
 2. 使用 **RegisterAudioRendererEventListener** 为渲染器状态更改注册侦听器。渲染器状态更改回调，该回调将在渲染器流状态更改时调用， 通过重写 **AudioRendererStateChangeCallback** 类中的函数 **OnRendererStateChange** 。
     ```
-    const int32_t clientUID;
+    const int32_t clientPid;
 
     class RendererStateChangeCallback : public AudioRendererStateChangeCallback {
     public:
@@ -275,13 +275,13 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
     };
 
     std::shared_ptr<AudioRendererStateChangeCallback> callback = std::make_shared<RendererStateChangeCallback>();
-    int32_t state = audioStreamMgr->RegisterAudioRendererEventListener(clientUID, callback);
-    int32_t result = audioStreamMgr->UnregisterAudioRendererEventListener(clientUID);
+    int32_t state = audioStreamMgr->RegisterAudioRendererEventListener(clientPid, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioRendererEventListener(clientPid);
     ```
 
 3. 使用 **RegisterAudioCapturerEventListener** 为捕获器状态更改注册侦听器。 捕获器状态更改回调，该回调将在捕获器流状态更改时调用， 通过重写 **AudioCapturerStateChangeCallback** 类中的函数 **OnCapturerStateChange** 。
     ```
-    const int32_t clientUID;
+    const int32_t clientPid;
 
     class CapturerStateChangeCallback : public AudioCapturerStateChangeCallback {
     public:
@@ -295,8 +295,8 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
     };
 
     std::shared_ptr<AudioCapturerStateChangeCallback> callback = std::make_shared<CapturerStateChangeCallback>();
-    int32_t state = audioStreamMgr->RegisterAudioCapturerEventListener(clientUID, callback);
-    int32_t result = audioStreamMgr->UnregisterAudioCapturerEventListener(clientUID);
+    int32_t state = audioStreamMgr->RegisterAudioCapturerEventListener(clientPid, callback);
+    int32_t result = audioStreamMgr->UnregisterAudioCapturerEventListener(clientPid);
     ```
 4. 使用 **GetCurrentRendererChangeInfos** 获取所有当前正在运行的流渲染器信息，包括clientuid、sessionid、renderinfo、renderstate和输出设备详细信息。
     ```

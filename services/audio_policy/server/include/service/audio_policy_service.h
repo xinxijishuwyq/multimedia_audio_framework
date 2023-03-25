@@ -168,15 +168,15 @@ public:
 
     int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
 
-    int32_t RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
 
-    int32_t UnregisterAudioRendererEventListener(int32_t clientUID);
+    int32_t UnregisterAudioRendererEventListener(int32_t clientPid);
 
-    int32_t RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
 
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientUID);
+    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
@@ -315,6 +315,7 @@ private:
     int32_t switchVolumeDelay_ = 500000; // us
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
+
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -331,15 +332,16 @@ private:
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
-    std::unordered_map<int32_t, std::pair<DeviceFlag, sptr<IStandardAudioPolicyManagerListener>>>
-        deviceChangeCallbackMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>>
-        activeOutputDeviceListenerCbsMap_;
-    std::unordered_map<AudioStreamType, std::pair<string, DeviceType>> outputStreamDeviceMap_;
+    std::unordered_map<int32_t,
+        std::pair<DeviceFlag, sptr<IStandardAudioPolicyManagerListener>>> deviceChangeCbsMap_;
+    std::unordered_map<int32_t,
+        sptr<IStandardAudioRoutingManagerListener>> activeOutputDeviceCbsMap_;
+
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
+
     std::vector<DeviceType> ioDeviceList = {
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_BLUETOOTH_SCO,

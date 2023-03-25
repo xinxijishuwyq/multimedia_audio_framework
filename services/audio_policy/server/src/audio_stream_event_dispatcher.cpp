@@ -30,40 +30,40 @@ AudioStreamEventDispatcher::~AudioStreamEventDispatcher()
     AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::~AudioStreamEventDispatcher()");
 }
 
-void AudioStreamEventDispatcher::addRendererListener(int32_t clientUID,
+void AudioStreamEventDispatcher::addRendererListener(int32_t clientPid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    rendererCBMap_[clientUID] = callback;
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addRendererListener:client %{public}d added", clientUID);
+    rendererCBMap_[clientPid] = callback;
+    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addRendererListener:client %{public}d added", clientPid);
 }
 
-void AudioStreamEventDispatcher::removeRendererListener(int32_t clientUID)
+void AudioStreamEventDispatcher::removeRendererListener(int32_t clientPid)
 {
     std::lock_guard<std::mutex> lock(rendererStateChangeListnerMutex_);
-    if (rendererCBMap_.erase(clientUID)) {
-        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d done", clientUID);
+    if (rendererCBMap_.erase(clientPid)) {
+        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d done", clientPid);
         return;
     }
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d not present", clientUID);
+    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeRendererListener:client %{public}d not present", clientPid);
 }
 
-void AudioStreamEventDispatcher::addCapturerListener(int32_t clientUID,
+void AudioStreamEventDispatcher::addCapturerListener(int32_t clientPid,
     const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    capturerCBMap_[clientUID] = callback;
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addCapturerListener:client %{public}d added", clientUID);
+    capturerCBMap_[clientPid] = callback;
+    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::addCapturerListener:client %{public}d added", clientPid);
 }
 
-void AudioStreamEventDispatcher::removeCapturerListener(int32_t clientUID)
+void AudioStreamEventDispatcher::removeCapturerListener(int32_t clientPid)
 {
     std::lock_guard<std::mutex> lock(capturerStateChangeListnerMutex_);
-    if (capturerCBMap_.erase(clientUID)) {
-        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d done", clientUID);
+    if (capturerCBMap_.erase(clientPid)) {
+        AUDIO_INFO_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d done", clientPid);
         return;
     }
-    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d not present", clientUID);
+    AUDIO_DEBUG_LOG("AudioStreamEventDispatcher::removeCapturerListener:client %{public}d not present", clientPid);
 }
 
 void AudioStreamEventDispatcher::SendRendererInfoEventToDispatcher(AudioMode mode,

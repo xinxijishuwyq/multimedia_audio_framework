@@ -84,10 +84,10 @@ AudioStreamCollector::~AudioStreamCollector()
     AUDIO_INFO_LOG("AudioStreamCollector::~AudioStreamCollector()");
 }
 
-int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
     bool hasBTPermission, bool hasSystemPermission)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientUID);
+    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientPid);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector:set renderer state change event listener object is nullptr");
@@ -100,21 +100,21 @@ int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientU
          std::make_shared<AudioRendererStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: failed to  create cb obj");
 
-    mDispatcherService.addRendererListener(clientUID, callback);
+    mDispatcherService.addRendererListener(clientPid, callback);
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clientUID)
+int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clientPid)
 {
     AUDIO_INFO_LOG("AudioStreamCollector::UnregisterAudioRendererEventListener()");
-    mDispatcherService.removeRendererListener(clientUID);
+    mDispatcherService.removeRendererListener(clientPid);
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientUID, const sptr<IRemoteObject> &object,
+int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
     bool hasBTPermission, bool hasSystemPermission)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientUID);
+    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientPid);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector:set capturer event listener object is nullptr");
@@ -127,14 +127,14 @@ int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientU
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "AudioStreamCollector: failed to create capturer cb obj");
 
-    mDispatcherService.addCapturerListener(clientUID, callback);
+    mDispatcherService.addCapturerListener(clientPid, callback);
     return SUCCESS;
 }
 
-int32_t AudioStreamCollector::UnregisterAudioCapturerEventListener(int32_t clientUID)
+int32_t AudioStreamCollector::UnregisterAudioCapturerEventListener(int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: UnregisterAudioCapturerEventListener client id %{public}d done", clientUID);
-    mDispatcherService.removeCapturerListener(clientUID);
+    AUDIO_INFO_LOG("AudioStreamCollector: UnregisterAudioCapturerEventListener client id %{public}d done", clientPid);
+    mDispatcherService.removeCapturerListener(clientPid);
     return SUCCESS;
 }
 
@@ -199,15 +199,15 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
 {
     AUDIO_INFO_LOG("AudioStreamCollector: RegisterTracker mode %{public}d", mode);
 
-    int32_t clientID;
+    int32_t clientId;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     if (mode == AUDIO_MODE_PLAYBACK) {
         AddRendererStream(streamChangeInfo);
-        clientID = streamChangeInfo.audioRendererChangeInfo.sessionId;
+        clientId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     } else {
         // mode = AUDIO_MODE_RECORD
         AddCapturerStream(streamChangeInfo);
-        clientID = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+        clientId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     }
 
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
@@ -216,7 +216,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     std::shared_ptr<AudioClientTracker> callback = std::make_shared<ClientTrackerCallbackListener>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         ERR_INVALID_PARAM, "AudioStreamCollector: failed to create tracker cb obj");
-    clientTracker_[clientID] = callback;
+    clientTracker_[clientId] = callback;
 
     return SUCCESS;
 }

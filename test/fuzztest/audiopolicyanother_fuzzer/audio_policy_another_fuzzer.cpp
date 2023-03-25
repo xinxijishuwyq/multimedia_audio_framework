@@ -109,15 +109,15 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     AudioPolicyServerPtr->SetAudioInterruptCallback(sessionID, object);
     AudioPolicyServerPtr->UnsetAudioInterruptCallback(sessionID);
 
-    uint32_t clientID = *reinterpret_cast<const uint32_t *>(rawData);
-    AudioPolicyServerPtr->SetAudioManagerInterruptCallback(clientID, object);
+    int32_t clientId = *reinterpret_cast<const uint32_t *>(rawData);
+    AudioPolicyServerPtr->SetAudioManagerInterruptCallback(clientId, object);
 
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
     audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
     audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-    AudioPolicyServerPtr->RequestAudioFocus(clientID, audioInterrupt);
-    AudioPolicyServerPtr->AbandonAudioFocus(clientID, audioInterrupt);
+    AudioPolicyServerPtr->RequestAudioFocus(clientId, audioInterrupt);
+    AudioPolicyServerPtr->AbandonAudioFocus(clientId, audioInterrupt);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
@@ -134,8 +134,8 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     focusInfoList.push_back(focusInfo);
     AudioPolicyServerPtr->GetAudioFocusInfoList(focusInfoList);
 
-    AudioPolicyServerPtr->RegisterFocusInfoChangeCallback(clientID, object);
-    AudioPolicyServerPtr->UnregisterFocusInfoChangeCallback(clientID);
+    AudioPolicyServerPtr->RegisterFocusInfoChangeCallback(clientId, object);
+    AudioPolicyServerPtr->UnregisterFocusInfoChangeCallback(clientId);
 }
 
 void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
@@ -159,11 +159,10 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
     AudioPolicyServerPtr->OnSessionRemoved(sessionID);
 
-    int32_t clientUID = *reinterpret_cast<const int32_t *>(rawData);
-    AudioPolicyServerPtr->RegisterAudioRendererEventListener(clientUID, object);
-    AudioPolicyServerPtr->UnregisterAudioRendererEventListener(clientUID);
-    AudioPolicyServerPtr->RegisterAudioCapturerEventListener(clientUID, object);
-    AudioPolicyServerPtr->UnregisterAudioCapturerEventListener(clientUID);
+    AudioPolicyServerPtr->RegisterAudioRendererEventListener(clientPid, object);
+    AudioPolicyServerPtr->UnregisterAudioRendererEventListener(clientPid);
+    AudioPolicyServerPtr->RegisterAudioCapturerEventListener(clientPid, object);
+    AudioPolicyServerPtr->UnregisterAudioCapturerEventListener(clientPid);
 
     AudioPolicyServer::DeathRecipientId id =
         *reinterpret_cast<const AudioPolicyServer::DeathRecipientId *>(rawData);
