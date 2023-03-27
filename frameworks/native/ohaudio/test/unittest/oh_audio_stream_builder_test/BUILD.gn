@@ -1,0 +1,62 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
+
+module_output_path = "multimedia_audio_framework/audio_ndk"
+
+config("audio_stream_builder_config") {
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/inner_api/native/audiorenderer/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocapturer/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiostream/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
+    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
+    "${audio_fwk_path}/frameworks/native/audiocapturer/include",
+    "${audio_fwk_path}/frameworks/native/audiopolicy/include",
+    "${audio_fwk_path}/services/audio_service/client/include",
+    "${audio_fwk_path}/services/audio_service/test/example",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+config("audio_ohaudio_config") {
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/kits/c/",
+    "${audio_fwk_path}/interfaces/kits/c/common/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+  ]
+}
+
+ohos_unittest("audio_oh_builder_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [ "./include" ]
+
+  configs = [
+    ":audio_stream_builder_config",
+    ":audio_ohaudio_config",
+  ]
+
+  sources = [ "src/oh_audio_stream_builder_unit_test.cpp" ]
+
+  deps = [ "${audio_fwk_path}/frameworks/native/ohaudio:ohaudio" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+}
