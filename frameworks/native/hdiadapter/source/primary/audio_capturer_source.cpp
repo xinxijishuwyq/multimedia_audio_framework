@@ -327,7 +327,7 @@ int32_t AudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
     if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
     }
     if (mKeepRunningLock != nullptr) {
