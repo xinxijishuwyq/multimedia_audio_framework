@@ -307,8 +307,8 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         StopAudioStream();
         ReleaseAudioStream(false);
     }
-    int32_t ret = 0;
     {
+        int32_t ret = 0;
         static std::mutex connectServerMutex;
         std::lock_guard<std::mutex> lockConnect(connectServerMutex);
         Trace trace("AudioStream::Initialize");
@@ -912,10 +912,9 @@ void AudioStream::ReadCbThreadLoop()
 {
     AUDIO_INFO_LOG("ReadCb thread start");
     StreamBuffer stream;
-    int32_t readLen;
-    bool isBlockingRead = true;
-
     if (isReadyToRead_) {
+        int32_t readLen;
+        bool isBlockingRead = true;
         while (true) {
             if (state_ != RUNNING) {
                 AUDIO_INFO_LOG("Read: not running state: %{public}u", state_);
