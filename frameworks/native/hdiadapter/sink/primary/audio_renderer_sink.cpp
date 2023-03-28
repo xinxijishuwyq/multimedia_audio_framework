@@ -653,10 +653,6 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     int32_t ret = SUCCESS;
 
     switch (outputDevice) {
-        case DEVICE_TYPE_EARPIECE:
-            sink.ext.device.type = PIN_OUT_EARPIECE;
-            sink.ext.device.desc = (char *)"pin_out_earpiece";
-            break;
         case DEVICE_TYPE_SPEAKER:
             sink.ext.device.type = PIN_OUT_SPEAKER;
             sink.ext.device.desc = (char *)"pin_out_speaker";
