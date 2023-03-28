@@ -154,6 +154,23 @@ private:
     std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
     int32_t WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri);
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
+    template<typename T>
+    std::vector<uint8_t> TransferTypeToByteArray(const T &t)
+    {
+        return std::vector<uint8_t>(reinterpret_cast<uint8_t *>(const_cast<T *>(&t)),
+            reinterpret_cast<uint8_t *>(const_cast<T *>(&t)) + sizeof(T));
+    }
+
+    template<typename T>
+    T TransferByteArrayToType(const std::vector<uint8_t> &data)
+    {
+        if (data.size() != sizeof(T) || data.size() == 0) {
+            constexpr int tSize = sizeof(T);
+            uint8_t tContent[tSize] = { 0 };
+            return *reinterpret_cast<T *>(tContent);
+        }
+        return *reinterpret_cast<T *>(const_cast<uint8_t *>(&data[0]));
+    }
 
     std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;
