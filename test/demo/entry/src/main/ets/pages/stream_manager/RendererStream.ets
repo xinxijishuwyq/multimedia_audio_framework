@@ -82,6 +82,12 @@ struct RendererStream {
     'CONTENT_TYPE_RINGTONE@STREAM_USAGE_VOICE_COMMUNICATION': 'STREAM_MUSIC',
     'CONTENT_TYPE_RINGTONE@STREAM_USAGE_VOICE_ASSISTANT': 'STREAM_MUSIC',
     'CONTENT_TYPE_RINGTONE@STREAM_USAGE_NOTIFICATION_RINGTONE': 'STREAM_RING',
+
+    'CONTENT_TYPE_ULTRASONIC@STREAM_USAGE_SYSTEM': 'STREAM_ULTRASONIC',
+    'CONTENT_TYPE_SPEECH@STREAM_USAGE_ACCESSIBILITY': 'STREAM_ACCESSIBILITY',
+    'CONTENT_TYPE_MUSIC@STREAM_USAGE_ALARM': 'STREAM_ALARM',
+
+
   }
 
   getVolumeType(contentType, streamUsage) {
@@ -97,13 +103,17 @@ struct RendererStream {
     'STREAM_MUSIC': 'MEDIA',
     'STREAM_VOICE_CALL': 'VOICE_CALL',
     'STREAM_VOICE_ASSISTANT': 'VOICE_ASSISTANT',
-    'STREAM_ALL': 'ALL'
+    'STREAM_ALL': 'ALL',
+    'STREAM_ALARM ': 'ALARM',
+    'STREAM_ACCESSIBILITY': 'ACCESSIBILITY',
+    'STREAM_ULTRASONIC': 'ULTRASONIC',
   }
 
   aboutToAppear() {
     for (let key in audio.AudioVolumeType) {
       this.volumeTypeSelectList.push({ value: key })
     }
+
     for (let key in audio.ContentType) {
       if (key === "CONTENT_TYPE_SONIFICATION") {
         continue;

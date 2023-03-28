@@ -39,6 +39,7 @@ struct MultiInstance {
 
   @State bufferSize: number = 0
   private arr=[0,1]
+  private writeArr=[0,0]
   aboutToAppear() {
 
   }
@@ -98,6 +99,10 @@ struct MultiInstance {
   }
 
   async writeRenderer(index) {
+    if(this.writeArr[index]==1){
+      this.returnMsg += `audioRenderer ${index} write already clicked`
+      return
+    }
     if (this.audioRenderers[index] == null) {
       this.returnMsg += `audioRenderer ${index} instance had not created,dont‘t allow to read\n`
       return
@@ -105,6 +110,8 @@ struct MultiInstance {
     if (this.bufferSize == 0) {
       this.bufferSize = await this.audioRenderers[index].getBufferSize()
     }
+
+    this.writeArr[index]=1
 
     let _this = this
     let path = this.paths[index]
@@ -180,6 +187,7 @@ struct MultiInstance {
       } else {
         _this.returnMsg = `audioRenderer ${index} release SUCCESS,state:${_this.audioRenderers[index].state}\n`
         _this.audioRenderers[index] = null
+        _this.writeArr[index]=0
       }
     })
   }

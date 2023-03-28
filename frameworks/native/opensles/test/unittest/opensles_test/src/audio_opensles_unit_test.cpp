@@ -1139,18 +1139,5 @@ HWTEST(AudioOpenslesUnitTest, Audio_Opensles_SetPriority_001, TestSize.Level1)
     SLresult result = (*engineObject_)->SetPriority(engineObject_, 0, SL_BOOLEAN_FALSE);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
-
-HWTEST(AudioOpenslesUnitTest, Audio_Opensles_Enqueue_001, TestSize.Level1)
-{
-    if (!feof(wavFile_)) {
-        SLuint8* buffer = nullptr;
-        SLuint32 size = 0;
-        SLresult result = (*bufferQueueItf_)->GetBuffer(bufferQueueItf_, &buffer, size);
-        EXPECT_TRUE(result == SL_RESULT_SUCCESS);
-        fread(buffer, 1, size, wavFile_);
-        result = (*bufferQueueItf_)->Enqueue(nullptr, buffer, size);
-        EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS

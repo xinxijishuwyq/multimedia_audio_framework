@@ -12,10 +12,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 {
   "app": {
-    "bundleName": "com.example.test.system",
+    "bundleName": "com.sample.rocketer.system",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

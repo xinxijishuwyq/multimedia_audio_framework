@@ -31,6 +31,8 @@ struct OutputDeviceByFilter {
   @State active: boolean = false
   private audioDeviceDescriptors = []
   private outputDeviceList = [{ value: '无数据' }]
+  @State deviceTag: number = -1
+  @State streamTag: number = -1
   @State selectedOutputDeviceIndex: number = 0
   private audioRendererOptions1 = {
     streamInfo: {
@@ -68,6 +70,9 @@ struct OutputDeviceByFilter {
     let audioManager = audio.getAudioManager();
     this.audioRoutingManager = audioManager.getRoutingManager();
   }
+  onBackPress(){
+
+  }
 
   async createaudioRenderStream(fileName, audioRendererOptions) {
     let audioRenderer = null
@@ -86,6 +91,9 @@ struct OutputDeviceByFilter {
           rendererId: audioRendererInfo.streamId
         }
         this.audioRendererFilterList.push(option)
+      }
+      if (this.streamIdList.length > 1) {
+        this.streamTag = 1
       }
     } catch (err) {
       this.returnMsg = `createAudioRenderer Error: ${JSON.stringify(err)}`
@@ -113,7 +121,6 @@ struct OutputDeviceByFilter {
 
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer write start.......... \n`;
-      while (true) {
         for (let i = 0;i < len; i++) {
           let options = {
             offset: i * bufferSize,
@@ -122,7 +129,6 @@ struct OutputDeviceByFilter {
           let readsize = await fs.read(file.fd, buf, options);
           let writeSize = await audioRenderer.write(buf);
         }
-      }
       this.returnMsg += `audioRenderer write end. \n`;
     } catch (err) {
       this.returnMsg += `AudioRenderer write Error:${JSON.stringify(err)}`
@@ -160,7 +166,9 @@ struct OutputDeviceByFilter {
       this.audioDeviceDescriptors = await this.audioRoutingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG);
       this.returnMsg = `getOutputAudioDevices Success1: ${JSON.stringify(this.audioDeviceDescriptors)}`
       this.outputDeviceList = this.getDeviceList(this.audioDeviceDescriptors)
-
+      if (this.outputDeviceList.length > 0) {
+        this.deviceTag = 1
+      }
       this.returnMsg = `getOutputAudioDevices SUccess2: ${JSON.stringify(this.outputDeviceList)}`
     } catch (err) {
       this.returnMsg = `getOutputAudioDevices Error: ${JSON.stringify(err)}`
@@ -168,18 +176,18 @@ struct OutputDeviceByFilter {
   }
 
   selectOutputDeviceByFilterCallback() {
-    if(this.audioDeviceDescriptors.length==0){
+    if (this.audioDeviceDescriptors.length == 0) {
       this.returnMsg = `没有输出设备类`
       return
     }
     let outputAudioDeviceDescriptor = this.audioDeviceDescriptors.filter((value, index) => {
       return index == this.selectedOutputDeviceIndex
     })
-    if(outputAudioDeviceDescriptor.length==0){
+    if (outputAudioDeviceDescriptor.length == 0) {
       this.returnMsg = `尚未选择输出设备`
       return
     }
-    if(this.audioRendererFilterList.length==0){
+    if (this.audioRendererFilterList.length == 0) {
       this.returnMsg = `尚未生成流ID组`
       return
     }
@@ -198,18 +206,18 @@ struct OutputDeviceByFilter {
   }
 
   selectOutputDeviceByFilterPromise() {
-    if(this.audioDeviceDescriptors.length==0){
+    if (this.audioDeviceDescriptors.length == 0) {
       this.returnMsg = `没有输出设备类`
       return
     }
     let outputAudioDeviceDescriptor = this.audioDeviceDescriptors.filter((value, index) => {
       return index == this.selectedOutputDeviceIndex
     })
-    if(outputAudioDeviceDescriptor.length==0){
+    if (outputAudioDeviceDescriptor.length == 0) {
       this.returnMsg = `尚未选择输出设备`
       return
     }
-    if(this.audioRendererFilterList.length==0){
+    if (this.audioRendererFilterList.length == 0) {
       this.returnMsg = `尚未生成流ID组`
       return
     }
@@ -246,32 +254,48 @@ struct OutputDeviceByFilter {
           Row() {
             Button() {
               Text("audioRender1").fontSize(24).fontColor(Color.Blue).textAlign(TextAlign.Center)
-            }.width('90%').height(80).onClick(() => this.selectOutputDeviceByFilterCallback()).backgroundColor(Color.Pink)
+            }
+            .width('90%')
+            .height(80)
+            .onClick(() => this.selectOutputDeviceByFilterCallback())
+            .backgroundColor(Color.Pink)
             .onClick(() => this.createaudioRenderStream(this.fileName1, this.audioRendererOptions1))
           }.margin({ top: 10 })
 
           Row() {
             Button() {
               Text("audioRender2").fontSize(24).fontColor(Color.Blue).textAlign(TextAlign.Center)
-            }.width('90%').height(80).onClick(() => this.selectOutputDeviceByFilterCallback()).backgroundColor(Color.Pink)
+            }
+            .width('90%')
+            .height(80)
+            .onClick(() => this.selectOutputDeviceByFilterCallback())
+            .backgroundColor(Color.Pink)
             .onClick(() => this.createaudioRenderStream(this.fileName2, this.audioRendererOptions2))
           }.margin({ top: 10 })
 
-          Row() {
-            Text("输出设备：").fontSize(26)
-            Select(this.outputDeviceList).value(this.outputDeviceList[this.selectedOutputDeviceIndex].value)
-              .onSelect((index, value) => {
-                this.selectedOutputDeviceIndex = index
-              })
-          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.Center)
+          Row(){
+            Text("audioRender1 和 audioRender2 都触发后，方可生成流ID组").fontSize(16).fontColor(Color.Blue)
+          }.margin({ top: 10 }).width('80%')
 
-          Row() {
-            Text("流ID：").fontSize(26)
-            Select(this.streamIdList).value(this.streamIdList[this.selectedStreamIndex].value)
-              .onSelect((index, value) => {
-                this.selectedStreamIndex = index
-              })
-          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.Center)
+          if (this.deviceTag > 0) {
+            Row() {
+              Text("输出设备：").fontSize(26)
+              Select(this.outputDeviceList).value(this.outputDeviceList[this.selectedOutputDeviceIndex].value)
+                .onSelect((index, value) => {
+                  this.selectedOutputDeviceIndex = index
+                })
+            }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.Center)
+          }
+
+          if (this.streamTag > 0) {
+            Row() {
+              Text("流ID：").fontSize(26)
+              Select(this.streamIdList).value(this.streamIdList[this.selectedStreamIndex].value)
+                .onSelect((index, value) => {
+                  this.selectedStreamIndex = index
+                })
+            }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.Center)
+          }
 
           Row() {
             Button() {

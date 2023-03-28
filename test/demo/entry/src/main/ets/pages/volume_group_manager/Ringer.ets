@@ -13,7 +13,6 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
 
 @Entry
@@ -21,34 +20,37 @@ import audio from '@ohos.multimedia.audio'
 struct Ringer {
   @State returnMsg: string = 'Hello World'
   @State message1: string = 'Hello World1'
-  private ringerModeSelectList = [];
   private audioVolumeGroupManager = null;
-  @State selectedRingerMode: number = 0;
-  @State selectedRingerModeKey: string = 'RINGER_MODE_SILENT';
+  private ringerModeSelectList = [];
+  @State selectedRingerMode: number = -1;
+  @State selectedRingerModeKey: string = '请选择';
   @State changedRingerMode: number = -1;
   @State isOnClickedState: string = "unclicked"
 
-  aboutToAppear() {
-    this.getRingModeList();
+  onPageShow(){
 
+  }
+  aboutToAppear() {
+    let _this = this;
+    for (let key in audio.AudioRingMode) {
+      this.ringerModeSelectList.push({ value: key })
+    }
     let audioManager = audio.getAudioManager();
     let audioVolumeManager = audioManager.getVolumeManager();
     let groupid = audio.DEFAULT_VOLUME_GROUP_ID;
-    let _this = this;
+
     audioVolumeManager.getVolumeGroupManager(groupid, (err, value) => {
       if (err) {
         _this.returnMsg = "getVolumeGroupManager failed. err:" + JSON.stringify(err);
         return;
       }
-      _this.returnMsg += "getVolumeGroupManager success";
+      _this.returnMsg = "getVolumeGroupManager success \n";
       _this.audioVolumeGroupManager = value;
-    });
-  }
 
-  getRingModeList() {
-    for (let key in audio.AudioRingMode) {
-      this.ringerModeSelectList.push({ value: key })
-    }
+
+    });
+
+
   }
 
   build() {
@@ -63,17 +65,19 @@ struct Ringer {
       Column() {
 
         Row() {
-          Text("铃声模式").fontSize(20).margin({ left: 10 })
+
           Select(this.ringerModeSelectList)
             .value(this.selectedRingerModeKey)
             .onSelect((index, value) => {
+              console.log('value='+value)
               this.selectedRingerMode = audio.AudioRingMode[value];
-            }).width('80%')
-        }.align(Alignment.Start).width('100%')
+              this.selectedRingerModeKey=value
+            }).font({size:22,weight: 800})
+        }.align(Alignment.Start)
 
         Row() {
           Text("铃声模式数据：" + this.selectedRingerMode).fontSize(20).margin({ left: 10 })
-        }.align(Alignment.Start).width('100%')
+        }.align(Alignment.Start)
 
         Row() {
           Button("on('ringerModeChange')").width('100%').fontSize(20).height(80).onClick(() => {

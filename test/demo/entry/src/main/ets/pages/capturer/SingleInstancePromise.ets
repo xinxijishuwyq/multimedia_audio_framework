@@ -344,7 +344,7 @@ struct SingleInstancePromise {
                 this.audioCapturerOptions.streamInfo.samplingRate = audio.AudioSamplingRate[value]
 
               }).font({ size: 22 })
-          }.margin({ top: 0 }).width('100%')
+          }.margin({ top: 0 })
 
           Row() {
             Select(this.channelsList).value(this.selectedChannelKey)
@@ -352,7 +352,7 @@ struct SingleInstancePromise {
                 this.selectedChannelKey = value
                 this.audioCapturerOptions.streamInfo.channels = audio.AudioChannel[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.sampleFormatList).value(this.selectedsampleFormatKey)
@@ -360,7 +360,7 @@ struct SingleInstancePromise {
                 this.selectedsampleFormatKey = value
                 this.audioCapturerOptions.streamInfo.sampleFormat = audio.AudioSampleFormat[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.encodingTypeList).value(this.selectedEncodingTypeKey)
@@ -368,7 +368,8 @@ struct SingleInstancePromise {
                 this.selectedEncodingTypeKey = value
                 this.audioCapturerOptions.streamInfo.encodingType = audio.AudioEncodingType[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
+          Divider().strokeWidth(6).color(Color.Blue)
 
           Row() {
             Select(this.sourceTypeList).value(this.selectedSourceTypeKey)
@@ -376,7 +377,7 @@ struct SingleInstancePromise {
                 this.selectedSourceTypeKey = value
                 this.audioCapturerOptions.capturerInfo.source = audio.SourceType[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
 
           Row() {

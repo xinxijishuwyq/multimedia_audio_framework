@@ -14,7 +14,6 @@
     "pages/renderer/MultiInstance",
     "pages/renderer/OnOff",
     "pages/renderer/Setting",
-    "pages/renderer/Interrupt",
 
     "pages/AudioManager",
     "pages/audio_manager/Settings",
@@ -23,6 +22,7 @@
     "pages/routing_manager/BasicDevice",
     "pages/routing_manager/CommunicationDevice",
     "pages/routing_manager/OutputDeviceByFilter",
+    "pages/routing_manager/PreferOutputDevice",
 
     "pages/AudioStreamManager",
     "pages/stream_manager/CapturerStream",
@@ -36,6 +36,12 @@
 
     "pages/TonePlayer",
     "pages/toneplayer/TonePlayerCallback",
-    "pages/toneplayer/TonePlayerPromise"
+    "pages/toneplayer/TonePlayerPromise",
+
+    "pages/AudioFocus",
+    "pages/focus/AvplayerInterruptAvplayer",
+    "pages/focus/CapturerInterruptCapturer",
+    "pages/focus/CapturerInterruptRenderer",
+    "pages/focus/RendererInterruptRenderer"
   ]
 }

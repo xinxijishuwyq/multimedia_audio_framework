@@ -317,7 +317,7 @@ struct SingleInstanceCallback {
                 this.audioRendererOptions.streamInfo.samplingRate = audio.AudioSamplingRate[value]
 
               }).font({ size: 22 })
-          }.margin({ top: 0 }).width('100%')
+          }.margin({ top: 0 })
 
           Row() {
             Select(this.channelsList).value(this.selectedChannelKey)
@@ -325,7 +325,7 @@ struct SingleInstanceCallback {
                 this.selectedChannelKey = value
                 this.audioRendererOptions.streamInfo.channels = audio.AudioChannel[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.sampleFormatList).value(this.selectedsampleFormatKey)
@@ -333,7 +333,7 @@ struct SingleInstanceCallback {
                 this.selectedsampleFormatKey = value
                 this.audioRendererOptions.streamInfo.sampleFormat = audio.AudioSampleFormat[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.encodingTypeList).value(this.selectedEncodingTypeKey)
@@ -341,24 +341,36 @@ struct SingleInstanceCallback {
                 this.selectedEncodingTypeKey = value
                 this.audioRendererOptions.streamInfo.encodingType = audio.AudioEncodingType[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
+          Divider().strokeWidth(6).color(Color.Blue)
 
           Row() {
             Select(this.contentTypeList).value(this.selectedContentTypeKey)
               .onSelect((index, value) => {
                 this.selectedContentTypeKey = value
                 this.audioRendererOptions.rendererInfo.content = audio.ContentType[value]
+                if(value=="CONTENT_TYPE_ULTRASONIC"){
+                  this.audioRendererOptions.rendererInfo.content=9
+                }
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.streamUsageList).value(this.selectedStreamUsageKey)
               .onSelect((index, value) => {
                 this.selectedStreamUsageKey = value
                 this.audioRendererOptions.rendererInfo.usage = audio.StreamUsage[value]
+                if(value=="STREAM_USAGE_ALARM"){
+                  this.audioRendererOptions.rendererInfo.usage=4
+                }
+                if(value=="STREAM_USAGE_ACCESSIBILITY"){
+                  this.audioRendererOptions.rendererInfo.usage=8
+                }
+                if(value=="STREAM_USAGE_SYSTEM"){
+                  this.audioRendererOptions.rendererInfo.usage=9
+                }
               })
-          }.margin({ top: 10 }).width('100%')
-
+          }.margin({ top: 10 })
 
           Row() {
             Button() {

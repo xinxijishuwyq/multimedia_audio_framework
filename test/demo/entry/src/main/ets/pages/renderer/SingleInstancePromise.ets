@@ -303,7 +303,7 @@ struct SingleInstancePromise {
                 this.audioRendererOptions.streamInfo.samplingRate = audio.AudioSamplingRate[value]
 
               }).font({ size: 22 })
-          }.margin({ top: 0 }).width('100%')
+          }.margin({ top: 0 })
 
           Row() {
             Select(this.channelsList).value(this.selectedChannelKey)
@@ -311,7 +311,7 @@ struct SingleInstancePromise {
                 this.selectedChannelKey = value
                 this.audioRendererOptions.streamInfo.channels = audio.AudioChannel[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.sampleFormatList).value(this.selectedsampleFormatKey)
@@ -319,7 +319,7 @@ struct SingleInstancePromise {
                 this.selectedsampleFormatKey = value
                 this.audioRendererOptions.streamInfo.sampleFormat = audio.AudioSampleFormat[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.encodingTypeList).value(this.selectedEncodingTypeKey)
@@ -327,7 +327,8 @@ struct SingleInstancePromise {
                 this.selectedEncodingTypeKey = value
                 this.audioRendererOptions.streamInfo.encodingType = audio.AudioEncodingType[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
+          Divider().strokeWidth(6).color(Color.Blue)
 
           Row() {
             Select(this.contentTypeList).value(this.selectedContentTypeKey)
@@ -335,7 +336,7 @@ struct SingleInstancePromise {
                 this.selectedContentTypeKey = value
                 this.audioRendererOptions.rendererInfo.content = audio.ContentType[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Select(this.streamUsageList).value(this.selectedStreamUsageKey)
@@ -343,7 +344,7 @@ struct SingleInstancePromise {
                 this.selectedStreamUsageKey = value
                 this.audioRendererOptions.rendererInfo.usage = audio.StreamUsage[value]
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
 
           Row() {
