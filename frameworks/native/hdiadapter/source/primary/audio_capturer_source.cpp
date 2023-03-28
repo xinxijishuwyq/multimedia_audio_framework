@@ -441,6 +441,7 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
             source.ext.device.type = PIN_IN_MIC;
             source.ext.device.desc = (char *)"pin_in_mic";

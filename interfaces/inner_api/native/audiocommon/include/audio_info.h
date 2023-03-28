@@ -198,6 +198,7 @@ enum ConnectType {
 
 enum ActiveDeviceType {
     ACTIVE_DEVICE_TYPE_NONE = -1,
+    EARPIECE = 1,
     SPEAKER = 2,
     BLUETOOTH_SCO = 7,
     FILE_SINK_DEVICE = 50,
