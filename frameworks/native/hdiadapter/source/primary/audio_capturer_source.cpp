@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioCapturerSourceInner : public AudioCapturerSource {
 public:
-    int32_t Init(IAudioSourceAttr &atrr) override;
+    int32_t Init(IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -47,9 +47,9 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
 
-    int32_t SetInputRoute(DeviceType deviceType, AudioPortPin &inputPortPin);
+    int32_t SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin);
 
-    int32_t SetInputRoute(DeviceType deviceType) override;
+    int32_t SetInputRoute(DeviceType inputDevice) override;
 
     uint64_t GetTransactionId() override;
 

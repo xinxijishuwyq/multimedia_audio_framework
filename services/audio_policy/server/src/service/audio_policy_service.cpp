@@ -1712,7 +1712,7 @@ int32_t AudioPolicyService::UnregisterAudioCapturerEventListener(int32_t clientP
     return streamCollector_.UnregisterAudioCapturerEventListener(clientPid);
 }
 
-static void UpdateRendererInfoWhenNoPermission(unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
+static void UpdateRendererInfoWhenNoPermission(const unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
     bool hasSystemPermission)
 {
     if (!hasSystemPermission) {
@@ -1721,7 +1721,7 @@ static void UpdateRendererInfoWhenNoPermission(unique_ptr<AudioRendererChangeInf
     }
 }
 
-static void UpdateCapturerInfoWhenNoPermission(unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
+static void UpdateCapturerInfoWhenNoPermission(const unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
     bool hasSystemPermission)
 {
     if (!hasSystemPermission) {
