@@ -194,9 +194,7 @@ AudioScene AudioSystemManager::GetAudioScene() const
 
 int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool flag) const
 {
-    AUDIO_INFO_LOG("SetDeviceActive device: %{public}d", deviceType);
     switch (deviceType) {
-        case EARPIECE:
         case SPEAKER:
         case BLUETOOTH_SCO:
         case FILE_SINK_DEVICE:
@@ -213,7 +211,6 @@ int32_t AudioSystemManager::SetDeviceActive(ActiveDeviceType deviceType, bool fl
 bool AudioSystemManager::IsDeviceActive(ActiveDeviceType deviceType) const
 {
     switch (deviceType) {
-        case EARPIECE:
         case SPEAKER:
         case BLUETOOTH_SCO:
         case FILE_SINK_DEVICE:
