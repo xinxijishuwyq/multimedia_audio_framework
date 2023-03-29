@@ -701,7 +701,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
 HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_003, TestSize.Level1)
 {
     int32_t ret = -1;
-    int callBackSetResult;
+    [[maybe_unused]] int callBackSetResult;
     std::string testCaseName("Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_003");
     AudioRendererOptions rendererOptions;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -751,7 +751,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChan
 HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_004, TestSize.Level1)
 {
     int32_t ret = -1;
-    int callBackSetResult;
+    [[maybe_unused]] int callBackSetResult;
     std::string testCaseName("Audio_Stream_Change_Listner_RendererStateChangeCallbackTest_004");
     AudioRendererOptions rendererOptions;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -1411,7 +1411,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
     TestSize.Level1)
 {
     int32_t ret = -1;
-    int callBackSetResult;
+    [[maybe_unused]] int callBackSetResult;
     std::string testCaseName("Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_003");
     AudioCapturerOptions capturerOptions;
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -1462,7 +1462,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
 HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_004, TestSize.Level1)
 {
     int32_t ret = -1;
-    int callBackSetResult;
+    [[maybe_unused]] int callBackSetResult;
     std::string testCaseName("Audio_Stream_Change_Listner_CapturerStateChangeCallbackTest_004");
     AudioCapturerOptions capturerOptions;
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
