@@ -8,6 +8,9 @@ src:*services/audio_service/server/src/audio_server.cpp
 src:*frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_sink.c
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_source.c
+src:*frameworks/native/ohaudio/OHAudioStreamBuilder.cpp
+src:*frameworks/native/ohaudio/OHAudioRenderer.cpp
+src:*frameworks/native/ohaudio/OHAudioCapturer.cpp
 fun:*AudioFocusParser*
 fun:*AudioToneParser*
 fun:*XMLParser*
