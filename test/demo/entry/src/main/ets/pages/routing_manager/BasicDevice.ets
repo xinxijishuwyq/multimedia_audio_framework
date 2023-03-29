@@ -20,7 +20,7 @@ import audio from '@ohos.multimedia.audio'
 @Component
 struct BasicDevice {
   @State returnMsg: string = 'Hello World'
-  @State onReturnMsg: string = 'Hello World'
+  @State onReturnMsg: string = ''
   private selectDeviceFlagList = []
   @State selectedDeviceFlagKey: string = "请选择设备类型"
   @State selectedDeviceFlag: number = 0
@@ -28,10 +28,11 @@ struct BasicDevice {
   private audioDeviceDescriptors = []
   private InputDeviceDescriptors = []
   private OutputDeviceDescriptors = []
-  private selectInputDeviceList = [{ value: "无数据" }]
-  private selectOutputDeviceList = [{ value: "无数据" }]
+  private selectInputDeviceList = []
+  private selectOutputDeviceList = []
   @State selectedInputIndex: number = 0
   @State selectedOutputIndex: number = 0
+  @State tag: number = -1
 
   aboutToAppear() {
     let audioManager = audio.getAudioManager();
@@ -59,7 +60,7 @@ struct BasicDevice {
   }
 
   getDevicesCallback() {
-    if(this.selectedDeviceFlagKey=="请选择设备类型"){
+    if (this.selectedDeviceFlagKey == "请选择设备类型") {
       this.returnMsg = `请选择设备类型`
       return
     }
@@ -74,18 +75,24 @@ struct BasicDevice {
       if (_this.selectedDeviceFlag == 2) {
         _this.InputDeviceDescriptors = value;
         _this.selectInputDeviceList = _this.getDeviceList(value)
+        if (_this.selectInputDeviceList.length > 0) {
+          _this.tag = 2
+        }
         _this.returnMsg = `getDevices selectInputDeviceList 返回值:${JSON.stringify(_this.selectInputDeviceList)}`
       }
       if (_this.selectedDeviceFlag == 1) {
         _this.OutputDeviceDescriptors = value;
         _this.selectOutputDeviceList = _this.getDeviceList(value)
+        if (_this.selectOutputDeviceList.length > 0) {
+          _this.tag = 1
+        }
         _this.returnMsg = `getDevices selectOutputDeviceList 返回值:${JSON.stringify(_this.selectOutputDeviceList)}`
       }
     })
   }
 
   getDevicesPromise() {
-    if(this.selectedDeviceFlagKey=="请选择设备类型"){
+    if (this.selectedDeviceFlagKey == "请选择设备类型") {
       this.returnMsg = `请选择设备类型`
       return
     }
@@ -97,11 +104,18 @@ struct BasicDevice {
         if (_this.selectedDeviceFlag == 2) {
           _this.InputDeviceDescriptors = value;
           _this.selectInputDeviceList = _this.getDeviceList(value)
+          if (_this.selectInputDeviceList.length > 0) {
+            _this.tag = 2
+          }
+
           _this.returnMsg = `getDevices selectInputDeviceList 返回值:${JSON.stringify(_this.selectInputDeviceList)}`
         }
         if (_this.selectedDeviceFlag == 1) {
           _this.OutputDeviceDescriptors = value;
           _this.selectOutputDeviceList = _this.getDeviceList(value)
+          if (_this.selectOutputDeviceList.length > 0) {
+            _this.tag = 1
+          }
           _this.returnMsg = `getDevices selectOutputDeviceList 返回值:${JSON.stringify(_this.selectOutputDeviceList)}`
         }
       }).catch(err => {
@@ -127,14 +141,14 @@ struct BasicDevice {
 
   selectInputDeviceCallback() {
     let _this = this;
-    if(this.InputDeviceDescriptors.length==0){
+    if (this.InputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输入设备类`
       return
     }
     let inputAudioDeviceDescriptor = this.InputDeviceDescriptors.filter((value, index) => {
       return index == _this.selectedInputIndex
     })
-    if(inputAudioDeviceDescriptor.length==0){
+    if (inputAudioDeviceDescriptor.length == 0) {
       _this.returnMsg = `尚未选择输入设备`
       return
     }
@@ -149,7 +163,7 @@ struct BasicDevice {
 
   selectInputDevicePromise() {
     let _this = this;
-    if(this.InputDeviceDescriptors.length==0){
+    if (this.InputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输入设备类`
       return
     }
@@ -157,7 +171,7 @@ struct BasicDevice {
       return index == _this.selectedInputIndex
     })
 
-    if(inputAudioDeviceDescriptor.length==0){
+    if (inputAudioDeviceDescriptor.length == 0) {
       _this.returnMsg = `尚未选择输入设备`
       return
     }
@@ -171,14 +185,14 @@ struct BasicDevice {
 
   selectOutputDeviceCallback() {
     let _this = this;
-    if(this.OutputDeviceDescriptors.length==0){
+    if (this.OutputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输出设备类`
       return
     }
     let outputAudioDeviceDescriptor = this.OutputDeviceDescriptors.filter((value, index) => {
       return index == _this.selectedOutputIndex
     })
-    if(outputAudioDeviceDescriptor.length==0){
+    if (outputAudioDeviceDescriptor.length == 0) {
       _this.returnMsg = `尚未选择输出设备`
       return
     }
@@ -193,14 +207,14 @@ struct BasicDevice {
 
   selectOutputDevicePromise() {
     let _this = this;
-    if(this.OutputDeviceDescriptors.length==0){
+    if (this.OutputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输出设备类`
       return
     }
     let outputAudioDeviceDescriptor = this.OutputDeviceDescriptors.filter((value, index) => {
       return index == _this.selectedOutputIndex
     })
-    if(outputAudioDeviceDescriptor.length==0){
+    if (outputAudioDeviceDescriptor.length == 0) {
       _this.returnMsg = `尚未选择输出设备`
       return
     }
@@ -229,7 +243,7 @@ struct BasicDevice {
                 this.selectedDeviceFlag = audio.DeviceFlag[value]
                 this.selectedDeviceFlagKey = value;
               })
-          }.margin({ top: 10 }).width('100%')
+          }.margin({ top: 10 })
 
           Row() {
             Button() {
@@ -256,54 +270,53 @@ struct BasicDevice {
           }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Row() {
-            Text("监听数据" + this.onReturnMsg).fontSize(20)
-          }.width('100%').height(50).margin({ left: 10 })
+            Text("尚未监听" + this.onReturnMsg).fontSize(20).lineHeight(34)
+          }
 
-          Row() {
-            Text("输入设备").fontSize(20).margin({ left: 10 })
-            Select(this.selectInputDeviceList).value(this.selectInputDeviceList[this.selectedInputIndex].value)
-              .onSelect((index, value) => {
-                if (value == "无数据") {
-                  return;
-                }
-                this.selectedInputIndex = index;
-              })
-          }.margin({ top: 10 }).width('100%')
+          if (this.tag == 2) {
+            Row() {
+              Text("输入设备").fontSize(20).margin({ left: 10 })
+              Select(this.selectInputDeviceList).value(this.selectInputDeviceList[this.selectedInputIndex].value)
+                .onSelect((index, value) => {
+                  this.selectedInputIndex = index;
+                })
+            }.margin({ top: 10 }).width('100%')
 
-          Row() {
-            Button() {
-              Text("selectInputDevice callback").fontSize(20).fontColor(Color.White)
-            }.width('100%').height(60).onClick(() => this.selectInputDeviceCallback())
-          }.margin({ top: 10 }).width('100%')
+            Row() {
+              Button() {
+                Text("selectInputDevice callback").fontSize(20).fontColor(Color.White)
+              }.width('100%').height(60).onClick(() => this.selectInputDeviceCallback())
+            }.margin({ top: 10 }).width('100%')
 
-          Row() {
-            Button() {
-              Text("selectInputDevice promise").fontSize(20).fontColor(Color.White)
-            }.width('100%').height(60).onClick(() => this.selectInputDevicePromise())
-          }.margin({ top: 10 }).width('100%')
+            Row() {
+              Button() {
+                Text("selectInputDevice promise").fontSize(20).fontColor(Color.White)
+              }.width('100%').height(60).onClick(() => this.selectInputDevicePromise())
+            }.margin({ top: 10 }).width('100%')
+          }
 
-          Row() {
-            Text("输出设备").fontSize(20).margin({ left: 10 })
-            Select(this.selectOutputDeviceList).value(this.selectOutputDeviceList[this.selectedOutputIndex].value)
-              .onSelect((index, value) => {
-                if (value == "无数据") {
-                  return;
-                }
-                this.selectedOutputIndex = index;
-              })
-          }.margin({ top: 10 }).width('100%')
+          if (this.tag == 1) {
+            Row() {
+              Text("输出设备").fontSize(20).margin({ left: 10 })
+              Select(this.selectOutputDeviceList).value(this.selectOutputDeviceList[this.selectedOutputIndex].value)
+                .onSelect((index, value) => {
+                  this.selectedOutputIndex = index;
+                })
+            }.margin({ top: 10 }).width('100%')
 
-          Row() {
-            Button() {
-              Text("selectOutputDevice callback").fontSize(20).fontColor(Color.White)
-            }.width('100%').height(60).onClick(() => this.selectOutputDeviceCallback())
-          }.margin({ top: 10 }).width('100%')
+            Row() {
+              Button() {
+                Text("selectOutputDevice callback").fontSize(20).fontColor(Color.White)
+              }.width('100%').height(60).onClick(() => this.selectOutputDeviceCallback())
+            }.margin({ top: 10 }).width('100%')
 
-          Row() {
-            Button() {
-              Text("selectOutputDevice promise").fontSize(20).fontColor(Color.White)
-            }.width('100%').height(60).onClick(() => this.selectOutputDevicePromise())
-          }.margin({ top: 10 }).width('100%')
+            Row() {
+              Button() {
+                Text("selectOutputDevice promise").fontSize(20).fontColor(Color.White)
+              }.width('100%').height(60).onClick(() => this.selectOutputDevicePromise())
+            }.margin({ top: 10 }).width('100%')
+          }
+
         }.width('100%')
       }.margin({ top: 130 }).width('100%')
 

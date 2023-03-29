@@ -20,7 +20,7 @@ import fs from '@ohos.file.fs';
 @Entry
 @Component
 struct Volume {
-  private audioRendererOptions  = {
+  private audioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -33,7 +33,7 @@ struct Volume {
       rendererFlags: 0
     }
   }
-  private audioRenderer=null
+  private audioRenderer = null
   @State returnMsg: string = ''
   private audioVolumeGroupManager = null;
   @State selectedVolumeTypeKey: string = "请选择"
@@ -105,15 +105,46 @@ struct Volume {
         selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
         selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
       }
+    },
+    'ALARM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        usage: audio.StreamUsage.STREAM_USAGE_ALARM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
+        selectedStreamUsageKey: 'STREAM_USAGE_ALARM'
+      }
+    },
+    'ACCESSIBILITY': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_ACCESSIBILITY'
+      }
+    },
+    'ULTRASONIC': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_ULTRASONIC,
+        usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_ULTRASONIC',
+        selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
+      }
     }
   }
 
   async aboutToAppear() {
-
     for (let key in audio.AudioVolumeType) {
       this.volumeTypeSelectList.push({ value: key })
     }
-
 
     let audioManager = audio.getAudioManager();
     this.audioVolumeManager = audioManager.getVolumeManager();
@@ -122,7 +153,7 @@ struct Volume {
     this.audioVolumeManager.getVolumeGroupManager(groupid, (err, value) => {
       if (err) {
         _this.returnMsg = "getVolumeGroupManager failed. err:" + JSON.stringify(err);
-        _this.returnMsg += "groupid:"+groupid;
+        _this.returnMsg += "groupid:" + groupid;
         return;
       }
       _this.returnMsg += "getVolumeGroupManager success";
@@ -130,11 +161,18 @@ struct Volume {
     });
   }
 
+  async onBackPress() {
+    if (this.audioRenderer !== null) {
+      await this.audioRenderer.release()
+      this.audioRenderer = null
+    }
+  }
+
   async renderPlay() {
 
-    if(this.audioRenderer!==null){
+    if (this.audioRenderer !== null) {
       await this.audioRenderer.release()
-      this.audioRenderer=null
+      this.audioRenderer = null
     }
     this.returnMsg = `audioRendererOptions ${JSON.stringify(this.audioRendererOptions)} \n`
     console.log(`audioRendererOptions ${JSON.stringify(this.audioRendererOptions)} \n`)
@@ -172,6 +210,9 @@ struct Volume {
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg = `audioRenderer write start.......... \n`;
       for (let i = 0;i < len; i++) {
+        if (this.audioRenderer.state > 2) {
+          return;
+        }
         let options = {
           offset: i * bufferSize,
           length: bufferSize
@@ -185,7 +226,7 @@ struct Volume {
     }
 
     await this.audioRenderer.release()
-    this.audioRenderer=null
+    this.audioRenderer = null
 
   }
 
@@ -216,14 +257,19 @@ struct Volume {
             Row() {
               Select(this.volumeTypeSelectList)
                 .value(this.selectedVolumeTypeKey)
-                .onSelect((index, value) => {
+                .onSelect(async(index, value) => {
                   this.selectedVolumeType = audio.AudioVolumeType[value];
                   this.selectedVolumeTypeKey = value;
-                  this.audioRendererOptions.rendererInfo=this.renderInfo[this.selectedVolumeTypeKey].main
+
+                  this.audioRendererOptions.rendererInfo = this.renderInfo[this.selectedVolumeTypeKey].main
                   this.selectedStreamUsageKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedStreamUsageKey
                   this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
 
                   this.getVolumeRange();
+                  if(this.audioRenderer!==null){
+                    await this.audioRenderer.release()
+                    this.audioRenderer = null
+                  }
                   this.renderPlay()
 
                 })

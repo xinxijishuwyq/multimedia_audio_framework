@@ -53,6 +53,16 @@ struct AudioRoutingManager {
             router.push({ url: 'pages/routing_manager/OutputDeviceByFilter' })
           })
         }.justifyContent(FlexAlign.SpaceBetween).width('90%')
+
+        Row() {
+          Button() {
+            Text("首选输出设备").fontSize(22).fontColor(Color.White)
+          }.height(80).width('90%')
+          .onClick(() => {
+            router.push({ url: 'pages/routing_manager/PreferOutputDevice' })
+          })
+
+        }.margin({ bottom: 10, top: 10 })
       }.width('100%').position({ x: 0, y: 70 }).height('100%')
 
     }

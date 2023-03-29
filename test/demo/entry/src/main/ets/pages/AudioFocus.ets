@@ -17,60 +17,54 @@ import router from '@ohos.router';
 
 @Entry
 @Component
-struct Index {
-  @State message: string = 'Hello World'
-  @State message1: string = 'Hello World1'
-
+struct AudioFocus {
   build() {
     Row() {
+      Row() {
+        Text("音频焦点").fontColor(Color.White).fontSize(28).textAlign(TextAlign.Center).width('100%')
+      }.position({ x: 0, y: 0 }).width('100%').height(60).backgroundColor(Color.Orange)
       Column() {
+
         Button() {
-          Text("音频管理").fontSize(30).fontColor(Color.White)
+          Text("Renderer-Renderer").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(100)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioManager' })
+          router.push({ url: 'pages/focus/RendererInterruptRenderer' })
         })
 
         Button() {
-          Text("音频录制").fontSize(30).fontColor(Color.White)
+          Text("avplayer-avplayer").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(100)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioCapturer' })
+          router.push({ url: 'pages/focus/AvplayerInterruptAvplayer' })
         })
 
 
         Button() {
-          Text("音频渲染").fontSize(30).fontColor(Color.White)
+          Text("Capturer-Capturer").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(100)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioRenderer' })
+          router.push({ url: 'pages/focus/CapturerInterruptCapturer' })
         })
 
 
 
         Button() {
-          Text("DTMF播放器").fontSize(30).fontColor(Color.White)
+          Text("Capturer-Renderer").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(100)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/TonePlayer' })
+          router.push({ url: 'pages/focus/CapturerInterruptRenderer' })
         })
 
-        Button() {
-          Text("音频焦点").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(100)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioFocus' })
-        })
+
 
       }.width('90%')
       .margin('5%')

@@ -72,18 +72,6 @@ struct AudioRenderer {
           })
 
         }.margin({ bottom: 10 })
-
-        Row() {
-          Button() {
-            Text("音频打断").fontSize(22).fontColor(Color.White)
-          }.height(80).width('90%')
-          .onClick(() => {
-            router.push({ url: 'pages/renderer/Interrupt' })
-          })
-
-        }.margin({ bottom: 10 })
-
-
       }.width('100%').position({ x: 0, y: 70 }).height('100%')
 
     }
