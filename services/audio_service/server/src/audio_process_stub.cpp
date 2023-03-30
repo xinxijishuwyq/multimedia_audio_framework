@@ -85,6 +85,13 @@ int32_t AudioProcessStub::HandleStop(MessageParcel &data, MessageParcel &reply)
     return AUDIO_OK;
 }
 
+int32_t AudioProcessStub::HandleRequestHandleInfo(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    reply.WriteInt32(RequestHandleInfo());
+    return AUDIO_OK;
+}
+
 int32_t AudioProcessStub::HandleRelease(MessageParcel &data, MessageParcel &reply)
 {
     (void)data;

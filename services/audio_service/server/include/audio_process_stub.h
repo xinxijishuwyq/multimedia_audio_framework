@@ -34,6 +34,7 @@ private:
     int32_t HandlePause(MessageParcel &data, MessageParcel &reply);
     int32_t HandleResume(MessageParcel &data, MessageParcel &reply);
     int32_t HandleStop(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleRequestHandleInfo(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRelease(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int32_t(AudioProcessStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -43,6 +44,7 @@ private:
         &AudioProcessStub::HandlePause,
         &AudioProcessStub::HandleResume,
         &AudioProcessStub::HandleStop,
+        &AudioProcessStub::HandleRequestHandleInfo,
         &AudioProcessStub::HandleRelease
     };
 };

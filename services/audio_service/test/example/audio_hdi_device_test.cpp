@@ -104,7 +104,8 @@ public:
 
         int32_t ret = hdiRenderSink_->Start();
         AUDIO_INFO_LOG("AudioHdiDeviceTest Start, ret %{public}d", ret);
-        ret = hdiRenderSink_->SetVolume(0.12, 0.12); // volume
+        float vol = 0.12; // for test
+        ret = hdiRenderSink_->SetVolume(vol, vol); // volume
         AUDIO_INFO_LOG("AudioHdiDeviceTest set volume to 0.5, ret %{public}d", ret);
 
         timeThread_ = make_unique<thread>(&AudioHdiDeviceTest::RenderFrameFromFile, this);
@@ -126,7 +127,7 @@ public:
         size_t headerSize = sizeof(wav_hdr);
         char *inputPath = argv[1];
         char path[PATH_MAX + 1] = {0x00};
-        int32_t time = strtol(argv[2], NULL, 10);
+        int32_t time = strtol(argv[2], nullptr, 10);
         if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
             AUDIO_ERR_LOG("Invalid path");
             return false;

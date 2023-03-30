@@ -40,6 +40,8 @@ public:
 
     virtual int32_t Stop() = 0;
 
+    virtual int32_t RequestHandleInfo() = 0;
+
     virtual int32_t Release() = 0;
 
     virtual ~AudioProcess() = default;
@@ -60,6 +62,7 @@ public:
         ON_PAUSE,
         ON_RESUME,
         ON_STOP,
+        ON_REQUEST_HANDLE_INFO,
         ON_RELEASE,
         PROCESS_MAX_MSG
     };

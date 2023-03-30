@@ -16,11 +16,11 @@
 #include "audio_endpoint.h"
 
 #include <atomic>
+#include <cinttypes>
 #include <condition_variable>
 #include <thread>
 #include <vector>
 #include <mutex>
-#include <inttypes.h>
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -30,17 +30,18 @@
 #include "fast_audio_renderer_sink.h"
 #include "linear_pos_time_model.h"
 
-// #define DUMP_PROCESS_FILE // open to enable dump file
+// DUMP_PROCESS_FILE // define it for dump file
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
-    static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 4000000; // 4ms
+    static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
 }
 class AudioEndpointInner : public AudioEndpoint {
 public:
-    AudioEndpointInner(EndpointType type);
+    explicit AudioEndpointInner(EndpointType type);
     ~AudioEndpointInner();
 
     bool Config(AudioStreamInfo streamInfo);
@@ -52,6 +53,8 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
+    // when audio process request update handle info.
+    int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.
@@ -101,14 +104,15 @@ private:
     std::mutex loopThreadLock_;
     std::condition_variable workThreadCV_;
     bool isThreadEnd_ = false;
+    int64_t lastHandleProcessTime_ = 0;
 
-    bool isDeviceRunningInIdel_ = false;
+    bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
     void ReSyncPosition();
 
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
-    int64_t GetPredictNextReadTime(uint64_t posInFrame);
+    int64_t GetPredictNextHandleTime(uint64_t posInFrame);
     bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
 
     /**
@@ -120,11 +124,13 @@ private:
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
 
     bool IsAnyProcessRunning();
-    bool CheckAllBufferReady(int64_t checkTime);
+    bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
+    bool ProcessToEndpointDataHandle(uint64_t curWritePos);
 
     std::string GetStatusStr(EndpointStatus status);
 
     bool KeepWorkloopRunning();
+
     void EndpointWorkLoopFuc();
 #ifdef DUMP_PROCESS_FILE
     FILE *dcp_ = nullptr;
@@ -215,8 +221,8 @@ bool AudioEndpointInner::Config(AudioStreamInfo streamInfo)
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
 
 #ifdef DUMP_PROCESS_FILE
-    dcp_ = fopen("/data/local/tmp/server-read-client.pcm", "a+");
-    dump_hdi_ = fopen("/data/local/tmp/server-hdi.pcm", "a+");
+    dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
+    dump_hdi_ = fopen("/data/data/server-hdi.pcm", "a+");
     if (dcp_ == nullptr || dump_hdi_ == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
@@ -288,8 +294,8 @@ void AudioEndpointInner::InitAudiobuffer(bool resetReadWritePos)
         spanInfo->writeStartTime = 0;
         spanInfo->writeDoneTime = 0;
 
-        spanInfo->volumeStart = 1 << 16; // 65536 for initialize
-        spanInfo->volumeEnd = 1 << 16; // 65536 for initialize
+        spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
+        spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->isMute = false;
     }
     return;
@@ -382,16 +388,39 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *stream)
     return SUCCESS;
 }
 
+int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *stream)
+{
+    Trace trace("AudioEndpoint::OnUpdateHandleInfo");
+    bool isFind = false;
+    std::lock_guard<std::mutex> lock(listLock_);
+    auto processItr = processList_.begin();
+    while (processItr != processList_.end()) {
+        if (*processItr != stream) {
+            processItr++;
+            continue;
+        }
+        std::shared_ptr<OHAudioBuffer> processBuffer = (*processItr)->GetStreamBuffer();
+        CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_OPERATION_FAILED, "Process found but buffer is null");
+        processBuffer->SetHandleInfo(processBuffer->GetCurReadFrame(), lastHandleProcessTime_);
+        AUDIO_INFO_LOG("UpdateHandleInfo to pos %{public}" PRIu64" time %{public}" PRId64" ",
+            processBuffer->GetCurReadFrame(), lastHandleProcessTime_);
+        isFind = true;
+        break;
+    }
+    if (!isFind) {
+        AUDIO_ERR_LOG("Can not find any process to UpdateHandleInfo");
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
+}
+
 int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream)
 {
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
 
-    if (processList_.size() >= MAX_LINKED_PROCESS) {
-        AUDIO_ERR_LOG("LinkProcessStream failed, too many process.");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(processList_.size() < MAX_LINKED_PROCESS, ERR_OPERATION_FAILED, "reach link limit.");
 
     AUDIO_INFO_LOG("LinkProcessStream success in status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
 
@@ -473,23 +502,34 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     return SUCCESS;
 }
 
-bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime)
+bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
 {
     bool isAllReady = true;
     std::lock_guard<std::mutex> lock(listLock_);
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         std::shared_ptr<OHAudioBuffer> tempBuffer = processBufferList_[i];
         uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
-        processBufferList_[i]->SetHandleInfo(eachCurReadPos, checkTime); // update info for each process
+        lastHandleProcessTime_ = checkTime;
+        processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_); // update info for each process
         if (tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
             continue; // process not running
         }
         uint64_t curRead = tempBuffer->GetCurReadFrame();
         SpanInfo *curReadSpan = tempBuffer->GetSpanInfo(curRead);
         if (curReadSpan == nullptr || curReadSpan->spanStatus != SpanStatus::SPAN_WRITE_DONE) {
-            AUDIO_DEBUG_LOG("Find one process not ready"); // print uid of the process?
+            AUDIO_WARNING_LOG("Find one process not ready"); // print uid of the process?
             isAllReady = false;
             break;
+        }
+    }
+
+    if (!isAllReady) {
+        Trace trace("AudioEndpoint::WaitAllProcessReady");
+        int64_t tempWakeupTime = readTimeModel_.GetTimeOfPos(curWritePos) + WRITE_TO_HDI_AHEAD_TIME;
+        if (tempWakeupTime - ClockTime::GetCurNano() < ONE_MILLISECOND_DURATION) {
+            ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION);
+        } else {
+            ClockTime::AbsoluteSleep(tempWakeupTime); // sleep to hdi read time ahead 1ms.
         }
     }
     return isAllReady;
@@ -497,7 +537,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime)
 
 void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
-    Trace trace("ProcessData");
+    Trace trace("AudioEndpoint::ProcessData");
     size_t srcListSize = srcDataList.size();
 
     for (size_t i = 0; i < srcListSize; i++) {
@@ -523,16 +563,74 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
             int16_t *srcPtr = (int16_t *)(srcDataList[i].bufferDesc.buffer) + offset;
-            sum += (*srcPtr * (int64_t)vol) >> 16; // 1/65536
+            sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
 }
 
-int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
+bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 {
-    Trace trace("GetPredictNextRead");
+    std::lock_guard<std::mutex> lock(listLock_);
+
+    std::vector<AudioStreamData> audioDataList;
+    for (size_t i = 0; i < processBufferList_.size(); i++) {
+        uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
+        SpanInfo *curReadSpan = processBufferList_[i]->GetSpanInfo(curRead);
+        if (curReadSpan == nullptr) {
+            AUDIO_ERR_LOG("GetSpanInfo failed, can not get client curReadSpan");
+            continue;
+        }
+        AudioStreamData streamData;
+        streamData.volumeStart = curReadSpan->volumeStart;
+        streamData.volumeEnd = curReadSpan->volumeEnd;
+        streamData.streamInfo = processList_[i]->GetStreamInfo();
+        SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
+        if (curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READING)) {
+            processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
+            audioDataList.push_back(streamData);
+            curReadSpan->readStartTime = ClockTime::GetCurNano();
+#ifdef DUMP_PROCESS_FILE
+            if (dcp_ != nullptr) {
+                fwrite((void *)streamData.bufferDesc.buffer, 1, streamData.bufferDesc.bufLength, dcp_);
+            }
+#endif
+        }
+    }
+
+    AudioStreamData dstStreamData;
+    dstStreamData.streamInfo = dstStreamInfo_;
+    int32_t ret = dstAudioBuffer_->GetWriteBuffer(curWritePos, dstStreamData.bufferDesc);
+    CHECK_AND_RETURN_RET_LOG(((ret == SUCCESS && dstStreamData.bufferDesc.buffer != nullptr)), false,
+        "GetWriteBuffer failed, ret:%{public}d", ret);
+
+    SpanInfo *curWriteSpan = dstAudioBuffer_->GetSpanInfo(curWritePos);
+    CHECK_AND_RETURN_RET_LOG(curWriteSpan != nullptr, false, "GetSpanInfo failed, can not get curWriteSpan");
+
+    dstStreamData.volumeStart = curWriteSpan->volumeStart;
+    dstStreamData.volumeEnd = curWriteSpan->volumeEnd;
+    curWriteSpan->writeStartTime = ClockTime::GetCurNano();
+    // do write work
+    if (audioDataList.size() == 0) {
+        memset_s(dstStreamData.bufferDesc.buffer, dstStreamData.bufferDesc.bufLength, 0,
+            dstStreamData.bufferDesc.bufLength);
+    } else {
+        ProcessData(audioDataList, dstStreamData);
+    }
+    curWriteSpan->writeDoneTime = ClockTime::GetCurNano(); // debug server time cost
+
+#ifdef DUMP_PROCESS_FILE
+    if (dump_hdi_ != nullptr) {
+        fwrite((void *)dstStreamData.bufferDesc.buffer, 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
+    }
+#endif
+    return true;
+}
+
+int64_t AudioEndpointInner::GetPredictNextHandleTime(uint64_t posInFrame)
+{
+    Trace trace("AudioEndpoint::GetPredictNextRead");
     int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
     uint64_t handleSpanCout = posInFrame / dstSpanSizeInframe_;
     uint32_t startPeriodCount = 20; // sync each time when start
@@ -552,10 +650,10 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
 
 bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime)
 {
-    Trace prepareTrace("PrepareNextLoop");
+    Trace prepareTrace("AudioEndpoint::PrepareNextLoop");
     uint64_t nextHandlePos = curWritePos + dstSpanSizeInframe_;
 
-    int64_t nextHdiReadTime = GetPredictNextReadTime(nextHandlePos);
+    int64_t nextHdiReadTime = GetPredictNextHandleTime(nextHandlePos);
 
     wakeUpTime = nextHdiReadTime - serverAheadReadTime_;
 
@@ -596,7 +694,7 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
 
 bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime)
 {
-    Trace trace("GetDeviceHandleInfo");
+    Trace trace("AudioEndpoint::GetDeviceHandleInfo");
     if (fastSink_ == nullptr || !fastSink_->IsInited()) {
         AUDIO_INFO_LOG("GetDeviceHandleInfo failed: sink is not inited.");
         return false;
@@ -676,8 +774,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
-    // uint64_t curReadPos = 0;
-    // uint64_t nextHandlePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("EndpointWorkLoopFuc start");
     int32_t ret = 0;
@@ -688,7 +784,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         ret = 0;
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
-        Trace loopTrace("loop_trace");
+        Trace loopTrace("AudioEndpoint::loop_trace");
         if (needReSyncPosition_) {
             ReSyncPosition();
             wakeUpTime = curTime;
@@ -699,88 +795,21 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             AUDIO_WARNING_LOG("Wake up too late!");
         }
 
-        // get current server write position
+        // First, wake up at client may-write-done time, and check if all process write done.
+        // If not, do another sleep to the possible latest write time.
         curWritePos = dstAudioBuffer_->GetCurWriteFrame();
-        SpanInfo *curWriteSpan = dstAudioBuffer_->GetSpanInfo(curWritePos);
-        if (curWriteSpan == nullptr) {
-            AUDIO_ERR_LOG("GetSpanInfo failed, can not get curWriteSpan");
-            break;
-        }
-
-        /**
-         * first, wake up at client may-write-done time, and check all process write status
-         * if not all process write done, do another sleep to server-buffer latest write time
-         * then do mix & write to hdi buffer and prepare next loop
-         */
-        bool isAllBufferReady = CheckAllBufferReady(wakeUpTime);
-        if (!isAllBufferReady) {
-            Trace trace("WaitAllReady");
-            int64_t tempWakeupTime = readTimeModel_.GetTimeOfPos(curWritePos) + WRITE_TO_HDI_AHEAD_TIME;
-            if (tempWakeupTime - curTime < ONE_MILLISECOND_DURATION) {
-                ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION);
-            } else {
-                ClockTime::AbsoluteSleep(tempWakeupTime); // sleep to hdi read time ahead 1ms.
-            }
+        if (!CheckAllBufferReady(wakeUpTime, curWritePos)) {
             curTime = ClockTime::GetCurNano();
         }
 
-        std::vector<AudioStreamData> audioDataList;
-        {
-            std::lock_guard<std::mutex> lock(listLock_);
-            for (size_t i = 0; i < processBufferList_.size(); i++) {
-                uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
-                SpanInfo *curReadSpan = processBufferList_[i]->GetSpanInfo(curRead);
-                if (curReadSpan == nullptr) {
-                    AUDIO_ERR_LOG("GetSpanInfo failed, can not get client curReadSpan");
-                    continue;
-                }
-                AudioStreamData streamData;
-                streamData.volumeStart = curReadSpan->volumeStart;
-                streamData.volumeEnd = curReadSpan->volumeEnd;
-                streamData.streamInfo = processList_[i]->GetStreamInfo();
-                if (curReadSpan->spanStatus.load() == SpanStatus::SPAN_WRITE_DONE) {
-                    processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
-                    audioDataList.push_back(streamData);
-#ifdef DUMP_PROCESS_FILE
-                    if (dcp_ != nullptr) {
-                        fwrite((void *)streamData.bufferDesc.buffer, 1, streamData.bufferDesc.bufLength, dcp_);
-                    }
-#endif
-                    curReadSpan->spanStatus.store(SpanStatus::SPAN_READING);
-                    curReadSpan->readStartTime = curTime;
-                }
-            }
-        }
-
-        AudioStreamData dstStreamData;
-        dstStreamData.streamInfo = dstStreamInfo_;
-        dstStreamData.volumeStart = curWriteSpan->volumeStart;
-        dstStreamData.volumeEnd = curWriteSpan->volumeEnd;
-        ret = dstAudioBuffer_->GetWriteBuffer(curWritePos, dstStreamData.bufferDesc);
-        if (ret != SUCCESS || dstStreamData.bufferDesc.buffer == nullptr) {
-            AUDIO_ERR_LOG("GetWriteBuffer failed, ret:%{public}d", ret);
+        // then do mix & write to hdi buffer and prepare next loop
+        if (!ProcessToEndpointDataHandle(curWritePos)) {
+            AUDIO_ERR_LOG("ProcessToEndpointDataHandle failed!");
             break;
         }
-        curWriteSpan->writeStartTime = curTime;
-        // do write work
-        // call data process module
-        if (audioDataList.size() == 0) {
-            memset_s(dstStreamData.bufferDesc.buffer, dstStreamData.bufferDesc.bufLength, 0,
-                dstStreamData.bufferDesc.bufLength);
-        } else {
-            ProcessData(audioDataList, dstStreamData); // what if process call unlink and remove buffer?
-        }
-
-#ifdef DUMP_PROCESS_FILE
-        if (dump_hdi_ != nullptr) {
-            fwrite((void *)dstStreamData.bufferDesc.buffer, 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
-        }
-#endif
-        curTime = ClockTime::GetCurNano();
-        curWriteSpan->writeDoneTime = curTime; // debug server time cost
 
         // prepare info of next loop
-        if(!PrepareNextLoop(curWritePos, wakeUpTime)) {
+        if (!PrepareNextLoop(curWritePos, wakeUpTime)) {
             AUDIO_ERR_LOG("PrepareNextLoop failed!");
             break;
         }

@@ -86,6 +86,7 @@ private:
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;
+    bool isGetProcessEnabled_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

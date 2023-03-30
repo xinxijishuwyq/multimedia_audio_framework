@@ -458,9 +458,15 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
+    if (!isGetProcessEnabled_) {
+        AUDIO_ERR_LOG("AudioServer::CreateAudioProcess is not enabled!");
+        return nullptr;
+    }
+
     // client pid uid check.
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
 
     AudioProcessConfig resetConfig(config);
     if (callerUid == MEDIA_SERVICE_UID) {
@@ -476,7 +482,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     // check MICROPHONE_PERMISSION
     if (config.audioMode == AUDIO_MODE_RECORD &&
         !VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId)) {
-         AUDIO_ERR_LOG("AudioServer::CreateAudioProcess for record failed:No permission.");
+            AUDIO_ERR_LOG("AudioServer::CreateAudioProcess for record failed:No permission.");
         return nullptr;
     }
 

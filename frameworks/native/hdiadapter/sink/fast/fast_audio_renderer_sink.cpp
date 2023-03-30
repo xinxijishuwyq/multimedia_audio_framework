@@ -34,7 +34,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-// #define DEBUG_DIRECT_USE_HDI
+
 using namespace std;
 
 namespace OHOS {
@@ -250,7 +250,7 @@ uint32_t PcmFormatToBits(AudioSampleFormat format)
 }
 
 int32_t FastAudioRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame)
+    uint32_t &byteSizePerFrame)
 {
     if (bufferFd_ == INVALID_FD) {
         AUDIO_ERR_LOG("buffer fd has been released!");

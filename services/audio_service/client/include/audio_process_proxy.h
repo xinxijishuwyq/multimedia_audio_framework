@@ -38,6 +38,8 @@ public:
 
     int32_t Stop() override;
 
+    int32_t RequestHandleInfo() override;
+
     int32_t Release() override;
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;

@@ -56,12 +56,14 @@ private:
 };
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(size_t size, const std::string &name)
-    : base_(nullptr), fd_(INVALID_FD), size_(size), name_(name) {
+    : base_(nullptr), fd_(INVALID_FD), size_(size), name_(name)
+{
     AUDIO_INFO_LOG("AudioSharedMemory ctor with size: %{public}zu name: %{public}s", size_, name_.c_str());
 }
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(int fd, size_t size, const std::string &name)
-    : base_(nullptr), fd_(dup(fd)), size_(size), name_(name) {
+    : base_(nullptr), fd_(dup(fd)), size_(size), name_(name)
+{
     AUDIO_INFO_LOG("AudioSharedMemory ctor with fd %{public}d size %{public}zu name %{public}s", fd_, size_,
         name_.c_str());
 }
@@ -133,7 +135,8 @@ int AudioSharedMemoryImpl::GetFd()
     return fd_;
 }
 
-std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t size, const std::string &name) {
+std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t size, const std::string &name)
+{
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(size, name);
     if (sharedMemory == nullptr || sharedMemory->Init() != SUCCESS) {
         AUDIO_ERR_LOG("CreateFormLocal failed");
@@ -142,7 +145,8 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t siz
     return sharedMemory;
 }
 
-std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, size_t size, const std::string &name) {
+std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, size_t size, const std::string &name)
+{
     int minfd = 2; // ignore stdout, stdin and stderr.
     CHECK_AND_RETURN_RET_LOG(fd > minfd, nullptr, "CreateFromRemote failed: invalid fd: %{public}d", fd);
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(fd, size, name);
@@ -195,9 +199,9 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
 
 // OHAudioBuffer
 OHAudioBuffer::OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
-        uint32_t byteSizePerFrame) : bufferHolder_(bufferHolder), totalSizeInFrame_(totalSizeInFrame),
-        spanSizeInFrame_(spanSizeInFrame), byteSizePerFrame_(byteSizePerFrame), audioMode_(AUDIO_MODE_PLAYBACK),
-        basicBufferInfo_(nullptr), spanInfoList_(nullptr)
+    uint32_t byteSizePerFrame) : bufferHolder_(bufferHolder), totalSizeInFrame_(totalSizeInFrame),
+    spanSizeInFrame_(spanSizeInFrame), byteSizePerFrame_(byteSizePerFrame), audioMode_(AUDIO_MODE_PLAYBACK),
+    basicBufferInfo_(nullptr), spanInfoList_(nullptr)
 {
     AUDIO_INFO_LOG("ctor with holder:%{public}d mode:%{public}d", bufferHolder_, audioMode_);
 }
@@ -462,7 +466,7 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
     if (writeFrame == oldWritePos) {
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(writeFrame > oldWritePos, ERR_INVALID_PARAM,"Too small writeFrame:%{public}" PRIu64".",
+    CHECK_AND_RETURN_RET_LOG(writeFrame > oldWritePos, ERR_INVALID_PARAM, "Too small writeFrame:%{public}" PRIu64".",
         writeFrame);
 
     uint64_t deltaToBase = writeFrame - basePos; // writeFrame % spanSizeInFrame_ --> 0
@@ -506,7 +510,7 @@ int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
     }
 
     uint64_t deltaToBase = readFrame - oldBasePos;
-    CHECK_AND_RETURN_RET_LOG(deltaToBase / spanSizeInFrame_ * spanSizeInFrame_ == deltaToBase, 
+    CHECK_AND_RETURN_RET_LOG((deltaToBase / spanSizeInFrame_ * spanSizeInFrame_) == deltaToBase,
         ERR_INVALID_PARAM, "invalid deltaToBase, readFrame:%{public}" PRIu64".", readFrame);
 
     if (deltaToBase > totalSizeInFrame_) {

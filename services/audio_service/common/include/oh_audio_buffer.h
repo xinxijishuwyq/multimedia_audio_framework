@@ -113,7 +113,7 @@ public:
 class OHAudioBuffer {
 public:
     static const int INVALID_BUFFER_FD = -1;
-    OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame, 
+    OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
         uint32_t byteSizePerFrame);
     ~OHAudioBuffer();
 

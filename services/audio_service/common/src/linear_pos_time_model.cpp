@@ -15,7 +15,7 @@
 
 #include "linear_pos_time_model.h"
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "audio_errors.h"
 #include "audio_log.h"

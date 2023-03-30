@@ -241,7 +241,7 @@ ohos_prebuilt_etc("audio_config.para.dac") {
 config("audio_policy_client_config") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/common/include",
+    "${audio_fwk_path}/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",

@@ -30,14 +30,14 @@ ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
   }
 
   install_enable = true
 
   include_dirs = [
     "common/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
   ]
 
   sources = [
@@ -54,7 +54,7 @@ ohos_shared_library("audio_common") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
-  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
+  deps = [ "${audio_fwk_path}/frameworks/native/audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",
@@ -77,7 +77,7 @@ config("audio_client_public_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
     "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/common/include",
+    "${audio_fwk_path}/services/audio_service/common/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
     "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
   ]
@@ -171,7 +171,7 @@ config("audio_service_config") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/frameworks/native/audioutils/include",
     "${fwk_native_hdiadapter_path}/sink/bluetooth",
     "${fwk_native_hdiadapter_path}/sink/common",
     "${fwk_native_hdiadapter_path}/sink/file",
@@ -192,7 +192,7 @@ ohos_shared_library("audio_process_service") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -204,10 +204,6 @@ ohos_shared_library("audio_process_service") {
   ]
 
   configs = [ ":audio_service_config" ]
-
-  if ("${product_name}" == "m40") {
-    cflags = [ "-DPRODUCT_M40" ]
-  }
 
   deps = [
     ":audio_common",
@@ -289,11 +285,9 @@ ohos_executable("audio_process_client_test") {
   install_enable = false
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/services/audio_service/client/include",
   ]
 
   sources = [ "test/example/audio_process_client_test.cpp" ]
@@ -317,7 +311,7 @@ ohos_executable("audio_hdi_device_test") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/fast",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/fast",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
     "//drivers/peripheral/audio/interfaces/include",

@@ -101,6 +101,20 @@ int32_t AudioProcessProxy::Stop()
     return reply.ReadInt32();
 }
 
+int32_t AudioProcessProxy::RequestHandleInfo()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option; // MessageOption::TF_ASYNC?
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_REQUEST_HANDLE_INFO, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "RequestHandleInfo failed: %{public}d", ret);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioProcessProxy::Release()
 {
     MessageParcel data;

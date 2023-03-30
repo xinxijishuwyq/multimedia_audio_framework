@@ -15,13 +15,14 @@
 
 #include <cinttypes>
 #include <condition_variable>
+#include <cstdint>
+#include <ctime>
 #include <ostream>
 #include <sstream>
 #include <iostream>
 #include <thread>
 #include <mutex>
-#include <stdint.h>
-#include <time.h>
+#include <map>
 
 #include "audio_log.h"
 #include "audio_error.h"
@@ -37,10 +38,26 @@ namespace {
     static const long WAV_HEADER_SIZE = 42;
     static const int32_t SUCCESS = 0;
     static const int32_t ERROR = -1;
+    enum OperationCode : int32_t {
+        INVALID_OPERATION = -1,
+        INIT_PROCESS = 0,
+        START_PROCESS,
+        PAUSE_PROCESS,
+        STOP_PROCESS,
+        CHANGE_PROCESS_VOL,
+        RELEASE_PROCESS
+    };
 }
-
-char *g_file_path = nullptr;
-FILE *g_wavFile = NULL;
+std::map<int32_t, std::string> g_operationStringMap = {
+    {INIT_PROCESS, "call init process"},
+    {START_PROCESS, "call start process"},
+    {PAUSE_PROCESS, "call pause process"},
+    {STOP_PROCESS, "call stop process"},
+    {CHANGE_PROCESS_VOL, "change process volume"},
+    {RELEASE_PROCESS, "release process"}
+};
+std::string g_filePath = nullptr;
+FILE *g_wavFile = nullptr;
 mutex g_autoRunMutex;
 condition_variable g_autoRunCV;
 
@@ -80,7 +97,7 @@ public:
         callBack.End();
     }
 
-    int32_t Config(int32_t loopCount)
+    int32_t Init(int32_t loopCount)
     {
         if (loopCount < 0) {
             loopCount_ = 1; // loop once
@@ -106,12 +123,11 @@ public:
         config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
         processClient_ = AudioProcessInClient::Create(config);
-
         if (processClient_ == nullptr) {
             return ERROR;
         }
         processClient_->SaveDataCallback(shared_from_this());
-        g_isInited = true;
+        gIsInited = true;
         return SUCCESS;
     }
 
@@ -162,14 +178,14 @@ public:
 
 private:
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
-    bool g_isInited = false;
+    bool gIsInited = false;
     int32_t loopCount_ = -1; // for loop
     BufferDesc buffer_ = {nullptr, 0, 0};
     bool needSkipWavHeader_ = true;
     bool renderFinish_ = false;
 };
 
-inline int32_t GetArgs(char *args)
+inline int32_t GetArgs(std::string args)
 {
     int32_t value = 0;
     stringstream valueStr;
@@ -180,12 +196,9 @@ inline int32_t GetArgs(char *args)
 
 void PrintInteractiveUsage()
 {
-    cout << "\t enter 0 : call init process" << endl;
-    cout << "\t enter 1 : call start play" << endl;
-    cout << "\t enter 2 : call stop play" << endl;
-    cout << "\t enter 3 : call pause play" << endl;
-    cout << "\t enter 4 and enter volume : call set volume" << endl;
-    cout << "\t enter 9 : call release" << endl << endl;
+    for (auto it = g_operationStringMap.begin(); it != g_operationStringMap.end(); it ++) {
+        cout << "\t enter " << it->first << " : " << it->second << endl;
+    }
 }
 
 void PrintUsage()
@@ -207,14 +220,6 @@ void PrintUsage()
     PrintInteractiveUsage();
 }
 
-void PrintArgs(int argc, char *argv[])
-{
-    cout << "user input is" << endl;
-    for (size_t i = 0; i < argc; i++) {
-        cout << i << " : " << argv[i] << endl;
-    }
-}
-
 int32_t GetUserInput()
 {
     int32_t res = -1; // result
@@ -234,9 +239,10 @@ int32_t GetUserInput()
 shared_ptr<AudioProcessTest> g_audioProcessTest = nullptr;
 void AutoRun(int32_t loopCount)
 {
-    g_audioProcessTest->Config(loopCount);
+    g_audioProcessTest->Init(loopCount);
     g_audioProcessTest->Start();
-    g_audioProcessTest->SetVolume(1 << 15); // half
+    int volShift = 15; // helf of 1 << 16
+    g_audioProcessTest->SetVolume(1 << volShift);
     unique_lock<mutex> lock(g_autoRunMutex);
     g_autoRunCV.wait(lock);
     cout << "AutoRun end" << endl;
@@ -246,7 +252,7 @@ void AutoRun(int32_t loopCount)
 
 string ConfigTest()
 {
-    int32_t ret = g_audioProcessTest->Config(0);
+    int32_t ret = g_audioProcessTest->Init(0);
     if (ret != SUCCESS) {
         return "init failed";
     }
@@ -294,33 +300,38 @@ string CallRelease()
     return "Release SUCCESS";
 }
 
-
 void InteractiveRun()
 {
-    int32_t optCode = -1; // invalid code
+    OperationCode optCode = INVALID_OPERATION; // invalid code
     while (true) {
         PrintInteractiveUsage();
-        optCode = GetUserInput();
+        int32_t res = GetUserInput();
+        if (g_operationStringMap.count(res)) {
+            optCode = static_cast<OperationCode>(res);
+        } else {
+            optCode = INVALID_OPERATION;
+        }
         switch (optCode) {
-            case 0:
+            case INIT_PROCESS:
                 cout << ConfigTest() << endl;
                 break;
-            case 1:
+            case START_PROCESS:
                 cout << CallStart() << endl;
                 break;
-            case 2:
+            case STOP_PROCESS:
                 cout << CallStop() << endl;
                 break;
-            case 3:
+            case PAUSE_PROCESS:
                 cout << CallPause() << endl;
                 break;
-            case 4:
+            case CHANGE_PROCESS_VOL:
                 cout << SetVolume() << endl;
                 break;
-            case 9:
-                cout << ConfigTest() << endl;
+            case RELEASE_PROCESS:
+                cout << CallRelease() << endl;
                 break;
             default:
+                cout << "invalid input :" << optCode << endl;
                 break;
         }
     }
@@ -329,7 +340,7 @@ void InteractiveRun()
 bool OpenFile()
 {
     char path[PATH_MAX] = { 0x00 };
-    if ((strlen(g_file_path) > PATH_MAX) || (realpath(g_file_path, path) == nullptr)) {
+    if ((strlen(g_filePath.c_str()) > PATH_MAX) || (realpath(g_filePath.c_str(), path) == nullptr)) {
         return false;
     }
     AUDIO_INFO_LOG("path = %{public}s", path);
@@ -356,16 +367,13 @@ int main(int argc, char *argv[])
     g_audioProcessTest = make_shared<AudioProcessTest>();
     if (argv == nullptr || argc > ARGC_NUM_THREE || argc < ARGC_NUM_TWO) {
         cout << "AudioProcessClientTest: argv is invalid" << endl;
-        PrintArgs(argc, argv);
         return 0;
     }
-    g_file_path = argv[1];
+    g_filePath = argv[1];
     if (!OpenFile()) {
-        cout << "open file path failed!" << g_file_path << endl;
+        cout << "open file path failed!" << g_filePath << endl;
         return 0;
     }
-    // wav_hdr wavHeader;
-    // size_t headerSize = sizeof(wav_hdr);
 
     PrintUsage();
     bool isAudioRun = false;

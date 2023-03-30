@@ -22,6 +22,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+}
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig)
 {
     sptr<AudioProcessInServer> process = new(std::nothrow) AudioProcessInServer(processConfig);
@@ -51,6 +54,7 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
 
     return SUCCESS;
 }
+
 int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
@@ -59,12 +63,23 @@ int32_t AudioProcessInServer::Start()
         return ERR_ILLEGAL_STATE;
     }
 
-    for (size_t i = 0;i < listenerList_.size();i++) {
+    for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
 
     streamStatus_->store(STREAM_RUNNING);
     AUDIO_INFO_LOG("Start in server success!");
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::RequestHandleInfo()
+{
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
+
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnUpdateHandleInfo(this);
+    }
     return SUCCESS;
 }
 
@@ -154,8 +169,8 @@ int32_t AudioProcessInServer::InitBufferStatus()
         spanInfo->writeStartTime = 0;
         spanInfo->writeDoneTime = 0;
 
-        spanInfo->volumeStart = 1 << 16; // 65536 for initialize
-        spanInfo->volumeEnd = 1 << 16; // 65536 for initialize
+        spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
+        spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
         spanInfo->isMute = false;
     }
     return SUCCESS;
