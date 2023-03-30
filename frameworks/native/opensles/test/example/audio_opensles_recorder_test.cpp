@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,15 +13,17 @@
  * limitations under the License.
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <securec.h>
-#include <iostream>
-#include <unistd.h>
 #include <OpenSLES.h>
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <unistd.h>
+#include <securec.h>
+
 #include "audio_info.h"
 #include "audio_log.h"
 
@@ -57,7 +59,7 @@ int main(int argc, char *argv[])
         AUDIO_ERR_LOG("Incorrect number(%{public}d) of parameters", argc);
         return -1;
     }
-    
+
     int opt = 0;
     string filePath = "/data/test.pcm";
     wavFile_ = fopen(filePath.c_str(), "wb");
@@ -149,16 +151,13 @@ static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
-        SLuint32 pSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        SLuint32 bufferSize = 0;
+        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, &bufferSize);
         if (buffer != nullptr) {
-            AUDIO_INFO_LOG("BufferQueueCallback, length, pSize:%{public}lu, size: %{public}lu.",
-                           pSize, size);
-            fwrite(buffer, 1, pSize, wavFile);
+            fwrite(buffer, 1, bufferSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         } else {
-            AUDIO_INFO_LOG("BufferQueueCallback, buffer is null or pSize: %{public}lu, size: %{public}lu.",
-                           pSize, size);
+            AUDIO_ERR_LOG("buffer is null or pSize: %{public}lu, size: %{public}lu.", bufferSize, size);
         }
     }
 
@@ -169,18 +168,6 @@ static void CaptureStart(SLRecordItf recordItf, SLOHBufferQueueItf bufferQueueIt
 {
     AUDIO_INFO_LOG("Enter CaptureStart");
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
-    if (wavFile != nullptr) {
-        SLuint8* buffer = nullptr;
-        SLuint32 pSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
-        if (buffer != nullptr) {
-            AUDIO_INFO_LOG("CaptureStart, enqueue buffer length: %{public}lu.", pSize);
-            fwrite(buffer, 1, pSize, wavFile);
-            (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, pSize);
-        } else {
-            AUDIO_INFO_LOG("CaptureStart, buffer is null or pSize: %{public}lu.", pSize);
-        }
-    }
 
     return;
 }

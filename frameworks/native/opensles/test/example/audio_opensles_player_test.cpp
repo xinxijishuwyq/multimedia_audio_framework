@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,21 +15,23 @@
 
 #include <OpenSLES.h>
 #include <OpenSLES_OpenHarmony.h>
+
 #include <cstdio>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+
 #include "audio_log.h"
 #include "pcm2wav.h"
 
 using namespace std;
 
-static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size);
 
-static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
+static void PlayerStart(SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile);
 
-static void PlayerStop (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf);
+static void PlayerStop(SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf);
 
 static void OpenSlTest();
 
@@ -190,7 +192,7 @@ static void OpenSlTest()
     SLmillibel pLevel = 0;
     (*volumeItf)->GetVolumeLevel(volumeItf, &pLevel);
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf);
-    (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BuqqerQueueCallback, wavFile_);
+    (*bufferQueueItf)->RegisterCallback(bufferQueueItf, BufferQueueCallback, wavFile_);
 
     PlayerStart(playItf, bufferQueueItf, wavFile_);
 }
@@ -260,37 +262,35 @@ static void OpenSlTestConcurrent()
 
     (*pcmPlayerObject1)->GetInterface(pcmPlayerObject1, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf1);
     (*pcmPlayerObject2)->GetInterface(pcmPlayerObject2, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf2);
-    (*bufferQueueItf1)->RegisterCallback(bufferQueueItf1, BuqqerQueueCallback, wavFile1_);
-    (*bufferQueueItf2)->RegisterCallback(bufferQueueItf2, BuqqerQueueCallback, wavFile2_);
+    (*bufferQueueItf1)->RegisterCallback(bufferQueueItf1, BufferQueueCallback, wavFile1_);
+    (*bufferQueueItf2)->RegisterCallback(bufferQueueItf2, BufferQueueCallback, wavFile2_);
     PlayerStart(playItf1, bufferQueueItf1, wavFile1_);
     PlayerStart(playItf2, bufferQueueItf2, wavFile2_);
 }
 
-static void BuqqerQueueCallback (SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
     FILE *wavFile = (FILE *)pContext;
     if (!feof(wavFile)) {
         SLuint8 *buffer = nullptr;
-        SLuint32 pSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, pSize);
+        SLuint32 bufferSize = 0;
+        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, &bufferSize);
         if (buffer != nullptr) {
             fread(buffer, 1, size, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
-        } else {
-            AUDIO_ERR_LOG("BuqqerQueueCallback, get buffer is null.");
         }
     }
     return;
 }
 
-static void PlayerStart (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
+static void PlayerStart(SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf, FILE *wavFile)
 {
     AUDIO_INFO_LOG("PlayerStart");
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
     return;
 }
 
-static void PlayerStop (SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf)
+static void PlayerStop(SLPlayItf playItf, SLOHBufferQueueItf bufferQueueItf)
 {
     AUDIO_INFO_LOG("PlayerStop");
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);

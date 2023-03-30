@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-#include "audio_opensles_capture_unit_test.h"
+#include "audio_opensles_recorder_unit_test.h"
+
+#include "common.h"
+#include "audio_errors.h"
+#include "audio_info.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -21,7 +25,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    const char *AUDIORENDER_TEST_FILE_PATH = "/data/test_capture.pcm";
+    const char *g_testFilePath = "/data/test_capture.pcm";
     FILE *wavFile_;
     SLObjectItf engineObject_;
     SLRecordItf captureItf_;
@@ -30,13 +34,13 @@ namespace {
     SLEngineItf engineEngine_;
 } // namespace
 
-static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
+static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
 {
     FILE *wavFile = (FILE *)pContext;
     if (wavFile != nullptr) {
         SLuint8 *buffer = nullptr;
         SLuint32 bufferSize = 0;
-        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, bufferSize);
+        (*bufferQueueItf)->GetBuffer(bufferQueueItf, &buffer, &bufferSize);
         if (buffer != nullptr) {
             fwrite(buffer, 1, bufferSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
@@ -46,35 +50,35 @@ static void BuqqerQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
     return;
 }
 
-void AudioOpenslesCaptureUnitTest::SetUpTestCase(void) { }
+void AudioOpenslesRecorderUnitTest::SetUpTestCase(void) { }
 
-void AudioOpenslesCaptureUnitTest::TearDownTestCase(void) { }
+void AudioOpenslesRecorderUnitTest::TearDownTestCase(void) { }
 
-void AudioOpenslesCaptureUnitTest::SetUp(void) { }
+void AudioOpenslesRecorderUnitTest::SetUp(void) { }
 
-void AudioOpenslesCaptureUnitTest::TearDown(void) { }
+void AudioOpenslesRecorderUnitTest::TearDown(void) { }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
 {
     SLresult result = slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateEngine_002, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateEngine_002, TestSize.Level0)
 {
     SLresult result = (*engineObject_)->Realize(engineObject_, SL_BOOLEAN_FALSE);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateEngine_003, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateEngine_003, TestSize.Level0)
 {
     SLresult result = (*engineObject_)->GetInterface(engineObject_, SL_IID_ENGINE, &engineEngine_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_001, TestSize.Level0)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("AudioCaptureTest: Unable to open record file.");
     }
@@ -116,195 +120,195 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_002, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_002, TestSize.Level0)
 {
     SLresult result = (*pcmCapturerObject_)->Realize(pcmCapturerObject_, SL_BOOLEAN_FALSE);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_003, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_003, TestSize.Level0)
 {
     SLresult result = (*pcmCapturerObject_)->GetInterface(pcmCapturerObject_, SL_IID_RECORD, &captureItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetBufferQueue_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetBufferQueue_001, TestSize.Level0)
 {
     SLresult result = (*pcmCapturerObject_)->GetInterface(pcmCapturerObject_, SL_IID_OH_BUFFERQUEUE, &bufferQueueItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_RegisterCallback_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_RegisterCallback_001, TestSize.Level0)
 {
-    SLresult result = (*bufferQueueItf_)->RegisterCallback(bufferQueueItf_, BuqqerQueueCallback, wavFile_);
+    SLresult result = (*bufferQueueItf_)->RegisterCallback(bufferQueueItf_, BufferQueueCallback, wavFile_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_RegisterCallback_002, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_RegisterCallback_002, TestSize.Level1)
 {
-    SLresult result = (*bufferQueueItf_)->RegisterCallback(nullptr, BuqqerQueueCallback, wavFile_);
+    SLresult result = (*bufferQueueItf_)->RegisterCallback(nullptr, BufferQueueCallback, wavFile_);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetRecordState_001, TestSize.Level0)
 {
     SLresult result = (*captureItf_)->SetRecordState(captureItf_, SL_RECORDSTATE_RECORDING);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_001, TestSize.Level0)
 {
     if (wavFile_ != nullptr) {
         SLuint8* buffer = nullptr;
-        SLuint32 size = 0;
-        SLresult result = (*bufferQueueItf_)->GetBuffer(bufferQueueItf_, &buffer, size);
+        SLuint32 bufferSize = 0;
+        SLresult result = (*bufferQueueItf_)->GetBuffer(bufferQueueItf_, &buffer, &bufferSize);
         EXPECT_TRUE(result == SL_RESULT_SUCCESS);
         if (buffer != nullptr) {
-            fwrite(buffer, 1, size, wavFile_);
-            result = (*bufferQueueItf_)->Enqueue(bufferQueueItf_, buffer, size);
+            fwrite(buffer, 1, bufferSize, wavFile_);
+            result = (*bufferQueueItf_)->Enqueue(bufferQueueItf_, buffer, bufferSize);
             EXPECT_TRUE(result == SL_RESULT_SUCCESS);
         }
     }
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetState_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetState_001, TestSize.Level0)
 {
     SLOHBufferQueueState state;
     SLresult result = (*bufferQueueItf_)->GetState(bufferQueueItf_, &state);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetState_002, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetState_002, TestSize.Level1)
 {
     SLOHBufferQueueState state;
     SLresult result = (*bufferQueueItf_)->GetState(nullptr, &state);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetBuffer_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetBuffer_001, TestSize.Level1)
 {
     SLuint32 bufferSize = 0;
-    SLresult result = (*bufferQueueItf_)->GetBuffer(nullptr, nullptr, bufferSize);
+    SLresult result = (*bufferQueueItf_)->GetBuffer(nullptr, nullptr, &bufferSize);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_002, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetRecordState_002, TestSize.Level0)
 {
     SLresult result = (*captureItf_)->SetRecordState(captureItf_, SL_RECORDSTATE_PAUSED);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_003, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetRecordState_003, TestSize.Level0)
 {
     SLresult result = (*captureItf_)->SetRecordState(captureItf_, SL_RECORDSTATE_STOPPED);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetRecordState_004, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetRecordState_004, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->SetRecordState(nullptr, SL_RECORDSTATE_STOPPED);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetRecordState_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetRecordState_001, TestSize.Level0)
 {
     SLuint32 state;
     SLresult result = (*captureItf_)->GetRecordState(captureItf_, &state);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetRecordState_002, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetRecordState_002, TestSize.Level1)
 {
     SLuint32 state;
     SLresult result = (*captureItf_)->GetRecordState(nullptr, &state);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetDurationLimit_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetDurationLimit_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->SetDurationLimit(nullptr, 0);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetPosition_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetPosition_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->GetPosition(nullptr, 0);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_RegisterCallback_003, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_RegisterCallback_003, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->RegisterCallback(captureItf_, nullptr, wavFile_);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetCallbackEventsMask_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetCallbackEventsMask_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->SetCallbackEventsMask(nullptr, 0);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetCallbackEventsMask_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetCallbackEventsMask_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->GetCallbackEventsMask(nullptr, nullptr);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetMarkerPosition_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetMarkerPosition_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->SetMarkerPosition(nullptr, 0);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_ClearMarkerPosition_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_ClearMarkerPosition_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->ClearMarkerPosition(nullptr);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetMarkerPosition_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetMarkerPosition_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->GetMarkerPosition(nullptr, nullptr);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SetPositionUpdatePeriod_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SetPositionUpdatePeriod_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->SetPositionUpdatePeriod(nullptr, 0);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_GetPositionUpdatePeriod_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_GetPositionUpdatePeriod_001, TestSize.Level1)
 {
     SLresult result = (*captureItf_)->GetPositionUpdatePeriod(nullptr, nullptr);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_clear_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_clear_001, TestSize.Level0)
 {
     SLresult result = (*bufferQueueItf_)->Clear(bufferQueueItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_clear_002, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_clear_002, TestSize.Level1)
 {
     SLresult result = (*bufferQueueItf_)->Clear(nullptr);
     EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_Destroy_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_001, TestSize.Level0)
 {
     (*pcmCapturerObject_)->Destroy(pcmCapturerObject_);
     EXPECT_TRUE(true);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_Destroy_002, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_002, TestSize.Level0)
 {
     (*engineObject_)->Destroy(engineObject_);
     EXPECT_TRUE(true);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)
 {
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
@@ -321,7 +325,7 @@ HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_DestoryEngine_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_DestoryEngine_001, TestSize.Level0)
 {
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
@@ -340,7 +344,7 @@ HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_DestoryEngine_00
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_Realize_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_Realize_001, TestSize.Level0)
 {
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
@@ -359,7 +363,7 @@ HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_Realize_001, Tes
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_GetInterface_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_GetInterface_001, TestSize.Level0)
 {
     struct timespec tv1 = {0};
     struct timespec tv2 = {0};
@@ -376,9 +380,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_Capture_GetInterface_001
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_CreateAudioRecorder_001, TestSize.Level0)
+HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_CreateAudioRecorder_001, TestSize.Level0)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("AudioCaptureTest: Unable to open record file.");
     }
@@ -431,9 +435,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Prf_Audio_Opensles_CreateAudioRecorder_001,
     EXPECT_TRUE(totalTime <= expectTime * performanceTestTimes);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_001, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_001, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_001: Unable to open record file.");
     }
@@ -474,9 +478,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_001,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_002, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_002, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_002: Unable to open record file.");
     }
@@ -516,9 +520,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_002,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_003, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_003, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_003: Unable to open record file.");
     }
@@ -558,9 +562,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_003,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_004, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_004, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_004: Unable to open record file.");
     }
@@ -599,9 +603,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_004,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_005, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_005, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_005: Unable to open record file.");
     }
@@ -642,9 +646,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_005,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_006, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_006, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_006: Unable to open record file.");
     }
@@ -684,9 +688,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_006,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_007, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_007, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_007: Unable to open record file.");
     }
@@ -726,9 +730,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_007,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_008, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_008, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_008: Unable to open record file.");
     }
@@ -767,9 +771,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_008,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_009, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_009, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_009: Unable to open record file.");
     }
@@ -809,9 +813,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_009,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_010, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_010, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_010: Unable to open record file.");
     }
@@ -851,9 +855,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_010,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_011, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_011, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_011: Unable to open record file.");
     }
@@ -893,9 +897,9 @@ HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_011,
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
-HWTEST(AudioOpenslesCaptureUnitTest, Audio_Opensles_Capture_SlToOhosChannel_012, TestSize.Level1)
+HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_SlToOhosChannel_012, TestSize.Level1)
 {
-    wavFile_ = fopen(AUDIORENDER_TEST_FILE_PATH, "wb");
+    wavFile_ = fopen(g_testFilePath, "wb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("SlToOhosChannel_012: Unable to open record file.");
     }
