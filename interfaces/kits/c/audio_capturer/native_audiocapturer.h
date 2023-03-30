@@ -101,17 +101,6 @@ OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer
     OH_AudioStream_LatencyMode* latencyMode);
 
 /*
- * Query the the number of frames that have been read since the stream was created.
- *
- * @since 10
- *
- * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param frames Pointer to a variable that will be set for the frame count number.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer, int64_t* frames);
-
-/*
  * Query the stream id of the capturer client.
  *
  * @since 10
@@ -184,31 +173,6 @@ OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioCapturer* capture
  */
 OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer* capturer,
     OH_AudioStream_SourceType* sourceType);
-
-/*
- * Query the frame size in callback, it is a fixed length of the buffer returned by each callback.
- *
- * @since 10
- *
- * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param frameSize Pointer to a variable that will be set for the frame size.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioCapturer_GetFrameSizeInCallback(OH_AudioCapturer* capturer, int32_t* frameSize);
-
-/*
- * Query the the time at which a particular frame was presented
- *
- * @since 10
- *
- * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param clockId {@link #CLOCK_MONOTONIC}
- * @param framePosition Pointer to a variable to receive the position
- * @param timestamp Pointer to a variable to receive the timestamp
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer,
-    clockid_t clockId, int64_t* framePosition, int64_t* timestamp);
 #ifdef __cplusplus
 }
 #endif

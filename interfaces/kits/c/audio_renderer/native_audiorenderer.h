@@ -86,17 +86,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* rendere
     OH_AudioStream_State* state);
 
 /*
- * Query the frame size in callback, it is a fixed length that the stream want to be filled for each callback.
- *
- * @since 10
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param frameSize Pointer to a variable that will be set for the frame size.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize);
-
-/*
  * Query the sample rate value of the renderer client
  *
  * This function will return the renderer sample rate value without updating the state.
@@ -180,31 +169,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
  */
 OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioCapturer* capturer,
     OH_AudioStream_EncodingType* encodingType);
-
-/*
- * Query the the number of frames that have been written since the stream was created.
- *
- * @since 10
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param frames Pointer to a variable that will be set for the frame count number.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int64_t* frames);
-
-/*
- * Query the the time at which a particular frame was presented.
- *
- * @since 10
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param clockId {@link #CLOCK_MONOTONIC}
- * @param framePosition Pointer to a variable to receive the position
- * @param timestamp Pointer to a variable to receive the timestamp
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
-    clockid_t clockId, int64_t* framePosition, int64_t* timestamp);
 #ifdef __cplusplus
 }
 #endif

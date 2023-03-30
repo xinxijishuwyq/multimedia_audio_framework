@@ -91,12 +91,6 @@ OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer, int32_t* frames)
-{
-    AUDIO_ERR_LOG("This interface is not supported for now.");
-    return AUDIOSTREAM_ERROR_INVALID_PARAM;
-}
-
 OH_AudioStream_Result OH_AudioCapturer_GetStreamId(OH_AudioCapturer* capturer, uint32_t* streamId)
 {
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
@@ -147,13 +141,6 @@ OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer* capture
     audioCapturer->GetCapturerInfo(capturerInfo);
     *sourceType = (OH_AudioStream_SourceType)capturerInfo.sourceType;
     return AUDIOSTREAM_SUCCESS;
-}
-
-OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer,
-    clockid_t clockId, int64_t* framePosition, int64_t* timestamp)
-{
-    AUDIO_ERR_LOG("This interface is not supported for now.");
-    return AUDIOSTREAM_ERROR_INVALID_PARAM;
 }
 
 namespace OHOS {

@@ -91,12 +91,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* rendere
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize)
-{
-    AUDIO_ERR_LOG("This interface is not supported for now.");
-    return AUDIOSTREAM_ERROR_INVALID_PARAM;
-}
-
 OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* renderer, int32_t* rate)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
@@ -142,6 +136,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer
 
     return AUDIOSTREAM_SUCCESS;
 }
+
 OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
     OH_AudioStream_Usage* usage, OH_AudioStream_Content* content)
 {
@@ -153,20 +148,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
     *usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
     *content = (OH_AudioStream_Content)rendererInfo.contentType;
     return AUDIOSTREAM_SUCCESS;
-}
-
-OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int32_t* frames)
-{
-    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    return AUDIOSTREAM_SUCCESS;
-}
-
-OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
-    clockid_t clockId, int64_t* framePosition, int64_t* timestamp)
-{
-    AUDIO_ERR_LOG("This interface is not supported for now.");
-    return AUDIOSTREAM_ERROR_INVALID_PARAM;
 }
 
 namespace OHOS {
