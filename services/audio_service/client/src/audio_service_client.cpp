@@ -1542,9 +1542,7 @@ void AudioServiceClient::OnTimeOut()
         AUDIO_ERR_LOG("AudioServiceClient::OnTimeOut failed: mainLoop == nullptr");
         return;
     }
-    pa_threaded_mainloop_lock(mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
-    pa_threaded_mainloop_unlock(mainLoop);
 }
 
 void AudioServiceClient::SetClientID(int32_t clientPid, int32_t clientUid)
