@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -94,6 +94,7 @@ private:
 const char *g_audioOutTestFilePath = "/data/local/tmp/audio_capture.pcm";
 #endif // CAPTURE_DUMP
 bool AudioCapturerSource::micMuteState_ = false;
+constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
 AudioCapturerSourceInner::AudioCapturerSourceInner()
     : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
@@ -328,11 +329,11 @@ int32_t AudioCapturerSourceInner::Start(void)
     AUDIO_INFO_LOG("Start.");
     if (mKeepRunningLock == nullptr) {
         mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
-            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
     if (mKeepRunningLock != nullptr) {
         AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock lock");
-        mKeepRunningLock->Lock(0); // 0 for lasting.
+        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("mKeepRunningLock is null, start can not work well!");
     }
