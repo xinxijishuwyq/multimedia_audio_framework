@@ -41,8 +41,9 @@ private:
 
 class OHAudioRenderer {
     public:
-        explicit OHAudioRenderer(const AudioRendererOptions &rendererOptions);
+        OHAudioRenderer();
         ~OHAudioRenderer();
+        bool Initialize(const AudioRendererOptions &rendererOptions);
         bool Start();
         bool Pause();
         bool Stop();
@@ -56,8 +57,12 @@ class OHAudioRenderer {
         int32_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
         void GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        int32_t GetBufferDesc(BufferDesc &bufDesc) const;
+        int32_t Enqueue(const BufferDesc &bufDesc) const;
 
         void SetRendererWriteCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
+
+    private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
 };
 }  // namespace AudioStandard

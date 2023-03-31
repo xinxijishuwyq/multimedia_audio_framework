@@ -260,16 +260,16 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
         rendererInfo
     };
 
-    OHAudioRenderer *audioRenderer = new OHAudioRenderer(options);
-    if (audioRenderer->audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("Create OHAudioRenderer failed");
-        delete audioRenderer;
-        audioRenderer = nullptr;
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    OHAudioRenderer *audioRenderer = new OHAudioRenderer();
+    if (audioRenderer->Initialize(options)) {
+        audioRenderer->SetRendererWriteCallback(rendererCallbacks_, userData_);
+        *renderer = (OH_AudioRenderer*)audioRenderer;
+        return AUDIOSTREAM_SUCCESS;
     }
-    audioRenderer->SetRendererWriteCallback(rendererCallbacks_, userData_);
-    *renderer = (OH_AudioRenderer*)audioRenderer;
-    return AUDIOSTREAM_SUCCESS;
+    AUDIO_ERR_LOG("Create OHAudioRenderer failed");
+    delete audioRenderer;
+    audioRenderer = nullptr;
+    return AUDIOSTREAM_ERROR_INVALID_PARAM;
 }
 
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer)
@@ -296,16 +296,16 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer
         capturerInfo
     };
 
-    OHAudioCapturer *audioCapturer = new OHAudioCapturer(options);
-    if (audioCapturer->audioCapturer_ == nullptr) {
-        AUDIO_ERR_LOG("Create OHAudioCapturer failed");
-        delete audioCapturer;
-        audioCapturer = nullptr;
-        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    OHAudioCapturer *audioCapturer = new OHAudioCapturer();
+    if (audioCapturer->Initialize(options)) {
+        audioCapturer->SetCapturerReadCallback(capturerCallbacks_, userData_);
+        *capturer = (OH_AudioCapturer*)audioCapturer;
+        return AUDIOSTREAM_SUCCESS;
     }
-    audioCapturer->SetCapturerReadCallback(capturerCallbacks_, userData_);
-    *capturer = (OH_AudioCapturer*)audioCapturer;
-    return AUDIOSTREAM_SUCCESS;
+    AUDIO_ERR_LOG("Create OHAudioCapturer failed");
+    delete audioCapturer;
+    audioCapturer = nullptr;
+    return AUDIOSTREAM_ERROR_INVALID_PARAM;
 }
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)

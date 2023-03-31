@@ -40,10 +40,10 @@ private:
 
 class OHAudioCapturer {
     public:
-        explicit OHAudioCapturer(const AudioCapturerOptions& capturerOptions);
-
+        OHAudioCapturer();
         ~OHAudioCapturer();
 
+        bool Initialize(const AudioCapturerOptions& capturerOptions);
         bool Start();
         bool Pause();
         bool Stop();
@@ -55,8 +55,12 @@ class OHAudioCapturer {
         AudioSampleFormat GetSampleFormat();
         void GetCapturerInfo(AudioCapturerInfo& capturerInfo);
         void GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        int32_t GetBufferDesc(BufferDesc &bufDesc) const;
+        int32_t Enqueue(const BufferDesc &bufDesc) const;
 
         void SetCapturerReadCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
+
+    private:
         std::unique_ptr<AudioCapturer> audioCapturer_;
 };
 }  // namespace AudioStandard

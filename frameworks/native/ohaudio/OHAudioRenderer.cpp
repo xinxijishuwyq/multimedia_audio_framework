@@ -152,15 +152,23 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
 
 namespace OHOS {
 namespace AudioStandard {
-OHAudioRenderer::OHAudioRenderer(const AudioRendererOptions &rendererOptions)
+OHAudioRenderer::OHAudioRenderer()
 {
-    audioRenderer_ = AudioRenderer::Create(rendererOptions);
-    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client create failed");
+    AUDIO_INFO_LOG("OHAudioRenderer created!");
 }
 
 OHAudioRenderer::~OHAudioRenderer()
 {
     AUDIO_INFO_LOG("OHAudioRenderer destroyed!");
+}
+
+bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
+{
+    audioRenderer_ = AudioRenderer::Create(rendererOptions);
+    if (audioRenderer_ == nullptr) {
+        return false;
+    }
+    return true;
 }
 
 bool OHAudioRenderer::Start()
@@ -244,6 +252,18 @@ void OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     audioRenderer_->GetAudioTime(timestamp, base);
 }
 
+int32_t OHAudioRenderer::GetBufferDesc(BufferDesc &bufDesc) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetBufferDesc(bufDesc);
+}
+
+int32_t OHAudioRenderer::Enqueue(const BufferDesc &bufDesc) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->Enqueue(bufDesc);
+}
+
 void OHAudioRenderer::SetRendererWriteCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
@@ -261,16 +281,15 @@ void OHAudioRenderer::SetRendererWriteCallback(OH_AudioRenderer_Callbacks callba
 void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer* audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
-    CHECK_AND_RETURN_LOG(audioRenderer != nullptr && audioRenderer->audioRenderer_ != nullptr,
-        "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnWriteData != nullptr, "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
-    audioRenderer->audioRenderer_->GetBufferDesc(bufDesc);
+    audioRenderer->GetBufferDesc(bufDesc);
     callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_,
         userData_,
         (void*)bufDesc.buffer,
         bufDesc.bufLength);
-    audioRenderer->audioRenderer_->Enqueue(bufDesc);
+    audioRenderer->Enqueue(bufDesc);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

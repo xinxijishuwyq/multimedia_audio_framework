@@ -146,15 +146,23 @@ OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer* capture
 
 namespace OHOS {
 namespace AudioStandard {
-OHAudioCapturer::OHAudioCapturer(const AudioCapturerOptions& capturerOptions)
+OHAudioCapturer::OHAudioCapturer()
 {
-    audioCapturer_ = AudioCapturer::Create(capturerOptions);
-    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client create failed");
+    AUDIO_INFO_LOG("OHAudioCapturer created!");
 }
 
 OHAudioCapturer::~OHAudioCapturer()
 {
     AUDIO_INFO_LOG("OHAudioCapturer destroyed!");
+}
+
+bool OHAudioCapturer::Initialize(const AudioCapturerOptions& capturerOptions)
+{
+    audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    if (audioCapturer_ == nullptr) {
+        return false;
+    }
+    return true;
 }
 
 bool OHAudioCapturer::Start()
@@ -242,19 +250,30 @@ void OHAudioCapturer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     audioCapturer_->GetAudioTime(timestamp, base);
 }
 
+int32_t OHAudioCapturer::GetBufferDesc(BufferDesc &bufDesc) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->GetBufferDesc(bufDesc);
+}
+
+int32_t OHAudioCapturer::Enqueue(const BufferDesc &bufDesc) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->Enqueue(bufDesc);
+}
+
 void OHAudioCapturerModeCallback::OnReadData(size_t length)
 {
     OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
-    CHECK_AND_RETURN_LOG(audioCapturer != nullptr && audioCapturer->audioCapturer_ != nullptr,
-        "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "capturer client is nullptr");
     CHECK_AND_RETURN_LOG(callbacks_.OH_AudioCapturer_OnReadData != nullptr, "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
-    audioCapturer->audioCapturer_->GetBufferDesc(bufDesc);
+    audioCapturer->GetBufferDesc(bufDesc);
     callbacks_.OH_AudioCapturer_OnReadData(ohAudioCapturer_,
         userData_,
         (void*)bufDesc.buffer,
         bufDesc.bufLength);
-    audioCapturer->audioCapturer_->Enqueue(bufDesc);
+    audioCapturer->Enqueue(bufDesc);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
