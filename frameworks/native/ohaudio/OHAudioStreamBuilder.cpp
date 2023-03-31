@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+#include <memory>
 #include "native_audiostreambuilder.h"
 #include "OHAudioStreamBuilder.h"
-#include <memory>
 #include "OHAudioRenderer.h"
 #include "OHAudioCapturer.h"
 

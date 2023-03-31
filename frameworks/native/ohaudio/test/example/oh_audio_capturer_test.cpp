@@ -22,7 +22,6 @@
 #include <thread>
 #include <chrono>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,8 +91,6 @@ void RecorderTest(char *argv[])
     bool stop = false;
     std::thread stopthread(SleepWaitRecoder, &stop);
     stopthread.detach();
-
-    printf("continue ...\n");
 
     int timeLeft = AudioTestConstants::RECODER_TIME;
     while (!stop) {
