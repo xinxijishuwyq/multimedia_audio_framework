@@ -304,6 +304,8 @@ private:
 
     void SetEarpieceState();
 
+    void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

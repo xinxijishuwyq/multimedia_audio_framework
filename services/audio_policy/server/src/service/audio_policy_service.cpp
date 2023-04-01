@@ -24,6 +24,8 @@
 #include "audio_log.h"
 #include "audio_focus_parser.h"
 #include "audio_manager_listener_stub.h"
+#include "device_manager.h"
+#include "device_init_callback.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
@@ -38,6 +40,7 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 static int32_t startDeviceId = 1;
@@ -458,6 +461,7 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
     };
     connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
         connectedDevices_.end());
+    UpdateDisplayName(remoteDeviceDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), remoteDeviceDescriptor);
     return SUCCESS;
 }
@@ -697,7 +701,6 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     DeviceType deviceType)
 {
     AudioModuleInfo audioModuleInfo = {};
-
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
         audioModuleInfo.format = "s16le"; // 16bit little endian
@@ -1159,6 +1162,7 @@ void AudioPolicyService::SetEarpieceState()
         if (itr == connectedDevices_.end()) {
             sptr<AudioDeviceDescriptor> audioDescriptor =
                 new(std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+            UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
             AUDIO_INFO_LOG("SetAudioScene: Add earpiece to connectedDevices_");
         }
@@ -1279,6 +1283,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         desc.push_back(audioDescriptor);
         if (isConnected) {
             audioDescriptor->deviceId_ = startDeviceId++;
+            UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
         }
 
@@ -1300,6 +1305,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         desc.push_back(audioDescriptor);
         if (isConnected) {
             audioDescriptor->deviceId_ = startDeviceId++;
+            UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
         }
     } else {
@@ -1309,6 +1315,7 @@ void AudioPolicyService::UpdateConnectedDevices(const AudioDeviceDescriptor &dev
         desc.push_back(audioDescriptor);
         if (isConnected) {
             audioDescriptor->deviceId_ = startDeviceId++;
+            UpdateDisplayName(audioDescriptor);
             connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
         }
     }
@@ -1500,6 +1507,34 @@ inline void RemoveDeviceInRouterMap(std::string networkId,
     }
 }
 
+void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("UpdateDisplayName init device failed");
+        return;
+    }
+    if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
+        DistributedHardware::DmDeviceInfo localDevice;
+        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) == SUCCESS) {
+            AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", localDevice.deviceName);
+            deviceDescriptor->displayName_ = localDevice.deviceName;
+        };
+    } else {
+        std::vector<DistributedHardware::DmDeviceInfo> deviceList;
+        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
+            for (auto deviceInfo : deviceList) {
+                if (deviceInfo.networkId == (deviceDescriptor->networkId_).c_str()) {
+                    AUDIO_INFO_LOG("UpdateDisplayName remote name [%{public}s]", deviceInfo.deviceName);
+                    deviceDescriptor->displayName_ = deviceInfo.deviceName;
+                    break;
+                }
+            }
+        };
+    }
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 {
     AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
@@ -1661,6 +1696,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
     }
 
     audioDescriptor->deviceId_ = startDeviceId++;
+    UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
 }
 
@@ -1795,6 +1831,7 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.displayName = desc->displayName_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;

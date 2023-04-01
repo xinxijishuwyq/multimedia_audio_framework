@@ -51,6 +51,7 @@ void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParce
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels);
     data.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
     data.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
+    data.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
 }
 
 void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
@@ -113,6 +114,7 @@ void AudioCapturerStateChangeListenerCallback::UpdateDeviceInfo(
             audioCapturerChangeInfos[i]->clientUID = 0;
             audioCapturerChangeInfos[i]->capturerState = CAPTURER_INVALID;
             audioCapturerChangeInfos[i]->inputDeviceInfo.networkId = "";
+            audioCapturerChangeInfos[i]->inputDeviceInfo.displayName = "";
         }
     }
 }
