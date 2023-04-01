@@ -83,10 +83,6 @@ public:
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
-    std::string GetRemoteDisplayName(std::string networkId);
-
-    std::string GetLocalDisplayName();
-
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
@@ -307,6 +303,8 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetEarpieceState();
+
+    void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

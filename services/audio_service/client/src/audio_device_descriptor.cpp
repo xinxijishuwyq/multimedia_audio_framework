@@ -32,6 +32,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     channelMasks_ = 0;
     deviceName_ = "";
     macAddress_ = "";
+    displayName_ = "";
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
@@ -45,6 +46,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) :
     volumeGroupId_ = 0;
     interruptGroupId_ = 0;
     networkId_ = LOCAL_NETWORK_ID;
+    displayName_ = "";
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor()
