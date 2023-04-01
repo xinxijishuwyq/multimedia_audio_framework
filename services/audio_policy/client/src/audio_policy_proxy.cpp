@@ -1514,6 +1514,8 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->sessionId = reply.ReadInt32();
     rendererChangeInfo->rendererState = static_cast<RendererState>(reply.ReadInt32());
     rendererChangeInfo->clientUID = reply.ReadInt32();
+    rendererChangeInfo->tokenId = reply.ReadInt32();
+
     rendererChangeInfo->rendererInfo.contentType = static_cast<ContentType>(reply.ReadInt32());
     rendererChangeInfo->rendererInfo.streamUsage = static_cast<StreamUsage>(reply.ReadInt32());
     rendererChangeInfo->rendererInfo.rendererFlags = reply.ReadInt32();
@@ -1530,6 +1532,7 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.deviceName = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.macAddress = reply.ReadString();
+    rendererChangeInfo->outputDeviceInfo.displayName = reply.ReadString();
 }
 
 void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
@@ -1553,6 +1556,7 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceName = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.macAddress = reply.ReadString();
+    capturerChangeInfo->inputDeviceInfo.displayName = reply.ReadString();
 }
 
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(

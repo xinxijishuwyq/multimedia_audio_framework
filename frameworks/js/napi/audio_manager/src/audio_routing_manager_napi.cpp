@@ -314,6 +314,11 @@ static void ParseAudioDeviceDescriptor(napi_env env, napi_value root,
         selectedAudioDevice->networkId_ = std::string(buffer);
     }
 
+    if (napi_get_named_property(env, root, "displayName", &tempValue) == napi_ok) {
+        napi_get_value_string_utf8(env, tempValue, buffer, SIZE, &res);
+        selectedAudioDevice->displayName_ = std::string(buffer);
+    }
+
     if (napi_get_named_property(env, root, "interruptGroupId", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         selectedAudioDevice->interruptGroupId_ = intValue;
@@ -398,6 +403,8 @@ static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors
             SetValueString(env, "address", deviceDescriptors[i]->macAddress_, valueParam);
             SetValueString(env, "networkId", static_cast<std::string>(
                 deviceDescriptors[i]->networkId_), valueParam);
+            SetValueString(env, "displayName", static_cast<std::string>(
+                deviceDescriptors[i]->displayName_), valueParam);
             SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(
                 deviceDescriptors[i]->interruptGroupId_), valueParam);
             SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(

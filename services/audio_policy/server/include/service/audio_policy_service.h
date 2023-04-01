@@ -83,6 +83,10 @@ public:
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
+    std::string GetRemoteDisplayName(std::string networkId);
+
+    std::string GetLocalDisplayName();
+
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 

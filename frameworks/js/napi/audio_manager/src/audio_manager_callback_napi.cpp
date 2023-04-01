@@ -84,6 +84,7 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
             SetValueInt32(env, "id", static_cast<int32_t>(action.deviceDescriptors[i]->deviceId_), value);
             SetValueString(env, "name", action.deviceDescriptors[i]->deviceName_, value);
             SetValueString(env, "address", action.deviceDescriptors[i]->macAddress_, value);
+            SetValueString(env, "displayName", action.deviceDescriptors[i]->displayName_, value);
 
             napi_value sampleRates;
             napi_create_array_with_length(env, 1, &sampleRates);
