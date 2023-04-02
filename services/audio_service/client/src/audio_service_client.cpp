@@ -2175,7 +2175,8 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     pa_cvolume_set(&cv, client.volumeChannels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, nullptr, nullptr));
 
-    AUDIO_INFO_LOG("Applied volume : %{public}f, pa volume: %{public}d", vol, volume);
+    AUDIO_INFO_LOG("Applied volume %{public}f, systemVolume %{public}f, volumeFactor %{public}f", vol, systemVolumeDb,
+        client.mVolumeFactor);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1,

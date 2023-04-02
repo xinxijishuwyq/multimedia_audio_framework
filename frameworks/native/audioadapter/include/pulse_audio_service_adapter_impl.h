@@ -39,6 +39,7 @@ public:
     int32_t SetMute(AudioStreamType streamType, bool mute) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
+    bool SetSinkMute(const std::string &sinkName, bool isMute) override;
     bool IsMute(AudioStreamType streamType) override;
     bool IsStreamActive(AudioStreamType streamType) override;
     std::vector<SinkInput> GetAllSinkInputs() override;

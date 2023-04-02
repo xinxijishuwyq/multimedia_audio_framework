@@ -98,6 +98,8 @@ public:
 
     int32_t SuspendAudioDevice(std::string &name, bool isSuspend);
 
+    bool SetSinkMute(const std::string &sinkName, bool isMute);
+
     float CalculateVolumeDb(int32_t volumeLevel);
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);

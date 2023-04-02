@@ -62,7 +62,7 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
 
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
         return;

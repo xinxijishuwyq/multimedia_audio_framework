@@ -160,6 +160,14 @@ public:
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
 
     /**
+     * @brief mute the device or unmute
+     *
+     * @param sinkName Name of the audio sink
+     * @return Returns {@link true} if mute is success; returns false otherwise.
+     */
+    virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
+
+    /**
      * @brief returns if given streamType is set to mute
      *
      * @param streamType the streamType for which mute status will be fetched, streamType defined in{@link audio_info.h}

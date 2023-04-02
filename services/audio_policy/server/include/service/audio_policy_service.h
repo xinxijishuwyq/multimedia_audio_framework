@@ -57,7 +57,7 @@ public:
     void InitKVStore();
     bool ConnectServiceAdapter();
 
-    const sptr<IStandardAudioService> GetAudioPolicyServiceProxy();
+    const sptr<IStandardAudioService> GetAudioServerProxy();
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
 
@@ -298,9 +298,13 @@ private:
 
     int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
 
+    int32_t HandleA2dpDevice(DeviceType deviceType);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
+
+    void KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType);
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
@@ -364,7 +368,7 @@ private:
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
-    int32_t switchVolumeDelay_ = 500000; // us
+    int32_t switchVolumeDelay_ = 200000; // us
     int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};

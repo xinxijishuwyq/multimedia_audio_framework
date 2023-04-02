@@ -265,6 +265,16 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
     return audioServiceAdapter_->SuspendAudioDevice(portName, isSuspend);
 }
 
+bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute)
+{
+    if (!audioServiceAdapter_) {
+        AUDIO_ERR_LOG("SetSinkMute audio adapter null");
+        return false;
+    }
+
+    return audioServiceAdapter_->SetSinkMute(sinkName, isMute);
+}
+
 int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name)
 {
     if (!audioServiceAdapter_) {
@@ -275,7 +285,6 @@ int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceT
         case DeviceRole::INPUT_DEVICE:
             return audioServiceAdapter_->SetDefaultSource(name);
         case DeviceRole::OUTPUT_DEVICE: {
-            SetVolumeForSwitchDevice(deviceType);
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return audioServiceAdapter_->SetDefaultSink(name);
         }
@@ -302,7 +311,6 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
-            SetVolumeForSwitchDevice(deviceType);
             AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
             return audioServiceAdapter_->SetDefaultSink(name);
         }

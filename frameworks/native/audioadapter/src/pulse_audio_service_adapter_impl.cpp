@@ -215,6 +215,25 @@ int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, 
     return SUCCESS;
 }
 
+bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute)
+{
+    AUDIO_INFO_LOG("MuteAudioDevice: [%{public}s] : [%{public}d]", sinkName.c_str(), isMute);
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    int muteFlag = isMute ? 1 : 0;
+    pa_operation *operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag, nullptr, nullptr);
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_suspend_sink_by_name failed!");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return false;
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+
+    return true;
+}
+
 int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
 {
     pa_threaded_mainloop_lock(mMainLoop);
@@ -973,8 +992,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
             pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
         }
     }
-    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume : %{public}f for stream : %{public}s, volumeInt%{public}d",
-        vol, i->name, volume);
+    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"
+        " volumeDbCb  %{public}f ", vol, uid, volumeFactor, volumeDbCb);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamID, "VOLUME", vol,
