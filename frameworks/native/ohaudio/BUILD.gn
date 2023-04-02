@@ -1,0 +1,142 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
+
+config("audio_config") {
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/inner_api/native/audiorenderer/include",
+    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocapturer/include",
+    "${audio_fwk_path}/frameworks/native/audiocapturer/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiostream/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
+    "${audio_fwk_path}/services/audio_service/client/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+}
+
+ohos_shared_library("ohaudio") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+  }
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/kits/c/",
+    "${audio_fwk_path}/interfaces/kits/c/common/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+  ]
+
+  configs = [ ":audio_config" ]
+
+  sources = [
+    "${audio_fwk_path}/frameworks/native/ohaudio/OHAudioCapturer.cpp",
+    "${audio_fwk_path}/frameworks/native/ohaudio/OHAudioRenderer.cpp",
+    "${audio_fwk_path}/frameworks/native/ohaudio/OHAudioStreamBuilder.cpp",
+  ]
+
+  deps = [
+    "${audio_fwk_path}/frameworks/native/audiocapturer:audio_capturer",
+    "${audio_fwk_path}/frameworks/native/audiorenderer:audio_renderer",
+  ]
+  cflags = [ "-Werror" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  output_name = "ohaudio"
+  output_extension = "so"
+  subsystem_name = "multimedia"
+  part_name = "multimedia_audio_framework"
+}
+
+group("oh_audio_renderer_test_packages") {
+  deps = [
+    ":oh_audio_capturer_test",
+    ":oh_audio_renderer_test",
+  ]
+}
+
+ohos_executable("oh_audio_capturer_test") {
+  install_enable = false
+
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/kits/c/",
+    "${audio_fwk_path}/interfaces/kits/c/common/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+  ]
+
+  sources = [ "test/example/oh_audio_capturer_test.cpp" ]
+
+  configs = [ ":audio_config" ]
+
+  deps = [ ":ohaudio" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("oh_audio_renderer_test") {
+  install_enable = false
+
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/kits/c/",
+    "${audio_fwk_path}/interfaces/kits/c/common/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
+    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+  ]
+
+  sources = [ "test/example/oh_audio_renderer_test.cpp" ]
+
+  configs = [ ":audio_config" ]
+
+  deps = [ ":ohaudio" ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  part_name = "multimedia_audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_ndk_headers("ohaudio_header") {
+  dest_dir = "$ndk_headers_out_dir/ohaudio"
+  sources = [
+    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/native_audiocapturer.h",
+    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/native_audiorenderer.h",
+    "${audio_fwk_path}/interfaces/kits/c/common/native_audiostream_base.h",
+    "${audio_fwk_path}/interfaces/kits/c/common/native_audiostreambuilder.h",
+  ]
+}
+
+ohos_ndk_library("libohaudio_ndk") {
+  output_name = "ohaudio"
+  output_extension = "so"
+  ndk_description_file = "./ohaudio.ndk.json"
+  system_capability = "SystemCapability.Multimedia.Audio.Core"
+  system_capability_headers = [
+    "ohaudio/native_audiostream_base.h",
+    "ohaudio/native_audiostreambuilder.h",
+    "ohaudio/native_audiorenderer.h",
+    "ohaudio/native_audiocapturer.h",
+  ]
+}
