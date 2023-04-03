@@ -140,6 +140,7 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
     SetValueString(env, "name", deviceInfo.deviceName, valueParam);
     SetValueString(env, "address", deviceInfo.macAddress, valueParam);
     SetValueString(env, "networkId", deviceInfo.networkId, valueParam);
+    SetValueString(env, "displayName", deviceInfo.displayName, valueParam);
 
     napi_value value = nullptr;
     napi_value sampleRates;

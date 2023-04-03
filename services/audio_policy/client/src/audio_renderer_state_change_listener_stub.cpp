@@ -40,6 +40,8 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     rendererChangeInfo->sessionId = data.ReadInt32();
     rendererChangeInfo->rendererState = static_cast<RendererState>(data.ReadInt32());
     rendererChangeInfo->clientUID = data.ReadInt32();
+    rendererChangeInfo->tokenId = data.ReadInt32();
+
     rendererChangeInfo->rendererInfo.contentType = static_cast<ContentType>(data.ReadInt32());
     rendererChangeInfo->rendererInfo.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     rendererChangeInfo->rendererInfo.rendererFlags = data.ReadInt32();
@@ -56,6 +58,7 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.deviceName = data.ReadString();
     rendererChangeInfo->outputDeviceInfo.macAddress = data.ReadString();
+    rendererChangeInfo->outputDeviceInfo.displayName = data.ReadString();
 
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, sessionid = %{public}d", rendererChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererState = %{public}d",

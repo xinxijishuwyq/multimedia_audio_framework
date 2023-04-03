@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "audio_renderer_state_change_listener_proxy.h"
 #include "audio_client_tracker_callback_proxy.h"
+#include "ipc_skeleton.h"
 
 #include "i_standard_renderer_state_change_listener.h"
 #include "i_standard_capturer_state_change_listener.h"
@@ -154,6 +155,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     }
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
@@ -255,6 +257,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 ERR_MEMORY_ALLOC_FAILED, "AudioStreamCollector::RendererChangeInfo Memory Allocation Failed");
             RendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
             RendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+            RendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
             RendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
             RendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
             RendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;

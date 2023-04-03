@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,6 +48,7 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const uint32_t PARAM_VALUE_LENTH = 10;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
@@ -532,12 +533,12 @@ int32_t AudioRendererSinkInner::Start(void)
     Trace trace("Sink::Start");
     if (mKeepRunningLock == nullptr) {
         mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
-            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
     if (mKeepRunningLock != nullptr) {
         AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock lock");
-        mKeepRunningLock->Lock(0); // 0 for lasting.
+        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
     }

@@ -57,7 +57,7 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
-static void SetValueString(const napi_env &env, const std::string &fieldStr, const std::string stringValue,
+static void SetValueString(const napi_env &env, const std::string &fieldStr, const std::string &stringValue,
     napi_value &result)
 {
     napi_value value = nullptr;
@@ -84,6 +84,7 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
             SetValueInt32(env, "id", static_cast<int32_t>(action.deviceDescriptors[i]->deviceId_), value);
             SetValueString(env, "name", action.deviceDescriptors[i]->deviceName_, value);
             SetValueString(env, "address", action.deviceDescriptors[i]->macAddress_, value);
+            SetValueString(env, "displayName", action.deviceDescriptors[i]->displayName_, value);
 
             napi_value sampleRates;
             napi_create_array_with_length(env, 1, &sampleRates);

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -28,6 +28,9 @@ group("audio_unit_test") {
     "../frameworks/native/audiopolicy/test/unittest/volume_change_test:audio_volume_change_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
     "../frameworks/native/audiostream/test/unittest/stream_test:audio_stream_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
     "../frameworks/native/opensles/test/unittest/opensles_player_test:audio_opensles_player_unit_test",
     "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",
     "../services/audio_service/test/unittest:audio_balance_test",

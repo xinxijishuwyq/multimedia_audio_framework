@@ -55,6 +55,7 @@ void AudioCapturerStateChangeListenerStub::ReadAudioCapturerChangeInfo(MessagePa
     capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceName = data.ReadString();
     capturerChangeInfo->inputDeviceInfo.macAddress = data.ReadString();
+    capturerChangeInfo->inputDeviceInfo.displayName = data.ReadString();
 
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, sessionid = %{public}d", capturerChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, capturerState = %{public}d",
