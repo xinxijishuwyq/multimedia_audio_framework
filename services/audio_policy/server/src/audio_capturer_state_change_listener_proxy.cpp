@@ -114,7 +114,6 @@ void AudioCapturerStateChangeListenerCallback::UpdateDeviceInfo(
             audioCapturerChangeInfos[i]->clientUID = 0;
             audioCapturerChangeInfos[i]->capturerState = CAPTURER_INVALID;
             audioCapturerChangeInfos[i]->inputDeviceInfo.networkId = "";
-            audioCapturerChangeInfos[i]->inputDeviceInfo.displayName = "";
         }
     }
 }

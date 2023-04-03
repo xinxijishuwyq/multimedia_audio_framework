@@ -1525,7 +1525,8 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
         if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
             for (auto deviceInfo : deviceList) {
-                if (deviceInfo.networkId == (deviceDescriptor->networkId_).c_str()) {
+                std::string strNetworkId(deviceInfo.networkId);
+                if (strNetworkId == deviceDescriptor->networkId_) {
                     AUDIO_INFO_LOG("UpdateDisplayName remote name [%{public}s]", deviceInfo.deviceName);
                     deviceDescriptor->displayName_ = deviceInfo.deviceName;
                     break;
