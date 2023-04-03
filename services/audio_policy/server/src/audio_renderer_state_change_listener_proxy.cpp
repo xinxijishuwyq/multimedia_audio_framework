@@ -117,7 +117,6 @@ void AudioRendererStateChangeListenerCallback::UpdateDeviceInfo(
             audioRendererChangeInfos[i]->clientUID = 0;
             audioRendererChangeInfos[i]->rendererState = RENDERER_INVALID;
             audioRendererChangeInfos[i]->outputDeviceInfo.networkId = "";
-            audioRendererChangeInfos[i]->outputDeviceInfo.displayName = "";
         }
     }
 }
