@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,17 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_OPENESLES_CAPTURE_UNIT_TEST_H
-#define AUDIO_OPENESLES_CAPTURE_UNIT_TEST_H
+#ifndef AUDIO_OPENSLES_PLAYER_UNIT_TEST_H
+#define AUDIO_OPENSLES_PLAYER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "common.h"
-#include "audio_errors.h"
-#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioOpenslesCaptureUnitTest : public testing::Test {
+
+class AudioOpenslesPlayerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -36,4 +34,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_OPENESLES_CAPTURE_UNIT_TEST_H
+#endif // AUDIO_OPENSLES_PLAYER_UNIT_TEST_H

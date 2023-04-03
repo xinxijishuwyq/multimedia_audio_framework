@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,12 +19,14 @@
 #include <OpenSLES.h>
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
-#include <audioplayer_adapter.h>
-#include<audiocapturer_adapter.h>
+
 #include <iostream>
 #include <cstdlib>
 #include <stddef.h>
+
 #include "audio_log.h"
+#include "audioplayer_adapter.h"
+#include "audiocapturer_adapter.h"
 
 struct CEngine;
 
