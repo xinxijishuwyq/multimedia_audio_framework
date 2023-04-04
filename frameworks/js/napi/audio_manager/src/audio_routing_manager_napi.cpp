@@ -384,12 +384,17 @@ static void SetValueString(const napi_env& env, const std::string& fieldStr, con
 }
 
 static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors, napi_env env, napi_value* result,
-    napi_value valueParam)
+    int32_t arrayLength, napi_value valueParam)
 {
     size_t size = deviceDescriptors.size();
     HiLog::Info(LABEL, "number of devices = %{public}zu", size);
 
-    napi_create_array_with_length(env, size, &result[PARAM1]);
+    if (arrayLength > PARAM1) {
+        napi_create_array_with_length(env, size, &result[PARAM1]);
+    } else {
+        HiLog::Error(LABEL, "ERROR: Array access out of bounds, result size is %{public}d", arrayLength);
+        return;
+    }
     for (size_t i = 0; i < size; i++) {
         if (deviceDescriptors[i] != nullptr) {
             (void)napi_create_object(env, &valueParam);
@@ -442,7 +447,7 @@ static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, vo
     }
     napi_value result[ARGS_TWO] = {0};
     napi_value valueParam = nullptr;
-    SetDevicesInfo(asyncContext->deviceDescriptors, env, result, valueParam);
+    SetDevicesInfo(asyncContext->deviceDescriptors, env, result, ARGS_TWO, valueParam);
 
     napi_get_undefined(env, &result[PARAM0]);
     if (!asyncContext->status) {
@@ -609,7 +614,7 @@ static void GetActiveOutputDeviceAsyncCallbackComplete(napi_env env, napi_status
         HiLog::Error(LABEL, "ERROR: AudioRoutingManagerAsyncContext* is Null!");
         return;
     }
-    SetDevicesInfo(asyncContext->outDeviceDescriptors, env, result, valueParam);
+    SetDevicesInfo(asyncContext->outDeviceDescriptors, env, result, ARGS_TWO, valueParam);
 
     napi_get_undefined(env, &result[PARAM0]);
     if (!asyncContext->status) {
@@ -682,7 +687,7 @@ static void GetPreferOutputDeviceForRendererInfoAsyncCallbackComplete(napi_env e
         HiLog::Error(LABEL, "ERROR: AudioRoutingManagerAsyncContext* is Null!");
         return;
     }
-    SetDevicesInfo(asyncContext->outDeviceDescriptors, env, result, valueParam);
+    SetDevicesInfo(asyncContext->outDeviceDescriptors, env, result, ARGS_TWO, valueParam);
 
     napi_get_undefined(env, &result[PARAM0]);
     if (!asyncContext->status) {
