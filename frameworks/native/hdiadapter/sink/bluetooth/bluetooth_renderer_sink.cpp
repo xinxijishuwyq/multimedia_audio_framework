@@ -174,17 +174,6 @@ void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
 {
     AUDIO_INFO_LOG("SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
-    AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("SetAudioParameter failed, audioAdapter_ is null");
-        return;
-    } else {
-        int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("SetAudioParameter for adapter failed, error code: %d", ret);
-        }
-    }
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("SetAudioParameter for render failed, audioRender_ is null");
         return;
