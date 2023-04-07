@@ -506,13 +506,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 bool AudioStream::StopAudioStream()
 {
     AUDIO_INFO_LOG("AudioStream: begin StopAudioStream for sessionId %{public}d", sessionId_);
-    if (state_ == PAUSED) {
-        state_ = STOPPED;
-        AUDIO_INFO_LOG("StopAudioStream SUCCESS");
-        return true;
-    }
-
-    if (state_ != RUNNING) {
+    if ((state_ != RUNNING) && (state_ != PAUSED)) {
         AUDIO_ERR_LOG("StopAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
     }
