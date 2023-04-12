@@ -118,6 +118,7 @@ ohos_prebuilt_etc("audio_service_init") {
 
 config("audio_service_config") {
   visibility = [ ":*" ]
+  visibility += [ "//foundation/multimedia/audio_framework/test/fuzztest/*" ]
 
   include_dirs = [
     "common/include",
