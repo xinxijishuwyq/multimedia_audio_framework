@@ -195,10 +195,10 @@ bool OHAudioCapturer::Release()
     return audioCapturer_->Release();
 }
 
-void OHAudioCapturer::GetStreamId(uint32_t &sessionID)
+void OHAudioCapturer::GetStreamId(uint32_t &streamId)
 {
     CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client is nullptr");
-    audioCapturer_->GetAudioStreamId(sessionID);
+    audioCapturer_->GetAudioStreamId(streamId);
 }
 
 AudioChannel OHAudioCapturer::GetChannelCount()
