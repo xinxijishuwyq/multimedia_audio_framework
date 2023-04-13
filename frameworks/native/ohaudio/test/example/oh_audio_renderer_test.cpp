@@ -35,6 +35,8 @@ namespace AudioTestConstants {
 std::string g_filePath = "/data/data/oh_test_audio.pcm";
 FILE* g_file = nullptr;
 bool g_readEnd = false;
+int32_t g_samplingRate = 48000;
+int32_t g_channelCount = 2;
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
@@ -64,16 +66,13 @@ void PlayerTest(char *argv[])
     ret = OH_AudioStreamBuilder_Create(&builder, type);
 
     // 2. set params and callbacks
-    int32_t samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
-    int32_t channelCount = atoi(argv[AudioTestConstants::THIRD_ARG_IDX]);
-    OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
-    void* userData = nullptr;
-    ret = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, userData);
-    printf("start setcallback: %d \n", ret);
+    ret = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
+    printf("setcallback ret: %d \n", ret);
 
     // 3. create OH_AudioRenderer
     OH_AudioRenderer* audioRenderer;
@@ -82,7 +81,7 @@ void PlayerTest(char *argv[])
 
     // 4. start
     ret = OH_AudioRenderer_Start(audioRenderer);
-    std::cout << ret <<std::endl;
+    printf("start ret: %d \n", ret);
 
     int timer = 0;
     while (!g_readEnd) {
@@ -92,11 +91,13 @@ void PlayerTest(char *argv[])
 
     // 5. stop and release client
     ret = OH_AudioRenderer_Stop(audioRenderer);
+    printf("stop ret: %d \n", ret);
     ret = OH_AudioRenderer_Release(audioRenderer);
-    printf("play end \n");
+    printf("release ret: %d \n", ret);
 
     // 6. destroy the builder
     ret = OH_AudioStreamBuilder_Destroy(builder);
+    printf("destroy builder ret: %d \n", ret);
 }
 
 int main(int argc, char *argv[])
@@ -112,6 +113,8 @@ int main(int argc, char *argv[])
     printf("argv[2]=%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
     printf("argv[3]=%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
 
+    g_samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
+    g_channelCount = atoi(argv[AudioTestConstants::THIRD_ARG_IDX]);
     g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
     printf("filePATH: %s \n", g_filePath.c_str());
 
