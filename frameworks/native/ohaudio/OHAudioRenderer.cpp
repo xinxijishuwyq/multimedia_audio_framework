@@ -213,10 +213,10 @@ AudioRendererRate OHAudioRenderer::GetRenderRate()
     return audioRenderer_->GetRenderRate();
 }
 
-void OHAudioRenderer::GetStreamId(uint32_t &sessionID)
+void OHAudioRenderer::GetStreamId(uint32_t &streamId)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
-    audioRenderer_->GetAudioStreamId(sessionID);
+    audioRenderer_->GetAudioStreamId(streamId);
 }
 
 AudioChannel OHAudioRenderer::GetChannelCount()

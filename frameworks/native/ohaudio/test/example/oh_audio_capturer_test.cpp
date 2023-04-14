@@ -36,6 +36,8 @@ namespace AudioTestConstants {
 
 std::string g_filePath = "/data/data/oh_test_audio.pcm";
 FILE* g_file = nullptr;
+int32_t g_samplingRate = 48000;
+int32_t g_channelCount = 2;
 
 static int32_t AudioCapturerOnReadData(OH_AudioCapturer* capturer,
     void* userData,
@@ -68,15 +70,12 @@ void RecorderTest(char *argv[])
     printf("create builder: %d \n", ret);
 
     // 2. set params and callbacks
-    int32_t samplingRate = atoi(argv[AudioTestConstants::FIRST_ARG_IDX]);
-    int32_t channelCount = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
-    OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
 
     OH_AudioCapturer_Callbacks callbacks;
     callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
-    void* userData = nullptr;
-    ret = OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, userData);
+    ret = OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, nullptr);
     printf("setcallback: %d \n", ret);
 
     // 3. create OH_AudioCapturer
@@ -101,26 +100,31 @@ void RecorderTest(char *argv[])
 
     // 5. stop and release client
     ret = OH_AudioCapturer_Stop(audioCapturer);
+    printf("stop ret: %d \n", ret);
     ret = OH_AudioCapturer_Release(audioCapturer);
-    printf("recording end \n");
+    printf("release ret: %d \n", ret);
 
     // 6. destroy the builder
     ret = OH_AudioStreamBuilder_Destroy(builder);
+    printf("destroy builder ret: %d \n", ret);
 }
 
 
 int main(int argc, char *argv[])
 {
-    printf("argc=%d ", argc);
-    printf("argv[1]=%s ", argv[AudioTestConstants::FIRST_ARG_IDX]);
-    printf("argv[2]=%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
-    printf("argv[3]=%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
-
     if ((argv == nullptr) || (argc <= AudioTestConstants::THIRD_ARG_IDX)) {
         printf("input parms wrong. input format: samplingRate channelCount \n");
         printf("input demo: ./oh_audio_capturer_test 48000 2 \n");
         return 0;
     }
+
+    printf("argc=%d ", argc);
+    printf("argv[1]=%s ", argv[AudioTestConstants::FIRST_ARG_IDX]);
+    printf("argv[2]=%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
+    printf("argv[3]=%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
+
+    g_samplingRate = atoi(argv[AudioTestConstants::FIRST_ARG_IDX]);
+    g_channelCount = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
 
     g_file = fopen(g_filePath.c_str(), "wb");
     if (g_file == nullptr) {

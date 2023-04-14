@@ -292,6 +292,8 @@ ohos_shared_library("audio_policy_client") {
   ]
   subsystem_name = "multimedia"
   part_name = "multimedia_audio_framework"
+
+  ldflags = [ "-Wl,-Bsymbolic" ]
 }
 
 group("audio_policy_test_packages") {
