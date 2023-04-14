@@ -88,7 +88,7 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
             SetValueString(env, "networkId", action.deviceDescriptors[i]->networkId_, value);
             SetValueInt32(env, "interruptGroupId",
                 static_cast<int32_t>(action.deviceDescriptors[i]->interruptGroupId_), value);
-            SetValueInt32(env, "volumeGroupId_",
+            SetValueInt32(env, "volumeGroupId",
                 static_cast<int32_t>(action.deviceDescriptors[i]->volumeGroupId_), value);
 
             napi_value sampleRates;
