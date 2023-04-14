@@ -85,6 +85,11 @@ static void NativeDeviceChangeActionToJsObj(const napi_env& env, napi_value& jsO
             SetValueString(env, "name", action.deviceDescriptors[i]->deviceName_, value);
             SetValueString(env, "address", action.deviceDescriptors[i]->macAddress_, value);
             SetValueString(env, "displayName", action.deviceDescriptors[i]->displayName_, value);
+            SetValueString(env, "networkId", action.deviceDescriptors[i]->networkId_, value);
+            SetValueInt32(env, "volumeGroupId",
+                static_cast<int32_t>(action.deviceDescriptors[i]->volumeGroupId_), value);
+            SetValueInt32(env, "volumeGroupId_",
+                static_cast<int32_t>(action.deviceDescriptors[i]->volumeGroupId_), value);
 
             napi_value sampleRates;
             napi_create_array_with_length(env, 1, &sampleRates);

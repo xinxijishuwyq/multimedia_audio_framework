@@ -847,6 +847,8 @@ struct DeviceInfo {
     AudioStreamInfo audioStreamInfo;
     std::string networkId;
     std::string displayName;
+    int32_t interruptGroupId;
+    int32_t volumeGroupId;
 };
 
 enum StreamSetState {

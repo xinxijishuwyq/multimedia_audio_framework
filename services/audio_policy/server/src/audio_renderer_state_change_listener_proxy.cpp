@@ -55,6 +55,9 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
     data.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
     data.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
+    data.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
 }
 
 void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
