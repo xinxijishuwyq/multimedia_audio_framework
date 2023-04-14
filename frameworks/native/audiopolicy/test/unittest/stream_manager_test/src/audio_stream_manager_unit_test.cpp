@@ -38,7 +38,7 @@ namespace {
     constexpr int32_t VALUE_NEGATIVE = -1;
     constexpr int32_t RENDERER_FLAG = 0;
     constexpr int32_t CAPTURER_FLAG = 0;
-    constexpr int32_t WAIT_TIME = 2;
+    constexpr int32_t WAIT_TIME = 3;
     constexpr int32_t VALUE_HUNDRED = 100;
     std::string g_callbackName("");
     std::mutex g_mutex;
@@ -289,6 +289,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(1, audioRendererChangeInfos[0]->rendererState);
+    EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
     audioRendererChangeInfos.clear();
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
@@ -336,6 +337,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
+    EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
 
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
@@ -373,6 +375,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(3, audioRendererChangeInfos[0]->rendererState);
+    EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
@@ -442,6 +445,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
     EXPECT_EQ(2, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
     EXPECT_EQ(2, audioRendererChangeInfos[1]->rendererState);
+    EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
 
     bool isStopped = audioRenderer1->Stop();
     EXPECT_EQ(true, isStopped);
@@ -452,6 +456,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
     EXPECT_EQ(2, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(3, audioRendererChangeInfos[0]->rendererState);
     EXPECT_EQ(2, audioRendererChangeInfos[1]->rendererState);
+    EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
 
     isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);

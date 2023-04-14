@@ -299,4 +299,64 @@ describe("AudioRoutingManagerJsTest", function () {
     }
   })
 
+  /*
+   * @tc.name:getdevice001
+   * @tc.desc:getdevice - callback
+   * @tc.type: FUNC
+   * @tc.require: I6C9VA
+   */
+  it("getdevice001", 0, async function (done) {
+    let routingManager = null;
+    try {
+      routingManager = audio.getAudioManager().getRoutingManager();
+      expect(true).assertTrue();
+      done();
+    } catch (e) {
+      console.error(`${TAG} getdevice001 ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+      return;
+    }
+
+    routingManager.getDevices(audio.DeviceFlag.INPUT_DEVICES_FLAG, (err, AudioDeviceDescriptors)=>{
+      if (err) {
+        console.error(`${TAG} first getDevices ERROR: ${JSON.stringify(err)}`);
+        expect(false).assertTrue();
+        done();
+        return;
+      }
+      console.info(`${TAG} getDevices001 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      expect(AudioDeviceDescriptors.length).assertLarger(0);
+      for (let i = 0; i < AudioDeviceDescriptors.length; i++) {
+        expect(AudioDeviceDescriptors[i].displayName!==""
+        && AudioDeviceDescriptors[i].displayName!==undefined).assertTrue();
+      }
+      done();
+    })
+  });
+
+  /*
+   * @tc.name:getdevice002
+   * @tc.desc:getdevice - promise
+   * @tc.type: FUNC
+   * @tc.require: I6C9VA
+   */
+  it("getdevice002", 0, async function (done) {
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let AudioDeviceDescriptors = await routingManager.getDevices(audio.DeviceFlag.INPUT_DEVICES_FLAG);
+      console.info(`${TAG} getDevices002 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      expect(AudioDeviceDescriptors.length).assertLarger(0);
+      for (let i = 0; i < AudioDeviceDescriptors.length; i++) {
+        expect(AudioDeviceDescriptors[i].displayName!==""
+        && AudioDeviceDescriptors[i].displayName!==undefined).assertTrue();
+      }
+      done();
+    } catch (e) {
+      console.error(`${TAG} getdevice002 ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    }
+  });
+
 })
