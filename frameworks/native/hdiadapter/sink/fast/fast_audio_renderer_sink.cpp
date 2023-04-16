@@ -53,6 +53,7 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
+const int INVALID_FD = -1;
 }
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
 public:
@@ -83,6 +84,8 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
+    int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+        uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
 
     FastAudioRendererSinkInner();
@@ -101,19 +104,23 @@ private:
     struct AudioRender *audioRender_;
     struct AudioPort audioPort_ = {};
 
-    char *bufferAddresss_ = nullptr;
     size_t bufferSize_ = 0;
     uint32_t bufferTotalFrameSize_ = 0;
 
-    bool isFirstWrite_ = true;
+    int bufferFd_ = INVALID_FD;
+    uint32_t frameSizeInByte_ = 1;
+    uint32_t eachReadFrameSize_ = 0;
 
+#ifdef DEBUG_DIRECT_USE_HDI
+    char *bufferAddresss_ = nullptr;
+    bool isFirstWrite_ = true;
     uint64_t alreadyReadFrames_ = 0;
     uint32_t curReadPos_ = 0;
     uint32_t curWritePos_ = 0;
     uint32_t writeAheadPeriod_ = 1;
 
-    int bufferFd_ = -1;
-
+    int privFd_ = INVALID_FD; // invalid fd
+#endif
     int32_t PrepareMmapBuffer();
     void ReleaseMmapBuffer();
 
@@ -122,10 +129,6 @@ private:
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
-#ifdef DUMPFILE
-    FILE *pfd_;
-    const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/fast_audio_dump.pcm";
-#endif // DUMPFILE
 };
 
 FastAudioRendererSinkInner::FastAudioRendererSinkInner()
@@ -134,9 +137,6 @@ FastAudioRendererSinkInner::FastAudioRendererSinkInner()
       audioRender_(nullptr)
 {
     attr_ = {};
-#ifdef DUMPFILE
-    pfd_ = nullptr;
-#endif // DUMPFILE
 }
 
 FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
@@ -175,12 +175,6 @@ void FastAudioRendererSinkInner::DeInit()
     audioManager_ = nullptr;
 
     ReleaseMmapBuffer();
-#ifdef DUMPFILE
-    if (pfd_) {
-        fclose(pfd_);
-        pfd_ = nullptr;
-    }
-#endif // DUMPFILE
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -255,6 +249,20 @@ uint32_t PcmFormatToBits(AudioSampleFormat format)
     }
 }
 
+int32_t FastAudioRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+    uint32_t &byteSizePerFrame)
+{
+    if (bufferFd_ == INVALID_FD) {
+        AUDIO_ERR_LOG("buffer fd has been released!");
+        return ERR_INVALID_HANDLE;
+    }
+    fd = bufferFd_;
+    totalSizeInframe = bufferTotalFrameSize_;
+    spanSizeInframe = eachReadFrameSize_;
+    byteSizePerFrame = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
+    return SUCCESS;
+}
+
 int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     if (audioRender_ == nullptr) {
@@ -268,9 +276,14 @@ int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int6
         AUDIO_ERR_LOG("Hdi GetMmapPosition filed, ret:%{public}d!", ret);
         return ERR_OPERATION_FAILED;
     }
+#ifdef DEBUG_DIRECT_USE_HDI
     alreadyReadFrames_ = frames; // frames already read.
     curReadPos_ = frameSizeInByte_ * (frames - bufferTotalFrameSize_ * (frames / bufferTotalFrameSize_));
     CHECK_AND_RETURN_RET_LOG((curReadPos_ >= 0 && curReadPos_ < bufferSize_), ERR_INVALID_PARAM, "curReadPos invalid");
+    AUDIO_DEBUG_LOG("GetMmapHandlePosition frames[:%{public}" PRIu64 "] tvsec:%{public}" PRId64 " tvNSec:"
+        "%{public}" PRId64 " alreadyReadFrames:%{public}" PRId64 " curReadPos[%{public}d]",
+        frames, timestamp.tvSec, timestamp.tvNSec, alreadyReadFrames_, curReadPos_);
+#endif
 
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it.
     if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
@@ -282,15 +295,12 @@ int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int6
     timeSec = timestamp.tvSec;
     timeNanoSec = timestamp.tvNSec;
 
-    AUDIO_DEBUG_LOG("GetMmapHandlePosition frames[:%{public}" PRIu64 "] tvsec:%{public}" PRId64 " tvNSec:"
-        "%{public}" PRId64 " alreadyReadFrames:%{public}" PRId64 " curReadPos[%{public}d]",
-        frames, timeSec, timeNanoSec, alreadyReadFrames_, curReadPos_);
-
     return SUCCESS;
 }
 
 void FastAudioRendererSinkInner::ReleaseMmapBuffer()
 {
+#ifdef DEBUG_DIRECT_USE_HDI
     if (bufferAddresss_ != nullptr) {
         munmap(bufferAddresss_, bufferSize_);
         bufferAddresss_ = nullptr;
@@ -299,11 +309,20 @@ void FastAudioRendererSinkInner::ReleaseMmapBuffer()
     } else {
         AUDIO_WARNING_LOG("ReleaseMmapBuffer buffer already null.");
     }
+    if (privFd_ != INVALID_FD) {
+        close(privFd_);
+        privFd_ = INVALID_FD;
+    }
+#endif
+    if (bufferFd_ != INVALID_FD) {
+        close(bufferFd_);
+        bufferFd_ = INVALID_FD;
+    }
 }
 
 int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
 {
-    int32_t totalBifferInMs = 50; // 5 * (6 + 2 * (2)) = 50ms, the buffer size, not latency.
+    int32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
     int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
@@ -317,7 +336,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
         "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]",desc.memoryAddress,
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable , desc.offset);
 
-    bufferFd_ = dup(desc.memoryFd); // fcntl(fd, 1030,3) after dup?
+    bufferFd_ = desc.memoryFd; // fcntl(fd, 1030,3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
     if (desc.totalBufferFrames < 0 || desc.transferFrameSize < 0 || desc.transferFrameSize > periodFrameMaxSize) {
         AUDIO_ERR_LOG("ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
@@ -332,11 +351,14 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
         return ERR_OPERATION_FAILED;
     }
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
-    bufferAddresss_ = (char *)mmap(nullptr, bufferSize_, PROT_READ | PROT_WRITE, MAP_SHARED, bufferFd_, 0);
-    if (bufferAddresss_ == nullptr) {
+#ifdef DEBUG_DIRECT_USE_HDI
+    privFd_ = dup(bufferFd_);
+    bufferAddresss_ = (char *)mmap(nullptr, bufferSize_, PROT_READ | PROT_WRITE, MAP_SHARED, privFd_, 0);
+    if (bufferAddresss_ == nullptr || bufferAddresss_ == MAP_FAILED) {
         AUDIO_ERR_LOG("mmap buffer failed!");
         return ERR_OPERATION_FAILED;
     }
+#endif
     return SUCCESS;
 }
 
@@ -440,18 +462,12 @@ int32_t FastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
 
     rendererInited_ = true;
 
-#ifdef DUMPFILE
-    pfd_ = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // DUMPFILE
-
     return SUCCESS;
 }
 
 void FastAudioRendererSinkInner::PreparePosition()
 {
+#ifdef DEBUG_DIRECT_USE_HDI
     isFirstWrite_ = false;
     uint64_t frames = 0;
     int64_t timeSec = 0;
@@ -466,22 +482,17 @@ void FastAudioRendererSinkInner::PreparePosition()
     curWritePos_ = (tempPos < bufferSize_ ? tempPos : tempPos - bufferSize_);
     AUDIO_INFO_LOG("First render frame start with curReadPos_[%{public}d] curWritePos_[%{public}d]", curReadPos_,
         curWritePos_);
+#endif
 }
 
 int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    int64_t stamp = GetNowTimeMs();
+#ifdef DEBUG_DIRECT_USE_HDI
+    int64_t stamp = ClockTime::GetCurNano();
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
         return ERR_INVALID_HANDLE;
     }
-
-#ifdef DUMPFILE
-    size_t writeResult = fwrite((void*)&data, 1, len, pfd_);
-    if (writeResult != len) {
-        AUDIO_ERR_LOG("Failed to write the file.");
-    }
-#endif // DUMPFILE
 
     if (len > (bufferSize_ - eachReadFrameSize_ * frameSizeInByte_ * writeAheadPeriod_)) {
         writeLen = 0;
@@ -519,16 +530,20 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
     writeLen = len;
 
-    stamp = GetNowTimeMs() - stamp;
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("Render len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms curWritePos[%{public}d] dataBefore"
         "<%{public}" PRIu64 "> dataAfter<%{public}" PRIu64 ">", len, stamp, curWritePos_, dataBefore, dataAfter);
     return SUCCESS;
+#else
+    AUDIO_WARNING_LOG("RenderFrame is not supported.");
+    return ERR_NOT_SUPPORTED;
+#endif
 }
 
 int32_t FastAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
-    int64_t stamp = GetNowTimeMs();
+    int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
 
     if (audioRender_ == nullptr) {
@@ -544,7 +559,7 @@ int32_t FastAudioRendererSinkInner::Start(void)
         }
     }
     started_ = true;
-    AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", GetNowTimeMs() - stamp);
+    AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
     return SUCCESS;
 }
 

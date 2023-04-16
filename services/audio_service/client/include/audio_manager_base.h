@@ -169,6 +169,15 @@ public:
      */
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
 
+    /**
+     * Create AudioProcess for play.
+     *
+     * @param config the config of the AudioProcess
+     *
+     * @return Returns AudioProcess client.
+    */
+    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -189,6 +198,7 @@ public:
         SET_VOICE_VOLUME = 16,
         SET_AUDIO_MONO_STATE = 17,
         SET_AUDIO_BALANCE_VALUE = 18,
+        CREATE_AUDIOPROCESS = 19,
     };
 
 public:

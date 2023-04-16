@@ -16,6 +16,7 @@
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#include "i_audio_process.h"
 
 using namespace std;
 
@@ -165,6 +166,18 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             AUDIO_DEBUG_LOG("SET_AUDIO_BALANCE_VALUE AudioManagerStub");
             float audioBalanceValue = data.ReadFloat();
             SetAudioBalanceValue(audioBalanceValue);
+            return AUDIO_OK;
+        }
+        case CREATE_AUDIOPROCESS: {
+            AUDIO_INFO_LOG("CREATE_AUDIOPROCESS AudioManagerStub");
+            AudioProcessConfig config;
+            IAudioProcess::ReadConfigFromParcel(config, data);
+            sptr<IRemoteObject> process = CreateAudioProcess(config);
+            if (process == nullptr) {
+                AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
+                return AUDIO_ERR;
+            }
+            reply.WriteRemoteObject(process);
             return AUDIO_OK;
         }
         default: {

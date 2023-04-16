@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,6 +14,8 @@
  */
 
 #include <cinttypes>
+#include <ostream>
+#include <iostream>
 #include <thread>
 #include <stdint.h>
 #include <time.h>
@@ -36,10 +38,17 @@ public:
             return;
         }
 
-        size_t tempBufferSize = hdiRenderSink_->eachReadFrameSize_ * hdiRenderSink_->frameSizeInByte_;
+        int fd = 0;
+        uint32_t totalSizeInframe = 0;
+        uint32_t spanSizeInframe = 0;
+        uint32_t byteSizePerFrame = 0;
+
+        hdiRenderSink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame);
+        size_t tempBufferSize = spanSizeInframe * byteSizePerFrame;
         char *buffer = (char *)malloc(tempBufferSize);
         if (buffer == nullptr) {
             AUDIO_ERR_LOG("AudioHdiDeviceTest: failed to malloc");
+            cout << "failed to get buffer" << endl;
             return;
         }
 
@@ -47,26 +56,27 @@ public:
         int64_t timeSec = 0;
         int64_t timeNanoSec = 0;
 
-        int64_t periodMicrTime = 5000; // 5ms
-        int64_t timeStampNext = GetNowTimeUs();
-        int64_t timeToSleep = periodMicrTime;
+        int64_t periodNanoSec = 5000000; // 5ms
+        int64_t fwkSyncTime = ClockTime::GetCurNano();
 
         uint64_t written = 0;
         int32_t ret = 0;
+        uint64_t writeCount = 0;
         while (!stopThread && !feof(wavFile)) {
+            Trace trace1("read_write");
+            if (writeCount == 0) {
+                hdiRenderSink_->GetMmapHandlePosition(frameCount, timeSec, timeNanoSec);
+                int64_t temp = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
+                fwkSyncTime = temp;
+            }
+            writeCount++;
+
             fread(buffer, 1, tempBufferSize, wavFile);
             ret = hdiRenderSink_->RenderFrame(*buffer, tempBufferSize, written);
 
-            hdiRenderSink_->GetMmapHandlePosition(frameCount, timeSec, timeNanoSec);
-
-            timeToSleep = periodMicrTime - (GetNowTimeUs() - timeStampNext);
-            if (timeToSleep > 0 && timeToSleep < periodMicrTime) {
-                usleep(timeToSleep);
-            } else {
-                usleep(periodMicrTime);
-            }
-
-            timeStampNext = GetNowTimeUs();
+            int64_t writeTime = fwkSyncTime + writeCount * periodNanoSec + deltaTime;
+            trace1.End();
+            ClockTime::AbsoluteSleep(writeTime);
         }
         free(buffer);
     }
@@ -85,23 +95,24 @@ public:
         return true;
     }
 
-    void StartHdiRender()
+    void StartHdiRender(int32_t time)
     {
         if (hdiRenderSink_ == nullptr) {
             AUDIO_ERR_LOG("StartHdiRender hdiRenderSink_ null");
             return;
         }
 
-        hdiRenderSink_->Start();
-        int32_t ret = hdiRenderSink_->SetVolume(0.5, 0.5);
+        int32_t ret = hdiRenderSink_->Start();
+        AUDIO_INFO_LOG("AudioHdiDeviceTest Start, ret %{public}d", ret);
+        float vol = 0.12; // for test
+        ret = hdiRenderSink_->SetVolume(vol, vol); // volume
         AUDIO_INFO_LOG("AudioHdiDeviceTest set volume to 0.5, ret %{public}d", ret);
 
         timeThread_ = make_unique<thread>(&AudioHdiDeviceTest::RenderFrameFromFile, this);
 
-        int32_t sleepTime = 7;
+        sleep(time);
 
-        sleep(sleepTime);
-
+        cout << "stop running" << endl;
         stopThread = true;
         timeThread_->join();
         hdiRenderSink_->Stop();
@@ -116,6 +127,7 @@ public:
         size_t headerSize = sizeof(wav_hdr);
         char *inputPath = argv[1];
         char path[PATH_MAX + 1] = {0x00};
+        int32_t time = strtol(argv[2], nullptr, 10);
         if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
             AUDIO_ERR_LOG("Invalid path");
             return false;
@@ -130,17 +142,19 @@ public:
         AUDIO_INFO_LOG("AudioHdiDeviceTest: Header Read in bytes %{public}zu", bytesRead);
 
         InitHdiRender();
-        StartHdiRender();
+        StartHdiRender(time);
 
         return true;
     }
 private:
     FastAudioRendererSink *hdiRenderSink_ = nullptr;
     unique_ptr<thread> timeThread_ = nullptr;
+    int64_t deltaTime = 4000000; // 4ms
     bool stopThread = false;
     FILE* wavFile = nullptr;
 };
 
+// usage: audio_hdi_device_test /data/data/xxx.pcm 5
 int main(int argc, char *argv[])
 {
     AUDIO_INFO_LOG("AudioHdiDeviceTest: Render test in");
@@ -149,10 +163,11 @@ int main(int argc, char *argv[])
         AUDIO_ERR_LOG("AudioHdiDeviceTest: argv is null");
         return 0;
     }
-    int32_t argsCountTwo_ = 2;
+
     int32_t argsCountThree_ = 3;
-    if (argc < argsCountTwo_ || argc >= argsCountThree_) {
-        AUDIO_ERR_LOG("AudioHdiDeviceTest: incorrect argc. Enter 2 args");
+    if (argc != argsCountThree_) {
+        AUDIO_ERR_LOG("AudioHdiDeviceTest: incorrect argc. Enter 3 args");
+        cout << "AudioHdiDeviceTest: incorrect argc" << endl;
         return 0;
     }
 

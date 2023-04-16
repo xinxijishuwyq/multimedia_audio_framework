@@ -491,7 +491,7 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
 
 int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    int64_t stamp = GetNowTimeMs();
+    int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
@@ -522,7 +522,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         return ERR_WRITE_FAILED;
     }
 
-    stamp = GetNowTimeMs() - stamp;
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     return SUCCESS;
 }

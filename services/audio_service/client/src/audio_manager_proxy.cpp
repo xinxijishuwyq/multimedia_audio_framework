@@ -16,6 +16,7 @@
 #include "audio_manager_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#include "i_audio_process.h"
 
 using namespace std;
 
@@ -404,6 +405,25 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
         AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %{public}d", error);
         return;
     }
+}
+sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return nullptr;
+    }
+    IAudioProcess::WriteConfigToParcel(config, data);
+    int error = Remote()->SendRequest(CREATE_AUDIOPROCESS, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: CreateAudioProcess failed, error: %{public}d", error);
+        return nullptr;
+    }
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
+    return process;
 }
 } // namespace AudioStandard
 } // namespace OHOS

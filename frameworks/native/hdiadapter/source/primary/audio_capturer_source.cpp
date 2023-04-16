@@ -296,7 +296,7 @@ void AudioCapturerSourceInner::OpenDumpFile()
 
 int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    int64_t stamp = GetNowTimeMs();
+    int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("Audio capture Handle is nullptr!");
@@ -319,7 +319,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     }
 #endif // CAPTURE_DUMP
 
-    stamp = GetNowTimeMs() - stamp;
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     return SUCCESS;
 }

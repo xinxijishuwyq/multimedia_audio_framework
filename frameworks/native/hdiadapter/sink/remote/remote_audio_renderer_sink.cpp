@@ -374,7 +374,7 @@ AudioFormat RemoteAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat fo
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
     int32_t ret;
-    int64_t start = GetNowTimeMs();
+    int64_t start = ClockTime::GetCurNano();
     struct AudioSampleAttributes param;
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
@@ -394,7 +394,7 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
     }
 
     isRenderCreated_.store(true);
-    int64_t cost = GetNowTimeMs() - start;
+    int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
 
     return 0;
@@ -501,7 +501,7 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
 
 int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    int64_t start = GetNowTimeMs();
+    int64_t start = ClockTime::GetCurNano();
     int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
@@ -523,7 +523,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
     }
 #endif // DEBUG_DUMP_FILE
 
-    int64_t cost = GetNowTimeMs() - start;
+    int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
     return SUCCESS;
 }

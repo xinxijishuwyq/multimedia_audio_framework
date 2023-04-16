@@ -26,6 +26,7 @@
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
+#include "audio_service.h"
 #include "audio_log.h"
 #include "audio_manager_listener_proxy.h"
 #include "i_audio_capturer_source.h"
@@ -455,6 +456,42 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
     }
 }
 
+sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
+{
+    if (!isGetProcessEnabled_) {
+        AUDIO_ERR_LOG("AudioServer::CreateAudioProcess is not enabled!");
+        return nullptr;
+    }
+
+    // client pid uid check.
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
+
+    AudioProcessConfig resetConfig(config);
+    if (callerUid == MEDIA_SERVICE_UID) {
+        AUDIO_INFO_LOG("Create process for media service.");
+    } else if (resetConfig.appInfo.appPid != callerPid || resetConfig.appInfo.appUid != callerUid ||
+        resetConfig.appInfo.appTokenId != IPCSkeleton::GetCallingTokenID()) {
+        AUDIO_INFO_LOG("Use true client appInfo instead.");
+        resetConfig.appInfo.appPid = callerPid;
+        resetConfig.appInfo.appUid = callerUid;
+        resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+    }
+
+    // check MICROPHONE_PERMISSION
+    if (config.audioMode == AUDIO_MODE_RECORD &&
+        !VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId)) {
+            AUDIO_ERR_LOG("AudioServer::CreateAudioProcess for record failed:No permission.");
+        return nullptr;
+    }
+
+    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
+    CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
+    sptr<IRemoteObject> remoteObject= process->AsObject();
+    return remoteObject;
+}
+
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
@@ -522,7 +559,8 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     return SUCCESS;
 }
 
-bool AudioServer::VerifyClientPermission(const std::string &permissionName)
+bool AudioServer::VerifyClientPermission(const std::string &permissionName,
+    Security::AccessToken::AccessTokenID tokenId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("AudioServer: ==[%{public}s] [uid:%{public}d]==", permissionName.c_str(), callerUid);
@@ -532,8 +570,10 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName)
         AUDIO_INFO_LOG("Root user. Permission GRANTED!!!");
         return true;
     }
-
-    Security::AccessToken::AccessTokenID clientTokenId = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::AccessTokenID clientTokenId = tokenId;
+    if (clientTokenId == Security::AccessToken::INVALID_TOKENID) {
+        clientTokenId = IPCSkeleton::GetCallingTokenID();
+    }
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
     if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);

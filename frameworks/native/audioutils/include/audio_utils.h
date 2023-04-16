@@ -16,6 +16,7 @@
 #define AUDIO_UTILS_H
 
 #include <cstdint>
+#include <string>
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
@@ -47,8 +48,6 @@ public:
     static bool VerifySystemPermission();
 };
 
-int64_t GetNowTimeMs();
-int64_t GetNowTimeUs();
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len);
