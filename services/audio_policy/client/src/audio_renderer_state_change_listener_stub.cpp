@@ -59,6 +59,9 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     rendererChangeInfo->outputDeviceInfo.deviceName = data.ReadString();
     rendererChangeInfo->outputDeviceInfo.macAddress = data.ReadString();
     rendererChangeInfo->outputDeviceInfo.displayName = data.ReadString();
+    rendererChangeInfo->outputDeviceInfo.networkId = data.ReadString();
+    rendererChangeInfo->outputDeviceInfo.interruptGroupId = data.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.volumeGroupId = data.ReadInt32();
 
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, sessionid = %{public}d", rendererChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererState = %{public}d",

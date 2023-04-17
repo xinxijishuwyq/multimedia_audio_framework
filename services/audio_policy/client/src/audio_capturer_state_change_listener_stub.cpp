@@ -56,6 +56,9 @@ void AudioCapturerStateChangeListenerStub::ReadAudioCapturerChangeInfo(MessagePa
     capturerChangeInfo->inputDeviceInfo.deviceName = data.ReadString();
     capturerChangeInfo->inputDeviceInfo.macAddress = data.ReadString();
     capturerChangeInfo->inputDeviceInfo.displayName = data.ReadString();
+    capturerChangeInfo->inputDeviceInfo.networkId = data.ReadString();
+    capturerChangeInfo->inputDeviceInfo.interruptGroupId = data.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.volumeGroupId = data.ReadInt32();
 
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, sessionid = %{public}d", capturerChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, capturerState = %{public}d",

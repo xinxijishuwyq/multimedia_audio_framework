@@ -52,6 +52,9 @@ void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParce
     data.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
     data.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
     data.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
+    data.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
 }
 
 void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
