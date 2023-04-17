@@ -34,7 +34,7 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
     "../frameworks/native/opensles/test/unittest/opensles_player_test:audio_opensles_player_unit_test",
     "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",
-    "../services/audio_service/test/unittest:audio_balance_test",
+    "../services/audio_service/test/unittest:audio_balance_unit_test",
   ]
 }
 

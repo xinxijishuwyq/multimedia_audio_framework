@@ -13,12 +13,8 @@
  * limitations under the License.
  */
 
-#include "audio_manager_proxy.h"
-
-#include "audio_log.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 #include <gtest/gtest.h>
+#include "audio_system_manager.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -31,28 +27,9 @@ public:
     void TearDown();
 };
 
-static sptr<IStandardAudioService> g_sProxy = nullptr;
-
 void AudioBalanceTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        AUDIO_ERR_LOG("[AudioBalanceUnitTest] Get samgr failed");
-        return;
-    }
-
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    if (object == nullptr) {
-        AUDIO_DEBUG_LOG("[AudioBalanceUnitTest] audio service remote object is NULL.");
-        return;
-    }
-
-    g_sProxy = iface_cast<IStandardAudioService>(object);
-    if (g_sProxy == nullptr) {
-        AUDIO_DEBUG_LOG("[AudioBalanceUnitTest] init g_sProxy is NULL.");
-        return;
-    }
 }
 
 void AudioBalanceTest::TearDownTestCase(void)
@@ -76,10 +53,10 @@ void AudioBalanceTest::TearDown(void)
 * @tc.number: SetAudioMonoState_001
 * @tc.desc  : Test SetAudioMonoState interface. Set audio mono state to true
 */
-HWTEST_F(AudioBalanceTest, SetAudioMonoState_001, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioMonoState_001, TestSize.Level1)
 {
     bool audioMonoState = true;
-    g_sProxy->SetAudioMonoState(audioMonoState);
+    AudioSystemManager::GetInstance()->SetAudioMonoState(audioMonoState);
 }
 
 /**
@@ -88,10 +65,10 @@ HWTEST_F(AudioBalanceTest, SetAudioMonoState_001, TestSize.Level0)
 * @tc.number: SetAudioMonoState_002
 * @tc.desc  : Test SetAudioMonoState interface. Set audio mono state to false
 */
-HWTEST_F(AudioBalanceTest, SetAudioMonoState_002, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioMonoState_002, TestSize.Level1)
 {
     bool audioMonoState = false;
-    g_sProxy->SetAudioMonoState(audioMonoState);
+    AudioSystemManager::GetInstance()->SetAudioMonoState(audioMonoState);
 }
 
 /**
@@ -100,10 +77,10 @@ HWTEST_F(AudioBalanceTest, SetAudioMonoState_002, TestSize.Level0)
 * @tc.number: SetAudioBalanceValue_001
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to -1.0f
 */
-HWTEST_F(AudioBalanceTest, SetAudioBalanceValue_001, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioBalanceValue_001, TestSize.Level1)
 {
     float audioBalanceValue = -1.0f;
-    g_sProxy->SetAudioBalanceValue(audioBalanceValue);
+    AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
 /**
@@ -112,46 +89,46 @@ HWTEST_F(AudioBalanceTest, SetAudioBalanceValue_001, TestSize.Level0)
 * @tc.number: SetAudioBalanceValue_002
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to -0.5f
 */
-HWTEST_F(AudioBalanceTest, SetAudioBalanceValue_002, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioBalanceValue_002, TestSize.Level1)
 {
     float audioBalanceValue = -0.5f;
-    g_sProxy->SetAudioBalanceValue(audioBalanceValue);
+    AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
 /**
 * @tc.name  : Test SetAudioBalanceValue API
 * @tc.type  : FUNC
 * @tc.number: SetAudioBalanceValue_003
-* @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 0.0f
+* @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 0.5f
 */
-HWTEST_F(AudioBalanceTest, SetAudioBalanceValue_003, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioBalanceValue_003, TestSize.Level1)
 {
-    float audioBalanceValue = 0.0f;
-    g_sProxy->SetAudioBalanceValue(audioBalanceValue);
+    float audioBalanceValue = 0.5f;
+    AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
 /**
 * @tc.name  : Test SetAudioBalanceValue API
 * @tc.type  : FUNC
 * @tc.number: SetAudioBalanceValue_004
-* @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 0.5f
+* @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 1.0f
 */
-HWTEST_F(AudioBalanceTest, SetAudioBalanceValue_004, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioBalanceValue_004, TestSize.Level1)
 {
-    float audioBalanceValue = 0.5f;
-    g_sProxy->SetAudioBalanceValue(audioBalanceValue);
+    float audioBalanceValue = 1.0f;
+    AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
 /**
 * @tc.name  : Test SetAudioBalanceValue API
 * @tc.type  : FUNC
 * @tc.number: SetAudioBalanceValue_005
-* @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 1.0f
+* @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 0.0f
 */
-HWTEST_F(AudioBalanceTest, SetAudioBalanceValue_005, TestSize.Level0)
+HWTEST(AudioBalanceTest, SetAudioBalanceValue_005, TestSize.Level1)
 {
-    float audioBalanceValue = 1.0f;
-    g_sProxy->SetAudioBalanceValue(audioBalanceValue);
+    float audioBalanceValue = 0.0f;
+    AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 } // namespace AudioStandard
 } // namespace OHOS
