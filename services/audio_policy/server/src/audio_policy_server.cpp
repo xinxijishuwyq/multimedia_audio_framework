@@ -91,7 +91,6 @@ void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("AudioPolicyService OnStart");
     mPolicyService.Init();
-
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
@@ -135,6 +134,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
             ConnectServiceAdapter();
             RegisterParamCallback();
+            LoadEffectLibrary();
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
@@ -243,6 +243,11 @@ void AudioPolicyServer::ConnectServiceAdapter()
         AUDIO_ERR_LOG("ConnectServiceAdapter Error in connecting to audio service adapter");
         return;
     }
+}
+
+void AudioPolicyServer::LoadEffectLibrary()
+{
+    mPolicyService.LoadEffectLibrary();
 }
 
 int32_t AudioPolicyServer::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -1405,6 +1410,9 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.audioFocusInfoList = audioFocusInfoList_;
     GetDeviceInfo(policyData);
     GetGroupInfo(policyData);
+
+    // Get Audio Effect Manager Information
+    mPolicyService.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
 }
 
 void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)

@@ -290,6 +290,7 @@ private:
     void SubscribeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
+    void LoadEffectLibrary();
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
 

@@ -57,6 +57,8 @@ bool AudioPolicyService::Init(void)
     AUDIO_INFO_LOG("AudioPolicyService init");
     serviceFlag_.reset();
     audioPolicyManager_.Init();
+    audioEffectManager_.EffectManagerInit();
+
     if (!configParser_.LoadConfiguration()) {
         AUDIO_ERR_LOG("Audio Config Load Configuration failed");
         return false;
@@ -1525,7 +1527,8 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
         };
     } else {
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
-        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
+        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) ==
+            SUCCESS) {
             for (auto deviceInfo : deviceList) {
                 std::string strNetworkId(deviceInfo.networkId);
                 if (strNetworkId == deviceDescriptor->networkId_) {
@@ -1675,6 +1678,33 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
         return;
     }
     gsp->SetAudioBalanceValue(audioBalance);
+}
+
+void AudioPolicyService::LoadEffectLibrary()
+{
+    // IPC -> audioservice load library
+    const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
+        return;
+    }
+    OriginalEffectConfig oriEffectConfig = {};
+    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
+    vector<Effect> successLoadedEffects;
+    bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
+                                                     oriEffectConfig.effects,
+                                                     successLoadedEffects);
+    if (!loadSuccess) {
+        AUDIO_ERR_LOG("Load audio effect failed, please check log");
+    }
+    audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
+}
+
+void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
+                                              std::vector<Effect>& availableEffects)
+{
+    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
+    audioEffectManager_.GetAvailableEffects(availableEffects);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)

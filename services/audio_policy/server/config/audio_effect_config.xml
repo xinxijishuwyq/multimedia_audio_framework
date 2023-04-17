@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Copyright (c) 2023 Huawei Device Co., Ltd.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<audio_effects_conf version="1.0">
+    <libraries>
+        <library name="histen" path="libhisten.so"/>
+        <library name="hvs" path="libhvsprocessing.z.so"/>
+    </libraries>
+
+    <effects>
+        <effect name="histen" library="histen" effect_id="4a387fc0-8ab3-11df-8bad-0002a5d5c51b"/>
+        <effect name="hvs" library="hvs" effect_id="c7a511a0-a3bb-11df-860e-0002a5d5c51b"/>
+    </effects>
+
+    <effectChains>
+        <effectChain name="EFFECTCHAIN_SPK_MUSIC">
+            <apply effect="histen"/>
+        </effectChain>
+        <effectChain name="EFFECTCHAIN_SPK_MOVIE">
+            <apply effect="hvs"/>
+            <apply effect="histen"/>
+        </effectChain>
+    </effectChains>
+
+    <preprocess>
+    </preprocess>
+
+    <postprocess>
+        <stream scene="STREAM_MUSIC">
+            <streamAE_mode mode="spatializer">
+                <devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADSET" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                <devicePort type="AUDIO_DEVICE_OUT_BUS" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            </streamAE_mode>
+            <streamAE_mode mode="clearVoice">
+                <devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADSET" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                <devicePort type="AUDIO_DEVICE_OUT_BUS" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            </streamAE_mode>    
+        </stream>
+        <stream scene="STREAM_MOVIE">
+                <streamAE_mode mode="bassEnhancer">
+                <devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADSET" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MOVIE"/>
+                <devicePort type="AUDIO_DEVICE_OUT_BUS" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MOVIE"/>
+            </streamAE_mode>    
+        </stream>
+    </postprocess>
+</audio_effects_conf>

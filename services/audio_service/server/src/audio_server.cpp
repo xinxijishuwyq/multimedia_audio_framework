@@ -69,11 +69,15 @@ void *AudioServer::paDaemonThread(void *arg)
 #endif
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
-    : SystemAbility(systemAbilityId, runOnCreate)
-{}
+    : SystemAbility(systemAbilityId, runOnCreate),
+      audioEffectServer_(std::make_unique<AudioEffectServer>())
+{
+}
 
 void AudioServer::OnDump()
-{}
+{
+    audioEffectServer_ = nullptr;
+}
 
 void AudioServer::OnStart()
 {
@@ -277,6 +281,22 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
 
     AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
     return transactionId;
+}
+
+bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
+                                           std::vector<Effect>& successEffectList)
+{
+    int32_t audio_policy_server_id = 1041;
+    int32_t audio_policy_server_Uid = 1005;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id
+        && IPCSkeleton::GetCallingUid() != audio_policy_server_Uid) {
+        return false;
+    }
+    bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
+    if (!loadSuccess) {
+        AUDIO_ERR_LOG("Load audio effect failed, please check log");
+    }
+    return loadSuccess;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
