@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
-class AudioBalanceTest : public testing::Test {
+class AudioBalanceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -27,22 +27,22 @@ public:
     void TearDown();
 };
 
-void AudioBalanceTest::SetUpTestCase(void)
+void AudioBalanceUnitTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
 }
 
-void AudioBalanceTest::TearDownTestCase(void)
+void AudioBalanceUnitTest::TearDownTestCase(void)
 {
     // input testsuit teardown step，teardown invoked after all testcases
 }
 
-void AudioBalanceTest::SetUp(void)
+void AudioBalanceUnitTest::SetUp(void)
 {
     // input testcase setup step，setup invoked before each testcases
 }
 
-void AudioBalanceTest::TearDown(void)
+void AudioBalanceUnitTest::TearDown(void)
 {
     // input testcase teardown step，teardown invoked after each testcases
 }
@@ -53,7 +53,7 @@ void AudioBalanceTest::TearDown(void)
 * @tc.number: SetAudioMonoState_001
 * @tc.desc  : Test SetAudioMonoState interface. Set audio mono state to true
 */
-HWTEST(AudioBalanceTest, SetAudioMonoState_001, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioMonoState_001, TestSize.Level1)
 {
     bool audioMonoState = true;
     AudioSystemManager::GetInstance()->SetAudioMonoState(audioMonoState);
@@ -65,7 +65,7 @@ HWTEST(AudioBalanceTest, SetAudioMonoState_001, TestSize.Level1)
 * @tc.number: SetAudioMonoState_002
 * @tc.desc  : Test SetAudioMonoState interface. Set audio mono state to false
 */
-HWTEST(AudioBalanceTest, SetAudioMonoState_002, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioMonoState_002, TestSize.Level1)
 {
     bool audioMonoState = false;
     AudioSystemManager::GetInstance()->SetAudioMonoState(audioMonoState);
@@ -77,7 +77,7 @@ HWTEST(AudioBalanceTest, SetAudioMonoState_002, TestSize.Level1)
 * @tc.number: SetAudioBalanceValue_001
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to -1.0f
 */
-HWTEST(AudioBalanceTest, SetAudioBalanceValue_001, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_001, TestSize.Level1)
 {
     float audioBalanceValue = -1.0f;
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
@@ -89,7 +89,7 @@ HWTEST(AudioBalanceTest, SetAudioBalanceValue_001, TestSize.Level1)
 * @tc.number: SetAudioBalanceValue_002
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to -0.5f
 */
-HWTEST(AudioBalanceTest, SetAudioBalanceValue_002, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_002, TestSize.Level1)
 {
     float audioBalanceValue = -0.5f;
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
@@ -101,7 +101,7 @@ HWTEST(AudioBalanceTest, SetAudioBalanceValue_002, TestSize.Level1)
 * @tc.number: SetAudioBalanceValue_003
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 0.5f
 */
-HWTEST(AudioBalanceTest, SetAudioBalanceValue_003, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_003, TestSize.Level1)
 {
     float audioBalanceValue = 0.5f;
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
@@ -113,7 +113,7 @@ HWTEST(AudioBalanceTest, SetAudioBalanceValue_003, TestSize.Level1)
 * @tc.number: SetAudioBalanceValue_004
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 1.0f
 */
-HWTEST(AudioBalanceTest, SetAudioBalanceValue_004, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_004, TestSize.Level1)
 {
     float audioBalanceValue = 1.0f;
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
@@ -125,7 +125,7 @@ HWTEST(AudioBalanceTest, SetAudioBalanceValue_004, TestSize.Level1)
 * @tc.number: SetAudioBalanceValue_005
 * @tc.desc  : Test SetAudioBalanceValue interface. Set audio balance value to 0.0f
 */
-HWTEST(AudioBalanceTest, SetAudioBalanceValue_005, TestSize.Level1)
+HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_005, TestSize.Level1)
 {
     float audioBalanceValue = 0.0f;
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
