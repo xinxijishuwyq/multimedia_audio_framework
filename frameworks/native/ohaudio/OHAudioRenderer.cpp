@@ -95,8 +95,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer* rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    OHOS::AudioStandard::AudioRendererRate rendererRate = audioRenderer->GetRenderRate();
-    *rate = (int32_t)rendererRate;
+
+    *rate = audioRenderer->GetSamplingRate();
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -147,6 +147,15 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
     audioRenderer->GetRendererInfo(rendererInfo);
     *usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
     *content = (OH_AudioStream_Content)rendererInfo.contentType;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer* renderer,
+    OH_AudioStream_EncodingType* encodingType)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *encodingType = (OH_AudioStream_EncodingType)audioRenderer->GetEncodingType();
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -207,12 +216,6 @@ RendererState OHAudioRenderer::GetStatus()
     return audioRenderer_->GetStatus();
 }
 
-AudioRendererRate OHAudioRenderer::GetRenderRate()
-{
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, RENDER_RATE_NORMAL, "renderer client is nullptr");
-    return audioRenderer_->GetRenderRate();
-}
-
 void OHAudioRenderer::GetStreamId(uint32_t &streamId)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
@@ -227,6 +230,14 @@ AudioChannel OHAudioRenderer::GetChannelCount()
     return params.channelCount;
 }
 
+int32_t OHAudioRenderer::GetSamplingRate()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
+    AudioRendererParams params;
+    audioRenderer_->GetParams(params);
+    return params.sampleRate;
+}
+
 AudioSampleFormat OHAudioRenderer::GetSampleFormat()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, INVALID_WIDTH, "renderer client is nullptr");
@@ -239,6 +250,14 @@ void OHAudioRenderer::GetRendererInfo(AudioRendererInfo& rendererInfo)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->GetRendererInfo(rendererInfo);
+}
+
+AudioEncodingType OHAudioRenderer::GetEncodingType()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ENCODING_INVALID, "renderer client is nullptr");
+    AudioRendererParams params;
+    audioRenderer_->GetParams(params);
+    return params.encodingType;
 }
 
 int32_t OHAudioRenderer::GetFramesWritten()

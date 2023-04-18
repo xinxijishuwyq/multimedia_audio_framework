@@ -36,6 +36,8 @@ public:
     OH_AudioStream_Result SetSampleFormat(AudioSampleFormat sampleFormat);
     OH_AudioStream_Result SetEncodingType(AudioEncodingType encodingType);
 
+    OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
+
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage, ContentType contentType);
     OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
 
@@ -44,6 +46,7 @@ public:
 
 private:
     int32_t streamType_;
+    int32_t latencyMode_ = 0; // default value is normal mode
 
     // stream params
     int32_t samplingRate_ = SAMPLE_RATE_48000;

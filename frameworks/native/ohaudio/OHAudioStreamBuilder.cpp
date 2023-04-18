@@ -67,6 +67,16 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilde
     return audioStreamBuilder->SetEncodingType(type);
 }
 
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_LatencyMode latencyMode)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    int32_t innerLatencyMode = (int32_t)latencyMode;
+    return audioStreamBuilder->SetLatencyMode(innerLatencyMode);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
     OH_AudioStream_Usage usage, OH_AudioStream_Content content)
 {
@@ -234,6 +244,13 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
     return AUDIOSTREAM_SUCCESS;
 }
 
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
+{
+    latencyMode_ = latencyMode;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer)
 {
     AUDIO_INFO_LOG("Generate OHAudioRenderer");
@@ -252,7 +269,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
     AudioRendererInfo rendererInfo = {
         contentType_,
         usage_,
-        0
+        latencyMode_
     };
 
     AudioRendererOptions options = {
@@ -288,7 +305,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer
 
     AudioCapturerInfo capturerInfo = {
         sourceType_,
-        0
+        latencyMode_
     };
 
     AudioCapturerOptions options = {

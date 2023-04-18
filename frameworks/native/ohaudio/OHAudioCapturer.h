@@ -51,6 +51,7 @@ class OHAudioCapturer {
         bool Release();
         void GetStreamId(uint32_t& streamId);
         AudioChannel GetChannelCount();
+        int32_t GetSamplingRate();
         AudioEncodingType GetEncodingType();
         AudioSampleFormat GetSampleFormat();
         void GetCapturerInfo(AudioCapturerInfo& capturerInfo);
