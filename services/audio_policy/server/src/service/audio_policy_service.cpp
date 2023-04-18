@@ -19,6 +19,7 @@
 #include "hisysevent.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "parameter.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -1511,19 +1512,21 @@ inline void RemoveDeviceInRouterMap(std::string networkId,
 
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
-    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
-    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
-    if (ret != SUCCESS) {
+    if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
+        char devicesName[100] = {0}; // 100 for system parameter usage
+        int res = GetParameter("const.product.name", " ", devicesName, sizeof(devicesName));
+        if (res > 0) {
+            std::string strLocalDevicesName(devicesName);
+            deviceDescriptor->displayName_ = strLocalDevicesName;
+            AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", strLocalDevicesName.c_str());
+        }
+    } else {
+        std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+        int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
+        if (ret != SUCCESS) {
         AUDIO_ERR_LOG("UpdateDisplayName init device failed");
         return;
-    }
-    if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
-        DistributedHardware::DmDeviceInfo localDevice;
-        if (DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(AUDIO_SERVICE_PKG, localDevice) == SUCCESS) {
-            AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", localDevice.deviceName);
-            deviceDescriptor->displayName_ = localDevice.deviceName;
-        };
-    } else {
+        }
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
         if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
             for (auto deviceInfo : deviceList) {

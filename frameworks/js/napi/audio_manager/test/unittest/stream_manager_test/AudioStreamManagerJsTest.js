@@ -15,8 +15,6 @@
 
 import audio from '@ohos.multimedia.audio';
 import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from 'deccjsunit/index'
-import featureAbility from '@ohos.ability.featureAbility';
-import { UiDriver, BY } from '@ohos.UiTest'
 
 const TAG = "[AudioStreamManagerJsTest]";
 
@@ -41,9 +39,6 @@ describe("AudioStreamManagerJsTest", function () {
   
   beforeAll(async function () {
     console.info(TAG + "beforeAll called");
-    await getPermission();  
-    await sleep(5000);
-    await driveFn();
   })
 
   afterAll(function () {
@@ -60,31 +55,6 @@ describe("AudioStreamManagerJsTest", function () {
 
   function sleep(time) {
     return new Promise((resolve) => setTimeout(resolve, time));
-  }
-
-  async function getPermission() {
-    console.info(`getPermission is start`);
-    let permissions = ['ohos.permission.MICROPHONE'];
-    let context = featureAbility.getContext()
-    context.requestPermissionsFromUser(permissions, 666, (data) => {
-        console.info("request success" + JSON.stringify(data));
-
-    })
-  }
-  async function driveFn() {
-    try {
-      let driver = await UiDriver.create()
-      console.info(` come in driveFn`)
-      console.info(`driver is ${JSON.stringify(driver)}`)
-      await sleep(2000);
-      let button = await driver.findComponent(BY.text('允许'));
-      console.info(`button is ${JSON.stringify(button)}`);
-      await sleep(5000);
-      await button.click();
-    } catch (err) {
-      console.info('err is ' + err);
-      return;
-    }
   }
 
   /*
