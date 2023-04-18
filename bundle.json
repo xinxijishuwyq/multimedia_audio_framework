@@ -10,7 +10,7 @@
     "dirs": {},
     "scripts": {},
     "component": {
-        "name": "multimedia_audio_framework",
+        "name": "audio_framework",
         "subsystem": "multimedia",
         "syscap": [
           "SystemCapability.Multimedia.Audio.Core",

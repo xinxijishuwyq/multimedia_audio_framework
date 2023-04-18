@@ -62,7 +62,7 @@ ohos_shared_library("audio_capturer_gateway") {
     "samgr:samgr_proxy",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -110,6 +110,6 @@ ohos_shared_library("audio_renderer_gateway") {
     "samgr:samgr_proxy",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

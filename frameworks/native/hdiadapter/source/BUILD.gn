@@ -43,7 +43,7 @@ ohos_shared_library("audio_capturer_source") {
     "power_manager:powermgr_client",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -76,7 +76,7 @@ ohos_shared_library("remote_audio_capturer_source") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -103,7 +103,7 @@ ohos_shared_library("audio_capturer_file_source") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -142,6 +142,6 @@ ohos_shared_library("capturer_source_adapter") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
