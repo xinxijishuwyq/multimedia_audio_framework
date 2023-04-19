@@ -279,8 +279,11 @@ private:
 
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
 
-    void UpdateConnectedDevices(const AudioDeviceDescriptor& deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>>& desc, bool status);
+    void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>>& desc);
+
+    void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
  
@@ -311,6 +314,14 @@ private:
     void SetEarpieceState();
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
+
+    void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
+        const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
+
+    int32_t HandleLocalDeviceConnected(DeviceType devType, const std::string& macAddress, const std::string& deviceName,
+        const AudioStreamInfo& streamInfo);
+
+    int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
