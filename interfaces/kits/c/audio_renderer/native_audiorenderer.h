@@ -167,7 +167,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
  * @param encodingType Pointer to a variable that will be set for the encoding type.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
-OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioCapturer* capturer,
+OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer* renderer,
     OH_AudioStream_EncodingType* encodingType);
 #ifdef __cplusplus
 }

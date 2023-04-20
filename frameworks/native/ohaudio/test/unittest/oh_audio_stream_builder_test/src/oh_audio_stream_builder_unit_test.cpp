@@ -467,5 +467,125 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, Tes
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
 }
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_U8.
+* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_U8;
+    result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S16LE.
+* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_002
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S16LE;
+    result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S24LE.
+* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_003
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S24LE;
+    result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S32LE.
+* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_004
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S32LE;
+    result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_F32LE.
+* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_005
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_005, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S32LE;
+    result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetLatencyMode API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
+* @tc.number: OH_AudioStreamBuilder_SetLatencyMode_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetLatencyMode interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetLatencyMode_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
+    result = OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

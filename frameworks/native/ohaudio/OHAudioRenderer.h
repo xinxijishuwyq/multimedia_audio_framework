@@ -50,10 +50,11 @@ class OHAudioRenderer {
         bool Flush();
         bool Release();
         RendererState GetStatus();
-        AudioRendererRate GetRenderRate();
         void GetStreamId(uint32_t& streamId);
         AudioChannel GetChannelCount();
+        int32_t GetSamplingRate();
         AudioSampleFormat GetSampleFormat();
+        AudioEncodingType GetEncodingType();
         int32_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
         void GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
