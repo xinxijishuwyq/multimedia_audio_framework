@@ -16,6 +16,7 @@
 #ifndef AUDIO_ENDPOINT_H
 #define AUDIO_ENDPOINT_H
 
+#include <sstream>
 #include <memory>
 
 #include "i_process_status_listener.h"
@@ -61,6 +62,8 @@ public:
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
 
     virtual int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) = 0;
+
+    virtual void Dump(std::stringstream &dumpStringStream) = 0;
 
     virtual ~AudioEndpoint() = default;
 };

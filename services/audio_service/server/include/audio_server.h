@@ -42,6 +42,7 @@ public:
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
+    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
         std::vector<Effect>& successEffectList) override;

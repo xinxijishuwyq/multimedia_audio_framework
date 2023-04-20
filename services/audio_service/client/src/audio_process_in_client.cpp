@@ -20,6 +20,7 @@
 #include <condition_variable>
 #include <sstream>
 #include <string>
+#include <mutex>
 #include <thread>
 
 #include "iservice_registry.h"
@@ -43,6 +44,8 @@ public:
     ~AudioProcessInClientInner();
 
     int32_t SaveDataCallback(const std::shared_ptr<AudioDataCallback> &dataCallback) override;
+
+    int32_t SaveUnderrunCallback(const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback) override;
 
     int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
 
@@ -82,9 +85,11 @@ private:
     uint32_t byteSizePerFrame_;
     size_t spanSizeInByte_ = 0;
     std::weak_ptr<AudioDataCallback> audioDataCallback_;
+    std::weak_ptr<ClientUnderrunCallBack> underrunCallback_;
 
     std::unique_ptr<uint8_t[]> callbackBuffer_ = nullptr;
 
+    std::mutex statusSwitchLock_;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     bool isInited_ = false;
 
@@ -103,6 +108,7 @@ private:
     void CallClientHandleCurrent();
     bool FinishHandleCurrent(uint64_t curWritePos, int64_t &clientWriteCost);
 
+    void UpdateHandleInfo();
     int64_t GetPredictNextHandleTime(uint64_t posInFrame);
     bool PrepareNext(uint64_t curWritePos, int64_t &wakeUpTime);
     std::string GetStatusInfo(StreamStatus status);
@@ -119,6 +125,9 @@ sptr<IStandardAudioService> gAudioServerProxy = nullptr;
 AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy) : processProxy_(ipcProxy)
 {
     AUDIO_INFO_LOG("AudioProcessInClient()");
+    totalSizeInFrame_ = 0;
+    spanSizeInFrame_ = 0;
+    byteSizePerFrame_ = 0;
 }
 
 const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy()
@@ -196,6 +205,9 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         isCallbackLoopEnd_ = true;
         callbackLoop_.join();
         AUDIO_INFO_LOG("AudioProcess join work thread end");
+    }
+    if (isInited_) {
+        Release();
     }
 #ifdef DUMP_CLIENT
     if (dcp_) {
@@ -287,6 +299,21 @@ int32_t AudioProcessInClientInner::SaveDataCallback(const std::shared_ptr<AudioD
     return SUCCESS;
 }
 
+int32_t AudioProcessInClientInner::SaveUnderrunCallback(const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback)
+{
+    AUDIO_INFO_LOG("SaveUnderrunCallback");
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+
+    if (underrunCallback.get() == nullptr) {
+        AUDIO_ERR_LOG("SaveDataCallback callback == nullptr");
+        return ERR_INVALID_PARAM;
+    }
+    underrunCallback_ = underrunCallback;
+    AUDIO_INFO_LOG("UnderrunCallback is set");
+
+    return SUCCESS;
+}
+
 // the buffer will be used by client
 int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 {
@@ -325,7 +352,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
         spanSizeInByte_);
 #ifdef DUMP_CLIENT
     if (dcp_ != nullptr) {
-        fwrite((void *)bufDesc.buffer, 1, spanSizeInByte_, dcp_);
+        fwrite(static_cast<void *>(bufDesc.buffer), 1, spanSizeInByte_, dcp_);
     }
 #endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
@@ -348,73 +375,143 @@ int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
 
 int32_t AudioProcessInClientInner::Start()
 {
-    AUDIO_INFO_LOG("Start in");
-    Trace trace("AudioProcessInClient::Start");
+    Trace traceWithLog("AudioProcessInClient::Start", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    if (streamStatus_->load() != STREAM_IDEL) {
-        AUDIO_ERR_LOG("Start failed, current status is %{public}s", GetStatusInfo(streamStatus_->load()).c_str());
+    std::lock_guard<std::mutex> lock(statusSwitchLock_);
+    if (streamStatus_->load() == StreamStatus::STREAM_RUNNING) {
+        AUDIO_INFO_LOG("Start find already started");
+        return SUCCESS;
+    }
+
+    StreamStatus targetStatus = StreamStatus::STREAM_IDEL;
+    if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING)) {
+        AUDIO_ERR_LOG("Start failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
         return ERR_ILLEGAL_STATE;
     }
 
-    if (streamStatus_->load() == STREAM_STARTING) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        AUDIO_INFO_LOG("already in starting");
-        threadStatusCV_.wait(lock, [this] {
-            return streamStatus_->load() != STREAM_STARTING;
-        });
-        if (streamStatus_->load() == STREAM_RUNNING) {
-            return SUCCESS;
-        } else {
-            AUDIO_ERR_LOG("Start failed, current status is %{public}s", GetStatusInfo(streamStatus_->load()).c_str());
-            return ERR_OPERATION_FAILED;
-        }
-    }
-
-    streamStatus_->store(STREAM_STARTING);
-    if (processProxy_->Start() != SUCCESS || streamStatus_->load() != STREAM_RUNNING) {
-        AUDIO_ERR_LOG("Start failed to call process proxy.");
+    if (processProxy_->Start() != SUCCESS) {
+        streamStatus_->store(StreamStatus::STREAM_IDEL);
+        AUDIO_ERR_LOG("Start failed to call process proxy, reset status to IDEL.");
         threadStatusCV_.notify_all();
         return ERR_OPERATION_FAILED;
     }
+    UpdateHandleInfo();
+    streamStatus_->store(StreamStatus::STREAM_RUNNING);
     threadStatusCV_.notify_all();
-    AUDIO_INFO_LOG("Start out");
     return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::Pause(bool isFlush)
 {
-    Trace trace("AudioProcessInClient::Pause");
+    Trace traceWithLog("AudioProcessInClient::Pause", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    // todo
+    std::lock_guard<std::mutex> lock(statusSwitchLock_);
+    if (streamStatus_->load() == StreamStatus::STREAM_PAUSED) {
+        AUDIO_INFO_LOG("Pause find already paused");
+        return SUCCESS;
+    }
+    StreamStatus targetStatus = StreamStatus::STREAM_RUNNING;
+    if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_PAUSING)) {
+        AUDIO_ERR_LOG("Pause failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (processProxy_->Pause(isFlush) != SUCCESS) {
+        streamStatus_->store(StreamStatus::STREAM_RUNNING);
+        AUDIO_ERR_LOG("Pause failed to call process proxy, reset status to RUNNING");
+        threadStatusCV_.notify_all(); // avoid thread blocking with status PAUSING
+        return ERR_OPERATION_FAILED;
+    }
+    streamStatus_->store(StreamStatus::STREAM_PAUSED);
+
     return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::Resume()
 {
-    Trace trace("AudioProcessInClient::Resume");
+    Trace traceWithLog("AudioProcessInClient::Resume", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    std::lock_guard<std::mutex> lock(statusSwitchLock_);
 
-    // todo
+    if (streamStatus_->load() == StreamStatus::STREAM_RUNNING) {
+        AUDIO_INFO_LOG("Resume find already running");
+        return SUCCESS;
+    }
+
+    StreamStatus targetStatus = StreamStatus::STREAM_PAUSED;
+    if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING)) {
+        AUDIO_ERR_LOG("Resume failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (processProxy_->Resume() != SUCCESS) {
+        streamStatus_->store(StreamStatus::STREAM_PAUSED);
+        AUDIO_ERR_LOG("Resume failed to call process proxy, reset status to PAUSED.");
+        threadStatusCV_.notify_all();
+        return ERR_OPERATION_FAILED;
+    }
+    UpdateHandleInfo();
+    streamStatus_->store(StreamStatus::STREAM_RUNNING);
+    threadStatusCV_.notify_all();
+
     return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::Stop()
 {
-    Trace trace("AudioProcessInClient::Stop");
+    Trace traceWithLog("AudioProcessInClient::Stop", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    std::lock_guard<std::mutex> lock(statusSwitchLock_);
+    if (streamStatus_->load() == StreamStatus::STREAM_STOPPED) {
+        AUDIO_INFO_LOG("Stop find already stopped");
+        return SUCCESS;
+    }
 
-    // todo
+    StreamStatus oldStatus = streamStatus_->load();
+    if (oldStatus == STREAM_IDEL || oldStatus == STREAM_RELEASED || oldStatus == STREAM_INVALID) {
+        AUDIO_ERR_LOG("Stop failed, invalid status : %{public}s", GetStatusInfo(oldStatus).c_str());
+        return ERR_ILLEGAL_STATE;
+    }
+
+    streamStatus_->store(StreamStatus::STREAM_STOPPING);
+    if (processProxy_->Stop() != SUCCESS) {
+        streamStatus_->store(oldStatus);
+        AUDIO_ERR_LOG("Stop failed in server, reset status to %{public}s", GetStatusInfo(oldStatus).c_str());
+        threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
+        return ERR_OPERATION_FAILED;
+    }
+    isCallbackLoopEnd_ = true;
+    threadStatusCV_.notify_all();
+
+    streamStatus_->store(StreamStatus::STREAM_STOPPED);
+    AUDIO_INFO_LOG("Success stop form %{public}s", GetStatusInfo(oldStatus).c_str());
     return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::Release()
 {
-    Trace trace("AudioProcessInClient::Release");
+    Trace traceWithLog("AudioProcessInClient::Release", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    // todo
+    // need any check?
+    Stop();
+    std::lock_guard<std::mutex> lock(statusSwitchLock_);
+    if (streamStatus_->load() != StreamStatus::STREAM_STOPPED) {
+        AUDIO_ERR_LOG("Process is not stopped");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (processProxy_->Release() != SUCCESS) {
+        AUDIO_ERR_LOG("Release may failed in server");
+        threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
+        return ERR_OPERATION_FAILED;
+    }
+
+    streamStatus_->store(StreamStatus::STREAM_RELEASED);
+    AUDIO_INFO_LOG("Success Released");
+    isInited_ = false;
     return SUCCESS;
 }
 
@@ -431,6 +528,18 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     cb->OnHandleData(spanSizeInByte_);
 }
 
+void AudioProcessInClientInner::UpdateHandleInfo()
+{
+    Trace traceSync("AudioProcessInClient::UpdateHandleInfo");
+    uint64_t serverHandlePos = 0;
+    int64_t serverHandleTime = 0;
+    int32_t ret = processProxy_->RequestHandleInfo();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
+    audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
+
+    handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+}
+
 int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)
 {
     Trace trace("AudioProcessInClient::GetPredictNextRead");
@@ -438,14 +547,7 @@ int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)
     uint32_t startPeriodCount = 20; // sync each time when start
     uint32_t oneBigPeriodCount = 40; // 200ms
     if (handleSpanCout < startPeriodCount || handleSpanCout % oneBigPeriodCount == 0) {
-        Trace traceSync("AudioProcessInClient::GetHandleInfo");
-        uint64_t serverHandlePos = 0;
-        int64_t serverHandleTime = 0;
-        int32_t ret = processProxy_->RequestHandleInfo();
-        AUDIO_INFO_LOG("RequestHandleInfo ret:%{public}d", ret);
-        audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
-
-        handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+        UpdateHandleInfo();
     }
 
     int64_t nextHandleTime = handleTimeModel_.GetTimeOfPos(posInFrame);
@@ -464,7 +566,7 @@ bool AudioProcessInClientInner::PrepareNext(uint64_t curWritePos, int64_t &wakeU
     }
 
     int64_t nextServerHandleTime = GetPredictNextHandleTime(nextWritePos) - ONE_MILLISECOND_DURATION;
-    AUDIO_DEBUG_LOG("nextWritePos %{public}" PRIu64" old wakeUpTime %{public}" PRIu64""
+    AUDIO_DEBUG_LOG("nextWritePos %{public}" PRIu64" old wakeUpTime %{public}" PRIu64" "
         "nextServerHandleTime %{public}" PRIu64".", nextWritePos, wakeUpTime, nextServerHandleTime);
     if (nextServerHandleTime < ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
@@ -614,6 +716,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
             AUDIO_WARNING_LOG("Wake up too late...");
             wakeUpTime = curTime;
         }
+        curWritePos = audioBuffer_->GetCurWriteFrame();
         if (!PrepareCurrent(curWritePos)) {
             AUDIO_ERR_LOG("PrepareCurrent failed!");
             continue;

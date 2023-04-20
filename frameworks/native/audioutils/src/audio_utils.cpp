@@ -90,8 +90,13 @@ void Trace::Count(const std::string &value, int64_t count, bool isEnable)
     CountTraceDebug(isEnable, HITRACE_TAG_ZAUDIO, value, count);
 }
 
-Trace::Trace(const std::string &value, bool isEnable) : isEnable_(isEnable)
+Trace::Trace(const std::string &value, bool isShowLog, bool isEnable) : isEnable_(isEnable)
 {
+    if (isShowLog) {
+        value_ = value;
+        isShowLog_ = true;
+        AUDIO_INFO_LOG("%{public}s start.", value_.c_str());
+    }
     StartTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO, value);
 }
 
@@ -100,6 +105,9 @@ void Trace::End()
     if (!isFinished_) {
         FinishTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO);
         isFinished_ = true;
+        if (isShowLog_) {
+            AUDIO_INFO_LOG("%{public}s end.", value_.c_str());
+        }
     }
 }
 
