@@ -168,6 +168,7 @@ void AudioSystemManager::AudioServerDied(pid_t pid)
 
 int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 {
+    std::lock_guard<std::mutex> lockSet(ringerModeCallbackMutex_);
     ringModeBackup_ = ringMode;
     if (ringerModeCallback_ != nullptr) {
         ringerModeCallback_->OnRingerModeUpdated(ringModeBackup_);
@@ -534,6 +535,7 @@ int32_t AudioSystemManager::UnsetDeviceChangeCallback()
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lockSet(ringerModeCallbackMutex_);
     if (!PermissionUtil::VerifySelfPermission()) {
         AUDIO_ERR_LOG("SetRingerModeCallback: No system permission");
         return ERR_PERMISSION_DENIED;
