@@ -198,6 +198,8 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
         return ERR_INVALID_INDEX;
     }
     sessionID_ = audioInterrupt_.sessionID;
+    audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
+    audioInterrupt_.contentType = rendererInfo_.contentType;
 
     AUDIO_INFO_LOG("InitAudioInterruptCallback::interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);

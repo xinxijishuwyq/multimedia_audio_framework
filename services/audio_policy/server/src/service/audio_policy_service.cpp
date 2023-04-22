@@ -1128,7 +1128,7 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
 
 int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 {
-    AUDIO_INFO_LOG("SetAudioScene: %{public}d current: %{public}d", audioScene, currentActiveDevice_);
+    AUDIO_INFO_LOG("SetAudioScene: %{public}d", audioScene);
     const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     audioScene_ = audioScene;
@@ -1138,13 +1138,13 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
 
     auto priorityDev = FetchHighPriorityDevice();
-    AUDIO_INFO_LOG("Priority device for setAudioScene: %{public}d", priorityDev);
+    AUDIO_INFO_LOG("Current active device: %{public}d. Priority device: %{public}d", currentActiveDevice_, priorityDev);
 
     int32_t result = ActivateNewDevice(priorityDev, true);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
 
     currentActiveDevice_ = priorityDev;
-    AUDIO_INFO_LOG("currentActiveDevice_: %{public}d", currentActiveDevice_);
+    AUDIO_INFO_LOG("Current active device updates: %{public}d", currentActiveDevice_);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
 
     result = gsp->SetAudioScene(audioScene, priorityDev);

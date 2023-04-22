@@ -976,13 +976,19 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    AUDIO_INFO_LOG("ActivateAudioInterrupt audioInterrupt:streamType: %{public}d, sessionID: %{public}u, "\
-        "isPlay: %{public}d, sourceType: %{public}d", (audioInterrupt.audioFocusType).streamType,
-        audioInterrupt.sessionID, (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
+    AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
+    AUDIO_INFO_LOG("ActivateAudioInterrupt::[audioInterrupt] streamType: %{public}d, sessionID: %{public}u, "\
+        "isPlay: %{public}d, sourceType: %{public}d", streamType, audioInterrupt.sessionID,
+        (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
+    AUDIO_INFO_LOG("ActivateAudioInterrupt::streamUsage: %{public}d, contentType: %{public}d, audioScene: %{public}d",
+        audioInterrupt.streamUsage, audioInterrupt.contentType, GetAudioScene());
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+        if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
+            UpdateAudioScene(audioInterrupt, ACTIVATE_AUDIO_INTERRUPT);
+        }
         return SUCCESS;
     }
 
@@ -999,6 +1005,9 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         OnAudioFocusInfoChange();
+        if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
+            UpdateAudioScene(audioInterrupt, ACTIVATE_AUDIO_INTERRUPT);
+        }
         return SUCCESS;
     }
 
@@ -1008,8 +1017,56 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_ERR_LOG("ActivateAudioInterrupt request rejected");
         return ERR_FOCUS_DENIED;
     }
-
+    if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
+        UpdateAudioScene(audioInterrupt, ACTIVATE_AUDIO_INTERRUPT);
+    }
     return SUCCESS;
+}
+
+void AudioPolicyServer::UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType)
+{
+    AudioScene currentAudioScene = GetAudioScene();
+    AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
+    AUDIO_INFO_LOG("UpdateAudioScene::changeType: %{public}d, currentAudioScene: %{public}d, streamType: %{public}d",
+        changeType, currentAudioScene, streamType);
+    switch (changeType) {
+        case ACTIVATE_AUDIO_INTERRUPT:
+            if (streamType == STREAM_RING && currentAudioScene == AUDIO_SCENE_DEFAULT) {
+                AUDIO_INFO_LOG("UpdateAudioScene::Ringtone is starting. Change audio scene to RINGING");
+                SetAudioScene(AUDIO_SCENE_RINGING);
+                break;
+            }
+            if (streamType == STREAM_VOICE_CALL) {
+                if (audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+                    && currentAudioScene != AUDIO_SCENE_PHONE_CALL) {
+                    AUDIO_INFO_LOG("UpdateAudioScene::Phone_call is starting. Change audio scene to PHONE_CALL");
+                    SetAudioScene(AUDIO_SCENE_PHONE_CALL);
+                    break;
+                }
+                if (currentAudioScene != AUDIO_SCENE_PHONE_CHAT) {
+                    AUDIO_INFO_LOG("UpdateAudioScene::VOIP is starting. Change audio scene to PHONE_CHAT");
+                    SetAudioScene(AUDIO_SCENE_PHONE_CHAT);
+                    break;
+                }
+            }
+            break;
+        case DEACTIVATE_AUDIO_INTERRUPT:
+            if (streamType == STREAM_RING && currentAudioScene == AUDIO_SCENE_RINGING) {
+                AUDIO_INFO_LOG("UpdateAudioScene::Ringtone is stopping. Change audio scene to DEFAULT");
+                SetAudioScene(AUDIO_SCENE_DEFAULT);
+                break;
+            }
+            if (streamType == STREAM_VOICE_CALL && (currentAudioScene == AUDIO_SCENE_PHONE_CALL
+                || currentAudioScene == AUDIO_SCENE_PHONE_CHAT)) {
+                AUDIO_INFO_LOG("UpdateAudioScene::Voice_call is stopping. Change audio scene to DEFAULT");
+                SetAudioScene(AUDIO_SCENE_DEFAULT);
+                break;
+            }
+            break;
+        default:
+            AUDIO_INFO_LOG("UpdateAudioScene::The audio scene did not change");
+            break;
+    }
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::SimulateFocusEntry()
@@ -1118,6 +1175,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
+    AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
@@ -1128,6 +1186,9 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
             OnAudioFocusInfoChange();
             return true;
         });
+        if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
+            UpdateAudioScene(audioInterrupt, DEACTIVATE_AUDIO_INTERRUPT);
+        }
         return SUCCESS;
     }
 
@@ -1141,6 +1202,9 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
             it = audioFocusInfoList_.erase(it);
             isInterruptActive = true;
             OnAudioFocusInfoChange();
+            if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
+                UpdateAudioScene(audioInterrupt, DEACTIVATE_AUDIO_INTERRUPT);
+            }
         } else {
             ++it;
         }
