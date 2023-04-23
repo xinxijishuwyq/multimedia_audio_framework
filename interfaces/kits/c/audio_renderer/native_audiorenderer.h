@@ -32,7 +32,7 @@ extern "C" {
 OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer);
 
 /*
- * Request to start playing the renderer stream.
+ * Request to start the renderer stream.
  *
  * @since 10
  *
@@ -42,7 +42,7 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer);
 OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer);
 
 /*
- * Request {bõfor the renderer stream to pause.
+ * Request to pause the renderer stream.
  *
  * @since 10
  *
@@ -52,7 +52,7 @@ OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer);
 OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer);
 
 /*
- * Request for the renderer stream stop.
+ * Request to stop renderer stream.
  *
  * @since 10
  *
@@ -62,7 +62,7 @@ OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer);
 OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer);
 
 /*
- * Request for the renderer stream flush.
+ * Request to flush the renderer stream.
  *
  * @since 10
  *
