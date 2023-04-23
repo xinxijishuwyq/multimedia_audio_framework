@@ -201,6 +201,10 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
     std::string GetSystemSoundUri(const std::string &key);
+
+    float GetMinStreamVolume(void);
+
+    float GetMaxStreamVolume(void);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

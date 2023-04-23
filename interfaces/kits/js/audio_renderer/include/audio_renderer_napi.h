@@ -105,6 +105,8 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRendererWrapper(napi_env env, std::unique_ptr<AudioRendererOptions> &renderOptions);
     static napi_value SetInterruptMode(napi_env env, napi_callback_info info);
+    static napi_value GetMinStreamVolume(napi_env env, napi_callback_info info);
+    static napi_value GetMaxStreamVolume(napi_env env, napi_callback_info info);
 
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
@@ -133,6 +135,7 @@ private:
     static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetRendererAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetDoubleValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);

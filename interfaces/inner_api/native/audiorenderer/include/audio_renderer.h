@@ -615,7 +615,24 @@ public:
      * @since 9
      */
     virtual float GetSingleStreamVolume() const = 0;
-    
+
+    /**
+     * @brief Gets the min volume this stream can set.
+     *
+     * @param none.
+     * @return min stream volume.
+     * @since 10
+     */
+    virtual float GetMinStreamVolume() const = 0;
+
+    /**
+     * @brief Gets the max volume this stream can set.
+     *
+     * @param none.
+     * @return max stream volume.
+     * @since 10
+     */
+    virtual float GetMaxStreamVolume() const = 0;
     virtual ~AudioRenderer();
 };
 }  // namespace AudioStandard

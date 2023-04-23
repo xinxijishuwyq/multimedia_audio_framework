@@ -104,6 +104,9 @@ public:
 
     std::string GetSystemSoundUri(const std::string &key);
 
+    float GetMinStreamVolume(void) const;
+
+    float GetMaxStreamVolume(void) const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -111,6 +114,8 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
     static constexpr int32_t CONST_FACTOR = 100;
+    static constexpr float MIN_STREAM_VOLUME = 0.0f;
+    static constexpr float MAX_STREAM_VOLUME = 1.0f;
 
     struct UserData {
         AudioAdapterManager *thiz;

@@ -100,6 +100,8 @@ private:
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

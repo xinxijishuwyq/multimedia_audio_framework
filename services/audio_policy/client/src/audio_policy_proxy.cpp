@@ -1736,5 +1736,41 @@ std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
     }
     return reply.ReadString();
 }
+
+float AudioPolicyProxy::GetMinStreamVolume()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMinStreamVolume WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(GET_MIN_VOLUME_STREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get min volume for stream failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
+
+float AudioPolicyProxy::GetMaxStreamVolume()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMaxStreamVolume: WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(GET_MAX_VOLUME_STREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get max volume for stream failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
 } // namespace AudioStandard
 } // namespace OHOS

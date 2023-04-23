@@ -1023,5 +1023,25 @@ std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
 
     return gsp->GetSystemSoundUri(key);
 }
+
+float AudioPolicyManager::GetMinStreamVolume()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetMinStreamVolume: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->GetMinStreamVolume();
+}
+
+float AudioPolicyManager::GetMaxStreamVolume()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetMaxStreamVolume: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->GetMaxStreamVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS

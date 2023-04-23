@@ -759,5 +759,15 @@ float AudioRendererPrivate::GetSingleStreamVolume() const
 {
     return audioStream_->GetSingleStreamVolume();
 }
+
+float AudioRendererPrivate::GetMinStreamVolume() const
+{
+    return AudioPolicyManager::GetInstance().GetMinStreamVolume();
+}
+
+float AudioRendererPrivate::GetMaxStreamVolume() const
+{
+    return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

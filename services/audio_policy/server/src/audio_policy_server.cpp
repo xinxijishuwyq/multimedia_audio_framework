@@ -1953,5 +1953,15 @@ std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
     AUDIO_INFO_LOG("GetSystemSoundUri:: key: %{public}s", key.c_str());
     return mPolicyService.GetSystemSoundUri(key);
 }
+
+float AudioPolicyServer::GetMinStreamVolume()
+{
+    return mPolicyService.GetMinStreamVolume();
+}
+
+float AudioPolicyServer::GetMaxStreamVolume()
+{
+    return mPolicyService.GetMaxStreamVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS

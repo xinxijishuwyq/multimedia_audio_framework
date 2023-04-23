@@ -848,6 +848,18 @@ void AudioPolicyManagerStub::GetSystemSoundUriInternal(MessageParcel &data, Mess
     reply.WriteString(result);
 }
 
+void AudioPolicyManagerStub::GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = GetMinStreamVolume();
+    reply.WriteFloat(volume);
+}
+
+void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = GetMaxStreamVolume();
+    reply.WriteFloat(volume);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1123,6 +1135,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_SYSTEM_SOUND_URI:
             GetSystemSoundUriInternal(data, reply);
+            break;
+
+        case GET_MIN_VOLUME_STREAM:
+            GetMinStreamVolumeInternal(data, reply);
+            break;
+
+        case GET_MAX_VOLUME_STREAM:
+            GetMaxStreamVolumeInternal(data, reply);
             break;
 
         default:

@@ -1089,5 +1089,15 @@ std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string
     AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
     return uri;
 }
+
+float AudioAdapterManager::GetMinStreamVolume() const
+{
+    return MIN_STREAM_VOLUME;
+}
+
+float AudioAdapterManager::GetMaxStreamVolume() const
+{
+    return MAX_STREAM_VOLUME;
+}
 } // namespace AudioStandard
 } // namespace OHOS
