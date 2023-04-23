@@ -23,6 +23,8 @@
 
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
@@ -31,8 +33,6 @@
 #include "audio_manager_listener_proxy.h"
 #include "i_audio_capturer_source.h"
 #include "i_standard_audio_server_manager_listener.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 
 #define PA
 #ifdef PA
@@ -77,10 +77,10 @@ void AudioServer::OnDump()
 
 void AudioServer::OnStart()
 {
-    AUDIO_DEBUG_LOG("AudioService OnStart");
+    AUDIO_DEBUG_LOG("AudioServer OnStart");
     bool res = Publish(this);
-    if (res) {
-        AUDIO_DEBUG_LOG("AudioService OnStart res=%{public}d", res);
+    if (!res) {
+        AUDIO_ERR_LOG("AudioServer start err");
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA

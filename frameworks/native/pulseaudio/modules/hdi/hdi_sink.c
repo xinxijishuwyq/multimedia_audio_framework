@@ -24,14 +24,18 @@
 #include <pulsecore/sink.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-#include <renderer_sink_adapter.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+#include <sched.h>
 #include <sys/types.h>
+#include <sys/resource.h>
+
 #include "audio_log.h"
+#include <renderer_sink_adapter.h>
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -195,6 +199,16 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
 static void ThreadFuncUseTiming(void *userdata)
 {
+    // set audio thread priority
+    struct sched_param param = {0};
+    param.sched_priority = 1;
+    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
+        AUDIO_ERR_LOG("set SCHED_FIFO failed");
+    } else {
+        AUDIO_INFO_LOG("set SCHED_FIFO success");
+    }
+    setpriority(PRIO_PROCESS, 0, -19);
+
     struct Userdata *u = userdata;
 
     pa_assert(u);
@@ -265,6 +279,9 @@ finish:
 
 static void ThreadFuncWriteHDI(void *userdata)
 {
+    // set audio thread priority
+    setpriority(PRIO_PROCESS, 0, -19);
+
     struct Userdata *u = userdata;
     pa_assert(u);
 
@@ -298,6 +315,9 @@ static void ThreadFuncWriteHDI(void *userdata)
 
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
+    // set audio thread priority
+    setpriority(PRIO_PROCESS, 0, -19);
+
     struct Userdata *u = userdata;
     pa_assert(u);
 
@@ -570,6 +590,9 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
+    // set audio thread priority
+    setpriority(PRIO_PROCESS, 0, -19);
+
     pa_sink_new_data data;
     pa_module *m;
     pa_sink *sink = NULL;
