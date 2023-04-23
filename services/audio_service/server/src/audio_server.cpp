@@ -20,6 +20,8 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
+#include <sched.h>
+#include <sys/resource.h>
 
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
@@ -77,7 +79,7 @@ void AudioServer::OnDump()
 
 void AudioServer::OnStart()
 {
-    AUDIO_DEBUG_LOG("AudioServer OnStart");
+    AUDIO_INFO_LOG("AudioServer OnStart");
     bool res = Publish(this);
     if (!res) {
         AUDIO_ERR_LOG("AudioServer start err");
@@ -612,5 +614,14 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
         }
     }
 }
+
+void AudioServer::RequestThreadPriority(uint32_t tid)
+{
+    // set audio thread priority
+    AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
+    setpriority(PRIO_PROCESS, tid, -16);
+    return;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

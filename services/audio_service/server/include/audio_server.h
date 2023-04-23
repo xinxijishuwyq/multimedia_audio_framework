@@ -71,6 +71,9 @@ public:
         const std::string& condition, const std::string& value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
+
+    void RequestThreadPriority(uint32_t tid) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 private:

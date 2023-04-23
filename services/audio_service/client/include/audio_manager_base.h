@@ -178,6 +178,8 @@ public:
     */
     virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) = 0;
 
+    virtual void RequestThreadPriority(uint32_t tid) = 0;
+
     enum {
         GET_MAX_VOLUME = 0,
         GET_MIN_VOLUME = 1,
@@ -199,6 +201,7 @@ public:
         SET_AUDIO_MONO_STATE = 17,
         SET_AUDIO_BALANCE_VALUE = 18,
         CREATE_AUDIOPROCESS = 19,
+        REQUEST_THREAD_PRIORITY = 20,
     };
 
 public:

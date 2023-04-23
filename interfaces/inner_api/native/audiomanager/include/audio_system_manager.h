@@ -897,10 +897,34 @@ public:
      * @since 8
      */
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+
+    /**
+     * @brief Get audio focus info
+     *
+     * @return Returns success or not
+     * @since 10
+     */
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+
+    /**
+     * @brief Register callback to listen audio focus info change event
+     *
+     * @return Returns success or not
+     * @since 10
+     */
     int32_t RegisterFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
+
+    /**
+     * @brief Unregister callback to listen audio focus info change event
+     *
+     * @return Returns success or not
+     * @since 10
+     */
     int32_t UnregisterFocusInfoChangeCallback(
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
+
+    void RequestThreadPriority(uint32_t tid);
+
     static void AudioServerDied(pid_t pid);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;

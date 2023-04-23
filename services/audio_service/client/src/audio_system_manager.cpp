@@ -1103,6 +1103,16 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     return result;
 }
 
+void AudioSystemManager::RequestThreadPriority(uint32_t tid)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("SetAudioBalanceValue::Audio service unavailable.");
+        return;
+    }
+    gasp->RequestThreadPriority(tid);
+}
+
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;

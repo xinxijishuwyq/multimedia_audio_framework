@@ -541,6 +541,7 @@ private:
     uint32_t sessionID;
     uint32_t volumeChannels;
     bool streamInfoUpdated;
+    bool firstFrame_;
 
     AudioRendererRate renderRate;
     AudioRenderMode renderMode_;
