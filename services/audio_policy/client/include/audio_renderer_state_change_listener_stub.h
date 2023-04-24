@@ -27,7 +27,7 @@ public:
     virtual ~AudioRendererStateChangeListenerStub();
 
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
-                                MessageParcel &reply, MessageOption &option(MessageOption::TF_ASYNC)) override;
+                                MessageParcel &reply, MessageOption &option) override;
     void OnRendererStateChange(const std::vector<std::unique_ptr<AudioRendererChangeInfo>>
         &audioRendererChangeInfos) override;
     void SetCallback(const std::weak_ptr<AudioRendererStateChangeCallback> &callback);

@@ -76,7 +76,7 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
 }
 
 int AudioRendererStateChangeListenerStub::OnRemoteRequest(
-    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option(MessageOption::TF_ASYNC))
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
         AUDIO_ERR_LOG("AudioRendererStateChangeListenerStub: ReadInterfaceToken failed");
@@ -99,7 +99,7 @@ int AudioRendererStateChangeListenerStub::OnRemoteRequest(
         }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option(MessageOption::TF_ASYNC));
         }
     }
 }

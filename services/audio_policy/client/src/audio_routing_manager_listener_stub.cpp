@@ -60,7 +60,7 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
         }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option(MessageOption::TF_ASYNC));
         }
     }
 }
