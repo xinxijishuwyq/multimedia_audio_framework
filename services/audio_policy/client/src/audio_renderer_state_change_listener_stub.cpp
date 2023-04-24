@@ -76,7 +76,7 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
 }
 
 int AudioRendererStateChangeListenerStub::OnRemoteRequest(
-    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option(MessageOption::TF_ASYNC))
 {
     if (data.ReadInterfaceToken() != GetDescriptor()) {
         AUDIO_ERR_LOG("AudioRendererStateChangeListenerStub: ReadInterfaceToken failed");
