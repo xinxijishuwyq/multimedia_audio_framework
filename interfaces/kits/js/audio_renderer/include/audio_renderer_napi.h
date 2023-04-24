@@ -135,7 +135,7 @@ private:
     static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetRendererAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
-    static void GetDoubleValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetStreamVolumeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);

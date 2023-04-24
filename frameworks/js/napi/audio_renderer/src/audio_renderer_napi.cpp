@@ -885,7 +885,7 @@ void AudioRendererNapi::GetIntValueAsyncCallbackComplete(napi_env env, napi_stat
     }
 }
 
-void AudioRendererNapi::GetDoubleValueAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+void AudioRendererNapi::GetStreamVolumeAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioRendererAsyncContext *>(data);
     napi_value valueParam = nullptr;
@@ -2324,7 +2324,7 @@ napi_value AudioRendererNapi::GetMinStreamVolume(napi_env env, napi_callback_inf
                 context->volLevel = context->objectInfo->audioRenderer_->GetMinStreamVolume();
                 context->status = SUCCESS;
             },
-            GetDoubleValueAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+            GetStreamVolumeAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
@@ -2377,7 +2377,7 @@ napi_value AudioRendererNapi::GetMaxStreamVolume(napi_env env, napi_callback_inf
                 context->volLevel = context->objectInfo->audioRenderer_->GetMaxStreamVolume();
                 context->status = SUCCESS;
             },
-            GetDoubleValueAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+            GetStreamVolumeAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
