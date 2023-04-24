@@ -56,6 +56,7 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate);
     AudioRendererRate GetRenderRate();
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback);
+    uint32_t GetUnderflowCount();
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode);

@@ -309,6 +309,14 @@ public:
     */
     uint8_t GetSampleSize() const;
 
+    /**
+    * Provides the underflow count required for this audio stream
+    * created using CreateStream
+    * @param underFlowCount will be get to number of frames
+    * @return Returns number of underflow
+    */
+    uint32_t GetCurrentUnderflowCount() const;
+
     // Device volume & route handling APIs
 
     // Audio stream callbacks

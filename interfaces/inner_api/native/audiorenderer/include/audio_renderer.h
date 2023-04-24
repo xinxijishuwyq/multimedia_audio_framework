@@ -633,6 +633,15 @@ public:
      * @since 10
      */
     virtual float GetMaxStreamVolume() const = 0;
+
+    /**
+     * @brief Get underflow count.
+     *
+     * @param none.
+     * @return underflow count.
+     * @since 10
+     */
+    virtual uint32_t GetUnderflowCount() const = 0;
     virtual ~AudioRenderer();
 };
 }  // namespace AudioStandard

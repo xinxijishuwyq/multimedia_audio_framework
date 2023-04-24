@@ -769,5 +769,10 @@ float AudioRendererPrivate::GetMaxStreamVolume() const
 {
     return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
 }
+
+uint32_t AudioRendererPrivate::GetUnderflowCount() const
+{
+    return audioStream_->GetUnderflowCount();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

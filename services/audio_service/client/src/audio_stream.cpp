@@ -651,6 +651,11 @@ int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback
     return SUCCESS;
 }
 
+uint32_t AudioStream::GetUnderflowCount()
+{
+    return GetCurrentUnderflowCount();
+}
+
 int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
 {
     int32_t ret = SetAudioRenderMode(renderMode);

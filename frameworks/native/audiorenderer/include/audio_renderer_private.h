@@ -72,6 +72,7 @@ public:
     float GetSingleStreamVolume() const override;
     float GetMinStreamVolume() const override;
     float GetMaxStreamVolume() const override;
+    uint32_t GetUnderflowCount() const override;
 
     AudioRendererInfo rendererInfo_ = {};
 

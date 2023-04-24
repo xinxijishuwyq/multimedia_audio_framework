@@ -1005,6 +1005,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     return AUDIO_CLIENT_SUCCESS;
 }
 
+uint32_t AudioServiceClient::GetCurrentUnderflowCount() const
+{
+    return underFlowCount;
+}
+
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::GetSessionID");
