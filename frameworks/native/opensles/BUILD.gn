@@ -95,7 +95,7 @@ ohos_shared_library("opensles") {
   output_name = "OpenSLES"
   output_extension = "so"
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 group("audio_opensles_test_packages") {
@@ -151,7 +151,7 @@ ohos_executable("audio_opensles_player_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -172,6 +172,6 @@ ohos_executable("audio_opensles_recorder_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

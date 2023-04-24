@@ -88,6 +88,6 @@ ohos_shared_library("audio") {
     "resource_management:global_resmgr",
   ]
   relative_install_dir = "module/multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
