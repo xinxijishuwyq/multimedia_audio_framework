@@ -99,7 +99,7 @@ int AudioRendererStateChangeListenerStub::OnRemoteRequest(
         }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
-            option = option(MessageOption::TF_ASYNC);
+            option = new MessageOption(MessageOption::TF_ASYNC);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
