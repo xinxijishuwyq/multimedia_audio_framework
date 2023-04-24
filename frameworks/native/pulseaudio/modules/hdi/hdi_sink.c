@@ -30,7 +30,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
-#include <sched.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 
@@ -200,13 +199,6 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 static void ThreadFuncUseTiming(void *userdata)
 {
     // set audio thread priority
-    struct sched_param param = {0};
-    param.sched_priority = 1;
-    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
-        AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    } else {
-        AUDIO_INFO_LOG("set SCHED_FIFO success");
-    }
     setpriority(PRIO_PROCESS, 0, -19);
 
     struct Userdata *u = userdata;
