@@ -68,6 +68,7 @@ private:
         size_t bufferSize;
         int32_t volType;
         double volLevel;
+        uint32_t rendererSampleRate;
         uint32_t audioStreamId;
         size_t totalBytesWritten;
         uint32_t underflowCount;
@@ -89,6 +90,8 @@ private:
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SetRenderRate(napi_env env, napi_callback_info info);
     static napi_value GetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value SetRendererSamplingRate(napi_env env, napi_callback_info info);
+    static napi_value GetRendererSamplingRate(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Write(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
@@ -129,6 +132,7 @@ private:
     static void GetAudioStreamIdCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetRendererSampleRateAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void WriteAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void PauseAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void StartAsyncCallbackComplete(napi_env env, napi_status status, void *data);

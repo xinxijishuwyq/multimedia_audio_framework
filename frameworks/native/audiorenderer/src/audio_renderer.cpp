@@ -505,6 +505,16 @@ AudioRendererRate AudioRendererPrivate::GetRenderRate() const
     return audioStream_->GetRenderRate();
 }
 
+int32_t AudioRendererPrivate::SetRendererSamplingRate(uint32_t sampleRate) const
+{
+    return audioStream_->SetRendererSamplingRate(sampleRate);
+}
+
+uint32_t AudioRendererPrivate::GetRendererSamplingRate() const
+{
+    return audioStream_->GetRendererSamplingRate();
+}
+
 int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {

@@ -2207,6 +2207,34 @@ int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererR
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::SetStreamRendererSamplingRate(uint32_t sampleRate)
+{
+    AUDIO_INFO_LOG("SetStreamRendererSamplingRate %{public}d", sampleRate);
+    if (!paStream) {
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
+    if (sampleRate <= 0) {
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+    rendererSampleRate = sampleRate;
+
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_operation *operation = pa_stream_update_sample_rate(paStream, sampleRate, nullptr, nullptr);
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+uint32_t AudioServiceClient::GetStreamRendererSamplingRate()
+{
+    if (rendererSampleRate == 0) {
+        return sampleSpec.rate;
+    }
+    return rendererSampleRate;
+}
+
 AudioRendererRate AudioServiceClient::GetStreamRenderRate()
 {
     return renderRate;

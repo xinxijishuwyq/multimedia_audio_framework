@@ -420,6 +420,24 @@ public:
     virtual AudioRendererRate GetRenderRate() const = 0;
 
     /**
+     * @brief Set the render sampling rate
+     *
+     * @param sampleRate The sample rate at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t SetRendererSamplingRate(uint32_t sampleRate) const = 0;
+
+    /**
+     * @brief Obtains the current render samplingrate
+     *
+     * @return Returns current render samplingrate
+     * @since 10
+     */
+    virtual uint32_t GetRendererSamplingRate() const = 0;
+
+    /**
      * @brief Registers the renderer position callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code

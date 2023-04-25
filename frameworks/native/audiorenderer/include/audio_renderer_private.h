@@ -50,6 +50,8 @@ public:
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
+    int32_t SetRendererSamplingRate(uint32_t sampleRate) const override;
+    uint32_t GetRendererSamplingRate() const override;
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override;
     int32_t SetRendererPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPositionCallback> &callback) override;
