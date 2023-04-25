@@ -660,6 +660,18 @@ public:
      * @since 10
      */
     virtual uint32_t GetUnderflowCount() const = 0;
+
+
+    /**
+     * @brief Get deviceInfo
+     *
+     * @param deviceInfo.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+    */
+    virtual int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const = 0;
+
     virtual ~AudioRenderer();
 };
 }  // namespace AudioStandard

@@ -108,6 +108,14 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void SetValueString(const napi_env &env, const std::string &fieldStr, const std::string stringValue,
+    napi_value &result)
+{
+    napi_value value = nullptr;
+    napi_create_string_utf8(env, stringValue.c_str(), NAPI_AUTO_LENGTH, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
 static AudioStandard::InterruptMode  GetNativeInterruptMode(int32_t interruptMode)
 {
     AudioStandard::InterruptMode result;
@@ -332,6 +340,38 @@ napi_value AudioRendererNapi::CreateInterruptHintTypeObject(napi_env env)
     return result;
 }
 
+static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const DeviceInfo &deviceInfo)
+{
+    SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole), valueParam);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType), valueParam);
+    SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.deviceId), valueParam);
+    SetValueString(env, "name", deviceInfo.deviceName, valueParam);
+    SetValueString(env, "address", deviceInfo.macAddress, valueParam);
+    SetValueString(env, "networkId", deviceInfo.networkId, valueParam);
+    SetValueString(env, "displayName", deviceInfo.displayName, valueParam);
+    SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(deviceInfo.interruptGroupId), valueParam);
+    SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(deviceInfo.volumeGroupId), valueParam);
+
+    napi_value value = nullptr;
+    napi_value sampleRates;
+    napi_create_array_with_length(env, 1, &sampleRates);
+    napi_create_int32(env, deviceInfo.audioStreamInfo.samplingRate, &value);
+    napi_set_element(env, sampleRates, 0, value);
+    napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
+
+    napi_value channelCounts;
+    napi_create_array_with_length(env, 1, &channelCounts);
+    napi_create_int32(env, deviceInfo.audioStreamInfo.channels, &value);
+    napi_set_element(env, channelCounts, 0, value);
+    napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
+
+    napi_value channelMasks;
+    napi_create_array_with_length(env, 1, &channelMasks);
+    napi_create_int32(env, deviceInfo.channelMasks, &value);
+    napi_set_element(env, channelMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
+}
+
 napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
 {
     napi_status status;
@@ -362,6 +402,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setInterruptMode", SetInterruptMode),
         DECLARE_NAPI_FUNCTION("getMinStreamVolume", GetMinStreamVolume),
         DECLARE_NAPI_FUNCTION("getMaxStreamVolume", GetMaxStreamVolume),
+        DECLARE_NAPI_FUNCTION("getCurrentOutputDevices", GetCurrentOutputDevices),
         DECLARE_NAPI_FUNCTION("getUnderflowCount", GetUnderflowCount),
         DECLARE_NAPI_GETTER("state", GetState)
     };
@@ -941,6 +982,24 @@ void AudioRendererNapi::GetRendererAsyncCallbackComplete(napi_env env, napi_stat
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
         HiLog::Error(LABEL, "ERROR: GetRendererAsyncCallbackComplete asyncContext is Null!");
+    }
+}
+
+void AudioRendererNapi::GetDeviceInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+{
+    napi_value valueParam = nullptr;
+    auto asyncContext = static_cast<AudioRendererAsyncContext *>(data);
+
+    if (asyncContext != nullptr) {
+        if (!asyncContext->status) {
+            (void)napi_create_object(env, &valueParam);
+            SetDeviceDescriptors(env, valueParam, asyncContext->deviceInfo);
+            asyncContext->status = AudioRendererNapi::isConstructSuccess_;
+            AudioRendererNapi::isConstructSuccess_ = SUCCESS;
+        }
+        CommonCallbackRoutine(env, asyncContext, valueParam);
+    } else {
+        HiLog::Error(LABEL, "ERROR: GetDeviceInfoAsyncCallbackComplete asyncContext is Null!");
     }
 }
 
@@ -2536,6 +2595,64 @@ napi_value AudioRendererNapi::GetMaxStreamVolume(napi_env env, napi_callback_inf
                 context->status = SUCCESS;
             },
             GetStreamVolumeAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+        if (status != napi_ok) {
+            result = nullptr;
+        } else {
+            status = napi_queue_async_work(env, asyncContext->work);
+            if (status == napi_ok) {
+                asyncContext.release();
+            } else {
+                result = nullptr;
+            }
+        }
+    }
+    return result;
+}
+
+napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
+    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
+        if (argc > PARAM0) {
+            napi_valuetype valueType = napi_undefined;
+            napi_typeof(env, argv[PARAM0], &valueType);
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
+            }
+        }
+
+        if (asyncContext->callbackRef == nullptr) {
+            napi_create_promise(env, &asyncContext->deferred, &result);
+        } else {
+            napi_get_undefined(env, &result);
+        }
+
+        napi_value resource = nullptr;
+        napi_create_string_utf8(env, "GetCurrentOutputDevices", NAPI_AUTO_LENGTH, &resource);
+
+        status = napi_create_async_work(
+            env, nullptr, resource,
+            [](napi_env env, void *data) {
+                auto context = static_cast<AudioRendererAsyncContext *>(data);
+                if (!CheckContextStatus(context)) {
+                    return;
+                }
+                DeviceInfo deviceInfo;
+                context->status = context->objectInfo->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
+                if (context->status == ERR_INVALID_PARAM) {
+                    context->status = NAPI_ERROR_INVALID_PARAM;
+                } else if (context->status == SUCCESS) {
+                    context->deviceInfo = deviceInfo;
+                }
+            },
+            GetDeviceInfoAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {

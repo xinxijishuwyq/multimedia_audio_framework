@@ -83,6 +83,7 @@ private:
         DeviceType deviceType;
         AudioRendererNapi *objectInfo;
         AudioRendererOptions rendererOptions;
+        DeviceInfo deviceInfo;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
@@ -111,6 +112,7 @@ private:
     static napi_value SetInterruptMode(napi_env env, napi_callback_info info);
     static napi_value GetMinStreamVolume(napi_env env, napi_callback_info info);
     static napi_value GetMaxStreamVolume(napi_env env, napi_callback_info info);
+    static napi_value GetCurrentOutputDevices(napi_env env, napi_callback_info info);
     static napi_value GetUnderflowCount(napi_env env, napi_callback_info info);
 
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
@@ -142,6 +144,7 @@ private:
     static void GetRendererAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetStreamVolumeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetDeviceInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetUnderflowCountAsyncCallbackComplete(napi_env env, napi_status status, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,

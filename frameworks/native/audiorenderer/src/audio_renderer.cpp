@@ -780,6 +780,30 @@ float AudioRendererPrivate::GetMaxStreamVolume() const
     return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
 }
 
+int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) const
+{
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::GetCurrentOutputDevices Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::GetCurrentOutputDevices Get Current Renderer devices failed");
+        return ret;
+    }
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        if ((*it)->sessionId == sessionId) {
+            deviceInfo = (*it)->outputDeviceInfo;
+        }
+    }
+    return SUCCESS;
+}
+
 uint32_t AudioRendererPrivate::GetUnderflowCount() const
 {
     return audioStream_->GetUnderflowCount();
