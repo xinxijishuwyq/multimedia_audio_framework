@@ -103,6 +103,20 @@ public:
     virtual void OnWriteData(size_t length) = 0;
 };
 
+class AudioRendererDeviceChangeCallback {
+public:
+    virtual ~AudioRendererDeviceChangeCallback() = default;
+
+    /**
+     * Called when renderer device is updated.
+     *
+     * @param state Indicates updated device of the renderer.
+     * since 10
+     */
+    virtual void OnStateChange(const DeviceInfo &deviceInfo) = 0;
+    virtual void RemoveAllCallbacks() = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  * @since 8
@@ -672,6 +686,53 @@ public:
     */
     virtual int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const = 0;
 
+    /**
+     * @brief Registers the renderer event callback listener.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+                                              const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer event callback listener.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t UnregisterAudioRendererEventListener(const int32_t clientUID);
+
+    /**
+     * @brief Register audio policy service died callback.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+                                           const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) = 0;
+
+    /**
+     * @brief Unregister audio policy service died callback.
+     *
+     * @param clientUID client UID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientUID) = 0;
+
+    /**
+     * @brief Destory callback instance when unregister renderer event listener.
+     * @since 10
+     */
+    virtual void DestroyAudioRendererStateCallback() = 0;
     virtual ~AudioRenderer();
 };
 }  // namespace AudioStandard

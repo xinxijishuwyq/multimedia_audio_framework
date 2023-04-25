@@ -205,6 +205,9 @@ public:
     float GetMinStreamVolume(void);
 
     float GetMaxStreamVolume(void);
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+                                    const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
+    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientUID);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
@@ -220,6 +223,7 @@ private:
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
+    static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

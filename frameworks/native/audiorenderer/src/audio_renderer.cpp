@@ -808,5 +808,136 @@ uint32_t AudioRendererPrivate::GetUnderflowCount() const
 {
     return audioStream_->GetUnderflowCount();
 }
+
+int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientUID,
+    const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientUID);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (GetCurrentOutputDevices(currentDeviceInfo) != SUCCESS) {
+        AUDIO_ERR_LOG("get current device info failed");
+        return ERROR;
+    }
+
+    if (!audioDeviceChangeCallback_) {
+        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>(this);
+        if (!audioDeviceChangeCallback_) {
+            AUDIO_ERR_LOG("AudioRendererPrivate: Memory Allocation Failed !!");
+            return ERROR;
+        }
+    }
+
+    int32_t ret =
+        AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientUID, audioDeviceChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener failed");
+        return ERROR;
+    }
+
+    audioDeviceChangeCallback_->setAudioRendererObj(this);
+    audioDeviceChangeCallback_->SaveCallback(callback);
+    AUDIO_INFO_LOG("AudioRendererPrivate:: audioDeviceChangeCallback_ use_count=%{public}ld",
+        audioDeviceChangeCallback_.use_count());
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+    const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientUID);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientUID, callback);
+}
+
+int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate:: UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientUID);
+    return AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientUID);
+}
+
+void AudioRendererPrivate::DestroyAudioRendererStateCallback()
+{
+    if (audioDeviceChangeCallback_ != nullptr) {
+        audioDeviceChangeCallback_.reset();
+        audioDeviceChangeCallback_ = nullptr;
+    }
+}
+
+int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate::UnregisterAudioCapturerEventListener client id: %{public}d", clientUID);
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientUID);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::UnregisterAudioRendererEventListener failed");
+        return ERROR;
+    }
+
+    DestroyAudioRendererStateCallback();
+    return SUCCESS;
+}
+
+AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl(const AudioRenderer *audioRender)
+{
+    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance create");
+}
+
+AudioRendererStateChangeCallbackImpl::~AudioRendererStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance destory");
+}
+
+void AudioRendererStateChangeCallbackImpl::SaveCallback(
+    const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback)
+{
+    callback_ = callback;
+}
+
+void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
+{
+    renderer = rendererObj;
+}
+
+bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
+{
+    bool deviceUpdated = false;
+    DeviceInfo deviceInfo = {};
+
+    if (GetCurrentOutputDevices(deviceInfo) != SUCCESS) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::GetCurrentOutputDevices failed");
+        return deviceUpdated;
+    }
+
+    AUDIO_INFO_LOG("newDeviceInfo type: %{public}d, currentDeviceInfo type: %{public}d ",
+        deviceInfo.deviceType, currentDeviceInfo.deviceType);
+    if (currentDeviceInfo.deviceType != deviceInfo.deviceType) {
+        currentDeviceInfo = deviceInfo;
+        newDeviceInfo = currentDeviceInfo;
+        deviceUpdated = true;
+    }
+    return deviceUpdated;
+}
+
+void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
+    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
+    if (cb == nullptr) {
+        AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
+        return;
+    }
+    AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
+    DeviceInfo deviceInfo = {};
+    if (renderer->IsDeviceChanged(deviceInfo)) {
+        cb->OnStateChange(deviceInfo);
+    }
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -28,6 +28,7 @@ using namespace std;
 
 static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
+std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
@@ -75,6 +76,14 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
     lock_guard<mutex> lock(g_apProxyMutex);
     AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
+    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
+    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
+        cb = it->second.lock();
+        if (cb != nullptr) {
+            cb->OnAudioPolicyServiceDied();
+            rendererCBMap_.erase(getpid());
+        }
+    }
     g_apProxy = nullptr;
 }
 
@@ -1042,6 +1051,23 @@ float AudioPolicyManager::GetMaxStreamVolume()
         return ERROR;
     }
     return gsp->GetMaxStreamVolume();
+}
+
+int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+    const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
+{
+    lock_guard<mutex> lock(g_apProxyMutex);
+    rendererCBMap_[clientUID] = callback;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clientUID)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientUID);
+    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
+        rendererCBMap_.erase(getpid());
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -963,6 +963,17 @@ enum StateChangeCmdType {
     CMD_FROM_CLIENT = 0,
     CMD_FROM_SYSTEM = 1
 };
+
+class AudioRendererPolicyServiceDiedCallback {
+public:
+    virtual ~AudioRendererPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 10
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

@@ -25,6 +25,8 @@
 #include "audio_system_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_stream_manager.h"
+#include "audio_renderer_state_callback_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,6 +53,8 @@ public:
     };
     std::unique_ptr<AudioRenderer> audioRenderer_;
     static napi_value Init(napi_env env, napi_value exports);
+    void DestroyCallbacks();
+    void DestroyNAPICallbacks();
 private:
     struct AudioRendererAsyncContext {
         napi_env env;
@@ -157,8 +161,8 @@ private:
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterDataRequestCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
-    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
-
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
+                                        const std::string& cbName);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioRendererRateObject(napi_env env);
     static napi_value CreateInterruptEventTypeObject(napi_env env);
@@ -166,7 +170,9 @@ private:
     static napi_value CreateInterruptHintTypeObject(napi_env env);
     static napi_value CreateAudioStateObject(napi_env env);
     static napi_value CreateAudioSampleFormatObject(napi_env env);
-
+    static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
+                                                        AudioRendererNapi *rendererNapi);
     static napi_ref audioRendererRate_;
     static napi_ref interruptEventType_;
     static napi_ref interruptForceType_;
@@ -194,6 +200,8 @@ private:
     std::shared_ptr<AudioRendererWriteCallback> dataRequestCBNapi_ = nullptr;
     static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
     static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+    std::shared_ptr<AudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;
 };
 
 static const std::map<std::string, InterruptType> interruptEventTypeMap = {
