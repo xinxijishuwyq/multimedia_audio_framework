@@ -60,7 +60,6 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
         }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
-            option.SetFlags(MessageOption::TF_ASYNC);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
