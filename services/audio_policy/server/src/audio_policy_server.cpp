@@ -1342,7 +1342,8 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t /* clientId */, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t /* clientId */,
+    const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
