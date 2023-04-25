@@ -2548,6 +2548,7 @@ void AudioServiceClient::HandleUnsetCapturerPeriodReachedEvent()
 
 int32_t AudioServiceClient::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
+    std::lock_guard<std::mutex> lockSet(writeCallbackMutex_);
     if (!callback) {
         AUDIO_ERR_LOG("SetRendererWriteCallback callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -2590,6 +2591,7 @@ void AudioServiceClient::SendReadBufferRequestEvent()
 
 void AudioServiceClient::HandleWriteRequestEvent()
 {
+    std::lock_guard<std::mutex> lockSet(writeCallbackMutex_);
     // do callback to application
     if (writeCallback_) {
         size_t requestSize;
