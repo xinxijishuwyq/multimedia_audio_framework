@@ -634,19 +634,9 @@ int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
     return SetStreamRenderRate(renderRate);
 }
 
-int32_t AudioStream::SetRendererSamplingRate(uint32_t sampleRate)
-{
-    return SetStreamRendererSamplingRate(sampleRate);
-}
-
 AudioRendererRate AudioStream::GetRenderRate()
 {
     return GetStreamRenderRate();
-}
-
-uint32_t AudioStream::GetRendererSamplingRate()
-{
-    return GetStreamRendererSamplingRate();
 }
 
 int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
@@ -659,11 +649,6 @@ int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback
     SaveStreamCallback(callback);
 
     return SUCCESS;
-}
-
-uint32_t AudioStream::GetUnderflowCount()
-{
-    return GetCurrentUnderflowCount();
 }
 
 int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)

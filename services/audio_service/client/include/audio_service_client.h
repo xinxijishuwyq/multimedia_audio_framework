@@ -315,7 +315,7 @@ public:
     * @param underFlowCount will be get to number of frames
     * @return Returns number of underflow
     */
-    uint32_t GetCurrentUnderflowCount() const;
+    uint32_t GetUnderflowCount() const;
 
     // Device volume & route handling APIs
 
@@ -438,14 +438,14 @@ public:
     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
     * defined in {@link audio_errors.h} otherwise.
     */
-    int32_t SetStreamRendererSamplingRate(uint32_t sampleRate);
+    int32_t SetRendererSamplingRate(uint32_t sampleRate);
 
     /**
     * @brief Obtains render sampling rate
     *
     * @return Returns current render sampling rate
     */
-    uint32_t GetStreamRendererSamplingRate();
+    uint32_t GetRendererSamplingRate();
 
     /**
      * @brief Set the buffer duration in msec
