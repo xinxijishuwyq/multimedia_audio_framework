@@ -16,6 +16,7 @@
 #include "audio_renderer_state_change_listener_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#include "audio_group_handle.h"
 
 using namespace std;
 
@@ -120,6 +121,8 @@ void AudioRendererStateChangeListenerCallback::UpdateDeviceInfo(
             audioRendererChangeInfos[i]->clientUID = 0;
             audioRendererChangeInfos[i]->rendererState = RENDERER_INVALID;
             audioRendererChangeInfos[i]->outputDeviceInfo.networkId = "";
+            audioRendererChangeInfos[i]->outputDeviceInfo.interruptGroupId = GROUP_ID_NONE;
+            audioRendererChangeInfos[i]->outputDeviceInfo.volumeGroupId = GROUP_ID_NONE;
         }
     }
 }

@@ -16,6 +16,7 @@
 #include "audio_capturer_state_change_listener_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#include "audio_group_handle.h"
 
 using namespace std;
 
@@ -117,6 +118,8 @@ void AudioCapturerStateChangeListenerCallback::UpdateDeviceInfo(
             audioCapturerChangeInfos[i]->clientUID = 0;
             audioCapturerChangeInfos[i]->capturerState = CAPTURER_INVALID;
             audioCapturerChangeInfos[i]->inputDeviceInfo.networkId = "";
+            audioCapturerChangeInfos[i]->inputDeviceInfo.interruptGroupId = GROUP_ID_NONE;
+            audioCapturerChangeInfos[i]->inputDeviceInfo.volumeGroupId = GROUP_ID_NONE;
         }
     }
 }
