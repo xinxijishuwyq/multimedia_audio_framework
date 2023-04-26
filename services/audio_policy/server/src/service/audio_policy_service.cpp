@@ -1155,7 +1155,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
 void AudioPolicyService::SetEarpieceState()
 {
-    if (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT) {
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         // add earpiece to connectedDevices_
         auto isPresent = [] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
@@ -1528,7 +1528,8 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
         return;
         }
         std::vector<DistributedHardware::DmDeviceInfo> deviceList;
-        if (DistributedHardware::DeviceManager::GetInstance().GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
+        if (DistributedHardware::DeviceManager::GetInstance()
+            .GetTrustedDeviceList(AUDIO_SERVICE_PKG, "", deviceList) == SUCCESS) {
             for (auto deviceInfo : deviceList) {
                 std::string strNetworkId(deviceInfo.networkId);
                 if (strNetworkId == deviceDescriptor->networkId_) {
