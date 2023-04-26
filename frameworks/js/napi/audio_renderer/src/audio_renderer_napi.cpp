@@ -2290,7 +2290,7 @@ napi_value AudioRendererNapi::On(napi_env env, napi_callback_info info)
 }
 
 napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
-                                                const std::string& cbName)
+    const std::string& cbName)
 {
     AudioRendererNapi *rendererNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&rendererNapi));
@@ -2740,7 +2740,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
 
         int32_t ret =
             rendererNapi->audioRenderer_->RegisterAudioRendererEventListener(getpid(),
-            rendererNapi->rendererDeviceChangeCallbackNapi_);
+                rendererNapi->rendererDeviceChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioRendererNapi: Registering of Renderer Device Change Callback Failed");
             return;
@@ -2749,7 +2749,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
 
     if (!rendererNapi->rendererPolicyServiceDiedCallbackNapi_) {
         rendererNapi->rendererPolicyServiceDiedCallbackNapi_ =
-        std::make_shared<AudioRendererPolicyServiceDiedCallbackNapi>(rendererNapi);
+            std::make_shared<AudioRendererPolicyServiceDiedCallbackNapi>(rendererNapi);
         if (!rendererNapi->rendererPolicyServiceDiedCallbackNapi_) {
             AUDIO_ERR_LOG("AudioRendererNapi: Memory Allocation Failed !!");
             return;
@@ -2757,7 +2757,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
 
         int32_t ret =
             rendererNapi->audioRenderer_->RegisterAudioPolicyServerDiedCb(getpid(),
-            rendererNapi->rendererPolicyServiceDiedCallbackNapi_);
+                rendererNapi->rendererPolicyServiceDiedCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("AudioRendererNapi: Registering of AudioPolicyService Died Change Callback Failed");
             return;
@@ -2765,7 +2765,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
     }
 
     std::shared_ptr<AudioRendererDeviceChangeCallbackNapi> cb =
-    std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(rendererNapi->rendererDeviceChangeCallbackNapi_);
+        std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(rendererNapi->rendererDeviceChangeCallbackNapi_);
     cb->AddCallbackReference(argv[PARAM1]);
     AUDIO_INFO_LOG("AudioRendererNapi::RegisterRendererStateChangeCallback is successful");
 }
@@ -2790,7 +2790,7 @@ void AudioRendererNapi::UnregisterRendererDeviceChangeCallback(napi_env env, siz
     }
 
     std::shared_ptr<AudioRendererDeviceChangeCallbackNapi> cb =
-    std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(rendererNapi->rendererDeviceChangeCallbackNapi_);
+        std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(rendererNapi->rendererDeviceChangeCallbackNapi_);
     cb->RemoveCallbackReference(env, callback);
 
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {

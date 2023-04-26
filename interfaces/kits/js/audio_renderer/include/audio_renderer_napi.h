@@ -162,7 +162,7 @@ private:
     static napi_value RegisterDataRequestCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
-                                        const std::string& cbName);
+        const std::string& cbName);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioRendererRateObject(napi_env env);
     static napi_value CreateInterruptEventTypeObject(napi_env env);
@@ -172,7 +172,7 @@ private:
     static napi_value CreateAudioSampleFormatObject(napi_env env);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
     static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
-                                                        AudioRendererNapi *rendererNapi);
+        AudioRendererNapi *rendererNapi);
     static napi_ref audioRendererRate_;
     static napi_ref interruptEventType_;
     static napi_ref interruptForceType_;

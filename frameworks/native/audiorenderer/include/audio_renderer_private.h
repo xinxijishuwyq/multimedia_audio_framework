@@ -79,10 +79,10 @@ public:
     uint32_t GetUnderflowCount() const override;
     bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
     int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
-                                        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
+        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
     int32_t UnregisterAudioRendererEventListener(const int32_t clientUID) override;
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
-                                    const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
+        const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientUID) override;
     void DestroyAudioRendererStateCallback() override;
 
