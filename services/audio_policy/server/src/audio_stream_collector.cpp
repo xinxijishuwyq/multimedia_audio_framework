@@ -430,7 +430,7 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
         capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
-    AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentCapturerChangeInfos returned");
+        AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentCapturerChangeInfos returned");
     }
 
     return SUCCESS;
