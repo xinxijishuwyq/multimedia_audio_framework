@@ -219,7 +219,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSampleFormat(AudioSampleFormat sa
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
 {
-    if (streamType_ == CAPTURER_TYPE) {
+    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN
+        || contentType == ContentType::CONTENT_TYPE_UNKNOWN) {
         AUDIO_ERR_LOG("Error, invalid type input");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
@@ -236,10 +237,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
-    if (streamType_ == RENDERER_TYPE) {
+    if (streamType_ == RENDERER_TYPE || type == SOURCE_TYPE_INVALID) {
         AUDIO_ERR_LOG("Error, invalid type input");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
+
     sourceType_ = type;
     return AUDIOSTREAM_SUCCESS;
 }
