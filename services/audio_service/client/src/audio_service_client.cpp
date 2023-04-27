@@ -401,13 +401,14 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 
 void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 {
-    AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
-
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     AUDIO_INFO_LOG("Current Context State: %{public}d", pa_context_get_state(context));
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
+            AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+            pa_threaded_mainloop_signal(mainLoop, 0);
+            break;
         case PA_CONTEXT_TERMINATED:
         case PA_CONTEXT_FAILED:
             pa_threaded_mainloop_signal(mainLoop, 0);

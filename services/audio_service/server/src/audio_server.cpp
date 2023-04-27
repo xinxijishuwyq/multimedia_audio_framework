@@ -621,7 +621,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid)
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
     struct sched_param param = {0};
     param.sched_priority = 1; // 1 used for fifo priority
-    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
+    if (sched_setscheduler(tid, SCHED_FIFO, &param) != 0) {
         AUDIO_ERR_LOG("set SCHED_FIFO failed");
     }
     setpriority(PRIO_PROCESS, tid, AUDIO_CLIENT_THREAD_PRIORITY);
