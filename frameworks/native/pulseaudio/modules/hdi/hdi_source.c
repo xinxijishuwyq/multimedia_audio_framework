@@ -138,7 +138,7 @@ static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offse
         }
         default: {
             pa_log("SourceProcessMsg default case");
-            return pa_SourceProcessMsg(o, code, data, offset, chunk);
+            return pa_source_process_msg(o, code, data, offset, chunk);
         }
     }
 }

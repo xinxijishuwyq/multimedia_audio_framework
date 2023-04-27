@@ -1107,7 +1107,7 @@ void AudioSystemManager::RequestThreadPriority(uint32_t tid)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     if (gasp == nullptr) {
-        AUDIO_ERR_LOG("SetAudioBalanceValue::Audio service unavailable.");
+        AUDIO_ERR_LOG("RequestThreadPriority Audio service unavailable.");
         return;
     }
     gasp->RequestThreadPriority(tid);

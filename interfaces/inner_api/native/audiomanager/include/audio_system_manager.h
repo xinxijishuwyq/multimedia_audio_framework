@@ -923,6 +923,12 @@ public:
     int32_t UnregisterFocusInfoChangeCallback(
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
 
+    /**
+     * @brief Ask audio native process to request thread priority for client
+     *
+     * @param tid Target thread id
+     * @since 10
+     */
     void RequestThreadPriority(uint32_t tid);
 
     static void AudioServerDied(pid_t pid);
