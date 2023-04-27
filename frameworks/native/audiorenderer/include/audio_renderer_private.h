@@ -78,12 +78,12 @@ public:
     int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
     bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
-    int32_t RegisterAudioRendererEventListener(const int32_t clientUID,
+    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
-    int32_t UnregisterAudioRendererEventListener(const int32_t clientUID) override;
-    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) override;
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
-    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientUID) override;
+    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
     void DestroyAudioRendererStateCallback() override;
 
     AudioRendererInfo rendererInfo_ = {};
@@ -142,7 +142,7 @@ private:
 
 class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
 public:
-    explicit AudioRendererStateChangeCallbackImpl(const AudioRenderer *audioRenderer);
+    AudioRendererStateChangeCallbackImpl();
     virtual ~AudioRendererStateChangeCallbackImpl();
 
     void OnRendererStateChange(

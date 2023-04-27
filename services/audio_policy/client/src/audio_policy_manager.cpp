@@ -1053,17 +1053,17 @@ float AudioPolicyManager::GetMaxStreamVolume()
     return gsp->GetMaxStreamVolume();
 }
 
-int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
     const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
     lock_guard<mutex> lock(g_apProxyMutex);
-    rendererCBMap_[clientUID] = callback;
+    rendererCBMap_[clientPid] = callback;
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clientUID)
+int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientUID);
+    AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioPolicyServerDiedCb client pid: %{public}d", clientPid);
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
         rendererCBMap_.erase(getpid());
     }

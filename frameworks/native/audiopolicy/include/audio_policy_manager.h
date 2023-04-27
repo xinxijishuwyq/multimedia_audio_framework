@@ -205,9 +205,9 @@ public:
     float GetMinStreamVolume(void);
 
     float GetMaxStreamVolume(void);
-    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
-    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientUID);
+    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

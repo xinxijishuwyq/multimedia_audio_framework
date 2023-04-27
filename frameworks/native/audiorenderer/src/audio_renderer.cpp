@@ -809,10 +809,10 @@ uint32_t AudioRendererPrivate::GetUnderflowCount() const
     return audioStream_->GetUnderflowCount();
 }
 
-int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientUID,
+int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientUID);
+    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientPid);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");
         return ERR_INVALID_PARAM;
@@ -824,7 +824,7 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
     }
 
     if (!audioDeviceChangeCallback_) {
-        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>(this);
+        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
         if (!audioDeviceChangeCallback_) {
             AUDIO_ERR_LOG("AudioRendererPrivate: Memory Allocation Failed !!");
             return ERROR;
@@ -832,7 +832,7 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
     }
 
     int32_t ret =
-        AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientUID, audioDeviceChangeCallback_);
+        AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, audioDeviceChangeCallback_);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener failed");
         return ERROR;
@@ -840,27 +840,26 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
 
     audioDeviceChangeCallback_->setAudioRendererObj(this);
     audioDeviceChangeCallback_->SaveCallback(callback);
-    AUDIO_INFO_LOG("AudioRendererPrivate:: audioDeviceChangeCallback_ use_count=%{public}ld",
-        audioDeviceChangeCallback_.use_count());
+    AUDIO_INFO_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
     return SUCCESS;
 }
 
-int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientUID,
+int32_t AudioRendererPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
     const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
 {
-    AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientUID);
+    AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("callback is null");
         return ERR_INVALID_PARAM;
     }
 
-    return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientUID, callback);
+    return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
 }
 
-int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t clientUID)
+int32_t AudioRendererPrivate::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioRendererPrivate:: UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientUID);
-    return AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientUID);
+    AUDIO_INFO_LOG("AudioRendererPrivate:: UnregisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
+    return AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientPid);
 }
 
 void AudioRendererPrivate::DestroyAudioRendererStateCallback()
@@ -871,10 +870,10 @@ void AudioRendererPrivate::DestroyAudioRendererStateCallback()
     }
 }
 
-int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientUID)
+int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioRendererPrivate::UnregisterAudioCapturerEventListener client id: %{public}d", clientUID);
-    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientUID);
+    AUDIO_INFO_LOG("AudioRendererPrivate::UnregisterAudioCapturerEventListener client id: %{public}d", clientPid);
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioRendererPrivate::UnregisterAudioRendererEventListener failed");
         return ERROR;
@@ -884,7 +883,7 @@ int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t
     return SUCCESS;
 }
 
-AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl(const AudioRenderer *audioRender)
+AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance create");
 }
