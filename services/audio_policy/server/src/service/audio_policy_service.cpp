@@ -1880,8 +1880,12 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
 
     if (hasSystemPermission) {
         deviceInfo.networkId = desc->networkId_;
+        deviceInfo.volumeGroupId = desc->volumeGroupId_;
+        deviceInfo.interruptGroupId = desc->interruptGroupId_;
     } else {
         deviceInfo.networkId = "";
+        deviceInfo.volumeGroupId = GROUP_ID_NONE;
+        deviceInfo.interruptGroupId = GROUP_ID_NONE;
     }
     deviceInfo.audioStreamInfo.samplingRate = desc->audioStreamInfo_.samplingRate;
     deviceInfo.audioStreamInfo.encoding = desc->audioStreamInfo_.encoding;

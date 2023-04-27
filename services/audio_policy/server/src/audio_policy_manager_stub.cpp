@@ -744,6 +744,9 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
+        reply.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
+        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
+        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
     }
 
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
@@ -785,6 +788,9 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
+        reply.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
+        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
+        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
     }
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }

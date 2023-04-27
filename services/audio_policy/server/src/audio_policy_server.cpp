@@ -422,8 +422,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     if (!hasSystemPermission) {
         for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
             desc->networkId_ = "";
-            desc->interruptGroupId_ = DEFAULT_VOLUME_INTERRUPT_ID;
-            desc->volumeGroupId_ = DEFAULT_VOLUME_GROUP_ID;
+            desc->interruptGroupId_ = GROUP_ID_NONE;
+            desc->volumeGroupId_ = GROUP_ID_NONE;
         }
     }
 
