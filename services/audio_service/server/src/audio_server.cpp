@@ -50,6 +50,7 @@ namespace AudioStandard {
 std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const unsigned int TIME_OUT_SECONDS = 10;
+const int AUDIO_CLIENT_THREAD_PRIORITY = -19;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -617,16 +618,13 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
 
 void AudioServer::RequestThreadPriority(uint32_t tid)
 {
-    // set audio thread priority
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
     struct sched_param param = {0};
     param.sched_priority = 1;
     if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
         AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    } else {
-        AUDIO_INFO_LOG("set SCHED_FIFO success");
     }
-    setpriority(PRIO_PROCESS, tid, -16);
+    setpriority(PRIO_PROCESS, tid, AUDIO_CLIENT_THREAD_PRIORITY);
     return;
 }
 

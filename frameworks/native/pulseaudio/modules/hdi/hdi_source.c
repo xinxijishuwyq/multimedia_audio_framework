@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <audio_manager.h>
+
 #include <config.h>
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
@@ -27,18 +27,22 @@
 #include <pulsecore/rtpoll.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
+
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <inttypes.h>
 #include <stdbool.h>
-#include "audio_log.h"
+#include <sys/resource.h>
+
 #include "audio_types.h"
+#include "audio_manager.h"
+
+#include "audio_log.h"
 #include "capturer_source_adapter.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_AUDIO_DEVICE_NAME "Internal Mic"
-#define DEFAULT_DEVICE_CLASS "primary"
 #define DEFAULT_DEVICE_NETWORKID "LocalDevice"
 
 #define DEFAULT_BUFFER_SIZE (1024 * 16)
@@ -51,6 +55,7 @@
 #define AUDIO_FRAME_NUM_IN_BUF 30
 
 const char *DEVICE_CLASS_REMOTE = "remote";
+const int AUDIO_PROCESS_THREAD_PRIORITY = -16;
 
 struct Userdata {
     pa_core *core;
@@ -68,8 +73,8 @@ struct Userdata {
     struct CapturerSourceAdapter *sourceAdapter;
 };
 
-static int pa_capturer_init(struct Userdata *u);
-static void pa_capturer_exit(struct Userdata *u);
+static int PaHdiCapturerInit(struct Userdata *u);
+static void PaHdiCapturerExit(struct Userdata *u);
 
 static char *GetStateInfo(pa_source_state_t state)
 {
@@ -91,7 +96,7 @@ static char *GetStateInfo(pa_source_state_t state)
     }
 }
 
-static void userdata_free(struct Userdata *u)
+static void UserdataFree(struct Userdata *u)
 {
     pa_assert(u);
     if (u->source)
@@ -119,7 +124,7 @@ static void userdata_free(struct Userdata *u)
     pa_xfree(u);
 }
 
-static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
+static int SourceProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
     struct Userdata *u = PA_SOURCE(o)->userdata;
     pa_assert(u);
@@ -132,14 +137,14 @@ static int source_process_msg(pa_msgobject *o, int code, void *data, int64_t off
             return 0;
         }
         default: {
-            pa_log("source_process_msg default case");
-            return pa_source_process_msg(o, code, data, offset, chunk);
+            pa_log("SourceProcessMsg default case");
+            return pa_SourceProcessMsg(o, code, data, offset, chunk);
         }
     }
 }
 
 /* Called from the IO thread. */
-static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newState,
+static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     pa_suspend_cause_t newSuspendCause)
 {
     struct Userdata *u = NULL;
@@ -180,7 +185,7 @@ static int source_set_state_in_io_thread_cb(pa_source *s, pa_source_state_t newS
     return 0;
 }
 
-static int get_capturer_frame_from_hdi(pa_memchunk *chunk, const struct Userdata *u)
+static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 {
     uint64_t requestBytes;
     uint64_t replyBytes = 0;
@@ -221,8 +226,11 @@ static int get_capturer_frame_from_hdi(pa_memchunk *chunk, const struct Userdata
     return 0;
 }
 
-static void thread_func(void *userdata)
+static void ThreadFuncCapturerTimer(void *userdata)
 {
+    // set audio thread priority
+    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
+
     struct Userdata *u = userdata;
     bool timer_elapsed = false;
 
@@ -248,7 +256,7 @@ static void thread_func(void *userdata)
             if (timer_elapsed) {
                 chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
                 if (chunk.length > 0) {
-                    ret = get_capturer_frame_from_hdi(&chunk, u);
+                    ret = GetCapturerFrameFromHdi(&chunk, u);
                     if (ret != 0) {
                         break;
                     }
@@ -283,10 +291,12 @@ static void thread_func(void *userdata)
     }
 }
 
-static int pa_capturer_init(struct Userdata *u)
+static int PaHdiCapturerInit(struct Userdata *u)
 {
-    int ret;
+    // set audio thread priority
+    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
 
+    int ret;
     ret = u->sourceAdapter->CapturerSourceInit(u->sourceAdapter->wapper, &u->attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("Audio capturer init failed!");
@@ -306,17 +316,17 @@ static int pa_capturer_init(struct Userdata *u)
     return ret;
 
 fail:
-    pa_capturer_exit(u);
+    PaHdiCapturerExit(u);
     return ret;
 }
 
-static void pa_capturer_exit(struct Userdata *u)
+static void PaHdiCapturerExit(struct Userdata *u)
 {
     u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
     u->sourceAdapter->CapturerSourceDeInit(u->sourceAdapter->wapper);
 }
 
-static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sample_spec *ss, const pa_channel_map *map,
+static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_spec *ss, const pa_channel_map *map,
     struct Userdata *u)
 {
     pa_source_new_data data;
@@ -351,8 +361,8 @@ static int pa_set_source_properties(pa_module *m, pa_modargs *ma, const pa_sampl
         return -1;
     }
 
-    u->source->parent.process_msg = source_process_msg;
-    u->source->set_state_in_io_thread = source_set_state_in_io_thread_cb;
+    u->source->parent.process_msg = SourceProcessMsg;
+    u->source->set_state_in_io_thread = SourceSetStateInIoThreadCb;
     u->source->userdata = u;
 
     pa_source_set_asyncmsgq(u->source, u->thread_mq.inq);
@@ -411,11 +421,11 @@ static bool GetEndianInfo(pa_sample_format_t format)
     return isBigEndian;
 }
 
-pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
+pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
     pa_sample_spec ss;
-    char *thread_name = NULL;
+    char *threadName = NULL;
     pa_channel_map map;
     int ret;
 
@@ -469,23 +479,23 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
-    ret = pa_set_source_properties(m, ma, &ss, &map, u);
+    ret = PaSetSourceProperties(m, ma, &ss, &map, u);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Failed to pa_set_source_properties");
+        AUDIO_ERR_LOG("Failed to PaSetSourceProperties");
         goto fail;
     }
 
     u->attrs.bufferSize = u->buffer_size;
     u->attrs.open_mic_speaker = u->open_mic_speaker;
 
-    ret = pa_capturer_init(u);
+    ret = PaHdiCapturerInit(u);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Failed to pa_capturer_init");
+        AUDIO_ERR_LOG("Failed to PaHdiCapturerInit");
         goto fail;
     }
 
-    thread_name = "hdi-source-record";
-    if (!(u->thread = pa_thread_new(thread_name, thread_func, u))) {
+    threadName = "read-hdi";
+    if (!(u->thread = pa_thread_new(threadName, ThreadFuncCapturerTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
         goto fail;
     }
@@ -496,17 +506,17 @@ pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver)
 fail:
 
     if (u->IsCapturerStarted) {
-        pa_capturer_exit(u);
+        PaHdiCapturerExit(u);
     }
-    userdata_free(u);
+    UserdataFree(u);
 
     return NULL;
 }
 
-void pa_hdi_source_free(pa_source *s)
+void PaHdiSourceFree(pa_source *s)
 {
     struct Userdata *u = NULL;
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);
-    userdata_free(u);
+    UserdataFree(u);
 }

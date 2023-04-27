@@ -30,12 +30,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
-#include <sched.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 
 #include "audio_log.h"
-#include <renderer_sink_adapter.h>
+#include "renderer_sink_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -46,6 +45,8 @@
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
+const int AUDIO_PROCESS_THREAD_PRIORITY = -16;
+
 enum {
     HDI_INIT,
     HDI_DEINIT,
@@ -197,17 +198,10 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
 
-static void ThreadFuncUseTiming(void *userdata)
+static void ThreadFuncRendererTimer(void *userdata)
 {
     // set audio thread priority
-    struct sched_param param = {0};
-    param.sched_priority = 1;
-    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
-        AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    } else {
-        AUDIO_INFO_LOG("set SCHED_FIFO success");
-    }
-    setpriority(PRIO_PROCESS, 0, -19);
+    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
 
     struct Userdata *u = userdata;
 
@@ -280,14 +274,7 @@ finish:
 static void ThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    struct sched_param param = {0};
-    param.sched_priority = 1;
-    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
-        AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    } else {
-        AUDIO_INFO_LOG("set SCHED_FIFO success");
-    }
-    setpriority(PRIO_PROCESS, 0, -19);
+    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -323,14 +310,7 @@ static void ThreadFuncWriteHDI(void *userdata)
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    struct sched_param param = {0};
-    param.sched_priority = 1;
-    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
-        AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    } else {
-        AUDIO_INFO_LOG("set SCHED_FIFO success");
-    }
-    setpriority(PRIO_PROCESS, 0, -19);
+    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -605,14 +585,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
-    struct sched_param param = {0};
-    param.sched_priority = 1;
-    if (sched_setscheduler(0, SCHED_FIFO, &param) != 0) {
-        AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    } else {
-        AUDIO_INFO_LOG("set SCHED_FIFO success");
-    }
-    setpriority(PRIO_PROCESS, 0, -19);
+    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
 
     pa_sink_new_data data;
     pa_module *m;
@@ -759,7 +732,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
     paThreadName = "write-pa";
-    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncUseTiming, u))) {
+    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
         AUDIO_ERR_LOG("Failed to write-pa thread.");
         goto fail;
     }

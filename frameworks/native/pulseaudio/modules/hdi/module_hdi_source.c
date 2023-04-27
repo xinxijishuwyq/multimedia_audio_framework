@@ -20,9 +20,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-pa_source *pa_hdi_source_new(pa_module *m, pa_modargs *ma, const char *driver);
-
-void pa_hdi_source_free(pa_source *s);
+pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);
+void PaHdiSourceFree(pa_source *s);
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION("OpenHarmony HDI Source");
@@ -72,7 +71,7 @@ int pa__init(pa_module *m)
         goto fail;
     }
 
-    if (!(m->userdata = pa_hdi_source_new(m, ma, __FILE__))) {
+    if (!(m->userdata = PaHdiSourceNew(m, ma, __FILE__))) {
         goto fail;
     }
 
@@ -108,6 +107,6 @@ void pa__done(pa_module *m)
     pa_assert(m);
 
     if ((source = m->userdata)) {
-        pa_hdi_source_free(source);
+        PaHdiSourceFree(source);
     }
 }
