@@ -182,6 +182,8 @@ public:
     float GetMinStreamVolume(void) override;
 
     float GetMaxStreamVolume(void) override;
+
+    int32_t GetMaxRendererInstances() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

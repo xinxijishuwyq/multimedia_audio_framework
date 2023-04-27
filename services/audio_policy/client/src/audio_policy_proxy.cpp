@@ -1780,5 +1780,23 @@ float AudioPolicyProxy::GetMaxStreamVolume()
     }
     return reply.ReadFloat();
 }
+
+int32_t AudioPolicyProxy::GetMaxRendererInstances()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMaxRendererInstances WriteInterfaceToken failed");
+        return ERROR;
+    }
+    int32_t error = Remote()->SendRequest(GET_MAX_RENDERER_INSTANCES, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetMaxRendererInstances failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

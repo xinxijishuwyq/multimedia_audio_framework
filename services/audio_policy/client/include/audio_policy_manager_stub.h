@@ -104,6 +104,7 @@ private:
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS
