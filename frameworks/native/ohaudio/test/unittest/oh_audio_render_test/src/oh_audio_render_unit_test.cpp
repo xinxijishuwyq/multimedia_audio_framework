@@ -247,6 +247,25 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_001, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test OH_AudioRenderer_Release API via illegal state.
+* @tc.number: OH_Audio_Render_Release_002
+* @tc.desc  : Test OH_AudioRenderer_Release interface. Returns error code, if stream is released twice.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioRenderer_Release(audioRenderer);
+    result = OH_AudioRenderer_Release(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
 * @tc.name  : Test OH_AudioRenderer_GetLatencyMode API via legal state.
 * @tc.number: OH_Audio_Render_GetParameter_001
 * @tc.desc  : Test OH_AudioRenderer_GetLatencyMode interface. Returns true if latencyMode is
@@ -266,10 +285,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_GetLatencyMode API via legal state.
+* @tc.name  : Test OH_AudioRenderer_GetStreamId API via legal state.
 * @tc.number: OH_Audio_Render_GetParameter_002
-* @tc.desc  : Test OH_AudioRenderer_GetLatencyMode interface. Returns true if latencyMode is
-*             AUDIOSTREAM_LATENCY_MODE_NORMAL,because default latency mode is AUDIOSTREAM_LATENCY_MODE_NORMAL.
+* @tc.desc  : Test OH_AudioRenderer_GetStreamId interface. Returns true if the result is AUDIOSTREAM_SUCCESS.
 */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_002, TestSize.Level0)
 {
@@ -280,6 +298,84 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetParameter_002, TestSize.Level0)
     uint32_t streamId;
     result = OH_AudioRenderer_GetStreamId(audioRenderer, &streamId);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetSamplingRate API via legal state.
+* @tc.number: OH_Audio_Render_GetSamplingRate_001
+* @tc.desc  : Test OH_AudioRenderer_GetSamplingRate interface. Returns true if samplingRate is
+*             SAMPLE_RATE_48000,because default samplingRate is SAMPLE_RATE_48000.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSamplingRate_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    int32_t rate;
+    result = OH_AudioRenderer_GetSamplingRate(audioRenderer, &rate);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(rate == SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetSampleFormat API via legal state.
+* @tc.number: OH_Audio_Render_GetSampleFormat_001
+* @tc.desc  : Test OH_AudioRenderer_GetSampleFormat interface. Returns true if sampleFormat is
+*             AUDIOSTREAM_SAMPLE_S16LE,because default sampleFormat is AUDIOSTREAM_SAMPLE_S16LE.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSampleFormat, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_SampleFormat sampleFormat;
+    result = OH_AudioRenderer_GetSampleFormat(audioRenderer, &sampleFormat);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(sampleFormat == AUDIOSTREAM_SAMPLE_S16LE);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetEncodingType API via legal state.
+* @tc.number: OH_Audio_Render_GetEncodingType_001
+* @tc.desc  : Test OH_AudioRenderer_GetEncodingType interface. Returns true if encodingType is
+*             ENCODING_PCM,because default encodingType is ENCODING_PCM.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetEncodingType_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_EncodingType encodingType;
+    result = OH_AudioRenderer_GetEncodingType(audioRenderer, &encodingType);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(encodingType == AUDIOSTREAM_ENCODING_TYPE_RAW);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetRendererInfo API via legal state.
+* @tc.number: OH_Audio_Render_GetRendererInfo_001
+* @tc.desc  : Test OH_AudioRenderer_GetRendererInfo interface. Returns true if usage is STREAM_USAGE_MEDIA and content
+*             is CONTENT_TYPE_MUSIC.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_Usage usage;
+    OH_AudioStream_Content content;
+    result = OH_AudioRenderer_GetRendererInfo(audioRenderer, &usage, &content);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(usage == AUDIOSTREAM_USAGE_MEDIA);
+    EXPECT_TRUE(content == AUDIOSTREAM_CONTENT_TYPE_MUSIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 } // namespace AudioStandard

@@ -33,7 +33,7 @@ extern "C" {
 OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
 
 /*
- * Request to start playing the capturer stream.
+ * Request to start the capturer stream.
  *
  * @since 10
  * @permission ohos.permission.MICROPHONE
@@ -44,7 +44,7 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
 OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
 
 /*
- * Request for the capturer stream to pause.
+ * Request to pause the capturer stream.
  *
  * @since 10
  * @permission ohos.permission.MICROPHONE
@@ -55,7 +55,7 @@ OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
 OH_AudioStream_Result OH_AudioCapturer_Pause(OH_AudioCapturer* capturer);
 
 /*
- * Request for the capturer stream stop.
+ * Request to stop the capturer stream.
  *
  * @since 10
  * @permission ohos.permission.MICROPHONE
@@ -66,7 +66,7 @@ OH_AudioStream_Result OH_AudioCapturer_Pause(OH_AudioCapturer* capturer);
 OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer);
 
 /*
- * Request for the capturer stream flush.
+ * Request to flush the capturer stream.
  *
  * @since 10
  *

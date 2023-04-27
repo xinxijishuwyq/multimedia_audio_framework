@@ -44,7 +44,7 @@ public:
     void OnStop() override;
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
-                                  std::vector<Effect>& successEffectList) override;
+        std::vector<Effect>& successEffectList) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
@@ -89,6 +89,7 @@ private:
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;
+    std::mutex setParameterCallbackMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };

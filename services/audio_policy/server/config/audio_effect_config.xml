@@ -28,7 +28,7 @@
         <effectChain name="EFFECTCHAIN_SPK_MUSIC">
             <apply effect="histen"/>
         </effectChain>
-        <effectChain name="EFFECTCHAIN_SPK_MOVIE">
+        <effectChain name="EFFECTCHAIN_HEADSET_MUSIC">
             <apply effect="hvs"/>
             <apply effect="histen"/>
         </effectChain>
@@ -39,19 +39,15 @@
 
     <postprocess>
         <stream scene="STREAM_MUSIC">
-            <streamAE_mode mode="spatializer">
-                <devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADSET" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="AUDIO_DEVICE_OUT_BUS" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            <streamAE_mode mode="default">
+                <devicePort type="DEVICE_TYPE_WIRED_HEADSET" address="" effectChain="EFFECTCHAIN_HEADSET_MUSIC"/>
+                <devicePort type="DEVICE_TYPE_SPEAKER" address="" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
             </streamAE_mode>
-            <streamAE_mode mode="clearVoice">
-                <devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADSET" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="AUDIO_DEVICE_OUT_BUS" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamAE_mode>    
         </stream>
         <stream scene="STREAM_MOVIE">
-                <streamAE_mode mode="bassEnhancer">
-                <devicePort type="AUDIO_DEVICE_OUT_WIRED_HEADSET" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MOVIE"/>
-                <devicePort type="AUDIO_DEVICE_OUT_BUS" address="BUS00_USAGE_MAIN" effectChain="EFFECTCHAIN_SPK_MOVIE"/>
+                <streamAE_mode mode="default">
+                <devicePort type="DEVICE_TYPE_WIRED_HEADSET" address="" effectChain="EFFECTCHAIN_HEADSET_MUSIC"/>
+                <devicePort type="DEVICE_TYPE_SPEAKER" address="" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
             </streamAE_mode>    
         </stream>
     </postprocess>

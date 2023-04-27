@@ -29,6 +29,7 @@ static constexpr int32_t INDEX_PREPROCESS = 3;
 static constexpr int32_t INDEX_POSTPROCESS = 4;
 static constexpr int32_t INDEX_EXCEPTION = 5;
 static constexpr int32_t NODE_SIZE = 6;
+static constexpr int32_t MODULE_SIZE = 5;
 
 AudioEffectConfigParser::AudioEffectConfigParser()
 {
@@ -75,8 +76,8 @@ static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)
     xmlNode *currNode = secondNode;
     int32_t countLibrary = 0;
     while (currNode != nullptr) {
-        if (countLibrary >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of library nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countLibrary >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of library nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -110,10 +111,11 @@ static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)
 static void LoadEffectConfigLibraries(OriginalEffectConfig &result, const xmlNode* currNode,
                                       int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[INDEX_LIBRARIES] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
-        if (countFirstNode[INDEX_LIBRARIES] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+    if (countFirstNode[INDEX_LIBRARIES] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_LIBRARIES] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
             countFirstNode[INDEX_LIBRARIES]++;
-            AUDIO_ERR_LOG("the number of libraries nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of libraries nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadLibrary(result, currNode->xmlChildrenNode);
@@ -129,8 +131,8 @@ static void LoadEffect(OriginalEffectConfig &result, xmlNode* secondNode)
     xmlNode *currNode = secondNode;
     int32_t countEffect = 0;
     while (currNode != nullptr) {
-        if (countEffect >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of effect nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countEffect >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of effect nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -168,10 +170,11 @@ static void LoadEffect(OriginalEffectConfig &result, xmlNode* secondNode)
 static void LoadEffectConfigEffects(OriginalEffectConfig &result, const xmlNode* currNode,
                                     int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[INDEX_EFFECS] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
-        if (countFirstNode[INDEX_EFFECS] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+    if (countFirstNode[INDEX_EFFECS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_EFFECS] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
             countFirstNode[INDEX_EFFECS]++;
-            AUDIO_ERR_LOG("the number of effects nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of effects nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadEffect(result, currNode->xmlChildrenNode);
@@ -191,8 +194,8 @@ static void LoadApply(OriginalEffectConfig &result, const xmlNode* thirdNode, co
     int32_t countApply = 0;
     xmlNode *currNode = thirdNode->xmlChildrenNode;
     while (currNode != nullptr) {
-        if (countApply >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of apply nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countApply >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of apply nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -225,8 +228,8 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
     int32_t segInx = 0;
     std::vector<std::string> apply;
     while (currNode != nullptr) {
-        if (countEffectChain >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of effectChain nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countEffectChain >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of effectChain nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -258,10 +261,11 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
 static void LoadEffectConfigEffectChains(OriginalEffectConfig &result, const xmlNode* currNode,
                                          int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[INDEX_EFFECTCHAINE] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
-        if (countFirstNode[INDEX_EFFECTCHAINE] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+    if (countFirstNode[INDEX_EFFECTCHAINE] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_EFFECTCHAINE] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
             countFirstNode[INDEX_EFFECTCHAINE]++;
-            AUDIO_ERR_LOG("the number of effectChains nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of effectChains nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadEffectChain(result, currNode->xmlChildrenNode);
@@ -282,8 +286,8 @@ static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode* fourthNod
     int32_t countDevice = 0;
     xmlNode *currNode = fourthNode->xmlChildrenNode;
     while (currNode != nullptr) {
-        if (countDevice >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of devicePort nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countDevice >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of devicePort nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -328,8 +332,9 @@ static void LoadPreMode(OriginalEffectConfig &result, const xmlNode* thirdNode, 
     int32_t modeNum = 0;
     xmlNode *currNode = thirdNode->xmlChildrenNode;
     while (currNode != nullptr) {
-        if (countMode >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of streamAE_mode nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countMode >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of streamAE_mode nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -368,8 +373,8 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
     int32_t countPreprocess = 0;
     int32_t streamNum = 0;
     while (currNode != nullptr) {
-        if (countPreprocess >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of stream nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countPreprocess >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of stream nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -401,10 +406,11 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
 static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNode* currNode,
                                        int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[INDEX_PREPROCESS] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
-        if (countFirstNode[INDEX_PREPROCESS] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+    if (countFirstNode[INDEX_PREPROCESS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_PREPROCESS] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
             countFirstNode[INDEX_PREPROCESS]++;
-            AUDIO_ERR_LOG("the number of preprocess nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of preprocess nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadPreProcess(result, currNode->xmlChildrenNode);
@@ -425,8 +431,8 @@ static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode* fourthNo
     int32_t countDevice = 0;
     xmlNode *currNode = fourthNode->xmlChildrenNode;
     while (currNode != nullptr) {
-        if (countDevice >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of devicePort nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countDevice >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of devicePort nodes exceeds limit: %{public}d", AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -471,8 +477,9 @@ static void LoadPostMode(OriginalEffectConfig &result, const xmlNode* thirdNode,
     int32_t modeNum = 0;
     xmlNode *currNode = thirdNode->xmlChildrenNode;
     while (currNode != nullptr) {
-        if (countMode >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of streamAE_mode nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countMode >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of streamAE_mode nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -511,8 +518,9 @@ static void LoadPostProcess(OriginalEffectConfig &result, xmlNode* secondNode)
     int32_t countPostprocess = 0;
     int32_t streamNum = 0;
     while (currNode != nullptr) {
-        if (countPostprocess >= COUNT_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("the number of stream nodes exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+        if (countPostprocess >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            AUDIO_ERR_LOG("the number of stream nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_UPPER_LIMIT);
             return;
         }
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -544,10 +552,11 @@ static void LoadPostProcess(OriginalEffectConfig &result, xmlNode* secondNode)
 static void LoadEffectConfigPostProcess(OriginalEffectConfig &result, const xmlNode* currNode,
                                         int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[INDEX_POSTPROCESS] >= COUNT_FIRST_NODE_UPPER_LIMIT) {
-        if (countFirstNode[INDEX_POSTPROCESS] == COUNT_FIRST_NODE_UPPER_LIMIT) {
+    if (countFirstNode[INDEX_POSTPROCESS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_POSTPROCESS] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
             countFirstNode[INDEX_POSTPROCESS]++;
-            AUDIO_ERR_LOG("the number of postprocess nodes exceeds limit: %{public}d", COUNT_FIRST_NODE_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of postprocess nodes exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT);
         }
     } else if (currNode->xmlChildrenNode) {
         LoadPostProcess(result, currNode->xmlChildrenNode);
@@ -561,10 +570,11 @@ static void LoadEffectConfigPostProcess(OriginalEffectConfig &result, const xmlN
 static void LoadEffectConfigException(OriginalEffectConfig &result, const xmlNode* currNode,
                                       int32_t (&countFirstNode)[NODE_SIZE])
 {
-    if (countFirstNode[INDEX_EXCEPTION] >= COUNT_UPPER_LIMIT) {
-        if (countFirstNode[INDEX_EXCEPTION] == COUNT_UPPER_LIMIT) {
+    if (countFirstNode[INDEX_EXCEPTION] >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+        if (countFirstNode[INDEX_EXCEPTION] == AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
             countFirstNode[INDEX_EXCEPTION]++;
-            AUDIO_ERR_LOG("the number of nodes with wrong name exceeds limit: %{public}d", COUNT_UPPER_LIMIT);
+            AUDIO_ERR_LOG("the number of nodes with wrong name exceeds limit: %{public}d",
+                AUDIO_EFFECT_COUNT_UPPER_LIMIT);
         }
     } else {
         AUDIO_ERR_LOG("wrong name: %{public}s", currNode->name);
@@ -579,7 +589,7 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
     AUDIO_INFO_LOG("AudioEffectParser::LoadConfig");
-    if ((doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1<<5) | (1<<6))) == nullptr) { // 5, 6: arguments
+    if ((doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << 5) | (1 << 6))) == nullptr) { // 5, 6: arguments
         AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_EFFECT_CONFIG_FILE);
         return FILE_PARSE_ERROR;
     }
@@ -617,15 +627,15 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
         currNode = currNode->next;
     }
 
-    for (i = 0; i < 5; i++) {  // 5: the number of modules
+    for (i = 0; i < MODULE_SIZE; i++) {
         if (countFirstNode[i] == 0) {
             AUDIO_ERR_LOG("missing information: %{public}s", EFFECT_CONFIG_NAME[i].c_str());
         }
     }
 
     if (doc) {
-    xmlFreeDoc(doc);
-    xmlCleanupParser();
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
     }
     
     return 0;

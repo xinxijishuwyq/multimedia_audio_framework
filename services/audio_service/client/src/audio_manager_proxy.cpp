@@ -462,7 +462,7 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     }
         
     int32_t successEffSize = replyParcel.ReadInt32();
-    if ((successEffSize < 0) || (successEffSize > COUNT_UPPER_LIMIT)) {
+    if ((successEffSize < 0) || (successEffSize > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
         AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read replyParcel failed");
         return false;
     }

@@ -99,11 +99,13 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
                              "Invalid content type");
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_SYSTEM,
-                             nullptr, "Invalid stream usage");
-    if (contentType == CONTENT_TYPE_ULTRASONIC || streamUsage == STREAM_USAGE_SYSTEM) {
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
+        streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
+    if (contentType == CONTENT_TYPE_ULTRASONIC || streamUsage == STREAM_USAGE_SYSTEM ||
+        streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         if (!PermissionUtil::VerifySelfPermission()) {
-            AUDIO_ERR_LOG("Create: CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM No system permission");
+            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
+                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
             return nullptr;
         }
     }
@@ -198,6 +200,8 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
         return ERR_INVALID_INDEX;
     }
     sessionID_ = audioInterrupt_.sessionID;
+    audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
+    audioInterrupt_.contentType = rendererInfo_.contentType;
 
     AUDIO_INFO_LOG("InitAudioInterruptCallback::interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);

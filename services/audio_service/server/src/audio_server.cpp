@@ -76,7 +76,6 @@ AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
 
 void AudioServer::OnDump()
 {
-    audioEffectServer_ = nullptr;
 }
 
 void AudioServer::OnStart()
@@ -287,9 +286,7 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
                                            std::vector<Effect>& successEffectList)
 {
     int32_t audio_policy_server_id = 1041;
-    int32_t audio_policy_server_Uid = 1005;
-    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id
-        && IPCSkeleton::GetCallingUid() != audio_policy_server_Uid) {
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
     }
     bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
@@ -555,6 +552,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
 void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
+    std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
     AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
 
     if (callback_ != nullptr) {
@@ -564,6 +562,7 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
 
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
+    std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
 
     sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);

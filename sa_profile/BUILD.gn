@@ -16,11 +16,11 @@ import("//build/ohos/sa_profile/sa_profile.gni")
 ohos_sa_profile("audio_service_sa_profile") {
   sources = [ "3001.xml" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_sa_profile("audio_policy_service_sa_profile") {
   sources = [ "3009.xml" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }

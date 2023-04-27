@@ -67,6 +67,16 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilde
     return audioStreamBuilder->SetEncodingType(type);
 }
 
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_LatencyMode latencyMode)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    int32_t innerLatencyMode = (int32_t)latencyMode;
+    return audioStreamBuilder->SetLatencyMode(innerLatencyMode);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
     OH_AudioStream_Usage usage, OH_AudioStream_Content content)
 {
@@ -209,7 +219,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSampleFormat(AudioSampleFormat sa
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
 {
-    if (streamType_ == CAPTURER_TYPE) {
+    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN
+        || contentType == ContentType::CONTENT_TYPE_UNKNOWN) {
         AUDIO_ERR_LOG("Error, invalid type input");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
@@ -226,11 +237,19 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
-    if (streamType_ == RENDERER_TYPE) {
+    if (streamType_ == RENDERER_TYPE || type == SOURCE_TYPE_INVALID) {
         AUDIO_ERR_LOG("Error, invalid type input");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
+
     sourceType_ = type;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
+{
+    latencyMode_ = latencyMode;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -252,7 +271,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
     AudioRendererInfo rendererInfo = {
         contentType_,
         usage_,
-        0
+        latencyMode_
     };
 
     AudioRendererOptions options = {
@@ -288,7 +307,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer
 
     AudioCapturerInfo capturerInfo = {
         sourceType_,
-        0
+        latencyMode_
     };
 
     AudioCapturerOptions options = {

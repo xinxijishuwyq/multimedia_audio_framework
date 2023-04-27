@@ -46,8 +46,11 @@ OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder** build
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* builder);
+
 /*
  * Set the channel count of the capturer client
+ *
+ * @since 10
  *
  * @param capturer Reference created by OH_AudioStreamBuilder
  * @param channelCount Pointer to a variable that will be set for the channel count.
@@ -84,19 +87,19 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetSampleFormat(OH_AudioStreamBuilde
  * @since 10
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
- * @param encodingType Encoding type for the stream client, {@link #AUDIOSTREAM_ENCODING_PCM}{
+ * @param encodingType Encoding type for the stream client, {@link #AUDIOSTREAM_ENCODING_PCM}
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder* builder,
     OH_AudioStream_EncodingType encodingType);
 
 /*
- * Set the encoding type of the stream client
+ * Set the latency mode of the stream client
  *
  * @since 10
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
- * @param encodingType Encoding type for the stream client, {@link #AUDIOSTREAM_ENCODING_PCM}
+ * @param latencyMode Latency mode for the stream client.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder* builder,
@@ -114,6 +117,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
     OH_AudioStream_Usage usage, OH_AudioStream_Content content);
+
 /*
  * Set the capturer information of the stream client
  *
@@ -169,7 +173,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuild
  * @since 10
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
- * @param audioRenderer Pointer to a viriable to receive the stream client.
+ * @param audioCapturer Pointer to a viriable to receive the stream client.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_GenerateCapturer(OH_AudioStreamBuilder* builder,

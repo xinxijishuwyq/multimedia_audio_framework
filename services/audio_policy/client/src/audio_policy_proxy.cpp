@@ -1533,6 +1533,9 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.deviceName = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.macAddress = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.displayName = reply.ReadString();
+    rendererChangeInfo->outputDeviceInfo.networkId = reply.ReadString();
+    rendererChangeInfo->outputDeviceInfo.interruptGroupId = reply.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.volumeGroupId = reply.ReadInt32();
 }
 
 void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
@@ -1557,6 +1560,9 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->inputDeviceInfo.deviceName = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.macAddress = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.displayName = reply.ReadString();
+    capturerChangeInfo->inputDeviceInfo.networkId = reply.ReadString();
+    capturerChangeInfo->inputDeviceInfo.interruptGroupId = reply.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.volumeGroupId = reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(

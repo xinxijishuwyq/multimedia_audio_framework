@@ -196,12 +196,25 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             SetAudioBalanceValue(audioBalanceValue);
             return AUDIO_OK;
         }
+        case CREATE_AUDIOPROCESS: {
+            AUDIO_INFO_LOG("CREATE_AUDIOPROCESS AudioManagerStub");
+            AudioProcessConfig config;
+            IAudioProcess::ReadConfigFromParcel(config, data);
+            sptr<IRemoteObject> process = CreateAudioProcess(config);
+            if (process == nullptr) {
+                AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
+                return AUDIO_ERR;
+            }
+            reply.WriteRemoteObject(process);
+            return AUDIO_OK;
+        }
         case LOAD_AUDIO_EFFECT_LIBRARIES: {
             vector<Library> libList = {};
             vector<Effect> effectList = {};
             int32_t countLib = data.ReadInt32();
             int32_t countEff = data.ReadInt32();
-            if ((countLib < 0) || (countLib > COUNT_UPPER_LIMIT) || (countEff < 0) || (countEff > COUNT_UPPER_LIMIT)) {
+            if ((countLib < 0) || (countLib > AUDIO_EFFECT_COUNT_UPPER_LIMIT) ||
+                (countEff < 0) || (countEff > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
                 AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read data failed");
                 return AUDIO_ERR;
             }

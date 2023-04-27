@@ -33,7 +33,7 @@ group("audio_policy_packages") {
 ohos_prebuilt_etc("audio_policy_init") {
   source = "etc/audio_policy.cfg"
   relative_install_dir = "init"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -119,7 +119,7 @@ ohos_shared_library("audio_dump") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_shared_library("audio_policy_service") {
@@ -220,7 +220,7 @@ ohos_shared_library("audio_policy_service") {
   }
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
@@ -228,7 +228,7 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_prebuilt_etc("audio_tone_dtmf_config") {
@@ -236,7 +236,7 @@ ohos_prebuilt_etc("audio_tone_dtmf_config") {
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_prebuilt_etc("audio_effect_config") {
@@ -249,13 +249,13 @@ ohos_prebuilt_etc("audio_effect_config") {
 
 ohos_prebuilt_etc("audio_config.para") {
   source = "//foundation/multimedia/audio_framework/services/audio_policy/etc/audio_config.para"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   module_install_dir = "etc/param"
 }
 
 ohos_prebuilt_etc("audio_config.para.dac") {
   source = "//foundation/multimedia/audio_framework/services/audio_policy/etc/audio_config.para.dac"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   module_install_dir = "etc/param"
 }
 
@@ -315,7 +315,7 @@ ohos_shared_library("audio_policy_client") {
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 
   ldflags = [ "-Wl,-Bsymbolic" ]
 }
@@ -345,6 +345,6 @@ ohos_executable("audio_policy_test") {
     "ipc:ipc_single",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

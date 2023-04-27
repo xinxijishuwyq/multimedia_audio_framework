@@ -456,7 +456,8 @@ enum StreamUsage {
     STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
     STREAM_USAGE_RANGING = 7,
     STREAM_USAGE_ACCESSIBILITY = 8,
-    STREAM_USAGE_SYSTEM = 9
+    STREAM_USAGE_SYSTEM = 9,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION = 10
 };
 
 /**
@@ -632,6 +633,11 @@ struct MicStateChangeEvent {
 enum DeviceChangeType {
     CONNECT = 0,
     DISCONNECT = 1,
+};
+
+enum AudioInterruptChangeType {
+    ACTIVATE_AUDIO_INTERRUPT = 0,
+    DEACTIVATE_AUDIO_INTERRUPT = 1,
 };
 
 enum AudioScene {
@@ -959,8 +965,8 @@ enum StateChangeCmdType {
 };
 
 // audio effect manager info
-constexpr int32_t COUNT_UPPER_LIMIT = 20;
-constexpr int32_t COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
 
 struct Library {
     std::string name;

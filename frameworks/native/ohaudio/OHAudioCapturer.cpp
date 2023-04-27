@@ -112,6 +112,8 @@ OH_AudioStream_Result OH_AudioCapturer_GetSamplingRate(OH_AudioCapturer* capture
 {
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+
+    *rate = audioCapturer->GetSamplingRate();
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -207,6 +209,14 @@ AudioChannel OHAudioCapturer::GetChannelCount()
     AudioCapturerParams params;
     audioCapturer_->GetParams(params);
     return params.audioChannel;
+}
+
+int32_t OHAudioCapturer::GetSamplingRate()
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, MONO, "capturer client is nullptr");
+    AudioCapturerParams params;
+    audioCapturer_->GetParams(params);
+    return params.samplingRate;
 }
 
 AudioEncodingType OHAudioCapturer::GetEncodingType()

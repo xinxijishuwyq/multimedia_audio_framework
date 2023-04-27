@@ -248,6 +248,25 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_001, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test OH_AudioCapturer_Release API via illegal state.
+* @tc.number: OH_Audio_Capture_Release_002
+* @tc.desc  : Test OH_AudioCapturer_Release interface. Returns error code, if stream is released twice.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    result = OH_AudioCapturer_Release(audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
 * @tc.name  : Test OH_AudioCapturer_GetLatencyMode API via legal state.
 * @tc.number: OH_Audio_Capture_GetParameter_001
 * @tc.desc  : Test OH_AudioCapturer_GetLatencyMode interface. Returns true if latencyMode is
@@ -267,10 +286,9 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_001, TestSize.Level
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_GetLatencyMode API via legal state.
+* @tc.name  : Test OH_AudioCapturer_GetStreamId API via legal state.
 * @tc.number: OH_Audio_Capture_GetParameter_002
-* @tc.desc  : Test OH_AudioCapturer_GetLatencyMode interface. Returns true if latencyMode is
-*             AUDIOSTREAM_LATENCY_MODE_NORMAL,because default latency mode is AUDIOSTREAM_LATENCY_MODE_NORMAL.
+* @tc.desc  : Test OH_AudioCapturer_GetStreamId interface. Returns true if the result is AUDIOSTREAM_SUCCESS.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_002, TestSize.Level0)
 {
@@ -281,6 +299,82 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_002, TestSize.Level
     uint32_t streamId;
     result = OH_AudioCapturer_GetStreamId(audioCapturer, &streamId);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetSamplingRate API via legal state.
+* @tc.number: OH_Audio_Capture_GetSamplingRate_001
+* @tc.desc  : Test OH_AudioCapturer_GetSamplingRate interface. Returns true if samplingRate is
+*             SAMPLE_RATE_48000,because default samplingRate is SAMPLE_RATE_48000.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetSamplingRate_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+
+    int32_t rate;
+    result = OH_AudioCapturer_GetSamplingRate(audioCapturer, &rate);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(rate == SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetSampleFormat API via legal state.
+* @tc.number: OH_Audio_Capture_GetSampleFormat_001
+* @tc.desc  : Test OH_AudioCapturer_GetSampleFormat interface. Returns true if sampleFormat is
+*             AUDIOSTREAM_SAMPLE_S16LE,because default sampleFormat is AUDIOSTREAM_SAMPLE_S16LE.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapture_GetSampleFormat_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+
+    OH_AudioStream_SampleFormat sampleFormat;
+    result = OH_AudioCapturer_GetSampleFormat(audioCapturer, &sampleFormat);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(sampleFormat == AUDIOSTREAM_SAMPLE_S16LE);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetEncodingType API via legal state.
+* @tc.number: OH_Audio_Capture_GetEncodingType_001
+* @tc.desc  : Test OH_AudioCapturer_GetEncodingType interface. Returns true if encodingType is
+*             ENCODING_PCM,because default encodingType is ENCODING_PCM.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetEncodingType_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+
+    OH_AudioStream_EncodingType encodingType;
+    result = OH_AudioCapturer_GetEncodingType(audioCapturer, &encodingType);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(encodingType == AUDIOSTREAM_ENCODING_TYPE_RAW);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetCapturerInfo API via legal state.
+* @tc.number: OH_Audio_Capture_GetCapturerInfo_001
+* @tc.desc  : Test OH_AudioCapturer_GetCapturerInfo interface. Returns true if sourceType is
+*             SOURCE_TYPE_MIC,because default sourceType is SOURCE_TYPE_MIC.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetCapturerInfo_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+
+    OH_AudioStream_SourceType sourceType;
+    result = OH_AudioCapturer_GetCapturerInfo(audioCapturer, &sourceType);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(sourceType == AUDIOSTREAM_SOURCE_TYPE_MIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 } // namespace AudioStandard

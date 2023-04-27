@@ -18,7 +18,6 @@
 #include "memory"
 #include <dlfcn.h>
 #include "unistd.h"
-#include "audio_effect_server.h"
 #include "audio_log.h"
 #include "audio_effect_server.h"
 
@@ -28,7 +27,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
+#ifdef __aarch64__
+    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
+#else
+    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
+#endif
 
 struct LoadEffectResult {
     bool success = false;
@@ -177,7 +180,7 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
     // load effect
     AUDIO_INFO_LOG("<log info> load effect");
     LoadEffects(effects, effectLibraryList, effectSkippedEffects, successEffectList);
-    if (successEffectList.size()>0) {
+    if (successEffectList.size() > 0) {
         return true;
     } else {
         return false;

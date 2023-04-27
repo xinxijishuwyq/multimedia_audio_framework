@@ -507,8 +507,8 @@ private:
     std::mutex rendererMarkReachedMutex_;
     std::mutex rendererPeriodReachedMutex_;
     std::mutex runnerMutex_;
+    std::mutex writeCallbackMutex_;
     bool runnerReleased_ = false;
-
     AudioCache acache;
     const void *internalReadBuffer;
     size_t internalRdBufLen;
