@@ -67,8 +67,7 @@ void AudioRendererDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env env
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
-    if (args == nullptr)
-    {
+    if (args == nullptr) {
         for (auto ref = callbacks_.begin(); ref != callbacks_.end(); ++ref) {
             napi_status ret = napi_delete_reference(env, *ref);
             CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
@@ -207,7 +206,7 @@ void AudioRendererDeviceChangeCallbackNapi::WorkCallbackCompleted(uv_work_t *wor
 }
 
 void AudioRendererDeviceChangeCallbackNapi::OnJsCallbackRendererDeviceInfo(napi_ref method,
-                                                                            const DeviceInfo &deviceInfo)
+    const DeviceInfo &deviceInfo)
 {
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);
@@ -222,14 +221,12 @@ void AudioRendererDeviceChangeCallbackNapi::OnJsCallbackRendererDeviceInfo(napi_
     }
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
-    if (work == nullptr)
-    {
+    if (work == nullptr) {
         AUDIO_ERR_LOG("AudioRendererDeviceChangeCallbackNapi: OnJsCallbackRendererDeviceInfo: No memory");
     }
 
     work->data = new AudioRendererDeviceChangeJsCallback {method, env_, deviceInfo};
-    if (work->data == nullptr)
-    {
+    if (work->data == nullptr) {
         AUDIO_ERR_LOG("new AudioRendererDeviceChangeCallbackNapi failed: No memory");
     }
     AUDIO_ERR_LOG("OnJsCallbackRendererDeviceInfo");

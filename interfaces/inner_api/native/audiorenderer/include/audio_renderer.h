@@ -675,7 +675,6 @@ public:
      */
     virtual uint32_t GetUnderflowCount() const = 0;
 
-
     /**
      * @brief Get deviceInfo
      *

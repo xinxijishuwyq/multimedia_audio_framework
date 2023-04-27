@@ -1148,6 +1148,22 @@ napi_value AudioRendererNapi::SetRenderRate(napi_env env, napi_callback_info inf
     return result;
 }
 
+void AudioRendererNapi::AsyncSetSamplingRate(napi_env env, void *data)
+{
+    auto context = static_cast<AudioRendererAsyncContext*>(data);
+    if (!CheckContextStatus(context)) {
+        return;
+    }
+    if (context->status == SUCCESS) {
+        if (context->rendererSampleRate <= 0) {
+            context->status = NAPI_ERR_UNSUPPORTED;
+        } else {
+            context->status = context->objectInfo->audioRenderer_->
+            SetRendererSamplingRate(context->rendererSampleRate);
+        }
+    }
+}
+
 napi_value AudioRendererNapi::SetRendererSamplingRate(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -1156,9 +1172,7 @@ napi_value AudioRendererNapi::SetRendererSamplingRate(napi_env env, napi_callbac
 
     GET_PARAMS(env, info, ARGS_TWO);
     unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
-    if (argc < ARGS_ONE) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
-    }
+    THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INVALID_PARAM);
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
@@ -1188,22 +1202,8 @@ napi_value AudioRendererNapi::SetRendererSamplingRate(napi_env env, napi_callbac
         napi_create_string_utf8(env, "SetRendererSamplingRate", NAPI_AUTO_LENGTH, &resource);
 
         status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext*>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                if (context->status == SUCCESS) {
-                    if (context->rendererSampleRate <= 0) {
-                        context->status = NAPI_ERR_UNSUPPORTED;
-                    } else {
-                        context->status = context->objectInfo->audioRenderer_->
-                            SetRendererSamplingRate(context->rendererSampleRate);
-                    }
-                }
-            },
-            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+            env, nullptr, resource, AsyncSetSamplingRate, SetFunctionAsyncCallbackComplete,
+            static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
@@ -2617,6 +2617,21 @@ napi_value AudioRendererNapi::GetMaxStreamVolume(napi_env env, napi_callback_inf
     return result;
 }
 
+void AudioRendererNapi::AsyncGetCurrentOutputDevices(napi_env env, void *data)
+{
+    auto context = static_cast<AudioRendererAsyncContext *>(data);
+    if (!CheckContextStatus(context)) {
+        return;
+    }
+    DeviceInfo deviceInfo;
+    context->status = context->objectInfo->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
+    if (context->status == ERR_INVALID_PARAM) {
+        context->status = NAPI_ERROR_INVALID_PARAM;
+    } else if (context->status == SUCCESS) {
+        context->deviceInfo = deviceInfo;
+    }
+}
+
 napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -2646,21 +2661,8 @@ napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callbac
         napi_create_string_utf8(env, "GetCurrentOutputDevices", NAPI_AUTO_LENGTH, &resource);
 
         status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext *>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                DeviceInfo deviceInfo;
-                context->status = context->objectInfo->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
-                if (context->status == ERR_INVALID_PARAM) {
-                    context->status = NAPI_ERROR_INVALID_PARAM;
-                } else if (context->status == SUCCESS) {
-                    context->deviceInfo = deviceInfo;
-                }
-            },
-            GetDeviceInfoAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+            env, nullptr, resource, AsyncGetCurrentOutputDevices, GetDeviceInfoAsyncCallbackComplete,
+            static_cast<void *>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
         } else {
@@ -2765,7 +2767,8 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
     }
 
     std::shared_ptr<AudioRendererDeviceChangeCallbackNapi> cb =
-        std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(rendererNapi->rendererDeviceChangeCallbackNapi_);
+        std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(
+            rendererNapi->rendererDeviceChangeCallbackNapi_);
     cb->AddCallbackReference(argv[PARAM1]);
     AUDIO_INFO_LOG("AudioRendererNapi::RegisterRendererStateChangeCallback is successful");
 }
@@ -2790,7 +2793,8 @@ void AudioRendererNapi::UnregisterRendererDeviceChangeCallback(napi_env env, siz
     }
 
     std::shared_ptr<AudioRendererDeviceChangeCallbackNapi> cb =
-        std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(rendererNapi->rendererDeviceChangeCallbackNapi_);
+        std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(
+            rendererNapi->rendererDeviceChangeCallbackNapi_);
     cb->RemoveCallbackReference(env, callback);
 
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {

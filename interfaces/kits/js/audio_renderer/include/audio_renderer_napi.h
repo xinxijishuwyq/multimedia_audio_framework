@@ -150,6 +150,8 @@ private:
     static void GetStreamVolumeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetDeviceInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetUnderflowCountAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AsyncSetSamplingRate(napi_env env, void *data);
+    static void AsyncGetCurrentOutputDevices(napi_env env, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);
