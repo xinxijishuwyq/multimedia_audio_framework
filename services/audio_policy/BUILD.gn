@@ -22,6 +22,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_policy_packages") {
   deps = [
     ":audio_dump",
+    ":audio_effect_config",
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
@@ -38,24 +39,25 @@ ohos_prebuilt_etc("audio_policy_init") {
 
 config("audio_policy_public_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/common/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/common",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/config",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/interface",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/listener",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service/manager",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include/service",
-    "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
+    "${audio_fwk_path}/services/audio_service/client/include",
+    "${audio_fwk_path}/services/audio_service/common/include",
+    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
+    "${audio_fwk_path}/frameworks/native/audioadapter/include",
+    "${audio_fwk_path}/frameworks/native/audiopolicy/include",
+    "${audio_fwk_path}/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/frameworks/native/bluetoothclient",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/common",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/config",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/interface",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/listener",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/manager",
+    "${audio_fwk_path}/services/audio_policy/server/include/service",
+    "${audio_fwk_path}/services/audio_policy/common/include",
+    "${audio_fwk_path}/services/audio_policy/server/include",
+    "${audio_fwk_path}/services/audio_policy/client/include",
   ]
 
   cflags = [
@@ -146,6 +148,8 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_tone_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
+    "server/src/service/effect/audio_effect_config_parser.cpp",
+    "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
   ]
@@ -229,6 +233,14 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
 
 ohos_prebuilt_etc("audio_tone_dtmf_config") {
   source = "server/config/audio_tone_dtmf_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_effect_config") {
+  source = "server/config/audio_effect_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"

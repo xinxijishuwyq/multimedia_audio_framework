@@ -37,6 +37,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "parser_factory.h"
+#include "audio_effect_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -162,6 +163,8 @@ public:
 
     void OnAudioBalanceChanged(float audioBalance);
 
+    void LoadEffectLibrary();
+
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
     int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object);
@@ -220,14 +223,18 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
+
     float GetMinStreamVolume(void);
 
     float GetMaxStreamVolume(void);
+
 private:
     AudioPolicyService()
-        : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-          configParser_(ParserFactory::GetInstance().CreateParser(*this)),
-          streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
+        :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+        configParser_(ParserFactory::GetInstance().CreateParser(*this)),
+        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioEffectManager_(AudioEffectManager::GetAudioEffectManager())
     {
 #ifdef ACCESSIBILITY_ENABLE
         accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
@@ -393,6 +400,7 @@ private:
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
+    AudioEffectManager& audioEffectManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

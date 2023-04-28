@@ -134,6 +134,7 @@ ohos_shared_library("audio_client") {
     "$pulseaudio_dir/include",
     "$pulseaudio_build_path/include",
     "//third_party/bounds_checking_function/include",
+    "${audio_fwk_path}/services/audio_service/server/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -182,6 +183,7 @@ config("audio_service_config") {
     "${fwk_native_hdiadapter_path}/source/common",
     "${fwk_native_hdiadapter_path}/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
   ]
 
   if (target_cpu == "arm") {
@@ -234,6 +236,7 @@ ohos_shared_library("audio_service") {
   install_enable = true
 
   sources = [
+    "server/src/audio_effect_server.cpp",
     "server/src/audio_manager_listener_proxy.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",

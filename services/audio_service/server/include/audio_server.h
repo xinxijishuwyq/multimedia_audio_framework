@@ -29,6 +29,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_system_manager.h"
 #include "i_audio_renderer_sink.h"
+#include "audio_effect_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +43,8 @@ public:
     void OnStart() override;
     void OnStop() override;
 
+    bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
+        std::vector<Effect>& successEffectList) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
@@ -88,6 +91,7 @@ private:
     std::shared_ptr<AudioParameterCallback> callback_;
     std::mutex setParameterCallbackMutex_;
     bool isGetProcessEnabled_ = false;
+    std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

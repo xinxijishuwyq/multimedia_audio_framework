@@ -542,6 +542,82 @@ void AudioServiceDump::DevicesInfoDump(string& dumpString)
         GetDeviceTypeName(audioData_.policyData.priorityInputDevice).c_str());
 }
 
+static void EffectManagerInfoDumpPart(string& dumpString, AudioData &audioData_)
+{
+    int32_t count;
+   // xml -- Preprocess
+    for (Preprocess x : audioData_.policyData.oriEffectConfig.preprocess) {
+        AppendFormat(dumpString, "preprocess stream = %s \n", x.stream.c_str());
+        count = 0;
+        for (string modeName : x.mode) {
+            count++;
+            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
+            for (Device deviceInfo : x.device[count - 1]) {
+                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
+                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
+            }
+        }
+    }
+
+    // xml -- Postprocess
+    for (Postprocess x : audioData_.policyData.oriEffectConfig.postprocess) {
+        AppendFormat(dumpString, "postprocess stream = %s \n", x.stream.c_str());
+        count = 0;
+        for (string modeName : x.mode) {
+            count++;
+            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
+            for (Device deviceInfo : x.device[count - 1]) {
+                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
+                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
+            }
+        }
+    }
+}
+
+void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
+{
+    int count = 0;
+    dumpString += "\n Effect Manager INFO: \n";
+    AppendFormat(dumpString, "XML version:%f \n", audioData_.policyData.oriEffectConfig.version);
+    // xml -- Library
+    for (Library x : audioData_.policyData.oriEffectConfig.libraries) {
+        count++;
+        AppendFormat(dumpString, "library%d name = %s \n", count, x.name.c_str());
+        AppendFormat(dumpString, "library%d path = %s \n", count, x.path.c_str());
+    }
+    // xml -- effect
+    count = 0;
+    for (Effect x : audioData_.policyData.oriEffectConfig.effects) {
+        count++;
+        AppendFormat(dumpString, "effect%d name = %s \n", count, x.name.c_str());
+        AppendFormat(dumpString, "effect%d libraryName = %s \n", count, x.libraryName.c_str());
+        AppendFormat(dumpString, "effect%d effectId = %s \n", count, x.effectId.c_str());
+    }
+
+    // xml -- effectChain
+    for (EffectChain x : audioData_.policyData.oriEffectConfig.effectChains) {
+        AppendFormat(dumpString, "effectChain name = %s \n", x.name.c_str());
+        count = 0;
+        for (string effectUnit : x.apply) {
+            count++;
+            AppendFormat(dumpString, "  effectUnit%d = %s \n", count, effectUnit.c_str());
+        }
+    }
+
+    EffectManagerInfoDumpPart(dumpString, audioData_);
+
+    // successful lib
+    count = 0;
+    for (Effect x : audioData_.policyData.availableEffects) {
+        count++;
+        AppendFormat(dumpString, "available Effect%d name = %s \n", count, x.name.c_str());
+        AppendFormat(dumpString, "available Effect%d libraryName = %s \n", count, x.libraryName.c_str());
+        AppendFormat(dumpString, "available Effect%d effectId = %s \n", count, x.effectId.c_str());
+    }
+}
+
 void AudioServiceDump::DataDump(string &dumpString)
 {
     PlaybackStreamDump(dumpString);
@@ -553,6 +629,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     StreamVolumesDump(dumpString);
     AudioFocusInfoDump(dumpString);
     GroupInfoDump(dumpString);
+    EffectManagerInfoDump(dumpString);
 }
 
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)

@@ -27,6 +27,7 @@
 #include "securec.h"
 #include "audio_log.h"
 #include "nocopyable.h"
+#include "audio_effect_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -79,6 +80,8 @@ typedef struct {
     AudioInterrupt audioFocusInfo;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
     std::vector<GroupInfo> groupInfos;
+    OriginalEffectConfig oriEffectConfig;
+    std::vector<Effect> availableEffects;
 } PolicyData;
 
 typedef struct {
@@ -119,6 +122,7 @@ private:
     void DevicesInfoDump(std::string &dumpString);
     void AudioFocusInfoDump(std::string &dumpString);
     void GroupInfoDump(std::string& dumpString);
+    void EffectManagerInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
     static const std::string GetStreamName(AudioStreamType streamType);
     static const std::string GetSourceName(SourceType sourceType);
