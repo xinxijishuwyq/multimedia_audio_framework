@@ -486,6 +486,7 @@ AudioServiceClient::AudioServiceClient()
 
     setBufferSize = 0;
     PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+    rendererSampleRate = 0;
 }
 
 void AudioServiceClient::ResetPAAudioClient()
