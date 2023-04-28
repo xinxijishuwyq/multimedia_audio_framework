@@ -1005,6 +1005,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     return AUDIO_CLIENT_SUCCESS;
 }
 
+uint32_t AudioServiceClient::GetUnderflowCount() const
+{
+    return underFlowCount;
+}
+
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::GetSessionID");
@@ -2200,6 +2205,34 @@ int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererR
     pa_threaded_mainloop_unlock(mainLoop);
 
     return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::SetRendererSamplingRate(uint32_t sampleRate)
+{
+    AUDIO_INFO_LOG("SetStreamRendererSamplingRate %{public}d", sampleRate);
+    if (!paStream) {
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
+    if (sampleRate <= 0) {
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+    rendererSampleRate = sampleRate;
+
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_operation *operation = pa_stream_update_sample_rate(paStream, sampleRate, nullptr, nullptr);
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+uint32_t AudioServiceClient::GetRendererSamplingRate()
+{
+    if (rendererSampleRate == 0) {
+        return sampleSpec.rate;
+    }
+    return rendererSampleRate;
 }
 
 AudioRendererRate AudioServiceClient::GetStreamRenderRate()

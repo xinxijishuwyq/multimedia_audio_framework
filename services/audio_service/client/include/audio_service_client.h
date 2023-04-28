@@ -309,6 +309,14 @@ public:
     */
     uint8_t GetSampleSize() const;
 
+    /**
+    * Provides the underflow count required for this audio stream
+    * created using CreateStream
+    * @param underFlowCount will be get to number of frames
+    * @return Returns number of underflow
+    */
+    virtual uint32_t GetUnderflowCount() const;
+
     // Device volume & route handling APIs
 
     // Audio stream callbacks
@@ -422,6 +430,22 @@ public:
      * @return Returns current render rate
      */
     AudioRendererRate GetStreamRenderRate();
+
+    /**
+    * @brief Set stream render sampling rate
+    *
+    * @param sampleRate The sample rate at which the stream needs to be rendered.
+    * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+    * defined in {@link audio_errors.h} otherwise.
+    */
+    virtual int32_t SetRendererSamplingRate(uint32_t sampleRate);
+
+    /**
+    * @brief Obtains render sampling rate
+    *
+    * @return Returns current render sampling rate
+    */
+    virtual uint32_t GetRendererSamplingRate();
 
     /**
      * @brief Set the buffer duration in msec
@@ -543,6 +567,7 @@ private:
     bool streamInfoUpdated;
 
     AudioRendererRate renderRate;
+    uint32_t rendererSampleRate;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
     std::shared_ptr<AudioCapturerReadCallback> readCallback_;

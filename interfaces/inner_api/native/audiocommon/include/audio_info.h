@@ -1010,6 +1010,17 @@ struct OriginalEffectConfig {
     std::vector<Preprocess> preprocess;
     std::vector<Postprocess> postprocess;
 };
+
+class AudioRendererPolicyServiceDiedCallback {
+public:
+    virtual ~AudioRendererPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 10
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

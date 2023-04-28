@@ -25,6 +25,8 @@
 #include "audio_system_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "audio_stream_manager.h"
+#include "audio_renderer_state_callback_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,6 +53,8 @@ public:
     };
     std::unique_ptr<AudioRenderer> audioRenderer_;
     static napi_value Init(napi_env env, napi_value exports);
+    void DestroyCallbacks();
+    void DestroyNAPICallbacks();
 private:
     struct AudioRendererAsyncContext {
         napi_env env;
@@ -68,8 +72,10 @@ private:
         size_t bufferSize;
         int32_t volType;
         double volLevel;
+        uint32_t rendererSampleRate;
         uint32_t audioStreamId;
         size_t totalBytesWritten;
+        uint32_t underflowCount;
         void *data;
         AudioSampleFormat sampleFormat;
         AudioSamplingRate samplingRate;
@@ -81,6 +87,7 @@ private:
         DeviceType deviceType;
         AudioRendererNapi *objectInfo;
         AudioRendererOptions rendererOptions;
+        DeviceInfo deviceInfo;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
@@ -88,6 +95,8 @@ private:
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SetRenderRate(napi_env env, napi_callback_info info);
     static napi_value GetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value SetRendererSamplingRate(napi_env env, napi_callback_info info);
+    static napi_value GetRendererSamplingRate(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
     static napi_value Write(napi_env env, napi_callback_info info);
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
@@ -105,6 +114,10 @@ private:
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRendererWrapper(napi_env env, std::unique_ptr<AudioRendererOptions> &renderOptions);
     static napi_value SetInterruptMode(napi_env env, napi_callback_info info);
+    static napi_value GetMinStreamVolume(napi_env env, napi_callback_info info);
+    static napi_value GetMaxStreamVolume(napi_env env, napi_callback_info info);
+    static napi_value GetCurrentOutputDevices(napi_env env, napi_callback_info info);
+    static napi_value GetUnderflowCount(napi_env env, napi_callback_info info);
 
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
@@ -125,6 +138,7 @@ private:
     static void GetAudioStreamIdCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetInt64ValueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetRendererSampleRateAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void WriteAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void PauseAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void StartAsyncCallbackComplete(napi_env env, napi_status status, void *data);
@@ -133,6 +147,11 @@ private:
     static void AudioStreamInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void GetRendererAsyncCallbackComplete(napi_env env, napi_status status, void *data);
     static void VoidAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetStreamVolumeAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetDeviceInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetUnderflowCountAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void AsyncSetSamplingRate(napi_env env, void *data);
+    static void AsyncGetCurrentOutputDevices(napi_env env, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);
@@ -144,8 +163,8 @@ private:
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterDataRequestCallback(napi_env env, napi_value* argv,
                                                      const std::string& cbName, AudioRendererNapi *rendererNapi);
-    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
-
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
+        const std::string& cbName);
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioRendererRateObject(napi_env env);
     static napi_value CreateInterruptEventTypeObject(napi_env env);
@@ -153,7 +172,9 @@ private:
     static napi_value CreateInterruptHintTypeObject(napi_env env);
     static napi_value CreateAudioStateObject(napi_env env);
     static napi_value CreateAudioSampleFormatObject(napi_env env);
-
+    static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
+        AudioRendererNapi *rendererNapi);
     static napi_ref audioRendererRate_;
     static napi_ref interruptEventType_;
     static napi_ref interruptForceType_;
@@ -181,6 +202,8 @@ private:
     std::shared_ptr<AudioRendererWriteCallback> dataRequestCBNapi_ = nullptr;
     static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
     static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+    std::shared_ptr<AudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;
 };
 
 static const std::map<std::string, InterruptType> interruptEventTypeMap = {

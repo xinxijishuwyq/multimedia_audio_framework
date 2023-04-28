@@ -176,6 +176,10 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
     std::string GetSystemSoundUri(const std::string &key) override;
+
+    float GetMinStreamVolume(void) override;
+
+    float GetMaxStreamVolume(void) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

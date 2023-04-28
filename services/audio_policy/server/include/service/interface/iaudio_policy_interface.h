@@ -86,6 +86,10 @@ public:
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
     virtual std::string GetSystemSoundUri(const std::string &key) = 0;
+
+    virtual float GetMinStreamVolume() const = 0;
+
+    virtual float GetMaxStreamVolume() const = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

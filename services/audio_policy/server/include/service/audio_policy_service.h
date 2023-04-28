@@ -225,6 +225,10 @@ public:
 
     void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
 
+    float GetMinStreamVolume(void);
+
+    float GetMaxStreamVolume(void);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

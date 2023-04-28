@@ -218,6 +218,9 @@ public:
 
     std::string GetSystemSoundUri(const std::string &key) override;
 
+    float GetMinStreamVolume(void) override;
+
+    float GetMaxStreamVolume(void) override;
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
