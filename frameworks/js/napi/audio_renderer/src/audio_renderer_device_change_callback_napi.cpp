@@ -58,7 +58,7 @@ void AudioRendererDeviceChangeCallbackNapi::AddCallbackReference(napi_value args
         "AudioRendererDeviceChangeCallbackNapi: creating reference for callback fail");
 
     callbacks_.push_back(callback);
-    AUDIO_INFO_LOG("AddCallbackReference successful, js callbacks number:%{public}d", callbacks_.size());
+    AUDIO_INFO_LOG("AddCallbackReference successful");
 }
 
 void AudioRendererDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env env, napi_value args)
@@ -98,7 +98,7 @@ void AudioRendererDeviceChangeCallbackNapi::RemoveCallbackReference(napi_env env
         }
     }
 
-    AUDIO_INFO_LOG("RemoveCallbackReference success, JS Callback number is:%{public}d", callbacks_.size());
+    AUDIO_INFO_LOG("RemoveCallbackReference success");
 }
 
 void AudioRendererDeviceChangeCallbackNapi::RemoveAllCallbacks()
