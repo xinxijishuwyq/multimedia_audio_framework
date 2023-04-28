@@ -201,6 +201,13 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
     std::string GetSystemSoundUri(const std::string &key);
+
+    float GetMinStreamVolume(void);
+
+    float GetMaxStreamVolume(void);
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
+    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
@@ -217,6 +224,7 @@ private:
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
+    static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

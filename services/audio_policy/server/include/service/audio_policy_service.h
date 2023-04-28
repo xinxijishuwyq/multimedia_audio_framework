@@ -220,6 +220,9 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    float GetMinStreamVolume(void);
+
+    float GetMaxStreamVolume(void);
 private:
     AudioPolicyService()
         : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

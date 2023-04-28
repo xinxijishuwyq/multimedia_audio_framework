@@ -2518,5 +2518,15 @@ void AudioPolicyService::SubscribeAccessibilityConfigObserver()
     AUDIO_INFO_LOG("Subscribe accessibility config observer successfully");
 #endif
 }
+
+float AudioPolicyService::GetMinStreamVolume()
+{
+    return audioPolicyManager_.GetMinStreamVolume();
+}
+
+float AudioPolicyService::GetMaxStreamVolume()
+{
+    return audioPolicyManager_.GetMaxStreamVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS
