@@ -1242,9 +1242,11 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
     while (length > 0) {
         size_t writableSize;
 
+        Trace trace1("PaWriteStream Wait");
         while (!(writableSize = pa_stream_writable_size(paStream))) {
             pa_threaded_mainloop_wait(mainLoop);
         }
+        Trace trace2("PaWriteStream Write");
 
         AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
         if (writableSize > length) {
@@ -1424,6 +1426,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     const uint8_t *buffer = acache.buffer.get();
     size_t length = acache.totalCacheSize;
 
+    Trace trace("WriteStream");
     error = PaWriteStream(buffer, length);
     acache.readIndex += acache.totalCacheSize;
     acache.isFull = false;
@@ -1487,6 +1490,7 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
 
 int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
 {
+    Trace trace("RenderPrebuf");
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
     if (bufferAttr == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
