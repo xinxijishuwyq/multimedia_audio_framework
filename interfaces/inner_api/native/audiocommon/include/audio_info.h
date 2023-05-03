@@ -45,6 +45,7 @@ const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCES
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 
+#ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
 
@@ -67,6 +68,7 @@ public:
     uint32_t repeatSegment;
     ToneInfo() {}
 };
+#endif
 
 enum DeviceFlag {
     /**

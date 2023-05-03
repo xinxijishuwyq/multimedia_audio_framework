@@ -26,8 +26,11 @@ group("audio_policy_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
-    ":audio_tone_dtmf_config",
   ]
+
+  if (audio_framework_feature_dtmf_tone) {
+    deps += [ ":audio_tone_dtmf_config" ]
+  }
 }
 
 ohos_prebuilt_etc("audio_policy_init") {
@@ -146,13 +149,18 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_volume_key_event_callback_proxy.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
-    "server/src/service/config/audio_tone_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
     "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
   ]
+
+  defines = []
+  if (audio_framework_feature_dtmf_tone) {
+    sources += [ "server/src/service/config/audio_tone_parser.cpp" ]
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
 
   public_configs = [ ":audio_policy_public_config" ]
 
@@ -231,12 +239,14 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
   part_name = "audio_framework"
 }
 
-ohos_prebuilt_etc("audio_tone_dtmf_config") {
-  source = "server/config/audio_tone_dtmf_config.xml"
+if (audio_framework_feature_dtmf_tone) {
+  ohos_prebuilt_etc("audio_tone_dtmf_config") {
+    source = "server/config/audio_tone_dtmf_config.xml"
 
-  subsystem_name = "multimedia"
-  relative_install_dir = "audio"
-  part_name = "audio_framework"
+    subsystem_name = "multimedia"
+    relative_install_dir = "audio"
+    part_name = "audio_framework"
+  }
 }
 
 ohos_prebuilt_etc("audio_effect_config") {
@@ -288,6 +298,12 @@ ohos_shared_library("audio_policy_client") {
     blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
   }
   install_enable = true
+
+  defines = []
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+
   sources = [
     "//foundation/multimedia/audio_framework/services/audio_service/client/src/audio_device_descriptor.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",

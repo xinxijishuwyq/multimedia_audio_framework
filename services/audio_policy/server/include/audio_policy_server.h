@@ -98,9 +98,11 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) override;
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+#endif
 
     AudioRingerMode GetRingerMode() override;
 

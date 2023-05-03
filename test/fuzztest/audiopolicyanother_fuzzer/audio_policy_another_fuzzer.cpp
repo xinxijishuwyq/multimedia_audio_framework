@@ -72,8 +72,10 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     AudioRingerMode ringMode = *reinterpret_cast<const AudioRingerMode *>(rawData);
     AudioPolicyServerPtr->SetRingerMode(ringMode);
 
+#ifdef FEATURE_DTMF_TONE
     int32_t ltonetype = *reinterpret_cast<const int32_t *>(rawData);
     AudioPolicyServerPtr->GetToneConfig(ltonetype);
+#endif
 
     AudioScene audioScene = *reinterpret_cast<const AudioScene *>(rawData);
     AudioPolicyServerPtr->SetAudioScene(audioScene);

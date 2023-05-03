@@ -22,7 +22,10 @@
           "SystemCapability.Multimedia.Audio.Tone",
           "SystemCapability.Multimedia.Audio.Interrupt"
         ],
-        "features": [],
+        "features": [
+          "audio_framework_feature_dtmf_tone",
+          "audio_framework_feature_opensl_es"
+        ],
         "adapted_system_type": [ "standard" ],
         "rom": "",
         "ram": "",
