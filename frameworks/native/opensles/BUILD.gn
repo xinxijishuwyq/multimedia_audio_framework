@@ -12,10 +12,10 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
-opensles_version = "1.0.1"
 
 group("libsl") {
   public_deps = [ "//third_party/openSLES:libSLES" ]
@@ -42,60 +42,67 @@ config("audio_config") {
   ]
 }
 
-ohos_shared_library("opensles") {
-  sanitize = {
-    cfi = true
-    debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+if (!audio_framework_feature_opensl_es) {
+  group("opensles") {
+    deps = []
   }
-  include_dirs = [
-    "$opensles_dir/api/$opensles_version",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/andiorenderer/include/",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/andiocapturer/include/",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/andiomanager/include/",
-  ]
+} else {
+  opensles_version = "1.0.1"
+  ohos_shared_library("opensles") {
+    sanitize = {
+      cfi = true
+      debug = false
+      blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    }
+    include_dirs = [
+      "$opensles_dir/api/$opensles_version",
+      "${audio_fwk_path}/frameworks/native/opensles/include",
+      "${audio_fwk_path}/interfaces/inner_api/native/andiorenderer/include/",
+      "${audio_fwk_path}/interfaces/inner_api/native/andiocapturer/include/",
+      "${audio_fwk_path}/interfaces/inner_api/native/andiomanager/include/",
+    ]
 
-  configs = [ ":audio_config" ]
+    configs = [ ":audio_config" ]
 
-  sources = [
-    "$opensles_dir/api/$opensles_version/OpenSLES_IID.c",
-    "$opensles_dir/api/$opensles_version/OpenSLES_OpenHarmony_IID.c",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/adapter/audiocapturer_adapter.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/adapter/readorwritecallback_adapter.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/itf/engine_itf.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/itf/object_itf.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/itf/play_itf.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/itf/record_itf.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/itf/volume_itf.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/obj/audiocapturer_obj.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/obj/engine_obj.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/util/builder.cpp",
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/src/util/table_struct.cpp",
-  ]
+    sources = [
+      "$opensles_dir/api/$opensles_version/OpenSLES_IID.c",
+      "$opensles_dir/api/$opensles_version/OpenSLES_OpenHarmony_IID.c",
+      "${audio_fwk_path}/frameworks/native/opensles/src/adapter/audiocapturer_adapter.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/adapter/readorwritecallback_adapter.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/itf/engine_itf.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/itf/object_itf.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/itf/play_itf.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/itf/record_itf.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/itf/volume_itf.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/obj/audiocapturer_obj.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/obj/engine_obj.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/util/builder.cpp",
+      "${audio_fwk_path}/frameworks/native/opensles/src/util/table_struct.cpp",
+    ]
 
-  cflags = [ "-Werror" ]
+    cflags = [ "-Werror" ]
 
-  deps = [
-    ":libsl",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
-  ]
+    deps = [
+      ":libsl",
+      "${audio_fwk_path}/frameworks/native/audiocapturer:audio_capturer",
+      "${audio_fwk_path}/frameworks/native/audiorenderer:audio_renderer",
+      "${audio_fwk_path}/services/audio_service:audio_client",
+    ]
 
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_single",
-  ]
+    external_deps = [
+      "hiviewdfx_hilog_native:libhilog",
+      "ipc:ipc_single",
+    ]
 
-  output_name = "OpenSLES"
-  output_extension = "so"
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
+    output_name = "OpenSLES"
+    output_extension = "so"
+    subsystem_name = "multimedia"
+    part_name = "audio_framework"
+  }
 }
 
 group("audio_opensles_test_packages") {
@@ -107,15 +114,15 @@ group("audio_opensles_test_packages") {
 
 config("audio_operation_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/test/example",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiorenderer/include",
+    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocapturer/include",
+    "${audio_fwk_path}/frameworks/native/audiocapturer/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiostream/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
+    "${audio_fwk_path}/services/audio_service/client/include",
+    "${audio_fwk_path}/services/audio_service/test/example",
     "//commonlibrary/c_utils/base/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
@@ -129,49 +136,61 @@ config("audio_operation_config") {
 
 config("audio_opensles_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/opensles/include",
+    "${audio_fwk_path}/frameworks/native/opensles/include",
     "$opensles_dir/api/1.0.1",
   ]
 }
 
-ohos_executable("audio_opensles_player_test") {
-  install_enable = false
+if (!audio_framework_feature_opensl_es) {
+  group("audio_opensles_player_test") {
+    deps = []
+  }
+} else {
+  ohos_executable("audio_opensles_player_test") {
+    install_enable = false
 
-  sources = [ "test/example/audio_opensles_player_test.cpp" ]
+    sources = [ "test/example/audio_opensles_player_test.cpp" ]
 
-  configs = [
-    ":audio_opensles_config",
-    ":audio_operation_config",
-  ]
+    configs = [
+      ":audio_opensles_config",
+      ":audio_operation_config",
+    ]
 
-  deps = [
-    ":libsl",
-    ":opensles",
-  ]
+    deps = [
+      ":libsl",
+      ":opensles",
+    ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
 }
 
-ohos_executable("audio_opensles_recorder_test") {
-  install_enable = false
+if (!audio_framework_feature_opensl_es) {
+  group("audio_opensles_recorder_test") {
+    deps = []
+  }
+} else {
+  ohos_executable("audio_opensles_recorder_test") {
+    install_enable = false
 
-  sources = [ "test/example/audio_opensles_recorder_test.cpp" ]
+    sources = [ "test/example/audio_opensles_recorder_test.cpp" ]
 
-  configs = [
-    ":audio_opensles_config",
-    ":audio_operation_config",
-  ]
+    configs = [
+      ":audio_opensles_config",
+      ":audio_operation_config",
+    ]
 
-  deps = [
-    ":libsl",
-    ":opensles",
-  ]
+    deps = [
+      ":libsl",
+      ":opensles",
+    ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
 }

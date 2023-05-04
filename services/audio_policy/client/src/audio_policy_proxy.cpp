@@ -169,6 +169,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION ap
     return reply.ReadInt32();
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
 {
     MessageParcel data;
@@ -231,6 +232,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
     return spToneInfo;
 }
+#endif
 
 int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
 {

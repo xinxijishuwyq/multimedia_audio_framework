@@ -86,9 +86,11 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9);
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+#endif
 
     AudioRingerMode GetRingerMode();
 

@@ -110,6 +110,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestS
     EXPECT_EQ(FAILURE, ret);
 }
 
+#ifdef FEATURE_DTMF_TONE
 /**
 * @tc.name  : Test Audio_Policy_GetSupportedTones_001 via legal state
 * @tc.number: Audio_Policy_GetSupportedTones_001
@@ -139,6 +140,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
     std::shared_ptr<ToneInfo> toneInfo = audioPolicyProxy->GetToneConfig(ltonetype);
     ASSERT_NE(nullptr, toneInfo);
 }
+#endif
 
 /**
 * @tc.name  : Test Audio_Policy_IsStreamActive_001 via legal state
@@ -302,6 +304,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_00
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef FEATURE_DTMF_TONE
 /**
 * @tc.name  : Test Audio_Policy_Manager_GetSupportedTones_001 via legal state
 * @tc.number: Audio_Policy_Manager_GetSupportedTones_001
@@ -323,6 +326,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetToneConfig_001, TestSize.Lev
     std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype);
     ASSERT_NE(nullptr, toneInfo);
 }
+#endif
 
 /**
 * @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_001 via legal state

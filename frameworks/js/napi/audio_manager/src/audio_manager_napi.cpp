@@ -31,7 +31,9 @@
 #include "audio_interrupt_manager_napi.h"
 #include "hilog/log.h"
 #include "audio_log.h"
+#ifdef FEATURE_DTMF_TONE
 #include "toneplayer_napi.h"
+#endif
 #include "xpower_event_js.h"
 
 using namespace std;
@@ -2543,7 +2545,9 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioManagerNapi::Init(env, exports);
     AudioCapturerNapi::Init(env, exports);
     AudioRendererNapi::Init(env, exports);
+#ifdef FEATURE_DTMF_TONE
     TonePlayerNapi::Init(env, exports);
+#endif
     AudioParametersNapi::Init(env, exports);
     AudioStreamMgrNapi::Init(env, exports);
     AudioRoutingManagerNapi::Init(env, exports);

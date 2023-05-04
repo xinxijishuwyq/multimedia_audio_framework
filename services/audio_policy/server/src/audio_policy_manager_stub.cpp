@@ -111,6 +111,7 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
     reply.WriteInt32(result);
 }
 
+#ifdef FEATURE_DTMF_TONE
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
@@ -141,6 +142,7 @@ void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, Mess
         reply.WriteInt32(lToneList[i]);
     }
 }
+#endif
 
 void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &reply)
 {
@@ -1033,12 +1035,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case SELECT_INPUT_DEVICE:
             SelectInputDeviceInternal(data, reply);
             break;
+#ifdef FEATURE_DTMF_TONE
         case GET_TONEINFO:
             GetToneInfoInternal(data, reply);
             break;
         case GET_SUPPORTED_TONES:
             GetSupportedTonesInternal(data, reply);
             break;
+#endif
         case RECONFIGURE_CHANNEL:
             ReconfigureAudioChannelInternal(data, reply);
             break;

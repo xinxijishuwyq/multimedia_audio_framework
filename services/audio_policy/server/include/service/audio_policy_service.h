@@ -26,7 +26,9 @@
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
+#ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
+#endif
 
 #ifdef ACCESSIBILITY_ENABLE
 #include "accessibility_config_listener.h"
@@ -139,9 +141,11 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+#endif
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
@@ -355,7 +359,9 @@ private:
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
+#ifdef FEATURE_DTMF_TONE
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
+#endif
     AudioStreamCollector& streamCollector_;
 #ifdef ACCESSIBILITY_ENABLE
     std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;

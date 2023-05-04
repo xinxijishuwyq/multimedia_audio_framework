@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//foundation/multimedia/audio_framework/config.gni")
+
 group("audio_unit_test") {
   testonly = true
 
@@ -32,10 +34,15 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
-    "../frameworks/native/opensles/test/unittest/opensles_player_test:audio_opensles_player_unit_test",
-    "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
   ]
+
+  if (audio_framework_feature_opensl_es) {
+    deps += [
+      "../frameworks/native/opensles/test/unittest/opensles_player_test:audio_opensles_player_unit_test",
+      "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",
+    ]
+  }
 }
 
 group("audio_module_test") {
