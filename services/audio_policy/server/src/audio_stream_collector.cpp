@@ -529,6 +529,7 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
 
 int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume streamId invalid.");
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
@@ -540,6 +541,7 @@ int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 
 float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ret, "AudioStreamCollector:GetLowPowerVolume streamId invalid.");
@@ -553,6 +555,7 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 
 float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ret, "AudioStreamCollector:GetSingleStreamVolume streamId invalid.");
