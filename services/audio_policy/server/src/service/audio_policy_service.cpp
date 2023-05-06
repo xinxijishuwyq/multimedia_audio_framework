@@ -1396,20 +1396,28 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
 int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress)
 {
     int32_t result = ERROR;
-    auto priorityDev = FetchHighPriorityDevice();
-    AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
+    if (currentActiveDevice_ == devType) {
+        auto priorityDev = FetchHighPriorityDevice();
+        AUDIO_INFO_LOG("Priority device is [%{public}d]", priorityDev);
 
-    if (priorityDev == DEVICE_TYPE_SPEAKER) {
-        result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
-            DEVICE_TYPE_SPEAKER);
+        if (priorityDev == DEVICE_TYPE_SPEAKER) {
+            result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
+                DEVICE_TYPE_SPEAKER);
+            result = ActivateNewDevice(DEVICE_TYPE_MIC);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
+                DEVICE_TYPE_MIC);
+        } else {
+            result = ActivateNewDevice(priorityDev);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
+                priorityDev);
+        }
 
-        result = ActivateNewDevice(DEVICE_TYPE_MIC);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]",
-            DEVICE_TYPE_MIC);
+        currentActiveDevice_ = priorityDev;
     } else {
-        result = ActivateNewDevice(priorityDev);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device [%{public}d]", priorityDev);
+        // The disconnected device is not current acitve device. No need to change active device.
+        AUDIO_INFO_LOG("Current acitve device: %{public}d. No need to change", currentActiveDevice_);
+        result = SUCCESS;
     }
 
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1422,7 +1430,6 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
         }
     }
 
-    currentActiveDevice_ = priorityDev;
     return result;
 }
 
