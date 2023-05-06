@@ -295,6 +295,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     }
 
     switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
