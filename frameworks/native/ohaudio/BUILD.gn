@@ -117,26 +117,3 @@ ohos_executable("oh_audio_renderer_test") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
-
-ohos_ndk_headers("ohaudio_header") {
-  dest_dir = "$ndk_headers_out_dir/ohaudio"
-  sources = [
-    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/native_audiocapturer.h",
-    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/native_audiorenderer.h",
-    "${audio_fwk_path}/interfaces/kits/c/common/native_audiostream_base.h",
-    "${audio_fwk_path}/interfaces/kits/c/common/native_audiostreambuilder.h",
-  ]
-}
-
-ohos_ndk_library("libohaudio_ndk") {
-  output_name = "ohaudio"
-  output_extension = "so"
-  ndk_description_file = "./ohaudio.ndk.json"
-  system_capability = "SystemCapability.Multimedia.Audio.Core"
-  system_capability_headers = [
-    "ohaudio/native_audiostream_base.h",
-    "ohaudio/native_audiostreambuilder.h",
-    "ohaudio/native_audiorenderer.h",
-    "ohaudio/native_audiocapturer.h",
-  ]
-}
