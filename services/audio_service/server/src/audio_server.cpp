@@ -20,13 +20,14 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
-#include <sched.h>
-#include <sys/resource.h>
+#include <unordered_map>
 
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "res_type.h"
+#include "res_sched_client.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
@@ -638,12 +639,23 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
 void AudioServer::RequestThreadPriority(uint32_t tid)
 {
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
-    struct sched_param param = {0};
-    param.sched_priority = 1; // 1 used for fifo priority
-    if (sched_setscheduler(tid, SCHED_FIFO, &param) != 0) {
-        AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    }
-    setpriority(PRIO_PROCESS, tid, AUDIO_CLIENT_THREAD_PRIORITY);
+    // struct sched_param param = {0};
+    // param.sched_priority = 1; // 1 used for fifo priority
+    // if (sched_setscheduler(tid, SCHED_FIFO, &param) != 0) {
+    //     AUDIO_ERR_LOG("set SCHED_FIFO failed");
+    // }
+    // setpriority(PRIO_PROCESS, tid, AUDIO_CLIENT_THREAD_PRIORITY);
+    uint32_t pid = IPCSkeleton::GetCallingPid();
+    string strPid = to_string(pid);
+    string strTid = to_string(uid);
+    string strQos = "";
+    unordered_map<string, string> mapPayload;
+    mapPayload["pid"] = strPid;
+    mapPayload["tid"] = strTid;
+    uint32_t type = RES_TYPE_THREAD_QOS_CHANGE;
+    int64_t value = 7;
+    OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
+
     return;
 }
 
