@@ -384,30 +384,30 @@ describe("AudioRoutingManagerJsTest", function () {
       }
       console.info(`${TAG} setAudioScene success`);
       let routingManager = audioManager.getRoutingManager();
-      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAGS, (err, value) => {
-        console.info('${TAG} getDevices return: ' + JSON.stringify(value));
+      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG, (err, value) => {
+        console.info(`${TAG} getDevices return: ` + JSON.stringify(value));
         if (err) {
           console.error(`${TAG} getDevices ERROR: ${err.message}`);
           expect(false).assertTrue();
           done();
           return;
         }
-        console.info('${TAG} getDevices value.length: ' + JSON.stringify(value.length));
+        console.info(`${TAG} getDevices value.length: ` + JSON.stringify(value.length));
         for (let i = 0; i < value.length; i++) {
           if (value[i].deviceType == audio.DeviceType.EARPIECE) {
             flag = true;
             break;
           }
         }
-        console.info('${TAG} getDevices flag: ' + flag);
+        console.info(`${TAG} getDevices flag: ` + flag);
         if (!flag) {
-          console.error(`${TAG} deviceType flag: false`);
-          expect(false).assertTrue();
+          console.error(`${TAG} This device does not have a eapiece`);
+          expect(true).assertTrue();
           done();
           return;
         }
         routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
-          console.info('${TAG} getPreferOutputDeviceForRendererInfo return: ' + JSON.stringify(value));
+          console.info(`${TAG} getPreferOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
             console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
@@ -478,30 +478,30 @@ describe("AudioRoutingManagerJsTest", function () {
         return;
       }
       let routingManager = audioManager.getRoutingManager();
-      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAGS, (err, value) => {
-        console.info('${TAG} getDevices return: ' + JSON.stringify(value));
+      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG, (err, value) => {
+        console.info(`${TAG} getDevices return: ` + JSON.stringify(value));
         if (err) {
           console.error(`${TAG} getDevices ERROR: ${err.message}`);
           expect(false).assertTrue();
           done();
           return;
         }
-        console.info('${TAG} getDevices value.length: ' + JSON.stringify(value.length));
+        console.info(`${TAG} getDevices value.length: ` + JSON.stringify(value.length));
         for (let i = 0; i < value.length; i++) {
           if (value[i].deviceType == audio.DeviceType.EARPIECE) {
             flag = true;
             break;
           }
         }
-        console.info('${TAG} getDevices flag: ' + flag);
+        console.info(`${TAG} getDevices flag: ` + flag);
         if (!flag) {
-          console.error(`${TAG} deviceType flag: false`);
-          expect(false).assertTrue();
+          console.error(`${TAG} This device does not have a earpiece`);
+          expect(true).assertTrue();
           done();
           return;
         }
         routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
-          console.info('${TAG} getPreferOutputDeviceForRendererInfo return: ' + JSON.stringify(value));
+          console.info(`${TAG} getPreferOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
             console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
