@@ -43,6 +43,7 @@ namespace {
         INIT_PROCESS = 0,
         START_PROCESS,
         PAUSE_PROCESS,
+        RESUME_PROCESS,
         STOP_PROCESS,
         CHANGE_PROCESS_VOL,
         RELEASE_PROCESS
@@ -52,11 +53,12 @@ std::map<int32_t, std::string> g_operationStringMap = {
     {INIT_PROCESS, "call init process"},
     {START_PROCESS, "call start process"},
     {PAUSE_PROCESS, "call pause process"},
+    {RESUME_PROCESS, "call resume process"},
     {STOP_PROCESS, "call stop process"},
     {CHANGE_PROCESS_VOL, "change process volume"},
     {RELEASE_PROCESS, "release process"}
 };
-std::string g_filePath = nullptr;
+std::string g_filePath = "";
 FILE *g_wavFile = nullptr;
 mutex g_autoRunMutex;
 condition_variable g_autoRunCV;
@@ -149,6 +151,15 @@ public:
         return true;
     }
 
+    bool Resume()
+    {
+        int32_t ret = processClient_->Resume();
+        if (ret != SUCCESS) {
+            return false;
+        }
+        return true;
+    }
+
     bool SetVolume(int32_t vol)
     {
         int32_t ret = processClient_->SetVolume(vol);
@@ -169,10 +180,15 @@ public:
 
     bool Release()
     {
+        if (processClient_ == nullptr) {
+            return true;
+        }
         int32_t ret = processClient_->Release();
         if (ret != SUCCESS) {
             return false;
         }
+        AUDIO_INFO_LOG("client test set nullptr!");
+        processClient_ = nullptr;
         return true;
     }
 
@@ -185,7 +201,7 @@ private:
     bool renderFinish_ = false;
 };
 
-inline int32_t GetArgs(std::string args)
+inline int32_t GetArgs(const std::string &args)
 {
     int32_t value = 0;
     stringstream valueStr;
@@ -206,7 +222,7 @@ void PrintUsage()
     cout << "[Audio Process Client Test App]" << endl << endl;
     cout << "Supported Functionalities:" << endl;
     cout << "  a) Automatically perform playback test." << endl;
-    cout << "  a) Interactive execution of playback test." << endl;
+    cout << "  b) Interactive execution of playback test." << endl;
     cout << "================================Usage=======================================" << endl << endl;
 
     cout << "-a\n\tAutomatically play" << endl;
@@ -217,7 +233,6 @@ void PrintUsage()
 
     cout << "-b\n\tInteractive play" << endl;
     cout << "\tUsage : ./audio_process_client_test <wav-file-path>" << endl;
-    PrintInteractiveUsage();
 }
 
 int32_t GetUserInput()
@@ -275,6 +290,14 @@ string CallPause()
     return "Pause SUCCESS";
 }
 
+string CallResume()
+{
+    if (!g_audioProcessTest->Resume()) {
+        return "Resume failed";
+    }
+    return "Resume SUCCESS";
+}
+
 string CallStop()
 {
     if (!g_audioProcessTest->Stop()) {
@@ -321,6 +344,9 @@ void InteractiveRun()
             case STOP_PROCESS:
                 cout << CallStop() << endl;
                 break;
+            case RESUME_PROCESS:
+                cout << CallResume() << endl;
+                break;
             case PAUSE_PROCESS:
                 cout << CallPause() << endl;
                 break;
@@ -329,6 +355,9 @@ void InteractiveRun()
                 break;
             case RELEASE_PROCESS:
                 cout << CallRelease() << endl;
+                break;
+            case INVALID_OPERATION:
+                cout << "invalid input" << endl;
                 break;
             default:
                 cout << "invalid input :" << optCode << endl;

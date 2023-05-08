@@ -25,14 +25,16 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
-sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig)
+sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
+    ProcessReleaseCallback *releaseCallback)
 {
-    sptr<AudioProcessInServer> process = new(std::nothrow) AudioProcessInServer(processConfig);
+    sptr<AudioProcessInServer> process = new(std::nothrow) AudioProcessInServer(processConfig, releaseCallback);
 
     return process;
 }
 
-AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig) : processConfig_(processConfig)
+AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
+    ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
     AUDIO_INFO_LOG("AudioProcessInServer()");
 }
@@ -58,6 +60,7 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
 int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    std::lock_guard<std::mutex> lock(statusLock_);
     if (streamStatus_->load() != STREAM_STARTING) {
         AUDIO_ERR_LOG("Start failed, invalid status.");
         return ERR_ILLEGAL_STATE;
@@ -67,7 +70,6 @@ int32_t AudioProcessInServer::Start()
         listenerList_[i]->OnStart(this);
     }
 
-    streamStatus_->store(STREAM_RUNNING);
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
@@ -86,32 +88,89 @@ int32_t AudioProcessInServer::RequestHandleInfo()
 int32_t AudioProcessInServer::Pause(bool isFlush)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-    // todo
+
     (void)isFlush;
+    std::lock_guard<std::mutex> lock(statusLock_);
+    if (streamStatus_->load() != STREAM_PAUSING) {
+        AUDIO_ERR_LOG("Pause failed, invalid status.");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnPause(this);
+    }
+
+    AUDIO_INFO_LOG("Pause in server success!");
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::Resume()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-    // todo
+    std::lock_guard<std::mutex> lock(statusLock_);
+    if (streamStatus_->load() != STREAM_STARTING) {
+        AUDIO_ERR_LOG("Resume failed, invalid status.");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnStart(this);
+    }
+
+    AUDIO_INFO_LOG("Resume in server success!");
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::Stop()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-    // todo
+
+    std::lock_guard<std::mutex> lock(statusLock_);
+    if (streamStatus_->load() != STREAM_STOPPING) {
+        AUDIO_ERR_LOG("Stop failed, invalid status.");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnPause(this); // notify endpoint?
+    }
+
+    AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::Release()
 {
-    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
 
     isInited_ = false;
-    // todo
+    std::lock_guard<std::mutex> lock(statusLock_);
+    CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
+
+    int32_t ret = releaseCallback_->OnProcessRelease(this);
+    AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
+}
+
+int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
+{
+    return SUCCESS;
+}
+
+void AudioProcessInServer::Dump(std::stringstream &dumpStringStream)
+{
+    dumpStringStream << std::endl << "uid:" << processConfig_.appInfo.appUid;
+    dumpStringStream << " pid:" << processConfig_.appInfo.appPid << std::endl;
+    dumpStringStream << " process info:" << std::endl;
+    dumpStringStream << " stream info:" << std::endl;
+    dumpStringStream << "   samplingRate:" << processConfig_.streamInfo.samplingRate << std::endl;
+    dumpStringStream << "   channels:" << processConfig_.streamInfo.channels << std::endl;
+    dumpStringStream << "   format:" << processConfig_.streamInfo.format << std::endl;
+    dumpStringStream << "   encoding:" << processConfig_.streamInfo.encoding << std::endl;
+    if (streamStatus_ != nullptr) {
+        dumpStringStream << "Status:" << streamStatus_->load() << std::endl;
+    }
+    dumpStringStream << std::endl;
 }
 
 std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()
@@ -219,22 +278,27 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe, ui
 
 int32_t AudioProcessInServer::AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener)
 {
+    std::lock_guard<std::mutex> lock(listenerListLock_);
     listenerList_.push_back(listener);
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener)
 {
+    std::lock_guard<std::mutex> lock(listenerListLock_);
     std::vector<std::shared_ptr<IProcessStatusListener>>::iterator it = listenerList_.begin();
+    bool isFind = false;
     while (it != listenerList_.end()) {
         if (*it == listener) {
             listenerList_.erase(it);
+            isFind = true;
             break;
         } else {
             it++;
         }
     }
 
+    AUDIO_INFO_LOG("%{public}s the endpoint.", (isFind ? "find and remove" : "not find"));
     return SUCCESS;
 }
 } // namespace AudioStandard

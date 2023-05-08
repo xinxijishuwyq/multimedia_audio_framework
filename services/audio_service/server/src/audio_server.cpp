@@ -77,6 +77,14 @@ AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
 void AudioServer::OnDump()
 {
 }
+int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
+{
+    AUDIO_INFO_LOG("AudioServer: Dump Process Invoked");
+    std::stringstream dumpStringStream;
+    AudioService::GetInstance()->Dump(dumpStringStream);
+    std::string dumpString = dumpStringStream.str();
+    return write(fd, dumpString.c_str(), dumpString.size());
+}
 
 void AudioServer::OnStart()
 {

@@ -48,6 +48,7 @@ public:
     int32_t PrepareDeviceBuffer();
 
     bool StartDevice();
+    bool StopDevice();
 
     // when audio process start.
     int32_t OnStart(IAudioProcessStream *processStream) override;
@@ -69,6 +70,8 @@ public:
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
 
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
+
+    void Dump(std::stringstream &dumpStringStream) override;
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
@@ -173,6 +176,7 @@ AudioEndpointInner::~AudioEndpointInner()
     endpointStatus_.store(INVALID);
 
     if (dstAudioBuffer_ != nullptr) {
+        AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
     }
 #ifdef DUMP_PROCESS_FILE
@@ -186,6 +190,31 @@ AudioEndpointInner::~AudioEndpointInner()
     }
 #endif
     AUDIO_INFO_LOG("~AudioEndpoint()");
+}
+
+void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
+{
+    // dump endpoint stream info
+    dumpStringStream << std::endl << "Endpoint stream info:" << std::endl;
+    dumpStringStream << " samplingRate:" << dstStreamInfo_.samplingRate << std::endl;
+    dumpStringStream << " channels:" << dstStreamInfo_.channels << std::endl;
+    dumpStringStream << " format:" << dstStreamInfo_.format << std::endl;
+
+    // dump status info
+    dumpStringStream << " Current endpoint status:" << GetStatusStr(endpointStatus_) << std::endl;
+    if (dstAudioBuffer_ != nullptr) {
+        dumpStringStream << " Currend hdi read position:" << dstAudioBuffer_->GetCurReadFrame() << std::endl;
+        dumpStringStream << " Currend hdi write position:" << dstAudioBuffer_->GetCurWriteFrame() << std::endl;
+    }
+
+    // dump linked process info
+    std::lock_guard<std::mutex> lock(listLock_);
+    dumpStringStream << processBufferList_.size() << " linked process:" << std::endl;
+    for (auto item : processBufferList_) {
+        dumpStringStream << " process read position:" << item->GetCurReadFrame() << std::endl;
+        dumpStringStream << " process write position:" << item->GetCurWriteFrame() << std::endl << std::endl;
+    }
+    dumpStringStream << std::endl;
 }
 
 bool AudioEndpointInner::Config(AudioStreamInfo streamInfo)
@@ -372,8 +401,29 @@ bool AudioEndpointInner::StartDevice()
     return true;
 }
 
-int32_t AudioEndpointInner::OnStart(IAudioProcessStream *stream)
+bool AudioEndpointInner::StopDevice()
 {
+    AUDIO_INFO_LOG("StopDevice with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    // todo
+    endpointStatus_ = STOPPING;
+    // Clear data buffer to avoid noise in some case.
+    if (dstAudioBuffer_ != nullptr) {
+        int32_t ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0,
+            dstAudioBuffer_->GetDataSize());
+        AUDIO_INFO_LOG("StopDevice clear buffer ret:%{public}d", ret);
+    }
+    fastSink_->Stop();
+    endpointStatus_ = STOPPED;
+    return true;
+}
+
+int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
+{
+    AUDIO_INFO_LOG("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    if (endpointStatus_ == RUNNING) {
+        AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
+        return SUCCESS;
+    }
     if (endpointStatus_ == IDEL && !isDeviceRunningInIdel_) {
         // call sink start
         StartDevice();
@@ -382,20 +432,28 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *stream)
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::OnPause(IAudioProcessStream *stream)
+int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
 {
+    AUDIO_INFO_LOG("OnPause endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    if (endpointStatus_ == RUNNING) {
+        endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+    }
+    if (endpointStatus_ == IDEL && !isDeviceRunningInIdel_) {
+        // call sink stop when no process running?
+        AUDIO_INFO_LOG("OnPause status is IDEL, call stop");
+    }
     // todo
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *stream)
+int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStream)
 {
     Trace trace("AudioEndpoint::OnUpdateHandleInfo");
     bool isFind = false;
     std::lock_guard<std::mutex> lock(listLock_);
     auto processItr = processList_.begin();
     while (processItr != processList_.end()) {
-        if (*processItr != stream) {
+        if (*processItr != processStream) {
             processItr++;
             continue;
         }
@@ -477,25 +535,29 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
 
 int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStream)
 {
+    AUDIO_INFO_LOG("UnlinkProcessStream in status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBuffer> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
 
-    // todo
     bool isFind = false;
     std::lock_guard<std::mutex> lock(listLock_);
     auto processItr = processList_.begin();
     auto bufferItr = processBufferList_.begin();
     while (processItr != processList_.end()) {
         if (*processItr == processStream && *bufferItr == processBuffer) {
-            processItr = processList_.erase(processItr);
-            bufferItr = processBufferList_.erase(bufferItr);
+            processList_.erase(processItr);
+            processBufferList_.erase(bufferItr);
             isFind = true;
             break;
         } else {
             processItr++;
             bufferItr++;
         }
+    }
+    if (processList_.size() == 0) {
+        StopDevice();
+        endpointStatus_ = UNLINKED;
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
@@ -557,12 +619,12 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
     size_t dataLength = dstData.bufferDesc.dataLength;
     dataLength /= 2; // SAMPLE_S16LE--> 2 byte
-    int16_t *dstPtr = (int16_t *)(dstData.bufferDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstData.bufferDesc.buffer);
     for (size_t offset = 0; dataLength > 0; dataLength--) {
         int32_t sum = 0;
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
-            int16_t *srcPtr = (int16_t *)(srcDataList[i].bufferDesc.buffer) + offset;
+            int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
             sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
         }
         offset++;
@@ -593,7 +655,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             curReadSpan->readStartTime = ClockTime::GetCurNano();
 #ifdef DUMP_PROCESS_FILE
             if (dcp_ != nullptr) {
-                fwrite((void *)streamData.bufferDesc.buffer, 1, streamData.bufferDesc.bufLength, dcp_);
+                fwrite(static_cast<void *>(streamData.bufferDesc.buffer), 1, streamData.bufferDesc.bufLength, dcp_);
             }
 #endif
         }
@@ -622,7 +684,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 
 #ifdef DUMP_PROCESS_FILE
     if (dump_hdi_ != nullptr) {
-        fwrite((void *)dstStreamData.bufferDesc.buffer, 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
+        fwrite(static_cast<void *>(dstStreamData.bufferDesc.buffer), 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
     }
 #endif
     return true;
@@ -696,13 +758,17 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
 {
     Trace trace("AudioEndpoint::GetDeviceHandleInfo");
     if (fastSink_ == nullptr || !fastSink_->IsInited()) {
-        AUDIO_INFO_LOG("GetDeviceHandleInfo failed: sink is not inited.");
+        AUDIO_ERR_LOG("GetDeviceHandleInfo failed: sink is not inited.");
         return false;
     }
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
     // GetMmapHandlePosition will call using ipc.
-    fastSink_->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+    int32_t ret = fastSink_->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Call sink GetMmapHandlePosition failed: %{public}d", ret);
+        return false;
+    }
     nanoTime = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
 
     nanoTime += DELTA_TO_REAL_READ_START_TIME; // global delay in server
@@ -819,7 +885,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
-    AUDIO_INFO_LOG("EndpointWorkLoopFuc end");
+    AUDIO_INFO_LOG("EndpointWorkLoopFuc end with ret %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

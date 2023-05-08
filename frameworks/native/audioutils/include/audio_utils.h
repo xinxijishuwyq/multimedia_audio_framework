@@ -26,10 +26,12 @@ namespace AudioStandard {
 class Trace {
 public:
     static void Count(const std::string &value, int64_t count, bool isEnable = true);
-    Trace(const std::string &value, bool isEnable = true);
+    Trace(const std::string &value, bool isShowLog = false, bool isEnable = true);
     void End();
     ~Trace();
 private:
+    std::string value_;
+    bool isShowLog_ = false;
     bool isEnable_ = true;
     bool isFinished_ = false;
 };
