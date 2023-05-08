@@ -648,12 +648,12 @@ void AudioServer::RequestThreadPriority(uint32_t tid)
     uint32_t pid = IPCSkeleton::GetCallingPid();
     string strPid = to_string(pid);
     string strTid = to_string(tid);
-    string strQos = "";
+    string strQos = to_string(7);
     unordered_map<string, string> mapPayload;
     mapPayload["pid"] = strPid;
-    mapPayload["tid"] = strTid;
+    mapPayload[strTid] = strQos;
     uint32_t type = ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
-    int64_t value = 7;
+    int64_t value = 0;
     ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
 
     return;
