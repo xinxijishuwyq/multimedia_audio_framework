@@ -309,6 +309,14 @@ public:
     */
     uint8_t GetSampleSize() const;
 
+    /**
+    * Provides the underflow count required for this audio stream
+    * created using CreateStream
+    * @param underFlowCount will be get to number of frames
+    * @return Returns number of underflow
+    */
+    virtual uint32_t GetUnderflowCount() const;
+
     // Device volume & route handling APIs
 
     // Audio stream callbacks
@@ -424,6 +432,22 @@ public:
     AudioRendererRate GetStreamRenderRate();
 
     /**
+    * @brief Set stream render sampling rate
+    *
+    * @param sampleRate The sample rate at which the stream needs to be rendered.
+    * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+    * defined in {@link audio_errors.h} otherwise.
+    */
+    virtual int32_t SetRendererSamplingRate(uint32_t sampleRate);
+
+    /**
+    * @brief Obtains render sampling rate
+    *
+    * @return Returns current render sampling rate
+    */
+    virtual uint32_t GetRendererSamplingRate();
+
+    /**
      * @brief Set the buffer duration in msec
      *
      * @param bufferSizeInMsec buffer size in duration.
@@ -507,8 +531,8 @@ private:
     std::mutex rendererMarkReachedMutex_;
     std::mutex rendererPeriodReachedMutex_;
     std::mutex runnerMutex_;
+    std::mutex writeCallbackMutex_;
     bool runnerReleased_ = false;
-
     AudioCache acache;
     const void *internalReadBuffer;
     size_t internalRdBufLen;
@@ -544,6 +568,7 @@ private:
     bool firstFrame_;
 
     AudioRendererRate renderRate;
+    uint32_t rendererSampleRate;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
     std::shared_ptr<AudioCapturerReadCallback> readCallback_;

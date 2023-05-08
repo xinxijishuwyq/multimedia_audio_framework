@@ -169,6 +169,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION ap
     return reply.ReadInt32();
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
 {
     MessageParcel data;
@@ -231,6 +232,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
     return spToneInfo;
 }
+#endif
 
 int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
 {
@@ -1533,6 +1535,9 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.deviceName = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.macAddress = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.displayName = reply.ReadString();
+    rendererChangeInfo->outputDeviceInfo.networkId = reply.ReadString();
+    rendererChangeInfo->outputDeviceInfo.interruptGroupId = reply.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.volumeGroupId = reply.ReadInt32();
 }
 
 void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
@@ -1557,6 +1562,9 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->inputDeviceInfo.deviceName = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.macAddress = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.displayName = reply.ReadString();
+    capturerChangeInfo->inputDeviceInfo.networkId = reply.ReadString();
+    capturerChangeInfo->inputDeviceInfo.interruptGroupId = reply.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.volumeGroupId = reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
@@ -1735,6 +1743,42 @@ std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
         return "";
     }
     return reply.ReadString();
+}
+
+float AudioPolicyProxy::GetMinStreamVolume()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMinStreamVolume WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(GET_MIN_VOLUME_STREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get min volume for stream failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
+}
+
+float AudioPolicyProxy::GetMaxStreamVolume()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetMaxStreamVolume: WriteInterfaceToken failed");
+        return -1;
+    }
+    int32_t error = Remote()->SendRequest(GET_MAX_VOLUME_STREAM, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get max volume for stream failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadFloat();
 }
 } // namespace AudioStandard
 } // namespace OHOS

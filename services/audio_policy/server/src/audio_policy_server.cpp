@@ -91,7 +91,6 @@ void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("AudioPolicyServer OnStart");
     mPolicyService.Init();
-
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
@@ -135,6 +134,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
             ConnectServiceAdapter();
             RegisterParamCallback();
+            LoadEffectLibrary();
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
@@ -243,6 +243,11 @@ void AudioPolicyServer::ConnectServiceAdapter()
         AUDIO_ERR_LOG("ConnectServiceAdapter Error in connecting to audio service adapter");
         return;
     }
+}
+
+void AudioPolicyServer::LoadEffectLibrary()
+{
+    mPolicyService.LoadEffectLibrary();
 }
 
 int32_t AudioPolicyServer::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -422,8 +427,8 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     if (!hasSystemPermission) {
         for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
             desc->networkId_ = "";
-            desc->interruptGroupId_ = DEFAULT_VOLUME_INTERRUPT_ID;
-            desc->volumeGroupId_ = DEFAULT_VOLUME_GROUP_ID;
+            desc->interruptGroupId_ = GROUP_ID_NONE;
+            desc->volumeGroupId_ = GROUP_ID_NONE;
         }
     }
 
@@ -526,6 +531,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     return ret;
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype)
 {
     return mPolicyService.GetToneConfig(ltonetype);
@@ -535,9 +541,11 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 {
     return mPolicyService.GetSupportedTones();
 }
+#endif
 
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
 {
+    std::lock_guard<std::mutex> lock(micStateChangeMutex_);
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
@@ -1342,7 +1350,8 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t /* clientId */, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t /* clientId */,
+    const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
@@ -1469,6 +1478,9 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.audioFocusInfoList = audioFocusInfoList_;
     GetDeviceInfo(policyData);
     GetGroupInfo(policyData);
+
+    // Get Audio Effect Manager Information
+    mPolicyService.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
 }
 
 void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
@@ -1952,6 +1964,16 @@ std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
 {
     AUDIO_INFO_LOG("GetSystemSoundUri:: key: %{public}s", key.c_str());
     return mPolicyService.GetSystemSoundUri(key);
+}
+
+float AudioPolicyServer::GetMinStreamVolume()
+{
+    return mPolicyService.GetMinStreamVolume();
+}
+
+float AudioPolicyServer::GetMaxStreamVolume()
+{
+    return mPolicyService.GetMaxStreamVolume();
 }
 } // namespace AudioStandard
 } // namespace OHOS

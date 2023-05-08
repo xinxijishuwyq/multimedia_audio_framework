@@ -76,7 +76,7 @@ ohos_shared_library("audio_capturer") {
   version_script = "../../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -99,6 +99,6 @@ ohos_executable("audio_capturer_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

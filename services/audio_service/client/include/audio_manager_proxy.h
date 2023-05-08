@@ -26,6 +26,7 @@ class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
 public:
     explicit AudioManagerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioManagerProxy() = default;
+    
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
@@ -46,6 +47,8 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
+    bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
+        std::vector<Effect> &successEffects) override;
     void RequestThreadPriority(uint32_t tid) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;

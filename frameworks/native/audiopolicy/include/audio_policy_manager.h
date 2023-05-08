@@ -86,9 +86,11 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9);
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype);
+#endif
 
     AudioRingerMode GetRingerMode();
 
@@ -201,6 +203,13 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
     std::string GetSystemSoundUri(const std::string &key);
+
+    float GetMinStreamVolume(void);
+
+    float GetMaxStreamVolume(void);
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
+    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
@@ -211,11 +220,13 @@ private:
     std::mutex volumeCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
+    std::mutex ringerModelistenerStubMutex_;
     sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
+    static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

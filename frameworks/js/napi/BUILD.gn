@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/ohos/ace/ace.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
 
 ohos_shared_library("audio") {
@@ -31,10 +32,8 @@ ohos_shared_library("audio") {
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_capturer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/audio_renderer/include",
     "//foundation/multimedia/audio_framework/interfaces/kits/js/ringtone_manager/include",
-    "//foundation/multimedia/audio_framework/interfaces/kits/js/toneplayer/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioringtone/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
     "${ability_runtime_path}/interfaces/kits/native/ability/native",
     "//foundation/arkui/napi/interfaces/kits",
     "//third_party/libuv/include",
@@ -62,20 +61,35 @@ ohos_shared_library("audio") {
     "audio_manager/src/audio_volume_key_event_napi.cpp",
     "audio_manager/src/audio_volume_manager_napi.cpp",
     "audio_renderer/src/audio_renderer_callback_napi.cpp",
+    "audio_renderer/src/audio_renderer_device_change_callback_napi.cpp",
     "audio_renderer/src/audio_renderer_napi.cpp",
+    "audio_renderer/src/audio_renderer_policy_service_died_callback_napi.cpp",
     "audio_renderer/src/renderer_data_request_callback_napi.cpp",
     "audio_renderer/src/renderer_period_position_callback_napi.cpp",
     "audio_renderer/src/renderer_position_callback_napi.cpp",
-    "toneplayer/src/toneplayer_napi.cpp",
   ]
 
   deps = [
     "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
     "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer",
-    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
+
+  defines = []
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+
+    include_dirs += [
+      "${audio_fwk_path}/interfaces/kits/js/toneplayer/include",
+      "${audio_fwk_path}/interfaces/inner_api/native/toneplayer/include",
+    ]
+
+    sources += [ "toneplayer/src/toneplayer_napi.cpp" ]
+
+    deps +=
+        [ "${audio_fwk_path}/frameworks/native/toneplayer:audio_toneplayer" ]
+  }
 
   external_deps = [
     "ability_runtime:abilitykit_native",
@@ -88,6 +102,6 @@ ohos_shared_library("audio") {
     "resource_management:global_resmgr",
   ]
   relative_install_dir = "module/multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

@@ -587,5 +587,114 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetLatencyMode_001, T
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
 }
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via illegal state,
+*             sourceType is AUDIOSTREAM_SOURCE_TYPE_INVALID.
+* @tc.number: OH_AudioStreamBuilder_SetCapturerInfo_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns error code, if source type is
+*             AUDIOSTREAM_SOURCE_TYPE_INVALID.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_INVALID;
+    result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
+*             sourceType is AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION.
+* @tc.number: OH_AudioStreamBuilder_SetCapturerInfo_002
+* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION;
+    result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInfo_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if usage type is
+*             AUDIOSTREAM_USAGE_UNKNOWN.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
+    OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_MUSIC;
+    result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage, content);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInfo_002
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if content type is
+*             AUDIOSTREAM_USAGE_UNKNOWN.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
+    OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_UNKNOWN;
+    result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage, content);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInfo_003
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if content type is
+*             AUDIOSTREAM_USAGE_UNKNOWN.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
+    OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_MOVIE;
+    result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage, content);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -427,6 +427,57 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     return process;
 }
 
+bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries, const vector<Effect> effects,
+    vector<Effect> &successEffects)
+{
+    int32_t error, i;
+
+    MessageParcel dataParcel, replyParcel;
+    MessageOption option;
+    if (!dataParcel.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return false;
+    }
+
+    int32_t countLib = libraries.size();
+    int32_t countEff = effects.size();
+
+    dataParcel.WriteInt32(countLib);
+    dataParcel.WriteInt32(countEff);
+
+    for (Library x : libraries) {
+        dataParcel.WriteString(x.name);
+        dataParcel.WriteString(x.path);
+    }
+
+    for (Effect x : effects) {
+        dataParcel.WriteString(x.name);
+        dataParcel.WriteString(x.libraryName);
+        dataParcel.WriteString(x.effectId);
+    }
+
+    error = Remote()->SendRequest(LOAD_AUDIO_EFFECT_LIBRARIES, dataParcel, replyParcel, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("LoadAudioEffectLibraries failed, error: %{public}d", error);
+        return false;
+    }
+        
+    int32_t successEffSize = replyParcel.ReadInt32();
+    if ((successEffSize < 0) || (successEffSize > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read replyParcel failed");
+        return false;
+    }
+
+    for (i = 0; i < successEffSize; i++) {
+        string effectName = replyParcel.ReadString();
+        string libName = replyParcel.ReadString();
+        string effectId = replyParcel.ReadString();
+        successEffects.push_back({effectName, libName, effectId});
+    }
+
+    return true;
+}
+
 void AudioManagerProxy::RequestThreadPriority(uint32_t tid)
 {
     MessageParcel data;
@@ -444,6 +495,5 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid)
         return;
     }
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -30,8 +30,10 @@ private:
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetRingerModeInternal(MessageParcel &data, MessageParcel &reply);
+#ifdef FEATURE_DTMF_TONE
     void GetToneInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
+#endif
     void GetRingerModeInternal(MessageParcel &data);
     void SetAudioSceneInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioSceneInternal(MessageParcel &data);
@@ -100,6 +102,8 @@ private:
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

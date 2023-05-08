@@ -103,6 +103,20 @@ public:
     virtual void OnWriteData(size_t length) = 0;
 };
 
+class AudioRendererDeviceChangeCallback {
+public:
+    virtual ~AudioRendererDeviceChangeCallback() = default;
+
+    /**
+     * Called when renderer device is updated.
+     *
+     * @param state Indicates updated device of the renderer.
+     * since 10
+     */
+    virtual void OnStateChange(const DeviceInfo &deviceInfo) = 0;
+    virtual void RemoveAllCallbacks() = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  * @since 8
@@ -420,6 +434,24 @@ public:
     virtual AudioRendererRate GetRenderRate() const = 0;
 
     /**
+     * @brief Set the render sampling rate
+     *
+     * @param sampleRate The sample rate at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t SetRendererSamplingRate(uint32_t sampleRate) const = 0;
+
+    /**
+     * @brief Obtains the current render samplingrate
+     *
+     * @return Returns current render samplingrate
+     * @since 10
+     */
+    virtual uint32_t GetRendererSamplingRate() const = 0;
+
+    /**
      * @brief Registers the renderer position callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -615,7 +647,91 @@ public:
      * @since 9
      */
     virtual float GetSingleStreamVolume() const = 0;
-    
+
+    /**
+     * @brief Gets the min volume this stream can set.
+     *
+     * @param none.
+     * @return min stream volume.
+     * @since 10
+     */
+    virtual float GetMinStreamVolume() const = 0;
+
+    /**
+     * @brief Gets the max volume this stream can set.
+     *
+     * @param none.
+     * @return max stream volume.
+     * @since 10
+     */
+    virtual float GetMaxStreamVolume() const = 0;
+
+    /**
+     * @brief Get underflow count.
+     *
+     * @param none.
+     * @return underflow count.
+     * @since 10
+     */
+    virtual uint32_t GetUnderflowCount() const = 0;
+
+    /**
+     * @brief Get deviceInfo
+     *
+     * @param deviceInfo.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+    */
+    virtual int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const = 0;
+
+    /**
+     * @brief Registers the renderer event callback listener.
+     *
+     * @param clientPid client PID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer event callback listener.
+     *
+     * @param clientPid client PID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+
+    /**
+     * @brief Register audio policy service died callback.
+     *
+     * @param clientPid client PID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) = 0;
+
+    /**
+     * @brief Unregister audio policy service died callback.
+     *
+     * @param clientPid client PID
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) = 0;
+
+    /**
+     * @brief Destory callback instance when unregister renderer event listener.
+     * @since 10
+     */
+    virtual void DestroyAudioRendererStateCallback() = 0;
     virtual ~AudioRenderer();
 };
 }  // namespace AudioStandard

@@ -24,6 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
+class AudioRendererStateChangeCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer {
 public:
@@ -50,6 +51,8 @@ public:
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
+    int32_t SetRendererSamplingRate(uint32_t sampleRate) const override;
+    uint32_t GetRendererSamplingRate() const override;
     int32_t SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback) override;
     int32_t SetRendererPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPositionCallback> &callback) override;
@@ -70,6 +73,18 @@ public:
     int32_t SetLowPowerVolume(float volume) const override;
     float GetLowPowerVolume() const override;
     float GetSingleStreamVolume() const override;
+    float GetMinStreamVolume() const override;
+    float GetMaxStreamVolume() const override;
+    int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
+    uint32_t GetUnderflowCount() const override;
+    bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
+    int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
+    int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) override;
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
+    int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
+    void DestroyAudioRendererStateCallback() override;
 
     AudioRendererInfo rendererInfo_ = {};
 
@@ -89,6 +104,8 @@ private:
 #ifdef DUMP_CLIENT_PCM
     FILE *dcp_ = nullptr;
 #endif
+    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
+    DeviceInfo currentDeviceInfo = {};
 };
 
 class AudioInterruptCallbackImpl : public AudioInterruptCallback {
@@ -121,6 +138,20 @@ public:
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
 private:
     std::weak_ptr<AudioRendererCallback> callback_;
+};
+
+class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
+public:
+    AudioRendererStateChangeCallbackImpl();
+    virtual ~AudioRendererStateChangeCallbackImpl();
+
+    void OnRendererStateChange(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+    void SaveCallback(const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback);
+    void setAudioRendererObj(AudioRendererPrivate *rendererObj);
+private:
+    std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
+    AudioRendererPrivate *renderer;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

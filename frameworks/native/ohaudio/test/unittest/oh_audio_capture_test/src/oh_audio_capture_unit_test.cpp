@@ -249,7 +249,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_001, TestSize.Level0)
 
 /**
 * @tc.name  : Test OH_AudioCapturer_Release API via illegal state.
-* @tc.number: OH_Audio_Render_Release_002
+* @tc.number: OH_Audio_Capture_Release_002
 * @tc.desc  : Test OH_AudioCapturer_Release interface. Returns error code, if stream is released twice.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_002, TestSize.Level0)
@@ -318,6 +318,25 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetSamplingRate_001, TestSize.Le
     result = OH_AudioCapturer_GetSamplingRate(audioCapturer, &rate);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_TRUE(rate == SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetSampleFormat API via legal state.
+* @tc.number: OH_Audio_Capture_GetSampleFormat_001
+* @tc.desc  : Test OH_AudioCapturer_GetSampleFormat interface. Returns true if sampleFormat is
+*             AUDIOSTREAM_SAMPLE_S16LE,because default sampleFormat is AUDIOSTREAM_SAMPLE_S16LE.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapture_GetSampleFormat_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+
+    OH_AudioStream_SampleFormat sampleFormat;
+    result = OH_AudioCapturer_GetSampleFormat(audioCapturer, &sampleFormat);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(sampleFormat == AUDIOSTREAM_SAMPLE_S16LE);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 

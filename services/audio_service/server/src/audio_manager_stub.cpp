@@ -17,11 +17,39 @@
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"
+#include "audio_effect_server.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>& effectList, MessageParcel &data,
+                                        int32_t countLib, int32_t countEff)
+{
+    int32_t i;
+    for (i = 0; i < countLib; i++) {
+        string libName = data.ReadString();
+        string libPath = data.ReadString();
+        libList.push_back({libName, libPath});
+    }
+    for (i = 0; i < countEff; i++) {
+        string effectName = data.ReadString();
+        string libName = data.ReadString();
+        string effectId = data.ReadString();
+        effectList.push_back({effectName, libName, effectId});
+    }
+}
+
+static void LoadEffectLibrariesWriteReply(vector<Effect>& successEffectList, MessageParcel &reply)
+{
+    reply.WriteInt32(successEffectList.size());
+    for (Effect effect: successEffectList) {
+        reply.WriteString(effect.name);
+        reply.WriteString(effect.libraryName);
+        reply.WriteString(effect.effectId);
+    }
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
@@ -180,8 +208,30 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteRemoteObject(process);
             return AUDIO_OK;
         }
+        case LOAD_AUDIO_EFFECT_LIBRARIES: {
+            vector<Library> libList = {};
+            vector<Effect> effectList = {};
+            int32_t countLib = data.ReadInt32();
+            int32_t countEff = data.ReadInt32();
+            if ((countLib < 0) || (countLib > AUDIO_EFFECT_COUNT_UPPER_LIMIT) ||
+                (countEff < 0) || (countEff > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+                AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read data failed");
+                return AUDIO_ERR;
+            }
+            LoadEffectLibrariesReadData(libList, effectList, data, countLib, countEff);
+            if (countLib > 0) {
+                //load lib and reply success list
+                vector<Effect> successEffectList = {};
+                bool loadSuccess = LoadAudioEffectLibraries(libList, effectList, successEffectList);
+                if (!loadSuccess) {
+                    AUDIO_ERR_LOG("Load audio effect libraries failed, please check log");
+                    return AUDIO_ERR;
+                }
+                LoadEffectLibrariesWriteReply(successEffectList, reply);
+            }
+            return AUDIO_OK;
+        }
         case REQUEST_THREAD_PRIORITY: {
-            AUDIO_DEBUG_LOG("REQUEST_THREAD_PRIORITY AudioManagerStub");
             uint32_t tid = data.ReadUint32();
             RequestThreadPriority(tid);
             return AUDIO_OK;

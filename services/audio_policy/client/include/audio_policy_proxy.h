@@ -68,9 +68,11 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v) override;
 
+#ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
 
     std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) override;
+#endif
 
     AudioRingerMode GetRingerMode() override;
 
@@ -176,6 +178,10 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
     std::string GetSystemSoundUri(const std::string &key) override;
+
+    float GetMinStreamVolume(void) override;
+
+    float GetMaxStreamVolume(void) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

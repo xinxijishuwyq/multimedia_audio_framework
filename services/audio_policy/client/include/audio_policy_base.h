@@ -62,9 +62,11 @@ public:
 
     virtual DeviceType GetActiveInputDevice() = 0;
 
+#ifdef FEATURE_DTMF_TONE
     virtual std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype) = 0;
 
     virtual std::vector<int32_t> GetSupportedTones() = 0;
+#endif
 
     virtual int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v = API_9) = 0;
 
@@ -180,6 +182,10 @@ public:
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
     virtual std::string GetSystemSoundUri(const std::string &key) = 0;
+
+    virtual float GetMinStreamVolume(void) = 0;
+
+    virtual float GetMaxStreamVolume(void) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

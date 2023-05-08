@@ -28,6 +28,7 @@ using namespace std;
 
 static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
+std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
@@ -75,6 +76,14 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
     lock_guard<mutex> lock(g_apProxyMutex);
     AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
+    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
+    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
+        cb = it->second.lock();
+        if (cb != nullptr) {
+            cb->OnAudioPolicyServiceDied();
+            rendererCBMap_.erase(getpid());
+        }
+    }
     g_apProxy = nullptr;
 }
 
@@ -358,6 +367,7 @@ int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clie
     return gsp->UnregisterFocusInfoChangeCallback(clientId);
 }
 
+#ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyManager::GetSupportedTones()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -380,6 +390,7 @@ std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype)
     }
     return gsp->GetToneConfig(ltonetype);
 }
+#endif
 
 int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
@@ -435,7 +446,7 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
         AUDIO_ERR_LOG("SetRingerModeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
-
+    std::lock_guard<std::mutex> lockSet(ringerModelistenerStubMutex_);
     ringerModelistenerStub_ = new(std::nothrow) AudioRingerModeUpdateListenerStub();
     if (ringerModelistenerStub_ == nullptr) {
         AUDIO_ERR_LOG("SetRingerModeCallback: object null");
@@ -1022,6 +1033,43 @@ std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
     }
 
     return gsp->GetSystemSoundUri(key);
+}
+
+float AudioPolicyManager::GetMinStreamVolume()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetMinStreamVolume: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->GetMinStreamVolume();
+}
+
+float AudioPolicyManager::GetMaxStreamVolume()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetMaxStreamVolume: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->GetMaxStreamVolume();
+}
+
+int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+    const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback)
+{
+    lock_guard<mutex> lock(g_apProxyMutex);
+    rendererCBMap_[clientPid] = callback;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clientPid)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::UnregisterAudioPolicyServerDiedCb client pid: %{public}d", clientPid);
+    for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
+        rendererCBMap_.erase(getpid());
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -295,6 +295,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     }
 
     switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
@@ -642,6 +643,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     AppId appId;
     appId.appId = "audio_policy_manager";
 
+    options.securityLevel = S1;
     options.createIfMissing = true;
     options.encrypt = false;
     options.autoSync = false;
@@ -1088,6 +1090,16 @@ std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string
     }
     AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
     return uri;
+}
+
+float AudioAdapterManager::GetMinStreamVolume() const
+{
+    return MIN_STREAM_VOLUME;
+}
+
+float AudioAdapterManager::GetMaxStreamVolume() const
+{
+    return MAX_STREAM_VOLUME;
 }
 } // namespace AudioStandard
 } // namespace OHOS

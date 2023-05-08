@@ -111,6 +111,7 @@ void AudioPolicyManagerStub::SetRingerModeInternal(MessageParcel &data, MessageP
     reply.WriteInt32(result);
 }
 
+#ifdef FEATURE_DTMF_TONE
 void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<ToneInfo> ltoneInfo = GetToneConfig(data.ReadInt32());
@@ -141,6 +142,7 @@ void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, Mess
         reply.WriteInt32(lToneList[i]);
     }
 }
+#endif
 
 void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &reply)
 {
@@ -744,6 +746,9 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
+        reply.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
+        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
+        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
     }
 
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
@@ -785,6 +790,9 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
+        reply.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
+        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
+        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
     }
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
@@ -846,6 +854,18 @@ void AudioPolicyManagerStub::GetSystemSoundUriInternal(MessageParcel &data, Mess
     std::string key = data.ReadString();
     std::string result = GetSystemSoundUri(key);
     reply.WriteString(result);
+}
+
+void AudioPolicyManagerStub::GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = GetMinStreamVolume();
+    reply.WriteFloat(volume);
+}
+
+void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = GetMaxStreamVolume();
+    reply.WriteFloat(volume);
 }
 
 int AudioPolicyManagerStub::OnRemoteRequest(
@@ -1015,12 +1035,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case SELECT_INPUT_DEVICE:
             SelectInputDeviceInternal(data, reply);
             break;
+#ifdef FEATURE_DTMF_TONE
         case GET_TONEINFO:
             GetToneInfoInternal(data, reply);
             break;
         case GET_SUPPORTED_TONES:
             GetSupportedTonesInternal(data, reply);
             break;
+#endif
         case RECONFIGURE_CHANNEL:
             ReconfigureAudioChannelInternal(data, reply);
             break;
@@ -1123,6 +1145,14 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_SYSTEM_SOUND_URI:
             GetSystemSoundUriInternal(data, reply);
+            break;
+
+        case GET_MIN_VOLUME_STREAM:
+            GetMinStreamVolumeInternal(data, reply);
+            break;
+
+        case GET_MAX_VOLUME_STREAM:
+            GetMaxStreamVolumeInternal(data, reply);
             break;
 
         default:

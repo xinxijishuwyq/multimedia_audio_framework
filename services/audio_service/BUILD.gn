@@ -64,7 +64,7 @@ ohos_shared_library("audio_common") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 config("audio_client_public_config") {
@@ -134,6 +134,7 @@ ohos_shared_library("audio_client") {
     "$pulseaudio_dir/include",
     "$pulseaudio_build_path/include",
     "//third_party/bounds_checking_function/include",
+    "${audio_fwk_path}/services/audio_service/server/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -151,13 +152,13 @@ ohos_shared_library("audio_client") {
   innerapi_tags = [ "platformsdk" ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_prebuilt_etc("audio_service_init") {
   source = "etc/pulseaudio.cfg"
   relative_install_dir = "init"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -182,6 +183,7 @@ config("audio_service_config") {
     "${fwk_native_hdiadapter_path}/source/common",
     "${fwk_native_hdiadapter_path}/source/primary",
     "//drivers/peripheral/audio/interfaces/include",
+    "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
   ]
 
   if (target_cpu == "arm") {
@@ -222,7 +224,7 @@ ohos_shared_library("audio_process_service") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 ohos_shared_library("audio_service") {
@@ -234,6 +236,7 @@ ohos_shared_library("audio_service") {
   install_enable = true
 
   sources = [
+    "server/src/audio_effect_server.cpp",
     "server/src/audio_manager_listener_proxy.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
@@ -269,7 +272,7 @@ ohos_shared_library("audio_service") {
   ]
 
   subsystem_name = "multimedia"
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
 }
 
 group("audio_service_test_packages") {
@@ -300,7 +303,7 @@ ohos_executable("audio_process_client_test") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -338,7 +341,7 @@ ohos_executable("audio_hdi_device_test") {
     "power_manager:powermgr_client",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -367,7 +370,7 @@ ohos_executable("audio_service_playback_test") {
     "ipc:ipc_single",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -395,7 +398,7 @@ ohos_executable("audio_service_record_test") {
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_single",
   ]
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
 
@@ -424,6 +427,6 @@ ohos_executable("audio_multichannel_test") {
     "ipc:ipc_single",
   ]
 
-  part_name = "multimedia_audio_framework"
+  part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

@@ -321,6 +321,25 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSamplingRate_001, TestSize.Leve
 }
 
 /**
+* @tc.name  : Test OH_AudioRenderer_GetSampleFormat API via legal state.
+* @tc.number: OH_Audio_Render_GetSampleFormat_001
+* @tc.desc  : Test OH_AudioRenderer_GetSampleFormat interface. Returns true if sampleFormat is
+*             AUDIOSTREAM_SAMPLE_S16LE,because default sampleFormat is AUDIOSTREAM_SAMPLE_S16LE.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetSampleFormat, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_SampleFormat sampleFormat;
+    result = OH_AudioRenderer_GetSampleFormat(audioRenderer, &sampleFormat);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(sampleFormat == AUDIOSTREAM_SAMPLE_S16LE);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
 * @tc.name  : Test OH_AudioRenderer_GetEncodingType API via legal state.
 * @tc.number: OH_Audio_Render_GetEncodingType_001
 * @tc.desc  : Test OH_AudioRenderer_GetEncodingType interface. Returns true if encodingType is

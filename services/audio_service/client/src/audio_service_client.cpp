@@ -490,6 +490,7 @@ AudioServiceClient::AudioServiceClient()
 
     setBufferSize = 0;
     PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+    rendererSampleRate = 0;
 }
 
 void AudioServiceClient::ResetPAAudioClient()
@@ -1007,6 +1008,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     AUDIO_INFO_LOG("Created Stream");
     return AUDIO_CLIENT_SUCCESS;
+}
+
+uint32_t AudioServiceClient::GetUnderflowCount() const
+{
+    return underFlowCount;
 }
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
@@ -2210,6 +2216,34 @@ int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererR
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::SetRendererSamplingRate(uint32_t sampleRate)
+{
+    AUDIO_INFO_LOG("SetStreamRendererSamplingRate %{public}d", sampleRate);
+    if (!paStream) {
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
+    if (sampleRate <= 0) {
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+    rendererSampleRate = sampleRate;
+
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_operation *operation = pa_stream_update_sample_rate(paStream, sampleRate, nullptr, nullptr);
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+uint32_t AudioServiceClient::GetRendererSamplingRate()
+{
+    if (rendererSampleRate == 0) {
+        return sampleSpec.rate;
+    }
+    return rendererSampleRate;
+}
+
 AudioRendererRate AudioServiceClient::GetStreamRenderRate()
 {
     return renderRate;
@@ -2556,6 +2590,7 @@ void AudioServiceClient::HandleUnsetCapturerPeriodReachedEvent()
 
 int32_t AudioServiceClient::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
+    std::lock_guard<std::mutex> lockSet(writeCallbackMutex_);
     if (!callback) {
         AUDIO_ERR_LOG("SetRendererWriteCallback callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -2598,6 +2633,7 @@ void AudioServiceClient::SendReadBufferRequestEvent()
 
 void AudioServiceClient::HandleWriteRequestEvent()
 {
+    std::lock_guard<std::mutex> lockSet(writeCallbackMutex_);
     // do callback to application
     if (writeCallback_) {
         size_t requestSize;
