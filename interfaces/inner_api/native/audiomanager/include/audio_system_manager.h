@@ -943,6 +943,7 @@ private:
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     uint32_t GetCallingPid();
+    std::string GetSelfBundleName();
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;

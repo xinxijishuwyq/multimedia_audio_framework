@@ -1105,6 +1105,29 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     return result;
 }
 
+std::string AudioSystemManager::GetSelfBundleName()
+{
+    std::string bundleName = "";
+
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (iBundleMgr == nullptr) {
+        AUDIO_ERR_LOG("bundlemgr interface is null");
+        return bundleName;
+    }
+
+    AppExecFwk::BundleInfo bundleInfo;
+    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) == ERR_OK) {
+        bundleName = bundleInfo.name;
+    } else {
+        AUDIO_ERR_LOG("Get bundle info failed");
+    }
+    return bundleName;
+}
+
 void AudioSystemManager::RequestThreadPriority(uint32_t tid)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
@@ -1112,6 +1135,7 @@ void AudioSystemManager::RequestThreadPriority(uint32_t tid)
         AUDIO_ERR_LOG("RequestThreadPriority Audio service unavailable.");
         return;
     }
+    std::string bundleName = GetSelfBundleName();
     gasp->RequestThreadPriority(tid, bundleName);
 }
 
