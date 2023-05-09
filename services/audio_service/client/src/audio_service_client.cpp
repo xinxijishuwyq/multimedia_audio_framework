@@ -1426,7 +1426,6 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     const uint8_t *buffer = acache.buffer.get();
     size_t length = acache.totalCacheSize;
 
-    Trace trace("WriteStream");
     error = PaWriteStream(buffer, length);
     acache.readIndex += acache.totalCacheSize;
     acache.isFull = false;
