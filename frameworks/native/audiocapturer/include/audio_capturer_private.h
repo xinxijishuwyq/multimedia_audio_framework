@@ -80,10 +80,10 @@ private:
     };
 };
 
-class AudioInterruptCallbackImpl : public AudioInterruptCallback {
+class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
 public:
-    explicit AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream);
-    virtual ~AudioInterruptCallbackImpl();
+    explicit AudioCapturerInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream);
+    virtual ~AudioCapturerInterruptCallbackImpl();
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);

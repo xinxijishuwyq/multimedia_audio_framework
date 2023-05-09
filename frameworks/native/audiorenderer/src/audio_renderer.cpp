@@ -207,7 +207,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);
 
     if (audioInterruptCallback_ == nullptr) {
-        audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackImpl>(audioStream_, audioInterrupt_);
+        audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt_);
         if (audioInterruptCallback_ == nullptr) {
             AUDIO_ERR_LOG("InitAudioInterruptCallback::Failed to allocate memory for audioInterruptCallback_");
             return ERROR;
@@ -305,8 +305,8 @@ int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRen
         AUDIO_ERR_LOG("AudioRendererPrivate::SetRendererCallback audioInterruptCallback_ == nullptr");
         return ERROR;
     }
-    std::shared_ptr<AudioInterruptCallbackImpl> cbInterrupt =
-        std::static_pointer_cast<AudioInterruptCallbackImpl>(audioInterruptCallback_);
+    std::shared_ptr<AudioRendererInterruptCallbackImpl> cbInterrupt =
+        std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
     cbInterrupt->SaveCallback(callback);
 
     // Save and Set reference for stream callback. Order is important here.
@@ -527,34 +527,34 @@ int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
 
-AudioInterruptCallbackImpl::AudioInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
+AudioRendererInterruptCallbackImpl::AudioRendererInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
     const AudioInterrupt &audioInterrupt)
     : audioStream_(audioStream), audioInterrupt_(audioInterrupt)
 {
-    AUDIO_INFO_LOG("AudioInterruptCallbackImpl constructor");
+    AUDIO_INFO_LOG("AudioRendererInterruptCallbackImpl constructor");
 }
 
-AudioInterruptCallbackImpl::~AudioInterruptCallbackImpl()
+AudioRendererInterruptCallbackImpl::~AudioRendererInterruptCallbackImpl()
 {
-    AUDIO_DEBUG_LOG("AudioInterruptCallbackImpl: instance destroy");
+    AUDIO_DEBUG_LOG("AudioRendererInterruptCallbackImpl: instance destroy");
 }
 
-void AudioInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
+void AudioRendererInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
 {
     callback_ = callback;
 }
 
-void AudioInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
+void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     if (cb_ != nullptr) {
         cb_->OnInterrupt(interruptEvent);
-        AUDIO_INFO_LOG("AudioInterruptCallbackImpl::NotifyEvent: Send interruptEvent to app successfully");
+        AUDIO_INFO_LOG("AudioRendererInterruptCallbackImpl::NotifyEvent: Send interruptEvent to app successfully");
     } else {
-        AUDIO_ERR_LOG("AudioInterruptCallbackImpl::NotifyEvent: cb_==nullptr, failed to send interruptEvent to app");
+        AUDIO_ERR_LOG("AudioRendererInterruptCallbackImpl::NotifyEvent: cb_==nullptr, failed to send interruptEvent");
     }
 }
 
-bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
+bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
     int32_t systemVolumeLevel =
         AudioPolicyManager::GetInstance().GetSystemVolumeLevel(audioInterrupt_.audioFocusType.streamType);
@@ -585,7 +585,7 @@ bool AudioInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal
     return true;
 }
 
-void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
 {
     // Change InterruptForceType to Share, Since app will take care of resuming
     InterruptEvent interruptEventResume {interruptEvent.eventType, INTERRUPT_SHARE,
@@ -593,7 +593,7 @@ void AudioInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventI
     NotifyEvent(interruptEventResume);
 }
 
-void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
     // ForceType: INTERRUPT_FORCE. Handle the event forcely and notify the app.
     AUDIO_DEBUG_LOG("HandleAndNotifyForcedEvent in");
@@ -646,11 +646,11 @@ void AudioInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEvent
     NotifyEvent(interruptEventForced);
 }
 
-void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
-    AUDIO_INFO_LOG("AudioInterruptCallbackImpl::OnInterrupt: forceType %{public}d, hintType: %{public}d",
+    AUDIO_INFO_LOG("AudioRendererInterruptCallbackImpl::OnInterrupt: forceType %{public}d, hintType: %{public}d",
         forceType, interruptEvent.hintType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
@@ -662,7 +662,7 @@ void AudioInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &inter
     }
 
     if (audioStream_ == nullptr) {
-        AUDIO_ERR_LOG("AudioInterruptCallbackImpl::OnInterrupt stream is not alive. No need to take forced action");
+        AUDIO_ERR_LOG("AudioRendererInterruptCallbackImpl::Stream is not alive. No need to take forced action");
         return;
     }
 
