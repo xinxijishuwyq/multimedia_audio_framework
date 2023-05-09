@@ -1112,7 +1112,7 @@ void AudioSystemManager::RequestThreadPriority(uint32_t tid)
         AUDIO_ERR_LOG("RequestThreadPriority Audio service unavailable.");
         return;
     }
-    gasp->RequestThreadPriority(tid);
+    gasp->RequestThreadPriority(tid, bundleName);
 }
 
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const

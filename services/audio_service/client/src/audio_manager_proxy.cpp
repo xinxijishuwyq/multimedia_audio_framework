@@ -478,7 +478,7 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     return true;
 }
 
-void AudioManagerProxy::RequestThreadPriority(uint32_t tid)
+void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -489,6 +489,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid)
         return;
     }
     (void)data.WriteUint32(tid);
+    (void)data.WriteString(bundleName);
     int error = Remote()->SendRequest(REQUEST_THREAD_PRIORITY, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RequestThreadPriority failed, error: %{public}d", error);

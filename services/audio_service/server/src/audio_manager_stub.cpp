@@ -233,7 +233,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         }
         case REQUEST_THREAD_PRIORITY: {
             uint32_t tid = data.ReadUint32();
-            RequestThreadPriority(tid);
+            string bundleName = data.ReadString();
+            RequestThreadPriority(tid, bundleName);
             return AUDIO_OK;
         }
         default: {

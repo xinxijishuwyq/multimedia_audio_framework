@@ -51,7 +51,6 @@ namespace AudioStandard {
 std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const unsigned int TIME_OUT_SECONDS = 10;
-const int AUDIO_CLIENT_THREAD_PRIORITY = -19;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -636,27 +635,22 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
     }
 }
 
-void AudioServer::RequestThreadPriority(uint32_t tid)
+void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
 {
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
-    // struct sched_param param = {0};
-    // param.sched_priority = 1; // 1 used for fifo priority
-    // if (sched_setscheduler(tid, SCHED_FIFO, &param) != 0) {
-    //     AUDIO_ERR_LOG("set SCHED_FIFO failed");
-    // }
-    // setpriority(PRIO_PROCESS, tid, AUDIO_CLIENT_THREAD_PRIORITY);
+
     uint32_t pid = IPCSkeleton::GetCallingPid();
+    const uint32_t AUDIO_QOS_LEVEL = 7;
     string strPid = to_string(pid);
     string strTid = to_string(tid);
-    string strQos = to_string(7);
-    unordered_map<string, string> mapPayload;
-    mapPayload["pid"] = strPid;
-    mapPayload[strTid] = strQos;
+    string strQos = to_string(AUDIO_QOS_LEVEL);
+
+    unordered_map<string, string> payload;
+    payload["pid"] = strPid;
+    payload[strTid] = strQos;
     uint32_t type = ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
     int64_t value = 0;
-    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
-
-    return;
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, payload);
 }
 
 } // namespace AudioStandard
