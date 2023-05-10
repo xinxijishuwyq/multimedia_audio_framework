@@ -640,7 +640,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_002, 
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -657,12 +657,12 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, 
 * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
 * @tc.number: OH_AudioStreamBuilder_SetRendererInfo_002
 * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if content type is
-*             AUDIOSTREAM_USAGE_UNKNOWN.
+*             AUDIOSTREAM_CONTENT_TYPE_UNKNOWN.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -678,13 +678,12 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via legal state.
 * @tc.number: OH_AudioStreamBuilder_SetRendererInfo_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if content type is
-*             AUDIOSTREAM_USAGE_UNKNOWN.
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns true if result is successful.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
