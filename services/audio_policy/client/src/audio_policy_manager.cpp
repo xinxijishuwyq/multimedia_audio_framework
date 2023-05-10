@@ -990,14 +990,24 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
     return  gsp->UpdateStreamState(clientUid, streamSetState, audioStreamType);
 }
 
-int32_t AudioPolicyManager::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision)
+int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetVolumeGroupInfos failed, g_apProxy is nullptr.");
         return ERROR;
     }
-    return gsp->GetVolumeGroupInfos(infos, needVerifyPermision);
+    return gsp->GetVolumeGroupInfos(networkId, infos);
+}
+
+int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetNetworkIdByGroupId failed, g_apProxy is nullptr.");
+        return ERROR;
+    }
+    return gsp->GetNetworkIdByGroupId(groupId, networkId);
 }
 
 bool AudioPolicyManager::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)

@@ -90,6 +90,7 @@ private:
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateStreamStateInternal(MessageParcel& data, MessageParcel& reply);
     void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
+    void GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply);
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
     void getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);

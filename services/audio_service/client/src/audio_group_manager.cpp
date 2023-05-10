@@ -286,17 +286,11 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
 int32_t AudioGroupManager::Init()
 {
     // init networkId_
-    int32_t groupId = groupId_;
-    std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos = {};
-    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(volumeGroupInfos, false);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioGroupManager::Init filed");
-    auto filter = [&groupId](const sptr<VolumeGroupInfo>& info) {
-        return groupId != info->volumeGroupId_;
-    };
-    volumeGroupInfos.erase(std::remove_if(volumeGroupInfos.begin(), volumeGroupInfos.end(), filter),
-        volumeGroupInfos.end());
-    if (volumeGroupInfos.size() > 0) {
-        netWorkId_ = volumeGroupInfos[0]->networkId_;
+    std::string netWorkId;
+    int32_t ret = AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId_, netWorkId);
+
+    if (ret == SUCCESS) {
+        netWorkId_ = netWorkId;
         connectType_ = netWorkId_ == LOCAL_NETWORK_ID ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
         AUDIO_INFO_LOG("AudioGroupManager::init set networkId %{public}s.", netWorkId_.c_str());
     } else {
