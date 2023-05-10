@@ -17,6 +17,7 @@
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "bundle_mgr_interface.h"
 
 #include "audio_log.h"
 #include "audio_errors.h"
