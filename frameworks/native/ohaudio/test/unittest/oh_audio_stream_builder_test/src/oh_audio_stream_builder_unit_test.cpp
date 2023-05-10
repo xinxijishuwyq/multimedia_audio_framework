@@ -79,10 +79,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_001, TestSize.
     OH_AudioStreamBuilder* builder = nullptr;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -95,10 +95,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_002, TestSize.
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -124,14 +124,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_001, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     int32_t samplingRate = SAMPLING_RATE_48000;
     result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -144,14 +144,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_002, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     int32_t samplingRate = SAMPLING_RATE_44100;
     result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -164,14 +164,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_003, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     int32_t samplingRate = SAMPLING_RATE_WRONG_NUM;
     result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -184,14 +184,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     int32_t channelCount = CHANNEL_COUNT_1;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -204,14 +204,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     int32_t channelCount = CHANNEL_COUNT_2;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -224,14 +224,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     int32_t channelCount = CHANNEL_COUNT_10;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -244,14 +244,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_007, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_EncodingType encodingType = AUDIOSTREAM_ENCODING_TYPE_RAW;
     result = OH_AudioStreamBuilder_SetEncodingType(builder, encodingType);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -265,7 +265,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_MUSIC;
@@ -273,7 +273,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, Tes
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -286,15 +286,15 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_009, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_COMMUNICATION;
     OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_SPEECH;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage, content);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -308,7 +308,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_COMMUNICATION;
     OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_SPEECH;
@@ -316,7 +316,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, Tes
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -329,15 +329,15 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_011, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
     result = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, NULL);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -351,7 +351,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_012, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
@@ -359,7 +359,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_012, Tes
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -373,14 +373,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_013, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
     result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -394,14 +394,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_014, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION ;
     result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -415,14 +415,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_015, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION ;
     result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -435,15 +435,15 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_016, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioCapturer_Callbacks callbacks;
     callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
     result = OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, NULL);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -457,7 +457,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, Tes
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioCapturer_Callbacks callbacks;
     callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
@@ -465,7 +465,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, Tes
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -478,14 +478,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_001, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_U8;
     result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -498,14 +498,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_002, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S16LE;
     result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -518,14 +518,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_003, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S24LE;
     result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -538,14 +538,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_004, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S32LE;
     result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -558,14 +558,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_005, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S32LE;
     result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -578,14 +578,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetLatencyMode_001, T
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
     result = OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -600,14 +600,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_001, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_INVALID;
     result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -621,14 +621,14 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_002, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION;
     result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -642,7 +642,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
     OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_MUSIC;
@@ -650,7 +650,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, 
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -664,7 +664,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_UNKNOWN;
@@ -672,7 +672,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -686,15 +686,15 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     OH_AudioStream_Content content = AUDIOSTREAM_CONTENT_TYPE_MOVIE;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage, content);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
