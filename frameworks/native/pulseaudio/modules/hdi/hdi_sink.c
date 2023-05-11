@@ -31,9 +31,9 @@
 #include <string.h>
 #include <inttypes.h>
 #include <sys/types.h>
-#include <sys/resource.h>
 
 #include "audio_log.h"
+#include "audio_schedule.h"
 #include "renderer_sink_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
@@ -45,7 +45,6 @@
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
-const int AUDIO_PROCESS_THREAD_PRIORITY = -16;
 
 enum {
     HDI_INIT,
@@ -201,7 +200,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 static void ThreadFuncRendererTimer(void *userdata)
 {
     // set audio thread priority
-    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
 
@@ -274,7 +273,7 @@ finish:
 static void ThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -310,7 +309,7 @@ static void ThreadFuncWriteHDI(void *userdata)
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
     // set audio thread priority
-    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     struct Userdata *u = userdata;
     pa_assert(u);
@@ -585,7 +584,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
-    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     pa_sink_new_data data;
     pa_module *m;

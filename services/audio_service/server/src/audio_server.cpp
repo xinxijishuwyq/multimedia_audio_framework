@@ -26,13 +26,12 @@
 #include "xcollie/xcollie_define.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include "res_type.h"
-#include "res_sched_client.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_service.h"
 #include "audio_log.h"
+#include "audio_schedule.h"
 #include "audio_manager_listener_proxy.h"
 #include "i_audio_capturer_source.h"
 #include "i_standard_audio_server_manager_listener.h"
@@ -640,17 +639,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
 
     uint32_t pid = IPCSkeleton::GetCallingPid();
-    const uint32_t AUDIO_QOS_LEVEL = 7;
-    string strPid = to_string(pid);
-    string strTid = to_string(tid);
-    string strQos = to_string(AUDIO_QOS_LEVEL);
-
-    unordered_map<string, string> payload;
-    payload["pid"] = strPid;
-    payload[strTid] = strQos;
-    uint32_t type = ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
-    int64_t value = 0;
-    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, payload);
+    ScheduleReportData(pid, tid, bundleName.c_str());
 }
 
 } // namespace AudioStandard

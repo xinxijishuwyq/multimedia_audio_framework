@@ -254,6 +254,7 @@ ohos_shared_library("audio_service") {
     ":audio_common",
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
+    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:remote_audio_renderer_sink",
