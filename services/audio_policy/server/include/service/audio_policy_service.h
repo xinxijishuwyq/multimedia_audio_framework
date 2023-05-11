@@ -329,8 +329,6 @@ private:
 
     void SetEarpieceState();
 
-    void RemoveDeviceInRouterMap(std::string networkId);
-
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
@@ -361,8 +359,6 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
-
-    std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
