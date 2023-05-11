@@ -205,7 +205,9 @@ public:
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
         AudioStreamType audioStreamType) override;
 
-    int32_t GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos, bool needVerifyPermision = true) override;
+    int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
+
+    int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
