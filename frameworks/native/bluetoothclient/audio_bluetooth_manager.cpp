@@ -19,10 +19,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "bluetooth_def.h"
-#include "bluetooth_types.h"
-#include "bluetooth_host.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 
 namespace OHOS {
 namespace Bluetooth {
