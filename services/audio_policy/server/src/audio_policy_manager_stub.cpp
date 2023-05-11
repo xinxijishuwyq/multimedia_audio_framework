@@ -868,6 +868,12 @@ void AudioPolicyManagerStub::GetMaxStreamVolumeInternal(MessageParcel &data, Mes
     reply.WriteFloat(volume);
 }
 
+void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result =  GetMaxRendererInstances();
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1153,6 +1159,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
+
+        case GET_MAX_RENDERER_INSTANCES:
+            GetMaxRendererInstancesInternal(data, reply);
             break;
 
         default:

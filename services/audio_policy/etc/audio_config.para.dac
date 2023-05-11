@@ -12,3 +12,4 @@
 # limitations under the License.
 
 persist.multimedia.audio.mediavolume = audio:audio:660
+persist.multimedia.audio.maxrendererinstances = audio:audio:660

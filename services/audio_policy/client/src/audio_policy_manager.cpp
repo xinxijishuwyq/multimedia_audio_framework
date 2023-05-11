@@ -1071,5 +1071,17 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
     }
     return SUCCESS;
 }
+
+int32_t AudioPolicyManager::GetMaxRendererInstances()
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::GetMaxRendererInstances");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetMaxRendererInstances: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->GetMaxRendererInstances();
+}
 } // namespace AudioStandard
 } // namespace OHOS

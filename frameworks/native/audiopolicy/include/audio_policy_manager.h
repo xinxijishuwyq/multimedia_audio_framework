@@ -210,6 +210,8 @@ public:
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
+
+    int32_t GetMaxRendererInstances();
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

@@ -2542,6 +2542,22 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
+
+int32_t AudioPolicyService::GetMaxRendererInstances()
+{
+    // init max renderer instances before kvstore start by local prop for bootanimation
+    char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
+    auto ret = GetParameter("persist.multimedia.audio.maxrendererinstances", "16",
+        currentMaxRendererInstances, sizeof(currentMaxRendererInstances));
+    if (ret > 0) {
+        maxRendererInstances_ = atoi(currentMaxRendererInstances);
+        AUDIO_INFO_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
+    } else {
+        AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
+    }
+    return maxRendererInstances_;
+}
+
 void AudioPolicyService::RegisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE

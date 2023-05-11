@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
+#include "audio_policy_manager.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -4514,6 +4515,50 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
 
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_NEGATIVE, positionCB);
     EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test max renderer instances.
+ * @tc.number: Audio_Renderer_Max_Renderer_Instances_001
+ * @tc.desc  : Test creating maximum configured audio renderer instances.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Max_Renderer_Instances_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    vector<unique_ptr<AudioRenderer>> rendererList;
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {};
+    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    int32_t maxRendererInstances = 0;
+    maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
+
+    // Create renderer instance with the maximum number of configured instances
+    while (audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances)) {
+        auto audioRenderer = AudioRenderer::Create(rendererOptions);
+        EXPECT_NE(nullptr, audioRenderer);
+        rendererList.push_back(std::move(audioRenderer));
+        audioRendererChangeInfos.clear();
+        AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    }
+
+    // When the number of renderer instances equals the number of configurations, creating another one should fail
+    auto audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_EQ(nullptr, audioRenderer);
+
+    // Release a renderer and create one, which should be successfully created
+    auto it = rendererList.begin();
+    bool isReleased = (*it)->Release();
+    EXPECT_EQ(true, isReleased);
+    rendererList.erase(it);
+    audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    for (auto it = rendererList.begin(); it != rendererList.end();) {
+        bool isReleased = (*it)->Release();
+        EXPECT_EQ(true, isReleased);
+        it = rendererList.erase(it);
+    }
+    EXPECT_EQ(rendererList.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

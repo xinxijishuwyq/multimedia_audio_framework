@@ -223,6 +223,9 @@ public:
     float GetMinStreamVolume(void) override;
 
     float GetMaxStreamVolume(void) override;
+
+    int32_t GetMaxRendererInstances() override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

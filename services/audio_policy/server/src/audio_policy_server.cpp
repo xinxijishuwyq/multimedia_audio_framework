@@ -1975,5 +1975,11 @@ float AudioPolicyServer::GetMaxStreamVolume()
 {
     return mPolicyService.GetMaxStreamVolume();
 }
+
+int32_t AudioPolicyServer::GetMaxRendererInstances()
+{
+    AUDIO_INFO_LOG("GetMaxRendererInstances");
+    return mPolicyService.GetMaxRendererInstances();
+}
 } // namespace AudioStandard
 } // namespace OHOS
