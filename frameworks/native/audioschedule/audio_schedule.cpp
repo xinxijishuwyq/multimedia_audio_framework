@@ -15,13 +15,9 @@
 
 #include "audio_schedule.h"
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
-
 #include <unistd.h>
 #include <sys/types.h>
-#include <string.h>
+#include <cstring>
 #include <unordered_map>
 
 #include "res_type.h"
