@@ -206,7 +206,6 @@ static void ThreadFuncRendererTimer(void *userdata)
 
     pa_assert(u);
 
-    pa_log_debug("Thread (use timing) starting up");
     pa_thread_mq_install(&u->thread_mq);
 
     u->timestamp = pa_rtclock_now();
