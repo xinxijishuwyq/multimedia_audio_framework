@@ -253,7 +253,6 @@ std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 {
     (void)streamType;
 
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
     if (!routerMap_.count(uid)) {
         AUDIO_INFO_LOG("GetSelectedDeviceInfo no such uid[%{public}d]", uid);
         return "";
@@ -335,8 +334,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 {
     AUDIO_INFO_LOG("SelectOutputDevice start for uid[%{public}d]", audioRendererFilter->uid);
     // check size == 1 && output device
-    if (audioDeviceDescriptors.size() != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
-        AUDIO_ERR_LOG("Device error: size[%{public}d] deviceRole[%{public}d]", audioDeviceDescriptors.size(),
+    int deviceSize = audioDeviceDescriptors.size();
+    if (deviceSize != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
+        AUDIO_ERR_LOG("Device error: size[%{public}d] deviceRole[%{public}d]", deviceSize,
             static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_));
         return ERR_INVALID_OPERATION;
     }
@@ -358,7 +358,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     if (targetUid == -1) {
         AUDIO_INFO_LOG("Move all sink inputs.");
         moveAll = true;
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_.clear();
     }
 
@@ -400,7 +399,6 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
     AUDIO_INFO_LOG("RememberRoutingInfo for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
         deviceDescriptor->networkId_.c_str());
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_[audioRendererFilter->uid] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
         return SUCCESS;
     }
@@ -418,7 +416,6 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
     int32_t ret = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
     routerMap_[audioRendererFilter->uid] = std::pair(moduleName, G_UNKNOWN_PID);
     return SUCCESS;
 }
@@ -447,7 +444,6 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
             AUDIO_ERR_LOG("move [%{public}d] to local failed", sinkInputIds[i].streamId);
             return ERROR;
         }
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
 
@@ -517,7 +513,6 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
             AUDIO_ERR_LOG("move [%{public}d] failed", sinkInputIds[i].streamId);
             return ERROR;
         }
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_[sinkInputIds[i].uid] = std::pair(moduleName, sinkInputIds[i].pid);
     }
 
@@ -1563,9 +1558,9 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     }
 }
 
-void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
+inline void RemoveDeviceInRouterMap(std::string networkId,
+    std::unordered_map<int32_t, std::pair<std::string, int32_t>> &routerMap_)
 {
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
     std::unordered_map<int32_t, std::pair<std::string, int32_t>>::iterator it;
     for (it = routerMap_.begin();it != routerMap_.end();) {
         if (it->second.first == networkId) {
@@ -1651,7 +1646,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             audioPolicyManager_.CloseAudioPort(IOHandles_[moduleName]);
             IOHandles_.erase(moduleName);
         }
-        RemoveDeviceInRouterMap(moduleName);
+        RemoveDeviceInRouterMap(moduleName, routerMap_);
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
