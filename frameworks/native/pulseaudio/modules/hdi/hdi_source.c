@@ -32,7 +32,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <sys/resource.h>
 
 #include "audio_types.h"
 #include "audio_manager.h"
@@ -55,7 +54,6 @@
 #define AUDIO_FRAME_NUM_IN_BUF 30
 
 const char *DEVICE_CLASS_REMOTE = "remote";
-const int AUDIO_PROCESS_THREAD_PRIORITY = -16;
 
 struct Userdata {
     pa_core *core;
@@ -228,9 +226,6 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 
 static void ThreadFuncCapturerTimer(void *userdata)
 {
-    // set audio thread priority
-    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
-
     struct Userdata *u = userdata;
     bool timer_elapsed = false;
 
@@ -293,9 +288,6 @@ static void ThreadFuncCapturerTimer(void *userdata)
 
 static int PaHdiCapturerInit(struct Userdata *u)
 {
-    // set audio thread priority
-    setpriority(PRIO_PROCESS, 0, AUDIO_PROCESS_THREAD_PRIORITY);
-
     int ret;
     ret = u->sourceAdapter->CapturerSourceInit(u->sourceAdapter->wapper, &u->attrs);
     if (ret != 0) {
