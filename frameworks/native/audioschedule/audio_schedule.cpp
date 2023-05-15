@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+#ifdef RESSCHE_ENABLE
 const uint32_t AUDIO_QOS_LEVEL = 7;
 
 void ScheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
@@ -42,9 +43,10 @@ void ScheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
     uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
     int64_t value = 0;
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
-
-    return;
 }
+#else
+void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
+#endif
 
 #ifdef __cplusplus
 }

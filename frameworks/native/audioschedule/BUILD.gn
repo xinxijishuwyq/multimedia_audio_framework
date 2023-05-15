@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
+import("//foundation/multimedia/audio_framework/ressche_part.gni")
 
 ohos_static_library("audio_schedule") {
   sanitize = {
@@ -30,10 +31,12 @@ ohos_static_library("audio_schedule") {
     "-Werror",
   ]
 
-  external_deps = [
-    "ipc:ipc_single",
-    "resource_schedule_service:ressched_client",
-  ]
+  external_deps = [ "ipc:ipc_single" ]
+
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    cflags += [ "-DRESSCHE_ENABLE" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

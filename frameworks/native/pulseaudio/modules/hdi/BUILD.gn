@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
+import("//foundation/multimedia/audio_framework/ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -78,10 +79,11 @@ ohos_shared_library("module-hdi-sink") {
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
   ]
 
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-    "resource_schedule_service:ressched_client",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
