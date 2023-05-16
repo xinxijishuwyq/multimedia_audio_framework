@@ -178,16 +178,22 @@ int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
 
 int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
-    if (streamType == STREAM_VOICE_CALL) {
-        const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
-        if (gsp == nullptr) {
-            AUDIO_ERR_LOG("SetVoiceVolumeLevel gsp null");
+    int32_t result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
+    if (result == SUCCESS && streamType == STREAM_VOICE_CALL) {
+        if (volumeLevel == 0) {
+            AUDIO_ERR_LOG("SetVoiceVolume: volume of voice_call cannot be set to 0");
         } else {
-            float volumeDb = audioPolicyManager_.CalculateVolumeDb(volumeLevel);
-            gsp->SetVoiceVolume(volumeDb);
+            const sptr<IStandardAudioService> gsp = GetAudioPolicyServiceProxy();
+            if (gsp == nullptr) {
+                AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
+            } else {
+                float volumeDb = audioPolicyManager_.CalculateVolumeDb(volumeLevel);
+                AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
+                gsp->SetVoiceVolume(volumeDb);
+            }
         }
     }
-    return audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
+    return result;
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType) const

@@ -540,21 +540,20 @@ std::string AudioAdapterManager::GetStreamNameByStreamType(DeviceType deviceType
 {
     std::string type;
     switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
-            type = "primary";
+            type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-            type = "bluetooth";
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            type = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
             type = "wired";
             break;
-        case DEVICE_TYPE_USB_HEADSET:
-            type = "usb";
-            break;
         default:
-            AUDIO_ERR_LOG("[GetStreamNameByStreamType] deivice %{public}d is not supported for kv"
-                " store", deviceType);
+            AUDIO_ERR_LOG("[GetStreamNameByStreamType] deivice %{public}d is not supported for kvStore", deviceType);
             return "";
     }
 
@@ -740,17 +739,17 @@ bool AudioAdapterManager::LoadVolumeFromKvStore(DeviceType deviceType, AudioStre
     std::string type;
 
     switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
-            type = "primary";
+            type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-            type = "bluetooth";
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            type = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
-            type = "wired";
-            break;
         case DEVICE_TYPE_USB_HEADSET:
-            type = "usb";
+            type = "wired";
             break;
         default:
             AUDIO_ERR_LOG("LoadVolumeFromKvStore device %{public}d is not supported for kv"
@@ -973,17 +972,17 @@ std::string AudioAdapterManager::GetStreamTypeKeyForMute(DeviceType deviceType, 
 {
     std::string type = "";
     switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
-            type = "primary";
+            type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-            type = "bluetooth";
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            type = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
-            type = "wired";
-            break;
         case DEVICE_TYPE_USB_HEADSET:
-            type = "usb";
+            type = "wired";
             break;
         default:
             AUDIO_ERR_LOG("GetStreamTypeKeyForMute device %{public}d is not supported for kv"
