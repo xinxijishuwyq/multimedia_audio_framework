@@ -406,6 +406,9 @@ void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
+            AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+            pa_threaded_mainloop_signal(mainLoop, 0);
+            break;
         case PA_CONTEXT_TERMINATED:
         case PA_CONTEXT_FAILED:
             pa_threaded_mainloop_signal(mainLoop, 0);
@@ -443,6 +446,7 @@ AudioServiceClient::AudioServiceClient()
     sessionID = 0;
     volumeChannels = STEREO;
     streamInfoUpdated = false;
+    firstFrame_ = true;
 
     renderRate = RENDER_RATE_NORMAL;
     renderMode_ = RENDER_MODE_NORMAL;
@@ -1244,6 +1248,10 @@ int32_t AudioServiceClient::DrainStream()
 int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 {
     int error = 0;
+    if (firstFrame_) {
+        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+        firstFrame_ = false;
+    }
 
     while (length > 0) {
         size_t writableSize;

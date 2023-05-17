@@ -12,6 +12,8 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
+import("//foundation/multimedia/audio_framework/ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -25,17 +27,18 @@ config("hdi_config") {
     "$pulseaudio_dir",
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/frameworks/native/audioschedule/include",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/common",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/primary",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/file",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/bluetooth",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/remote",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source/common",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source/primary",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source/file",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source/remote",
     "//drivers/peripheral/audio/interfaces/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/primary",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/file",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/bluetooth",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/remote",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/file",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/remote",
     "//commonlibrary/c_utils/base/include",
   ]
 
@@ -72,10 +75,15 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
+    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

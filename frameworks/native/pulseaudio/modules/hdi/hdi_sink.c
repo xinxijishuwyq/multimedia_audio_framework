@@ -24,14 +24,17 @@
 #include <pulsecore/sink.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-#include <renderer_sink_adapter.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
 #include <sys/types.h>
+
 #include "audio_log.h"
+#include "audio_schedule.h"
+#include "renderer_sink_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -42,6 +45,7 @@
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
+
 enum {
     HDI_INIT,
     HDI_DEINIT,
@@ -193,13 +197,15 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
 
-static void ThreadFuncUseTiming(void *userdata)
+static void ThreadFuncRendererTimer(void *userdata)
 {
+    // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+
     struct Userdata *u = userdata;
 
     pa_assert(u);
 
-    pa_log_debug("Thread (use timing) starting up");
     pa_thread_mq_install(&u->thread_mq);
 
     u->timestamp = pa_rtclock_now();
@@ -265,6 +271,9 @@ finish:
 
 static void ThreadFuncWriteHDI(void *userdata)
 {
+    // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+
     struct Userdata *u = userdata;
     pa_assert(u);
 
@@ -298,6 +307,9 @@ static void ThreadFuncWriteHDI(void *userdata)
 
 static void TestModeThreadFuncWriteHDI(void *userdata)
 {
+    // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+
     struct Userdata *u = userdata;
     pa_assert(u);
 
@@ -570,6 +582,9 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
 
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
+    // set audio thread priority
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+
     pa_sink_new_data data;
     pa_module *m;
     pa_sink *sink = NULL;
@@ -715,7 +730,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
     paThreadName = "write-pa";
-    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncUseTiming, u))) {
+    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
         AUDIO_ERR_LOG("Failed to write-pa thread.");
         goto fail;
     }

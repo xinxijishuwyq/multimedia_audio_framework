@@ -897,10 +897,40 @@ public:
      * @since 8
      */
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
+
+    /**
+     * @brief Get audio focus info
+     *
+     * @return Returns success or not
+     * @since 10
+     */
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+
+    /**
+     * @brief Register callback to listen audio focus info change event
+     *
+     * @return Returns success or not
+     * @since 10
+     */
     int32_t RegisterFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
+
+    /**
+     * @brief Unregister callback to listen audio focus info change event
+     *
+     * @return Returns success or not
+     * @since 10
+     */
     int32_t UnregisterFocusInfoChangeCallback(
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback = nullptr);
+
+    /**
+     * @brief Ask audio native process to request thread priority for client
+     *
+     * @param tid Target thread id
+     * @since 10
+     */
+    void RequestThreadPriority(uint32_t tid);
+
     static void AudioServerDied(pid_t pid);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
@@ -913,6 +943,7 @@ private:
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     uint32_t GetCallingPid();
+    std::string GetSelfBundleName();
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;

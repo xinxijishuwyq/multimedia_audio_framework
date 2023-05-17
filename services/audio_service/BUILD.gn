@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
+import("//foundation/multimedia/audio_framework/ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -140,6 +141,8 @@ ohos_shared_library("audio_client") {
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
 
   external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hisysevent_native:libhisysevent",
@@ -170,10 +173,11 @@ config("audio_service_config") {
     "common/include",
     "server/include",
     "client/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
+    "${audio_fwk_path}/frameworks/native/audiopolicy/include",
     "${audio_fwk_path}/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/frameworks/native/audioschedule/include",
     "${fwk_native_hdiadapter_path}/sink/bluetooth",
     "${fwk_native_hdiadapter_path}/sink/common",
     "${fwk_native_hdiadapter_path}/sink/file",
@@ -252,6 +256,7 @@ ohos_shared_library("audio_service") {
     ":audio_common",
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
+    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:remote_audio_renderer_sink",
@@ -270,6 +275,10 @@ ohos_shared_library("audio_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

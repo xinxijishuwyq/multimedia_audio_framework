@@ -231,6 +231,12 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             return AUDIO_OK;
         }
+        case REQUEST_THREAD_PRIORITY: {
+            uint32_t tid = data.ReadUint32();
+            string bundleName = data.ReadString();
+            RequestThreadPriority(tid, bundleName);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

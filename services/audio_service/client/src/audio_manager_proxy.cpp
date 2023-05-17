@@ -357,14 +357,14 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return -1;
     }
 
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(SET_PARAMETER_CALLBACK, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetParameterCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetParameterCallback failed, error: %{public}d", error);
         return error;
     }
 
@@ -378,13 +378,13 @@ void AudioManagerProxy::SetAudioMonoState(bool audioMono)
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
     (void)data.WriteBool(audioMono);
     int error = Remote()->SendRequest(SET_AUDIO_MONO_STATE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioMonoState failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetAudioMonoState failed, error: %{public}d", error);
         return;
     }
 }
@@ -396,16 +396,17 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
     (void)data.WriteFloat(audioBalance);
     int error = Remote()->SendRequest(SET_AUDIO_BALANCE_VALUE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioBalanceValue failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetAudioBalanceValue failed, error: %{public}d", error);
         return;
     }
 }
+
 sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config)
 {
     MessageParcel data;
@@ -413,13 +414,13 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return nullptr;
     }
     IAudioProcess::WriteConfigToParcel(config, data);
     int error = Remote()->SendRequest(CREATE_AUDIOPROCESS, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: CreateAudioProcess failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("CreateAudioProcess failed, error: %{public}d", error);
         return nullptr;
     }
     sptr<IRemoteObject> process = reply.ReadRemoteObject();
@@ -427,7 +428,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
 }
 
 bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries, const vector<Effect> effects,
-                                                 vector<Effect> &successEffects)
+    vector<Effect> &successEffects)
 {
     int32_t error, i;
 
@@ -475,6 +476,25 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     }
 
     return true;
+}
+
+void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    (void)data.WriteUint32(tid);
+    (void)data.WriteString(bundleName);
+    int error = Remote()->SendRequest(REQUEST_THREAD_PRIORITY, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RequestThreadPriority failed, error: %{public}d", error);
+        return;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

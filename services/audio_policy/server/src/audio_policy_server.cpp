@@ -89,7 +89,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    AUDIO_INFO_LOG("AudioPolicyService OnStart");
+    AUDIO_INFO_LOG("AudioPolicyServer OnStart");
     mPolicyService.Init();
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
@@ -98,8 +98,8 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
 
     bool res = Publish(this);
-    if (res) {
-        AUDIO_WARNING_LOG("AudioPolicyService OnStart res=%d", res);
+    if (!res) {
+        AUDIO_INFO_LOG("AudioPolicyServer start err");
     }
 
     Security::AccessToken::PermStateChangeScope scopeInfo;
