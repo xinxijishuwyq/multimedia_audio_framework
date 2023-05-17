@@ -323,6 +323,7 @@ private:
     std::mutex focusInfoChangeMutex_;
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
+    std::mutex clientDiedListenerStateMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -515,6 +515,8 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
     }
 
     int32_t ret = mPolicyService.SetRingerMode(ringMode);
+    
+    std::lock_guard<std::mutex> lock(ringerModeMutex_);
     if (ret == SUCCESS) {
         for (auto it = ringerModeCbsMap_.begin(); it != ringerModeCbsMap_.end(); ++it) {
             std::shared_ptr<AudioRingerModeCallback> ringerModeListenerCb = it->second;
@@ -1702,6 +1704,7 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 
 void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
 {
+    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     AUDIO_INFO_LOG("Register clients death recipient!!");
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
@@ -1739,6 +1742,7 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
 
 void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
 {
+    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
     mPolicyService.RegisteredTrackerClientDied(pid);
     auto filter = [&pid](int val) {
