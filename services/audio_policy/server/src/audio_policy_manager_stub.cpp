@@ -1174,6 +1174,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_VOLUME_STREAM:
             GetMaxStreamVolumeInternal(data, reply);
+            break;
 
         case GET_MAX_RENDERER_INSTANCES:
             GetMaxRendererInstancesInternal(data, reply);
