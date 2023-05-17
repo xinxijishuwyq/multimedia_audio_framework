@@ -88,6 +88,7 @@ void AudioRendererNapi::Destructor(napi_env env, void *nativeObject, void *final
         delete obj;
         obj = nullptr;
     }
+    AUDIO_INFO_LOG("AudioRendererNapi::Destructor is successful");
 }
 
 napi_status AudioRendererNapi::AddNamedProperty(napi_env env, napi_value object,
