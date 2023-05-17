@@ -140,7 +140,7 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     AudioParamKey parmKey = AudioParamKey::NONE;
     if (key == "A2dpSuspended") {
         parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
-        IAudioRendererSink* bluetoothSinkInstance= IAudioRendererSink::GetInstance("a2dp", "");
+        IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
         if (bluetoothSinkInstance == nullptr) {
             AUDIO_ERR_LOG("has no valid sink");
             HiviewDFX::XCollie::GetInstance().CancelTimer(id);
