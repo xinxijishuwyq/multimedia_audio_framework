@@ -1761,15 +1761,16 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
-        streamSetState, audioStreamType);
-
+    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == clientUid) {
-        AUDIO_ERR_LOG("UpdateStreamState clientUid value is error");
+    if (callerUid != avSessionUid) {
+        // This function can only be used by av_session
+        AUDIO_ERR_LOG("UpdateStreamState callerUid is error: not av_session");
         return ERROR;
     }
 
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamType:%{public}d",
+        clientUid, streamSetState, audioStreamType);
     StreamSetState setState = StreamSetState::STREAM_PAUSE;
     if (streamSetState == StreamSetState::STREAM_RESUME) {
         setState  = StreamSetState::STREAM_RESUME;
