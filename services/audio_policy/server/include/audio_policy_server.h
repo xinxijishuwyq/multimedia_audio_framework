@@ -308,6 +308,7 @@ private:
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
+    std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
     std::vector<pid_t> clientDiedListenerState_;
 

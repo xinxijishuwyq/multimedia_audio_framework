@@ -790,6 +790,7 @@ int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const Audio
         return SUCCESS;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (focussedAudioInterruptInfo_ != nullptr) {
         AUDIO_INFO_LOG("Existing stream: %{public}d, incoming stream: %{public}d",
             (focussedAudioInterruptInfo_->audioFocusType).streamType, audioInterrupt.audioFocusType.streamType);
@@ -807,6 +808,7 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 {
     AUDIO_INFO_LOG("AudioPolicyServer: AbandonAudioFocus in");
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (clientId == clientOnFocus_) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: remove app focus");
         focussedAudioInterruptInfo_.reset();
@@ -821,6 +823,7 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
     std::shared_ptr<AudioInterruptCallback> interruptCb = amInterruptCbsMap_[clientId];
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (interruptCb) {
         InterruptEventInternal interruptEvent = {};
         interruptEvent.eventType = INTERRUPT_TYPE_END;
