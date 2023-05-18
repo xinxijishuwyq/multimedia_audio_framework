@@ -187,7 +187,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
             if (gsp == nullptr) {
                 AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
             } else {
-                float volumeDb = audioPolicyManager_.CalculateVolumeDb(volumeLevel);
+                float volumeDb = static_cast<float>(volumeLevel) / GetMaxVolumeLevel(STREAM_VOICE_CALL);
                 AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
                 gsp->SetVoiceVolume(volumeDb);
             }
