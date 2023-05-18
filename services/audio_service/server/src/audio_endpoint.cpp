@@ -28,6 +28,7 @@
 
 #include "audio_utils.h"
 #include "fast_audio_renderer_sink.h"
+#include "remote_fast_audio_renderer_sink.h"
 #include "linear_pos_time_model.h"
 
 // DUMP_PROCESS_FILE // define it for dump file
@@ -44,7 +45,7 @@ public:
     explicit AudioEndpointInner(EndpointType type);
     ~AudioEndpointInner();
 
-    bool Config(AudioStreamInfo streamInfo);
+    bool Config(AudioStreamInfo streamInfo, const std::string &networkId);
     int32_t PrepareDeviceBuffer();
 
     bool StartDevice();
@@ -141,12 +142,13 @@ private:
 #endif
 };
 
-std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, AudioStreamInfo streamInfo)
+std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, AudioStreamInfo streamInfo,
+    const std::string &networkId)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpoint = std::make_shared<AudioEndpointInner>(type);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(streamInfo)) {
+    if (!audioEndpoint->Config(streamInfo, networkId)) {
         AUDIO_ERR_LOG("Config AudioEndpoint failed.");
         audioEndpoint = nullptr;
     }
@@ -217,15 +219,21 @@ void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
     dumpStringStream << std::endl;
 }
 
-bool AudioEndpointInner::Config(AudioStreamInfo streamInfo)
+bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &networkId)
 {
     dstStreamInfo_ = streamInfo;
-    fastSink_ = FastAudioRendererSink::GetInstance();
+    if (networkId == REMOTE_NETWORK_ID) {
+        fastSink_ = RemoteFastAudioRendererSink::GetInstance(networkId);
+    } else {
+        fastSink_ = FastAudioRendererSink::GetInstance();
+    }
     IAudioSinkAttr attr = {};
     attr.adapterName = "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
+    attr.sampleFmt = dstStreamInfo_.format;
+    attr.deviceNetworkId = networkId.c_str();
 
     fastSink_->Init(attr);
     if (!fastSink_->IsInited()) {

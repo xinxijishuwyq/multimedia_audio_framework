@@ -33,7 +33,7 @@ LinearPosTimeModel::LinearPosTimeModel()
 
 bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
 {
-    AUDIO_INFO_LOG("ConfigSampleRate:%{public}d", sampleRate_);
+    AUDIO_INFO_LOG("ConfigSampleRate:%{public}d", sampleRate);
     if (isConfiged) {
         AUDIO_ERR_LOG("SampleRate already set:%{public}d", sampleRate_);
         return false;
