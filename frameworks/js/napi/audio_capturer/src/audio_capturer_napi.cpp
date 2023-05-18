@@ -1055,7 +1055,7 @@ napi_value AudioCapturerNapi::RegisterPeriodPositionCallback(napi_env env, napi_
         } else {
             AUDIO_DEBUG_LOG("AudioCapturerNapi: periodReach already subscribed.");
             THROW_ERROR_ASSERT(env, false, NAPI_ERR_ILLEGAL_STATE);
-        }    
+        }
     } else {
         AUDIO_ERR_LOG("AudioCapturerNapi: frameCount value not supported!");
         THROW_ERROR_ASSERT(env, false, NAPI_ERR_INPUT_INVALID);
