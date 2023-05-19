@@ -31,7 +31,8 @@
 #include "pcm2wav.h"
 
 using namespace std;
-using namespace OHOS::AudioStandard;
+namespace OHOS {
+namespace AudioStandard {
 namespace {
     static const uint32_t ARGC_NUM_TWO = 2;
     static const uint32_t ARGC_NUM_THREE = 3;
@@ -388,7 +389,10 @@ void CloseFile()
         g_wavFile = nullptr;
     }
 }
+} // namespace AudioStandard
+} // namespace OHOS
 
+using namespace OHOS::AudioStandard;
 int main(int argc, char *argv[])
 {
     AUDIO_INFO_LOG("AudioProcessClientTest: Render test in");
