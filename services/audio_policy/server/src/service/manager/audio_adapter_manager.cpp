@@ -37,7 +37,7 @@ bool AudioAdapterManager::Init()
 
     // init volume before kvstore start by local prop for bootanimation
     char currentVolumeValue[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "15",
+    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "7",
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         int32_t mediaVolumeLevel = atoi(currentVolumeValue);
