@@ -26,6 +26,9 @@ declare_args() {
 
   multimedia_audio_framework_drivers =
       "//drivers/peripheral/audio/interfaces/include/"
+
+  multimedia_distributed_audio =
+      "//foundation/distributedhardware/distributed_audio"
 }
 
 audio_fwk_path = "//foundation/multimedia/audio_framework"

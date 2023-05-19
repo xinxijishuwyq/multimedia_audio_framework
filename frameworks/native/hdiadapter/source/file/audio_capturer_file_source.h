@@ -27,7 +27,7 @@ class AudioCapturerFileSource : public IAudioCapturerSource {
 public:
     AudioCapturerFileSource();
     ~AudioCapturerFileSource();
-    int32_t Init(IAudioSourceAttr &atrr) override;
+    int32_t Init(IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 

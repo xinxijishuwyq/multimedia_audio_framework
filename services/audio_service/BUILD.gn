@@ -187,6 +187,7 @@ config("audio_service_config") {
     "${fwk_native_hdiadapter_path}/sink/remote",
     "${fwk_native_hdiadapter_path}/source/common",
     "${fwk_native_hdiadapter_path}/source/primary",
+    "${fwk_native_hdiadapter_path}/source/remote_fast",
     "//drivers/peripheral/audio/interfaces/include",
     "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
   ]
@@ -219,6 +220,7 @@ ohos_shared_library("audio_process_service") {
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
   ]
 
   public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]

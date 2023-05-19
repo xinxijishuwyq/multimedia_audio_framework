@@ -25,6 +25,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
+
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback)
 {
@@ -57,6 +58,17 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
     return SUCCESS;
 }
 
+int32_t AudioProcessInServer::RequestHandleInfo()
+{
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
+
+    for (size_t i = 0; i < listenerList_.size(); i++) {
+        listenerList_[i]->OnUpdateHandleInfo(this);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
@@ -71,17 +83,6 @@ int32_t AudioProcessInServer::Start()
     }
 
     AUDIO_INFO_LOG("Start in server success!");
-    return SUCCESS;
-}
-
-int32_t AudioProcessInServer::RequestHandleInfo()
-{
-    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
-
-    for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnUpdateHandleInfo(this);
-    }
     return SUCCESS;
 }
 
@@ -219,7 +220,11 @@ int32_t AudioProcessInServer::InitBufferStatus()
             AUDIO_ERR_LOG("InitBufferStatus failed, null spaninfo");
             return ERR_ILLEGAL_STATE;
         }
-        spanInfo->spanStatus = SPAN_READ_DONE;
+        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+            spanInfo->spanStatus = SPAN_WRITE_DONE;
+        } else {
+            spanInfo->spanStatus = SPAN_READ_DONE;
+        }
         spanInfo->offsetInFrame = 0;
 
         spanInfo->readStartTime = 0;

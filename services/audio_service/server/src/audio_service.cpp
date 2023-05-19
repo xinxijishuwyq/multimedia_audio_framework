@@ -17,6 +17,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "remote_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -121,14 +122,22 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
-    deviceInfo.deviceId = 6; // 6 for test
-    if (config.isRemote) {
-        deviceInfo.networkId = REMOTE_NETWORK_ID;
+    if (config.audioMode == AUDIO_MODE_RECORD) {
+        deviceInfo.deviceId = 1;
+        deviceInfo.networkId = "remote_mmap_dmic";
+        deviceInfo.deviceRole = INPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_MIC;
     } else {
-        deviceInfo.networkId = LOCAL_NETWORK_ID;
+        deviceInfo.deviceId = 6; // 6 for test
+        if (config.isRemote) {
+        deviceInfo.networkId = REMOTE_NETWORK_ID;
+        } else {
+            deviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+        deviceInfo.deviceRole = OUTPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
     }
-    deviceInfo.deviceRole = OUTPUT_DEVICE;
-    deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
     deviceInfo.audioStreamInfo = config.streamInfo;
     deviceInfo.deviceName = "mmap_device";
     return deviceInfo;
@@ -142,7 +151,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
         return endpointList_[deviceKey];
     }
     std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::GetInstance(AudioEndpoint::EndpointType::TYPE_MMAP,
-        deviceInfo.audioStreamInfo, deviceInfo.networkId);
+        deviceInfo);
     if (endpoint == nullptr) {
         AUDIO_ERR_LOG("Find no endpoint for the process");
         return nullptr;

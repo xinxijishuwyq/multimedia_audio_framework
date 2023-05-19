@@ -101,7 +101,6 @@ private:
     std::atomic<bool> paramCallbackRegistered_ = false;
     float leftVolume_ = 0;
     float rightVolume_ = 0;
-    sptr<Ashmem> ashmemSink_ = nullptr;
     struct AudioManager *audioManager_ = nullptr;
     struct AudioAdapter *audioAdapter_ = nullptr;
     struct AudioRender *audioRender_ = nullptr;
@@ -110,11 +109,15 @@ private:
     IAudioSinkAttr attr_ = {};
     std::string deviceNetworkId_;
 
-    size_t bufferSize_ = 0;
     uint32_t bufferTotalFrameSize_ = 0;
     int32_t bufferFd_ = INVALID_FD;
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
+
+#ifdef DEBUG_DIRECT_USE_HDI
+    sptr<Ashmem> ashmemSink_ = nullptr;
+    size_t bufferSize_ = 0;
+#endif
 };
 
 std::map<std::string, RemoteFastAudioRendererSinkInner *> allRFSinks;
@@ -158,11 +161,17 @@ void RemoteFastAudioRendererSinkInner::DeInit()
     AUDIO_INFO_LOG("DeInit.");
     started_.store(false);
     rendererInited_.store(false);
+#ifdef DEBUG_DIRECT_USE_HDI
     if (ashmemSink_ != nullptr) {
         ashmemSink_->UnmapAshmem();
         ashmemSink_->CloseAshmem();
         ashmemSink_ = nullptr;
         AUDIO_INFO_LOG("%{public}s: UnInit sink ashmem OK,", __func__);
+    }
+#endif // DEBUG_DIRECT_USE_HDI
+    if (bufferFd_ != INVALID_FD) {
+        close(bufferFd_);
+        bufferFd_ = INVALID_FD;
     }
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
         audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
@@ -357,6 +366,8 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
         AUDIO_ERR_LOG("BufferSize will overflow!");
         return ERR_OPERATION_FAILED;
     }
+
+#ifdef DEBUG_DIRECT_USE_HDI
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
     ashmemSink_ = new Ashmem(bufferFd_, bufferSize_);
     AUDIO_INFO_LOG("%{public}s create ashmem sink OK, ashmemLen %{public}zu.", __func__, bufferSize_);
@@ -364,6 +375,7 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
         AUDIO_ERR_LOG("%{public}s map ashmem sink failed.", __func__);
         return ERR_OPERATION_FAILED;
     }
+#endif // DEBUG_DIRECT_USE_HDI
     return SUCCESS;
 }
 
