@@ -288,7 +288,6 @@ int32_t AudioGroupManager::Init()
     // init networkId_
     std::string netWorkId;
     int32_t ret = AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId_, netWorkId);
-
     if (ret == SUCCESS) {
         netWorkId_ = netWorkId;
         connectType_ = netWorkId_ == LOCAL_NETWORK_ID ? CONNECT_TYPE_LOCAL : CONNECT_TYPE_DISTRIBUTED;
