@@ -179,6 +179,11 @@ void AudioProcessInClientInner::AudioServerDied(pid_t pid)
 std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Create with config: flag %{public}d", config.rendererInfo.rendererFlags);
+    if (config.isRemote) {
+        AUDIO_INFO_LOG("Create with config: remote");
+    } else {
+        AUDIO_INFO_LOG("Create with config: local");
+    }
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config);

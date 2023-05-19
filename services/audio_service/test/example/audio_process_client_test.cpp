@@ -41,7 +41,8 @@ namespace {
     static const int32_t ERROR = -1;
     enum OperationCode : int32_t {
         INVALID_OPERATION = -1,
-        INIT_PROCESS = 0,
+        INIT_LOCAL_PROCESS = 0,
+        INIT_REMOTE_PROCESS,
         START_PROCESS,
         PAUSE_PROCESS,
         RESUME_PROCESS,
@@ -51,7 +52,8 @@ namespace {
     };
 }
 std::map<int32_t, std::string> g_operationStringMap = {
-    {INIT_PROCESS, "call init process"},
+    {INIT_LOCAL_PROCESS, "call local init process"},
+    {INIT_REMOTE_PROCESS, "call remote init process"},
     {START_PROCESS, "call start process"},
     {PAUSE_PROCESS, "call pause process"},
     {RESUME_PROCESS, "call resume process"},
@@ -100,7 +102,7 @@ public:
         callBack.End();
     }
 
-    int32_t Init(int32_t loopCount)
+    int32_t Init(int32_t loopCount, bool isRemote)
     {
         if (loopCount < 0) {
             loopCount_ = 1; // loop once
@@ -124,6 +126,8 @@ public:
         config.streamInfo.encoding = ENCODING_PCM;
         config.streamInfo.format = SAMPLE_S16LE;
         config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+        config.isRemote = isRemote;
 
         processClient_ = AudioProcessInClient::Create(config);
         if (processClient_ == nullptr) {
@@ -255,7 +259,7 @@ int32_t GetUserInput()
 shared_ptr<AudioProcessTest> g_audioProcessTest = nullptr;
 void AutoRun(int32_t loopCount)
 {
-    g_audioProcessTest->Init(loopCount);
+    g_audioProcessTest->Init(loopCount, false);
     g_audioProcessTest->Start();
     int volShift = 15; // helf of 1 << 16
     g_audioProcessTest->SetVolume(1 << volShift);
@@ -266,9 +270,9 @@ void AutoRun(int32_t loopCount)
     g_audioProcessTest->Release();
 }
 
-string ConfigTest()
+string ConfigTest(bool isRemote)
 {
-    int32_t ret = g_audioProcessTest->Init(0);
+    int32_t ret = g_audioProcessTest->Init(0, isRemote);
     if (ret != SUCCESS) {
         return "init failed";
     }
@@ -336,8 +340,11 @@ void InteractiveRun()
             optCode = INVALID_OPERATION;
         }
         switch (optCode) {
-            case INIT_PROCESS:
-                cout << ConfigTest() << endl;
+            case INIT_LOCAL_PROCESS:
+                cout << ConfigTest(false) << endl;
+                break;
+            case INIT_REMOTE_PROCESS:
+                cout << ConfigTest(true) << endl;
                 break;
             case START_PROCESS:
                 cout << CallStart() << endl;

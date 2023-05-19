@@ -56,7 +56,8 @@ public:
         STOPPED   // sink stoped
     };
 
-    static std::shared_ptr<AudioEndpoint> GetInstance(EndpointType type, AudioStreamInfo streamInfo);
+    static std::shared_ptr<AudioEndpoint> GetInstance(EndpointType type, AudioStreamInfo streamInfo,
+        const std::string &networkId);
 
     virtual int32_t LinkProcessStream(IAudioProcessStream *processStream) = 0;
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
