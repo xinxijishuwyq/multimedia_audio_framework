@@ -36,6 +36,8 @@ const std::string DAUDIO_HDI_SERVICE_NAME = "daudio_primary_service";
 const uint8_t EVENT_PARAMS = 2;
 const uint8_t D_EVENT_PARAMS = 5;
 
+const uint32_t HDF_AUDIO_EXTERN_CABLE = 1025;
+
 static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
 {
     DeviceType internalDeviceType = DEVICE_TYPE_NONE;
@@ -49,6 +51,9 @@ static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
             break;
         case AudioDeviceType::HDF_AUDIO_USB_HEADSET:
             internalDeviceType = DEVICE_TYPE_USB_HEADSET;
+            break;
+        case HDF_AUDIO_EXTERN_CABLE:
+            internalDeviceType = DEVICE_TYPE_EXTERN_CABLE;
             break;
         default:
             internalDeviceType = DEVICE_TYPE_NONE;

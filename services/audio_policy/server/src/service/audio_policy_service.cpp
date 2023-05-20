@@ -1451,10 +1451,40 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
     return result;
 }
 
+DeviceType AudioPolicyService::FindConnectedHeadset()
+{
+    DeviceType retType = DEVICE_TYPE_NONE;
+    for (auto& devDesc: connectedDevices_) {
+        if ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+            retType = devDesc->deviceType_;
+            break;
+        }
+    }
+    return retType;
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo)
 {
     AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
+
+    // Special logic for extern cable, need refactor
+    if (devType == DEVICE_TYPE_EXTERN_CABLE) {
+        if (!isConnected) {
+            AUDIO_INFO_LOG("Extern cable disconnected, do nothing");
+            return;
+        }
+        DeviceType connectedHeadsetType = FindConnectedHeadset();
+        if (connectedHeadsetType == DEVICE_TYPE_NONE) {
+            AUDIO_INFO_LOG("Extern cable connect without headset connected before, do nothing");
+            return;
+        }
+        devType = connectedHeadsetType;
+        isConnected = false;
+    }
+
     int32_t result = ERROR;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, deviceDesc);
