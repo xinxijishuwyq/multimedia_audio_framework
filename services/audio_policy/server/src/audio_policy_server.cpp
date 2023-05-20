@@ -822,8 +822,16 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
+
+    if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
+        AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
+        return;
+    }
     std::shared_ptr<AudioInterruptCallback> interruptCb = amInterruptCbsMap_[clientId];
-    if (interruptCb) {
+    if (interruptCb == nullptr) {
+        AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback is nullptr", clientId);
+        return;
+    } else {
         InterruptEventInternal interruptEvent = {};
         interruptEvent.eventType = INTERRUPT_TYPE_END;
         interruptEvent.forceType = INTERRUPT_SHARE;
