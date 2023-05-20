@@ -94,7 +94,7 @@ private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;
     std::mutex setParameterCallbackMutex_;
-    std::mutex setAudioParameterMutex_;
+    std::mutex audioParameterMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
