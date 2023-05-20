@@ -336,16 +336,40 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
+int32_t AudioPolicyService::DeviceParamsCheck(DeviceRole targetRole,
+    std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const
+{
+    size_t targetSize = audioDeviceDescriptors.size();
+    if (targetSize != 1) {
+        AUDIO_ERR_LOG("Device error: size[%{public}zu]", targetSize);
+        return ERR_INVALID_OPERATION;
+    }
+
+    bool isDeviceTypeCorrect = false;
+    if (targetRole == DeviceRole::OUTPUT_DEVICE) {
+        isDeviceTypeCorrect = IsOutputDevice(audioDeviceDescriptors[0]->deviceType_);
+    } else if (targetRole == DeviceRole::INPUT_DEVICE) {
+        isDeviceTypeCorrect = IsInputDevice(audioDeviceDescriptors[0]->deviceType_);
+    }
+
+    if (audioDeviceDescriptors[0]->deviceRole_ != targetRole || !isDeviceTypeCorrect) {
+        AUDIO_ERR_LOG("Device error: size[%{public}zu] deviceRole[%{public}d]", targetSize,
+            static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_));
+        return ERR_INVALID_OPERATION;
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     AUDIO_INFO_LOG("SelectOutputDevice start for uid[%{public}d]", audioRendererFilter->uid);
     // check size == 1 && output device
-    if (audioDeviceDescriptors.size() != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
-        AUDIO_ERR_LOG("Device error: size[%{public}zu] deviceRole[%{public}d]", audioDeviceDescriptors.size(),
-            static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_));
-        return ERR_INVALID_OPERATION;
+    int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
+    if (res != SUCCESS) {
+        return res;
     }
+
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
@@ -551,13 +575,12 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     AUDIO_INFO_LOG("Select input device start for uid[%{public}d]", audioCapturerFilter->uid);
-    // check size == 1 && output device
-    int deviceSize = audioDeviceDescriptors.size();
-    if (deviceSize != 1 || audioDeviceDescriptors[0]->deviceRole_ != DeviceRole::INPUT_DEVICE) {
-        AUDIO_ERR_LOG("Device error: size[%{public}d] deviceRole[%{public}d]", deviceSize,
-            static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_));
-        return ERR_INVALID_OPERATION;
+    // check size == 1 && input device
+    int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, audioDeviceDescriptors);
+    if (res != SUCCESS) {
+        return res;
     }
+
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
@@ -2378,6 +2401,35 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByFlag(
             break;
     }
     return descRet;
+}
+
+bool AudioPolicyService::IsInputDevice(DeviceType deviceType) const
+{
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool AudioPolicyService::IsOutputDevice(DeviceType deviceType) const
+{
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+            return true;
+        default:
+            return false;
+    }
 }
 
 DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
