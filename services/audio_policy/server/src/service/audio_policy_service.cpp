@@ -889,6 +889,35 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
 
+bool AudioPolicyService::IsSessionIdValid(int32_t callerUid, int32_t sessionId)
+{
+    AUDIO_INFO_LOG("IsSessionIdValid::callerUid: %{public}d, sessionId: %{public}d", callerUid, sessionId);
+
+    constexpr int32_t mediaUid = 1013; // "uid" : "media"
+    if (callerUid == mediaUid) {
+        AUDIO_INFO_LOG("IsSessionIdValid::sessionId:%{public}d is an valid id from media", sessionId);
+        return true;
+    }
+
+    auto allSinkInputs = audioPolicyManager_.GetAllSinkInputs();
+    for (auto sinkInput: allSinkInputs) {
+        if (sinkInput.uid == callerUid && sinkInput.streamId == sessionId) {
+            AUDIO_INFO_LOG("IsSessionIdValid::sessionId:%{public}d is a valid sink input id", sessionId);
+            return true;
+        }
+    }
+    auto allSourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
+    for (auto sourceOutput: allSourceOutputs) {
+        if (sourceOutput.uid == callerUid && sourceOutput.streamId == sessionId) {
+            AUDIO_INFO_LOG("IsSessionIdValid::sessionId:%{public}d is a valid source output id", sessionId);
+            return true;
+        }
+    }
+
+    AUDIO_ERR_LOG("IsSessionIdValid::sessionId:%{public}d is an invalid id", sessionId);
+    return false;
+}
+
 void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);

@@ -130,6 +130,8 @@ public:
 
     std::string GetSystemSoundUri(const std::string &key);
 
+    bool IsSessionIdValid(int32_t callerUid, int32_t sessionId);
+
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
 

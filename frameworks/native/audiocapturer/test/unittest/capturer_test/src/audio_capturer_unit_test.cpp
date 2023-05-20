@@ -396,7 +396,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_014, TestSize.Level0)
 {
     AppInfo appInfo = {};
     appInfo.appTokenId = VALUE_THOUSAND;
-    appInfo.appUid = VALUE_HUNDRED;
+    appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
 
@@ -427,7 +427,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_015, TestSize.Level0)
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
     appInfo.appTokenId = VALUE_THOUSAND;
-    appInfo.appUid = VALUE_HUNDRED;
+    appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
@@ -450,7 +450,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_016, TestSize.Level0)
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
     appInfo.appTokenId = VALUE_THOUSAND;
-    appInfo.appUid = VALUE_HUNDRED;
+    appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
@@ -493,7 +493,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_018, TestSize.Level0)
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
     appInfo.appTokenId = VALUE_THOUSAND;
-    appInfo.appUid = VALUE_HUNDRED;
+    appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, cachePath.c_str(), appInfo);
     ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
