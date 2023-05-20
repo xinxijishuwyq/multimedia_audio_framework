@@ -45,7 +45,6 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int32_t INVALID_FD = -1;
-const int32_t INVALID_INDEX = -1;
 }
 class RemoteFastAudioRendererSinkInner : public RemoteFastAudioRendererSink {
 public:
@@ -262,26 +261,7 @@ int32_t RemoteFastAudioRendererSinkInner::InitAudioManager()
 int32_t RemoteFastAudioRendererSinkInner::GetTargetAdapterPort(struct AudioAdapterDescriptor *descs, int32_t size,
     const char *networkId)
 {
-    int32_t targetIdx = INVALID_INDEX;
-    for (int32_t index = 0; index < size; index++) {
-        struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr || desc->adapterName == nullptr) {
-            continue;
-        }
-        if (strcmp(desc->adapterName, networkId)) {
-            AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
-            continue;
-        }
-        targetIdx = index;
-        for (uint32_t port = 0; port < desc->portNum; port++) {
-            // Only find out the port of out in the sound card
-            if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
-                audioPort_ = desc->ports[port];
-                break;
-            }
-        }
-    }
-    return targetIdx;
+    return 0;
 }
 
 void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
