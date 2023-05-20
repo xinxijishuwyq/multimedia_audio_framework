@@ -792,6 +792,7 @@ int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const Audio
         return SUCCESS;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (focussedAudioInterruptInfo_ != nullptr) {
         AUDIO_INFO_LOG("Existing stream: %{public}d, incoming stream: %{public}d",
             (focussedAudioInterruptInfo_->audioFocusType).streamType, audioInterrupt.audioFocusType.streamType);
@@ -809,6 +810,7 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 {
     AUDIO_INFO_LOG("AudioPolicyServer: AbandonAudioFocus in");
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (clientId == clientOnFocus_) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: remove app focus");
         focussedAudioInterruptInfo_.reset();
@@ -823,6 +825,7 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
 
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
         return;
@@ -1769,15 +1772,16 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d state:%{public}d sType:%{public}d", clientUid,
-        streamSetState, audioStreamType);
-
+    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == clientUid) {
-        AUDIO_ERR_LOG("UpdateStreamState clientUid value is error");
+    if (callerUid != avSessionUid) {
+        // This function can only be used by av_session
+        AUDIO_ERR_LOG("UpdateStreamState callerUid is error: not av_session");
         return ERROR;
     }
 
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamType:%{public}d",
+        clientUid, streamSetState, audioStreamType);
     StreamSetState setState = StreamSetState::STREAM_PAUSE;
     if (streamSetState == StreamSetState::STREAM_RESUME) {
         setState  = StreamSetState::STREAM_RESUME;

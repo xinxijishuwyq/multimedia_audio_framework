@@ -36,7 +36,8 @@ public:
 
     virtual int32_t GetMinVolumeLevel(AudioVolumeType streamType) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        API_VERSION api_v = API_9) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 

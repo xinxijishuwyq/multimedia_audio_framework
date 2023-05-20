@@ -29,5 +29,8 @@ declare_args() {
 }
 
 audio_fwk_path = "//foundation/multimedia/audio_framework"
+drivers_audio_path = "//drivers/peripheral/audio"
+daudio_path = "//foundation/distributedhardware/distributed_audio"
+third_party_path = "//third_party"
 
 fwk_native_hdiadapter_path = "${audio_fwk_path}/frameworks/native/hdiadapter"

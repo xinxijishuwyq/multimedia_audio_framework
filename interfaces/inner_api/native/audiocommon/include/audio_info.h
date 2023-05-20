@@ -44,6 +44,7 @@ const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUD
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
+const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -855,6 +856,8 @@ struct AudioProcessConfig {
     AudioRendererInfo rendererInfo;
 
     AudioCapturerInfo capturerInfo;
+
+    bool isRemote;
 };
 
 struct AudioStreamData {

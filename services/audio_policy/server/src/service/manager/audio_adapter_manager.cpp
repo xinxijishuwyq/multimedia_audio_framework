@@ -37,7 +37,7 @@ bool AudioAdapterManager::Init()
 
     // init volume before kvstore start by local prop for bootanimation
     char currentVolumeValue[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "15",
+    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "7",
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         int32_t mediaVolumeLevel = atoi(currentVolumeValue);
@@ -54,10 +54,6 @@ bool AudioAdapterManager::ConnectServiceAdapter()
 {
     std::shared_ptr<AudioAdapterManager> audioAdapterManager(this);
     std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
-    if (!policyCallbackImpl || !policyCallbackImpl.get()) {
-        AUDIO_ERR_LOG("[AudioAdapterManager] Error in audio adapter manager");
-        return false;
-    }
     audioServiceAdapter_ = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
     if (!audioServiceAdapter_) {
         AUDIO_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");

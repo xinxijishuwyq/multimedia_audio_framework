@@ -44,7 +44,7 @@ private:
     AudioService();
     std::mutex processListMutex_;
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
-    std::map<int32_t, std::shared_ptr<AudioEndpoint>> endpointList_;
+    std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -106,7 +106,7 @@ private:
 
     bool PrepareCurrent(uint64_t curWritePos);
     void CallClientHandleCurrent();
-    bool FinishHandleCurrent(uint64_t curWritePos, int64_t &clientWriteCost);
+    bool FinishHandleCurrent(uint64_t &curWritePos, int64_t &clientWriteCost);
 
     void UpdateHandleInfo();
     int64_t GetPredictNextHandleTime(uint64_t posInFrame);
@@ -179,6 +179,11 @@ void AudioProcessInClientInner::AudioServerDied(pid_t pid)
 std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Create with config: flag %{public}d", config.rendererInfo.rendererFlags);
+    if (config.isRemote) {
+        AUDIO_INFO_LOG("Create with config: remote");
+    } else {
+        AUDIO_INFO_LOG("Create with config: local");
+    }
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config);
@@ -558,16 +563,10 @@ int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)
 bool AudioProcessInClientInner::PrepareNext(uint64_t curWritePos, int64_t &wakeUpTime)
 {
     Trace trace("AudioProcessInClient::PrepareNext");
-    uint64_t nextWritePos = curWritePos + spanSizeInFrame_;
-    int32_t ret = audioBuffer_->SetCurWriteFrame(nextWritePos);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", nextWritePos, ret);
-        return false;
-    }
 
-    int64_t nextServerHandleTime = GetPredictNextHandleTime(nextWritePos) - ONE_MILLISECOND_DURATION;
+    int64_t nextServerHandleTime = GetPredictNextHandleTime(curWritePos) - ONE_MILLISECOND_DURATION;
     AUDIO_DEBUG_LOG("nextWritePos %{public}" PRIu64" old wakeUpTime %{public}" PRIu64" "
-        "nextServerHandleTime %{public}" PRIu64".", nextWritePos, wakeUpTime, nextServerHandleTime);
+        "nextServerHandleTime %{public}" PRIu64".", curWritePos, wakeUpTime, nextServerHandleTime);
     if (nextServerHandleTime < ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
     } else {
@@ -668,7 +667,7 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
     return true;
 }
 
-bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t curWritePos, int64_t &clientWriteCost)
+bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64_t &clientWriteCost)
 {
     SpanInfo *tempSpan = audioBuffer_->GetSpanInfo(curWritePos);
     if (tempSpan == nullptr) {
@@ -682,6 +681,13 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t curWritePos, int64_
         AUDIO_ERR_LOG("current span  %{public}" PRIu64" status invalid: %{public}d", curWritePos, targetStatus);
         return false;
     }
+    uint64_t nextWritePos = curWritePos + spanSizeInFrame_;
+    int32_t ret = audioBuffer_->SetCurWriteFrame(nextWritePos);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", nextWritePos, ret);
+        return false;
+    }
+    curWritePos = nextWritePos;
     tempSpan->writeDoneTime = ClockTime::GetCurNano();
     tempSpan->volumeStart = processVolume_;
     tempSpan->volumeEnd = processVolume_;

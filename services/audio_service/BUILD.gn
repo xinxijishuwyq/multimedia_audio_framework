@@ -182,6 +182,7 @@ config("audio_service_config") {
     "${fwk_native_hdiadapter_path}/sink/common",
     "${fwk_native_hdiadapter_path}/sink/file",
     "${fwk_native_hdiadapter_path}/sink/fast",
+    "${fwk_native_hdiadapter_path}/sink/remote_fast",
     "${fwk_native_hdiadapter_path}/sink/primary",
     "${fwk_native_hdiadapter_path}/sink/remote",
     "${fwk_native_hdiadapter_path}/source/common",
@@ -214,8 +215,10 @@ ohos_shared_library("audio_process_service") {
 
   deps = [
     ":audio_common",
-    "./../../frameworks/native/audioutils:audio_utils",
-    "./../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
   ]
 
   public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
@@ -260,6 +263,7 @@ ohos_shared_library("audio_service") {
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:remote_audio_renderer_sink",
+    "${fwk_native_hdiadapter_path}/sink:remote_fast_audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:renderer_sink_adapter",
     "${fwk_native_hdiadapter_path}/source:audio_capturer_source",
     "${fwk_native_hdiadapter_path}/source:capturer_source_adapter",
@@ -320,10 +324,10 @@ ohos_executable("audio_hdi_device_test") {
   install_enable = false
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/common",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink/fast",
     "//commonlibrary/c_utils/base/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
@@ -334,13 +338,15 @@ ohos_executable("audio_hdi_device_test") {
   cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
 
   sources = [
-    "../../frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp",
     "test/example/audio_hdi_device_test.cpp",
   ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     multimedia_audio_framework_hdi_audio_client,
   ]
 

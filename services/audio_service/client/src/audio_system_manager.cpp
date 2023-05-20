@@ -333,7 +333,8 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     if (volumeType == STREAM_ALL) {
         for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
             StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volumeLevel, API_7);
+            int32_t setResult = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType,
+                volumeLevel, API_7);
             AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
             if (setResult != SUCCESS) {
                 return setResult;
@@ -801,7 +802,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     AUDIO_DEBUG_LOG("on callback Entered AudioFocusInfoChangeCallbackImpl %{public}s", __func__);
-    
+
     for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
         cb_ = (*callback).lock();
         if (cb_ != nullptr) {

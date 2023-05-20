@@ -127,7 +127,7 @@ void AudioServer::OnStop()
 
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
-    std::lock_guard<std::mutex> lockSet(setAudioParameterMutex_);
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: set audio parameter");
@@ -193,6 +193,7 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: get audio parameter");

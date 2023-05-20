@@ -122,7 +122,11 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
     deviceInfo.deviceId = 6; // 6 for test
-    deviceInfo.networkId = LOCAL_NETWORK_ID;
+    if (config.isRemote) {
+        deviceInfo.networkId = REMOTE_NETWORK_ID;
+    } else {
+        deviceInfo.networkId = LOCAL_NETWORK_ID;
+    }
     deviceInfo.deviceRole = OUTPUT_DEVICE;
     deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
     deviceInfo.audioStreamInfo = config.streamInfo;
@@ -132,17 +136,18 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo deviceInfo)
 {
-    if (endpointList_.find(deviceInfo.deviceId) != endpointList_.end()) {
-        AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceId:%{public}d", deviceInfo.deviceId);
-        return endpointList_[deviceInfo.deviceId];
+    std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId);
+    if (endpointList_.find(deviceKey) != endpointList_.end()) {
+        AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
+        return endpointList_[deviceKey];
     }
     std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::GetInstance(AudioEndpoint::EndpointType::TYPE_MMAP,
-        deviceInfo.audioStreamInfo);
+        deviceInfo.audioStreamInfo, deviceInfo.networkId);
     if (endpoint == nullptr) {
         AUDIO_ERR_LOG("Find no endpoint for the process");
         return nullptr;
     }
-    endpointList_[deviceInfo.deviceId] = endpoint;
+    endpointList_[deviceKey] = endpoint;
     return endpoint;
 }
 
