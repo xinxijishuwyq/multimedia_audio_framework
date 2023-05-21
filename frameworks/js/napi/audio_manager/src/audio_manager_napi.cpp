@@ -825,8 +825,10 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -888,8 +890,10 @@ napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_call
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -952,8 +956,10 @@ napi_value AudioManagerNapi::SetMicrophoneMute(napi_env env, napi_callback_info 
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1006,8 +1012,10 @@ napi_value AudioManagerNapi::IsMicrophoneMute(napi_env env, napi_callback_info i
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1075,8 +1083,10 @@ napi_value AudioManagerNapi::SetRingerMode(napi_env env, napi_callback_info info
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1130,8 +1140,10 @@ napi_value AudioManagerNapi::GetRingerMode(napi_env env, napi_callback_info info
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1201,8 +1213,10 @@ napi_value AudioManagerNapi::SetAudioScene(napi_env env, napi_callback_info info
     } else {
         status = napi_queue_async_work(env, asyncContext->work);
         if (status == napi_ok) {
+            AUDIO_INFO_LOG("napi_ok, start release uptr");
             asyncContext.release();
         } else {
+            AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
             result = nullptr;
         }
     }
@@ -1254,8 +1268,10 @@ napi_value AudioManagerNapi::GetAudioScene(napi_env env, napi_callback_info info
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1325,8 +1341,10 @@ napi_value AudioManagerNapi::SetStreamMute(napi_env env, napi_callback_info info
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1396,8 +1414,10 @@ napi_value AudioManagerNapi::IsStreamMute(napi_env env, napi_callback_info info)
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1467,8 +1487,10 @@ napi_value AudioManagerNapi::IsStreamActive(napi_env env, napi_callback_info inf
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1538,8 +1560,10 @@ napi_value AudioManagerNapi::SetDeviceActive(napi_env env, napi_callback_info in
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1609,8 +1633,10 @@ napi_value AudioManagerNapi::IsDeviceActive(napi_env env, napi_callback_info inf
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1676,8 +1702,10 @@ napi_value AudioManagerNapi::SetAudioParameter(napi_env env, napi_callback_info 
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1740,8 +1768,10 @@ napi_value AudioManagerNapi::GetAudioParameter(napi_env env, napi_callback_info 
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1816,8 +1846,10 @@ napi_value AudioManagerNapi::SetVolume(napi_env env, napi_callback_info info)
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1887,8 +1919,10 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -1958,8 +1992,10 @@ napi_value AudioManagerNapi::GetMaxVolume(napi_env env, napi_callback_info info)
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -2029,8 +2065,10 @@ napi_value AudioManagerNapi::GetMinVolume(napi_env env, napi_callback_info info)
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }
@@ -2169,8 +2207,10 @@ napi_value AudioManagerNapi::GetDevices(napi_env env, napi_callback_info info)
         } else {
             status = napi_queue_async_work(env, asyncContext->work);
             if (status == napi_ok) {
+                AUDIO_INFO_LOG("napi_ok, start release uptr");
                 asyncContext.release();
             } else {
+                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
                 result = nullptr;
             }
         }

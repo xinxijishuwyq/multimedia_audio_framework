@@ -33,6 +33,7 @@
 #include "i_standard_renderer_state_change_listener.h"
 #include "i_standard_capturer_state_change_listener.h"
 #include "i_standard_client_tracker.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +43,7 @@ class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance()
     {
+        AUDIO_INFO_LOG("Enter AudioPolicyManager::GetInstance");
         static AudioPolicyManager policyManager;
         return policyManager;
     }
@@ -215,7 +217,10 @@ public:
 
     int32_t GetMaxRendererInstances();
 private:
-    AudioPolicyManager() {}
+    AudioPolicyManager()
+    {
+        AUDIO_INFO_LOG("Enter AudioPolicyManager::AudioPolicyManager");
+    }
     ~AudioPolicyManager() {}
 
     void Init();
