@@ -1176,44 +1176,46 @@ napi_value AudioRendererNapi::SetRendererSamplingRate(napi_env env, napi_callbac
     THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INVALID_PARAM);
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
-    if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        return result;
+    }
 
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_uint32(env, argv[PARAM0], &asyncContext->rendererSampleRate);
-            } else if (i == PARAM1) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_uint32(env, argv[PARAM0], &asyncContext->rendererSampleRate);
+        } else if (i == PARAM1) {
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
             }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
+            break;
         } else {
-            napi_get_undefined(env, &result);
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
+    }
 
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "SetRendererSamplingRate", NAPI_AUTO_LENGTH, &resource);
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
 
-        status = napi_create_async_work(
-            env, nullptr, resource, AsyncSetSamplingRate, SetFunctionAsyncCallbackComplete,
-            static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetRendererSamplingRate", NAPI_AUTO_LENGTH, &resource);
+
+    status = napi_create_async_work(
+        env, nullptr, resource, AsyncSetSamplingRate, SetFunctionAsyncCallbackComplete,
+        static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
             result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
         }
     }
 
@@ -1395,7 +1397,7 @@ napi_value AudioRendererNapi::Write(napi_env env, napi_callback_info info)
     if (argc < ARGS_ONE) {
         asyncContext->status = NAPI_ERR_INVALID_PARAM;
     }
-    
+
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         for (size_t i = PARAM0; i < argc; i++) {
@@ -2140,11 +2142,11 @@ napi_value AudioRendererNapi::RegisterPeriodPositionCallback(napi_env env, napi_
         if (rendererNapi->periodPositionCBNapi_ == nullptr) {
             rendererNapi->periodPositionCBNapi_ = std::make_shared<RendererPeriodPositionCallbackNapi>(env);
             THROW_ERROR_ASSERT(env, rendererNapi->periodPositionCBNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
-    
+
             int32_t ret = rendererNapi->audioRenderer_->SetRendererPeriodPositionCallback(frameCount,
                 rendererNapi->periodPositionCBNapi_);
             THROW_ERROR_ASSERT(env, ret == SUCCESS, NAPI_ERR_SYSTEM);
-    
+
             std::shared_ptr<RendererPeriodPositionCallbackNapi> cb =
                 std::static_pointer_cast<RendererPeriodPositionCallbackNapi>(rendererNapi->periodPositionCBNapi_);
             cb->SaveCallbackReference(cbName, argv[PARAM2]);
