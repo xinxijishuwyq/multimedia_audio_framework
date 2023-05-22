@@ -64,6 +64,7 @@ void PlayerTest(char *argv[])
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
     ret = OH_AudioStreamBuilder_Create(&builder, type);
+    printf("createcallback ret: %d \n", ret);
 
     // 2. set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);

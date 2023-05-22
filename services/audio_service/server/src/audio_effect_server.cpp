@@ -52,7 +52,7 @@ bool ResolveLibrary(const std::string &path, std::string &resovledPath)
     return false;
 }
 
-static bool LoadLibrary(const std::string relativePath, std::unique_ptr<LibEntryT>& libEntry) noexcept
+static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<LibEntryT>& libEntry) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
@@ -111,7 +111,7 @@ void LoadLibraries(const std::vector<Library> &libs,
     }
 }
 
-LibEntryT *FindLibrary(const std::string name, std::vector<std::unique_ptr<LibEntryT>> &libList)
+LibEntryT *FindLibrary(const std::string &name, const std::vector<std::unique_ptr<LibEntryT>> &libList)
 {
     for (const std::unique_ptr<LibEntryT>& lib : libList) {
         if (lib->name == name) {
