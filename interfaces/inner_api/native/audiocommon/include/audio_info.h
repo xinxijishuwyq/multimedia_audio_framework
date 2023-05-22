@@ -179,6 +179,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_FILE_SOURCE = 51,
     /**
+     * Indicates any headset/headphone for disconnect
+     */
+    DEVICE_TYPE_EXTERN_CABLE = 100,
+    /**
      * Indicates default device
      */
     DEVICE_TYPE_DEFAULT = 1000,
