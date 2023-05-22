@@ -260,6 +260,7 @@ ohos_shared_library("audio_service") {
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
     "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
+    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
     "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
     "${fwk_native_hdiadapter_path}/sink:remote_audio_renderer_sink",
@@ -314,7 +315,10 @@ ohos_executable("audio_process_client_test") {
     "./../../frameworks/native/audioutils:audio_utils",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
