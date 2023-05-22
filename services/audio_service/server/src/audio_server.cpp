@@ -29,10 +29,11 @@
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
-#include "audio_service.h"
 #include "audio_log.h"
-#include "audio_schedule.h"
 #include "audio_manager_listener_proxy.h"
+#include "audio_service.h"
+#include "audio_schedule.h"
+#include "audio_utils.h"
 #include "i_audio_capturer_source.h"
 #include "i_standard_audio_server_manager_listener.h"
 
@@ -485,9 +486,20 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
     }
 }
 
+inline bool IsParamEnabled(std::string key, bool &isEnabled)
+{
+    int32_t policyFlag = 0;
+    if (GetSysPara(key.c_str(), policyFlag) && policyFlag == 1) {
+        isEnabled = true;
+        return true;
+    }
+    isEnabled = false;
+    return false;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
-    if (!isGetProcessEnabled_) {
+    if (!IsParamEnabled("persist.multimedia.audio.mmap.enable", isGetProcessEnabled_)) {
         AUDIO_ERR_LOG("AudioServer::CreateAudioProcess is not enabled!");
         return nullptr;
     }

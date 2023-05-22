@@ -28,6 +28,7 @@
 #include "audio_error.h"
 #include "audio_utils.h"
 #include "audio_process_in_client.h"
+#include "parameter.h"
 #include "pcm2wav.h"
 
 using namespace std;
@@ -396,6 +397,17 @@ void CloseFile()
         g_wavFile = nullptr;
     }
 }
+
+bool SetSysPara(std::string key, int32_t &value)
+{
+    auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
+    if (res < 0) {
+        AUDIO_WARNING_LOG("SetSysPara fail, key:%{public}s res:%{public}d", key.c_str(), res);
+        return false;
+    }
+    AUDIO_INFO_LOG("SetSysPara success.");
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -403,7 +415,8 @@ using namespace OHOS::AudioStandard;
 int main(int argc, char *argv[])
 {
     AUDIO_INFO_LOG("AudioProcessClientTest: Render test in");
-
+    int32_t val = 1;
+    SetSysPara("persist.multimedia.audio.mmap.enable", val);
     g_audioProcessTest = make_shared<AudioProcessTest>();
     if (argv == nullptr || argc > ARGC_NUM_THREE || argc < ARGC_NUM_TWO) {
         cout << "AudioProcessClientTest: argv is invalid" << endl;
