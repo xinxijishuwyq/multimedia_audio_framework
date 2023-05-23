@@ -21,7 +21,11 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_renderer.h"
+#include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
+#include "audio_stream.h"
+#include "audio_renderer_private.h"
+
 
 using namespace std;
 using namespace std::chrono;
@@ -4509,7 +4513,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererPeriodPositionCallback_0
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
 
-    shared_ptr<RendererPeriodPositionCallbackTest> positionCB = std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> positionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
     ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_ZERO, positionCB);
     EXPECT_NE(SUCCESS, ret);
 
@@ -4559,6 +4564,275 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Max_Renderer_Instances_001, TestSiz
         it = rendererList.erase(it);
     }
     EXPECT_EQ(rendererList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test set renderer samplingrate.
+ * @tc.number: Audio_Renderer_Set_Renderer_SamplingRate_001
+ * @tc.desc  : Test SetRendererSamplingRate and GetRendererSamplingRate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_SamplingRate_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t sampleRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    ret = audioRenderer->SetRendererSamplingRate(sampleRate);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint32_t sampleRateRet = audioRenderer->GetRendererSamplingRate();
+    EXPECT_EQ(sampleRate, sampleRateRet);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test set renderer Interrupt.
+ * @tc.number: Audio_Renderer_Set_Renderer_Interrupt_002
+ * @tc.desc  : Test AudioRendererInterruptCallbackImpl SaveCallback and OnInterrupt.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Interrupt_002, TestSize.Level1)
+{
+    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
+    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+    AudioInterrupt audioInterrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
+    AppInfo appInfo_;
+    if (!(appInfo_.appPid)) {
+        appInfo_.appPid = getpid();
+    }
+
+    if (appInfo_.appUid < 0) {
+        appInfo_.appUid = static_cast<int32_t>(getuid());
+    }
+    const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MEDIA,
+        AUDIO_MODE_PLAYBACK, appInfo_.appUid);
+    ASSERT_NE(nullptr, audioStream_);
+   
+    shared_ptr<AudioRendererInterruptCallbackImpl> interruptCallbackImpl =
+        make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt);
+    EXPECT_NE(nullptr, interruptCallbackImpl);
+
+    interruptCallbackImpl->SaveCallback(audioRendererCB);
+
+    InterruptEventInternal interruptEvent = {};
+    interruptEvent.eventType = INTERRUPT_TYPE_END;
+    interruptEvent.forceType = INTERRUPT_SHARE;
+    interruptEvent.hintType = INTERRUPT_HINT_NONE;
+    interruptEvent.duckVolume = 0;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.forceType = INTERRUPT_FORCE;
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.hintType = INTERRUPT_HINT_DUCK;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.duckVolume = 5;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.duckVolume = 15;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.hintType = INTERRUPT_HINT_UNDUCK;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    interruptEvent.hintType = INTERRUPT_HINT_NONE;
+    interruptCallbackImpl->OnInterrupt(interruptEvent);
+
+    EXPECT_EQ(interruptEvent.hintType, INTERRUPT_HINT_NONE);
+}
+
+/**
+ * @tc.name  : Test set renderer instance.
+ * @tc.number: Audio_Renderer_Set_Renderer_Instance_001
+ * @tc.desc  : Test renderer instance GetMinStreamVolume,GetMaxStreamVolume,GetCurrentOutputDevices,GetUnderflowCount
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    float minVolume = audioRenderer->GetMinStreamVolume();
+    float maxVolume = audioRenderer->GetMaxStreamVolume();
+    EXPECT_EQ(minVolume < maxVolume, true);
+
+    DeviceInfo deviceInfo;
+    ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+
+    float count = audioRenderer->GetUnderflowCount();
+    EXPECT_EQ(count >= 0, true);
+
+    AppInfo appInfo = {};
+    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    bool isDeviceChanged = audioRendererPrivate->IsDeviceChanged(deviceInfo);
+    EXPECT_EQ(false, isDeviceChanged);
+
+    deviceInfo.deviceType = DEVICE_TYPE_EARPIECE;
+    isDeviceChanged = audioRendererPrivate->IsDeviceChanged(deviceInfo);
+    EXPECT_EQ(false, isDeviceChanged);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test set renderer instance.
+ * @tc.number: Audio_Renderer_Set_Renderer_Instance_002
+ * @tc.desc  : Test renderer instance RegisterAudioRendererEventListener,DestroyAudioRendererStateCallback
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    int32_t clientPid = getpid();
+    const std::shared_ptr<AudioRendererDeviceChangeCallback> callback =
+        std::make_shared<AudioRendererDeviceChangeCallbackTest>();
+    ret = audioRenderer->RegisterAudioRendererEventListener(clientPid, nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    ret = audioRenderer->RegisterAudioRendererEventListener(clientPid, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->UnregisterAudioRendererEventListener(clientPid);
+    EXPECT_EQ(SUCCESS, ret);
+
+    clientPid = -1;
+    ret = audioRenderer->UnregisterAudioRendererEventListener(clientPid);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test set renderer instance.
+ * @tc.number: Audio_Renderer_Set_Renderer_Instance_003
+ * @tc.desc  : Test renderer instance RegisterAudioRendererEventListener,DestroyAudioRendererStateCallback
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    int32_t clientPid = getpid();
+    const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> serviceCallback =
+        std::make_shared<AudioRendererPolicyServiceDiedCallbackTest>();
+    ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientPid, serviceCallback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientPid, nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = audioRenderer->UnregisterAudioPolicyServerDiedCb(clientPid);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test set renderer instance.
+ * @tc.number: Audio_Renderer_Set_Renderer_Instance_004
+ * @tc.desc  : Test SaveCallback and setAudioRendererObj on audioRendererStateChangeCallbackImpl
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_SONIFICATION;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_ASSISTANT;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    unique_ptr<AudioRendererStateChangeCallbackImpl> audioRendererStateChangeCallbackImpl =
+        std::make_unique<AudioRendererStateChangeCallbackImpl>();
+    std::weak_ptr<AudioRendererDeviceChangeCallback> callback =
+        std::make_shared<AudioRendererDeviceChangeCallbackTest>();
+    audioRendererStateChangeCallbackImpl->SaveCallback(callback);
+
+    AppInfo appInfo = {};
+    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    audioRendererStateChangeCallbackImpl->setAudioRendererObj(audioRendererPrivate.get());
+
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRendererStateChangeCallbackImpl->OnRendererStateChange(audioRendererChangeInfos);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test set renderer instance.
+ * @tc.number: Audio_Renderer_Set_Renderer_Instance_005
+ * @tc.desc  : Test ResumeStreamImpl and PausedStreamImpl on AudioRendererProxyObj
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_005, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    
+    unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
+
+    audioRendererProxyObj->SaveRendererObj(audioRendererPrivate.get());
+    const StreamSetStateEventInternal streamSetStateEventInternal = {};
+    audioRendererProxyObj->ResumeStreamImpl(streamSetStateEventInternal);
+    audioRendererProxyObj->PausedStreamImpl(streamSetStateEventInternal);
+    ASSERT_NE(nullptr, audioRendererPrivate);
 }
 } // namespace AudioStandard
 } // namespace OHOS
