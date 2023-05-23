@@ -146,9 +146,9 @@ FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
 
 FastAudioRendererSink *FastAudioRendererSink::GetInstance()
 {
-    static FastAudioRendererSinkInner audioRenderer_;
+    static FastAudioRendererSinkInner audioRenderer;
 
-    return &audioRenderer_;
+    return &audioRenderer;
 }
 
 bool FastAudioRendererSinkInner::IsInited()

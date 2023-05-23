@@ -135,9 +135,9 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 
 AudioRendererSink *AudioRendererSink::GetInstance()
 {
-    static AudioRendererSinkInner audioRenderer_;
+    static AudioRendererSinkInner audioRenderer;
 
-    return &audioRenderer_;
+    return &audioRenderer;
 }
 
 void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,

@@ -234,6 +234,10 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, false, "Init failed, access buffer failed.");
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    if (spanSizeInFrame_ * byteSizePerFrame_ < SIZE_MAX) {
+        AUDIO_ERR_LOG("InitAudioBuffer() failed because of a data overflow");
+        return false;
+    }
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
         "spanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_);

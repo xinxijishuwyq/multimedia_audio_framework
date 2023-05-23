@@ -142,21 +142,21 @@ std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
-    RemoteAudioRendererSinkInner *audioRenderer_ = nullptr;
+    RemoteAudioRendererSinkInner *audioRenderer = nullptr;
     if (deviceNetworkId == nullptr) {
-        return audioRenderer_;
+        return audioRenderer;
     }
     // check if it is in our map
     std::string deviceName = deviceNetworkId;
     if (allsinks.count(deviceName)) {
         return allsinks[deviceName];
     } else {
-        audioRenderer_ = new(std::nothrow) RemoteAudioRendererSinkInner(deviceName);
+        audioRenderer = new(std::nothrow) RemoteAudioRendererSinkInner(deviceName);
         AUDIO_DEBUG_LOG("new Daudio device sink:[%{public}s]", deviceNetworkId);
-        allsinks[deviceName] = audioRenderer_;
+        allsinks[deviceName] = audioRenderer;
     }
-    CHECK_AND_RETURN_RET_LOG((audioRenderer_ != nullptr), nullptr, "null audioRenderer!");
-    return audioRenderer_;
+    CHECK_AND_RETURN_RET_LOG((audioRenderer != nullptr), nullptr, "null audioRenderer!");
+    return audioRenderer;
 }
 
 void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
