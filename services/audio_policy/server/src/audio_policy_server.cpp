@@ -723,6 +723,12 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (!mPolicyService.IsSessionIdValid(callerUid, sessionID)) {
+        AUDIO_ERR_LOG("SetAudioInterruptCallback for sessionID %{public}d, id is invalid", sessionID);
+        return ERR_INVALID_PARAM;
+    }
+
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioInterruptCallback object is nullptr");
 
     sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
