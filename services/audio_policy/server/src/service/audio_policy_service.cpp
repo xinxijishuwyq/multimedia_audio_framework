@@ -336,6 +336,23 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     AUDIO_INFO_LOG("NotifyRemoteRenderState success");
 }
 
+bool AudioPolicyService::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const
+{
+    size_t connectedDevicesNum = connectedDevices_.size();
+    for (size_t i = 0; i < connectedDevicesNum; i++) {
+        if (connectedDevices_[i] != nullptr) {
+            if (connectedDevices_[i]->deviceRole_ == audioDeviceDescriptors->deviceRole_
+                && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
+                && connectedDevices_[i]->interruptGroupId_ == audioDeviceDescriptors->interruptGroupId_
+                && connectedDevices_[i]->volumeGroupId_ == audioDeviceDescriptors->volumeGroupId_
+                && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int32_t AudioPolicyService::DeviceParamsCheck(DeviceRole targetRole,
     std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const
 {
@@ -347,9 +364,11 @@ int32_t AudioPolicyService::DeviceParamsCheck(DeviceRole targetRole,
 
     bool isDeviceTypeCorrect = false;
     if (targetRole == DeviceRole::OUTPUT_DEVICE) {
-        isDeviceTypeCorrect = IsOutputDevice(audioDeviceDescriptors[0]->deviceType_);
+        isDeviceTypeCorrect = IsOutputDevice(audioDeviceDescriptors[0]->deviceType_) &&
+            IsDeviceConnected(audioDeviceDescriptors[0]);
     } else if (targetRole == DeviceRole::INPUT_DEVICE) {
-        isDeviceTypeCorrect = IsInputDevice(audioDeviceDescriptors[0]->deviceType_);
+        isDeviceTypeCorrect = IsInputDevice(audioDeviceDescriptors[0]->deviceType_) &&
+            IsDeviceConnected(audioDeviceDescriptors[0]);
     }
 
     if (audioDeviceDescriptors[0]->deviceRole_ != targetRole || !isDeviceTypeCorrect) {

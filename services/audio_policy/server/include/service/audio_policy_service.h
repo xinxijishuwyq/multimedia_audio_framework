@@ -281,6 +281,8 @@ private:
 
     InternalDeviceType GetCurrentActiveDevice(DeviceRole role) const;
 
+    bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
+
     int32_t DeviceParamsCheck(DeviceRole targetRole,
         std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const;
 
