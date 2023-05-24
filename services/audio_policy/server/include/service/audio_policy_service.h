@@ -400,12 +400,6 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
 
-    std::vector<DeviceType> ioDeviceList = {
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_BLUETOOTH_SCO,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_WIRED_HEADSET
-    };
     std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_BLUETOOTH_A2DP,
