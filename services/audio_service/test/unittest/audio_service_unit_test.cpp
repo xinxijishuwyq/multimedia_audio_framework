@@ -351,5 +351,56 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);
     EXPECT_EQ(streamInfo.samplingRate, audioStreamInfo.samplingRate);
 }
+
+/**
+* @tc.name  : Test AudioServiceClient API
+* @tc.type  : FUNC
+* @tc.number: AudioServiceClient_001
+* @tc.desc  : Test AudioServiceClient interface.
+*/
+HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioServiceClient>();
+
+    ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
+    ret = audioServiceClient->Initialize(eClientType);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioStreamParams audioParams = {};
+    audioParams.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    audioParams.encoding = AudioEncodingType::ENCODING_PCM;
+    audioParams.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioParams.channels = AudioChannel::STEREO;
+
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_SYSTEM);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_NOTIFICATION);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_BLUETOOTH_SCO);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_DTMF);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_TTS);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_DEFAULT);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioServiceClient->SetStreamRenderRate(AudioRendererRate::RENDER_RATE_HALF);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->SetStreamRenderRate(static_cast<AudioRendererRate>(-1));
+    EXPECT_EQ(SUCCESS - 2, ret);
+    ret = audioServiceClient->SetStreamRenderRate(RENDER_RATE_DOUBLE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint32_t rate = audioServiceClient->GetRendererSamplingRate();
+    EXPECT_EQ((uint32_t)SAMPLE_RATE_44100, rate);
+    ret = audioServiceClient->SetRendererSamplingRate(0);
+    EXPECT_EQ(SUCCESS - 2, ret);
+    rate = audioServiceClient->GetRendererSamplingRate();
+    EXPECT_EQ((uint32_t)SAMPLE_RATE_44100, rate);
+
+    audioServiceClient->OnTimeOut();
+}
 } // namespace AudioStandard
 } // namespace OHOS
