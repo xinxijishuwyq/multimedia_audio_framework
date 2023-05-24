@@ -44,7 +44,7 @@ public:
         uint32_t byteSizePerFrame = 0;
 
         hdiRenderSink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame);
-        if (spanSizeInframe * byteSizePerFrame < SIZE_MAX) {
+        if (spanSizeInframe > SIZE_MAX / byteSizePerFrame) {
             AUDIO_ERR_LOG("RenderFrameFromFile():data overflow");
             return;
         }
