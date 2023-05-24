@@ -540,10 +540,6 @@ int32_t OHAudioBuffer::GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferD
     CHECK_AND_RETURN_RET_LOG(deltaToBase < UINT32_MAX && deltaToBase < totalSizeInFrame_, ERR_INVALID_PARAM,
         "invalid deltaToBase, posInFrame %{public}" PRIu64" basePos %{public}" PRIu64".", posInFrame, basePos);
     deltaToBase = (deltaToBase / spanSizeInFrame_) * spanSizeInFrame_;
-    if (deltaToBase * byteSizePerFrame_ < SIZE_MAX) {
-        AUDIO_ERR_LOG("GetBufferByFrame():data overflow");
-        return ERR_INVALID_PARAM;
-    }
     size_t offset = deltaToBase * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(offset < totalSizeInByte_, ERR_INVALID_PARAM, "invalid deltaToBase:%{public}zu", offset);
 
