@@ -80,6 +80,41 @@ ohos_shared_library("remote_audio_capturer_source") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("remote_fast_audio_capturer_source") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+  }
+  install_enable = true
+  sources = [ "remote_fast/remote_fast_audio_capturer_source.cpp" ]
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+  cflags_cc = cflags
+
+  include_dirs = [
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source/common",
+  ]
+
+  include_dirs += [ multimedia_audio_framework_drivers ]
+
+  deps = [
+    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
+    "${multimedia_distributed_audio}/services/hdfaudioclient:daudio_client",
+    multimedia_audio_framework_hdi_audio_client,
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("audio_capturer_file_source") {
   sanitize = {
     cfi = true
@@ -138,6 +173,7 @@ ohos_shared_library("capturer_source_adapter") {
     ":audio_capturer_file_source",
     ":audio_capturer_source",
     ":remote_audio_capturer_source",
+    ":remote_fast_audio_capturer_source",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

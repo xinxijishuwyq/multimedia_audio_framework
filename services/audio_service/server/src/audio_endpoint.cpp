@@ -22,14 +22,16 @@
 #include <vector>
 #include <mutex>
 
-#include "audio_errors.h"
-#include "audio_log.h"
 #include "securec.h"
 
+#include "audio_errors.h"
+#include "audio_log.h"
 #include "audio_utils.h"
 #include "fast_audio_renderer_sink.h"
-#include "remote_fast_audio_renderer_sink.h"
+#include "i_audio_capturer_source.h"
 #include "linear_pos_time_model.h"
+#include "remote_fast_audio_renderer_sink.h"
+#include "remote_fast_audio_capturer_source.h"
 
 // DUMP_PROCESS_FILE // define it for dump file
 namespace OHOS {
@@ -40,14 +42,13 @@ namespace {
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
 }
+
 class AudioEndpointInner : public AudioEndpoint {
 public:
     explicit AudioEndpointInner(EndpointType type);
     ~AudioEndpointInner();
 
-    bool Config(AudioStreamInfo streamInfo, const std::string &networkId);
-    int32_t PrepareDeviceBuffer();
-
+    bool Config(const DeviceInfo &deviceInfo);
     bool StartDevice();
     bool StopDevice();
 
@@ -73,6 +74,41 @@ public:
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
     void Dump(std::stringstream &dumpStringStream) override;
+
+private:
+    bool ConfigInputPoint(const DeviceInfo &deviceInfo);
+    int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
+    int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);
+    void ReSyncPosition();
+    void RecordReSyncPosition();
+    void InitAudiobuffer(bool resetReadWritePos);
+    void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
+    int64_t GetPredictNextReadTime(uint64_t posInFrame);
+    int64_t GetPredictNextWriteTime(uint64_t posInFrame);
+    bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
+    bool RecordPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
+
+    /**
+     * @brief Get the current read position in frame and the read-time with it.
+     *
+     * @param frames the read position in frame
+     * @param nanoTime the time in nanosecond when device-sink start read the buffer
+    */
+    bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
+
+    bool IsAnyProcessRunning();
+    bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
+    bool ProcessToEndpointDataHandle(uint64_t curWritePos);
+
+    std::string GetStatusStr(EndpointStatus status);
+
+    void WriteToProcessBuffers(const BufferDesc &readBuf);
+    int32_t ReadFromEndpoint(uint64_t curReadPos);
+    bool KeepWorkloopRunning();
+
+    void EndpointWorkLoopFuc();
+    void RecordEndpointWorkLoopFuc();
+
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
@@ -82,6 +118,7 @@ private:
         INRUNNING
     };
     // SamplingRate EncodingType SampleFormat Channel
+    DeviceInfo deviceInfo_;
     AudioStreamInfo dstStreamInfo_;
     EndpointType endpointType_;
 
@@ -90,8 +127,10 @@ private:
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
 
     FastAudioRendererSink *fastSink_ = nullptr;
+    IMmapAudioCapturerSource *fastSource_ = nullptr;
 
     LinearPosTimeModel readTimeModel_;
+    LinearPosTimeModel writeTimeModel_;
 
     int64_t spanDuration_ = 0; // nano second
     int64_t serverAheadReadTime_ = 0;
@@ -112,43 +151,18 @@ private:
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
-    void ReSyncPosition();
-
-    void InitAudiobuffer(bool resetReadWritePos);
-    void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
-    int64_t GetPredictNextHandleTime(uint64_t posInFrame);
-    bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
-
-    /**
-     * @brief Get the current read position in frame and the read-time with it.
-     *
-     * @param frames the read position in frame
-     * @param nanoTime the time in nanosecond when device-sink start read the buffer
-    */
-    bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
-
-    bool IsAnyProcessRunning();
-    bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
-    bool ProcessToEndpointDataHandle(uint64_t curWritePos);
-
-    std::string GetStatusStr(EndpointStatus status);
-
-    bool KeepWorkloopRunning();
-
-    void EndpointWorkLoopFuc();
 #ifdef DUMP_PROCESS_FILE
     FILE *dcp_ = nullptr;
     FILE *dump_hdi_ = nullptr;
 #endif
 };
 
-std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, AudioStreamInfo streamInfo,
-    const std::string &networkId)
+std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, const DeviceInfo &deviceInfo)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpoint = std::make_shared<AudioEndpointInner>(type);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(streamInfo, networkId)) {
+    if (!audioEndpoint->Config(deviceInfo)) {
         AUDIO_ERR_LOG("Config AudioEndpoint failed.");
         audioEndpoint = nullptr;
     }
@@ -163,6 +177,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type) : endpointType_(type)
 AudioEndpointInner::~AudioEndpointInner()
 {
     // Wait for thread end and then clear other data to avoid using any cleared data in thread.
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     if (endpointWorkThread_.joinable()) {
         AUDIO_INFO_LOG("AudioEndpoint join work thread start");
         isThreadEnd_ = true;
@@ -173,6 +188,11 @@ AudioEndpointInner::~AudioEndpointInner()
     if (fastSink_ != nullptr) {
         fastSink_->DeInit();
         fastSink_ = nullptr;
+    }
+
+    if (fastSource_ != nullptr) {
+        fastSource_->DeInit();
+        fastSource_ = nullptr;
     }
 
     endpointStatus_.store(INVALID);
@@ -219,28 +239,73 @@ void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
     dumpStringStream << std::endl;
 }
 
-bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &networkId)
+bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
 {
-    dstStreamInfo_ = streamInfo;
-    if (networkId == REMOTE_NETWORK_ID) {
-        fastSink_ = RemoteFastAudioRendererSink::GetInstance(networkId);
-    } else {
-        fastSink_ = FastAudioRendererSink::GetInstance();
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    fastSource_ = RemoteFastAudioCapturerSource::GetInstance(deviceInfo.networkId);
+    IAudioSourceAttr attr = {};
+    attr.adapterName = "remote";
+    attr.sampleRate = dstStreamInfo_.samplingRate;
+    attr.channel = dstStreamInfo_.channels;
+    attr.format = dstStreamInfo_.format;
+    attr.deviceNetworkId = deviceInfo.networkId.c_str();
+
+    int32_t err = fastSource_->Init(attr);
+    if (err != SUCCESS || !fastSource_->IsInited()) {
+        AUDIO_ERR_LOG("%{public}s init remote fast fail, err %{public}d.", __func__, err);
+        fastSource_ = nullptr;
+        return false;
     }
+    if (PrepareDeviceBuffer(deviceInfo) != SUCCESS) {
+        fastSource_->DeInit();
+        fastSource_ = nullptr;
+        return false;
+    }
+
+    float initVolume = 1.0; // init volume to 1.0, right and left
+    err = fastSource_->SetVolume(initVolume, initVolume);
+    CHECK_AND_BREAK_LOG(err == SUCCESS, "%{public}s remote fast set volume fail, err %{public}d.", __func__, err);
+
+    bool ret = writeTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
+    CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
+
+    endpointStatus_ = UNLINKED;
+    endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
+    pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
+#ifdef DUMP_PROCESS_FILE
+    dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
+    if (dump_hdi_ == nullptr) {
+        AUDIO_ERR_LOG("Error opening pcm test file!");
+    }
+#endif
+    return true;
+}
+
+bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
+{
+    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
+    deviceInfo_ = deviceInfo;
+    dstStreamInfo_ = deviceInfo.audioStreamInfo;
+    if (deviceInfo.deviceRole == INPUT_DEVICE) {
+        return ConfigInputPoint(deviceInfo);
+    }
+
+    fastSink_ = deviceInfo.networkId == REMOTE_NETWORK_ID ?
+        RemoteFastAudioRendererSink::GetInstance(deviceInfo.networkId) : FastAudioRendererSink::GetInstance();
     IAudioSinkAttr attr = {};
     attr.adapterName = "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
     attr.sampleFmt = dstStreamInfo_.format;
-    attr.deviceNetworkId = networkId.c_str();
+    attr.deviceNetworkId = deviceInfo.networkId.c_str();
 
     fastSink_->Init(attr);
     if (!fastSink_->IsInited()) {
         fastSink_ = nullptr;
         return false;
     }
-    if (PrepareDeviceBuffer() != SUCCESS) {
+    if (PrepareDeviceBuffer(deviceInfo) != SUCCESS) {
         fastSink_->DeInit();
         fastSink_ = nullptr;
         return false;
@@ -253,7 +318,6 @@ bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &n
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
 
     endpointStatus_ = UNLINKED;
-
     endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
 
@@ -267,50 +331,76 @@ bool AudioEndpointInner::Config(AudioStreamInfo streamInfo, const std::string &n
     return true;
 }
 
-int32_t AudioEndpointInner::PrepareDeviceBuffer()
+int32_t AudioEndpointInner::GetAdapterBufferInfo(const DeviceInfo &deviceInfo)
 {
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
+    if (deviceInfo.deviceRole == INPUT_DEVICE) {
+        CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr, ERR_INVALID_HANDLE,
+            "%{public}s fast source is null.", __func__);
+        ret = fastSource_->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_,
+        dstByteSizePerFrame_);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr, ERR_INVALID_HANDLE, "%{public}s fast sink is null.", __func__);
+        ret = fastSink_->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_,
+        dstByteSizePerFrame_);
+    }
+
+    if (ret != SUCCESS || dstBufferFd_ == -1 || dstTotalSizeInframe_ == 0 || dstSpanSizeInframe_ == 0 ||
+        dstByteSizePerFrame_ == 0) {
+        AUDIO_ERR_LOG("%{public}s get mmap buffer info fail, ret %{public}d, dstBufferFd %{public}d, \
+            dstTotalSizeInframe %{public}d, dstSpanSizeInframe %{public}d, dstByteSizePerFrame %{public}d.",
+            __func__, ret, dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
+        return ERR_ILLEGAL_STATE;
+    }
+    AUDIO_INFO_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);
+    return SUCCESS;
+}
+
+int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
+{
+    AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
     if (dstAudioBuffer_ != nullptr) {
-        AUDIO_INFO_LOG("Endpoint buffer is preapred, fd:%{public}d", dstBufferFd_);
+        AUDIO_INFO_LOG("%{public}s endpoint buffer is preapred, fd:%{public}d", __func__, dstBufferFd_);
         return SUCCESS;
     }
 
-    int32_t ret = fastSink_->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_,
-        dstByteSizePerFrame_);
-    if (ret != SUCCESS || dstBufferFd_ == -1 || dstTotalSizeInframe_ == 0 || dstSpanSizeInframe_ == 0 ||
-        dstByteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("GetMmapBufferInfo failed.");
-        return ERR_ILLEGAL_STATE;
-    }
+    int32_t ret = GetAdapterBufferInfo(deviceInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "%{public}s get adapter buffer Info fail, ret %{public}d.", __func__, ret);
 
     // spanDuration_ may be less than the correct time of dstSpanSizeInframe_.
     spanDuration_ = dstSpanSizeInframe_ * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
     int64_t temp = spanDuration_ / 4 * 3; // 3/4 spanDuration
     serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // at least 1ms ahead.
-    AUDIO_INFO_LOG("Span duration: %{public}" PRId64"ns, server will wake up and handle %{public}" PRId64"ns ahead.",
-        spanDuration_, serverAheadReadTime_);
+    AUDIO_INFO_LOG("%{public}s spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
+        __func__, spanDuration_, serverAheadReadTime_);
 
     if (spanDuration_ <= 0 || spanDuration_ >= MAX_SPAN_DURATION_IN_NANO) {
-        AUDIO_ERR_LOG("GetMmapBufferInfo error: invalid span info.");
+        AUDIO_ERR_LOG("%{public}s mmap span info error, spanDuration %{public}" PRIu64".", __func__, spanDuration_);
         return ERR_INVALID_PARAM;
     }
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
         dstBufferFd_);
     if (dstAudioBuffer_ == nullptr || dstAudioBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_ONLY) {
-        AUDIO_ERR_LOG("GetMmapBufferInfo failed.");
+        AUDIO_ERR_LOG("%{public}s create buffer from remote fail.", __func__);
         return ERR_ILLEGAL_STATE;
     }
     dstAudioBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_IDEL);
 
     // clear data buffer
     ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0, dstAudioBuffer_->GetDataSize());
-    AUDIO_INFO_LOG("PrepareDeviceBuffer and clear buffer[fd:%{public}d] success, ret:%{public}d", dstBufferFd_, ret);
+    CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s memset buffer fail, ret %{public}d, fd %{public}d.",
+        __func__, ret, dstBufferFd_);
     InitAudiobuffer(true);
 
+    AUDIO_INFO_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);
     return SUCCESS;
 }
 
 void AudioEndpointInner::InitAudiobuffer(bool resetReadWritePos)
 {
+    CHECK_AND_RETURN_LOG((dstAudioBuffer_ != nullptr), "%{public}s: dst audio buffer is null.", __func__);
     if (resetReadWritePos) {
         dstAudioBuffer_->ResetCurReadWritePos(0, 0);
     }
@@ -322,7 +412,11 @@ void AudioEndpointInner::InitAudiobuffer(bool resetReadWritePos)
             AUDIO_ERR_LOG("InitAudiobuffer failed.");
             return;
         }
-        spanInfo->spanStatus = SPAN_READ_DONE;
+        if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+            spanInfo->spanStatus = SPAN_WRITE_DONE;
+        } else {
+            spanInfo->spanStatus = SPAN_READ_DONE;
+        }
         spanInfo->offsetInFrame = 0;
 
         spanInfo->readStartTime = 0;
@@ -358,6 +452,33 @@ bool AudioEndpointInner::IsAnyProcessRunning()
     return isRunning;
 }
 
+void AudioEndpointInner::RecordReSyncPosition()
+{
+    uint64_t curHdiWritePos = 0;
+    int64_t writeTime = GetDeviceHandleInfo(curHdiWritePos, writeTime);
+    AUDIO_INFO_LOG("%{public}s get capturer info, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRIu64".",
+        __func__, curHdiWritePos, writeTime);
+    int64_t temp = ClockTime::GetCurNano() - writeTime;
+    if (temp > spanDuration_) {
+        AUDIO_ERR_LOG("%{public}s GetDeviceHandleInfo cost long time %{public}" PRIu64".", __func__, temp);
+    }
+
+    writeTimeModel_.ResetFrameStamp(curHdiWritePos, writeTime);
+    uint64_t nextDstReadPos = curHdiWritePos;
+    uint64_t nextDstWritePos = curHdiWritePos + dstSpanSizeInframe_;
+    InitAudiobuffer(false);
+    int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextDstReadPos, nextDstWritePos);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("ResetCurReadWritePos failed.");
+        return;
+    }
+
+    SpanInfo *nextReadSapn = dstAudioBuffer_->GetSpanInfo(nextDstReadPos);
+    CHECK_AND_RETURN_LOG(nextReadSapn != nullptr, "GetSpanInfo failed.");
+    nextReadSapn->offsetInFrame = nextDstReadPos;
+    nextReadSapn->spanStatus = SpanStatus::SPAN_WRITE_DONE;
+}
+
 void AudioEndpointInner::ReSyncPosition()
 {
     uint64_t curHdiReadPos = 0;
@@ -390,17 +511,25 @@ void AudioEndpointInner::ReSyncPosition()
 
 bool AudioEndpointInner::StartDevice()
 {
-    AUDIO_INFO_LOG("StartDevice in.");
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     // how to modify the status while unlinked and started?
     if (endpointStatus_ != IDEL) {
         AUDIO_ERR_LOG("Endpoint status is not IDEL");
         return false;
     }
     endpointStatus_ = STARTING;
-    if (fastSink_->Start() != SUCCESS) {
-        AUDIO_ERR_LOG("Sink start failed.");
-        return false;
+    if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+        if (fastSource_ == nullptr || fastSource_->Start() != SUCCESS) {
+            AUDIO_ERR_LOG("Source start failed.");
+            return false;
+        }
+    } else {
+        if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
+            AUDIO_ERR_LOG("Sink start failed.");
+            return false;
+        }
     }
+
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
     endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
@@ -467,9 +596,15 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStrea
         }
         std::shared_ptr<OHAudioBuffer> processBuffer = (*processItr)->GetStreamBuffer();
         CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_OPERATION_FAILED, "Process found but buffer is null");
-        processBuffer->SetHandleInfo(processBuffer->GetCurReadFrame(), lastHandleProcessTime_);
-        AUDIO_INFO_LOG("UpdateHandleInfo to pos %{public}" PRIu64" time %{public}" PRId64" ",
-            processBuffer->GetCurReadFrame(), lastHandleProcessTime_);
+        uint64_t proHandleFrame = 0;
+        if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+            proHandleFrame = processBuffer->GetCurWriteFrame();
+        } else {
+            proHandleFrame = processBuffer->GetCurReadFrame();
+        }
+        processBuffer->SetHandleInfo(proHandleFrame, lastHandleProcessTime_);
+        AUDIO_INFO_LOG("%{public}s set process buf handle pos %{public}" PRIu64" time %{public}" PRId64" ",
+            __func__, proHandleFrame, lastHandleProcessTime_);
         isFind = true;
         break;
     }
@@ -698,10 +833,9 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     return true;
 }
 
-int64_t AudioEndpointInner::GetPredictNextHandleTime(uint64_t posInFrame)
+int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
 {
     Trace trace("AudioEndpoint::GetPredictNextRead");
-    int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
     uint64_t handleSpanCout = posInFrame / dstSpanSizeInframe_;
     uint32_t startPeriodCount = 20; // sync each time when start
     uint32_t oneBigPeriodCount = 40; // 200ms
@@ -712,19 +846,78 @@ int64_t AudioEndpointInner::GetPredictNextHandleTime(uint64_t posInFrame)
         if (GetDeviceHandleInfo(readFrame, readtime)) {
             readTimeModel_.UpdataFrameStamp(readFrame, readtime);
         }
-        nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
     }
 
+    int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
     return nextHdiReadTime;
+}
+
+int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
+{
+    AUDIO_INFO_LOG("%{public}s enter, posInFrame %{public}" PRIu64".", __func__, posInFrame);
+    uint64_t handleSpanCout = posInFrame / dstSpanSizeInframe_;
+    uint32_t startPeriodCount = 20;
+    uint32_t oneBigPeriodCount = 40;
+    if (handleSpanCout < startPeriodCount || handleSpanCout % oneBigPeriodCount == 0) {
+        // todo sleep random little time but less than nextHdiReadTime - 2ms
+        uint64_t writeFrame = 0;
+        int64_t writeTime = 0;
+        if (GetDeviceHandleInfo(writeFrame, writeTime)) {
+            writeTimeModel_.UpdataFrameStamp(writeFrame, writeTime);
+        }
+    }
+    int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);
+    return nextHdiWriteTime;
+}
+
+bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime)
+{
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
+    int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
+    wakeUpTime = nextHdiWriteTime + serverAheadReadTime_;
+
+    int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set dst buffer write frame fail, ret %{public}d.",
+        __func__, ret);
+    ret = dstAudioBuffer_->SetCurReadFrame(nextHandlePos);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set dst buffer read frame fail, ret %{public}d.",
+        __func__, ret);
+
+    {
+        std::lock_guard<std::mutex> lock(listLock_);
+        for (size_t i = 0; i < processBufferList_.size(); i++) {
+            if (processBufferList_[i] == nullptr) {
+                AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
+                continue;
+            }
+            uint64_t eachCurWritePos = processBufferList_[i]->GetCurWriteFrame();
+            SpanInfo *tempSpan = processBufferList_[i]->GetSpanInfo(eachCurWritePos);
+            CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false, "GetSpanInfo failed, can not get process read span");
+            if (tempSpan->spanStatus.load() != SpanStatus::SPAN_WRITE_DONE) {
+                AUDIO_ERR_LOG("%{public}s process buffer %{public}zu info error, spanStatus %{public}d.",
+                    __func__, i, tempSpan->spanStatus.load());
+                tempSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
+            }
+            lastHandleProcessTime_ = ClockTime::GetCurNano();
+            processBufferList_[i]->SetHandleInfo(eachCurWritePos, lastHandleProcessTime_);
+
+            ret = processBufferList_[i]->SetCurWriteFrame(eachCurWritePos+ dstSpanSizeInframe_);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("%{public}s set dst buffer read frame fail, ret %{public}d.", __func__, ret);
+                continue;
+            }
+        }
+    }
+    AUDIO_INFO_LOG("%{public}s end.", __func__);
+    return true;
 }
 
 bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime)
 {
     Trace prepareTrace("AudioEndpoint::PrepareNextLoop");
     uint64_t nextHandlePos = curWritePos + dstSpanSizeInframe_;
-
-    int64_t nextHdiReadTime = GetPredictNextHandleTime(nextHandlePos);
-
+    int64_t nextHdiReadTime = GetPredictNextReadTime(nextHandlePos);
     wakeUpTime = nextHdiReadTime - serverAheadReadTime_;
 
     SpanInfo *nextWriteSpan = dstAudioBuffer_->GetSpanInfo(nextHandlePos);
@@ -767,20 +960,30 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
 bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime)
 {
     Trace trace("AudioEndpoint::GetDeviceHandleInfo");
-    if (fastSink_ == nullptr || !fastSink_->IsInited()) {
-        AUDIO_ERR_LOG("GetDeviceHandleInfo failed: sink is not inited.");
-        return false;
-    }
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
-    // GetMmapHandlePosition will call using ipc.
-    int32_t ret = fastSink_->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+    int32_t ret = 0;
+    if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+        if (fastSource_ == nullptr || !fastSource_->IsInited()) {
+            AUDIO_ERR_LOG("Source start failed.");
+            return false;
+        }
+        // GetMmapHandlePosition will call using ipc.
+        ret = fastSource_->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+    } else {
+        if (fastSink_ == nullptr || !fastSink_->IsInited()) {
+            AUDIO_ERR_LOG("GetDeviceHandleInfo failed: sink is not inited.");
+            return false;
+        }
+        // GetMmapHandlePosition will call using ipc.
+        ret = fastSink_->GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+    }
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Call sink GetMmapHandlePosition failed: %{public}d", ret);
+        AUDIO_ERR_LOG("Call adapter GetMmapHandlePosition failed: %{public}d", ret);
         return false;
     }
-    nanoTime = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
 
+    nanoTime = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
     nanoTime += DELTA_TO_REAL_READ_START_TIME; // global delay in server
     return true;
 }
@@ -846,12 +1049,112 @@ bool AudioEndpointInner::KeepWorkloopRunning()
     return false;
 }
 
+void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
+{
+    std::lock_guard<std::mutex> lock(listLock_);
+    for (size_t i = 0; i < processBufferList_.size(); i++) {
+        if (processBufferList_[i] == nullptr) {
+            AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
+            continue;
+        }
+        uint64_t curWritePos = processBufferList_[i]->GetCurWriteFrame();
+        SpanInfo *curWriteSpan = processBufferList_[i]->GetSpanInfo(curWritePos);
+        if (curWriteSpan == nullptr) {
+            AUDIO_ERR_LOG("%{public}s get write span info of process service %{public}zu fail.", __func__, i);
+            continue;
+        }
+        curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITTING);
+        curWriteSpan->writeStartTime = ClockTime::GetCurNano();
+        BufferDesc writeBuf;
+        int32_t ret = processBufferList_[i]->GetWriteBuffer(curWritePos, writeBuf);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("%{public}s get write buffer fail, ret %{public}d.", __func__, ret);
+            continue;
+        }
+        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+            static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+        if (ret != EOK) {
+            AUDIO_ERR_LOG("%{public}s memcpy data to process service %{public}zu fail, ret %{public}d.",
+                __func__, i, ret);
+            continue;
+        }
+        curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
+        curWriteSpan->writeDoneTime = ClockTime::GetCurNano();
+    }
+}
+
+int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
+{
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s dst audio buffer is null.", __func__);
+    SpanInfo *curReadSpan = dstAudioBuffer_->GetSpanInfo(curReadPos);
+    CHECK_AND_RETURN_RET_LOG(curReadSpan != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s get source read span info of source adapter fail.", __func__);
+    curReadSpan->readStartTime = ClockTime::GetCurNano();
+    curReadSpan->spanStatus.store(SpanStatus::SPAN_READING);
+    BufferDesc readBuf;
+    int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get read buffer fail, ret %{public}d.", __func__, ret);
+#ifdef DUMP_PROCESS_FILE
+    if (dump_hdi_ != nullptr) {
+        fwrite(static_cast<void *>(readBuf.buffer), 1, readBuf.bufLength, dump_hdi_);
+    }
+#endif
+
+    WriteToProcessBuffers(readBuf);
+    curReadSpan->readDoneTime = ClockTime::GetCurNano();
+    curReadSpan->spanStatus.store(SpanStatus::SPAN_READ_DONE);
+    return SUCCESS;
+}
+
+void AudioEndpointInner::RecordEndpointWorkLoopFuc()
+{
+    int64_t curTime = 0;
+    uint64_t curReadPos = 0;
+    int64_t wakeUpTime = ClockTime::GetCurNano();
+    AUDIO_INFO_LOG("Record endpoint work loop fuc start.");
+    while (!isThreadEnd_) {
+        if (!KeepWorkloopRunning()) {
+            continue;
+        }
+        AUDIO_INFO_LOG("%{public}s Record endpoint work loop fuc running.", __func__);
+        threadStatus_ = INRUNNING;
+        if (needReSyncPosition_) {
+            RecordReSyncPosition();
+            wakeUpTime = ClockTime::GetCurNano();
+            needReSyncPosition_ = false;
+            continue;
+        }
+        curTime = ClockTime::GetCurNano();
+        Trace loopTrace("Record_loop_trace");
+        if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("%{public}s Wake up too late!", __func__);
+        }
+
+        curReadPos = dstAudioBuffer_->GetCurReadFrame();
+        if (ReadFromEndpoint(curReadPos) != SUCCESS) {
+            AUDIO_ERR_LOG("%{public}s read from endpoint to process service fail.", __func__);
+            break;
+        }
+
+        if (!RecordPrepareNextLoop(curReadPos, wakeUpTime)) {
+            AUDIO_ERR_LOG("PrepareNextLoop failed!");
+            break;
+        }
+
+        loopTrace.End();
+        threadStatus_ = SLEEPING;
+        ClockTime::AbsoluteSleep(wakeUpTime);
+    }
+    AUDIO_INFO_LOG("Record endpoint work loop fuc end");
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
-    AUDIO_INFO_LOG("EndpointWorkLoopFuc start");
+    AUDIO_INFO_LOG("Endpoint work loop fuc start");
     int32_t ret = 0;
     while (!isThreadEnd_) {
         if (!KeepWorkloopRunning()) {
@@ -895,7 +1198,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
-    AUDIO_INFO_LOG("EndpointWorkLoopFuc end with ret %{public}d", ret);
+    AUDIO_INFO_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

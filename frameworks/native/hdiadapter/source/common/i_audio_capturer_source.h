@@ -41,7 +41,7 @@ class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *devceClass, const char *deviceNetworkId);
 
-    virtual int32_t Init(IAudioSourceAttr &atrr) = 0;
+    virtual int32_t Init(IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
 
@@ -61,6 +61,15 @@ public:
     virtual uint64_t GetTransactionId() = 0;
 
     virtual ~IAudioCapturerSource() = default;
+};
+
+class IMmapAudioCapturerSource : public IAudioCapturerSource {
+public:
+    IMmapAudioCapturerSource() = default;
+    virtual ~IMmapAudioCapturerSource() = default;
+    virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+        uint32_t &byteSizePerFrame) = 0;
+    virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
