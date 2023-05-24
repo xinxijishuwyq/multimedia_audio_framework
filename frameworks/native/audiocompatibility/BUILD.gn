@@ -47,7 +47,6 @@ ohos_shared_library("audio_capturer_gateway") {
   deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
 
   if ("${product_name}" == "m40") {
-    deps += [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
   } else {
     deps +=
         [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
@@ -95,7 +94,6 @@ ohos_shared_library("audio_renderer_gateway") {
   deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
 
   if ("${product_name}" == "m40") {
-    deps += [ "//drivers/peripheral/adapter/audio/interfaces:hdi_audio_client" ]
   } else {
     deps +=
         [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
