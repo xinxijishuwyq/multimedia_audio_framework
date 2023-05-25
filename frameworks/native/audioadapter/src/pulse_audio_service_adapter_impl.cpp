@@ -271,6 +271,7 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSource(string name)
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERR_OPERATION_FAILED;
     }
+    isSetDefaultSource_ = true;
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
@@ -669,6 +670,11 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 
     if (mContext == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] GetAllSourceOutputs mContext is nullptr");
+        return userData->sourceOutputList;
+    }
+
+    if (!isSetDefaultSource_) {
+        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] default source has not been set.");
         return userData->sourceOutputList;
     }
 
