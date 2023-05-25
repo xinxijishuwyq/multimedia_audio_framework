@@ -153,6 +153,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
         AUDIO_ERR_LOG("AudioStreamCollector::AddRendererStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
     }
+    rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
@@ -182,6 +183,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
         AUDIO_ERR_LOG("AudioStreamCollector::AddCapturerStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
     }
+    capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
@@ -446,7 +448,8 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator audioRendererBegin = audioRendererChangeInfos_.begin();
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRendererBegin;
-        if (audioRendererChangeInfo == nullptr || audioRendererChangeInfo->clientUID != uid) {
+        if (audioRendererChangeInfo == nullptr ||
+            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid)) {
             audioRendererBegin++;
             continue;
         }
