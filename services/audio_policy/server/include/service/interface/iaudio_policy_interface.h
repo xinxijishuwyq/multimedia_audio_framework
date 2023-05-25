@@ -81,6 +81,10 @@ public:
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
+    virtual void SetVolumeForSwitchDevice(InternalDeviceType deviceType) = 0;
+
+    virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
+
     virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
 
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;

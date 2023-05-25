@@ -63,7 +63,7 @@ void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerProxy OnCapturerStateChange entered");
 
