@@ -27,7 +27,10 @@ class AudioManagerInterruptCallbackNapi : public AudioManagerCallback {
 public:
     explicit AudioManagerInterruptCallbackNapi(napi_env env);
     virtual ~AudioManagerInterruptCallbackNapi();
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    void RemoveCallbackReference(const std::string &callbackName, napi_value args);
+    void RemoveAllCallbackReferences(const std::string &callbackName);
+    int32_t GetInterruptCallbackListSize();
     void OnInterrupt(const InterruptAction &interruptAction) override;
 
 private:
@@ -41,7 +44,7 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> audioManagerInterruptCallback_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> audioManagerInterruptCallbackList_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -198,8 +198,6 @@ void AudioManagerCallbackNapi::SaveRoutingManagerDeviceChangeCbRef(DeviceFlag de
 void AudioManagerCallbackNapi::RemoveRoutingManagerDeviceChangeCbRef(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    bool isEquals = false;
-    napi_value copyValue = nullptr;
 
     for (auto it = routingManagerDeviceChangeCbList_.begin(); it != routingManagerDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);

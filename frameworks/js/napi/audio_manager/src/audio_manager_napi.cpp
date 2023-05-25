@@ -2342,7 +2342,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "SetAudioManagerInterruptCallback Failed");
             }
             std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
-            std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
+                std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
             cb->SaveCallbackReference(callbackName, args[PARAM2]);
             AudioInterrupt audioInterrupt;
             status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
@@ -2461,29 +2461,40 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
             AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }
-        if (argCount == ARGS_THREE) {
-            if (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function) {
-                AUDIO_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 3");
-                AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-                return undefinedResult;
-            }
-        }
-        AudioInterrupt audioInterrupt;
-        status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
-        int32_t ret = managerNapi->audioMngr_->AbandonAudioFocus(audioInterrupt);
-        if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi::Off AbandonAudioFocus Failed");
-        }
-        ret = managerNapi->audioMngr_->UnsetAudioManagerInterruptCallback();
-        if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi::Off UnsetAudioManagerInterruptCallback Failed");
+        if ((argCount == ARGS_THREE) &&
+            (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function)) {
+            AUDIO_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 3");
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }
+        int32_t callbackCount = 0;
         if (managerNapi->interruptCallbackNapi_ != nullptr) {
-            managerNapi->interruptCallbackNapi_.reset();
-            managerNapi->interruptCallbackNapi_ = nullptr;
+            std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
+                std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
+            if (argCount == ARGS_TWO) {
+                cb->RemoveAllCallbackReferences(callbackName);
+            } else if (argCount == ARGS_THREE) {
+                cb->RemoveCallbackReference(callbackName, args[PARAM2]);
+            }
+            callbackCount = cb->GetInterruptCallbackListSize();
         }
-        AUDIO_INFO_LOG("AudioManagerNapi::Off Abandon Focus and UnSetAudioInterruptCallback success");
+        AUDIO_INFO_LOG("AudioManagerNapi::Remove Callback Reference success");
+        if (callbackCount == 0) {
+            AudioInterrupt audioInterrupt;
+            status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
+            int32_t ret = managerNapi->audioMngr_->AbandonAudioFocus(audioInterrupt);
+            if (ret) {
+                AUDIO_ERR_LOG("AudioManagerNapi::Off AbandonAudioFocus Failed");
+            }
+            ret = managerNapi->audioMngr_->UnsetAudioManagerInterruptCallback();
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
+                "AudioManagerNapi::Off UnsetAudioManagerInterruptCallback Failed");
+            if (managerNapi->interruptCallbackNapi_ != nullptr) {
+                managerNapi->interruptCallbackNapi_.reset();
+                managerNapi->interruptCallbackNapi_ = nullptr;
+            }
+            AUDIO_INFO_LOG("AudioManagerNapi::Off Abandon Focus and UnSetAudioInterruptCallback success");
+        }
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterDeviceChangeCallback(env, args[PARAM1], managerNapi);
     } else {
@@ -2491,7 +2502,6 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
     }
     return undefinedResult;
 }
-
 
 napi_value AudioManagerNapi::GetStreamManager(napi_env env, napi_callback_info info)
 {

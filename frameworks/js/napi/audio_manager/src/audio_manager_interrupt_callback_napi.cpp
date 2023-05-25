@@ -33,19 +33,74 @@ AudioManagerInterruptCallbackNapi::~AudioManagerInterruptCallbackNapi()
 
 void AudioManagerInterruptCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
+    if (callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
+        AUDIO_ERR_LOG("SaveCallbackReference: Unknown callback type: %{public}s", callbackName.c_str());
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(mutex_);
+    bool isSameCallback = true;
+    for (auto it = audioManagerInterruptCallbackList_.begin(); it != audioManagerInterruptCallbackList_.end(); ++it) {
+        isSameCallback = AudioCommonNapi::IsSameCallback(env_, args, (*it)->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: the callback already exists");
+    }
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-                         "SaveCallbackReference: creating reference for callback fail");
+        "SaveCallbackReference: creating reference for callback fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == INTERRUPT_CALLBACK_NAME) {
-        audioManagerInterruptCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("SaveCallbackReference: Unknown callback type: %{public}s", callbackName.c_str());
-    }
+    audioManagerInterruptCallbackList_.push_back(cb);
+    AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}d]", audioManagerInterruptCallbackList_.size());
 }
+
+void AudioManagerInterruptCallbackNapi::RemoveCallbackReference(const std::string &callbackName, napi_value args)
+{
+    if (callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
+        AUDIO_ERR_LOG("RemoveCallbackReference: Unknown callback type: %{public}s", callbackName.c_str());
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = audioManagerInterruptCallbackList_.begin(); it != audioManagerInterruptCallbackList_.end(); ++it) {
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, args, (*it)->cb_);
+        if (isSameCallback) {
+            napi_status status = napi_delete_reference(env_, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+            CHECK_AND_RETURN_LOG(status == napi_ok, "RemoveCallbackReference: delete reference for callback fail");
+            audioManagerInterruptCallbackList_.erase(it);
+            AUDIO_INFO_LOG("RemoveCallbackReference success, list size [%{public}d]",
+                audioManagerInterruptCallbackList_.size());
+            return;
+        }
+    }
+    AUDIO_ERR_LOG("RemoveCallbackReference: js callback no find");
+}
+
+void AudioManagerInterruptCallbackNapi::RemoveAllCallbackReferences(const std::string &callbackName)
+{
+    if (callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
+        AUDIO_ERR_LOG("RemoveAllCallbackReferences: Unknown callback type: %{public}s", callbackName.c_str());
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = audioManagerInterruptCallbackList_.begin(); it != audioManagerInterruptCallbackList_.end(); ++it) {
+        napi_status ret = napi_delete_reference(env_, (*it)->cb_);
+        if (ret != napi_ok) {
+            AUDIO_ERR_LOG("RemoveAllCallbackReferences: napi_delete_reference err.");
+        }
+        (*it)->cb_ = nullptr;
+    }
+    audioManagerInterruptCallbackList_.clear();
+    AUDIO_INFO_LOG("RemoveAllCallbackReference: remove all js callbacks success");
+}
+
+int32_t AudioManagerInterruptCallbackNapi::GetInterruptCallbackListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return audioManagerInterruptCallbackList_.size();
+}
+
 
 static void SetValueInt32(const napi_env &env, const std::string &fieldStr, const int intValue, napi_value &result)
 {
@@ -77,13 +132,16 @@ void AudioManagerInterruptCallbackNapi::OnInterrupt(const InterruptAction &inter
     AUDIO_INFO_LOG("OnInterrupt action: %{public}d IntType: %{public}d, IntHint: %{public}d, activated: %{public}d",
         interruptAction.actionType, interruptAction.interruptType, interruptAction.interruptHint,
         interruptAction.activated);
-    CHECK_AND_RETURN_LOG(audioManagerInterruptCallback_ != nullptr, "Cannot find the reference of interrupt callback");
-    std::unique_ptr<AudioManagerInterruptJsCallback> cb = std::make_unique<AudioManagerInterruptJsCallback>();
-    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
-    cb->callback = audioManagerInterruptCallback_;
-    cb->callbackName = INTERRUPT_CALLBACK_NAME;
-    cb->interruptAction = interruptAction;
-    return OnJsCallbackAudioManagerInterrupt(cb);
+    CHECK_AND_RETURN_LOG(audioManagerInterruptCallbackList_.size() != 0,
+        "Cannot find the reference of interrupt callback");
+    for (auto it = audioManagerInterruptCallbackList_.begin(); it != audioManagerInterruptCallbackList_.end(); ++it) {
+        std::unique_ptr<AudioManagerInterruptJsCallback> cb = std::make_unique<AudioManagerInterruptJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+        cb->callback = *it;
+        cb->callbackName = INTERRUPT_CALLBACK_NAME;
+        cb->interruptAction = interruptAction;
+        OnJsCallbackAudioManagerInterrupt(cb);
+    }
 }
 
 void AudioManagerInterruptCallbackNapi::OnJsCallbackAudioManagerInterrupt (
