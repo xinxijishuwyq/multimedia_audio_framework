@@ -94,6 +94,7 @@ private:
     static std::unordered_map<uint32_t, uint32_t> sourceIndexSessionIDMap;
     std::mutex mMutex;
     bool isSetDefaultSink_ = false;
+    bool isSetDefaultSource_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
