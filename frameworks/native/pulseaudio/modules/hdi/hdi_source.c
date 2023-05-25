@@ -97,8 +97,9 @@ static char *GetStateInfo(pa_source_state_t state)
 static void UserdataFree(struct Userdata *u)
 {
     pa_assert(u);
-    if (u->source)
+    if (u->source) {
         pa_source_unlink(u->source);
+    }
 
     if (u->thread) {
         pa_asyncmsgq_send(u->thread_mq.inq, NULL, PA_MESSAGE_SHUTDOWN, NULL, 0, NULL);
@@ -107,11 +108,13 @@ static void UserdataFree(struct Userdata *u)
 
     pa_thread_mq_done(&u->thread_mq);
 
-    if (u->source)
+    if (u->source) {
         pa_source_unref(u->source);
+    }
 
-    if (u->rtpoll)
+    if (u->rtpoll) {
         pa_rtpoll_free(u->rtpoll);
+    }
 
     if (u->sourceAdapter) {
         u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
@@ -227,12 +230,13 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 static void ThreadFuncCapturerTimer(void *userdata)
 {
     struct Userdata *u = userdata;
-    bool timer_elapsed = false;
+    bool timerElapsed = false;
 
     pa_assert(u);
 
-    if (u->core->realtime_scheduling)
+    if (u->core->realtime_scheduling) {
         pa_thread_make_realtime(u->core->realtime_priority);
+    }
 
     pa_thread_mq_install(&u->thread_mq);
     u->timestamp = pa_rtclock_now();
@@ -246,9 +250,9 @@ static void ThreadFuncCapturerTimer(void *userdata)
             pa_usec_t now;
 
             now = pa_rtclock_now();
-            AUDIO_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timer_elapsed: %{public}d", now, timer_elapsed);
+            AUDIO_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timerElapsed: %{public}d", now, timerElapsed);
 
-            if (timer_elapsed) {
+            if (timerElapsed) {
                 chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
                 if (chunk.length > 0) {
                     ret = GetCapturerFrameFromHdi(&chunk, u);
@@ -278,7 +282,7 @@ static void ThreadFuncCapturerTimer(void *userdata)
             return;
         }
 
-        timer_elapsed = pa_rtpoll_timer_elapsed(u->rtpoll);
+        timerElapsed = pa_rtpoll_timer_elapsed(u->rtpoll);
 
         if (ret == 0) {
             return;

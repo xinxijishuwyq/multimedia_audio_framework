@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#ifndef ST_AUDIO_EFFECT_SERVER_H
+#define ST_AUDIO_EFFECT_SERVER_H
+
 #include <cassert>
 #include <cstdint>
 #include <stddef.h>
@@ -20,9 +24,6 @@
 #include <string>
 #include <vector>
 #include "audio_info.h"
-
-#ifndef ST_AUDIO_EFFECT_SERVER_H
-#define ST_AUDIO_EFFECT_SERVER_H
 
 #define AUDIO_EFFECT_LIBRARY_INFO_SYM AELI
 #define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"

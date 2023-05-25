@@ -144,9 +144,9 @@ BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 
 BluetoothRendererSink *BluetoothRendererSink::GetInstance()
 {
-    static BluetoothRendererSinkInner audioRenderer_;
+    static BluetoothRendererSinkInner audioRenderer;
 
-    return &audioRenderer_;
+    return &audioRenderer;
 }
 
 bool BluetoothRendererSinkInner::IsInited(void)
