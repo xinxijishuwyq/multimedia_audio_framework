@@ -215,7 +215,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         AUDIO_INFO_LOG("AudioProcess join work thread end");
     }
     if (isInited_) {
-        Release();
+        AudioProcessInClientInner::Release();
     }
 #ifdef DUMP_CLIENT
     if (dcp_) {

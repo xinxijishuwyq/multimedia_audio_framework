@@ -33,7 +33,7 @@ AudioCapturerFileSource::AudioCapturerFileSource()
 
 AudioCapturerFileSource::~AudioCapturerFileSource()
 {
-    DeInit();
+    AudioCapturerFileSource::DeInit();
 }
 
 int32_t AudioCapturerFileSource::SetVolume(float left, float right)
