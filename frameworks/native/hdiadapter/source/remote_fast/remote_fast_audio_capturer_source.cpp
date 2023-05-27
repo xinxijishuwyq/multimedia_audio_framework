@@ -138,12 +138,9 @@ int32_t RemoteFastAudioCapturerSource::Init(IAudioSourceAttr &attr)
     }
 
     if (!isCapturerCreated_.load()) {
-        if (CreateCapture(audioPort_) != SUCCESS) {
-            AUDIO_ERR_LOG("Create capture failed, Audio Port: %{public}d.", audioPort_.portId);
-            return ERR_NOT_STARTED;
-        }
+        CHECK_AND_RETURN_RET_LOG(CreateCapture(audioPort_) == SUCCESS, ERR_NOT_STARTED,
+            "Create capture failed, Audio Port: %{public}d.", audioPort_.portId);
     }
-    AUDIO_INFO_LOG("%{public}s end.", __func__);
     capturerInited_.store(true);
 
 #ifdef DEBUG_DIRECT_USE_HDI
@@ -155,6 +152,7 @@ int32_t RemoteFastAudioCapturerSource::Init(IAudioSourceAttr &attr)
     }
 #endif // DEBUG_DIRECT_USE_HDI
 
+    AUDIO_INFO_LOG("%{public}s end.", __func__);
     return SUCCESS;
 }
 
@@ -351,7 +349,6 @@ int32_t RemoteFastAudioCapturerSource::Start(void)
 
     ClockTime::RelativeSleep(CAPTURE_FIRST_FRIME_WAIT_NANO);
     while (true) {
-        AUDIO_INFO_LOG("%{public}s wait remote fast capturer get first frame.", __func__);
         uint64_t curHdiWritePos = 0;
         int64_t timeSec = 0;
         int64_t timeNanoSec = 0;
@@ -362,6 +359,7 @@ int32_t RemoteFastAudioCapturerSource::Start(void)
         if (writeTime > 0) {
             break;
         }
+        AUDIO_INFO_LOG("%{public}s wait 2ms for remote fast capturer get first frame.", __func__);
         ClockTime::RelativeSleep(CAPTURE_RESYNC_SLEEP_NANO);
     }
     started_.store(true);

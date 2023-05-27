@@ -467,23 +467,24 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
 
     uint64_t deltaToBase = writeFrame - basePos; // writeFrame % spanSizeInFrame_ --> 0
     CHECK_AND_RETURN_RET_LOG(deltaToBase / spanSizeInFrame_ * spanSizeInFrame_ == deltaToBase, ERR_INVALID_PARAM,
-        "invalid deltaToBase, writeFrame:%{public}" PRIu64".", writeFrame);
+        "Invalid deltaToBase, writeFrame:%{public}" PRIu64".", writeFrame);
 
     // check new pos in range: base ~ base + 2*total
     if (deltaToBase >= (totalSizeInFrame_ + totalSizeInFrame_)) {
-        AUDIO_ERR_LOG("Invalid writeFrame:%{public}" PRIu64", out of base range.", writeFrame);
+        AUDIO_ERR_LOG("Invalid writeFrame %{public}" PRIu64" out of base range.", writeFrame);
         return ERR_INVALID_PARAM;
     }
 
     // check new pos in (read + cache) range: read ~ read + totalSize - 1*spanSize
     uint64_t curRead = basicBufferInfo_->curReadFrame.load();
     if (writeFrame < curRead || writeFrame - curRead > totalSizeInFrame_ - spanSizeInFrame_) {
-        AUDIO_ERR_LOG("Invalid writeFrame:%{public}" PRIu64". out of cache range", writeFrame);
+        AUDIO_ERR_LOG("Invalid writeFrame %{public}" PRIu64" out of cache range, curRead %{public}" PRIu64".",
+            writeFrame, curRead);
         return ERR_INVALID_PARAM;
     }
 
     if (writeFrame - oldWritePos != spanSizeInFrame_) {
-        AUDIO_WARNING_LOG("not advanced in one step. new pos:%{public}" PRIu64", old pos:%{public}" PRIu64".",
+        AUDIO_WARNING_LOG("Not advanced in one step. newWritePos %{public}" PRIu64", oldWritePos %{public}" PRIu64".",
             writeFrame, oldWritePos);
     }
 
@@ -501,13 +502,14 @@ int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
 
     // new read position should not be bigger than write position or less than old read position
     if (readFrame < oldReadPos || readFrame > basicBufferInfo_->curWriteFrame.load()) {
-        AUDIO_ERR_LOG("Invalid readFrame:%{public}" PRIu64".", readFrame);
+        AUDIO_ERR_LOG("Invalid readFrame %{public}" PRIu64".", readFrame);
         return ERR_INVALID_PARAM;
     }
 
     uint64_t deltaToBase = readFrame - oldBasePos;
     CHECK_AND_RETURN_RET_LOG((deltaToBase / spanSizeInFrame_ * spanSizeInFrame_) == deltaToBase,
-        ERR_INVALID_PARAM, "invalid deltaToBase, readFrame:%{public}" PRIu64".", readFrame);
+        ERR_INVALID_PARAM, "Invalid deltaToBase, readFrame %{public}" PRIu64", oldBasePos %{public}" PRIu64".",
+            readFrame, oldBasePos);
 
     if (deltaToBase > totalSizeInFrame_) {
         AUDIO_ERR_LOG("Invalid readFrame:%{public}" PRIu64", out of range.", readFrame);
@@ -517,7 +519,7 @@ int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
     }
 
     if (readFrame - oldReadPos != spanSizeInFrame_) {
-        AUDIO_WARNING_LOG("not advanced in one step. new readpos:%{public}" PRIu64", old readpos:%{public}" PRIu64".",
+        AUDIO_WARNING_LOG("Not advanced in one step. newReadPos %{public}" PRIu64", oldReadPos %{public}" PRIu64".",
             readFrame, oldReadPos);
     }
 

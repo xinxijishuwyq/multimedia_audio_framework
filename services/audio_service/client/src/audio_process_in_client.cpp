@@ -75,6 +75,7 @@ private:
     void CallClientHandleCurrent();
     bool FinishHandleCurrent(uint64_t &curWritePos, int64_t &clientWriteCost);
     int32_t ReadFromProcessClient() const;
+    int32_t RecordReSyncServicePos();
     int32_t RecordPrepareCurrent(uint64_t curReadPos);
     int32_t RecordFinishHandleCurrent(uint64_t &curReadPos, int64_t &clientReadCost);
 
@@ -115,6 +116,7 @@ private:
     std::mutex statusSwitchLock_;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     bool isInited_ = false;
+    bool needReSyncPosition_ = true;
 
     int32_t processVolume_ = PROCESS_VOLUME_MAX; // 0 ~ 65536
     LinearPosTimeModel handleTimeModel_;
@@ -273,7 +275,8 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 
     int waitThreadStartTime = 5; // wait for thread start.
     while (threadStatus_.load() == INVALID) {
-        AUDIO_INFO_LOG("wait for ProcessCallbackFuc started...");
+        AUDIO_INFO_LOG("%{public}s wait %{public}d ms for %{public}s started...", __func__, waitThreadStartTime,
+            config.audioMode == AUDIO_MODE_RECORD ? "RecordProcessCallbackFuc" : "ProcessCallbackFuc");
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION * waitThreadStartTime);
     }
 
@@ -703,9 +706,14 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         }
         threadStatus_ = INRUNNING;
         AUDIO_INFO_LOG("%{public}s thread running.", __func__);
+        if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
+            wakeUpTime = ClockTime::GetCurNano();
+            needReSyncPosition_ = false;
+            continue;
+        }
         int64_t curTime = ClockTime::GetCurNano();
         if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_INFO_LOG("%{public}s wake up too late.", __func__);
+            AUDIO_WARNING_LOG("%{public}s wake up too late.", __func__);
             wakeUpTime = curTime;
         }
 
@@ -717,7 +725,7 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         CallClientHandleCurrent();
         if (RecordFinishHandleCurrent(curReadPos, clientReadCost) != SUCCESS) {
             AUDIO_ERR_LOG("%{public}s finish handle current fail.", __func__);
-            break;
+            continue;
         }
 
         if (PrepareNext(curReadPos, wakeUpTime) != SUCCESS) {
@@ -736,6 +744,27 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         }
     }
     AUDIO_INFO_LOG("%{public}s end.", __func__);
+}
+
+int32_t AudioProcessInClientInner::RecordReSyncServicePos()
+{
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr && audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s process proxy or audio buffer is null.", __func__);
+    uint64_t serverHandlePos = 0;
+    int64_t serverHandleTime = 0;
+    int32_t ret = processProxy_->RequestHandleInfo();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s request handle info fail, ret %{public}d.",
+        __func__, ret);
+
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime), ERR_OPERATION_FAILED,
+        "%{public}s get handle info fail.", __func__);
+    AUDIO_INFO_LOG("%{public}s get handle info OK, serverHandlePos %{public}" PRIu64", serverHandleTime "
+        "%{public}" PRId64".", __func__, serverHandlePos, serverHandleTime);
+
+    ret = audioBuffer_->SetCurReadFrame(serverHandlePos);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s set curReadPos fail, ret %{public}d.", __func__, ret);
+    return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::RecordPrepareCurrent(uint64_t curReadPos)
