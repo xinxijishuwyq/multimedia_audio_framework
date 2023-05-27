@@ -124,6 +124,7 @@ private:
     int32_t PrepareMmapBuffer();
     void ReleaseMmapBuffer();
 
+    int32_t CheckPositionTime();
     void PreparePosition();
 
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
@@ -540,6 +541,31 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 #endif
 }
 
+int32_t FastAudioRendererSinkInner::CheckPositionTime()
+{
+    int32_t tryCount = 10;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t maxHandleCost = 10000000; // ns
+    int64_t waitTime = 2000000; // 2ms
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(waitTime); // us
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
+            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
+}
+
 int32_t FastAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
@@ -555,6 +581,10 @@ int32_t FastAudioRendererSinkInner::Start(void)
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Start failed!");
+            return ERR_NOT_STARTED;
+        }
+        if (CheckPositionTime() != SUCCESS) {
+            AUDIO_ERR_LOG("FastAudioRendererSink::CheckPositionTime failed!");
             return ERR_NOT_STARTED;
         }
     }

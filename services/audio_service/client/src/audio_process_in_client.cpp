@@ -854,19 +854,19 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
         return false;
     }
 
+    int32_t ret = ERROR;
     // mark status write-done and then server can read
     SpanStatus targetStatus = SpanStatus::SPAN_WRITTING;
-    if (!tempSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_WRITE_DONE)) {
-        AUDIO_ERR_LOG("current span  %{public}" PRIu64" status invalid: %{public}d", curWritePos, targetStatus);
-        return false;
+    if (tempSpan->spanStatus.load() == targetStatus) {
+        uint64_t nextWritePos = curWritePos + spanSizeInFrame_;
+        ret = audioBuffer_->SetCurWriteFrame(nextWritePos); // move ahead before writedone
+        curWritePos = nextWritePos;
+        tempSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
     }
-    uint64_t nextWritePos = curWritePos + spanSizeInFrame_;
-    int32_t ret = audioBuffer_->SetCurWriteFrame(nextWritePos);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", nextWritePos, ret);
+        AUDIO_ERR_LOG("SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", curWritePos, ret);
         return false;
     }
-    curWritePos = nextWritePos;
     tempSpan->writeDoneTime = ClockTime::GetCurNano();
     tempSpan->volumeStart = processVolume_;
     tempSpan->volumeEnd = processVolume_;
