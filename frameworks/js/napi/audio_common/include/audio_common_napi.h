@@ -72,6 +72,7 @@ public:
     static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
+    static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;

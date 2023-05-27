@@ -56,6 +56,10 @@ private:
     static napi_value SetMicrophoneMute(napi_env env, napi_callback_info info);
     static napi_value IsMicrophoneMute(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value IsVolumeUnadjustable(napi_env env, napi_callback_info info);
+    static napi_value AdjustVolumeByStep(napi_env env, napi_callback_info info);
+    static napi_value AdjustSystemVolumeByStep(napi_env env, napi_callback_info info);
+    static napi_value GetSystemVolumeInDb(napi_env env, napi_callback_info info);
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
     int32_t cachedClientId_ = -1;
 

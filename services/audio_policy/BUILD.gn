@@ -26,6 +26,7 @@ group("audio_policy_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
+    ":audio_volume_config",
   ]
 
   if (audio_framework_feature_dtmf_tone) {
@@ -149,6 +150,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_volume_key_event_callback_proxy.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/audio_volume_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
     "server/src/service/data_share_observer_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
@@ -208,6 +210,7 @@ ohos_shared_library("audio_policy_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
@@ -241,6 +244,14 @@ ohos_shared_library("audio_policy_service") {
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
   source = "server/config/audio_interrupt_policy_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_volume_config") {
+  source = "server/config/audio_volume_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -335,6 +346,7 @@ ohos_shared_library("audio_policy_client") {
   external_deps = [
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]

@@ -215,6 +215,14 @@ public:
         const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
+    bool IsVolumeUnadjustable();
+
+    int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
+
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
+
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
     int32_t GetMaxRendererInstances();
 private:
     AudioPolicyManager()

@@ -190,5 +190,20 @@ bool AudioCommonNapi::IsSameCallback(napi_env env, napi_value callback, napi_ref
 
     return isEquals;
 }
+
+bool AudioCommonNapi::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
+{
+    bool result = false;
+    switch (adjustType) {
+        case VolumeAdjustType::VOLUME_ADJUST_TURN_UP:
+        case VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
