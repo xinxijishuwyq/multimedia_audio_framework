@@ -1510,10 +1510,10 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
         return AUDIO_CLIENT_ERR;
     }
 
-    size_t diff = bufferAttr->maxlength - writeLen;
-    if (diff <= 0) {
+    if (bufferAttr->maxlength <= writeLen) {
         return AUDIO_CLIENT_SUCCESS;
     }
+    size_t diff = bufferAttr->maxlength - writeLen;
 
     int32_t writeError;
     StreamBuffer prebufStream;
@@ -1534,7 +1534,7 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
             return AUDIO_CLIENT_ERR;
         }
 
-        if (static_cast<int32_t>(diff - bytesWritten) <= 0) {
+        if (diff <= bytesWritten) {
             break;
         }
 
