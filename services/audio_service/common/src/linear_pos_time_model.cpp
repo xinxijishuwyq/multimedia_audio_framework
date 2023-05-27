@@ -82,12 +82,14 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
         return invalidTime;
     }
     if (posInFrame >= stampFrame_) {
-        CHECK_AND_RETURN_RET_LOG((posInFrame - stampFrame_ < sampleRate_), invalidTime, "posInFrame %{public}" PRIu64""
+        CHECK_AND_RETURN_RET_LOG((posInFrame - stampFrame_ < (uint64_t)sampleRate_), invalidTime,
+            "posInFrame %{public}" PRIu64""
             " is too large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         deltaFrame = posInFrame - stampFrame_;
         return stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     } else {
-        CHECK_AND_RETURN_RET_LOG((stampFrame_ - posInFrame < sampleRate_), invalidTime, "posInFrame %{public}" PRIu64""
+        CHECK_AND_RETURN_RET_LOG((stampFrame_ - posInFrame < (uint64_t)sampleRate_), invalidTime,
+            "posInFrame %{public}" PRIu64""
             " is too small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         deltaFrame = stampFrame_ - posInFrame;
         return stampNanoTime_ - deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;

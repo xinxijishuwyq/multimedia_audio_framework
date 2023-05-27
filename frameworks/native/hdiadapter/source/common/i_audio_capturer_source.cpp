@@ -31,23 +31,23 @@ namespace AudioStandard {
 IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
     AUDIO_DEBUG_LOG("%{public}s Source:GetInstance[%{public}s]", devceClass, deviceNetworkId);
-    const char *g_deviceClassPrimary = "primary";
-    const char *g_deviceClassA2DP = "a2dp";
-    const char *g_deviceClassFile = "file_io";
-    const char *g_deviceClassRemote = "remote";
+    const char *deviceClassPrimary = "primary";
+    const char *deviceClassA2DP = "a2dp";
+    const char *deviceClassFile = "file_io";
+    const char *deviceClassRemote = "remote";
 
-    if (!strcmp(devceClass, g_deviceClassPrimary)) {
+    if (!strcmp(devceClass, deviceClassPrimary)) {
         return AudioCapturerSource::GetInstance();
     }
-    if (!strcmp(devceClass, g_deviceClassA2DP)) {
+    if (!strcmp(devceClass, deviceClassA2DP)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
-    if (!strcmp(devceClass, g_deviceClassFile)) {
+    if (!strcmp(devceClass, deviceClassFile)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
-    if (!strcmp(devceClass, g_deviceClassRemote)) {
+    if (!strcmp(devceClass, deviceClassRemote)) {
         std::string networkId = deviceNetworkId;
         RemoteAudioCapturerSource *rSource = RemoteAudioCapturerSource::GetInstance(networkId);
         return rSource;
