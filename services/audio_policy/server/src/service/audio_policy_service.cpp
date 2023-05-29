@@ -2566,6 +2566,9 @@ std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> AudioPolicyService
 {
     std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> devices = {};
     for (auto devDes : connectedDevices_) {
+        if (devDes == nullptr) {
+            continue;
+        }
         bool inVolumeGroup = type == VOLUME_TYPE && devDes->volumeGroupId_ == groupId;
         bool inInterruptGroup = type == INTERRUPT_TYPE && devDes->interruptGroupId_ == groupId;
 
