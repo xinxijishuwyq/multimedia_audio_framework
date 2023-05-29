@@ -86,7 +86,7 @@ private:
     int64_t GetPredictNextReadTime(uint64_t posInFrame);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
-    bool RecordPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
+    bool RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime);
     bool RecordPrepareNextProcess();
 
     /**
