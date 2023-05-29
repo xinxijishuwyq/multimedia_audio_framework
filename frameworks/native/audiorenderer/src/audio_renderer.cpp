@@ -62,6 +62,7 @@ static int32_t CheckMaxRendererInstances()
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    AUDIO_INFO_LOG("Audio current renderer change infos size: %{public}zu", audioRendererChangeInfos.size());
     int32_t maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
     CHECK_AND_RETURN_RET_LOG(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances), ERR_OVERFLOW,
         "The current number of audio renderer streams is greater than the maximum number of configured instances");
