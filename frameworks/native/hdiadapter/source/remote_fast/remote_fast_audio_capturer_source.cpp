@@ -166,16 +166,16 @@ int32_t RemoteFastAudioCapturerSource::InitAudioManager()
 #endif
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
-    void *handle_ = dlopen(resolvedPath, RTLD_LAZY);
-    if (handle_ == nullptr) {
+    void *handle = dlopen(resolvedPath, RTLD_LAZY);
+    if (handle == nullptr) {
         AUDIO_ERR_LOG("dlopen %{public}s fail.", resolvedPath);
         return ERR_INVALID_HANDLE;
     }
     AUDIO_INFO_LOG("dlopen %{public}s OK.", resolvedPath);
 
     dlerror();
-    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
-    if (dlerror() != NULL || GetAudioManagerFuncs == nullptr) {
+    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle, "GetAudioManagerFuncs"));
+    if (dlerror() != nullptr || GetAudioManagerFuncs == nullptr) {
         AUDIO_ERR_LOG("dlsym GetAudioManagerFuncs fail.");
         return ERR_INVALID_HANDLE;
     }
