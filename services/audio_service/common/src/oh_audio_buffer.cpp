@@ -82,7 +82,7 @@ int32_t AudioSharedMemoryImpl::Init()
     if (fd_ > 0) {
         isFromRemote = true;
         int size = AshmemGetSize(fd_); // hdi fd may not support
-        if (size < 0 || size != size_) {
+        if (size < 0 || static_cast<size_t>(size) != size_) {
             AUDIO_WARNING_LOG("AshmemGetSize faied, get %{public}d", size);
         }
     } else {

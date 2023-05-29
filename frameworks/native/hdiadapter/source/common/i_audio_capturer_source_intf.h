@@ -31,7 +31,7 @@ typedef struct {
     bool isBigEndian;
     const char *filePath;
     const char *deviceNetworkId;
-    int32_t device_type;
+    int32_t deviceType;
 } IAudioSourceAttr;
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId, void **wapper);

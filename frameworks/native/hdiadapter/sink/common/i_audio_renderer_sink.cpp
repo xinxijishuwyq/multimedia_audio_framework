@@ -103,7 +103,7 @@ int32_t IAudioRendererSinkInit(struct RendererSinkAdapter *adapter, const SinkAt
     iAttr.volume = attr->volume;
     iAttr.filePath = attr->filePath;
     iAttr.deviceNetworkId = attr->deviceNetworkId;
-    iAttr.device_type = attr->device_type;
+    iAttr.deviceType = attr->deviceType;
 
     return audioRendererSink->Init(iAttr);
 }

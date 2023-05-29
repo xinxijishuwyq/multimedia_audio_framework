@@ -407,7 +407,7 @@ inline std::string printRemoteAttr(IAudioSinkAttr attr_)
     value << "format[" << static_cast<int32_t>(attr_.format) << "] sampleFmt[" << attr_.sampleFmt << "] ";
     value << "sampleRate[" << attr_.sampleRate << "] channel[" << attr_.channel << "] ";
     value << "volume[" << attr_.volume << "] filePath[" << attr_.filePath << "] ";
-    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.device_type << "]";
+    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.deviceType << "]";
     return value.str();
 }
 

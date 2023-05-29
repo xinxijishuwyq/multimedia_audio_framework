@@ -34,7 +34,7 @@ typedef struct {
     bool isBigEndian;
     const char *filePath;
     const char *deviceNetworkId;
-    int32_t device_type;
+    int32_t deviceType;
 } IAudioSourceAttr;
 
 class IAudioCapturerSource {
@@ -66,7 +66,7 @@ public:
 class IMmapAudioCapturerSource : public IAudioCapturerSource {
 public:
     IMmapAudioCapturerSource() = default;
-    virtual ~IMmapAudioCapturerSource() = default;
+    ~IMmapAudioCapturerSource() = default;
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) = 0;
     virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
