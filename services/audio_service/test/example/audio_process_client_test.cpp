@@ -25,7 +25,7 @@
 #include <map>
 
 #include "audio_log.h"
-#include "audio_error.h"
+#include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_process_in_client.h"
 #include "parameter.h"
@@ -35,177 +35,448 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    static const uint32_t ARGC_NUM_TWO = 2;
-    static const uint32_t ARGC_NUM_THREE = 3;
-    static const long WAV_HEADER_SIZE = 42;
-    static const int32_t SUCCESS = 0;
-    static const int32_t ERROR = -1;
+    static constexpr long WAV_HEADER_SIZE = 42;
+    static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
     enum OperationCode : int32_t {
         INVALID_OPERATION = -1,
-        INIT_LOCAL_PROCESS = 0,
-        INIT_REMOTE_PROCESS,
-        START_PROCESS,
-        PAUSE_PROCESS,
-        RESUME_PROCESS,
-        STOP_PROCESS,
-        CHANGE_PROCESS_VOL,
-        RELEASE_PROCESS
+        INIT_LOCAL_SPK_PROCESS = 0,
+        INIT_REMOTE_SPK_PROCESS = 1,
+        START_SPK_PROCESS = 2,
+        PAUSE_SPK_PROCESS = 3,
+        RESUME_SPK_PROCESS = 4,
+        STOP_SPK_PROCESS = 5,
+        CHANGE_SPK_PROCESS_VOL = 6,
+        RELEASE_SPK_PROCESS = 7,
+
+        INIT_LOCAL_MIC_PROCESS = 20,
+        INIT_REMOTE_MIC_PROCESS = 21,
+        START_MIC_PROCESS = 22,
+        PAUSE_MIC_PROCESS = 23,
+        RESUME_MIC_PROCESS = 24,
+        STOP_MIC_PROCESS = 25,
+        CHANGE_MIC_PROCESS_VOL = 26,
+        RELEASE_MIC_PROCESS = 27,
+    };
+
+    enum AudioProcessTestType : int32_t {
+        INVALID_PROC_TEST = 0,
+        INTERACTIVE_RUN_SPK_TEST = 1,
+        AUTO_RUN_SPK_TEST = 2,
+        INTERACTIVE_RUN_MIC_TEST = 3,
+        AUTO_RUN_MIC_TEST = 4,
     };
 }
-std::map<int32_t, std::string> g_operationStringMap = {
-    {INIT_LOCAL_PROCESS, "call local init process"},
-    {INIT_REMOTE_PROCESS, "call remote init process"},
-    {START_PROCESS, "call start process"},
-    {PAUSE_PROCESS, "call pause process"},
-    {RESUME_PROCESS, "call resume process"},
-    {STOP_PROCESS, "call stop process"},
-    {CHANGE_PROCESS_VOL, "change process volume"},
-    {RELEASE_PROCESS, "release process"}
-};
-std::string g_filePath = "";
-FILE *g_wavFile = nullptr;
+
+class AudioProcessTest;
+shared_ptr<AudioProcessTest> g_audioProcessTest = nullptr;
+std::string g_spkfilePath = "";
+const std::string MIC_FILE_PATH = "/data/data/mic.pcm";
+FILE *g_spkWavFile = nullptr;
+FILE *g_micPcmFile = nullptr;
 mutex g_autoRunMutex;
 condition_variable g_autoRunCV;
 
-class AudioProcessTest : public AudioDataCallback, public enable_shared_from_this<AudioProcessTest> {
+string ConfigSpkTest(bool isRemote);
+string CallStartSpk();
+string CallPauseSpk();
+string CallResumeSpk();
+string CallStopSpk();
+string SetSpkVolume();
+string CallReleaseSpk();
+
+string ConfigMicTest(bool isRemote);
+string CallStartMic();
+string CallPauseMic();
+string CallResumeMic();
+string CallStopSpk();
+string SetMicVolume();
+string CallReleaseMic();
+using CallTestOperationFunc = string (*)();
+
+std::map<int32_t, std::string> g_audioProcessTestType = {
+    {INTERACTIVE_RUN_SPK_TEST, "Interactive run spk process test"},
+    {AUTO_RUN_SPK_TEST, "Auto run spk process test"},
+    {INTERACTIVE_RUN_MIC_TEST, "Interactive run mic process test"},
+    {AUTO_RUN_MIC_TEST, "Auto run mic process test"},
+};
+
+std::map<int32_t, std::string> g_interactiveOptStrMap = {
+    {INIT_LOCAL_SPK_PROCESS, "call local spk init process"},
+    {INIT_REMOTE_SPK_PROCESS, "call remote spk init process"},
+    {START_SPK_PROCESS, "call start spk process"},
+    {PAUSE_SPK_PROCESS, "call pause spk process"},
+    {RESUME_SPK_PROCESS, "call resume spk process"},
+    {STOP_SPK_PROCESS, "call stop spk process"},
+    {CHANGE_SPK_PROCESS_VOL, "change spk process volume"},
+    {RELEASE_SPK_PROCESS, "release spk process"},
+
+    {INIT_LOCAL_MIC_PROCESS, "call local mic init process"},
+    {INIT_REMOTE_MIC_PROCESS, "call remote mic init process"},
+    {START_MIC_PROCESS, "call start mic process"},
+    {PAUSE_MIC_PROCESS, "call pause mic process"},
+    {RESUME_MIC_PROCESS, "call resume mic process"},
+    {STOP_MIC_PROCESS, "call stop mic process"},
+    {CHANGE_MIC_PROCESS_VOL, "change mic process volume"},
+    {RELEASE_MIC_PROCESS, "release mic process"}
+};
+
+std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
+    {START_SPK_PROCESS, CallStartSpk},
+    {PAUSE_SPK_PROCESS, CallPauseSpk},
+    {RESUME_SPK_PROCESS, CallResumeSpk},
+    {STOP_SPK_PROCESS, CallStopSpk},
+    {CHANGE_SPK_PROCESS_VOL, SetSpkVolume},
+    {RELEASE_SPK_PROCESS, CallReleaseSpk},
+
+    {START_MIC_PROCESS, CallStartMic},
+    {PAUSE_MIC_PROCESS, CallPauseMic},
+    {RESUME_MIC_PROCESS, CallResumeMic},
+    {STOP_MIC_PROCESS, CallStopSpk},
+    {CHANGE_MIC_PROCESS_VOL, SetMicVolume},
+    {RELEASE_MIC_PROCESS, CallReleaseMic}
+};
+
+class AudioProcessTestCallback : public AudioDataCallback {
+public:
+    AudioProcessTestCallback(const std::shared_ptr<AudioProcessInClient> &procClient,
+        int32_t spkLoopCnt, AudioMode clientMode)
+        : procClient_(procClient), loopCount_(spkLoopCnt), clientMode_(clientMode) {};
+    ~AudioProcessTestCallback() = default;
+
+    void OnHandleData(size_t length) override;
+
+private:
+    int32_t CaptureToFile(const BufferDesc &bufDesc);
+    int32_t RenderFromFile(const BufferDesc &bufDesc);
+
+private:
+    std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
+    int32_t loopCount_ = -1; // for loop
+    AudioMode clientMode_ = AUDIO_MODE_PLAYBACK;
+    bool needSkipWavHeader_ = true;
+    bool renderFinish_ = false;
+};
+
+class AudioProcessTest {
 public:
     AudioProcessTest() = default;
     ~AudioProcessTest() = default;
 
-    void OnHandleData(size_t length) override
-    {
-        Trace callBack("client_n");
-        int32_t ret = processClient_->GetBufferDesc(buffer_);
-        if (ret != SUCCESS || buffer_.buffer == nullptr || buffer_.bufLength ==0) {
-            cout << "GetBufferDesc failed." << endl;
-            return;
-        }
-        if (needSkipWavHeader_) {
-            fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
-            needSkipWavHeader_ = false;
-        }
-        if (feof(g_wavFile)) {
-            if (loopCount_ < 0) {
-                fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
-            } else if (loopCount_ == 0) {
-                renderFinish_ = true;
-                g_autoRunCV.notify_all();
-            } else {
-                loopCount_--;
-                fseek(g_wavFile, WAV_HEADER_SIZE, SEEK_SET);
-            }
-        }
-        if (renderFinish_) {
-            return;
-        }
-        fread(buffer_.buffer, 1, buffer_.bufLength, g_wavFile);
-        processClient_->Enqueue(buffer_);
-        callBack.End();
-    }
+    int32_t InitSpk(int32_t loopCount, bool isRemote);
+    bool StartSpk();
+    bool PauseSpk();
+    bool ResumeSpk();
+    bool SetSpkVolume(int32_t vol);
+    bool StopSpk();
+    bool ReleaseSpk();
 
-    int32_t Init(int32_t loopCount, bool isRemote)
-    {
-        if (loopCount < 0) {
-            loopCount_ = 1; // loop once
-        } else if (loopCount == 0) {
-            loopCount_ = -1; // infinite loop
-        } else {
-            loopCount_ = loopCount;
-        }
-
-        AudioProcessConfig config;
-        config.appInfo.appPid = getpid();
-        config.appInfo.appUid = getuid();
-
-        config.audioMode = AUDIO_MODE_PLAYBACK;
-
-        config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-        config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-        config.rendererInfo.rendererFlags = 4; // 4 for test
-
-        config.streamInfo.channels = STEREO;
-        config.streamInfo.encoding = ENCODING_PCM;
-        config.streamInfo.format = SAMPLE_S16LE;
-        config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-
-        config.isRemote = isRemote;
-
-        processClient_ = AudioProcessInClient::Create(config);
-        if (processClient_ == nullptr) {
-            return ERROR;
-        }
-        processClient_->SaveDataCallback(shared_from_this());
-        gIsInited = true;
-        return SUCCESS;
-    }
-
-    bool Start()
-    {
-        int32_t ret = processClient_->Start();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Pause()
-    {
-        int32_t ret = processClient_->Pause();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Resume()
-    {
-        int32_t ret = processClient_->Resume();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool SetVolume(int32_t vol)
-    {
-        int32_t ret = processClient_->SetVolume(vol);
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Stop()
-    {
-        int32_t ret = processClient_->Stop();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        return true;
-    }
-
-    bool Release()
-    {
-        if (processClient_ == nullptr) {
-            return true;
-        }
-        int32_t ret = processClient_->Release();
-        if (ret != SUCCESS) {
-            return false;
-        }
-        AUDIO_INFO_LOG("client test set nullptr!");
-        processClient_ = nullptr;
-        return true;
-    }
+    int32_t InitMic(bool isRemote);
+    bool StartMic();
+    bool PauseMic();
+    bool ResumeMic();
+    bool SetMicVolume(int32_t vol);
+    bool StopMic();
+    bool ReleaseMic();
 
 private:
-    std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
-    bool gIsInited = false;
+    std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
+    std::shared_ptr<AudioProcessInClient> micProcessClient_ = nullptr;
+    std::shared_ptr<AudioProcessTestCallback> spkProcClientCb_ = nullptr;
+    std::shared_ptr<AudioProcessTestCallback> micProcClientCb_ = nullptr;
     int32_t loopCount_ = -1; // for loop
-    BufferDesc buffer_ = {nullptr, 0, 0};
-    bool needSkipWavHeader_ = true;
-    bool renderFinish_ = false;
 };
+
+int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
+{
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    CHECK_AND_RETURN_RET_LOG(g_micPcmFile != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s g_micPcmFile is null.", __func__);
+
+    size_t cnt = fwrite(bufDesc.buffer, 1, bufDesc.bufLength, g_micPcmFile);
+    CHECK_AND_RETURN_RET_LOG(cnt == bufDesc.bufLength, ERR_WRITE_FAILED,
+        "%{public}s fwrite fail, cnt %{public}zu, bufLength %{public}zu.", __func__, cnt, bufDesc.bufLength);
+    return SUCCESS;
+}
+
+int32_t AudioProcessTestCallback::RenderFromFile(const BufferDesc &bufDesc)
+{
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    CHECK_AND_RETURN_RET_LOG(g_spkWavFile != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s g_spkWavFile is null.", __func__);
+
+    if (needSkipWavHeader_) {
+        fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET);
+        needSkipWavHeader_ = false;
+    }
+    if (feof(g_spkWavFile)) {
+        if (loopCount_ < 0) {
+            fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
+        } else if (loopCount_ == 0) {
+            renderFinish_ = true;
+            g_autoRunCV.notify_all();
+        } else {
+            loopCount_--;
+            fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET);
+        }
+    }
+    if (renderFinish_) {
+        AUDIO_INFO_LOG("%{public}s render finish.", __func__);
+        return SUCCESS;
+    }
+    fread(bufDesc.buffer, 1, bufDesc.bufLength, g_spkWavFile);
+    return SUCCESS;
+}
+
+void AudioProcessTestCallback::OnHandleData(size_t length)
+{
+    Trace callBack("client_n");
+    CHECK_AND_RETURN_LOG(procClient_ != nullptr, "%{public}s procClient is null.", __func__);
+
+    BufferDesc bufDesc = {nullptr, 0, 0};
+    int32_t ret = procClient_->GetBufferDesc(bufDesc);
+    if (ret != SUCCESS || bufDesc.buffer == nullptr || bufDesc.bufLength ==0) {
+        cout << "GetBufferDesc failed." << endl;
+        return;
+    }
+
+    if (clientMode_ == AUDIO_MODE_RECORD) {
+        ret = CaptureToFile(bufDesc);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s capture to file fail, ret %{public}d.",
+            __func__, ret);
+    } else {
+        ret = RenderFromFile(bufDesc);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s render from file fail, ret %{public}d.",
+            __func__, ret);
+    }
+    ret = procClient_->Enqueue(bufDesc);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s enqueue buf fail, clientMode %{public}d, ret %{public}d.",
+        __func__, clientMode_, ret);
+    AUDIO_INFO_LOG("%{public}s enqueue end, clientMode %{public}d, bufLength %{public}zu.",
+        __func__, clientMode_, bufDesc.bufLength);
+    callBack.End();
+}
+
+int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
+{
+    if (loopCount < 0) {
+        loopCount_ = 1; // loop once
+    } else if (loopCount == 0) {
+        loopCount_ = -1; // infinite loop
+    } else {
+        loopCount_ = loopCount;
+    }
+
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = 4; // 4 for test
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    config.isRemote = isRemote;
+
+    spkProcessClient_ = AudioProcessInClient::Create(config);
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, ERR_INVALID_HANDLE,
+        "Client test creat process client fail.");
+
+    spkProcClientCb_ = std::make_shared<AudioProcessTestCallback>(spkProcessClient_, loopCount_, config.audioMode);
+    int32_t ret = spkProcessClient_->SaveDataCallback(spkProcClientCb_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
+    return SUCCESS;
+}
+
+bool AudioProcessTest::StartSpk()
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = spkProcessClient_->Start();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::PauseSpk()
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = spkProcessClient_->Pause();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::ResumeSpk()
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = spkProcessClient_->Resume();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::SetSpkVolume(int32_t vol)
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = spkProcessClient_->SetVolume(vol);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::StopSpk()
+{
+    CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = spkProcessClient_->Stop();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::ReleaseSpk()
+{
+    if (spkProcessClient_ == nullptr) {
+        AUDIO_INFO_LOG("%{public}s process client is already released.", __func__);
+        return true;
+    }
+    int32_t ret = spkProcessClient_->Release();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test release fail, ret %{public}d.", ret);
+    spkProcessClient_ = nullptr;
+    AUDIO_INFO_LOG("client test set nullptr!");
+    return true;
+}
+
+int32_t AudioProcessTest::InitMic(bool isRemote)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = 7; // 7 for test
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    config.isRemote = isRemote;
+
+    micProcessClient_ = AudioProcessInClient::Create(config);
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, ERR_INVALID_HANDLE,
+        "Client test creat process client fail.");
+
+    micProcClientCb_ = std::make_shared<AudioProcessTestCallback>(micProcessClient_, 0, config.audioMode);
+    int32_t ret = micProcessClient_->SaveDataCallback(micProcClientCb_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
+    return SUCCESS;
+}
+
+bool AudioProcessTest::StartMic()
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = micProcessClient_->Start();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::PauseMic()
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = micProcessClient_->Pause();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::ResumeMic()
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = micProcessClient_->Resume();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::SetMicVolume(int32_t vol)
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = micProcessClient_->SetVolume(vol);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::StopMic()
+{
+    CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, false, "%{public}s process client is null.", __func__);
+    int32_t ret = micProcessClient_->Stop();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    return true;
+}
+
+bool AudioProcessTest::ReleaseMic()
+{
+    if (micProcessClient_ == nullptr) {
+        AUDIO_INFO_LOG("%{public}s process client is already released.", __func__);
+        return true;
+    }
+    int32_t ret = micProcessClient_->Release();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test release fail, ret %{public}d.", ret);
+    micProcessClient_ = nullptr;
+    AUDIO_INFO_LOG("client test set nullptr!");
+    return true;
+}
+
+bool OpenSpkFile()
+{
+    if (g_spkWavFile != nullptr) {
+        AUDIO_ERR_LOG("Spk file has been opened, g_spkfilePath %{public}s", g_spkfilePath.c_str());
+        return true;
+    }
+
+    char path[PATH_MAX] = { 0x00 };
+    if ((strlen(g_spkfilePath.c_str()) > PATH_MAX) || (realpath(g_spkfilePath.c_str(), path) == nullptr)) {
+        return false;
+    }
+    AUDIO_INFO_LOG("spk path = %{public}s", path);
+    g_spkWavFile = fopen(path, "rb");
+    if (g_spkWavFile == nullptr) {
+        AUDIO_ERR_LOG("Unable to open wave file");
+        return false;
+    }
+    return true;
+}
+
+void CloseSpkFile()
+{
+    if (g_spkWavFile != nullptr) {
+        fclose(g_spkWavFile);
+        g_spkWavFile = nullptr;
+    }
+}
+
+bool OpenMicFile()
+{
+    if (g_micPcmFile != nullptr) {
+        AUDIO_ERR_LOG("Mic file has been opened, MIC_FILE_PATH %{public}s", MIC_FILE_PATH.c_str());
+        return true;
+    }
+
+    AUDIO_INFO_LOG("mic path = %{public}s", MIC_FILE_PATH.c_str());
+    g_micPcmFile = fopen(MIC_FILE_PATH.c_str(), "ab+");
+    if (g_micPcmFile == nullptr) {
+        AUDIO_ERR_LOG("Unable to open wave file");
+        return false;
+    }
+    return true;
+}
+
+void CloseMicFile()
+{
+    if (g_micPcmFile != nullptr) {
+        fclose(g_micPcmFile);
+        g_micPcmFile = nullptr;
+    }
+}
 
 inline int32_t GetArgs(const std::string &args)
 {
@@ -218,8 +489,19 @@ inline int32_t GetArgs(const std::string &args)
 
 void PrintInteractiveUsage()
 {
-    for (auto it = g_operationStringMap.begin(); it != g_operationStringMap.end(); it ++) {
+    cout << endl << "======================= InteractiveRunTestSelect ============================" << endl;
+    cout << "You can respond to instructions for corresponding option:" << endl;
+    for (auto it = g_interactiveOptStrMap.begin(); it != g_interactiveOptStrMap.end(); it ++) {
         cout << "\t enter " << it->first << " : " << it->second << endl;
+    }
+}
+
+void PrintProcTestUsage()
+{
+    cout << endl << "========================== ProcessTestSelect ================================" << endl;
+    cout << "You can respond to instructions for corresponding test:" << endl;
+    for (auto it = g_audioProcessTestType.begin(); it != g_audioProcessTestType.end(); it ++) {
+        cout << it->first << ". " << it->second << endl;
     }
 }
 
@@ -227,18 +509,27 @@ void PrintUsage()
 {
     cout << "[Audio Process Client Test App]" << endl << endl;
     cout << "Supported Functionalities:" << endl;
-    cout << "  a) Automatically perform playback test." << endl;
-    cout << "  b) Interactive execution of playback test." << endl;
+    cout << "  a) Auto run local spk test." << endl;
+    cout << "  b) Interactive run local/remote spk test." << endl;
+    cout << "  c) Auto run remote mic test." << endl;
+    cout << "  d) Interactive run remote mic test." << endl;
     cout << "================================Usage=======================================" << endl << endl;
 
-    cout << "-a\n\tAutomatically play" << endl;
-    cout << "\tUsage : ./audio_process_client_test <wav-file-path> <play-loop-count>" << endl;
+    cout << "-a\n\tAuto run local spk process test, pelese input the following after select." << endl;
+    cout << "\tUsage : <wav-file-path> <play-loop-count>" << endl;
     cout << "\t       if <play-loop-count> equals to 0, it will loop infinitely." << endl;
-    cout << "\tExample 1 : ./audio_process_client_test /data/data/48kHz_16bit.wav 0" << endl;
-    cout << "\tExample 2 : ./audio_process_client_test /data/data/48kHz_16bit.wav 2" << endl << endl;
+    cout << "\tExample 1 : /data/data/48kHz_16bit.wav 0" << endl;
+    cout << "\tExample 2 : /data/data/48kHz_16bit.wav 2" << endl << endl;
 
-    cout << "-b\n\tInteractive play" << endl;
-    cout << "\tUsage : ./audio_process_client_test <wav-file-path>" << endl;
+    cout << "-b\n\tInteractive run local/remote spk test, pelese input the following after select." << endl;
+    cout << "\tUsage : <wav-file-path>" << endl;
+
+    cout << "-c\n\tAuto run remote mic process test, pelese input the following after select." << endl;
+    cout << "\tUsage : <record-time-in-seconds>" << endl;
+    cout << "\tGenerate the specified time span record file, path : /data/data/mic.pcm" << endl;
+
+    cout << "-d\n\tInteractive run remote mic test." << endl;
+    cout << "\tGenerate record file from start to stop, path : /data/data/mic.pcm" << endl;
 }
 
 int32_t GetUserInput()
@@ -257,144 +548,224 @@ int32_t GetUserInput()
     return res;
 }
 
-shared_ptr<AudioProcessTest> g_audioProcessTest = nullptr;
-void AutoRun(int32_t loopCount)
+void AutoRunSpk()
 {
-    g_audioProcessTest->Init(loopCount, false);
-    g_audioProcessTest->Start();
+    cout << "Auto run spk process test enter, please input loopCount and path:" << endl;
+    int32_t loopCount = GetUserInput();
+    std::string palyFilePath;
+    cin >> palyFilePath;
+    g_spkfilePath = palyFilePath;
+
+    if (!OpenSpkFile()) {
+        cout << "open spk file path failed!" << g_spkfilePath << endl;
+        return;
+    }
+    g_audioProcessTest->InitSpk(loopCount, false);
+    g_audioProcessTest->StartSpk();
     int volShift = 15; // helf of 1 << 16
-    g_audioProcessTest->SetVolume(1 << volShift);
+    g_audioProcessTest->SetSpkVolume(1 << volShift);
     unique_lock<mutex> lock(g_autoRunMutex);
     g_autoRunCV.wait(lock);
-    cout << "AutoRun end" << endl;
-    g_audioProcessTest->Stop();
-    g_audioProcessTest->Release();
+    cout << "AutoRunSpk end" << endl;
+    g_audioProcessTest->StopSpk();
+    g_audioProcessTest->ReleaseSpk();
+    CloseSpkFile();
 }
 
-string ConfigTest(bool isRemote)
+void AutoRunMic()
 {
-    int32_t ret = g_audioProcessTest->Init(0, isRemote);
+    cout << "Auto run mic process test enter, please input recordTimeS:" << endl;
+    int32_t recordTimeS = GetUserInput();
+    if (!OpenMicFile()) {
+        cout << "open mic file path failed!" << g_spkfilePath << endl;
+        return;
+    }
+    g_audioProcessTest->InitMic(false);
+    g_audioProcessTest->StartMic();
+    int volShift = 15; // helf of 1 << 16
+    g_audioProcessTest->SetMicVolume(1 << volShift);
+    cout << "wait " << recordTimeS << "s for capture frame..." << endl;
+    ClockTime::RelativeSleep(recordTimeS * SECOND_TO_NANOSECOND);
+    cout << "AutoRunMic end" << endl;
+    g_audioProcessTest->StopMic();
+    g_audioProcessTest->ReleaseMic();
+    CloseMicFile();
+}
+
+string ConfigSpkTest(bool isRemote)
+{
+    cout << "Please input spk file path:" << endl;
+    std::string palyFilePath;
+    cin >> palyFilePath;
+    g_spkfilePath = palyFilePath;
+
+    if (!OpenSpkFile()) {
+        cout << "open spk file path failed!" << g_spkfilePath << endl;
+        return "open spk wav file fail";
+    }
+    int32_t ret = g_audioProcessTest->InitSpk(0, isRemote);
     if (ret != SUCCESS) {
         return "init failed";
     }
     return "init SUCCESS";
 }
 
-string CallStart()
+string CallStartSpk()
 {
-    if (!g_audioProcessTest->Start()) {
+    if (!g_audioProcessTest->StartSpk()) {
         return "start failed";
     }
     return "start SUCCESS";
 }
 
-string CallPause()
+string CallPauseSpk()
 {
-    if (!g_audioProcessTest->Pause()) {
+    if (!g_audioProcessTest->PauseSpk()) {
         return "Pause failed";
     }
     return "Pause SUCCESS";
 }
 
-string CallResume()
+string CallResumeSpk()
 {
-    if (!g_audioProcessTest->Resume()) {
+    if (!g_audioProcessTest->ResumeSpk()) {
         return "Resume failed";
     }
     return "Resume SUCCESS";
 }
 
-string CallStop()
+string CallStopSpk()
 {
-    if (!g_audioProcessTest->Stop()) {
+    if (!g_audioProcessTest->StopSpk()) {
         return "Stop failed";
     }
     return "Stop SUCCESS";
 }
 
-string SetVolume()
+string SetSpkVolume()
 {
     int32_t vol = GetUserInput();
-    if (!g_audioProcessTest->SetVolume(vol)) {
+    if (!g_audioProcessTest->SetSpkVolume(vol)) {
         return "SetVolume failed";
     }
     return "SetVolume SUCCESS";
 }
 
-string CallRelease()
+string CallReleaseSpk()
 {
-    if (!g_audioProcessTest->Release()) {
+    if (!g_audioProcessTest->ReleaseSpk()) {
         return "Release failed";
     }
+    CloseSpkFile();
+    return "Release SUCCESS";
+}
+
+string ConfigMicTest(bool isRemote)
+{
+    if (!isRemote) {
+        return "Local mic init is not supported.";
+    }
+
+    if (!OpenMicFile()) {
+        cout << "open mic file path failed!" << g_spkfilePath << endl;
+        return "open mic pcm file fail";
+    }
+
+    int32_t ret = g_audioProcessTest->InitMic(isRemote);
+    if (ret != SUCCESS) {
+        return "init failed";
+    }
+    return "init SUCCESS";
+}
+
+string CallStartMic()
+{
+    if (!g_audioProcessTest->StartMic()) {
+        return "start failed";
+    }
+    return "start SUCCESS";
+}
+
+string CallPauseMic()
+{
+    if (!g_audioProcessTest->PauseMic()) {
+        return "Pause failed";
+    }
+    return "Pause SUCCESS";
+}
+
+string CallResumeMic()
+{
+    if (!g_audioProcessTest->ResumeMic()) {
+        return "Resume failed";
+    }
+    return "Resume SUCCESS";
+}
+
+string CallStopMic()
+{
+    if (!g_audioProcessTest->StopMic()) {
+        return "Stop failed";
+    }
+    return "Stop SUCCESS";
+}
+
+string SetMicVolume()
+{
+    int32_t vol = GetUserInput();
+    if (!g_audioProcessTest->SetMicVolume(vol)) {
+        return "SetVolume failed";
+    }
+    return "SetVolume SUCCESS";
+}
+
+string CallReleaseMic()
+{
+    if (!g_audioProcessTest->ReleaseMic()) {
+        return "Release failed";
+    }
+    CloseMicFile();
     return "Release SUCCESS";
 }
 
 void InteractiveRun()
 {
+    cout << "Interactive run process test enter." << endl;
     OperationCode optCode = INVALID_OPERATION; // invalid code
     while (true) {
         PrintInteractiveUsage();
         int32_t res = GetUserInput();
-        if (g_operationStringMap.count(res)) {
+        if (g_interactiveOptStrMap.count(res)) {
             optCode = static_cast<OperationCode>(res);
         } else {
             optCode = INVALID_OPERATION;
         }
         switch (optCode) {
-            case INIT_LOCAL_PROCESS:
-                cout << ConfigTest(false) << endl;
-                break;
-            case INIT_REMOTE_PROCESS:
-                cout << ConfigTest(true) << endl;
-                break;
-            case START_PROCESS:
-                cout << CallStart() << endl;
-                break;
-            case STOP_PROCESS:
-                cout << CallStop() << endl;
-                break;
-            case RESUME_PROCESS:
-                cout << CallResume() << endl;
-                break;
-            case PAUSE_PROCESS:
-                cout << CallPause() << endl;
-                break;
-            case CHANGE_PROCESS_VOL:
-                cout << SetVolume() << endl;
-                break;
-            case RELEASE_PROCESS:
-                cout << CallRelease() << endl;
-                break;
             case INVALID_OPERATION:
                 cout << "invalid input" << endl;
                 break;
+            case INIT_LOCAL_SPK_PROCESS:
+                cout << ConfigSpkTest(false) << endl;
+                break;
+            case INIT_REMOTE_SPK_PROCESS:
+                cout << ConfigSpkTest(true) << endl;
+                break;
+            case INIT_LOCAL_MIC_PROCESS:
+                cout << ConfigMicTest(false) << endl;
+                break;
+            case INIT_REMOTE_MIC_PROCESS:
+                cout << ConfigMicTest(true) << endl;
+                break;
             default:
+                auto it = g_interactiveOptFuncMap.find(optCode);
+                if (it != g_interactiveOptFuncMap.end() && it->second != nullptr) {
+                    CallTestOperationFunc &func = it->second;
+                    cout << (*func)() << endl;
+                    break;
+                }
                 cout << "invalid input :" << optCode << endl;
                 break;
         }
-    }
-}
-
-bool OpenFile()
-{
-    char path[PATH_MAX] = { 0x00 };
-    if ((strlen(g_filePath.c_str()) > PATH_MAX) || (realpath(g_filePath.c_str(), path) == nullptr)) {
-        return false;
-    }
-    AUDIO_INFO_LOG("path = %{public}s", path);
-    g_wavFile = fopen(path, "rb");
-    if (g_wavFile == nullptr) {
-        AUDIO_ERR_LOG("Unable to open wave file");
-        return false;
-    }
-    return true;
-}
-
-void CloseFile()
-{
-    if (g_wavFile != nullptr) {
-        fclose(g_wavFile);
-        g_wavFile = nullptr;
     }
 }
 
@@ -412,38 +783,35 @@ bool SetSysPara(std::string key, int32_t &value)
 } // namespace OHOS
 
 using namespace OHOS::AudioStandard;
-int main(int argc, char *argv[])
+int main()
 {
-    AUDIO_INFO_LOG("AudioProcessClientTest: Render test in");
+    AUDIO_INFO_LOG("AudioProcessClientTest test enter.");
     int32_t val = 1;
     SetSysPara("persist.multimedia.audio.mmap.enable", val);
-    g_audioProcessTest = make_shared<AudioProcessTest>();
-    if (argv == nullptr || argc > ARGC_NUM_THREE || argc < ARGC_NUM_TWO) {
-        cout << "AudioProcessClientTest: argv is invalid" << endl;
-        return 0;
-    }
-    g_filePath = argv[1];
-    if (!OpenFile()) {
-        cout << "open file path failed!" << g_filePath << endl;
-        return 0;
-    }
 
     PrintUsage();
-    bool isAudioRun = false;
-    int32_t loopCount = -1; // loop
-    if (argc == ARGC_NUM_THREE && GetArgs(argv[ARGC_NUM_TWO]) >= 0) {
-        loopCount = GetArgs(argv[ARGC_NUM_TWO]);
-        isAudioRun = true;
-    } else {
-        isAudioRun = false;
+    g_audioProcessTest = make_shared<AudioProcessTest>();
+    PrintProcTestUsage();
+    AudioProcessTestType procTestType = INVALID_PROC_TEST;
+    int32_t res = GetUserInput();
+    if (g_audioProcessTestType.count(res)) {
+        procTestType = static_cast<AudioProcessTestType>(res);
     }
-
-    if (!isAudioRun) {
-        InteractiveRun();
-    } else {
-        AutoRun(loopCount);
+    switch (procTestType) {
+        case INTERACTIVE_RUN_SPK_TEST:
+        case INTERACTIVE_RUN_MIC_TEST:
+            InteractiveRun();
+            break;
+        case AUTO_RUN_SPK_TEST:
+            AutoRunSpk();
+            break;
+        case AUTO_RUN_MIC_TEST:
+            AutoRunMic();
+            break;
+        default:
+            cout << "invalid input, test end." << endl;
+            break;
     }
-    CloseFile();
-
+    AUDIO_INFO_LOG("AudioProcessClientTest test end.");
     return 0;
 }
