@@ -29,6 +29,7 @@
 #include "audio_schedule.h"
 #include "audio_utils.h"
 #include "fast_audio_renderer_sink.h"
+#include "fast_audio_capturer_source.h"
 #include "i_audio_capturer_source.h"
 #include "linear_pos_time_model.h"
 #include "remote_fast_audio_renderer_sink.h"
@@ -278,13 +279,20 @@ void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
 bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
-    fastSource_ = RemoteFastAudioCapturerSource::GetInstance(deviceInfo.networkId);
     IAudioSourceAttr attr = {};
-    attr.adapterName = "remote";
     attr.sampleRate = dstStreamInfo_.samplingRate;
     attr.channel = dstStreamInfo_.channels;
     attr.format = dstStreamInfo_.format;
     attr.deviceNetworkId = deviceInfo.networkId.c_str();
+
+    if (deviceInfo.networkId == LOCAL_NETWORK_ID) {
+        attr.adapterName = "primary";
+        fastSource_ = FastAudioCapturerSource::GetInstance();
+    } else {
+        attr.adapterName = "remote";
+        fastSource_ = RemoteFastAudioCapturerSource::GetInstance(deviceInfo.networkId);
+    }
+    CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr, false, "ConfigInputPoint GetInstance failed.");
 
     int32_t err = fastSource_->Init(attr);
     if (err != SUCCESS || !fastSource_->IsInited()) {
@@ -297,10 +305,6 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
         fastSource_ = nullptr;
         return false;
     }
-
-    float initVolume = 1.0; // init volume to 1.0, right and left
-    err = fastSource_->SetVolume(initVolume, initVolume);
-    CHECK_AND_BREAK_LOG(err == SUCCESS, "%{public}s remote fast set volume fail, err %{public}d.", __func__, err);
 
     bool ret = writeTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
