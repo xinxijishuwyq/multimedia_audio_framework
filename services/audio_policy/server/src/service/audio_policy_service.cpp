@@ -399,9 +399,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     AUDIO_INFO_LOG("SelectOutputDevice start for uid[%{public}d]", audioRendererFilter->uid);
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
-    if (res != SUCCESS) {
-        return res;
-    }
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
 
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
@@ -436,7 +434,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         }
         if (LOCAL_NETWORK_ID == networkId && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
             AUDIO_INFO_LOG("Sink-input[%{public}zu] route to effect sink, don't move", i);
-            AUDIO_DEBUG_LOG("Sink-input[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
             continue;
         }
         AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());

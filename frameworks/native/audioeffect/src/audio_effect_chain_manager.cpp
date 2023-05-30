@@ -289,7 +289,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
             AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
             continue;
         }
-    }    
+    }
     return SUCCESS;
 }
 
