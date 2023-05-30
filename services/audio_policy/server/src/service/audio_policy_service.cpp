@@ -434,6 +434,11 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
             continue;
         }
+        if (LOCAL_NETWORK_ID == networkId && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
+            AUDIO_INFO_LOG("Sink-input[%{public}zu] route to effect sink, don't move", i);
+            AUDIO_DEBUG_LOG("Sink-input[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
+            continue;
+        }
         AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
         if (moveAll || (targetUid == sinkInputs[i].uid && targetStreamType == sinkInputs[i].streamType)) {
             targetSinkInputs.push_back(sinkInputs[i]);
@@ -815,6 +820,12 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
     }
+
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string sinkName = GetPortName(deviceType);
+    bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
+    CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -1950,6 +1961,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice_);
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
         OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
+        audioEffectManager_.SetMasterSinkAvailable();
+        if (audioEffectManager_.CanLoadEffectSinks()) {
+            LoadEffectSinks();
+        }
     }
 }
 
@@ -1985,6 +2000,28 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     gsp->SetAudioBalanceValue(audioBalance);
 }
 
+void AudioPolicyService::LoadEffectSinks()
+{
+    // Create sink for each effect
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-cluster-sink.z.so";
+    moduleInfo.name = "CLUSTER";
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+    IOHandles_[moduleInfo.name] = ioHandle;
+
+    moduleInfo.lib = "libmodule-effect-sink.z.so";
+    moduleInfo.rate = "44100";
+    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
+        ++sceneType) {
+        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
+        moduleInfo.name = sceneType->second;
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
+}
+
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library
@@ -2004,7 +2041,20 @@ void AudioPolicyService::LoadEffectLibrary()
     }
 
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
-	audioEffectManager_.GetAvailableAEConfig();
+    audioEffectManager_.GetAvailableAEConfig();
+
+    // Initialize EffectChainManager in audio service through IPC
+    SupportedEffectConfig supportedEffectConfig;
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
+    std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
+    audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
+    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
+    CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
+
+    audioEffectManager_.SetEffectChainManagerAvailable();
+    if (audioEffectManager_.CanLoadEffectSinks()) {
+        LoadEffectSinks();
+    }
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,

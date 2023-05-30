@@ -41,6 +41,7 @@ public:
     void SetEffectChainManagerAvailable();
     bool CanLoadEffectSinks();
     void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
+    bool CheckEffectSinkName(std::string &sinkName);
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
