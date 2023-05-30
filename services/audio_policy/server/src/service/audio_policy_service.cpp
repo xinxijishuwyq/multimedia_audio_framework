@@ -1133,6 +1133,25 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("HandleFileDevice");
+    AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
+    std::string portName = GetPortName(deviceType);
+    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
+
+    int32_t result = audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
+    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
+    audioPolicyManager_.SuspendAudioDevice(portName, false);
+
+    if (isUpdateRouteSupported_) {
+        UpdateActiveDeviceRoute(deviceType);
+    }
+
+    UpdateInputDeviceInfo(deviceType);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
     AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_, deviceType);
@@ -1144,6 +1163,11 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
 
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+
+    if (deviceType == DEVICE_TYPE_FILE_SINK || currentActiveDevice_ == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
         return result;
     }
 
