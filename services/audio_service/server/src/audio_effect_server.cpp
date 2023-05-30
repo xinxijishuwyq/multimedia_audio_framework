@@ -123,7 +123,7 @@ LibEntryT *FindLibrary(const std::string &name, const std::vector<std::unique_pt
 }
 
 LoadEffectResult LoadEffect(const Effect &effect, const std::string &name,
-                            std::vector<std::unique_ptr<LibEntryT>> &libList)
+    const std::vector<std::unique_ptr<LibEntryT>> &libList)
 {
     LoadEffectResult result;
 

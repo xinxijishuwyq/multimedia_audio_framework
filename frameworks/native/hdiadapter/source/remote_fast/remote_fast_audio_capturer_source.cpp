@@ -51,7 +51,7 @@ RemoteFastAudioCapturerSource::RemoteFastAudioCapturerSource(const std::string& 
 RemoteFastAudioCapturerSource::~RemoteFastAudioCapturerSource()
 {
     if (capturerInited_.load()) {
-        DeInit();
+        RemoteFastAudioCapturerSource::DeInit();
     }
     AUDIO_INFO_LOG("~RemoteFastAudioCapturerSource end.");
 }
