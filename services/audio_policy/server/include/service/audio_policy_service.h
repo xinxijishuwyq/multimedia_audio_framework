@@ -245,6 +245,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

@@ -2031,5 +2031,11 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     return mPolicyService.GetMaxRendererInstances();
 }
+
+int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
+{
+    int32_t ret = mPolicyService.QueryEffectManagerSceneMode(supportedEffectConfig);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

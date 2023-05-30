@@ -1821,5 +1821,121 @@ int32_t AudioPolicyProxy::GetMaxRendererInstances()
     }
     return reply.ReadInt32();
 }
+
+static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
+{
+    int j, k;
+    for (j = 0; j < countMode; j++) {
+        StreamEffectMode streamEffectMode;
+        streamEffectMode.mode = reply.ReadString();
+        int countDev = reply.ReadInt32();
+        if (countDev > 0) {
+            for (k = 0; k < countDev; k++) {
+                string type = reply.ReadString();
+                string chain = reply.ReadString();
+                streamEffectMode.devicePort.push_back({type, chain});
+            }
+        }
+        stream.streamEffectMode.push_back(streamEffectMode);
+    }
+}
+
+static Stream PreprocessProcess(MessageParcel &reply)
+{
+    Stream stream;
+    stream.scene = reply.ReadString();
+    int countMode = reply.ReadInt32();
+    if (countMode > 0) {
+        PreprocessMode(stream, reply, countMode);
+    }
+    return stream;
+}
+
+static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
+{
+    int j, k;
+    for (j = 0; j < countMode; j++) {
+        StreamEffectMode streamEffectMode;
+        streamEffectMode.mode = reply.ReadString();
+        int countDev = reply.ReadInt32();
+        if (countDev > 0) {
+            for (k = 0; k < countDev; k++) {
+                string type = reply.ReadString();
+                string chain = reply.ReadString();
+                streamEffectMode.devicePort.push_back({type, chain});
+            }
+        }
+        stream.streamEffectMode.push_back(streamEffectMode);
+    }
+}
+
+static Stream PostprocessProcess(MessageParcel &reply)
+{
+    Stream stream;
+    stream.scene = reply.ReadString();
+    int countMode = reply.ReadInt32();
+    if (countMode > 0) {
+        PostprocessMode(stream, reply, countMode);
+    }
+    return stream;
+}
+
+static int32_t QueryEffectSceneModeChkReply(int countPre, int countPost)
+{
+    if ((countPre < 0) || (countPre > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    if ((countPost < 0) || (countPost > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
+        AUDIO_ERR_LOG("QUERY_EFFECT_SCENEMODE read replyParcel failed");
+        return -1;
+    }
+    return 0;
+}
+
+int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
+{
+    int i;
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
+        return -1;
+    }
+    error = Remote()->SendRequest(QUERY_EFFECT_SCENEMODE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
+        return error;
+    }
+    int countPre = reply.ReadInt32();
+    int countPost = reply.ReadInt32();
+    error = QueryEffectSceneModeChkReply(countPre, countPost);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("get scene & mode failed, error: %d", error);
+        return error;
+    }
+    // preprocess
+    Stream stream;
+    if (countPre > 0) {
+        ProcessNew preProcessNew;
+        for (i = 0; i < countPre; i++) {
+            stream = PreprocessProcess(reply);
+            preProcessNew.stream.push_back(stream);
+        }
+        supportedEffectConfig.preProcessNew = preProcessNew;
+    }
+    // postprocess
+    if (countPost > 0) {
+        ProcessNew postProcessNew;
+        for (i = 0; i < countPost; i++) {
+            stream = PostprocessProcess(reply);
+            postProcessNew.stream.push_back(stream);
+        }
+        supportedEffectConfig.postProcessNew = postProcessNew;
+    }
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

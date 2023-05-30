@@ -24,6 +24,7 @@
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 #include "audio_system_manager.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -191,6 +192,8 @@ public:
     virtual float GetMaxStreamVolume(void) = 0;
 
     virtual int32_t GetMaxRendererInstances() = 0;
+
+    virtual int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

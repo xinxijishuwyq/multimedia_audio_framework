@@ -1093,5 +1093,16 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
 
     return gsp->GetMaxRendererInstances();
 }
+
+int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("QueryEffectSceneMode: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    int error = gsp->QueryEffectSceneMode(supportedEffectConfig);
+    return error;
+}
 } // namespace AudioStandard
 } // namespace OHOS

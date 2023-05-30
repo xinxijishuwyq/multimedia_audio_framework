@@ -453,7 +453,6 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     for (Effect x : effects) {
         dataParcel.WriteString(x.name);
         dataParcel.WriteString(x.libraryName);
-        dataParcel.WriteString(x.effectId);
     }
 
     error = Remote()->SendRequest(LOAD_AUDIO_EFFECT_LIBRARIES, dataParcel, replyParcel, option);
@@ -471,8 +470,7 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     for (i = 0; i < successEffSize; i++) {
         string effectName = replyParcel.ReadString();
         string libName = replyParcel.ReadString();
-        string effectId = replyParcel.ReadString();
-        successEffects.push_back({effectName, libName, effectId});
+        successEffects.push_back({effectName, libName});
     }
 
     return true;

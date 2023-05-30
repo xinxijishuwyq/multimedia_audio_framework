@@ -16,6 +16,7 @@
 #ifndef AUDIO_STREAM_MGR_NAPI_H_
 #define AUDIO_STREAM_MGR_NAPI_H_
 
+#include "audio_errors.h"
 #include "audio_renderer.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -36,6 +37,25 @@ public:
     static napi_value GetStreamManager(napi_env env, napi_callback_info info);
 
 private:
+    struct AudioStreamMgrAsyncContext {
+        napi_env env;
+        napi_async_work work;
+        napi_deferred deferred;
+        napi_ref callbackRef = nullptr;
+        int32_t status = SUCCESS;
+        int32_t volType;
+        int32_t contentType;
+        int32_t streamUsage;
+        bool isTrue;
+        bool isLowLatencySupported;
+        bool isActive;
+        AudioStreamInfo audioStreamInfo;
+        AudioStreamMgrNapi *objectInfo;
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+        AudioSceneEffectInfo audioSceneEffectInfo;
+    };
+
     static napi_value GetCurrentAudioRendererInfos(napi_env env, napi_callback_info info);
     static napi_value GetCurrentAudioCapturerInfos(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
@@ -53,6 +73,13 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static bool ParseAudioStreamInfo(napi_env env, napi_value root, AudioStreamInfo &audioStreamInfo);
     static void IsLowLatencySupportedCallback(napi_env env, napi_status status, void *data);
+    static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
+    static void GetCurrentCapturerChangeInfosCallbackComplete(napi_env env, napi_status status, void *data);
+    static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetEffectInfoArrayCallbackComplete(napi_env env, napi_status status, void *data);
+    static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data);
+    static void CommonCallbackRoutine(napi_env env, AudioStreamMgrAsyncContext* &asyncContext,
+        const napi_value &valueParam);
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
     AudioSystemManager *audioMngr_;

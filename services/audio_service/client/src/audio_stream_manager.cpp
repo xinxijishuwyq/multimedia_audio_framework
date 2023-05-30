@@ -17,6 +17,7 @@
 #include "audio_policy_manager.h"
 #include "audio_log.h"
 #include "audio_stream_manager.h"
+#include "audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -79,6 +80,48 @@ bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
 {
     AUDIO_DEBUG_LOG("IsAudioRendererLowLatencySupported");
     return AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
+}
+
+static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
+    AudioSceneEffectInfo &audioSceneEffectInfo, int i)
+{
+    uint32_t j;
+    AudioEffectMode audioEffectMode;
+    for (j = 0; j < supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size(); j++) {
+        audioEffectMode = effectModeMap.at(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
+        audioSceneEffectInfo.mode.push_back(audioEffectMode);
+    }
+    auto index = std::find(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end(), 0);
+    if (index == audioSceneEffectInfo.mode.end()) {
+        audioEffectMode = effectModeMap.at("EFFECT_NONE");
+        audioSceneEffectInfo.mode.push_back(audioEffectMode);
+    }
+    index = std::find(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end(), 1);
+    if (index == audioSceneEffectInfo.mode.end()) {
+        audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
+        audioSceneEffectInfo.mode.push_back(audioEffectMode);
+    }
+    std::sort(audioSceneEffectInfo.mode.begin(), audioSceneEffectInfo.mode.end());
+}
+
+int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo,
+    ContentType contentType, StreamUsage streamUsage)
+{
+    int i;
+    AudioStreamType streamType =  AudioStream::GetStreamType(contentType, streamUsage);
+    std::string effectScene = AudioServiceClient::GetEffectSceneName(streamType);
+    SupportedEffectConfig supportedEffectConfig;
+    int ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
+    int streamNum = supportedEffectConfig.postProcessNew.stream.size();
+    if (streamNum > 0) {
+        for (i = 0; i < streamNum; i++) {
+            if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
+                UpdateEffectInfoArray(supportedEffectConfig, audioSceneEffectInfo, i);
+                break;
+            }
+        }
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -23,7 +23,7 @@
 #include <cstring>
 #include <timestamp.h>
 #include <mutex>
-#include "audio_info.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
