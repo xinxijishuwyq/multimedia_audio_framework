@@ -250,7 +250,6 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_005, TestSize.Level1)
     Effect effect = {};
     effect.name = "test";
     effect.libraryName = "test";
-    effect.effectId = "test";
     effects.push_back(effect);
 
     std::vector<Effect> successEffects;
