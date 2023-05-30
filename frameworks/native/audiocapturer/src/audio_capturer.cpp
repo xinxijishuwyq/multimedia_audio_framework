@@ -20,7 +20,6 @@
 #ifdef OHCORE
 #include "audio_capturer_gateway.h"
 #endif
-#include "audio_stream.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
 
@@ -40,7 +39,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
 #ifdef OHCORE
     return std::make_unique<AudioCapturerGateway>(audioStreamType);
 #else
-    return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo);
+    return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, true);
 #endif
 }
 
@@ -91,7 +90,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 #ifdef OHCORE
     auto capturer = std::make_unique<AudioCapturerGateway>(audioStreamType);
 #else
-    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo);
+    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 #endif
     if (capturer == nullptr) {
         return capturer;
@@ -99,7 +98,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
-        capturer->SetApplicationCachePath(cachePath);
+        capturer->cachePath_ = cachePath;
     }
 
     if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -119,11 +118,12 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return capturer;
 }
 
-AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
+AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
 {
     if (audioStreamType < STREAM_VOICE_CALL || audioStreamType > STREAM_ALL) {
         AUDIO_ERR_LOG("AudioCapturerPrivate audioStreamType is invalid!");
     }
+    audioStreamType_ = audioStreamType;
     auto iter = streamToSource_.find(audioStreamType);
     if (iter != streamToSource_.end()) {
         capturerInfo_.sourceType = iter->second;
@@ -136,11 +136,13 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     if (appInfo_.appUid < 0) {
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
-
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_RECORD, appInfo_.appUid);
-    if (audioStream_) {
-        AUDIO_DEBUG_LOG("AudioCapturerPrivate::Audio stream created");
+    if (createStream) {
+        AudioStreamParams tempParams = {};
+        audioStream_ = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, audioStreamType_,
+            appInfo_.appUid);
+        AUDIO_INFO_LOG("AudioCapturerPrivate create normal stream for old mode.");
     }
+
     capturerProxyObj_ = std::make_shared<AudioCapturerProxyObj>();
     if (!capturerProxyObj_) {
         AUDIO_ERR_LOG("AudioCapturerProxyObj Memory Allocation Failed !!");
@@ -160,8 +162,27 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     AUDIO_INFO_LOG("AudioCapturer::SetParams");
-    if (!audioStream_->VerifyClientMicrophonePermission(appInfo_.appTokenId, appInfo_.appUid, true,
-        AUDIO_PERMISSION_START)) {
+    AudioStreamParams audioStreamParams;
+    audioStreamParams.format = params.audioSampleFormat;
+    audioStreamParams.samplingRate = params.samplingRate;
+    audioStreamParams.channels = params.audioChannel;
+    audioStreamParams.encoding = params.audioEncoding;
+
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST) {
+        streamClass = IAudioStream::FAST_STREAM;
+    }
+
+    // check AudioStreamParams for fast stream
+    if (audioStream_ == nullptr) {
+        audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_,
+            appInfo_.appUid);
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetRecordStream faied.");
+        AUDIO_INFO_LOG("IAudioStream::GetStream success");
+        audioStream_->SetApplicationCachePath(cachePath_);
+    }
+    if (!audioStream_->VerifyClientMicrophonePermission(appInfo_.appTokenId, appInfo_.appUid,
+        true, AUDIO_PERMISSION_START)) {
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }
@@ -169,12 +190,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     capturerProxyObj_->SaveCapturerObj(capturer);
 
     audioStream_->SetCapturerInfo(capturerInfo_);
-
-    AudioStreamParams audioStreamParams;
-    audioStreamParams.format = params.audioSampleFormat;
-    audioStreamParams.samplingRate = params.samplingRate;
-    audioStreamParams.channels = params.audioChannel;
-    audioStreamParams.encoding = params.audioEncoding;
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
@@ -444,10 +459,15 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
 
 void AudioCapturerPrivate::SetApplicationCachePath(const std::string cachePath)
 {
-    audioStream_->SetApplicationCachePath(cachePath);
+    cachePath_ = cachePath;
+    if (audioStream_ != nullptr) {
+        audioStream_->SetApplicationCachePath(cachePath_);
+    } else {
+        AUDIO_WARNING_LOG("AudioCapturer SetApplicationCachePath while stream is null");
+    }
 }
 
-AudioCapturerInterruptCallbackImpl::AudioCapturerInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream)
+AudioCapturerInterruptCallbackImpl::AudioCapturerInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream)
     : audioStream_(audioStream)
 {
     AUDIO_INFO_LOG("AudioCapturerInterruptCallbackImpl constructor");

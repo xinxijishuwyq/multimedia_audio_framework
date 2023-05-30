@@ -33,12 +33,14 @@
 #include <audio_info.h>
 #include <audio_timer.h>
 
+#include "event_handler.h"
+#include "event_runner.h"
+
 #include "audio_capturer.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
-#include "event_handler.h"
-#include "event_runner.h"
+#include "i_audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,43 +69,6 @@ struct AudioCache {
     bool isFull;
 };
 
-/**
- * @brief Enumerates the stream states of the current device.
- *
- * @since 1.0
- * @version 1.0
- */
-enum State {
-    /** INVALID */
-    INVALID = -1,
-    /** New */
-    NEW,
-    /** Prepared */
-    PREPARED,
-    /** Running */
-    RUNNING,
-    /** Stopped */
-    STOPPED,
-    /** Released */
-    RELEASED,
-    /** Paused */
-    PAUSED,
-    /** Stopping */
-    STOPPING
-};
-
-class AudioStreamCallback {
-public:
-    virtual ~AudioStreamCallback() = default;
-    /**
-     * Called when stream state is updated.
-     *
-     * @param state Indicates the InterruptEvent information needed by client.
-     * For details, refer InterruptEvent struct in audio_info.h
-     */
-    virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
-};
-
 class AudioRendererCallbacks {
 public:
     virtual ~AudioRendererCallbacks();
@@ -128,7 +93,7 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const = 0;
 };
 
-class AudioServiceClient : public AudioTimer, public AppExecFwk::EventHandler {
+class AudioServiceClient : public IAudioStream, public AudioTimer, public AppExecFwk::EventHandler {
 public:
     static constexpr char PA_RUNTIME_DIR[] = "/data/data/.pulse_dir/runtime";
     static constexpr char PA_STATE_DIR[] = "/data/data/.pulse_dir/state";
@@ -317,7 +282,7 @@ public:
     * @param underFlowCount will be get to number of frames
     * @return Returns number of underflow
     */
-    virtual uint32_t GetUnderflowCount() const;
+    uint32_t GetUnderflowCount() override;
 
     // Device volume & route handling APIs
 
@@ -345,14 +310,15 @@ public:
     * @param callback indicates pointer for registered callbacks
     * @return none
     */
-    void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback);
+    void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
+        override;
 
     /**
     * Unset the renderer frame position callback
     *
     * @return none
     */
-    void UnsetRendererPositionCallback();
+    void UnsetRendererPositionCallback() override;
 
     /**
     * Set the renderer frame period position callback
@@ -361,14 +327,14 @@ public:
     * @return none
     */
     void SetRendererPeriodPositionCallback(int64_t markPosition,
-        const std::shared_ptr<RendererPeriodPositionCallback> &callback);
+        const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
 
     /**
     * Unset the renderer frame period position callback
     *
     * @return none
     */
-    void UnsetRendererPeriodPositionCallback();
+    void UnsetRendererPeriodPositionCallback() override;
 
     /**
     * Set the capturer frame position callback
@@ -376,14 +342,15 @@ public:
     * @param callback indicates pointer for registered callbacks
     * @return none
     */
-    void SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback);
+    void SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback)
+        override;
 
     /**
     * Unset the capturer frame position callback
     *
     * @return none
     */
-    void UnsetCapturerPositionCallback();
+    void UnsetCapturerPositionCallback() override;
 
     /**
     * Set the capturer frame period position callback
@@ -392,14 +359,14 @@ public:
     * @return none
     */
     void SetCapturerPeriodPositionCallback(int64_t markPosition,
-        const std::shared_ptr<CapturerPeriodPositionCallback> &callback);
+        const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
 
     /**
     * Unset the capturer frame period position callback
     *
     * @return none
     */
-    void UnsetCapturerPeriodPositionCallback();
+    void UnsetCapturerPeriodPositionCallback() override;
 
     /**
      * @brief Set the track volume
@@ -440,14 +407,14 @@ public:
     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
     * defined in {@link audio_errors.h} otherwise.
     */
-    virtual int32_t SetRendererSamplingRate(uint32_t sampleRate);
+    int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
 
     /**
     * @brief Obtains render sampling rate
     *
     * @return Returns current render sampling rate
     */
-    virtual uint32_t GetRendererSamplingRate();
+    uint32_t GetRendererSamplingRate() override;
 
     /**
      * @brief Set the buffer duration in msec
@@ -455,7 +422,7 @@ public:
      * @param bufferSizeInMsec buffer size in duration.
      * @return Returns {@link SUCCESS} defined in {@link audio_errors.h} otherwise.
      */
-    int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec);
+    int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
 
     /**
      * @brief Saves StreamCallback
@@ -526,7 +493,7 @@ public:
      *
      * @return none
      */
-    void SetApplicationCachePath(const std::string cachePath);
+    void SetApplicationCachePath(const std::string cachePath) override;
 
     /**
      * @brief Verifies the clients permsiion based on appTokenId
@@ -534,9 +501,10 @@ public:
      * @return Returns whether the authentication was success or not
      */
     bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state);
+        AudioPermissionState state) override;
+
     bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state);
+        AudioPermissionState state) override;
     int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
     float GetStreamLowPowerVolume();
     float GetSingleStreamVol();
@@ -544,15 +512,7 @@ public:
     // Audio timer callback
     virtual void OnTimeOut() override;
 
-    void SetClientID(int32_t clientPid, int32_t clientUid);
-
-    /**
-    * Gets the audio effect scene name
-    *
-    * @param audioType indicate the stream type like music, system, ringtone etc
-    * @return Returns the audio effect scene name.
-    */
-    static const std::string GetEffectSceneName(AudioStreamType audioType);
+    void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -560,8 +520,8 @@ protected:
     void SendReadBufferRequestEvent();
     void HandleWriteRequestEvent();
     void HandleReadRequestEvent();
-    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback);
-    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback);
+    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
+    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
 
 private:
     pa_threaded_mainloop *mainLoop;

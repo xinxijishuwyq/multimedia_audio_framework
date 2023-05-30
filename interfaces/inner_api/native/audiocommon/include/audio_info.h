@@ -39,6 +39,7 @@ constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
+constexpr uint32_t STREAM_FLAG_FAST = 4;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
@@ -939,6 +940,30 @@ enum CapturerState {
     CAPTURER_PAUSED
 };
 
+enum State {
+    /** INVALID */
+    INVALID = -1,
+    /** New */
+    NEW,
+    /** Prepared */
+    PREPARED,
+    /** Running */
+    RUNNING,
+    /** Stopped */
+    STOPPED,
+    /** Released */
+    RELEASED,
+    /** Paused */
+    PAUSED,
+    /** Stopping */
+    STOPPING
+};
+
+enum StateChangeCmdType {
+    CMD_FROM_CLIENT = 0,
+    CMD_FROM_SYSTEM = 1
+};
+
 enum AudioMode {
     AUDIO_MODE_PLAYBACK,
     AUDIO_MODE_RECORD
@@ -1068,11 +1093,6 @@ struct AudioRendererDataInfo {
 enum AudioPermissionState {
     AUDIO_PERMISSION_START = 0,
     AUDIO_PERMISSION_STOP = 1,
-};
-
-enum StateChangeCmdType {
-    CMD_FROM_CLIENT = 0,
-    CMD_FROM_SYSTEM = 1
 };
 
 class AudioRendererPolicyServiceDiedCallback {

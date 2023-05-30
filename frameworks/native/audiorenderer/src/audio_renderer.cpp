@@ -16,12 +16,11 @@
 #include <sstream>
 
 #include "audio_renderer.h"
+#include "audio_renderer_private.h"
 
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_stream.h"
-#include "audio_renderer_private.h"
 #include "audio_utils.h"
 #ifdef OHCORE
 #include "audio_renderer_gateway.h"
@@ -84,7 +83,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 #ifdef OHCORE
     return std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
-    return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
+    return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, true);
 #endif
 }
 
@@ -130,16 +129,16 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         }
     }
 
-    AudioStreamType audioStreamType = AudioStream::GetStreamType(contentType, streamUsage);
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(contentType, streamUsage);
 #ifdef OHCORE
     auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
-    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo);
+    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
 #endif
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
-        audioRenderer->SetApplicationCachePath(cachePath);
+        audioRenderer->cachePath_ = cachePath;
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
@@ -168,7 +167,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return audioRenderer;
 }
 
-AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo)
+AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
 {
     appInfo_ = appInfo;
     if (!(appInfo_.appPid)) {
@@ -179,12 +178,16 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
 
-    audioStream_ = std::make_shared<AudioStream>(audioStreamType, AUDIO_MODE_PLAYBACK, appInfo_.appUid);
-    if (audioStream_) {
-        AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
-        // Initializing with default values
-        rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
-        rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    if (createStream) {
+        AudioStreamParams tempParams = {};
+        audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, tempParams, audioStreamType,
+            appInfo_.appUid);
+        if (audioStream_) {
+            // Initializing with default values
+            rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
+            rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+        }
+        AUDIO_INFO_LOG("AudioRendererPrivate create normal stream for old mode.");
     }
 
     rendererProxyObj_ = std::make_shared<AudioRendererProxyObj>();
@@ -244,14 +247,32 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");
     AudioStreamParams audioStreamParams;
-    AudioRenderer *renderer = this;
-    rendererProxyObj_->SaveRendererObj(renderer);
-    audioStream_->SetRendererInfo(rendererInfo_);
 
     audioStreamParams.format = params.sampleFormat;
     audioStreamParams.samplingRate = params.sampleRate;
     audioStreamParams.channels = params.channelCount;
     audioStreamParams.encoding = params.encodingType;
+
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType,
+        rendererInfo_.streamUsage);
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST) {
+        AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
+        streamClass = IAudioStream::FAST_STREAM;
+    }
+    // check AudioStreamParams for fast stream
+    // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
+    if (audioStream_ == nullptr) {
+        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
+            appInfo_.appUid);
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream faied.");
+        AUDIO_INFO_LOG("IAudioStream::GetStream success");
+        audioStream_->SetApplicationCachePath(cachePath_);
+    }
+
+    AudioRenderer *renderer = this;
+    rendererProxyObj_->SaveRendererObj(renderer);
+    audioStream_->SetRendererInfo(rendererInfo_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
@@ -527,7 +548,7 @@ int32_t AudioRendererPrivate::SetAudioRendererDesc(AudioRendererDesc audioRender
 {
     ContentType contentType = audioRendererDesc.contentType;
     StreamUsage streamUsage = audioRendererDesc.streamUsage;
-    AudioStreamType audioStreamType = audioStream_->GetStreamType(contentType, streamUsage);
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(contentType, streamUsage);
     audioInterrupt_.audioFocusType.streamType = audioStreamType;
     return audioStream_->SetAudioStreamType(audioStreamType);
 }
@@ -578,7 +599,7 @@ int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
 
-AudioRendererInterruptCallbackImpl::AudioRendererInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
+AudioRendererInterruptCallbackImpl::AudioRendererInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream,
     const AudioInterrupt &audioInterrupt)
     : audioStream_(audioStream), audioInterrupt_(audioInterrupt)
 {
@@ -793,7 +814,12 @@ int32_t AudioRendererPrivate::GetBufQueueState(BufferQueueState &bufState) const
 
 void AudioRendererPrivate::SetApplicationCachePath(const std::string cachePath)
 {
-    audioStream_->SetApplicationCachePath(cachePath);
+    cachePath_ = cachePath;
+    if (audioStream_ != nullptr) {
+        audioStream_->SetApplicationCachePath(cachePath);
+    } else {
+        AUDIO_WARNING_LOG("AudioRenderer SetApplicationCachePath while stream is null");
+    }
 }
 
 int32_t AudioRendererPrivate::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)

@@ -1,0 +1,141 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License") = 0;
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef I_AUDIO_STREAM_H
+#define I_AUDIO_STREAM_H
+
+#include <map>
+#include <memory>
+#include "timestamp.h"
+#include "audio_info.h"
+#include "audio_capturer.h"
+#include "audio_renderer.h"
+#include "audio_stream_manager.h"
+
+namespace OHOS {
+namespace AudioStandard {
+class AudioStreamCallback {
+public:
+    virtual ~AudioStreamCallback() = default;
+    /**
+     * Called when stream state is updated.
+     *
+     * @param state Indicates the InterruptEvent information needed by client.
+     * For details, refer InterruptEvent struct in audio_info.h
+     */
+    virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+};
+class IAudioStream {
+public:
+    enum StreamClass : uint32_t {
+        PA_STREAM = 0,
+        FAST_STREAM,
+    };
+
+    virtual ~IAudioStream() = default;
+
+    static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
+        AudioStreamType eStreamType, int32_t appUid);
+    static std::shared_ptr<IAudioStream> GetRecordStream(StreamClass streamClass, AudioStreamParams params,
+        AudioStreamType eStreamType, int32_t appUid);
+
+    static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
+    static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
+    static const std::string GetEffectSceneName(AudioStreamType audioType);
+
+    virtual void SetClientID(int32_t clientPid, int32_t clientUid) = 0;
+    virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
+    virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
+    virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj) = 0;
+    virtual int32_t GetAudioStreamInfo(AudioStreamParams &info) = 0;
+    virtual bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+        AudioPermissionState state) = 0;
+    virtual bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+        AudioPermissionState state) = 0;
+    virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
+    virtual State GetState() = 0;
+    virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
+    virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
+    virtual int32_t GetFrameCount(uint32_t &frameCount) = 0;
+    virtual int32_t GetLatency(uint64_t &latency) = 0;
+    virtual int32_t SetAudioStreamType(AudioStreamType audioStreamType) = 0;
+    virtual int32_t SetVolume(float volume) = 0;
+    virtual float GetVolume() = 0;
+    virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
+    virtual AudioRendererRate GetRenderRate() = 0;
+    virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
+
+    // callback mode api
+    virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
+    virtual AudioRenderMode GetRenderMode() = 0;
+    virtual int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) = 0;
+
+    virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) = 0;
+    virtual AudioCaptureMode GetCaptureMode() = 0;
+    virtual int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) = 0;
+
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
+    virtual int32_t GetBufQueueState(BufferQueueState &bufState) = 0;
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
+    virtual int32_t Clear() = 0;
+
+    virtual int32_t SetLowPowerVolume(float volume) = 0;
+    virtual float GetLowPowerVolume() = 0;
+    virtual float GetSingleStreamVolume() = 0;
+
+    // for effect
+    virtual AudioEffectMode GetAudioEffectMode() = 0;
+    virtual int32_t SetAudioEffectMode(AudioEffectMode effectMode) = 0;
+
+    // Common APIs
+    virtual bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+    virtual bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+    virtual bool StopAudioStream() = 0;
+    virtual bool ReleaseAudioStream(bool releaseRunner = true) = 0;
+    virtual bool FlushAudioStream() = 0;
+
+    // Playback related APIs
+    virtual bool DrainAudioStream() = 0;
+    virtual size_t Write(uint8_t *buffer, size_t buffer_size) = 0;
+
+    // Recording related APIs
+    virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
+
+    virtual uint32_t GetUnderflowCount() = 0;
+
+    virtual void SetRendererPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPositionCallback> &callback) = 0;
+    virtual void UnsetRendererPositionCallback() = 0;
+
+    virtual void SetRendererPeriodPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPeriodPositionCallback> &callback) = 0;
+    virtual void UnsetRendererPeriodPositionCallback() = 0;
+
+    virtual void SetCapturerPositionCallback(int64_t markPosition,
+        const std::shared_ptr<CapturerPositionCallback> &callback) = 0;
+    virtual void UnsetCapturerPositionCallback() = 0;
+
+    virtual void SetCapturerPeriodPositionCallback(int64_t markPosition,
+        const std::shared_ptr<CapturerPeriodPositionCallback> &callback) = 0;
+
+    virtual void UnsetCapturerPeriodPositionCallback() = 0;
+    virtual int32_t SetRendererSamplingRate(uint32_t sampleRate) = 0;
+    virtual uint32_t GetRendererSamplingRate() = 0;
+    virtual int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) = 0;
+    virtual void SetApplicationCachePath(const std::string cachePath) = 0;
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // I_AUDIO_STREAM_H

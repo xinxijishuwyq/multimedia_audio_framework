@@ -19,7 +19,7 @@
 #include "audio_log.h"
 #include "audio_process_in_client.h"
 #include "audio_process_proxy.h"
-#include "audio_service_client.h"
+#include "audio_stream.h"
 #include "audio_system_manager.h"
 #include <gtest/gtest.h>
 #include "iservice_registry.h"
@@ -359,7 +359,9 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
 HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
 {
     int32_t ret = -1;
-    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioServiceClient>();
+
+    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioStream>(STREAM_MUSIC,
+        AUDIO_MODE_PLAYBACK, getuid());
 
     ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
     ret = audioServiceClient->Initialize(eClientType);

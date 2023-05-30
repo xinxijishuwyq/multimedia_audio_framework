@@ -1053,7 +1053,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
             AUDIO_ERR_LOG("Set render rate failed");
         }
 
-        effectSceneName = GetEffectSceneName(audioType);
+        effectSceneName = IAudioStream::GetEffectSceneName(audioType);
         if (SetStreamAudioEffectMode(effectMode) != AUDIO_CLIENT_SUCCESS) {
             AUDIO_ERR_LOG("Set audio effect mode failed");
         }
@@ -1070,7 +1070,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     return AUDIO_CLIENT_SUCCESS;
 }
 
-uint32_t AudioServiceClient::GetUnderflowCount() const
+uint32_t AudioServiceClient::GetUnderflowCount()
 {
     return underFlowCount;
 }
@@ -2106,7 +2106,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     mStreamType = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
-    effectSceneName = GetEffectSceneName(audioStreamType);
+    effectSceneName = IAudioStream::GetEffectSceneName(audioStreamType);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -2858,36 +2858,6 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
         default:
             break;
     }
-}
-
-const std::string AudioServiceClient::GetEffectSceneName(AudioStreamType audioType)
-{
-    std::string name;
-    switch (audioType) {
-        case STREAM_DEFAULT:
-            name = "SCENE_MUSIC";
-            break;
-        case STREAM_MUSIC:
-            name = "SCENE_MUSIC";
-            break;
-        case STREAM_MEDIA:
-            name = "SCENE_MOVIE";
-            break;
-        case STREAM_TTS:
-            name = "SCENE_SPEECH";
-            break;
-        case STREAM_RING:
-            name = "SCENE_RING";
-            break;
-        case STREAM_ALARM:
-            name = "SCENE_RING";
-            break;
-        default:
-            name = "SCENE_OTHERS";
-    }
-
-    const std::string sceneName = name;
-    return sceneName;
 }
 
 const std::string AudioServiceClient::GetEffectModeName(AudioEffectMode effectMode)

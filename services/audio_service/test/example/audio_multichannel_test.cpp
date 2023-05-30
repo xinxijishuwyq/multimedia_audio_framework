@@ -15,7 +15,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "audio_service_client.h"
+#include "audio_stream.h"
 #include "audio_log.h"
 #include "audio_system_manager.h"
 #include "pcm2wav.h"
@@ -67,7 +67,8 @@ int32_t StartRecording(char *recPath, int samplingRate, size_t frames, uint32_t 
         return AUDIO_ERR;
     }
 
-    std::unique_ptr client = std::make_unique<AudioServiceClient>();
+    std::unique_ptr<AudioServiceClient> client = std::make_unique<AudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD,
+        getuid());
     if (!InitClient(client, samplingRate, channelCount)) {
         AUDIO_ERR_LOG("Initialize client failed");
         return AUDIO_ERR;
@@ -252,7 +253,8 @@ int32_t StartRendererPlayback(char *inputPath)
     audioParams.samplingRate = wavHeader.SamplesPerSec;
     audioParams.channels = wavHeader.NumOfChan;
 
-    std::unique_ptr client = std::make_unique<AudioServiceClient>();
+    std::unique_ptr<AudioServiceClient> client = std::make_unique<AudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
+        getuid());
     if (InitPlayback(client, audioParams) < 0) {
         AUDIO_INFO_LOG("Initialize playback failed");
         (void)fclose(wavFile);

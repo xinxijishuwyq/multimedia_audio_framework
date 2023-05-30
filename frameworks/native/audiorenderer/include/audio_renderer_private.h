@@ -18,8 +18,8 @@
 
 #include "audio_interrupt_callback.h"
 #include "audio_renderer.h"
-#include "audio_stream.h"
 #include "audio_renderer_proxy_obj.h"
+#include "i_audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,14 +90,15 @@ public:
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
 
-    AudioRendererInfo rendererInfo_ = {};
+    AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
+    std::string cachePath_;
 
-    explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo);
+    explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     ~AudioRendererPrivate();
 
 private:
     int32_t InitAudioInterruptCallback();
-    std::shared_ptr<AudioStream> audioStream_;
+    std::shared_ptr<IAudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -114,7 +115,7 @@ private:
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
 public:
-    explicit AudioRendererInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream,
+    explicit AudioRendererInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream,
         const AudioInterrupt &audioInterrupt);
     virtual ~AudioRendererInterruptCallbackImpl();
 
@@ -125,7 +126,7 @@ private:
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
-    std::shared_ptr<AudioStream> audioStream_;
+    std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioRendererCallback> callback_;
     std::shared_ptr<AudioRendererCallback> cb_;
     AudioInterrupt audioInterrupt_ {};

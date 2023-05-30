@@ -34,60 +34,6 @@ constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
 
-const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::streamTypeMap_ = AudioStream::CreateStreamMap();
-
-map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStream::CreateStreamMap()
-{
-    map<pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
-    // Mapping relationships from content and usage to stream type in design
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
-    streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA)] = STREAM_MOVIE;
-    streamMap[make_pair(CONTENT_TYPE_GAME, STREAM_USAGE_MEDIA)] = STREAM_GAME;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_MEDIA)] = STREAM_SPEECH;
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ALARM)] = STREAM_ALARM;
-    streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_NOTIFICATION)] = STREAM_NOTIFICATION;
-    streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
-    streamMap[make_pair(CONTENT_TYPE_DTMF, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_DTMF;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_ACCESSIBILITY)] = STREAM_ACCESSIBILITY;
-    streamMap[make_pair(CONTENT_TYPE_ULTRASONIC, STREAM_USAGE_SYSTEM)] = STREAM_ULTRASONIC;
-
-    // Old mapping relationships from content and usage to stream type
-    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_UNKNOWN)] = STREAM_NOTIFICATION;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_MEDIA)] = STREAM_NOTIFICATION;
-    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-
-    // Only use stream usage to choose stream type
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_RINGTONE)] = STREAM_RING;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NOTIFICATION)] = STREAM_NOTIFICATION;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ACCESSIBILITY)] = STREAM_ACCESSIBILITY;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MOVIE)] = STREAM_MOVIE;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_GAME)] = STREAM_GAME;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_AUDIOBOOK)] = STREAM_SPEECH;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
-
-    return streamMap;
-}
-
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
     : eStreamType_(eStreamType),
       eMode_(eMode),
@@ -195,7 +141,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     return false;
 }
 
-int32_t AudioStream::GetBufferSize(size_t &bufferSize) const
+int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 {
     AUDIO_INFO_LOG("AudioStream: Get Buffer size");
     if (GetMinimumBufferSize(bufferSize) != 0) {
@@ -205,7 +151,7 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize) const
     return SUCCESS;
 }
 
-int32_t AudioStream::GetFrameCount(uint32_t &frameCount) const
+int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
 {
     AUDIO_INFO_LOG("AudioStream: Get frame count");
     if (GetMinimumFrameCount(frameCount) != 0) {
@@ -289,18 +235,6 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     }
 
     return SUCCESS;
-}
-
-bool AudioStream::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-    AudioPermissionState state)
-{
-    return AudioServiceClient::VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state);
-}
-
-bool AudioStream::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-    AudioPermissionState state)
-{
-    return AudioServiceClient::getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
 }
 
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
@@ -611,21 +545,6 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
     return true;
-}
-
-AudioStreamType AudioStream::GetStreamType(ContentType contentType, StreamUsage streamUsage)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
-    if (pos != streamTypeMap_.end()) {
-        streamType = pos->second;
-    }
-
-    if (streamType == STREAM_MEDIA) {
-        streamType = STREAM_MUSIC;
-    }
-
-    return streamType;
 }
 
 int32_t AudioStream::SetAudioStreamType(AudioStreamType audioStreamType)

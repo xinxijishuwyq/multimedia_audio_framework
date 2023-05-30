@@ -14,6 +14,7 @@
  */
 
 #include "audio_stream_tracker.h"
+#include "audio_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
