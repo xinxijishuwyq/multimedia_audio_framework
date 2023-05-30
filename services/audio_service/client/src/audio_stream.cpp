@@ -380,7 +380,7 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
         readThread_ = std::make_unique<std::thread>(&AudioStream::ReadCbThreadLoop, this);
     }
 
-    AUDIO_INFO_LOG("StartAudioStream SUCCESS");
+    AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
@@ -493,7 +493,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         return false;
     }
 
-    AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
+    AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     // flush stream after stream paused
     FlushAudioStream();
@@ -536,7 +536,7 @@ bool AudioStream::StopAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS");
+    AUDIO_INFO_LOG("StopAudioStream SUCCESS,sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
@@ -559,7 +559,7 @@ bool AudioStream::FlushAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("Flush stream SUCCESS");
+    AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }
 
@@ -593,7 +593,7 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 
     ReleaseStream(releaseRunner);
     state_ = RELEASED;
-    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS");
+    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS,sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
