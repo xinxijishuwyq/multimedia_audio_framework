@@ -70,6 +70,7 @@ public:
     static bool IsLegalInputArgumentActiveDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentRingMode(int32_t ringerMode);
+    static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
 private:

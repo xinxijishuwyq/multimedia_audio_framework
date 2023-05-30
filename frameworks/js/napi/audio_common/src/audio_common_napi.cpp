@@ -190,5 +190,20 @@ bool AudioCommonNapi::IsSameCallback(napi_env env, napi_value callback, napi_ref
 
     return isEquals;
 }
+
+bool AudioCommonNapi::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
+{
+    bool result = false;
+    switch (audioEffectMode) {
+        case AudioEffectMode::EFFECT_NONE:
+        case AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

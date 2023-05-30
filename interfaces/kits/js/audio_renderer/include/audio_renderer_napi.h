@@ -77,6 +77,7 @@ private:
         size_t totalBytesWritten;
         uint32_t underflowCount;
         void *data;
+        int32_t audioEffectMode;
         AudioSampleFormat sampleFormat;
         AudioSamplingRate samplingRate;
         AudioChannel channelCount;
@@ -118,6 +119,8 @@ private:
     static napi_value GetMaxStreamVolume(napi_env env, napi_callback_info info);
     static napi_value GetCurrentOutputDevices(napi_env env, napi_callback_info info);
     static napi_value GetUnderflowCount(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
 
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
@@ -172,6 +175,7 @@ private:
     static napi_value CreateInterruptHintTypeObject(napi_env env);
     static napi_value CreateAudioStateObject(napi_env env);
     static napi_value CreateAudioSampleFormatObject(napi_env env);
+    static napi_value CreateAudioEffectModeObject(napi_env env);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
     static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
         AudioRendererNapi *rendererNapi);
@@ -181,6 +185,7 @@ private:
     static napi_ref interruptHintType_;
     static napi_ref audioState_;
     static napi_ref sampleFormat_;
+    static napi_ref audioEffectMode_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
     static std::mutex createMutex_;
@@ -233,6 +238,11 @@ static const std::map<std::string, RendererState> audioStateMap = {
     {"STATE_STOPPED", RENDERER_STOPPED},
     {"STATE_RELEASED", RENDERER_RELEASED},
     {"STATE_PAUSED", RENDERER_PAUSED}
+};
+
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
 };
 } // namespace AudioStandard
 } // namespace OHOS
