@@ -525,6 +525,14 @@ enum AudioFocuState {
     STOP
 };
 
+/**
+* Enumerates the audio scene effct mode.
+*/
+enum AudioEffectMode {
+    EFFECT_NONE = 0,
+    EFFECT_DEFAULT = 1,
+};
+
 struct InterruptEvent {
     /**
      * Interrupt event type, begin or end

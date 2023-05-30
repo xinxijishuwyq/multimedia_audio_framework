@@ -687,6 +687,24 @@ public:
     virtual int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const = 0;
 
     /**
+     * @brief Gets the audio effect mode.
+     *
+     * @return  Returns current audio effect mode.
+     * @since 10
+     */
+    virtual AudioEffectMode GetAudioEffectMode() const = 0;
+
+    /**
+     * @brief Sets the audio effect mode.
+     *
+     * * @param effectMode The audio effect mode at which the stream needs to be rendered.
+     * @return  Returns {@link SUCCESS} if audio effect mode is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t SetAudioEffectMode(AudioEffectMode effectMode) const = 0;
+
+    /**
      * @brief Registers the renderer event callback listener.
      *
      * @param clientPid client PID
