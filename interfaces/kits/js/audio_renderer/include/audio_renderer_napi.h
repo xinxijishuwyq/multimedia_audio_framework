@@ -239,11 +239,6 @@ static const std::map<std::string, RendererState> audioStateMap = {
     {"STATE_RELEASED", RENDERER_RELEASED},
     {"STATE_PAUSED", RENDERER_PAUSED}
 };
-
-static const std::map<std::string, AudioEffectMode> effectModeMap = {
-    {"EFFECT_NONE", EFFECT_NONE},
-    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif /* AUDIO_RENDERER_NAPI_H_ */

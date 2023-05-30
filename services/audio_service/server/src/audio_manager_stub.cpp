@@ -35,8 +35,7 @@ static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>
     for (i = 0; i < countEff; i++) {
         string effectName = data.ReadString();
         string libName = data.ReadString();
-        string effectId = data.ReadString();
-        effectList.push_back({effectName, libName, effectId});
+        effectList.push_back({effectName, libName});
     }
 }
 
@@ -46,7 +45,6 @@ static void LoadEffectLibrariesWriteReply(const vector<Effect>& successEffectLis
     for (Effect effect: successEffectList) {
         reply.WriteString(effect.name);
         reply.WriteString(effect.libraryName);
-        reply.WriteString(effect.effectId);
     }
 }
 
