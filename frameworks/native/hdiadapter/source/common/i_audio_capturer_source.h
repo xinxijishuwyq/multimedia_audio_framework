@@ -66,7 +66,7 @@ public:
 class IMmapAudioCapturerSource : public IAudioCapturerSource {
 public:
     IMmapAudioCapturerSource() = default;
-    ~IMmapAudioCapturerSource() = default;
+    virtual ~IMmapAudioCapturerSource() = default;
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) = 0;
     virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
