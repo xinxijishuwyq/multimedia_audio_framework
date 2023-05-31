@@ -210,12 +210,10 @@ int32_t RemoteFastAudioCapturerSource::GetTargetAdapterPort(struct AudioAdapterD
 
 int32_t RemoteFastAudioCapturerSource::CreateCapture(const struct AudioPort &capturePort)
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), ERR_INVALID_HANDLE,
         "%{public}s: audio adapter is null.", __func__);
     struct AudioSampleAttributes captureAttr;
     InitAttrs(captureAttr);
-    AUDIO_INFO_LOG("RemoteFastAudioCapturerSource Create capture format: %{public}d", captureAttr.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     deviceDesc.pins = PIN_IN_MIC;
@@ -230,6 +228,7 @@ int32_t RemoteFastAudioCapturerSource::CreateCapture(const struct AudioPort &cap
     }
 
     isCapturerCreated_.store(true);
+    AUDIO_INFO_LOG("%{public}s end, capture format: %{public}d.", __func__, captureAttr.format);
     return SUCCESS;
 }
 
@@ -348,23 +347,23 @@ int32_t RemoteFastAudioCapturerSource::Start(void)
     }
 
     ClockTime::RelativeSleep(CAPTURE_FIRST_FRIME_WAIT_NANO);
+    uint64_t curHdiWritePos = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t writeTime = 0;
     while (true) {
-        uint64_t curHdiWritePos = 0;
-        int64_t timeSec = 0;
-        int64_t timeNanoSec = 0;
-        int64_t writeTime = 0;
         ret = GetMmapHandlePosition(curHdiWritePos, timeSec, timeNanoSec);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get source handle info fail.", __func__);
         writeTime = timeNanoSec + timeSec * SECOND_TO_NANOSECOND;
         if (writeTime > 0) {
             break;
         }
-        AUDIO_INFO_LOG("%{public}s wait 2ms for remote fast capturer get first frame.", __func__);
         ClockTime::RelativeSleep(CAPTURE_RESYNC_SLEEP_NANO);
     }
     started_.store(true);
 
-    AUDIO_INFO_LOG("%{public}s OK.", __func__);
+    AUDIO_INFO_LOG("%{public}s OK, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64" ns.",
+        __func__, curHdiWritePos, writeTime);
     return SUCCESS;
 }
 
