@@ -448,13 +448,8 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     int32_t ret = SUCCESS;
-    ret = (LOCAL_NETWORK_ID == networkId) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]) : 
+    ret = (LOCAL_NETWORK_ID == networkId) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
                                             MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
-    // if (LOCAL_NETWORK_ID == networkId) {
-    //     ret = MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
-    // } else {
-    //     ret = MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
-    // }
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
@@ -2010,7 +2005,7 @@ void AudioPolicyService::LoadEffectSinks()
     IOHandles_[moduleInfo.name] = ioHandle;
 
     moduleInfo.lib = "libmodule-effect-sink.z.so";
-    moduleInfo.rate = "44100";
+    moduleInfo.rate = "48000";
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
         AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
