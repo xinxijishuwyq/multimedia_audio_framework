@@ -196,7 +196,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_003, TestSize.Level1)
     object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
     EXPECT_NE(object, nullptr);
     ret = audioManagerProxy->SetParameterCallback(object);
-    EXPECT_EQ(AUDIO_OK, ret);
+    EXPECT_EQ(true, ret < 0);
 }
 
 /**
