@@ -233,6 +233,17 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
     return audioServiceAdapter_->IsStreamActive(streamType);
 }
 
+vector<SinkInfo> AudioAdapterManager::GetAllSinks()
+{
+    if (!audioServiceAdapter_) {
+        AUDIO_ERR_LOG("GetAllSinks audio adapter null");
+        vector<SinkInfo> sinkInputList;
+        return sinkInputList;
+    }
+
+    return audioServiceAdapter_->GetAllSinks();
+}
+
 vector<SinkInput> AudioAdapterManager::GetAllSinkInputs()
 {
     if (!audioServiceAdapter_) {
@@ -539,6 +550,18 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
             args.append(audioModuleInfo.fileName);
+        }
+    } else if (audioModuleInfo.lib == CLUSTER_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
+        }
+    } else if (audioModuleInfo.lib == EFFECT_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
         }
     }
     return args;

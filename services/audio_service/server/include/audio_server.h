@@ -46,6 +46,9 @@ public:
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
         std::vector<Effect>& successEffectList) override;
+    bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+                                  std::unordered_map<std::string, std::string> &map) override;
+    bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;

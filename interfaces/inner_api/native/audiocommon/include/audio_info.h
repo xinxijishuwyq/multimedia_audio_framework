@@ -526,7 +526,6 @@ enum AudioFocuState {
     STOP
 };
 
-
 struct InterruptEvent {
     /**
      * Interrupt event type, begin or end

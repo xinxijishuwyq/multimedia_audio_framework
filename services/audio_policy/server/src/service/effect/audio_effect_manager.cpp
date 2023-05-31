@@ -457,22 +457,31 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
     std::string sceneType;
     std::string sceneMode;
     std::string key;
-    for (auto &scene : supportedEffectConfig_.postProcessNew.stream) {
+    for (auto &scene: supportedEffectConfig_.postProcessNew.stream) {
         sceneType = scene.scene;
-        for (auto &mode : scene.streamEffectMode) {
+        for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
-            if (mode.devicePort.size() == 0) { // if no any device port
-                continue;
+            for (auto &device: mode.devicePort) {
+                key = sceneType + "_&_" + sceneMode + "_&_" + device.type;
+                if (map.count(key)) { // if the key already register in map
+                    continue;
+                }
+                map[key] = device.chain;
             }
-            key = sceneType + "_&_" + sceneMode;
-            if (map.count(key)) { // if the key already register in map
-                continue;
-            }
-            map[key] = mode.devicePort[0].chain; // grab the first device port by default
         }
     }
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
+}
+
+bool AudioEffectManager::CheckEffectSinkName(std::string &sinkName)
+{
+    for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++it) {
+        if (it->second == sinkName) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespce AudioStandard
