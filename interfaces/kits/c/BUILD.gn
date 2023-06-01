@@ -30,4 +30,10 @@ ohos_ndk_library("libohaudio_ndk") {
   output_extension = "so"
   ndk_description_file = "./ohaudio.ndk.json"
   system_capability = "SystemCapability.Multimedia.Audio.Core"
+  system_capability_headers = [
+    "ohaudio/native_audiostream_base.h",
+    "ohaudio/native_audiostreambuilder.h",
+    "ohaudio/native_audiorenderer.h",
+    "ohaudio/native_audiocapturer.h",
+  ]
 }
