@@ -986,16 +986,6 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     status = napi_create_async_work(env, nullptr, resource, AsyncGetEffectInfoArray,
         GetEffectInfoArrayCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
     GetEffectInfoArrayResult(env, asyncContext, status, result);
-    // if (status != napi_ok) {
-    //     result = nullptr;
-    // } else {
-    //     status = napi_queue_async_work(env, asyncContext->work);
-    //     if (status == napi_ok) {
-    //         asyncContext.release();
-    //     } else {
-    //         result = nullptr;
-    //     }
-    // }
 
     return result;
 }
