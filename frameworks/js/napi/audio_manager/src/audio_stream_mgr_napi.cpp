@@ -917,6 +917,21 @@ void AudioStreamMgrNapi::AsyncGetEffectInfoArray(napi_env env, void *data)
     }
 }
 
+void AudioStreamMgrNapi::GetEffectInfoArrayResult(napi_env env, unique_ptr<AudioStreamMgrAsyncContext> &asyncContext,
+    napi_status status, napi_value &result)
+{
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
+}
+
 napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -970,16 +985,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     napi_create_string_utf8(env, "getEffectInfoArray", NAPI_AUTO_LENGTH, &resource);
     status = napi_create_async_work(env, nullptr, resource, AsyncGetEffectInfoArray,
         GetEffectInfoArrayCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-    if (status != napi_ok) {
-        result = nullptr;
-    } else {
-        status = napi_queue_async_work(env, asyncContext->work);
-        if (status == napi_ok) {
-            asyncContext.release();
-        } else {
-            result = nullptr;
-        }
-    }
+    GetEffectInfoArrayResult(env, asyncContext, status, result);
 
     return result;
 }
