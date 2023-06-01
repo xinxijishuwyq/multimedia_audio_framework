@@ -338,12 +338,12 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     for (std::string effect: effectSet) {
         ret = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
         if (ret == ERROR) {
-            AUDIO_INFO_LOG("Couldn't find libEntry of effect %{public}s", effect.c_str());
+            AUDIO_ERR_LOG("Couldn't find libEntry of effect %{public}s", effect.c_str());
             continue;
         }
         ret = CheckValidEffectLibEntry(libEntry, effect, libName);
         if (ret == ERROR) {
-            AUDIO_INFO_LOG("Invalid libEntry of effect %{public}s", effect.c_str());
+            AUDIO_ERR_LOG("Invalid libEntry of effect %{public}s", effect.c_str());
             continue;
         }
         EffectToLibraryEntryMap[effect] = libEntry;
@@ -439,7 +439,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
 {
     if (!SceneTypeToEffectChainMap.count(sceneType)) {
-        AUDIO_INFO_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
+        AUDIO_ERR_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
+        BypassAlgorithm(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
         return ERROR;
     }
 

@@ -452,6 +452,15 @@ bool AudioEffectManager::CanLoadEffectSinks()
     return (isMasterSinkAvailable_ && isEffectChainManagerAvailable_);
 }
 
+template <typename T>
+void AddKeyValueIntoMap(std::unordered_map<T, std::string> &map, std::string &key, std::string &value)
+{
+    if (map.count(key)) { // if the key already register in map
+        return;
+    }
+    map[key] = value;
+}
+
 void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map)
 {
     std::string sceneType;
@@ -463,10 +472,7 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {
                 key = sceneType + "_&_" + sceneMode + "_&_" + device.type;
-                if (map.count(key)) { // if the key already register in map
-                    continue;
-                }
-                map[key] = device.chain;
+                AddKeyValueIntoMap(map, key, device.chain);
             }
         }
     }
