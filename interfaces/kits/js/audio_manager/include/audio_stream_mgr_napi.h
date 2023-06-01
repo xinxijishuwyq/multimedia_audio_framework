@@ -80,6 +80,7 @@ private:
     static void GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data);
     static void CommonCallbackRoutine(napi_env env, AudioStreamMgrAsyncContext* &asyncContext,
         const napi_value &valueParam);
+    static void AsyncGetEffectInfoArray(napi_env env, void *data);
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
     AudioSystemManager *audioMngr_;

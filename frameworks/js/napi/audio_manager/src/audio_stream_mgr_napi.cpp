@@ -905,6 +905,18 @@ void AudioStreamMgrNapi::GetEffectInfoArrayCallbackComplete(napi_env env, napi_s
     delete asyncContext;
 }
 
+void AudioStreamMgrNapi::AsyncGetEffectInfoArray(napi_env env, void *data)
+{
+    auto context = static_cast<AudioStreamMgrAsyncContext *>(data);
+    if (context->status == SUCCESS) {
+        ContentType contentType = static_cast<ContentType>(context->contentType);
+        StreamUsage streamUsage = static_cast<StreamUsage>(context->streamUsage);
+        context->status =
+            context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfo,
+            contentType, streamUsage);
+    }
+}
+
 napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -918,65 +930,58 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
         return result;
     }
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if ((status == napi_ok && asyncContext->objectInfo != nullptr)
-        && (asyncContext->objectInfo->audioStreamMngr_ != nullptr)) {
-        for (size_t i = PARAM0; i < argc; i++) {
-            napi_valuetype valueType = napi_undefined;
-            napi_typeof(env, argv[i], &valueType);
-            if (i == PARAM0 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->contentType);
-                if (!AudioCommonNapi::IsLegalInputArgumentContentType(asyncContext->contentType)) {
-                    asyncContext->status = (asyncContext->status ==
-                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
-                }
-            } else if (i == PARAM1 && valueType == napi_number) {
-                napi_get_value_int32(env, argv[i], &asyncContext->streamUsage);
-                if (!AudioCommonNapi::IsLegalInputArgumentStreamUsage(asyncContext->streamUsage)) {
-                    asyncContext->status = (asyncContext->status ==
-                        NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
-                }
-            } else if (i == PARAM2) {
-                if (valueType == napi_function) {
-                    napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
-                }
-                break;
-            } else {
-                asyncContext->status = NAPI_ERR_INVALID_PARAM;
+    if (status != napi_ok || asyncContext->objectInfo == nullptr
+        || asyncContext->objectInfo->audioStreamMngr_ == nullptr) {
+        return result;
+    }
+    
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->contentType);
+            if (!AudioCommonNapi::IsLegalInputArgumentContentType(asyncContext->contentType)) {
+                asyncContext->status = (asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
             }
-        }
-
-        if (asyncContext->callbackRef == nullptr) {
-            napi_create_promise(env, &asyncContext->deferred, &result);
-        } else {
-            napi_get_undefined(env, &result);
-        }
-       
-        napi_value resource = nullptr;
-        napi_create_string_utf8(env, "getEffectInfoArray", NAPI_AUTO_LENGTH, &resource);
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioStreamMgrAsyncContext *>(data);
-                if (context->status == SUCCESS) {
-                    ContentType contentType = static_cast<ContentType>(context->contentType);
-                    StreamUsage streamUsage = static_cast<StreamUsage>(context->streamUsage);
-                    context->status =
-                        context->objectInfo->audioStreamMngr_->GetEffectInfoArray(context->audioSceneEffectInfo,
-                        contentType, streamUsage);
-                }
-            },
-            GetEffectInfoArrayCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work(env, asyncContext->work);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
+        } else if (i == PARAM1 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[i], &asyncContext->streamUsage);
+            if (!AudioCommonNapi::IsLegalInputArgumentStreamUsage(asyncContext->streamUsage)) {
+                asyncContext->status = (asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
             }
+        } else if (i == PARAM2) {
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            }
+            break;
+        } else {
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
         }
     }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+    
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "getEffectInfoArray", NAPI_AUTO_LENGTH, &resource);
+    status = napi_create_async_work(
+        env, nullptr, resource, AsyncGetEffectInfoArray, GetEffectInfoArrayCallbackComplete, 
+        static_cast<void*>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        status = napi_queue_async_work(env, asyncContext->work);
+        if (status == napi_ok) {
+            asyncContext.release();
+        } else {
+            result = nullptr;
+        }
+    }
+
     return result;
 }
 } // namespace AudioStandard
