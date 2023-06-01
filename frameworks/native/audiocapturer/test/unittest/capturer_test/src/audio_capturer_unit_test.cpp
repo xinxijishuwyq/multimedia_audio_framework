@@ -2824,6 +2824,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCapturerCallback_004, TestSize.L
     shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
     ret = audioCapturer->SetCapturerCallback(audioCapturerCB);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2848,6 +2849,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetCaptureMode_001, TestSize.Level1
 
     ret = audioCapturer->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
 }
 
 /**
@@ -2875,6 +2877,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCaptureMode, TestSize.Level1)
 
     AudioCaptureMode captureMode = audioCapturer->GetCaptureMode();
     EXPECT_EQ(CAPTURE_MODE_CALLBACK, captureMode);
+    audioCapturer->Release();
 }
 
 /**
@@ -2888,7 +2891,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerInterruptCallbackImpl_
     int32_t appUid = static_cast<int32_t>(getuid());
     audioStream= std::make_shared<AudioStream>(AudioStreamType::STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
     EXPECT_NE(nullptr, audioStream);
-    
+
     shared_ptr<AudioCapturerInterruptCallbackImpl> audioCapturerInterruptCallbackImpl =
         std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream);
     shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
