@@ -88,7 +88,7 @@ string ConfigMicTest(bool isRemote);
 string CallStartMic();
 string CallPauseMic();
 string CallResumeMic();
-string CallStopSpk();
+string CallStopMic();
 string SetMicVolume();
 string CallReleaseMic();
 using CallTestOperationFunc = string (*)();
@@ -131,7 +131,7 @@ std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
     {START_MIC_PROCESS, CallStartMic},
     {PAUSE_MIC_PROCESS, CallPauseMic},
     {RESUME_MIC_PROCESS, CallResumeMic},
-    {STOP_MIC_PROCESS, CallStopSpk},
+    {STOP_MIC_PROCESS, CallStopMic},
     {CHANGE_MIC_PROCESS_VOL, SetMicVolume},
     {RELEASE_MIC_PROCESS, CallReleaseMic}
 };
