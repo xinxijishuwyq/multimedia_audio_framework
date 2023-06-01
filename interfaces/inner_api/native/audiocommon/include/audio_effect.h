@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#ifndef AUDIO_FRAMEWORK_AUDIO_EFFECT_H
+#define AUDIO_FRAMEWORK_AUDIO_EFFECT_H
+
 #include <cassert>
 #include <cstdint>
 #include <stddef.h>
@@ -20,9 +24,6 @@
 #include <string>
 #include <vector>
 #include "audio_info.h"
-
-#ifndef AUDIO_FRAMEWORK_AUDIO_EFFECT_H
-#define AUDIO_FRAMEWORK_AUDIO_EFFECT_H
 
 #define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
 #define EFFECT_STRING_LEN_MAX 64
