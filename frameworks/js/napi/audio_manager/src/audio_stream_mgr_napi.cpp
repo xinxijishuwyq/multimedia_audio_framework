@@ -940,10 +940,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     GET_PARAMS(env, info, ARGS_THREE);
     unique_ptr<AudioStreamMgrAsyncContext> asyncContext = make_unique<AudioStreamMgrAsyncContext>();
 
-    if (!asyncContext) {
-        AUDIO_ERR_LOG("AudioStreamMgrNapi:Audio manager async context failed");
-        return result;
-    }
+    CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, result, "AudioStreamMgrNapi:Audio manager async context failed");
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status != napi_ok || asyncContext->objectInfo == nullptr
         || asyncContext->objectInfo->audioStreamMngr_ == nullptr) {
