@@ -171,7 +171,7 @@ void AudioEffectChain::AddEffectHandleEnd()
     // used for crossfading in the near future
 }
 
-void BypassAlgorithm(float *bufIn, float *bufOut, uint32_t totalLen)
+void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 {
     for (uint32_t i = 0; i < totalLen; ++i) {
         bufOut[i] = bufIn[i];
@@ -182,7 +182,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 {
     if (standByEffectHandles.empty()) {
         AUDIO_INFO_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
-        BypassAlgorithm(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
+        CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
         return;
     }
 
@@ -190,7 +190,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
-    bool writeToBufOutFlag = false;
     for (AudioEffectHandle handle: standByEffectHandles) {
         if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
@@ -205,13 +204,11 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
                 sceneType.c_str(), effectMode.c_str());
             continue;
         }
-        writeToBufOutFlag = true;
         count++;
     }
-    bufOut = audioBufOut.f32;
 
-    if (!writeToBufOutFlag) {
-        BypassAlgorithm(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
+    if (count % FACTOR_TWO == 0) {
+        CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
     }
 }
 
@@ -440,7 +437,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
 {
     if (!SceneTypeToEffectChainMap.count(sceneType)) {
         AUDIO_ERR_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
-        BypassAlgorithm(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
+        CopyBuffer(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
         return ERROR;
     }
 
