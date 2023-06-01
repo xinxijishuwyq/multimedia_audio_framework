@@ -2253,9 +2253,8 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
     napi_value resource = nullptr;
     napi_create_string_utf8(env, "SetAudioEffectMode", NAPI_AUTO_LENGTH, &resource);
 
-    status = napi_create_async_work(
-        env, nullptr, resource, AsyncSetAudioEffectMode, VoidAsyncCallbackComplete, 
-        static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    status = napi_create_async_work(env, nullptr, resource, AsyncSetAudioEffectMode,
+        VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
     if (status != napi_ok) {
         result = nullptr;
     } else {
