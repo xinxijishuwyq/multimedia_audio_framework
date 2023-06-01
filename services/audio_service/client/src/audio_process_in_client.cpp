@@ -93,7 +93,7 @@ private:
     static constexpr int64_t MAX_WRITE_COST_DUTATION_NANO = 5000000; // 5ms
     static constexpr int64_t MAX_READ_COST_DUTATION_NANO = 5000000; // 5ms
     static constexpr int64_t RECORD_RESYNC_SLEEP_NANO = 2000000; // 2ms
-    static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 1000000; // 1ms
+    static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -590,10 +590,10 @@ void AudioProcessInClientInner::UpdateHandleInfo()
 int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)
 {
     Trace trace("AudioProcessInClient::GetPredictNextRead");
-    uint64_t handleSpanCout = posInFrame / spanSizeInFrame_;
-    uint32_t startPeriodCount = 20; // sync each time when start
-    uint32_t oneBigPeriodCount = 40; // 200ms
-    if (handleSpanCout < startPeriodCount || handleSpanCout % oneBigPeriodCount == 0) {
+    uint64_t handleSpanCnt = posInFrame / spanSizeInFrame_;
+    uint32_t startPeriodCnt = 20; // sync each time when start
+    uint32_t oneBigPeriodCnt = 40; // 200ms
+    if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
         UpdateHandleInfo();
     }
 
@@ -748,7 +748,6 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
 
 int32_t AudioProcessInClientInner::RecordReSyncServicePos()
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr && audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
         "%{public}s process proxy or audio buffer is null.", __func__);
     uint64_t serverHandlePos = 0;
@@ -766,9 +765,11 @@ int32_t AudioProcessInClientInner::RecordReSyncServicePos()
             break;
         }
         ClockTime::RelativeSleep(MAX_READ_COST_DUTATION_NANO);
+        tryTimes--;
     }
     AUDIO_INFO_LOG("%{public}s get handle info OK, tryTimes %{public}d, serverHandlePos %{public}" PRIu64", "
         "serverHandleTime %{public}" PRId64".", __func__, tryTimes, serverHandlePos, serverHandleTime);
+    ClockTime::AbsoluteSleep(serverHandleTime + RECORD_HANDLE_DELAY_NANO);
 
     ret = audioBuffer_->SetCurReadFrame(serverHandlePos);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s set curReadPos fail, ret %{public}d.", __func__, ret);
