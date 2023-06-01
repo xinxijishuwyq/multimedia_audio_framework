@@ -191,9 +191,9 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_003, TestSize.Level1)
     ret = audioManagerProxy->SetParameterCallback(object);
     EXPECT_EQ(ERR_NULL_OBJECT, ret);
 
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(samgr, nullptr);
-    object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
+    EXPECT_NE(parameterChangeCbStub, nullptr);
+    object = parameterChangeCbStub->AsObject();
     EXPECT_NE(object, nullptr);
     ret = audioManagerProxy->SetParameterCallback(object);
     EXPECT_EQ(AUDIO_OK, ret);
