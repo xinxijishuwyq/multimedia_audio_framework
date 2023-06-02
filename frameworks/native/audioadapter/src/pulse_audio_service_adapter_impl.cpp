@@ -253,6 +253,8 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
+    MoveEffectSinkInputsToSink(name);
+
     return SUCCESS;
 }
 
@@ -785,6 +787,16 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
     }
 
     return stream;
+}
+
+void PulseAudioServiceAdapterImpl::MoveEffectSinkInputsToSink(std::string name)
+{
+    std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
+    // move all sink inputs to new sink
+    for (auto sinkInput : allSinkInputs) {
+        uint32_t invalidSinkId = PA_INVALID_INDEX;
+        MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
+    }
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
