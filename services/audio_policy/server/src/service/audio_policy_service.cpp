@@ -1064,6 +1064,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
 int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::HandleA2dpDevice");
+    std::string activePort = GetPortName(currentActiveDevice_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
         if (primaryModulesPos != deviceClassInfo_.end()) {
@@ -1073,9 +1074,8 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
                     AUDIO_INFO_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
                     AudioStreamInfo audioStreamInfo = {};
                     GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);
-                    uint32_t bufferSize
-                        = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format)
-                            * audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+                    uint32_t bufferSize = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format) *
+                        audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
                     AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
                         audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
                     moduleInfo.channels = to_string(audioStreamInfo.channels);
@@ -1089,13 +1089,11 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
                     IOHandles_[moduleInfo.name] = ioHandle;
                 }
 
-                std::string activePort = GetPortName(currentActiveDevice_);
                 AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_);
                 audioPolicyManager_.SuspendAudioDevice(activePort, true);
             }
         }
     } else if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        std::string activePort = GetPortName(currentActiveDevice_);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
         int32_t muteDuration =  1000000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, PRIMARY_SPEAKER, deviceType);
@@ -1103,6 +1101,11 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
         int32_t beforSwitchDelay = 300000;
         usleep(beforSwitchDelay);
     }
+
+    if (isUpdateRouteSupported_) {
+        UpdateActiveDeviceRoute(deviceType);
+    }
+    audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
 
     AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
     std::string portName = GetPortName(deviceType);
@@ -1632,9 +1635,14 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
 
-        if ((devType == DEVICE_TYPE_BLUETOOTH_SCO) && (GetAudioScene() == AUDIO_SCENE_DEFAULT)) {
-            // For SCO device, add to connected device and donot activate now
-            AUDIO_INFO_LOG("BT SCO device detected in non-call mode [%{public}d]", GetAudioScene());
+        if ((devType == DEVICE_TYPE_BLUETOOTH_SCO && GetAudioScene() == AUDIO_SCENE_DEFAULT) ||
+            (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() == AUDIO_SCENE_PHONE_CALL)) {
+            // For SCO or A2DP device, add to connected device and donot activate now
+            AUDIO_INFO_LOG("BT SCO or A2DP device detected in non-call mode [%{public}d]", GetAudioScene());
+            if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+                connectedA2dpDeviceMap_.insert(make_pair(macAddress, streamInfo));
+                activeBTDevice_ = macAddress;
+            }
             TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
             UpdateTrackerDeviceChange(deviceChangeDescriptor);
             return;
