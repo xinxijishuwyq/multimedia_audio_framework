@@ -257,6 +257,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             unique_ptr<AudioRendererChangeInfo> RendererChangeInfo = make_unique<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(RendererChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "AudioStreamCollector::RendererChangeInfo Memory Allocation Failed");
+            RendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
             RendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
             RendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
             RendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
@@ -320,6 +321,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             unique_ptr<AudioCapturerChangeInfo> CapturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(CapturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "AudioStreamCollector::CapturerChangeInfo Memory Allocation Failed");
+            CapturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
             CapturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
             CapturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
             CapturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;

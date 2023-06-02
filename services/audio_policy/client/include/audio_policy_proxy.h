@@ -186,6 +186,8 @@ public:
     float GetMaxStreamVolume(void) override;
 
     int32_t GetMaxRendererInstances() override;
+
+    int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

@@ -269,7 +269,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
     posInFrame = 3000 + 1;
     ret = oHAudioBuffer->GetBufferByFrame(posInFrame, bufferDesc);
     EXPECT_EQ(ret < TEST_RET_NUM, true);
-    
+
     uint64_t writePosInFrame = 1000;
     ret = oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
     EXPECT_EQ(SUCCESS, ret);

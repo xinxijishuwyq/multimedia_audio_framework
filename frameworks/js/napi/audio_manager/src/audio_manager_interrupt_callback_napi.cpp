@@ -51,7 +51,7 @@ void AudioManagerInterruptCallbackNapi::SaveCallbackReference(const std::string 
         "SaveCallbackReference: creating reference for callback fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     audioManagerInterruptCallbackList_.push_back(cb);
-    AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}d]", audioManagerInterruptCallbackList_.size());
+    AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}zu]", audioManagerInterruptCallbackList_.size());
 }
 
 void AudioManagerInterruptCallbackNapi::RemoveCallbackReference(const std::string &callbackName, napi_value args)
@@ -69,7 +69,7 @@ void AudioManagerInterruptCallbackNapi::RemoveCallbackReference(const std::strin
             (*it)->cb_ = nullptr;
             CHECK_AND_RETURN_LOG(status == napi_ok, "RemoveCallbackReference: delete reference for callback fail");
             audioManagerInterruptCallbackList_.erase(it);
-            AUDIO_INFO_LOG("RemoveCallbackReference success, list size [%{public}d]",
+            AUDIO_INFO_LOG("RemoveCallbackReference success, list size [%{public}zu]",
                 audioManagerInterruptCallbackList_.size());
             return;
         }

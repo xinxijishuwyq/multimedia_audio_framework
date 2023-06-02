@@ -454,6 +454,8 @@ AudioServiceClient::AudioServiceClient()
     captureMode_ = CAPTURE_MODE_NORMAL;
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
+    effectSceneName = "SCENE_MUSIC";
+    effectMode = EFFECT_DEFAULT;
 
     mFrameSize = 0;
     mFrameMarkPosition = 0;
@@ -996,6 +998,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
         if (SetStreamRenderRate(renderRate) != AUDIO_CLIENT_SUCCESS) {
             AUDIO_ERR_LOG("Set render rate failed");
+        }
+
+        effectSceneName = GetEffectSceneName(audioType);
+        if (SetStreamAudioEffectMode(effectMode) != AUDIO_CLIENT_SUCCESS) {
+            AUDIO_ERR_LOG("Set audio effect mode failed");
         }
     }
 
@@ -2015,6 +2022,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     mStreamType = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
+    effectSceneName = GetEffectSceneName(audioStreamType);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -2025,6 +2033,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
+    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
@@ -2731,5 +2740,87 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
     }
 }
 
+const std::string AudioServiceClient::GetEffectSceneName(AudioStreamType audioType)
+{
+    std::string name;
+    switch (audioType) {
+        case STREAM_DEFAULT:
+            name = "SCENE_MUSIC";
+            break;
+        case STREAM_MUSIC:
+            name = "SCENE_MUSIC";
+            break;
+        case STREAM_MEDIA:
+            name = "SCENE_MOVIE";
+            break;
+        case STREAM_TTS:
+            name = "SCENE_SPEECH";
+            break;
+        case STREAM_RING:
+            name = "SCENE_RING";
+            break;
+        case STREAM_ALARM:
+            name = "SCENE_RING";
+            break;
+        default:
+            name = "SCENE_OTHERS";
+    }
+
+    const std::string sceneName = name;
+    return sceneName;
+}
+
+const std::string AudioServiceClient::GetEffectModeName(AudioEffectMode effectMode)
+{
+    std::string name;
+    switch (effectMode) {
+        case EFFECT_NONE:
+            name = "EFFECT_NONE";
+            break;
+        default:
+            name = "EFFECT_DEFAULT";
+    }
+
+    const std::string modeName = name;
+    return modeName;
+}
+
+AudioEffectMode AudioServiceClient::GetStreamAudioEffectMode()
+{
+    return effectMode;
+}
+
+int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffectMode)
+{
+    AUDIO_INFO_LOG("SetStreamAudioEffectMode: %{public}d", audioEffectMode);
+
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("set stream audio effect mode: invalid stream state");
+        return AUDIO_CLIENT_PA_ERR;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    effectMode = audioEffectMode;
+    const std::string effectModeName = GetEffectModeName(audioEffectMode);
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
+    pa_proplist_sets(propList, "scene.mode", effectModeName.c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return AUDIO_CLIENT_SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

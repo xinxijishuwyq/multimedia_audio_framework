@@ -61,6 +61,10 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
     capturerOptions.capturerInfo.capturerFlags = 0;
     string cachePath = "/data/storage/el2/base/haps/entry/files";
     unique_ptr<AudioCapturer> capturerHolder = AudioCapturer::Create(capturerOptions, cachePath.c_str());
+    if (!capturerHolder) {
+        AUDIO_ERR_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter fail, ID: %{public}lu", id);
+        return SL_RESULT_RESOURCE_ERROR;
+    }
     capturerHolder->SetParams(capturerParams);
     AudioCapturer *capturer = capturerHolder.release();
     AUDIO_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter ID: %{public}lu", id);

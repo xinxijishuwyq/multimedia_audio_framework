@@ -380,7 +380,7 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
         readThread_ = std::make_unique<std::thread>(&AudioStream::ReadCbThreadLoop, this);
     }
 
-    AUDIO_INFO_LOG("StartAudioStream SUCCESS");
+    AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
@@ -493,7 +493,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         return false;
     }
 
-    AUDIO_INFO_LOG("PauseAudioStream SUCCESS");
+    AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     // flush stream after stream paused
     FlushAudioStream();
@@ -536,7 +536,7 @@ bool AudioStream::StopAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS");
+    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
@@ -559,7 +559,7 @@ bool AudioStream::FlushAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("Flush stream SUCCESS");
+    AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }
 
@@ -593,7 +593,7 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 
     ReleaseStream(releaseRunner);
     state_ = RELEASED;
-    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS");
+    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
@@ -673,7 +673,7 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
         writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (writeBufferPool_[i] == nullptr) {
             AUDIO_INFO_LOG(
-            "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
+                "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
 
@@ -970,6 +970,16 @@ void AudioStream::SubmitAllFreeBuffers()
     for (size_t i = 0; i < freeBufferQ_.size(); ++i) {
         SendWriteBufferRequestEvent();
     }
+}
+
+int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
+{
+    return SetStreamAudioEffectMode(effectMode);
+}
+
+AudioEffectMode AudioStream::GetAudioEffectMode()
+{
+    return GetStreamAudioEffectMode();
 }
 } // namespace AudioStandard
 } // namespace OHOS

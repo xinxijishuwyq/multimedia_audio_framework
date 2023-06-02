@@ -52,8 +52,11 @@ static SLresult CreateAudioPlayer(
     IVolumeInit(&thiz->mVolume, audioPlayerId);
     IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_PLAY, audioPlayerId);
     *pPlayer = &thiz->mObject.mItf;
-    AudioPlayerAdapter::GetInstance()->
+    SLresult ret = AudioPlayerAdapter::GetInstance()->
         CreateAudioPlayerAdapter(audioPlayerId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
+    if (ret != SL_RESULT_SUCCESS) {
+        return SL_RESULT_RESOURCE_ERROR;
+    }
     audioPlayerId++;
 
     return SL_RESULT_SUCCESS;
@@ -73,8 +76,11 @@ static SLresult CreateAudioRecorder(
     IRecordInit(&thiz->mRecord, audioRecorderId);
     IOHBufferQueueInit(&thiz->mBufferQueue, SL_IID_RECORD, audioRecorderId);
     *pRecorder = &thiz->mObject.mItf;
-    AudioCapturerAdapter::GetInstance()->
+    SLresult ret = AudioCapturerAdapter::GetInstance()->
         CreateAudioCapturerAdapter(audioRecorderId, pAudioSrc, pAudioSnk, OHOS::AudioStandard::STREAM_MUSIC);
+    if (ret != SL_RESULT_SUCCESS) {
+        return SL_RESULT_RESOURCE_ERROR;
+    }
     audioRecorderId++;
 
     return SL_RESULT_SUCCESS;

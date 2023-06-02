@@ -93,6 +93,7 @@ enum AudioPolicyCommand {
     GET_MIN_VOLUME_STREAM,
     GET_MAX_VOLUME_STREAM,
     GET_MAX_RENDERER_INSTANCES,
+    QUERY_EFFECT_SCENEMODE,
 };
 } // namespace AudioStandard
 } // namespace OHOS
