@@ -58,6 +58,11 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
         return PA_HOOK_OK;
     }
 
+    if (pa_safe_streq(c->default_sink->name, "Bt_Speaker")) {
+        pa_sink_input_move_to(si, c->default_sink, false); //if bluetooth activated
+        return PA_HOOK_OK;
+    }
+
     effectSink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
