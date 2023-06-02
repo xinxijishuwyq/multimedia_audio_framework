@@ -491,7 +491,7 @@ public:
     /**
      * @brief Sets the audio effect mode.
      *
-     * * @param effectMode The audio effect mode at which the stream needs to be rendered.
+     * @param effectMode The audio effect mode at which the stream needs to be rendered.
      * @return  Returns {@link SUCCESS} if audio effect mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
