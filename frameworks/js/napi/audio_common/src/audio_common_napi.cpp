@@ -15,6 +15,7 @@
 
 #include "audio_common_napi.h"
 #include "audio_log.h"
+#include "audio_info.h"
 #include "audio_manager_napi.h"
 
 namespace OHOS {
@@ -189,6 +190,64 @@ bool AudioCommonNapi::IsSameCallback(napi_env env, napi_value callback, napi_ref
     }
 
     return isEquals;
+}
+
+bool AudioCommonNapi::IsLegalInputArgumentContentType(int32_t contentType)
+{
+    bool result = false;
+    switch (contentType) {
+        case CONTENT_TYPE_UNKNOWN:
+        case CONTENT_TYPE_SPEECH:
+        case CONTENT_TYPE_MUSIC:
+        case CONTENT_TYPE_MOVIE:
+        case CONTENT_TYPE_SONIFICATION:
+        case CONTENT_TYPE_RINGTONE:
+        case CONTENT_TYPE_ULTRASONIC:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool AudioCommonNapi::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
+{
+    bool result = false;
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MEDIA:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_NOTIFICATION_RINGTONE:
+        case STREAM_USAGE_RANGING:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool AudioCommonNapi::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
+{
+    bool result = false;
+    switch (audioEffectMode) {
+        case AudioEffectMode::EFFECT_NONE:
+        case AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

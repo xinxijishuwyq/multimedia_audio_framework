@@ -971,5 +971,15 @@ void AudioStream::SubmitAllFreeBuffers()
         SendWriteBufferRequestEvent();
     }
 }
+
+int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
+{
+    return SetStreamAudioEffectMode(effectMode);
+}
+
+AudioEffectMode AudioStream::GetAudioEffectMode()
+{
+    return GetStreamAudioEffectMode();
+}
 } // namespace AudioStandard
 } // namespace OHOS

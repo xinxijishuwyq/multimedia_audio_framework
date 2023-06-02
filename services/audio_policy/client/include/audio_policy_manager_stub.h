@@ -106,6 +106,7 @@ private:
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply);
+    void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

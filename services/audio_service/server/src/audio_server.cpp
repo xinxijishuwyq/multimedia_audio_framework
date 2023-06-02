@@ -37,6 +37,7 @@
 #include "i_audio_capturer_source.h"
 #include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
+#include "audio_effect_chain_manager.h"
 
 #define PA
 #ifdef PA
@@ -305,6 +306,31 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
     return loadSuccess;
+}
+
+bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+                                           std::unordered_map<std::string, std::string> &map)
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return false;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, map, audioEffectServer_->GetEffectEntries());
+    return true;
+}
+
+bool AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return false;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName) != SUCCESS) {
+        return false;
+    }
+    return true;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)

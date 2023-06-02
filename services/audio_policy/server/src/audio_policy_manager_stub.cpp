@@ -886,6 +886,85 @@ void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data
     reply.WriteInt32(result);
 }
 
+static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
+{
+    int k;
+    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
+    int countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    reply.WriteInt32(countDev);
+    if (countDev > 0) {
+        for (k = 0; k < countDev; k++) {
+            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
+            reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
+        }
+    }
+}
+static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
+{
+    int j;
+    reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
+    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
+    reply.WriteInt32(countMode);
+    if (countMode > 0) {
+        for (j = 0; j < countMode; j++) {
+            PreprocessMode(supportedEffectConfig, reply, i, j);
+        }
+    }
+}
+static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
+{
+    int k;
+    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
+    int countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    reply.WriteInt32(countDev);
+    if (countDev > 0) {
+        for (k = 0; k < countDev; k++) {
+            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
+            reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
+        }
+    }
+}
+static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
+{
+    int j;
+    // i th stream
+    reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
+    int countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
+    reply.WriteInt32(countMode);
+    if (countMode > 0) {
+        for (j = 0; j < countMode; j++) {
+            PostprocessMode(supportedEffectConfig, reply, i, j);
+        }
+    }
+}
+
+void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int i;
+    SupportedEffectConfig supportedEffectConfig;
+    int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
+    if (ret == -1) {
+        AUDIO_ERR_LOG("default mode is unavailable !");
+        return;
+    }
+
+    int countPre = supportedEffectConfig.preProcessNew.stream.size();
+    int countPost = supportedEffectConfig.postProcessNew.stream.size();
+    reply.WriteInt32(countPre);
+    reply.WriteInt32(countPost);
+
+    if (countPre > 0) {
+        for (i = 0; i < countPre; i++) {
+            PreprocessProcess(supportedEffectConfig, reply, i);
+        }
+    }
+    if (countPost > 0) {
+        for (i = 0; i < countPost; i++) {
+            PostprocessProcess(supportedEffectConfig, reply, i);
+        }
+    }
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1179,6 +1258,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case GET_MAX_RENDERER_INSTANCES:
             GetMaxRendererInstancesInternal(data, reply);
+            break;
+        
+        case QUERY_EFFECT_SCENEMODE:
+            QueryEffectSceneModeInternal(data, reply);
             break;
 
         default:

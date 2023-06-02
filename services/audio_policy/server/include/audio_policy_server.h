@@ -228,6 +228,8 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

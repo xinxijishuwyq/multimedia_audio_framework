@@ -50,6 +50,9 @@ public:
     bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
         std::vector<Effect> &successEffects) override;
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
+    bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+                                  std::unordered_map<std::string, std::string> &map) override;
+    bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };
