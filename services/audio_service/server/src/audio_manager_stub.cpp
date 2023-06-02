@@ -35,8 +35,7 @@ static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>
     for (i = 0; i < countEff; i++) {
         string effectName = data.ReadString();
         string libName = data.ReadString();
-        string effectId = data.ReadString();
-        effectList.push_back({effectName, libName, effectId});
+        effectList.push_back({effectName, libName});
     }
 }
 
@@ -46,7 +45,6 @@ static void LoadEffectLibrariesWriteReply(const vector<Effect>& successEffectLis
     for (Effect effect: successEffectList) {
         reply.WriteString(effect.name);
         reply.WriteString(effect.libraryName);
-        reply.WriteString(effect.effectId);
     }
 }
 
@@ -235,6 +233,50 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             uint32_t tid = data.ReadUint32();
             string bundleName = data.ReadString();
             RequestThreadPriority(tid, bundleName);
+            return AUDIO_OK;
+        }
+        case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+            int i;
+            vector<EffectChain> effectChains = {};
+            vector<int32_t> countEffect = {};
+            int32_t countEffectChains = data.ReadInt32();
+            for (i = 0; i < countEffectChains; i++) {
+                countEffect.emplace_back(data.ReadInt32());
+            }
+
+            for (int32_t count: countEffect) {
+                EffectChain effectChain;
+                effectChain.name = data.ReadString();
+                for (i = 0; i < count; i++) {
+                    effectChain.apply.emplace_back(data.ReadString());
+                }
+                effectChains.emplace_back(effectChain);
+            }
+
+            unordered_map<string, string> sceneTypeToEffectChainNameMap;
+            string key, value;
+            int32_t mapSize = data.ReadInt32();
+            for (i = 0; i < mapSize; i++) {
+                key = data.ReadString();
+                value = data.ReadString();
+                sceneTypeToEffectChainNameMap[key] = value;
+            }
+
+            bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap);
+            if (!createSuccess) {
+                AUDIO_ERR_LOG("Create audio effect chain manager failed, please check log");
+                return AUDIO_ERR;
+            }
+            return AUDIO_OK;
+        }
+        case SET_OUTPUT_DEVICE_SINK: {
+            int32_t deviceType = data.ReadInt32();
+            std::string sinkName = data.ReadString();
+            bool ret = SetOutputDeviceSink(deviceType, sinkName);
+            if (!ret) {
+                AUDIO_ERR_LOG("Set output device sink failed, please check log");
+                return AUDIO_ERR;
+            }
             return AUDIO_OK;
         }
         default: {

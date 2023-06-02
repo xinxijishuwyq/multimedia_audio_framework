@@ -546,22 +546,21 @@ static void EffectManagerInfoDumpPart(string& dumpString, const AudioData &audio
 {
     int32_t count;
    // xml -- Preprocess
-    for (Preprocess x : audioData_.policyData.oriEffectConfig.preprocess) {
-        AppendFormat(dumpString, "preprocess stream = %s \n", x.stream.c_str());
+    for (Preprocess x : audioData_.policyData.oriEffectConfig.preProcess) {
+        AppendFormat(dumpString, "preProcess stream = %s \n", x.stream.c_str());
         count = 0;
         for (string modeName : x.mode) {
             count++;
             AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
             for (Device deviceInfo : x.device[count - 1]) {
                 AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
-                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
                 AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
             }
         }
     }
 
     // xml -- Postprocess
-    for (Postprocess x : audioData_.policyData.oriEffectConfig.postprocess) {
+    for (Postprocess x : audioData_.policyData.oriEffectConfig.postProcess) {
         AppendFormat(dumpString, "postprocess stream = %s \n", x.stream.c_str());
         count = 0;
         for (string modeName : x.mode) {
@@ -569,7 +568,6 @@ static void EffectManagerInfoDumpPart(string& dumpString, const AudioData &audio
             AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
             for (Device deviceInfo : x.device[count - 1]) {
                 AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
-                AppendFormat(dumpString, "      device address = %s \n", deviceInfo.address.c_str());
                 AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
             }
         }
@@ -593,7 +591,6 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
         count++;
         AppendFormat(dumpString, "effect%d name = %s \n", count, x.name.c_str());
         AppendFormat(dumpString, "effect%d libraryName = %s \n", count, x.libraryName.c_str());
-        AppendFormat(dumpString, "effect%d effectId = %s \n", count, x.effectId.c_str());
     }
 
     // xml -- effectChain
@@ -614,7 +611,6 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
         count++;
         AppendFormat(dumpString, "available Effect%d name = %s \n", count, x.name.c_str());
         AppendFormat(dumpString, "available Effect%d libraryName = %s \n", count, x.libraryName.c_str());
-        AppendFormat(dumpString, "available Effect%d effectId = %s \n", count, x.effectId.c_str());
     }
 }
 

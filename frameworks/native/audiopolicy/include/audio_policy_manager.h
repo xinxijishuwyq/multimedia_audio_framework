@@ -19,7 +19,7 @@
 #include <cstdint>
 #include "audio_capturer_state_change_listener_stub.h"
 #include "audio_client_tracker_callback_stub.h"
-#include "audio_info.h"
+#include "audio_effect.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_renderer_state_change_listener_stub.h"
@@ -214,8 +214,10 @@ public:
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
-
+    
     int32_t GetMaxRendererInstances();
+    
+    int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 private:
     AudioPolicyManager()
     {

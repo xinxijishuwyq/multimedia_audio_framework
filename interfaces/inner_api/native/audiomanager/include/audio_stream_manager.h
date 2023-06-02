@@ -17,8 +17,8 @@
 #define ST_AUDIO_STREAM_MANAGER_H
 
 #include <iostream>
-
-#include "audio_info.h"
+#include <map>
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -165,6 +165,22 @@ public:
      * @since 9
      */
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
+
+    /**
+     * @brief Get Audio Effect Infos.
+     *
+     * @param AudioSceneEffectInfo  AudioSceneEffectInfo
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 9
+     */
+    int32_t GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo,
+        ContentType contentType, StreamUsage streamUsage);
+};
+
+static const std::map<std::string, AudioEffectMode> effectModeMap = {
+    {"EFFECT_NONE", EFFECT_NONE},
+    {"EFFECT_DEFAULT", EFFECT_DEFAULT}
 };
 } // namespace AudioStandard
 } // namespace OHOS

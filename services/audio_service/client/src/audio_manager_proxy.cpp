@@ -453,7 +453,6 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     for (Effect x : effects) {
         dataParcel.WriteString(x.name);
         dataParcel.WriteString(x.libraryName);
-        dataParcel.WriteString(x.effectId);
     }
 
     error = Remote()->SendRequest(LOAD_AUDIO_EFFECT_LIBRARIES, dataParcel, replyParcel, option);
@@ -471,8 +470,7 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     for (i = 0; i < successEffSize; i++) {
         string effectName = replyParcel.ReadString();
         string libName = replyParcel.ReadString();
-        string effectId = replyParcel.ReadString();
-        successEffects.push_back({effectName, libName, effectId});
+        successEffects.push_back({effectName, libName});
     }
 
     return true;
@@ -496,5 +494,72 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
         return;
     }
 }
+
+bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+                                                 std::unordered_map<std::string, std::string> &map)
+{
+    int32_t error;
+
+    MessageParcel dataParcel, replyParcel;
+    MessageOption option;
+    if (!dataParcel.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return false;
+    }
+
+    int32_t countEffectChains = effectChains.size();
+    std::vector<int32_t> listCountEffects;
+
+    for (EffectChain &effectChain: effectChains) {
+        listCountEffects.emplace_back(effectChain.apply.size());
+    }
+
+    dataParcel.WriteInt32(countEffectChains);
+    for (int32_t countEffects: listCountEffects) {
+        dataParcel.WriteInt32(countEffects);
+    }
+
+    for (EffectChain &effectChain: effectChains) {
+        dataParcel.WriteString(effectChain.name);
+        for (std::string applyName: effectChain.apply) {
+            dataParcel.WriteString(applyName);
+        }
+    }
+
+    dataParcel.WriteInt32(map.size());
+    for (auto item = map.begin(); item != map.end(); ++item) {
+        dataParcel.WriteString(item->first);
+        dataParcel.WriteString(item->second);
+    }
+
+    error = Remote()->SendRequest(CREATE_AUDIO_EFFECT_CHAIN_MANAGER, dataParcel, replyParcel, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CreateAudioEffectChainManager failed, error: %{public}d", error);
+        return false;
+    }
+    return true;
+}
+
+bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+{
+    int32_t error;
+
+    MessageParcel dataParcel, replyParcel;
+    MessageOption option;
+    if (!dataParcel.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return false;
+    }
+    dataParcel.WriteInt32(deviceType);
+    dataParcel.WriteString(sinkName);
+
+    error = Remote()->SendRequest(SET_OUTPUT_DEVICE_SINK, dataParcel, replyParcel, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetOutputDeviceSink failed, error: %{public}d", error);
+        return false;
+    }
+    return true;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

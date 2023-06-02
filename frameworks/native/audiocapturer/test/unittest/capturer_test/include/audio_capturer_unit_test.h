@@ -37,6 +37,18 @@ public:
     void OnStateChange(const CapturerState state) override {}
 };
 
+class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
+public:
+    virtual ~AudioCapturerReadCallbackTest() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     */
+    virtual void OnReadData(size_t length) {};
+};
+
 class AudioCapturerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

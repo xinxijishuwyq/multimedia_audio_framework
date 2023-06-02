@@ -86,8 +86,7 @@ private:
     int64_t GetPredictNextReadTime(uint64_t posInFrame);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
-    bool RecordPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
-    bool RecordPrepareNextProcess();
+    bool RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime);
 
     /**
      * @brief Get the current read position in frame and the read-time with it.
@@ -96,6 +95,8 @@ private:
      * @param nanoTime the time in nanosecond when device-sink start read the buffer
     */
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
+    int32_t GetProcLastWriteDoneInfo(const std::shared_ptr<OHAudioBuffer> processBuffer, uint64_t curWriteFrame,
+        uint64_t &proHandleFrame, int64_t &proHandleTime);
 
     bool IsAnyProcessRunning();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
@@ -103,6 +104,7 @@ private:
 
     std::string GetStatusStr(EndpointStatus status);
 
+    int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf);
     void WriteToProcessBuffers(const BufferDesc &readBuf);
     int32_t ReadFromEndpoint(uint64_t curReadPos);
     bool KeepWorkloopRunning();
@@ -464,7 +466,7 @@ void AudioEndpointInner::RecordReSyncPosition()
         __func__, curHdiWritePos, writeTime);
     int64_t temp = ClockTime::GetCurNano() - writeTime;
     if (temp > spanDuration_) {
-        AUDIO_ERR_LOG("%{public}s GetDeviceHandleInfo cost long time %{public}" PRIu64".", __func__, temp);
+        AUDIO_WARNING_LOG("%{public}s GetDeviceHandleInfo cost long time %{public}" PRIu64".", __func__, temp);
     }
 
     writeTimeModel_.ResetFrameStamp(curHdiWritePos, writeTime);
@@ -554,7 +556,17 @@ bool AudioEndpointInner::StopDevice()
             dstAudioBuffer_->GetDataSize());
         AUDIO_INFO_LOG("StopDevice clear buffer ret:%{public}d", ret);
     }
-    fastSink_->Stop();
+    if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+        if (fastSource_ == nullptr || fastSource_->Stop() != SUCCESS) {
+            AUDIO_ERR_LOG("Source stop failed.");
+            return false;
+        }
+    } else {
+        if (fastSink_ == nullptr || fastSink_->Stop() != SUCCESS) {
+            AUDIO_ERR_LOG("Sink stop failed.");
+            return false;
+        }
+    }
     endpointStatus_ = STOPPED;
     return true;
 }
@@ -588,6 +600,30 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
     return SUCCESS;
 }
 
+int32_t AudioEndpointInner::GetProcLastWriteDoneInfo(const std::shared_ptr<OHAudioBuffer> processBuffer,
+    uint64_t curWriteFrame, uint64_t &proHandleFrame, int64_t &proHandleTime)
+{
+    CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_HANDLE, "Process found but buffer is null");
+    uint64_t curReadFrame = processBuffer->GetCurReadFrame();
+    SpanInfo *curWriteSpan = processBuffer->GetSpanInfo(curWriteFrame);
+    CHECK_AND_RETURN_RET_LOG(curWriteSpan != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s curWriteSpan of curWriteFrame %{public}" PRIu64" is null", __func__, curWriteFrame);
+    if (curWriteSpan->spanStatus == SpanStatus::SPAN_WRITE_DONE || curWriteFrame < dstSpanSizeInframe_ ||
+        curWriteFrame < curReadFrame) {
+        proHandleFrame = curWriteFrame;
+        proHandleTime = curWriteSpan->writeDoneTime;
+    } else {
+        int32_t ret = GetProcLastWriteDoneInfo(processBuffer, curWriteFrame - dstSpanSizeInframe_,
+            proHandleFrame, proHandleTime);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "%{public}s get process last write done info fail, ret %{public}d.", __func__, ret);
+    }
+
+    AUDIO_INFO_LOG("%{public}s end, curWriteFrame %{public}" PRIu64", proHandleFrame %{public}" PRIu64", "
+        "proHandleTime %{public}" PRId64".", __func__, curWriteFrame, proHandleFrame, proHandleTime);
+    return SUCCESS;
+}
+
 int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStream)
 {
     Trace trace("AudioEndpoint::OnUpdateHandleInfo");
@@ -602,14 +638,19 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStrea
         std::shared_ptr<OHAudioBuffer> processBuffer = (*processItr)->GetStreamBuffer();
         CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_OPERATION_FAILED, "Process found but buffer is null");
         uint64_t proHandleFrame = 0;
+        int64_t proHandleTime = 0;
         if (deviceInfo_.deviceRole == INPUT_DEVICE) {
-            proHandleFrame = processBuffer->GetCurWriteFrame();
+            uint64_t curWriteFrame = processBuffer->GetCurWriteFrame();
+            int32_t ret = GetProcLastWriteDoneInfo(processBuffer, curWriteFrame, proHandleFrame, proHandleTime);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+                "%{public}s get process last write done info fail, ret %{public}d.", __func__, ret);
         } else {
             proHandleFrame = processBuffer->GetCurReadFrame();
+            proHandleTime = lastHandleProcessTime_;
         }
-        processBuffer->SetHandleInfo(proHandleFrame, lastHandleProcessTime_);
-        AUDIO_INFO_LOG("%{public}s set process buf handle pos %{public}" PRIu64" time %{public}" PRId64" ",
-            __func__, proHandleFrame, lastHandleProcessTime_);
+        processBuffer->SetHandleInfo(proHandleFrame, proHandleTime);
+        AUDIO_INFO_LOG("%{public}s set process buf handle pos %{public}" PRIu64", handle time %{public}" PRId64", "
+            "deviceRole %{public}d.", __func__, proHandleFrame, proHandleTime, deviceInfo_.deviceRole);
         isFind = true;
         break;
     }
@@ -628,7 +669,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
 
     CHECK_AND_RETURN_RET_LOG(processList_.size() < MAX_LINKED_PROCESS, ERR_OPERATION_FAILED, "reach link limit.");
 
-    AUDIO_INFO_LOG("LinkProcessStream success in status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_INFO_LOG("LinkProcessStream endpoint status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
 
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
@@ -841,10 +882,10 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
 {
     Trace trace("AudioEndpoint::GetPredictNextRead");
-    uint64_t handleSpanCout = posInFrame / dstSpanSizeInframe_;
-    uint32_t startPeriodCount = 20; // sync each time when start
-    uint32_t oneBigPeriodCount = 40; // 200ms
-    if (handleSpanCout < startPeriodCount || handleSpanCout % oneBigPeriodCount == 0) {
+    uint64_t handleSpanCnt = posInFrame / dstSpanSizeInframe_;
+    uint32_t startPeriodCnt = 20; // sync each time when start
+    uint32_t oneBigPeriodCnt = 40; // 200ms
+    if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
         // todo sleep random little time but less than nextHdiReadTime - 2ms
         uint64_t readFrame = 0;
         int64_t readtime = 0;
@@ -859,11 +900,10 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
 
 int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
 {
-    AUDIO_INFO_LOG("%{public}s enter, posInFrame %{public}" PRIu64".", __func__, posInFrame);
-    uint64_t handleSpanCout = posInFrame / dstSpanSizeInframe_;
-    uint32_t startPeriodCount = 20;
-    uint32_t oneBigPeriodCount = 40;
-    if (handleSpanCout < startPeriodCount || handleSpanCout % oneBigPeriodCount == 0) {
+    uint64_t handleSpanCnt = posInFrame / dstSpanSizeInframe_;
+    uint32_t startPeriodCnt = 20;
+    uint32_t oneBigPeriodCnt = 40;
+    if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
         // todo sleep random little time but less than nextHdiReadTime - 2ms
         uint64_t writeFrame = 0;
         int64_t writeTime = 0;
@@ -877,43 +917,8 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     return nextHdiWriteTime;
 }
 
-bool AudioEndpointInner::RecordPrepareNextProcess()
-{
-    std::lock_guard<std::mutex> lock(listLock_);
-    for (size_t i = 0; i < processBufferList_.size(); i++) {
-        if (processBufferList_[i] == nullptr) {
-            AUDIO_ERR_LOG("%{public}s process buffer %{public}zu is null.", __func__, i);
-            continue;
-        }
-        if (processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
-            AUDIO_ERR_LOG("%{public}s process %{public}zu not running, stream status %{public}d.",
-                __func__, i, processBufferList_[i]->GetStreamStatus()->load());
-            continue;
-        }
-
-        uint64_t eachCurWritePos = processBufferList_[i]->GetCurWriteFrame();
-        SpanInfo *tempSpan = processBufferList_[i]->GetSpanInfo(eachCurWritePos);
-        CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false, "GetSpanInfo failed, can not get process read span");
-        if (tempSpan->spanStatus.load() != SpanStatus::SPAN_WRITE_DONE) {
-            AUDIO_ERR_LOG("%{public}s process buffer %{public}zu info error, spanStatus %{public}d.",
-                __func__, i, tempSpan->spanStatus.load());
-            tempSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
-        }
-        lastHandleProcessTime_ = ClockTime::GetCurNano();
-        processBufferList_[i]->SetHandleInfo(eachCurWritePos, lastHandleProcessTime_);
-
-        int32_t ret = processBufferList_[i]->SetCurWriteFrame(eachCurWritePos+ dstSpanSizeInframe_);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("%{public}s set dst buffer read frame fail, ret %{public}d.", __func__, ret);
-            continue;
-        }
-    }
-    return true;
-}
-
 bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime)
 {
-    AUDIO_INFO_LOG("%{public}s enter, dstAudioBuffer curReadPos %{public}" PRIu64".", __func__, curReadPos);
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
     wakeUpTime = nextHdiWriteTime + serverAheadReadTime_;
@@ -925,9 +930,8 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set dst buffer read frame fail, ret %{public}d.",
         __func__, ret);
 
-    CHECK_AND_RETURN_RET_LOG(RecordPrepareNextProcess(), false, "%{public}s prepare process next fail.", __func__);
-    AUDIO_INFO_LOG("%{public}s end, dstAudioBuffer nextHandlePos %{public}" PRIu64", wakeUpTime %{public}" PRId64"",
-        __func__, nextHandlePos, wakeUpTime);
+    AUDIO_INFO_LOG("%{public}s end, dstAudioBuffer curReadPos %{public}" PRIu64", nextHandlePos %{public}" PRIu64", "
+        "wakeUpTime %{public}" PRId64"", __func__, curReadPos, nextHandlePos, wakeUpTime);
     return true;
 }
 
@@ -1067,9 +1071,38 @@ bool AudioEndpointInner::KeepWorkloopRunning()
     return false;
 }
 
+int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf,
+    const BufferDesc &readBuf)
+{
+    CHECK_AND_RETURN_RET_LOG(procBuf != nullptr, ERR_INVALID_HANDLE, "%{public}s process buffer is null.", __func__);
+    uint64_t curWritePos = procBuf->GetCurWriteFrame();
+    SpanInfo *curWriteSpan = procBuf->GetSpanInfo(curWritePos);
+    CHECK_AND_RETURN_RET_LOG(curWriteSpan != nullptr, ERR_INVALID_HANDLE,
+        "%{public}s get write span info of procBuf fail.", __func__);
+
+    AUDIO_DEBUG_LOG("%{public}s process buffer write start, curWritePos %{public}" PRIu64".", __func__, curWritePos);
+    curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITTING);
+    curWriteSpan->writeStartTime = ClockTime::GetCurNano();
+
+    BufferDesc writeBuf;
+    int32_t ret = procBuf->GetWriteBuffer(curWritePos, writeBuf);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get write buffer fail, ret %{public}d.", __func__, ret);
+    ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
+        static_cast<void *>(readBuf.buffer), readBuf.bufLength);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "%{public}s memcpy data to process buffer fail, "
+        "curWritePos %{public}" PRIu64", ret %{public}d.", __func__, curWritePos, ret);
+
+    curWriteSpan->writeDoneTime = ClockTime::GetCurNano();
+    procBuf->SetHandleInfo(curWritePos, curWriteSpan->writeDoneTime);
+    ret = procBuf->SetCurWriteFrame(curWritePos + dstSpanSizeInframe_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s set procBuf next write frame fail, ret %{public}d.",
+        __func__, ret);
+    curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
+    return SUCCESS;
+}
+
 void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
 {
-    AUDIO_DEBUG_LOG("%{public}s enter, processBufferList size %{public}zu.", __func__, processBufferList_.size());
     std::lock_guard<std::mutex> lock(listLock_);
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         if (processBufferList_[i] == nullptr) {
@@ -1077,38 +1110,19 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
             continue;
         }
         if (processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
-            AUDIO_ERR_LOG("%{public}s process %{public}zu not running, stream status %{public}d.",
+            AUDIO_WARNING_LOG("%{public}s process buffer %{public}zu not running, stream status %{public}d.",
                 __func__, i, processBufferList_[i]->GetStreamStatus()->load());
             continue;
         }
 
-        uint64_t curWritePos = processBufferList_[i]->GetCurWriteFrame();
-        SpanInfo *curWriteSpan = processBufferList_[i]->GetSpanInfo(curWritePos);
-        if (curWriteSpan == nullptr) {
-            AUDIO_ERR_LOG("%{public}s get write span info of process %{public}zu fail.", __func__, i);
-            continue;
-        }
-        AUDIO_DEBUG_LOG("%{public}s endpoint process %{public}zu, curWritePos %{public}" PRIu64".",
-            __func__, i, curWritePos);
-        curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITTING);
-        curWriteSpan->writeStartTime = ClockTime::GetCurNano();
-        BufferDesc writeBuf;
-        int32_t ret = processBufferList_[i]->GetWriteBuffer(curWritePos, writeBuf);
+        int32_t ret = WriteToSpecialProcBuf(processBufferList_[i], readBuf);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("%{public}s get write buffer fail, ret %{public}d.", __func__, ret);
-            continue;
-        }
-        ret = memcpy_s(static_cast<void *>(writeBuf.buffer), writeBuf.bufLength,
-            static_cast<void *>(readBuf.buffer), readBuf.bufLength);
-        if (ret != EOK) {
-            AUDIO_ERR_LOG("%{public}s memcpy data to process %{public}zu fail, ret %{public}d.",
+            AUDIO_ERR_LOG("%{public}s endpoint write to process buffer %{public}zu fail, ret %{public}d.",
                 __func__, i, ret);
             continue;
         }
-        curWriteSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
-        curWriteSpan->writeDoneTime = ClockTime::GetCurNano();
+        AUDIO_DEBUG_LOG("%{public}s endpoint process buffer %{public}zu write success.", __func__, i);
     }
-    AUDIO_DEBUG_LOG("%{public}s end.", __func__);
 }
 
 int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
@@ -1146,7 +1160,6 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         if (!KeepWorkloopRunning()) {
             continue;
         }
-        AUDIO_INFO_LOG("%{public}s Record endpoint work loop fuc running.", __func__);
         threadStatus_ = INRUNNING;
         if (needReSyncPosition_) {
             RecordReSyncPosition();
