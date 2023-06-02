@@ -26,6 +26,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_schedule.h"
 #include "audio_utils.h"
 #include "fast_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
@@ -1152,6 +1153,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
 
 void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 {
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
     int64_t curTime = 0;
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -1193,6 +1195,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
