@@ -1012,7 +1012,9 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
     AudioStreamType streamID = thiz->GetIdByStreamType(streamType);
-    float volumeDbCb = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
+    std::pair<float, bool> volumeDbCbPair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
+    float volumeDbCb = volumeDbCbPair.first;
+    bool muteStatus = volumeDbCbPair.second;
     float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
 
     pa_cvolume cv = i->volume;
@@ -1020,13 +1022,11 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
     if (streamID == userData->streamType || userData->isSubscribingCb) {
+        pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, muteStatus ? 1 : 0, nullptr, nullptr));
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
-        if (i->mute) {
-            pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
-        }
     }
     AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"
-        " volumeDbCb  %{public}f ", vol, uid, volumeFactor, volumeDbCb);
+        ", volumeDbCb %{public}f, muteStatus %{public}d", vol, uid, volumeFactor, volumeDbCb, muteStatus);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamID, "VOLUME", vol,

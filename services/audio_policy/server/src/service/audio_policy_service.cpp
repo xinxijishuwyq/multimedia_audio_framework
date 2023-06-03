@@ -108,6 +108,11 @@ bool AudioPolicyService::Init(void)
     CreateDataShareHelperInstance();
     RegisterNameMonitorHelper();
 
+    // Get device type from const.product.devicetype when starting.
+    char devicesType[100] = {0}; // 100 for system parameter usage
+    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
+    localDevicesType_ = devicesType;
+
     return true;
 }
 
@@ -182,37 +187,49 @@ int32_t AudioPolicyService::SetAudioSessionCallback(AudioSessionCallback *callba
 
 int32_t AudioPolicyService::GetMaxVolumeLevel(AudioVolumeType volumeType) const
 {
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
+    }
     return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
 }
 
 int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
 {
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
+    }
     return audioPolicyManager_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
 {
-    int32_t result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
+    int32_t result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
     if (result == SUCCESS && streamType == STREAM_VOICE_CALL) {
-        if (volumeLevel == 0) {
-            AUDIO_ERR_LOG("SetVoiceVolume: volume of voice_call cannot be set to 0");
-        } else {
-            const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-            if (gsp == nullptr) {
-                AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
-            } else {
-                float volumeDb = static_cast<float>(volumeLevel) / GetMaxVolumeLevel(STREAM_VOICE_CALL);
-                AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
-                gsp->SetVoiceVolume(volumeDb);
-            }
-        }
+        SetVoiceCallVolume(volumeLevel);
     }
     return result;
 }
 
-int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType) const
+void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
 {
-    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
+    // set voice volume by the interface from hdi.
+    if (volumeLevel == 0) {
+        AUDIO_ERR_LOG("SetVoiceVolume: volume of voice_call cannot be set to 0");
+        return;
+    }
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
+        return;
+    }
+    float volumeDb = static_cast<float>(volumeLevel) / GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    gsp->SetVoiceVolume(volumeDb);
+    AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
+}
+
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
+{
+    return audioPolicyManager_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
 }
 
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
@@ -1327,32 +1344,32 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 void AudioPolicyService::SetEarpieceState()
 {
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
-        char devicesType[100] = {0}; // 100 for system parameter usage
-        int res = GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-        std::string strLocalDevicesType(devicesType);
-        AUDIO_INFO_LOG("SetEarpieceState local devicetype [%{public}s]", strLocalDevicesType.c_str());
-        if (res > 0 && strLocalDevicesType.compare("phone") == 0) {
-            // add earpiece to connectedDevices_
-            auto isPresent = [](const sptr<AudioDeviceDescriptor> &desc) {
-                CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-                return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
-            };
-            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-            if (itr == connectedDevices_.end()) {
-                sptr<AudioDeviceDescriptor> audioDescriptor =
-                    new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
-                UpdateDisplayName(audioDescriptor);
-                connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
-                AUDIO_INFO_LOG("SetAudioScene: Add earpiece to connectedDevices_");
-            }
+        AUDIO_INFO_LOG("SetEarpieceState: add earpiece device only for [phone], localDevicesType [%{public}s]",
+            localDevicesType_.c_str());
+        if (localDevicesType_.compare("phone") != 0) {
+            return;
+        }
 
-            // add earpiece to outputPriorityList_
-            auto earpiecePos = find(outputPriorityList_.begin(), outputPriorityList_.end(), DEVICE_TYPE_EARPIECE);
-            if (earpiecePos == outputPriorityList_.end()) {
-                outputPriorityList_.insert(outputPriorityList_.end() - PRIORITY_LIST_OFFSET_POSTION,
-                    DEVICE_TYPE_EARPIECE);
-                AUDIO_INFO_LOG("SetAudioScene: Add earpiece to outputPriorityList_");
-            }
+        // add earpiece to connectedDevices_
+        auto isPresent = [](const sptr<AudioDeviceDescriptor> &desc) {
+            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+            return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
+        };
+        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (itr == connectedDevices_.end()) {
+            sptr<AudioDeviceDescriptor> audioDescriptor =
+                new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+            UpdateDisplayName(audioDescriptor);
+            connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+            AUDIO_INFO_LOG("SetAudioScene: Add earpiece to connectedDevices_");
+        }
+
+        // add earpiece to outputPriorityList_
+        auto earpiecePos = find(outputPriorityList_.begin(), outputPriorityList_.end(), DEVICE_TYPE_EARPIECE);
+        if (earpiecePos == outputPriorityList_.end()) {
+            outputPriorityList_.insert(outputPriorityList_.end() - PRIORITY_LIST_OFFSET_POSTION,
+                DEVICE_TYPE_EARPIECE);
+            AUDIO_INFO_LOG("SetAudioScene: Add earpiece to outputPriorityList_");
         }
     } else {
         // remove earpiece from connectedDevices_
@@ -1372,6 +1389,11 @@ void AudioPolicyService::SetEarpieceState()
             AUDIO_INFO_LOG("SetAudioScene: Remove earpiece from outputPriorityList_");
         }
     }
+}
+
+std::string AudioPolicyService::GetLocalDevicesType()
+{
+    return localDevicesType_;
 }
 
 AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const

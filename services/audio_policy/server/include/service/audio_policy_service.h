@@ -63,9 +63,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false) const;
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
@@ -245,6 +245,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    std::string GetLocalDevicesType();
+
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
 private:
@@ -356,6 +358,8 @@ private:
 
     void SetEarpieceState();
 
+    void SetVoiceCallVolume(int32_t volume);
+
     void RemoveDeviceInRouterMap(std::string networkId);
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
@@ -392,6 +396,7 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
+    std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;

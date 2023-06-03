@@ -60,9 +60,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false);
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
@@ -113,6 +113,7 @@ public:
     float GetMinStreamVolume(void) const;
 
     float GetMaxStreamVolume(void) const;
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -130,6 +131,16 @@ private:
         bool mute;
         bool isCorked;
         uint32_t idx;
+    };
+
+    const std::vector<AudioStreamType> streamTypeList_ = {
+        STREAM_MUSIC,
+        STREAM_RING,
+        STREAM_VOICE_CALL,
+        STREAM_VOICE_ASSISTANT,
+        STREAM_ALARM,
+        STREAM_ACCESSIBILITY,
+        STREAM_ULTRASONIC
     };
 
     AudioAdapterManager()
@@ -160,11 +171,14 @@ private:
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
-    bool LoadMuteStatusFromKvStore(AudioStreamType streamType);
+    bool LoadMuteStatusFromKvStore(DeviceType deviceType, AudioStreamType streamType);
     void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
     std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
     int32_t WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri);
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
+    void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
+    void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
+
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -185,7 +199,7 @@ private:
 
     std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;
-    std::unordered_map<AudioStreamType, int> muteStatusMap_;
+    std::unordered_map<AudioStreamType, bool> muteStatusMap_;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode ringerMode_;
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
@@ -212,22 +226,14 @@ public:
         audioAdapterManager_ = nullptr;
     }
 
-    float OnGetVolumeDbCb(std::string streamType)
+    std::pair<float, bool> OnGetVolumeDbCb(std::string streamType)
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(
             audioAdapterManager_->GetStreamIDByType(streamType));
-        if (audioAdapterManager_->ringerMode_ != RINGER_MODE_NORMAL) {
-            if (streamForVolumeMap == STREAM_RING) {
-                return AudioAdapterManager::MIN_VOLUME;
-            }
-        }
-
-        if (audioAdapterManager_->GetStreamMute(streamForVolumeMap)) {
-            return AudioAdapterManager::MIN_VOLUME;
-        }
 
         int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
-        return audioAdapterManager_->CalculateVolumeDb(volumeLevel);
+        bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
+        return std::make_pair(audioAdapterManager_->CalculateVolumeDb(volumeLevel), muteStatus);
     }
 
     void OnSessionRemoved(const uint32_t sessionID)

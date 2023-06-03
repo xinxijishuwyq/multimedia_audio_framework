@@ -50,6 +50,13 @@ public:
         LISTENER_CLIENT
     };
 
+    const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+        STREAM_MUSIC,
+        STREAM_RING,
+        STREAM_VOICE_CALL,
+        STREAM_VOICE_ASSISTANT
+    };
+
     explicit AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate = true);
 
     virtual ~AudioPolicyServer() = default;
@@ -290,9 +297,12 @@ private:
     void OnAudioFocusInfoChange();
     void UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType);
 
-    // for audio volume
+    // for audio volume and mute status
     int32_t SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t GetSystemVolumeLevelForKey(AudioStreamType streamType, bool isFromVolumeKey);
     float GetSystemVolumeDb(AudioStreamType streamType);
+    int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute);
 
     // common
     void GetPolicyData(PolicyData &policyData);
