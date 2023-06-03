@@ -28,6 +28,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
 
@@ -696,6 +697,7 @@ bool AudioProcessInClientInner::KeepLoopRunning()
 void AudioProcessInClientInner::RecordProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     int64_t clientReadCost = 0;
@@ -892,6 +894,7 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
 void AudioProcessInClientInner::ProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("AudioProcessInClient Callback loop start.");
+    AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
 
     uint64_t curWritePos = 0;
     int64_t curTime = 0;
