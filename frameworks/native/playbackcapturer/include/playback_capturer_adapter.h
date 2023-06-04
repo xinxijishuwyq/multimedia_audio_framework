@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_SESSION_CALLBACK_H
-#define ST_AUDIO_SESSION_CALLBACK_H
+#ifndef PLAYBACK_CAPTURER_ADAPTER_H
+#define PLAYBACK_CAPTURER_ADAPTER_H
 
-#include "audio_info.h"
+#include <stdio.h>
+#include <stdint.h>
 
-namespace OHOS {
-namespace AudioStandard {
-class AudioSessionCallback {
-public:
-    AudioSessionCallback() = default;
-    virtual ~AudioSessionCallback() = default;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    virtual void OnSessionRemoved(const uint32_t sessionID) = 0;
+bool IsStreamSupportInnerCapturer(int32_t streamUsage);
+bool IsPrivacySupportInnerCapturer(int32_t privacyTpe);
 
-    virtual void OnPlaybackCapturerStop() = 0;
-};
-} // namespce AudioStandard
-} // namespace OHOS
+#ifdef __cplusplus
+}
+#endif
+#endif // PLAYBACK_CAPTURER_ADAPTER_H
 
-#endif // ST_AUDIO_SESSION_CALLBACK_H

@@ -53,6 +53,8 @@ public:
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &map) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
+    bool CreatePlaybackCapturerManager() override;
+    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

@@ -990,6 +990,20 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     }
 }
 
+void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<CaptureFilterOptions> filterInfo;
+    int32_t ss = data.ReadInt32();
+    for (int32_t i = 0; i < ss; i++) {
+        CaptureFilterOptions info;
+        info.usage = static_cast<StreamUsage>(data.ReadInt32());
+        filterInfo.push_back(info);
+    }
+
+    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo);
+    reply.WriteInt32(ret);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1303,6 +1317,10 @@ int AudioPolicyManagerStub::OnRemoteRequest(
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUME_IN_DB):
             GetSystemVolumeInDbInternal(data, reply);
+            break;
+
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO):
+            SetPlaybackCapturerFilterInfosInternal(data, reply);
             break;
 
         default:

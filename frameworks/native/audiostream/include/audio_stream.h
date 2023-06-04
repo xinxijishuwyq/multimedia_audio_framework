@@ -57,6 +57,9 @@ public:
     AudioRendererRate GetRenderRate();
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback);
 
+    void SetInnerCapturerState(bool isInnerCapturer);
+    void SetPrivacyType(AudioPrivacyType privacyType);
+
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode);
     AudioRenderMode GetRenderMode();

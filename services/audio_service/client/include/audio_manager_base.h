@@ -207,6 +207,22 @@ public:
      */
     virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;
 
+    /**
+     * Create playback capturer manager.
+     *
+     * @return true/false.
+     */
+    virtual bool CreatePlaybackCapturerManager() = 0;
+
+    /**
+     * Set StreamUsage set which support playback capturer.
+     *
+     * @param usage value of StreamUsage which support inner capturer.
+     *
+     * @return result of setting. 0 if success, error number else;
+    */
+    virtual int32_t SetSupportStreamUsage(std::vector<int32_t> usage) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };

@@ -99,6 +99,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->SetApplicationCachePath(cachePath);
     }
 
+    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        capturer->SetCapturerState(true);
+        (void)AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(
+            capturerOptions.playbackCaptureConfig.filterOptions);
+    }
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     if (capturer->SetParams(params) != SUCCESS) {
@@ -107,6 +112,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (isChange) {
         capturer->isChannelChange_ = true;
     }
+
     return capturer;
 }
 
@@ -136,6 +142,11 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     if (!capturerProxyObj_) {
         AUDIO_ERR_LOG("AudioCapturerProxyObj Memory Allocation Failed !!");
     }
+}
+
+void AudioCapturerPrivate::SetCapturerState(bool state)
+{
+    audioStream_->SetInnerCapturerState(state);
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const

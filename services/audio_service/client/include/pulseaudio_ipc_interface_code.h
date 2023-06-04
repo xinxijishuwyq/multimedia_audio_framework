@@ -46,6 +46,8 @@ namespace AudioStandard {
         REQUEST_THREAD_PRIORITY = 21,
         CREATE_AUDIO_EFFECT_CHAIN_MANAGER = 22,
         SET_OUTPUT_DEVICE_SINK = 23,
+        CREATE_PLAYBACK_CAPTURER_MANAGER = 24,
+        SET_SUPPORT_STREAM_USAGE = 25,
     };
 } // namespace AudioStandard
 } // namespace OHOS

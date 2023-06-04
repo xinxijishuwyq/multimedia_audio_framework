@@ -89,8 +89,20 @@ public:
     std::string fileName;
     std::string networkId;
     std::string deviceType;
+    std::string sceneName;
     std::list<AudioModuleInfo> ports;
 };
+
+class LoopbackModuleInfo {
+public:
+    LoopbackModuleInfo() = default;
+    virtual ~LoopbackModuleInfo() = default;
+
+    std::string lib;
+    std::string sink;
+    std::string source;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 

@@ -17,7 +17,7 @@ import("../../../../../config.gni")
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
-config("cluster_config") {
+config("capturer_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
@@ -26,8 +26,6 @@ config("cluster_config") {
     "$pulseaudio_dir",
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
-    "../../../audioeffect/include",
-    "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -40,25 +38,56 @@ config("cluster_config") {
   ]
 }
 
-ohos_shared_library("module-cluster-sink") {
+ohos_shared_library("module-inner-capturer-sink") {
   sanitize = {
     cfi = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }
-  sources = [ "module_cluster_sink.c" ]
+  sources = [ "module_inner_capturer_sink.c" ]
 
-  configs = [ ":cluster_config" ]
+  configs = [ ":capturer_config" ]
 
-  cflags = [ "-DPA_MODULE_NAME=libmodule_cluster_sink_z_so" ]
+  cflags = [ "-DPA_MODULE_NAME=libmodule_inner_capturer_sink_z_so" ]
+
+  ldflags = [
+    "-Wl",
+    "--no-undefined",
+  ]
 
   deps = [
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "${third_party_path}/bounds_checking_function:libsec_shared",
-    "../../../audioeffect:audio_effect",
-    "../../../playbackcapturer:playback_capturer",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("module-receiver-sink") {
+  sanitize = {
+    cfi = true
+    debug = false
+    blocklist = "../../../../../cfi_blocklist.txt"
+  }
+  sources = [ "module_receiver_sink.c" ]
+
+  configs = [ ":capturer_config" ]
+
+  cflags = [ "-DPA_MODULE_NAME=libmodule_receiver_sink_z_so" ]
+
+  ldflags = [
+    "-Wl",
+    "--no-undefined",
+  ]
+
+  deps = [
+    "$pulseaudio_build_path/src:pulsecommon",
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "$pulseaudio_build_path/src/pulsecore:pulsecore",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

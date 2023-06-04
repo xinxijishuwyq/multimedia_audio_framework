@@ -38,6 +38,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_effect_chain_manager.h"
+#include "playback_capturer_manager.h"
 
 #define PA
 #ifdef PA
@@ -736,6 +737,31 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
 
     uint32_t pid = IPCSkeleton::GetCallingPid();
     ScheduleReportData(pid, tid, bundleName.c_str());
+}
+
+bool AudioServer::CreatePlaybackCapturerManager()
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return false;
+    }
+    std::vector<int32_t> usage;
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    playbackCapturerMgr->SetSupportStreamUsage(usage);
+    return true;
+}
+
+int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
+{
+    AUDIO_INFO_LOG("SetSupportStreamUsage with usage num:%{public}zu", usage.size());
+
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return ERR_OPERATION_FAILED;
+    }
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    playbackCapturerMgr->SetSupportStreamUsage(usage);
+    return SUCCESS;
 }
 
 } // namespace AudioStandard

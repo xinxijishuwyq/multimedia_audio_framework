@@ -225,6 +225,9 @@ public:
     int32_t GetMaxRendererInstances();
     
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
+    int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions);
+
 private:
     AudioPolicyManager()
     {

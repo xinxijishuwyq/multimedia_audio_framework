@@ -196,6 +196,8 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
+
+    int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

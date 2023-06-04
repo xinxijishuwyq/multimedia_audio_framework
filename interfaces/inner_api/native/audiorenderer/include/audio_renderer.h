@@ -194,6 +194,15 @@ public:
         const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
 
     /**
+     * @brief Sets audio privacy type.
+     *
+     * @param privacyType Indicates information about audio privacy type. For details, see
+     * {@link AudioPrivacyType}.
+     * @since 10
+     */
+    virtual void SetAudioPrivacyType(AudioPrivacyType privacyType) = 0;
+
+    /**
      * @brief Sets audio renderer parameters.
      *
      * @param params Indicates information about audio renderer parameters to set. For details, see

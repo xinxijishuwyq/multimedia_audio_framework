@@ -179,6 +179,8 @@ public:
 
     void OnSessionRemoved(const uint32_t sessionID) override;
 
+    void OnPlaybackCapturerStop() override;
+
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
@@ -249,6 +251,8 @@ public:
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
+
+    int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> options) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

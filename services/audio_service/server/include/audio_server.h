@@ -46,6 +46,7 @@ public:
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
         std::vector<Effect>& successEffectList) override;
+    bool CreatePlaybackCapturerManager() override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &map) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
@@ -80,6 +81,8 @@ public:
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
+
+    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
