@@ -26,7 +26,7 @@ namespace AudioStandard {
 // When AudioEndpoint is offline, notify the owner.
 class IAudioEndpointStatusListener {
 public:
-    enum EndpointStatus : uint32_t {
+    enum HdiDeviceStatus : uint32_t {
         STATUS_ONLINE = 0,
         STATUS_OFFLINE,
         STATUS_INVALID,
@@ -35,7 +35,7 @@ public:
     /**
      * When AudioEndpoint changed status, we need to notify AudioProcessStream.
     */
-    virtual int32_t OnEndpointStatusChange(EndpointStatus status) = 0;
+    virtual int32_t OnEndpointStatusChange(HdiDeviceStatus status) = 0;
 };
 
 class AudioEndpoint : public IProcessStatusListener {
@@ -57,6 +57,12 @@ public:
     };
 
     static std::shared_ptr<AudioEndpoint> GetInstance(EndpointType type, const DeviceInfo &deviceInfo);
+
+    virtual std::string GetEndpointName() = 0;
+
+    virtual EndpointStatus GetStatus() = 0;
+
+    virtual void Release() = 0;
 
     virtual int32_t LinkProcessStream(IAudioProcessStream *processStream) = 0;
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
