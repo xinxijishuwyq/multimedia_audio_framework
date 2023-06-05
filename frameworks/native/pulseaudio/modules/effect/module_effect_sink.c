@@ -76,8 +76,8 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
             *((int64_t*) data) =
                 /* Get the latency of the masterSink */
                 pa_sink_get_latency_within_thread(u->sinkInput->sink, true) +
-
                 /* Add the latency internal to our sink input on top */
+                pa_bytes_to_usec(pa_memblockq_get_length(u->bufInQ), &u->sinkInput->sink->sample_spec) +
                 pa_bytes_to_usec(pa_memblockq_get_length(u->sinkInput->thread_info.render_memblockq),
                     &u->sinkInput->sink->sample_spec);
             return 0;
@@ -135,7 +135,8 @@ static void SinkRequestRewind(pa_sink *s)
             return;
     }
 
-    pa_sink_input_request_rewind(u->sinkInput, s->thread_info.rewind_nbytes, true, false, false);
+    size_t nbytes = s->thread_info.rewind_nbytes + pa_memblockq_get_length(u->bufInQ);
+    pa_sink_input_request_rewind(u->sinkInput, nbytes, true, false, false);
 }
 
 /* Called from I/O thread context */
@@ -385,8 +386,12 @@ static void SinkInputProcessRewindCb(pa_sink_input *i, size_t nbytes)
     }
 
     if (u->sink->thread_info.rewind_nbytes > 0) {
-        amount = PA_MIN(u->sink->thread_info.rewind_nbytes, nbytes);
+        size_t maxRewrite = nbytes + pa_memblockq_get_length(u->bufInQ);
+        amount = PA_MIN(u->sink->thread_info.rewind_nbytes, maxRewrite);
         u->sink->thread_info.rewind_nbytes = 0;
+        if (amount > 0) {
+            pa_memblockq_seek(u->bufInQ, -(int64_t)amount, PA_SEEK_RELATIVE, true);
+        }
     }
 
     pa_sink_process_rewind(u->sink, amount);
@@ -511,7 +516,7 @@ static void SinkInputMovingCb(pa_sink_input *i, pa_sink *dest)
     }
     
     pa_sink_set_asyncmsgq(u->sink, dest->asyncmsgq);
-    pa_sink_update_flags(u->sink, PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY, dest->flags);
+    pa_sink_update_flags(u->sink, PA_SINK_LATENCY | PA_SINK_DYNAMIC_LATENCY, dest->flags);
 
     const char *k;
     pa_proplist *pl;
@@ -562,7 +567,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     k = pa_proplist_gets(masterSink->proplist, PA_PROP_DEVICE_DESCRIPTION);
     pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "Remapped %s", k ? k : masterSink->name);
     
-    u->sink = pa_sink_new(m->core, &sinkData, masterSink->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
+    u->sink = pa_sink_new(m->core, &sinkData, masterSink->flags & (PA_SINK_LATENCY | PA_SINK_DYNAMIC_LATENCY));
     pa_sink_new_data_done(&sinkData);
 
     if (!u->sink) {
@@ -678,8 +683,8 @@ int pa__init(pa_module *m)
 
     int32_t bitSize = pa_sample_size_of_format(u->sampleSpec.format);
     size_t targetSize = u->sampleSpec.channels * frameLen * bitSize;
-    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize,
-                                 &u->sampleSpec, 1, 1, 0, NULL);
+    u->bufInQ = pa_memblockq_new("module-effect-sink bufInQ", 0, MEMBLOCKQ_MAXLENGTH, targetSize, &u->sampleSpec,
+        1, 1, 0, NULL);
 
     pa_sink_input_put(u->sinkInput);
     pa_sink_put(u->sink);

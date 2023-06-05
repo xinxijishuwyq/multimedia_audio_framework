@@ -51,6 +51,7 @@ public:
     void AddEffectHandle(AudioEffectHandle effectHandle);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
+    bool IsEmptyEffectHandles();
     void Dump();
 private:
     std::string sceneType;

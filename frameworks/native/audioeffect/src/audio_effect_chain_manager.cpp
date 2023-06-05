@@ -201,8 +201,7 @@ void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen)
 {
-    if (standByEffectHandles.empty()) {
-        AUDIO_INFO_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
+    if (IsEmptyEffectHandles()) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
         return;
     }
@@ -242,6 +241,11 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
         ioBufferConfig.outputCfg.samplingRate = samplingRate;
         ioBufferConfig.outputCfg.channels = channels;
     }
+}
+
+bool AudioEffectChain::IsEmptyEffectHandles()
+{
+    return standByEffectHandles.empty();
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
@@ -457,7 +461,16 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
 {
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
-    return SceneTypeAndModeToEffectChainNameMap.count(effectChainKey);
+    if (!SceneTypeAndModeToEffectChainNameMap.count(effectChainKey)) {
+        return false;
+    }
+    // if the effectChain exist, see if it is empty
+    auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+    if (audioEffectChain->IsEmptyEffectHandles()) {
+        AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
+        return false;
+    }
+    return true;
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)

@@ -45,6 +45,14 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
+static pa_hook_result_t MoveSinkInputIntoSink(pa_sink_input *si, pa_sink *sink)
+{
+    if (si->sink != sink) {
+        pa_sink_input_move_to(si, sink, false);
+    }
+    return PA_HOOK_OK;
+}
+
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {
     pa_sink *effectSink;
@@ -56,18 +64,17 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
     if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
-        pa_sink_input_move_to(si, c->default_sink, false); //if bypass move to hdi sink
-        return PA_HOOK_OK;
+        return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
     }
 
     effectSink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
         // classify sinkinput to default sink
-        pa_sink_input_move_to(si, c->default_sink, false);
+        MoveSinkInputIntoSink(si, c->default_sink);
     } else {
         // classify sinkinput to effect sink
-        pa_sink_input_move_to(si, effectSink, false);
+        MoveSinkInputIntoSink(si, effectSink);
     }
 
     return PA_HOOK_OK;
