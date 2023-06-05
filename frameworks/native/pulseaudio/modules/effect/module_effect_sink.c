@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -307,7 +307,6 @@ static size_t MemblockqMissing(pa_memblockq *bq)
     l = tlength - l;
     return l >= pa_memblockq_get_minreq(bq) ? l : 0;
 }
-
 // END Utility functions
 
 /* Called from I/O thread context */
@@ -561,7 +560,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");
     const char *k;
     k = pa_proplist_gets(masterSink->proplist, PA_PROP_DEVICE_DESCRIPTION);
-    pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "Remapped %s", k ? k : masterSink->name);    
+    pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "Remapped %s", k ? k : masterSink->name);
     
     u->sink = pa_sink_new(m->core, &sinkData, masterSink->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
     pa_sink_new_data_done(&sinkData);
