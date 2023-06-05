@@ -339,6 +339,7 @@ ohos_shared_library("audio_policy_client") {
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
+  innerapi_tags = [ "platformsdk" ]
   part_name = "audio_framework"
 
   ldflags = [ "-Wl,-Bsymbolic" ]

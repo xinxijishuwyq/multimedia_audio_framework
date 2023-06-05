@@ -65,6 +65,7 @@ ohos_shared_library("audio_common") {
   ]
 
   subsystem_name = "multimedia"
+  innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
 }
 
