@@ -16,6 +16,7 @@
 #ifndef AUDIO_SERVICE_H
 #define AUDIO_SERVICE_H
 
+#include <condition_variable>
 #include <sstream>
 #include <map>
 #include <mutex>
@@ -42,7 +43,13 @@ public:
     void Dump(std::stringstream &dumpString);
 private:
     AudioService();
+    void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
+private:
     std::mutex processListMutex_;
+
+    std::string reusingEndpoint_;
+    std::mutex releaseEndpointMutex_;
+    std::condition_variable releaseEndpointCV_;
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
 };

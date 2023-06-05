@@ -76,6 +76,12 @@ public:
 
     void Dump(std::stringstream &dumpStringStream) override;
 
+    std::string GetEndpointName() override;
+
+    EndpointStatus GetStatus() override;
+
+    void Release() override;
+
 private:
     bool ConfigInputPoint(const DeviceInfo &deviceInfo);
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
@@ -130,6 +136,8 @@ private:
     std::vector<IAudioProcessStream *> processList_;
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
 
+    std::atomic<bool> isInited = false;
+
     FastAudioRendererSink *fastSink_ = nullptr;
     IMmapAudioCapturerSource *fastSource_ = nullptr;
 
@@ -178,10 +186,26 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type) : endpointType_(type)
     AUDIO_INFO_LOG("AudioEndpoint type:%{public}d", endpointType_);
 }
 
-AudioEndpointInner::~AudioEndpointInner()
+std::string AudioEndpointInner::GetEndpointName()
+{
+    // temp method to get deivce key, should be same with AudioService::GetAudioEndpointForDevice.
+    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId);
+}
+
+AudioEndpoint::EndpointStatus AudioEndpointInner::GetStatus()
+{
+    AUDIO_INFO_LOG("AudioEndpoint get status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+    return endpointStatus_.load();
+}
+
+void AudioEndpointInner::Release()
 {
     // Wait for thread end and then clear other data to avoid using any cleared data in thread.
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    if (!isInited) {
+        AUDIO_WARNING_LOG("already released");
+        return;
+    }
     if (endpointWorkThread_.joinable()) {
         AUDIO_INFO_LOG("AudioEndpoint join work thread start");
         isThreadEnd_ = true;
@@ -205,6 +229,7 @@ AudioEndpointInner::~AudioEndpointInner()
         AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
     }
+    isInited = false;
 #ifdef DUMP_PROCESS_FILE
     if (dcp_) {
         fclose(dcp_);
@@ -215,6 +240,13 @@ AudioEndpointInner::~AudioEndpointInner()
         dump_hdi_ = nullptr;
     }
 #endif
+}
+
+AudioEndpointInner::~AudioEndpointInner()
+{
+    if (isInited) {
+        AudioEndpointInner::Release();
+    }
     AUDIO_INFO_LOG("~AudioEndpoint()");
 }
 
@@ -324,6 +356,8 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     endpointStatus_ = UNLINKED;
     endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
+
+    isInited = true;
 
 #ifdef DUMP_PROCESS_FILE
     dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
