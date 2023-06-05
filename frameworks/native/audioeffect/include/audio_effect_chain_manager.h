@@ -71,6 +71,7 @@ public:
         std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
     int32_t CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
+    bool ExistAudioEffectChain(std::string sceneType, std::string effectMode);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
     DeviceType GetDeviceType();

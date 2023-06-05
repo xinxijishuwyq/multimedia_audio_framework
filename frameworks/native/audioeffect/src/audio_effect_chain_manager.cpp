@@ -36,7 +36,10 @@ int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString(sceneType);
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
     if (audioEffectChainManager->CreateAudioEffectChain(sceneTypeString, bufferAttr) != SUCCESS) {
         return ERROR;
     }
@@ -47,7 +50,10 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString(sceneType);
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
     if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, bufferAttr) != SUCCESS) {
         return ERROR;
     }
@@ -66,6 +72,21 @@ int32_t EffectChainManagerGetDeviceType()
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     return (int32_t)audioEffectChainManager->GetDeviceType();
+}
+
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
+    std::string effectModeString = "";
+    if (effectMode) {
+        effectModeString = effectMode;
+    }
+    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
 }
 
 namespace OHOS {
@@ -431,6 +452,12 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     audioEffectChain->AddEffectHandleEnd();
     
     return SUCCESS;
+}
+
+bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
+{
+    std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
+    return SceneTypeAndModeToEffectChainNameMap.count(effectChainKey);
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)

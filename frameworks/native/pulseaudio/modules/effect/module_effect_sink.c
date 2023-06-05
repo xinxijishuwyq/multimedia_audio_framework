@@ -52,7 +52,6 @@ struct userdata {
     int32_t processLen;
     size_t processSize;
     pa_sample_format_t format;
-    bool auto_desc;
 };
 
 static const char * const VALID_MODARGS[] = {
@@ -80,7 +79,7 @@ static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
 
                 /* Add the latency internal to our sink input on top */
                 pa_bytes_to_usec(pa_memblockq_get_length(u->sinkInput->thread_info.render_memblockq),
-                                 &u->sinkInput->sink->sample_spec);
+                    &u->sinkInput->sink->sample_spec);
             return 0;
         default:
             break;
@@ -153,9 +152,7 @@ static void SinkUpdateRequestedLatency(pa_sink *s)
     }
 
     /* Just hand this one over to the masterSink */
-    pa_sink_input_set_requested_latency_within_thread(
-            u->sinkInput,
-            pa_sink_get_requested_latency_within_thread(s));
+    pa_sink_input_set_requested_latency_within_thread(u->sinkInput, pa_sink_get_requested_latency_within_thread(s));
 }
 
 // BEGIN Utility functions
@@ -169,10 +166,7 @@ static void SinkUpdateRequestedLatency(pa_sink *s)
 #define BIT_32 32
 static uint32_t Read24Bit(const uint8_t *p)
 {
-    return
-        ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) |
-        ((uint32_t) p[1] << BIT_8) |
-        ((uint32_t) p[0]);
+    return ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t) p[1] << BIT_8) | ((uint32_t) p[0]);
 }
 
 static void Write24Bit(uint8_t *p, uint32_t u)
@@ -377,11 +371,165 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
 }
 // END QUEUE
 
+/* Called from I/O thread context */
+static void SinkInputProcessRewindCb(pa_sink_input *i, size_t nbytes)
+{
+    size_t amount = 0;
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    /* If the sink is not yet linked, there is nothing to rewind */
+    if (!PA_SINK_IS_LINKED(u->sink->thread_info.state)) {
+        return;
+    }
+
+    if (u->sink->thread_info.rewind_nbytes > 0) {
+        amount = PA_MIN(u->sink->thread_info.rewind_nbytes, nbytes);
+        u->sink->thread_info.rewind_nbytes = 0;
+    }
+
+    pa_sink_process_rewind(u->sink, amount);
+}
+
+/* Called from I/O thread context */
+static void SinkInputUpdateMaxRewindCb(pa_sink_input *i, size_t nbytes)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    pa_sink_set_max_rewind_within_thread(u->sink, nbytes);
+}
+
+/* Called from I/O thread context */
+static void SinkInputUpdateMaxRequestCb(pa_sink_input *i, size_t nbytes)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    pa_sink_set_max_request_within_thread(u->sink, nbytes);
+}
+
+/* Called from I/O thread context */
+static void SinkInputUpdateSinkLatencyRangeCb(pa_sink_input *i)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    pa_sink_set_latency_range_within_thread(u->sink, i->sink->thread_info.min_latency,
+        i->sink->thread_info.max_latency);
+}
+
+/* Called from I/O thread context */
+static void SinkInputUpdateSinkFixedLatencyCb(pa_sink_input *i)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    pa_sink_set_fixed_latency_within_thread(u->sink, i->sink->thread_info.fixed_latency);
+}
+
+/* Called from I/O thread context */
+static void SinkInputAttachCb(pa_sink_input *i)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    pa_sink_set_rtpoll(u->sink, i->sink->thread_info.rtpoll);
+    pa_sink_set_latency_range_within_thread(u->sink, i->sink->thread_info.min_latency,
+        i->sink->thread_info.max_latency);
+    pa_sink_set_fixed_latency_within_thread(u->sink, i->sink->thread_info.fixed_latency);
+    pa_sink_set_max_request_within_thread(u->sink, pa_sink_input_get_max_request(i));
+
+    pa_sink_set_max_rewind_within_thread(u->sink, pa_sink_input_get_max_rewind(i));
+
+    if (PA_SINK_IS_LINKED(u->sink->thread_info.state)) {
+        pa_sink_attach_within_thread(u->sink);
+    }
+}
+
+/* Called from I/O thread context */
+static void SinkInputDetachCb(pa_sink_input *i)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    if (PA_SINK_IS_LINKED(u->sink->thread_info.state)) {
+        pa_sink_detach_within_thread(u->sink);
+    }
+
+    pa_sink_set_rtpoll(u->sink, NULL);
+}
+
+/* Called from main context */
+static void SinkInputKillCb(pa_sink_input *i)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    /* The order here matters! We first kill the sink so that streams
+     * can properly be moved away while the sink input is still connected
+     * to the master. */
+    pa_sink_input_cork(u->sinkInput, true);
+    pa_sink_unlink(u->sink);
+    pa_sink_input_unlink(u->sinkInput);
+
+    pa_sink_input_unref(u->sinkInput);
+    u->sinkInput = NULL;
+
+    pa_sink_unref(u->sink);
+    u->sink = NULL;
+
+    pa_module_unload_request(u->module, true);
+}
+
+/* Called from main context */
+static void SinkInputMovingCb(pa_sink_input *i, pa_sink *dest)
+{
+    struct userdata *u;
+
+    pa_sink_input_assert_ref(i);
+    pa_assert_se(u = i->userdata);
+
+    if (!dest) {
+        pa_sink_set_asyncmsgq(u->sink, NULL);
+        return;
+    }
+    
+    pa_sink_set_asyncmsgq(u->sink, dest->asyncmsgq);
+    pa_sink_update_flags(u->sink, PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY, dest->flags);
+
+    const char *k;
+    pa_proplist *pl;
+    pl = pa_proplist_new();
+    k = pa_proplist_gets(dest->proplist, PA_PROP_DEVICE_DESCRIPTION);
+    pa_proplist_setf(pl, PA_PROP_DEVICE_DESCRIPTION, "Remapped %s", k ? k : dest->name);
+    pa_proplist_sets(pl, PA_PROP_DEVICE_MASTER_DEVICE, dest->name);
+    pa_sink_update_proplist(u->sink, PA_UPDATE_REPLACE, pl);
+    pa_proplist_free(pl);
+}
+
 int InitFail(pa_module *m, pa_modargs *ma)
 {
     AUDIO_ERR_LOG("Failed to create effect sink");
-    if (ma)
+    if (ma) {
         pa_modargs_free(ma);
+    }
     pa__done(m);
     return -1;
 }
@@ -403,19 +551,17 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
     pa_sink_new_data_init(&sinkData);
     sinkData.driver = __FILE__;
     sinkData.module = m;
-    if (!(sinkData.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL))))
+    if (!(sinkData.name = pa_xstrdup(pa_modargs_get_value(ma, "sink_name", NULL)))) {
         sinkData.name = pa_sprintf_malloc("%s.effected", masterSink->name);
+    }
     pa_sink_new_data_set_sample_spec(&sinkData, &ss);
     pa_sink_new_data_set_channel_map(&sinkData, &sinkMap);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, masterSink->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "N/A");
-
-    if ((u->auto_desc = !pa_proplist_contains(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION))) {
-        const char *k;
-        k = pa_proplist_gets(masterSink->proplist, PA_PROP_DEVICE_DESCRIPTION);
-        pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "effected %s", k ? k : masterSink->name);
-    }
+    const char *k;
+    k = pa_proplist_gets(masterSink->proplist, PA_PROP_DEVICE_DESCRIPTION);
+    pa_proplist_setf(sinkData.proplist, PA_PROP_DEVICE_DESCRIPTION, "Remapped %s", k ? k : masterSink->name);    
     
     u->sink = pa_sink_new(m->core, &sinkData, masterSink->flags & (PA_SINK_LATENCY|PA_SINK_DYNAMIC_LATENCY));
     pa_sink_new_data_done(&sinkData);
@@ -439,7 +585,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdat
 
 int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct userdata *u)
 {
-    pa_resample_method_t resampleMethod = PA_RESAMPLER_SRC_SINC_FASTEST; //PA_RESAMPLER_INVALID;
+    pa_resample_method_t resampleMethod = PA_RESAMPLER_TRIVIAL;
     bool remix = true;
     pa_sink_input_new_data sinkInputData;
     /* Create sink input */
@@ -466,6 +612,15 @@ int CreateSinkInput(pa_module *m, pa_modargs *ma, pa_sink *masterSink, struct us
     }
 
     u->sinkInput->pop = SinkInputPopCb;
+    u->sinkInput->process_rewind = SinkInputProcessRewindCb;
+    u->sinkInput->update_max_rewind = SinkInputUpdateMaxRewindCb;
+    u->sinkInput->update_max_request = SinkInputUpdateMaxRequestCb;
+    u->sinkInput->update_sink_latency_range = SinkInputUpdateSinkLatencyRangeCb;
+    u->sinkInput->update_sink_fixed_latency = SinkInputUpdateSinkFixedLatencyCb;
+    u->sinkInput->attach = SinkInputAttachCb;
+    u->sinkInput->detach = SinkInputDetachCb;
+    u->sinkInput->kill = SinkInputKillCb;
+    u->sinkInput->moving = SinkInputMovingCb;
     u->sinkInput->userdata = u;
 
     u->sink->input_to_master = u->sinkInput;
@@ -497,12 +652,12 @@ int pa__init(pa_module *m)
 
     ret = CreateSink(m, ma, masterSink, u);
     if (ret != 0) {
-        return InitFail(m, ma);
+        return ret;
     }
 
     ret = CreateSinkInput(m, ma, masterSink, u);
     if (ret != 0) {
-        return InitFail(m, ma);
+        return ret;
     }
 
     // Set buffer attributes

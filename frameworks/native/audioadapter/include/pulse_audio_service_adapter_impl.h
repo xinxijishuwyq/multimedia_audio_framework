@@ -85,8 +85,7 @@ private:
 
     bool ConnectToPulseAudio();
     std::string GetNameByStreamType(AudioStreamType streamType);
-    AudioStreamType GetIdByStreamType(std::string streamType);
-    void MoveEffectSinkInputsToSink(std::string name);
+    AudioStreamType GetIdByStreamType(std::string streamType);    
 
     static constexpr uint32_t PA_CONNECT_RETRY_SLEEP_IN_MICRO_SECONDS = 500000;
     pa_context *mContext = NULL;
