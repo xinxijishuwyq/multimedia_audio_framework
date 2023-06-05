@@ -190,6 +190,7 @@ private:
     void SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel);
     void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
     void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetVolumeDb(AudioStreamType streamType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -244,22 +245,25 @@ public:
         audioAdapterManager_ = nullptr;
     }
 
-    std::pair<float, bool> OnGetVolumeDbCb(std::string streamType)
+    float OnGetVolumeDbCb(std::string streamType)
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(
             audioAdapterManager_->GetStreamIDByType(streamType));
 
-        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
         bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
-        float volumeDb;
+        if (muteStatus) {
+            return 0.0f;
+        }
+
+        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
+        float volumeDb = 1.0f;
         if (audioAdapterManager_->IsUseNonlinearAlgo()) {
             volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
                 audioAdapterManager_->GetActiveDevice(), volumeLevel);
         } else {
             volumeDb = audioAdapterManager_->CalculateVolumeDb(volumeLevel);
         }
-
-        return std::make_pair(volumeDb, muteStatus);
+        return volumeDb;
     }
 
     void OnSessionRemoved(const uint32_t sessionID)

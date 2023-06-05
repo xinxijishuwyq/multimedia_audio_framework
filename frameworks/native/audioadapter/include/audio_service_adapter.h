@@ -34,7 +34,7 @@ public:
      * @param streamType streamType for which volume will be computed
      * @return Returns volume level in float
      */
-    virtual std::pair<float, bool> OnGetVolumeDbCb(std::string streamType) = 0;
+    virtual float OnGetVolumeDbCb(std::string streamType) = 0;
 
     virtual void OnSessionRemoved(const uint32_t sessionID) = 0;
 
@@ -132,16 +132,6 @@ public:
     virtual int32_t SetVolumeDb(AudioStreamType streamType, float volume) = 0;
 
     /**
-     * @brief set mute for give streamType
-     *
-     * @param streamType the streamType for which mute will be set, streamType defined in{@link audio_info.h}
-     * @param mute boolean value, true: Set mute; false: Set unmute
-     * @return Returns {@link SUCCESS} if mute/unmute is set successfully; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    virtual int32_t SetMute(AudioStreamType streamType, bool mute) = 0;
-
-    /**
      * @brief set mute for give output streamType
      *
      * @param streamType the output streamType for which mute will be set, streamType defined in{@link audio_info.h}
@@ -167,14 +157,6 @@ public:
      * @return Returns {@link true} if mute is success; returns false otherwise.
      */
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
-
-    /**
-     * @brief returns if given streamType is set to mute
-     *
-     * @param streamType the streamType for which mute status will be fetched, streamType defined in{@link audio_info.h}
-     * @return Returns true: Is streamType is set as mute; else returns false
-     */
-    virtual bool IsMute(AudioStreamType streamType) = 0;
 
     /**
      * @brief returns if given streamType is active(currently the streamType audio is played)
