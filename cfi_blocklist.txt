@@ -1,3 +1,4 @@
+src:*frameworks/native/bluetoothclient/audio_bluetooth_manager.cpp
 src:*frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp
 src:*services/audio_policy/server/src/service/listener/device_status_listener.cpp
