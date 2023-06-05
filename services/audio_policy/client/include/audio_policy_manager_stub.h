@@ -110,6 +110,7 @@ private:
     void AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void IsVolumeUnadjustableInternal(MessageParcel &data, MessageParcel &reply);
+    void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

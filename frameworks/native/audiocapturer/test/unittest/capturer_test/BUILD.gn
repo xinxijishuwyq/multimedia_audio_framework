@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_capturer"
 
@@ -19,16 +20,26 @@ ohos_unittest("audio_capturer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/common/include",
+    "../../../include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/frameworks/native/common/include",
+    "${audio_fwk_path}/frameworks/native/audiostream/include",
   ]
+  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+
+  include_dirs += [ multimedia_audio_framework_pulse_audio_src ]
 
   cflags = [
     "-Wall",
     "-Werror",
   ]
 
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
   sources = [ "src/audio_capturer_unit_test.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer" ]
+  deps = [
+    "${audio_fwk_path}/frameworks/native/audiocapturer:audio_capturer",
+    "${audio_fwk_path}/services/audio_service:audio_client",
+  ]
 }

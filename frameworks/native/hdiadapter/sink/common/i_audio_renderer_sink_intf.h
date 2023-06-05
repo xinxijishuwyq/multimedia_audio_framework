@@ -40,7 +40,7 @@ typedef struct {
     float volume;
     const char *filePath;
     const char *deviceNetworkId;
-    int32_t device_type;
+    int32_t deviceType;
 } SinkAttr;
 
 struct RendererSinkAdapter {

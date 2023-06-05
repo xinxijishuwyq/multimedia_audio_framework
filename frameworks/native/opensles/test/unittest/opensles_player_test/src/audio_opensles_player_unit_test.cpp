@@ -163,24 +163,15 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_001, TestSi
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_001, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
-    if (wavFile_ == nullptr) {
-        AUDIO_INFO_LOG("CreateAudioPlayerAdapter_001: Unable to open wave file");
-    }
-    size_t headerSize = sizeof(wav_hdr);
-    fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.NumOfChan = 1;
-    wavHeader_.SamplesPerSec = 8000;
-    wavHeader_.bitsPerSample = 8;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
     };
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
-        wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
-        wavHeader_.bitsPerSample,
+        AudioChannel::MONO,
+        SL_SAMPLINGRATE_8,
+        SL_PCMSAMPLEFORMAT_FIXED_8,
         0,
         0,
         0
@@ -196,24 +187,15 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_001,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_002, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
-    if (wavFile_ == nullptr) {
-        AUDIO_INFO_LOG("CreateAudioPlayerAdapter_002: Unable to open wave file");
-    }
-    size_t headerSize = sizeof(wav_hdr);
-    fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.NumOfChan = 2;
-    wavHeader_.SamplesPerSec = 11025;
-    wavHeader_.bitsPerSample = 16;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
     };
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
-        wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
-        wavHeader_.bitsPerSample,
+        AudioChannel::STEREO,
+        SL_SAMPLINGRATE_11_025,
+        SL_PCMSAMPLEFORMAT_FIXED_16,
         0,
         0,
         0
@@ -235,16 +217,14 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_003,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.NumOfChan = 3;
-    wavHeader_.SamplesPerSec = 12000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
     };
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
-        wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        AudioChannel::CHANNEL_3,
+        SL_SAMPLINGRATE_12,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -267,16 +247,14 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_004,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.NumOfChan = 4;
-    wavHeader_.SamplesPerSec = 16000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
     };
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
-        wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        AudioChannel::CHANNEL_4,
+        SL_SAMPLINGRATE_16,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -299,7 +277,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_005,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 22050;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
@@ -307,7 +284,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_005,
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_22_05,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -330,7 +307,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_006,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 24000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
@@ -338,7 +314,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_006,
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_24,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -361,7 +337,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_007,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 32000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
@@ -369,7 +344,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_007,
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_32,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -392,15 +367,14 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_008,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 44100;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
     };
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
-        wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        AudioChannel::MONO,
+        SL_SAMPLINGRATE_44_1,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -423,7 +397,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_009,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 48000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
@@ -431,7 +404,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_009,
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_48,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -454,7 +427,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_010,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 64000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
@@ -462,7 +434,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_010,
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_64,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -485,7 +457,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_011,
     }
     size_t headerSize = sizeof(wav_hdr);
     fread(&wavHeader_, 1, headerSize, wavFile_);
-    wavHeader_.SamplesPerSec = 96000;
     SLDataLocator_BufferQueue slBufferQueue = {
         SL_DATALOCATOR_BUFFERQUEUE,
         0
@@ -493,12 +464,13 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_011,
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_96,
         wavHeader_.bitsPerSample,
         0,
         0,
         0
     };
+    
     SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject_};
     SLDataSink slSink = {&slOutputMix, nullptr};
     SLDataSource slSource = {&slBufferQueue, &pcmFormat};
@@ -594,7 +566,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_004, TestSi
     SLDataFormat_PCM pcmFormat = {
         SL_DATAFORMAT_PCM,
         wavHeader_.NumOfChan,
-        wavHeader_.SamplesPerSec * 1000,
+        SL_SAMPLINGRATE_44_1,
         wavHeader_.bitsPerSample,
         0,
         0,
@@ -704,6 +676,8 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetVoumeItf_001, TestSize.Lev
 {
     SLresult result = (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_VOLUME, &volumeItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_SEEK, &volumeItf_);
+    EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
 }
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetVoume_001, TestSize.Level0)
@@ -743,6 +717,8 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetBufferQueue_001, TestSize.
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_RegisterCallback_002, TestSize.Level0)
 {
     SLresult result = (*bufferQueueItf_)->RegisterCallback(bufferQueueItf_, BufferQueueCallback, wavFile_);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*bufferQueueItf_)->Clear(bufferQueueItf_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
@@ -876,7 +852,6 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_SetPlayState_006, TestSize.Le
     SLresult result = (*playItf_)->SetPlayState(playItf_, -1);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
-
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_001, TestSize.Level0)
 {
@@ -1157,6 +1132,169 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_SetPriority_001, TestSize.Lev
 {
     SLresult result = (*engineObject_)->SetPriority(engineObject_, 0, SL_BOOLEAN_FALSE);
     EXPECT_TRUE(result == SL_RESULT_FEATURE_UNSUPPORTED);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("Audio_Opensles_CreateAudioPlayer_005 start");
+    slCreateEngine(&engineObject_, 0, nullptr, 0, nullptr, nullptr);
+    (*engineObject_)->Realize(engineObject_, SL_BOOLEAN_FALSE);
+    (*engineObject_)->GetInterface(engineObject_, SL_IID_ENGINE, &engineEngine_);
+
+    (*engineEngine_)->CreateOutputMix(engineEngine_, &outputMixObject_, 0, nullptr, nullptr);
+    (*outputMixObject_)->Realize(outputMixObject_, SL_BOOLEAN_FALSE);
+
+    SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject_};
+    SLDataSink slSink = {&slOutputMix, nullptr};
+    SLDataLocator_BufferQueue slBufferQueue = {
+        SL_DATALOCATOR_BUFFERQUEUE,
+        0
+    };
+    SLDataFormat_PCM pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        AudioChannel::MONO,
+        SL_SAMPLINGRATE_44_1,
+        SL_PCMSAMPLEFORMAT_FIXED_8,
+        0,
+        0,
+        0
+    };
+    SLDataSource slSource = {&slBufferQueue, &pcmFormat};
+    SLresult result = (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_,
+        &slSource, &slSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmPlayerObject_)->Realize(pcmPlayerObject_, SL_BOOLEAN_FALSE);
+    (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_PLAY, &playItf_);
+    (*pcmPlayerObject_)->GetInterface(pcmPlayerObject_, SL_IID_VOLUME, &volumeItf_);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_SetPlayState_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("Audio_Opensles_SetPlayState_007 start");
+    SLmillibel level = 0; // Min Volume
+    SLmillibel temp = 2; // Half of MaxVolumeLevel
+    SLresult result = (*volumeItf_)->GetMaxVolumeLevel(volumeItf_, &level);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    level = (SLmillibel) (level / temp);
+    result = (*volumeItf_)->SetVolumeLevel(volumeItf_, level);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*volumeItf_)->GetVolumeLevel(volumeItf_, &level);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+
+    SLuint32 state = SL_PLAYSTATE_PLAYING;
+    result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_PLAYING);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*playItf_)->GetPlayState(playItf_, &state);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+
+    result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_PAUSED);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*playItf_)->GetPlayState(playItf_, &state);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    usleep(30000); // 30ms sleep time
+    result = (*playItf_)->SetPlayState(playItf_, SL_PLAYSTATE_STOPPED);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*playItf_)->GetPlayState(playItf_, &state);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+}
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_006, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("Audio_Opensles_CreateAudioPlayer_006 start");
+    SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject_};
+    SLDataSink slSink = {&slOutputMix, nullptr};
+    SLDataLocator_BufferQueue slBufferQueue = {
+        SL_DATALOCATOR_BUFFERQUEUE,
+        0
+    };
+    SLDataFormat_PCM pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        AudioChannel::MONO,
+        SL_SAMPLINGRATE_192,
+        SL_PCMSAMPLEFORMAT_FIXED_32,
+        0,
+        0,
+        0
+    };
+    SLDataSource slSource = {&slBufferQueue, &pcmFormat};
+    SLresult result = (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_, &slSource,
+        &slSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+
+    pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        AudioChannel::MONO,
+        SL_SAMPLINGRATE_88_2,
+        SL_PCMSAMPLEFORMAT_FIXED_24,
+        0,
+        0,
+        0
+    };
+    result = (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_, &slSource,
+        &slSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("Audio_Opensles_CreateAudioPlayer_007 start");
+    SLDataLocator_OutputMix slOutputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject_};
+    SLDataSink slSink = {&slOutputMix, nullptr};
+    SLDataLocator_BufferQueue slBufferQueue = {
+        SL_DATALOCATOR_BUFFERQUEUE,
+        0
+    };
+    SLDataFormat_PCM pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        AudioChannel::CHANNEL_3,
+        SL_SAMPLINGRATE_44_1,
+        SL_PCMSAMPLEFORMAT_FIXED_28,
+        0,
+        0,
+        0
+    };
+    SLDataSource slSource = {&slBufferQueue, &pcmFormat};
+    SLresult result = (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_, &slSource,
+        &slSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result != SL_RESULT_SUCCESS);
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+
+    pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        AudioChannel::STEREO,
+        SL_SAMPLINGRATE_44_1,
+        SL_PCMSAMPLEFORMAT_FIXED_20,
+        0,
+        0,
+        0
+    };
+    result = (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_, &slSource,
+        &slSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result != SL_RESULT_SUCCESS);
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+
+    pcmFormat = {
+        SL_DATAFORMAT_PCM,
+        AudioChannel::CHANNEL_4,
+        SL_SAMPLINGRATE_88_2,
+        -1,
+        0,
+        0,
+        0
+    };
+    result = (*engineEngine_)->CreateAudioPlayer(engineEngine_, &pcmPlayerObject_, &slSource,
+        &slSink, 0, nullptr, nullptr);
+    EXPECT_TRUE(result != SL_RESULT_SUCCESS);
+}
+HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_Destroy_004, TestSize.Level0)
+{
+    AUDIO_INFO_LOG("Audio_Opensles_Destroy_004 start");
+    (*pcmPlayerObject_)->Destroy(pcmPlayerObject_);
+    (*engineObject_)->Destroy(engineObject_);
+    (*outputMixObject_)->Destroy(outputMixObject_);
+    EXPECT_TRUE(true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

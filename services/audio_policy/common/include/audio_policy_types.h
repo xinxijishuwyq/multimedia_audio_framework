@@ -97,6 +97,7 @@ enum AudioPolicyCommand {
     ADJUST_VOLUME_BY_STEP,
     ADJUST_SYSTEM_VOLUME_BY_STEP,
     GET_SYSTEM_VOLUME_IN_DB,
+    QUERY_EFFECT_SCENEMODE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

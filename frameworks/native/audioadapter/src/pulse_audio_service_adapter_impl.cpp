@@ -253,6 +253,8 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
+    MoveEffectSinkInputsToSink(name);
+
     return SUCCESS;
 }
 
@@ -356,6 +358,16 @@ std::vector<uint32_t> PulseAudioServiceAdapterImpl::GetTargetSinks(std::string a
     return targetSinkIds;
 }
 
+bool IsValidSceneType(std::string sceneType)
+{
+    for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++it) {
+        if (it->second == sceneType) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 {
     std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
@@ -366,14 +378,19 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
     // filter sink-inputs which are not connected with remote sinks.
     for (auto sinkInput : allSinkInputs) {
         uint32_t sink = sinkInput.deviceSinkId;
+        // the sink inputs connected to remote device remain the same
         if (std::find(remoteSinks.begin(), remoteSinks.end(), sink) != remoteSinks.end()) {
             AUDIO_INFO_LOG("[SetLocalDefaultSink] sink-input[%{public}d] connects with remote device[%{public}d]",
                 sinkInput.paStreamId, sinkInput.deviceSinkId);
             continue;
-        } else {
-            uint32_t invalidSinkId = PA_INVALID_INDEX;
-            MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
         }
+        // the sink inputs connected to effect sink remain the same
+        if (IsValidSceneType(sinkInput.sinkName)) {
+            continue;
+        }
+        // move the remaining sink inputs to the default sink
+        uint32_t invalidSinkId = PA_INVALID_INDEX;
+        MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
     }
 
     return SUCCESS;
@@ -772,6 +789,16 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
     return stream;
 }
 
+void PulseAudioServiceAdapterImpl::MoveEffectSinkInputsToSink(std::string name)
+{
+    std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
+    // move all sink inputs to new sink
+    for (auto sinkInput : allSinkInputs) {
+        uint32_t invalidSinkId = PA_INVALID_INDEX;
+        MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
+    }
+}
+
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
     void *userdata)
 {
@@ -985,7 +1012,9 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
     AudioStreamType streamID = thiz->GetIdByStreamType(streamType);
-    float volumeDbCb = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
+    std::pair<float, bool> volumeDbCbPair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
+    float volumeDbCb = volumeDbCbPair.first;
+    bool muteStatus = volumeDbCbPair.second;
     float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
 
     pa_cvolume cv = i->volume;
@@ -993,13 +1022,11 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
     if (streamID == userData->streamType || userData->isSubscribingCb) {
+        pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, muteStatus ? 1 : 0, nullptr, nullptr));
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
-        if (i->mute) {
-            pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, 0, nullptr, nullptr));
-        }
     }
     AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"
-        " volumeDbCb  %{public}f ", vol, uid, volumeFactor, volumeDbCb);
+        ", volumeDbCb %{public}f, muteStatus %{public}d", vol, uid, volumeFactor, volumeDbCb, muteStatus);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamID, "VOLUME", vol,

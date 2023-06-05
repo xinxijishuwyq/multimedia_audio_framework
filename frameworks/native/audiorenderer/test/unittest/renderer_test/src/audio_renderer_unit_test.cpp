@@ -4617,7 +4617,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Interrupt_002, TestSiz
     const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MEDIA,
         AUDIO_MODE_PLAYBACK, appInfo_.appUid);
     ASSERT_NE(nullptr, audioStream_);
-   
+
     shared_ptr<AudioRendererInterruptCallbackImpl> interruptCallbackImpl =
         make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt);
     EXPECT_NE(nullptr, interruptCallbackImpl);
@@ -4825,7 +4825,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_005, TestSize
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    
+
     unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
 
     audioRendererProxyObj->SaveRendererObj(audioRendererPrivate.get());
@@ -4833,6 +4833,106 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_005, TestSize
     audioRendererProxyObj->ResumeStreamImpl(streamSetStateEventInternal);
     audioRendererProxyObj->PausedStreamImpl(streamSetStateEventInternal);
     ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectMode via legal input, EFFECT_NONE
+ * @tc.number: Audio_Renderer_SetAudioEffectMode_001
+ * @tc.desc  : Test SetAudioEffectMode interface. Returns SUCCESS, if the effect mode is successfully set.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetAudioEffectMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetAudioEffectMode(EFFECT_NONE);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectMode via legal input, EFFECT_DEFAULT
+ * @tc.number: Audio_Renderer_SetAudioEffectMode_002
+ * @tc.desc  : Test SetAudioEffectMode interface. Returns SUCCESS, if the effect mode is successfully set.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetAudioEffectMode_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetAudioEffectMode(EFFECT_DEFAULT);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectMode with, EFFECT_NONE
+ * @tc.number: Audio_Renderer_GetAudioEffectMode_001
+ * @tc.desc  : Test GetAudioEffectMode interface. Returns the current effect mode.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetAudioEffectMode(EFFECT_NONE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
+    EXPECT_EQ(EFFECT_NONE, effectMode);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectMode with, EFFECT_DEFAULT
+ * @tc.number: Audio_Renderer_GetAudioEffectMode_002
+ * @tc.desc  : Test GetAudioEffectMode interface. Returns the current effect mode.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetAudioEffectMode(EFFECT_DEFAULT);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
+    EXPECT_EQ(EFFECT_DEFAULT, effectMode);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectMode with, default effectMode
+ * @tc.number: Audio_Renderer_GetAudioEffectMode_003
+ * @tc.desc  : Test GetAudioEffectMode interface. Returns the default effect mode EFFECT_DEFAULT.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
+    EXPECT_EQ(EFFECT_DEFAULT, effectMode);
+    audioRenderer->Release();
 }
 } // namespace AudioStandard
 } // namespace OHOS

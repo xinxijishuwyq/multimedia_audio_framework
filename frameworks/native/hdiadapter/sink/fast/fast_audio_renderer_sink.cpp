@@ -111,6 +111,8 @@ private:
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
 
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+
 #ifdef DEBUG_DIRECT_USE_HDI
     char *bufferAddresss_ = nullptr;
     bool isFirstWrite_ = true;
@@ -121,9 +123,14 @@ private:
 
     int privFd_ = INVALID_FD; // invalid fd
 #endif
+
+    void KeepRunningLock();
+    void KeepRunningUnlock();
+
     int32_t PrepareMmapBuffer();
     void ReleaseMmapBuffer();
 
+    int32_t CheckPositionTime();
     void PreparePosition();
 
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
@@ -158,6 +165,7 @@ bool FastAudioRendererSinkInner::IsInited()
 
 void FastAudioRendererSinkInner::DeInit()
 {
+    KeepRunningUnlock();
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -540,6 +548,31 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 #endif
 }
 
+int32_t FastAudioRendererSinkInner::CheckPositionTime()
+{
+    int32_t tryCount = 10;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t maxHandleCost = 10000000; // ns
+    int64_t waitTime = 2000000; // 2ms
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(waitTime); // us
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
+            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
+}
+
 int32_t FastAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
@@ -557,11 +590,43 @@ int32_t FastAudioRendererSinkInner::Start(void)
             AUDIO_ERR_LOG("FastAudioRendererSink::Start failed!");
             return ERR_NOT_STARTED;
         }
+        if (CheckPositionTime() != SUCCESS) {
+            AUDIO_ERR_LOG("FastAudioRendererSink::CheckPositionTime failed!");
+            return ERR_NOT_STARTED;
+        }
     }
+    KeepRunningLock();
     started_ = true;
     AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
     return SUCCESS;
 }
+
+void FastAudioRendererSinkInner::KeepRunningLock()
+{
+    if (mKeepRunningLock == nullptr) {
+        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+    }
+
+    int32_t timeOut = -1;
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock lock");
+        mKeepRunningLock->Lock(timeOut); // -1 for lasting.
+    } else {
+        AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
+    }
+}
+
+void FastAudioRendererSinkInner::KeepRunningUnlock()
+{
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock UnLock");
+        mKeepRunningLock->UnLock();
+    } else {
+        AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
+    }
+}
+
 
 int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
 {
@@ -682,6 +747,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
         AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
+    KeepRunningUnlock();
 
     if (started_) {
         int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));

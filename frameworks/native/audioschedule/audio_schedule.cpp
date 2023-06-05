@@ -20,8 +20,10 @@
 #include <cstring>
 #include <unordered_map>
 
+#ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

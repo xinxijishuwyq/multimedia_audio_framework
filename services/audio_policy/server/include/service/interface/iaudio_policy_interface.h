@@ -42,9 +42,9 @@ public:
 
     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey) = 0;
 
-    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) = 0;
 
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
@@ -55,6 +55,8 @@ public:
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;
 
     virtual bool IsStreamActive(AudioStreamType streamType) = 0;
+
+    virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
     virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
 

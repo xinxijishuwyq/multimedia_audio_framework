@@ -46,7 +46,7 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetInputRoute(DeviceType deviceType) override;
+    int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

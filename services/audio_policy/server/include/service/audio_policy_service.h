@@ -64,9 +64,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false) const;
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
@@ -251,6 +251,11 @@ public:
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
+    std::string GetLocalDevicesType();
+
+    int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -314,6 +319,8 @@ private:
 
     int32_t HandleA2dpDevice(DeviceType deviceType);
 
+    int32_t HandleFileDevice(DeviceType deviceType);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
@@ -358,6 +365,8 @@ private:
 
     void SetEarpieceState();
 
+    void SetVoiceCallVolume(int32_t volume);
+
     void RemoveDeviceInRouterMap(std::string networkId);
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
@@ -370,6 +379,8 @@ private:
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
+    void LoadEffectSinks();
+    
     DeviceType FindConnectedHeadset();
 
     bool interruptEnabled_ = true;
@@ -392,6 +403,7 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
+    std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;

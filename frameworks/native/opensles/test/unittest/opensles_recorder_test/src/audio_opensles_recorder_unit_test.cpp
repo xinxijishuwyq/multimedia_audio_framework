@@ -143,6 +143,8 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_RegisterCallback_00
 {
     SLresult result = (*bufferQueueItf_)->RegisterCallback(bufferQueueItf_, BufferQueueCallback, wavFile_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
+    result = (*bufferQueueItf_)->Clear(bufferQueueItf_);
+    EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_RegisterCallback_002, TestSize.Level1)

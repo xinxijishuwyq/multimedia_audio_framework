@@ -66,6 +66,10 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
     string cachePath = "/data/storage/el2/base/haps/entry/files";
     unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(cachePath.c_str(), rendererOptions);
+    if (!rendererHolder) {
+        AUDIO_ERR_LOG("AudioPlayerAdapter::CreateAudioPlayer fail, ID: %{public}lu", id);
+        return SL_RESULT_RESOURCE_ERROR;
+    }
     // use release to get raw pointer, so need to delete explicitly when destory object
     AudioRenderer *renderer = rendererHolder.release();
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);

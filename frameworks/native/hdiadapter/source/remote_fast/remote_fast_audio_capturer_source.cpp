@@ -51,7 +51,7 @@ RemoteFastAudioCapturerSource::RemoteFastAudioCapturerSource(const std::string& 
 RemoteFastAudioCapturerSource::~RemoteFastAudioCapturerSource()
 {
     if (capturerInited_.load()) {
-        DeInit();
+        RemoteFastAudioCapturerSource::DeInit();
     }
     AUDIO_INFO_LOG("~RemoteFastAudioCapturerSource end.");
 }
@@ -166,16 +166,16 @@ int32_t RemoteFastAudioCapturerSource::InitAudioManager()
 #endif
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
-    void *handle_ = dlopen(resolvedPath, RTLD_LAZY);
-    if (handle_ == nullptr) {
+    void *handle = dlopen(resolvedPath, RTLD_LAZY);
+    if (handle == nullptr) {
         AUDIO_ERR_LOG("dlopen %{public}s fail.", resolvedPath);
         return ERR_INVALID_HANDLE;
     }
     AUDIO_INFO_LOG("dlopen %{public}s OK.", resolvedPath);
 
     dlerror();
-    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
-    if (dlerror() != NULL || GetAudioManagerFuncs == nullptr) {
+    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle, "GetAudioManagerFuncs"));
+    if (dlerror() != nullptr || GetAudioManagerFuncs == nullptr) {
         AUDIO_ERR_LOG("dlsym GetAudioManagerFuncs fail.");
         return ERR_INVALID_HANDLE;
     }
@@ -210,12 +210,10 @@ int32_t RemoteFastAudioCapturerSource::GetTargetAdapterPort(struct AudioAdapterD
 
 int32_t RemoteFastAudioCapturerSource::CreateCapture(const struct AudioPort &capturePort)
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), ERR_INVALID_HANDLE,
         "%{public}s: audio adapter is null.", __func__);
     struct AudioSampleAttributes captureAttr;
     InitAttrs(captureAttr);
-    AUDIO_INFO_LOG("RemoteFastAudioCapturerSource Create capture format: %{public}d", captureAttr.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     deviceDesc.pins = PIN_IN_MIC;
@@ -230,6 +228,7 @@ int32_t RemoteFastAudioCapturerSource::CreateCapture(const struct AudioPort &cap
     }
 
     isCapturerCreated_.store(true);
+    AUDIO_INFO_LOG("%{public}s end, capture format: %{public}d.", __func__, captureAttr.format);
     return SUCCESS;
 }
 
@@ -320,7 +319,7 @@ inline std::string printRemoteAttr(IAudioSourceAttr attr_)
     value << "format[" << static_cast<int32_t>(attr_.format) << "] sampleFmt[" << attr_.sampleFmt << "] ";
     value << "sampleRate[" << attr_.sampleRate << "] channel[" << attr_.channel << "] ";
     value << "volume[" << attr_.volume << "] filePath[" << attr_.filePath << "] ";
-    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.device_type << "]";
+    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.deviceType << "]";
     return value.str();
 }
 
@@ -348,23 +347,23 @@ int32_t RemoteFastAudioCapturerSource::Start(void)
     }
 
     ClockTime::RelativeSleep(CAPTURE_FIRST_FRIME_WAIT_NANO);
+    uint64_t curHdiWritePos = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t writeTime = 0;
     while (true) {
-        uint64_t curHdiWritePos = 0;
-        int64_t timeSec = 0;
-        int64_t timeNanoSec = 0;
-        int64_t writeTime = 0;
         ret = GetMmapHandlePosition(curHdiWritePos, timeSec, timeNanoSec);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get source handle info fail.", __func__);
         writeTime = timeNanoSec + timeSec * SECOND_TO_NANOSECOND;
         if (writeTime > 0) {
             break;
         }
-        AUDIO_INFO_LOG("%{public}s wait 2ms for remote fast capturer get first frame.", __func__);
         ClockTime::RelativeSleep(CAPTURE_RESYNC_SLEEP_NANO);
     }
     started_.store(true);
 
-    AUDIO_INFO_LOG("%{public}s OK.", __func__);
+    AUDIO_INFO_LOG("%{public}s OK, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64" ns.",
+        __func__, curHdiWritePos, writeTime);
     return SUCCESS;
 }
 

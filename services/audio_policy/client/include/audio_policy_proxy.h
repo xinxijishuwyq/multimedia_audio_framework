@@ -194,6 +194,8 @@ public:
     int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType) override;
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
+
+    int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

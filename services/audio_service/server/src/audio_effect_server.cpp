@@ -21,9 +21,6 @@
 #include "audio_log.h"
 #include "audio_effect_server.h"
 
-# define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
-# define EFFECT_STRING_LEN_MAX 64
-
 namespace OHOS {
 namespace AudioStandard {
 
@@ -32,12 +29,6 @@ namespace AudioStandard {
 #else
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
 #endif
-
-struct LoadEffectResult {
-    bool success = false;
-    LibEntryT *lib = nullptr;
-    std::unique_ptr<EffectDescriptorT> effectDesc;
-};
 
 bool ResolveLibrary(const std::string &path, std::string &resovledPath)
 {
@@ -52,57 +43,51 @@ bool ResolveLibrary(const std::string &path, std::string &resovledPath)
     return false;
 }
 
-static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<LibEntryT>& libEntry) noexcept
+static bool LoadLibrary(const std::string relativePath, std::unique_ptr<AudioEffectLibEntry>& libEntry) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
     if (!ResolveLibrary(relativePath, absolutePath)) {
         AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s",
             relativePath.c_str());
-        libEntry->path = relativePath;
         return false;
     }
-
-    // load hundle
-    libEntry->path = absolutePath;
 
     void* handle = dlopen(absolutePath.c_str(), 1);
     if (!handle) {
-        AUDIO_ERR_LOG("<log error> Open lib Fail");
+        AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
         return false;
     } else {
-        AUDIO_INFO_LOG("<log info> dlopen lib successful");
+        AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     }
 
-    AudioEffectLibraryT *description = static_cast<AudioEffectLibraryT *>(dlsym(handle,
+    AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     const char* error = dlerror();
-    if (!error) {
-        AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, description);
+    if (error) {
+        AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, audioEffectLibHandle);
+        dlclose(handle);
+        return false;
     } else {
-        AUDIO_INFO_LOG("<log info> dlsym lib successful");
+        AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful, error: %{public}s", relativePath.c_str(), error);
     }
 
-    libEntry->handle = handle;
-    libEntry->desc = description;
+    libEntry->audioEffectLibHandle = audioEffectLibHandle;
 
     return true;
 }
 
-void LoadLibraries(const std::vector<Library> &libs,
-                   std::vector<std::unique_ptr<LibEntryT>> &libList,
-                   std::vector<std::unique_ptr<LibEntryT>> &glibFailedList)
+void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
     for (Library library: libs) {
         AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s", library.name.c_str(), library.path.c_str());
 
-        std::unique_ptr<LibEntryT> libEntry = std::make_unique<LibEntryT>();
-        libEntry->name = library.name;
+        std::unique_ptr<AudioEffectLibEntry> libEntry = std::make_unique<AudioEffectLibEntry>();
+        libEntry->libraryName = library.name;
 
         bool loadLibrarySuccess = LoadLibrary(library.path, libEntry);
         if (!loadLibrarySuccess) {
-            // Register library load failure
-            glibFailedList.emplace_back(std::move(libEntry));
+            AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
             continue;
         }
 
@@ -111,10 +96,10 @@ void LoadLibraries(const std::vector<Library> &libs,
     }
 }
 
-LibEntryT *FindLibrary(const std::string &name, const std::vector<std::unique_ptr<LibEntryT>> &libList)
+AudioEffectLibEntry *FindLibrary(const std::string name, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
-    for (const std::unique_ptr<LibEntryT>& lib : libList) {
-        if (lib->name == name) {
+    for (const std::unique_ptr<AudioEffectLibEntry> &lib : libList) {
+        if (lib->libraryName == name) {
             return lib.get();
         }
     }
@@ -122,41 +107,41 @@ LibEntryT *FindLibrary(const std::string &name, const std::vector<std::unique_pt
     return nullptr;
 }
 
-LoadEffectResult LoadEffect(const Effect &effect, const std::string &name,
-                            std::vector<std::unique_ptr<LibEntryT>> &libList)
+static bool LoadEffect(const Effect &effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
-    LoadEffectResult result;
-
-    result.lib = FindLibrary(effect.libraryName, libList);
-    if (result.lib == nullptr) {
+    AudioEffectLibEntry *currentLibEntry = FindLibrary(effect.libraryName, libList);
+    if (currentLibEntry == nullptr) {
         AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",
                       effect.libraryName.c_str(), effect.name.c_str());
-        result.success = false;
-        return result;
+        return false;
+    }
+    // check effect
+    AudioEffectDescriptor descriptor;
+    descriptor.libraryName = effect.libraryName;
+    descriptor.effectName = effect.name;
+
+    bool ret = currentLibEntry->audioEffectLibHandle->checkEffect(descriptor);
+    if (ret) {
+        currentLibEntry->effectName.push_back(effect.name);
+    } else {
+        AUDIO_ERR_LOG("<log error> the effect %{public}s in lib %{public}s, open check file!",
+            effect.name.c_str(), effect.libraryName.c_str());
+        return false;
     }
 
-    result.effectDesc = std::make_unique<EffectDescriptorT>();
-
-    result.success = true;
-    return result;
+    return true;
 }
 
-void LoadEffects(const std::vector<Effect> &effects,
-                 std::vector<std::unique_ptr<LibEntryT>> &libList,
-                 std::vector<std::unique_ptr<EffectDescriptorT>> &gSkippedEffectList,
-                 std::vector<Effect> &successEffectList)
+void CheckEffects(const std::vector<Effect> &effects, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList,
+    std::vector<Effect> &successEffectList)
 {
     for (Effect effect: effects) {
-        LoadEffectResult effectLoadResult = LoadEffect(effect, effect.name, libList);
-        if (!effectLoadResult.success) {
-            AUDIO_ERR_LOG("<log error> LoadEffects have failures!");
-            if (effectLoadResult.effectDesc != nullptr) {
-                gSkippedEffectList.emplace_back(std::move(effectLoadResult.effectDesc));
-            }
+        bool ret = LoadEffect(effect, libList);
+        if (!ret) {
+            AUDIO_ERR_LOG("<log error> LoadEffects have failures, please check log!");
             continue;
         }
 
-        effectLoadResult.lib->effects.emplace_back(std::move(effectLoadResult.effectDesc));
         successEffectList.push_back(effect);
     }
 }
@@ -171,15 +156,13 @@ AudioEffectServer::~AudioEffectServer()
 }
 
 bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
-                                         std::vector<Effect>& successEffectList)
+                                         std::vector<Effect> &successEffectList)
 {
     // load library
-    AUDIO_INFO_LOG("<log info> load library");
-    LoadLibraries(libraries, effectLibraryList, effectLibraryFailedList);
+    LoadLibraries(libraries, effectLibEntries);
 
-    // load effect
-    AUDIO_INFO_LOG("<log info> load effect");
-    LoadEffects(effects, effectLibraryList, effectSkippedEffects, successEffectList);
+    // check effects
+    CheckEffects(effects, effectLibEntries, successEffectList);
     if (successEffectList.size() > 0) {
         return true;
     } else {
@@ -187,9 +170,9 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
     }
 }
 
-std::vector<std::unique_ptr<LibEntryT>>& AudioEffectServer::GetAvailableEffects()
+std::vector<std::unique_ptr<AudioEffectLibEntry>> &AudioEffectServer::GetEffectEntries()
 {
-    return effectLibraryList;
+    return effectLibEntries;
 }
 
 } // namespce AudioStandard
