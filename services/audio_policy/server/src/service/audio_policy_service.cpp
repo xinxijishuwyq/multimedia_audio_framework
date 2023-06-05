@@ -1616,7 +1616,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
 DeviceType AudioPolicyService::FindConnectedHeadset()
 {
     DeviceType retType = DEVICE_TYPE_NONE;
-    for (auto& devDesc: connectedDevices_) {
+    for (const auto& devDesc: connectedDevices_) {
         if ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET)) {

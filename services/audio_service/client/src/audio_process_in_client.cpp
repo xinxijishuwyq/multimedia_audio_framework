@@ -343,7 +343,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
 #ifdef DUMP_CLIENT
     if (dcp_ != nullptr) {
-        fwrite((void *)bufDesc.buffer, 1, spanSizeInByte_, dcp_);
+        fwrite(static_cast<void *>(bufDesc.buffer), 1, spanSizeInByte_, dcp_);
     }
 #endif
 
