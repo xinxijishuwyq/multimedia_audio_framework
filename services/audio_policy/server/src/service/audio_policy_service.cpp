@@ -33,6 +33,7 @@
 #include "device_init_callback.h"
 #include "data_share_observer_callback.h"
 #include "uri.h"
+#include "audio_server_death_recipient.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_bluetooth_manager.h"
@@ -55,9 +56,11 @@ const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
+static sptr<IStandardAudioService> g_btProxy = nullptr;
 static int32_t startDeviceId = 1;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper;
 mutex g_adProxyMutex;
+mutex g_btProxyMutex;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -1998,6 +2001,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
             LoadEffectSinks();
         }
     }
+    RegisterBluetoothListener();
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -2946,6 +2950,49 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     return maxRendererInstances_;
 }
 
+const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
+{
+    lock_guard<mutex> lock(g_btProxyMutex);
+    if (g_btProxy == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (samgr == nullptr) {
+            AUDIO_ERR_LOG("RegisterBluetoothDeathCallback: get sa manager failed");
+            return nullptr;
+        }
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("RegisterBluetoothDeathCallback: get audio service remote object failed");
+            return nullptr;
+        }
+        g_btProxy = iface_cast<IStandardAudioService>(object);
+        if (g_btProxy == nullptr) {
+            AUDIO_ERR_LOG("RegisterBluetoothDeathCallback: get audio service proxy failed");
+            return nullptr;
+        }
+
+        // register death recipent
+        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        if (asDeathRecipient != nullptr) {
+            asDeathRecipient->SetNotifyCb(std::bind(&AudioPolicyService::BluetoothServiceCrashedCallback,
+                std::placeholders::_1));
+            bool result = object->AddDeathRecipient(asDeathRecipient);
+            if (!result) {
+                AUDIO_ERR_LOG("RegisterBluetoothDeathCallback: failed to add deathRecipient");
+            }
+        }
+    }
+    sptr<IStandardAudioService> gasp = g_btProxy;
+    return gasp;
+}
+
+void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
+{
+    AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
+    lock_guard<mutex> lock(g_btProxyMutex);
+    g_btProxy = nullptr;
+    Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
+}
+
 void AudioPolicyService::RegisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE
@@ -2954,6 +3001,7 @@ void AudioPolicyService::RegisterBluetoothListener()
     Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
     Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     isBtListenerRegistered = true;
+    const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
 #endif
 }
 

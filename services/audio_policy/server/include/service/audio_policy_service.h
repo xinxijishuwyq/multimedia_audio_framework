@@ -228,6 +228,8 @@ public:
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
+    static void BluetoothServiceCrashedCallback(pid_t pid);
+
     void RegisterBluetoothListener();
 
     void UnregisterBluetoothListener();

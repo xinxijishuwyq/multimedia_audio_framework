@@ -19,6 +19,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "bluetooth_def.h"
+#include "hdf_remote_service.h"
+#include "servmgr_hdi.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -32,6 +34,9 @@ AudioHfpListener AudioHfpManager::hfpListener_;
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
 bool AudioA2dpManager::bluetoothSinkLoaded_ = false;
 BluetoothRemoteDevice AudioA2dpManager::bluetoothRemoteDevice_;
+HdfRemoteService *g_hdiService = nullptr;
+HdfRemoteService *g_audioSessionService = nullptr;
+constexpr const char *AUDIO_BLUETOOTH_SERVICE_NAME = "audio_bluetooth_hdi_service";
 
 std::mutex g_deviceLock;
 std::mutex g_a2dpInstanceLock;
@@ -149,12 +154,15 @@ void AudioA2dpManager::ConnectBluetoothA2dpSink()
     bluetoothSinkLoaded_ = true;
 }
 
-// Prepare for future optimization
 void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 {
-    if (bluetoothSinkLoaded_) {
-        AUDIO_WARNING_LOG("bluetooth sink still loaded, some error may occur!");
+    if (!bluetoothSinkLoaded_) {
+        AUDIO_INFO_LOG("DisconnectBluetoothA2dpSink: bluetooth is disconnected");
+        return;
     }
+
+    int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
+    a2dpListener_.OnConnectionStateChanged(bluetoothRemoteDevice_, connectionState);
 }
 
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
@@ -165,6 +173,19 @@ void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &de
     AudioA2dpManager::SetConnectionState(state);
     if (state == static_cast<int>(BTConnectState::CONNECTED)) {
         AudioA2dpManager::SetBluetoothRemoteDevice(device);
+
+        struct HDIServiceManager *serviceMgr = HDIServiceManagerGet();
+        if (serviceMgr == nullptr) {
+            AUDIO_ERR_LOG("HDIServiceManagerGet failed!");
+            return;
+        }
+        g_hdiService = serviceMgr->GetService(serviceMgr, AUDIO_BLUETOOTH_SERVICE_NAME);
+        HDIServiceManagerRelease(serviceMgr);
+
+        if (g_hdiService != nullptr) {
+            AUDIO_INFO_LOG("Remote GetService [g_hdiService] SUCCESS!");
+            AudioA2dpManager::ConnectBluetoothA2dpSink();
+        }
     }
 
     // Currently disconnect need to be done in OnConnectionStateChanged instead of hdi service stopped
