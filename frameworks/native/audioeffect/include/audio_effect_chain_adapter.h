@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,6 +36,7 @@ int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerGetFrameLen();
 int32_t EffectChainManagerGetDeviceType();
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode);
 
 #ifdef __cplusplus
 }
