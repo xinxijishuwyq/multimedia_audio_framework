@@ -454,6 +454,10 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         audioEffectChain->AddEffectHandle(handle);
     }
     audioEffectChain->AddEffectHandleEnd();
+
+    if (audioEffectChain->IsEmptyEffectHandles()) {
+        AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
+    }
     
     return SUCCESS;
 }
@@ -466,11 +470,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
     // if the effectChain exist, see if it is empty
     auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
-    if (audioEffectChain->IsEmptyEffectHandles()) {
-        AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
-        return false;
-    }
-    return true;
+    return !audioEffectChain->IsEmptyEffectHandles();
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
