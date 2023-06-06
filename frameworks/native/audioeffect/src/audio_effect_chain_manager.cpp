@@ -181,7 +181,6 @@ void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen)
 {
     if (standByEffectHandles.empty()) {
-        AUDIO_INFO_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
         return;
     }
