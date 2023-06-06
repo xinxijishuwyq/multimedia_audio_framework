@@ -368,9 +368,8 @@ int32_t AudioGroupManager::SetMicStateChangeCallback(
 
 bool AudioGroupManager::IsVolumeUnadjustable()
 {
-    /* Call Audio Policy IsVolumeUnadjustable */
     if (netWorkId_ != LOCAL_NETWORK_ID) {
-        AUDIO_ERR_LOG("AudioGroupManager::IsVolumeUnadjustable is not supported for local device.");
+        AUDIO_ERR_LOG("AudioGroupManager::IsVolumeUnadjustable is only supported for LOCAL_NETWORK_ID.");
         return ERROR;
     }
     return AudioPolicyManager::GetInstance().IsVolumeUnadjustable();
@@ -390,7 +389,7 @@ float AudioGroupManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
 {
     /* Call Audio Policy GetSystemVolumeInDb */
     if (netWorkId_ != LOCAL_NETWORK_ID) {
-        AUDIO_ERR_LOG("AudioGroupManager::GetSystemVolumeInDb is not supported for local device.");
+        AUDIO_ERR_LOG("AudioGroupManager::GetSystemVolumeInDb is only supported for LOCAL_NETWORK_ID.");
         return ERROR;
     }
     return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);

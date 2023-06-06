@@ -1390,7 +1390,7 @@ bool AudioPolicyProxy::IsVolumeUnadjustable()
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("IsVolumeUnadjustable: WriteInterfaceToken failed");
         return false;
     }
     int32_t error = Remote()->SendRequest(IS_VOLUME_UNADJUSTABLE, data, reply, option);

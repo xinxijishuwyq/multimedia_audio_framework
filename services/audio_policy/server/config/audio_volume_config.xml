@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <audio_volume_config>
-    <volume_type type="VOICE_CALL" minidx="1" maxidx="5" defaultidx="4">
+    <volume_type type="VOICE_CALL" minidx="1" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-4200"/>
             <point idx="33"  decibel="-2800"/>
@@ -66,7 +66,7 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>
-    <volume_type type="RING" minidx="0" maxidx="15" defaultidx="10">
+    <volume_type type="RING" minidx="0" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>
@@ -86,7 +86,7 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>
-    <volume_type type="VOICE_ASSISTANT" minidx="1" maxidx="15" defaultidx="6">
+    <volume_type type="VOICE_ASSISTANT" minidx="1" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>
@@ -106,7 +106,7 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>
-    <volume_type type="ALARM" minidx="1" maxidx="15" defaultidx="8">
+    <volume_type type="ALARM" minidx="1" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>
@@ -126,7 +126,7 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>    
-    <volume_type type="ACCESSIBILITY" minidx="1" maxidx="15" defaultidx="8">
+    <volume_type type="ACCESSIBILITY" minidx="1" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>
@@ -146,7 +146,7 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>     
-    <volume_type type="ULTRASONIC" minidx="1" maxidx="7" defaultidx="7">
+    <volume_type type="ULTRASONIC" minidx="0" maxidx="15" defaultidx="15">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>

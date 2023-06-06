@@ -37,11 +37,11 @@ bool AudioAdapterManager::Init()
     }
 
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
-    if (audiovolumeParser->LoadConfig(streamVolumeInfos_)) {
-        AUDIO_ERR_LOG("Audio Volume Confgig Load Configuration failed");
-        return false;
+    if (!audiovolumeParser->LoadConfig(streamVolumeInfos_)) {
+        AUDIO_INFO_LOG("Audio Volume Config Load Configuration successfully");
+        useNonlinearAlgo_ = 1;
+        UpdateVolumeMapIndex();
     }
-    UpdateVolumeMapIndex();
 
     // init volume before kvstore start by local prop for bootanimation
     char currentVolumeValue[3] = {0};
@@ -173,8 +173,13 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         volumeLevelMap_[streamForVolumeMap] = volumeLevel;
         WriteVolumeToKvStore(currentActiveDevice_, streamType, volumeLevel);
     }
+    float volumeDb;
+    if (useNonlinearAlgo_) {
+        volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+    } else {
+        volumeDb = CalculateVolumeDb(volumeLevel);
+    }
 
-    float volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
     AUDIO_INFO_LOG("SetSystemVolumeLevel for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
         streamType, currentActiveDevice_, volumeLevel);
     return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
@@ -702,22 +707,22 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
     }
 }
 
-DeviceType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
+DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
 {
     switch (deviceType) {
         case DEVICE_TYPE_EARPIECE:
-            return DEVICE_TYPE_EARPIECE;
+            return EARPIECE_VOLUME_TYPE;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_FILE_SOURCE:
-            return DEVICE_TYPE_SPEAKER;
+            return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
-            return DEVICE_TYPE_WIRED_HEADSET;
+            return HEADSET_VOLUME_TYPE;
         default:
-            return DEVICE_TYPE_SPEAKER;
+            return SPEAKER_VOLUME_TYPE;
     }
 }
 
@@ -1181,7 +1186,11 @@ float AudioAdapterManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32
 {
     AUDIO_INFO_LOG("GetSystemVolumeInDb for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
         volumeType, deviceType, volumeLevel);
-    getSystemVolumeInDb_ = CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
+    if (useNonlinearAlgo_) {
+        getSystemVolumeInDb_ = CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
+    } else {
+        getSystemVolumeInDb_ = CalculateVolumeDb(volumeLevel);
+    }
     AUDIO_INFO_LOG("Get system volume in db success %{public}f", getSystemVolumeInDb_);
 
     return getSystemVolumeInDb_;
@@ -1225,7 +1234,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
         volumeLevel = maxVolIndex;
     }
 
-    DeviceType deviceCategory = GetDeviceCategory(deviceType);
+    DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType);
     std::vector<VolumePoint> volumePoints;
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     int pointSize = volumePoints.size();
@@ -1257,12 +1266,12 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 
 void AudioAdapterManager::InitVolumeMapIndex()
 {
-    AUDIO_INFO_LOG("InitVolumeMapIndexs");
-    for (auto streamType : volumeCategoryList) {
+    useNonlinearAlgo_ = 0;
+    for (auto streamType : streamTypeList_) {
         minVolumeIndexMap_[streamType] = MIN_VOLUME_LEVEL;
         maxVolumeIndexMap_[streamType] = MAX_VOLUME_LEVEL;
         volumeLevelMap_[streamType] = DEFAULT_VOLUME_LEVEL;
-        AUDIO_INFO_LOG("streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
+        AUDIO_DEBUG_LOG("streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
             streamType, minVolumeIndexMap_[streamType],
             maxVolumeIndexMap_[streamType], volumeLevelMap_[streamType]);
     }
@@ -1272,24 +1281,18 @@ void AudioAdapterManager::InitVolumeMapIndex()
 
 void AudioAdapterManager::UpdateVolumeMapIndex()
 {
-    AUDIO_INFO_LOG("UpdateVolumeMapIndexs");
     for (auto streamVolInfoPair : streamVolumeInfos_) {
         auto streamVolInfo = streamVolInfoPair.second;
-        minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minIndex;
-        maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxIndex;
-        volumeLevelMap_[streamVolInfo->streamType] = streamVolInfo->defaultIndex;
-        AUDIO_INFO_LOG("update streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
+        minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minLevel;
+        maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxLevel;
+        volumeLevelMap_[streamVolInfo->streamType] = streamVolInfo->defaultLevel;
+        AUDIO_DEBUG_LOG("update streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
             streamVolInfo->streamType, minVolumeIndexMap_[streamVolInfo->streamType],
             maxVolumeIndexMap_[streamVolInfo->streamType], volumeLevelMap_[streamVolInfo->streamType]);
     }
-
-    for (auto streamType : volumeCategoryList) {
-        AUDIO_INFO_LOG("stream [%{public}d]minVolumeIndex=[%{public}d]", streamType, minVolumeIndexMap_[streamType]);
-        AUDIO_INFO_LOG("stream [%{public}d]maxVolumeIndex=[%{public}d]", streamType, maxVolumeIndexMap_[streamType]);
-    }
 }
 
-void AudioAdapterManager::GetVolumePoints(AudioStreamType streamType, DeviceType deviceType,
+void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
     std::vector<VolumePoint> &volumePoints)
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);

@@ -134,6 +134,7 @@ private:
     static const std::string GetContentTypeName(ContentType contentType);
     static const std::string GetDeviceTypeName(DeviceType deviceType);
     static const std::string GetConnectTypeName(ConnectType connectType);
+    static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
     static bool IsEndWith(const std::string &mainStr, const std::string &toMatch);
     static bool IsValidModule (const std::string moduleName);
 

@@ -23,25 +23,25 @@ namespace AudioStandard {
 
 struct VolumePoint {
     uint32_t index;
-    int32_t  dbValue;
+    int32_t dbValue;
 };
 
 struct DeviceVolumeInfo {
-    DeviceType deviceName;
+    DeviceVolumeType deviceType;
     std::vector<VolumePoint> volumePoints;
 };
 
-typedef std::map<DeviceType, std::shared_ptr<DeviceVolumeInfo>> DeviceVolumeInfoMap;
+typedef std::map<DeviceVolumeType, std::shared_ptr<DeviceVolumeInfo>> DeviceVolumeInfoMap;
 
 struct StreamVolumeInfo {
-    AudioStreamType streamType;
-    int minIndex;
-    int maxIndex;
-    int defaultIndex;
+    AudioVolumeType streamType;
+    int minLevel;
+    int maxLevel;
+    int defaultLevel;
     DeviceVolumeInfoMap deviceVolumeInfos;
 };
 
-typedef std::map<AudioStreamType, std::shared_ptr<StreamVolumeInfo>> StreamVolumeInfoMap;
+typedef std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> StreamVolumeInfoMap;
 } // namespace AudioStandard
 } // namespace OHOS
 

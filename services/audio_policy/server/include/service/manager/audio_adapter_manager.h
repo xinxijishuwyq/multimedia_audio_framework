@@ -121,11 +121,13 @@ public:
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
-    DeviceType GetDeviceCategory(DeviceType deviceType);
+    DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
     DeviceType GetActiveDevice();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
+    bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 private:
     friend class PolicyCallbackImpl;
 
@@ -184,7 +186,7 @@ private:
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
     void InitVolumeMapIndex();
     void UpdateVolumeMapIndex();
-    void GetVolumePoints(AudioStreamType streamType, DeviceType deviceType, std::vector<VolumePoint> &volumePoints);
+    void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType, std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel);
     void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
@@ -221,22 +223,13 @@ private:
     bool isVolumeUnadjustable_;
     bool testModeOn_ {false};
     float getSystemVolumeInDb_;
+    bool useNonlinearAlgo_;
 
     std::vector<DeviceType> deviceList_ = {
         DEVICE_TYPE_SPEAKER,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_WIRED_HEADSET
-    };
-
-    std::vector<AudioStreamType> volumeCategoryList = {
-        STREAM_VOICE_CALL,
-        STREAM_MUSIC,
-        STREAM_RING,
-        STREAM_VOICE_ASSISTANT,
-        STREAM_ALARM,
-        STREAM_ACCESSIBILITY,
-        STREAM_ULTRASONIC
     };
 };
 
@@ -258,10 +251,15 @@ public:
             audioAdapterManager_->GetStreamIDByType(streamType));
 
         int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
+        bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
+        float volumeDb;
+        if (audioAdapterManager_->IsUseNonlinearAlgo()) {
+            volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
+                audioAdapterManager_->GetActiveDevice(), volumeLevel);
+        } else {
+            volumeDb = audioAdapterManager_->CalculateVolumeDb(volumeLevel);
+        }
 
-	bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
-        float volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
-            audioAdapterManager_->GetActiveDevice(), volumeLevel);
         return std::make_pair(volumeDb, muteStatus);
     }
 

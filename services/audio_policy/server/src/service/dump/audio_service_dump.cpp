@@ -360,6 +360,27 @@ const std::string AudioServiceDump::GetConnectTypeName(ConnectType connectType)
     return connectTypeName;
 }
 
+const std::string AudioServiceDump::GetDeviceVolumeTypeName(DeviceVolumeType deviceType)
+{
+    string device;
+    switch (deviceType) {
+        case EARPIECE_VOLUME_TYPE:
+            device = "EARPIECE";
+            break;
+        case SPEAKER_VOLUME_TYPE:
+            device = "SPEAKER";
+            break;
+        case HEADSET_VOLUME_TYPE:
+            device = "HEADSET";
+            break;
+        default:
+            device = "UNKNOWN";
+    }
+
+    const string deviceTypeName = device;
+    return deviceTypeName;
+}
+
 void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
 {
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
@@ -894,7 +915,7 @@ void AudioServiceDump::DeviceVolumeInfosDump(std::string& dumpString, DeviceVolu
 {
     AppendFormat(dumpString, "    volume points:\n");
     for (auto it = deviceVolumeInfos.cbegin(); it != deviceVolumeInfos.cend(); ++it) {
-        AppendFormat(dumpString, "      device:%s \n", GetDeviceTypeName(it->first).c_str());
+        AppendFormat(dumpString, "      device:%s \n", GetDeviceVolumeTypeName(it->first).c_str());
         auto volumePoints = it->second->volumePoints;
         for (auto it = volumePoints.cbegin(); it != volumePoints.cend(); ++it) {
             AppendFormat(dumpString, "        [%d, %d]\n", it->index, it->dbValue);
@@ -911,9 +932,9 @@ void AudioServiceDump::StreamVolumeInfosDump(std::string& dumpString)
         it != audioData_.policyData.streamVolumeInfos.cend(); ++it) {
         AppendFormat(dumpString, "  %s:  ", GetStreamName(it->first).c_str());
         auto streamVolumeInfo = it->second;
-        AppendFormat(dumpString, "minindex = %d  ", streamVolumeInfo->minIndex);
-        AppendFormat(dumpString, "maxindex = %d  ", streamVolumeInfo->maxIndex);
-        AppendFormat(dumpString, "defaultindex = %d\n", streamVolumeInfo->defaultIndex);
+        AppendFormat(dumpString, "minLevel = %d  ", streamVolumeInfo->minLevel);
+        AppendFormat(dumpString, "maxLevel = %d  ", streamVolumeInfo->maxLevel);
+        AppendFormat(dumpString, "defaultLevel = %d\n", streamVolumeInfo->defaultLevel);
         DeviceVolumeInfosDump(dumpString, streamVolumeInfo->deviceVolumeInfos);
     }
 }

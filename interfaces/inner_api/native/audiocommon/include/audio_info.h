@@ -997,6 +997,12 @@ public:
      */
     virtual void OnAudioPolicyServiceDied() = 0;
 };
+
+enum DeviceVolumeType {
+    EARPIECE_VOLUME_TYPE = 0,
+    SPEAKER_VOLUME_TYPE = 1,
+    HEADSET_VOLUME_TYPE = 2,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

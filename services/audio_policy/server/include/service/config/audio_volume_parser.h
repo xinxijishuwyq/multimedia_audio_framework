@@ -36,8 +36,8 @@ public:
     virtual ~AudioVolumeParser();
     int32_t LoadConfig(StreamVolumeInfoMap &streamVolumeInfoMap);
 private:
-    std::map<std::string, AudioStreamType> audioStreamMap_;
-    std::map<std::string, DeviceType> audioDeviceMap_;
+    std::map<std::string, AudioVolumeType> audioStreamMap_;
+    std::map<std::string, DeviceVolumeType> audioDeviceMap_;
 
     void ParseStreamInfos(xmlNode *node, StreamVolumeInfoMap &streamVolumeInfoMap);
     void ParseStreamVolumeInfoAttr(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);

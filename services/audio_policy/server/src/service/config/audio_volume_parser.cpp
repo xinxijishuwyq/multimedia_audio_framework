@@ -31,9 +31,9 @@ AudioVolumeParser::AudioVolumeParser()
     };
 
     audioDeviceMap_ = {
-        {"earpiece", DEVICE_TYPE_EARPIECE},
-        {"speaker", DEVICE_TYPE_SPEAKER},
-        {"headset", DEVICE_TYPE_WIRED_HEADSET},
+        {"earpiece", EARPIECE_VOLUME_TYPE},
+        {"speaker", SPEAKER_VOLUME_TYPE},
+        {"headset", HEADSET_VOLUME_TYPE},
     };
 }
 
@@ -97,13 +97,13 @@ void AudioVolumeParser::ParseStreamInfos(xmlNode *node, StreamVolumeInfoMap &str
     xmlNode *currNode = node;
     AUDIO_DEBUG_LOG("AudioVolumeParser::ParseStreamInfos");
     while (currNode) {
-        if (currNode->type == XML_ELEMENT_NODE && (!xmlStrcmp(currNode->name,
-            reinterpret_cast<const xmlChar*>("volume_type")))) {
-                std::shared_ptr<StreamVolumeInfo> streamVolInfo = std::make_shared<StreamVolumeInfo>();
-                ParseStreamVolumeInfoAttr(currNode, streamVolInfo);
-                ParseDeviceVolumeInfos(currNode->children, streamVolInfo);
-                AUDIO_DEBUG_LOG("Parse streamType:%{public}d ", streamVolInfo->streamType);
-                streamVolumeInfoMap[streamVolInfo->streamType] = streamVolInfo;
+        if (currNode->type == XML_ELEMENT_NODE
+            && (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("volume_type")))) {
+            std::shared_ptr<StreamVolumeInfo> streamVolInfo = std::make_shared<StreamVolumeInfo>();
+            ParseStreamVolumeInfoAttr(currNode, streamVolInfo);
+            ParseDeviceVolumeInfos(currNode->children, streamVolInfo);
+            AUDIO_DEBUG_LOG("Parse streamType:%{public}d ", streamVolInfo->streamType);
+            streamVolumeInfoMap[streamVolInfo->streamType] = streamVolInfo;
         }
         currNode = currNode->next;
     }
@@ -121,19 +121,19 @@ void AudioVolumeParser::ParseStreamVolumeInfoAttr(xmlNode *node, std::shared_ptr
 
     pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
         reinterpret_cast<xmlChar*>(const_cast<char*>("minidx"))));
-    streamVolInfo->minIndex = atoi(pValue);
+    streamVolInfo->minLevel = atoi(pValue);
     AUDIO_DEBUG_LOG("minidx: %{public}d", atoi(pValue));
     xmlFree(pValue);
 
     pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
         reinterpret_cast<xmlChar*>(const_cast<char*>("maxidx"))));
-    streamVolInfo->maxIndex = atoi(pValue);
+    streamVolInfo->maxLevel = atoi(pValue);
     AUDIO_DEBUG_LOG("minidx: %{public}d", atoi(pValue));
     xmlFree(pValue);
 
     pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
         reinterpret_cast<xmlChar*>(const_cast<char*>("defaultidx"))));
-    streamVolInfo->defaultIndex = atoi(pValue);
+    streamVolInfo->defaultLevel = atoi(pValue);
     AUDIO_DEBUG_LOG("defaultidx: %{public}d", atoi(pValue));
     xmlFree(pValue);
 }
@@ -143,17 +143,17 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(xmlNode *node, std::shared_ptr<St
     xmlNode *currNode = node;
     AUDIO_DEBUG_LOG("AudioVolumeParser::ParseDeviceVolumeInfos");
     while (currNode) {
-        if (currNode->type == XML_ELEMENT_NODE && (!xmlStrcmp(currNode->name,
-            reinterpret_cast<const xmlChar*>("volumecurve")))) {
-                char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("deviceClass"))));
-                std::shared_ptr<DeviceVolumeInfo> deviceVolInfo = std::make_shared<DeviceVolumeInfo>();
-                AUDIO_DEBUG_LOG("deviceClass: %{public}s; currNode->name %{public}s;", pValue, currNode->name);
-                deviceVolInfo->deviceName = audioDeviceMap_[pValue];
-                AUDIO_DEBUG_LOG("deviceVolInfo->deviceName %{public}d;", deviceVolInfo->deviceName);
-                xmlFree(pValue);
-                ParseVolumePoints(currNode->children, deviceVolInfo);
-                streamVolInfo->deviceVolumeInfos[deviceVolInfo->deviceName] = deviceVolInfo;
+        if (currNode->type == XML_ELEMENT_NODE
+            && (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("volumecurve")))) {
+            char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
+                reinterpret_cast<xmlChar*>(const_cast<char*>("deviceClass"))));
+            std::shared_ptr<DeviceVolumeInfo> deviceVolInfo = std::make_shared<DeviceVolumeInfo>();
+            AUDIO_DEBUG_LOG("deviceClass: %{public}s; currNode->name %{public}s;", pValue, currNode->name);
+            deviceVolInfo->deviceType = audioDeviceMap_[pValue];
+            AUDIO_DEBUG_LOG("deviceVolInfo->deviceType %{public}d;", deviceVolInfo->deviceType);
+            xmlFree(pValue);
+            ParseVolumePoints(currNode->children, deviceVolInfo);
+            streamVolInfo->deviceVolumeInfos[deviceVolInfo->deviceType] = deviceVolInfo;
         }
         currNode = currNode->next;
     }
@@ -164,20 +164,20 @@ void AudioVolumeParser::ParseVolumePoints(xmlNode *node, std::shared_ptr<DeviceV
     xmlNode *currNode = node;
     AUDIO_DEBUG_LOG("AudioVolumeParser::ParseVolumePoints");
     while (currNode) {
-        if (currNode->type == XML_ELEMENT_NODE && (!xmlStrcmp(currNode->name,
-            reinterpret_cast<const xmlChar*>("point")))) {
-                struct VolumePoint volumePoint;
-                char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("idx"))));
-                volumePoint.index = atoi(pValue);
-                AUDIO_DEBUG_LOG("idx: %{public}d", atoi(pValue));
-                xmlFree(pValue);
-                pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
-                    reinterpret_cast<xmlChar*>(const_cast<char*>("decibel"))));
-                volumePoint.dbValue = atoi(pValue);
-                AUDIO_DEBUG_LOG("decibel: %{public}d", atoi(pValue));
-                xmlFree(pValue);
-                deviceVolInfo->volumePoints.push_back(volumePoint);
+        if (currNode->type == XML_ELEMENT_NODE
+            && (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("point")))) {
+            struct VolumePoint volumePoint;
+            char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
+                reinterpret_cast<xmlChar*>(const_cast<char*>("idx"))));
+            volumePoint.index = atoi(pValue);
+            AUDIO_DEBUG_LOG("idx: %{public}d", atoi(pValue));
+            xmlFree(pValue);
+            pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
+                reinterpret_cast<xmlChar*>(const_cast<char*>("decibel"))));
+            volumePoint.dbValue = atoi(pValue);
+            AUDIO_DEBUG_LOG("decibel: %{public}d", atoi(pValue));
+            xmlFree(pValue);
+            deviceVolInfo->volumePoints.push_back(volumePoint);
         }
         currNode = currNode->next;
     }
