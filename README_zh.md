@@ -95,14 +95,20 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     ```
 
 4.  （可选）使用 audioRenderer->**GetParams**(rendererParams) 来验证 SetParams。
-5.  AudioRenderer 实例调用 audioRenderer->**Start**() 函数来启动播放任务。
-6.  使用 **GetBufferSize** 接口获取要写入的缓冲区长度。
+5.  （可选）使用 **SetAudioEffectMode** 和 **GetAudioEffectMode** 接口来设置和获取当前音频流的音效模式。
+    ```
+    AudioEffectMode effectMode = EFFECT_DEFAULT;
+    int32_t result = audioRenderer->SetAudioEffectMode(effectMode);
+    AudioEffectMode mode = audioRenderer->GetAudioEffectMode();
+    ```
+6.  AudioRenderer 实例调用 audioRenderer->**Start**() 函数来启动播放任务。
+7.  使用 **GetBufferSize** 接口获取要写入的缓冲区长度。
 
     ```
     audioRenderer->GetBufferSize(bufferLen);
     ```
 
-7.  从源（例如音频文件）读取要播放的音频数据并将其传输到字节流中。重复调用Write函数写入渲染数据。
+8.  从源（例如音频文件）读取要播放的音频数据并将其传输到字节流中。重复调用Write函数写入渲染数据。
 
     ```
     bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
@@ -113,14 +119,14 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     }
     ```
 
-8.  调用audioRenderer->**Drain**()来清空播放流。
-9.  调用audioRenderer->**Stop**()来停止输出。
-10. 播放任务完成后，调用AudioRenderer实例的audioRenderer->**Release**()函数来释放资源。
+9.  调用audioRenderer->**Drain**()来清空播放流。
+10.  调用audioRenderer->**Stop**()来停止输出。
+11. 播放任务完成后，调用AudioRenderer实例的audioRenderer->**Release**()函数来释放资源。
 
 以上提供了基本音频播放使用场景。
 
 
-11. 使用 audioRenderer->**SetVolume(float)** 和 audioRenderer->**GetVolume()** 来设置和获取当前音频流音量, 可选范围为 0.0 到 1.0。
+12. 使用 audioRenderer->**SetVolume(float)** 和 audioRenderer->**GetVolume()** 来设置和获取当前音频流音量, 可选范围为 0.0 到 1.0。
 
 提供上述基本音频播放使用范例。更多接口说明请参考[**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) 和 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
 
