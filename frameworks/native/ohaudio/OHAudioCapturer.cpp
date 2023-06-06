@@ -160,11 +160,9 @@ OHAudioCapturer::~OHAudioCapturer()
 
 bool OHAudioCapturer::Initialize(const AudioCapturerOptions& capturerOptions)
 {
-    audioCapturer_ = AudioCapturer::Create(capturerOptions);
-    if (audioCapturer_ == nullptr) {
-        return false;
-    }
-    return true;
+    std::string cacheDir = "/data/storage/el2/base/haps/entry/files";
+    audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+    return audioCapturer_ != nullptr;
 }
 
 bool OHAudioCapturer::Start()
