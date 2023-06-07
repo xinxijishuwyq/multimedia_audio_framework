@@ -122,12 +122,12 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
                 break;
             }
         }
-    }
-    if (sceneFlag == 0) {
-        AudioEffectMode audioEffectMode = effectModeMap.at("EFFECT_NONE");
-        audioSceneEffectInfo.mode.push_back(audioEffectMode);
-        audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
-        audioSceneEffectInfo.mode.push_back(audioEffectMode);
+        if (sceneFlag == 0) {
+            AudioEffectMode audioEffectMode = effectModeMap.at("EFFECT_NONE");
+            audioSceneEffectInfo.mode.push_back(audioEffectMode);
+            audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
+            audioSceneEffectInfo.mode.push_back(audioEffectMode);
+        }
     }
     return ret;
 }
