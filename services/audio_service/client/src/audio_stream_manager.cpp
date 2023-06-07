@@ -118,6 +118,12 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
             if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
                 UpdateEffectInfoArray(supportedEffectConfig, audioSceneEffectInfo, i);
                 break;
+            } else {
+                AudioEffectMode audioEffectMode = effectModeMap.at("EFFECT_NONE");
+                audioSceneEffectInfo.mode.push_back(audioEffectMode);
+                audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
+                audioSceneEffectInfo.mode.push_back(audioEffectMode);
+                break;
             }
         }
     }
