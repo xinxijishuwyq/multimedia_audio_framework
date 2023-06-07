@@ -368,6 +368,7 @@ void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
 ```
 
 2. (可选) 静态接口 **RegisterBluetoothScoAgListener**(), **UnregisterBluetoothScoAgListener**(), 可用于注册蓝牙SCO的侦听器。
+
 ## 支持设备<a name="section645572311287_008"></a>
 以下是音频子系统支持的设备类型列表。
 
@@ -379,6 +380,16 @@ void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
     蓝牙A2DP（高级音频分配模式）耳机，用于无线传输音频。
 4. **Internal Speaker and MIC**\
     支持内置扬声器和麦克风，并将分别用作播放和录制的默认设备。
+
+## 音效全局查询<a name="section645572311287_009"></a>
+以下是音频子系统支持的音效全局查询功能。
+
+1. **使用getAudioEffectInfoArray接口查询指定ContentType和StreamUsage下可以支持的音效模式**\
+    ```
+    getAudioEffectInfoArray(content: ContentType, usage: StreamUsage, callback: AsyncCallback<AudioEffectInfoArray>): void;
+    ```
+    有关支持的音效模式，请参阅 **AudioEffectMode** 中的枚举[**audio_effect.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_effect.h)
+
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
