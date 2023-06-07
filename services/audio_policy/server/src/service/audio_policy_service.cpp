@@ -230,6 +230,16 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
+void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
+{
+    // Load volume from KvStore and set volume for each stream type
+    audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+
+    // The volume of voice_call needs to be adjusted separately
+    SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+}
+
+
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
 {
     return audioPolicyManager_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
@@ -1077,7 +1087,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
     }
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
-        audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+        SetVolumeForSwitchDevice(deviceType);
         currentActiveDevice_ = deviceType;
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     } else {
@@ -1130,7 +1140,7 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
     if (isUpdateRouteSupported_) {
         UpdateActiveDeviceRoute(deviceType);
     }
-    audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+    SetVolumeForSwitchDevice(deviceType);
 
     AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
     std::string portName = GetPortName(deviceType);
@@ -1196,13 +1206,13 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
         }
         UpdateActiveDeviceRoute(deviceType);
         if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
-            audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+            SetVolumeForSwitchDevice(deviceType);
             isVolumeSwitched = true;
         }
     }
 
     if (GetDeviceRole(deviceType) == OUTPUT_DEVICE && !isVolumeSwitched) {
-        audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+        SetVolumeForSwitchDevice(deviceType);
     }
 
     UpdateInputDeviceInfo(deviceType);
@@ -1993,7 +2003,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         hasModulesLoaded = true;
         currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         activeInputDevice_ = DEVICE_TYPE_MIC;
-        audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice_);
+        SetVolumeForSwitchDevice(currentActiveDevice_);
         OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
         OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
         audioEffectManager_.SetMasterSinkAvailable();

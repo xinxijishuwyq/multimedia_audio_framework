@@ -46,8 +46,6 @@ public:
     void InitKVStore();
     bool ConnectServiceAdapter();
 
-    std::string GetPolicyManagerName();
-
     static IAudioPolicyInterface& GetInstance()
     {
         static AudioAdapterManager audioAdapterManager;
