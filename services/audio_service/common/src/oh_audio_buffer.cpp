@@ -578,7 +578,8 @@ SpanInfo *OHAudioBuffer::GetSpanInfo(uint64_t posInFrame)
 {
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t maxPos = basePos + totalSizeInFrame_ + totalSizeInFrame_;
-    CHECK_AND_RETURN_RET_LOG((basePos <= posInFrame && posInFrame < maxPos), nullptr, "posInFrame out of range");
+    CHECK_AND_RETURN_RET_LOG((basePos <= posInFrame && posInFrame < maxPos), nullptr, "posInFrame %{public}" PRIu64" "
+        "out of range, basePos %{public}" PRIu64", maxPos %{public}" PRIu64".", posInFrame, basePos, maxPos);
 
     uint64_t deltaToBase = posInFrame - basePos;
     if (deltaToBase >= totalSizeInFrame_) {

@@ -434,7 +434,7 @@ int32_t AudioProcessInClientInner::Start()
 
     StreamStatus targetStatus = StreamStatus::STREAM_IDEL;
     if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING)) {
-        AUDIO_ERR_LOG("Start failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
+        AUDIO_ERR_LOG("Start failed, invalid status: %{public}s", GetStatusInfo(targetStatus).c_str());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -707,7 +707,7 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             continue;
         }
         threadStatus_ = INRUNNING;
-        AUDIO_INFO_LOG("%{public}s thread running.", __func__);
+        Trace traceLoop("AudioProcessInClient RecordProcessCallbackFuc InRunning");
         if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
@@ -813,7 +813,7 @@ int32_t AudioProcessInClientInner::RecordFinishHandleCurrent(uint64_t &curReadPo
 
     SpanStatus targetStatus = SpanStatus::SPAN_READING;
     if (!curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READ_DONE)) {
-        AUDIO_INFO_LOG("%{public}s status error, curReadSpan %{public}" PRIu64", curSpanStatus %{public}d.",
+        AUDIO_ERR_LOG("%{public}s status error, curReadSpan %{public}" PRIu64", curSpanStatus %{public}d.",
             __func__, curReadPos, curReadSpan->spanStatus.load());
         return ERR_INVALID_OPERATION;
     }

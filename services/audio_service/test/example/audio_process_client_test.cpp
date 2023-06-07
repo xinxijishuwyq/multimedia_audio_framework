@@ -56,6 +56,8 @@ namespace {
         STOP_MIC_PROCESS = 25,
         CHANGE_MIC_PROCESS_VOL = 26,
         RELEASE_MIC_PROCESS = 27,
+
+        EXIT_INTERACTIVE_TEST = 40,
     };
 
     enum AudioProcessTestType : int32_t {
@@ -64,6 +66,7 @@ namespace {
         AUTO_RUN_SPK_TEST = 2,
         INTERACTIVE_RUN_MIC_TEST = 3,
         AUTO_RUN_MIC_TEST = 4,
+        EXIT_PROC_TEST = 5,
     };
 }
 
@@ -98,6 +101,7 @@ std::map<int32_t, std::string> g_audioProcessTestType = {
     {AUTO_RUN_SPK_TEST, "Auto run spk process test"},
     {INTERACTIVE_RUN_MIC_TEST, "Interactive run mic process test"},
     {AUTO_RUN_MIC_TEST, "Auto run mic process test"},
+    {EXIT_PROC_TEST, "Exit audio process test"},
 };
 
 std::map<int32_t, std::string> g_interactiveOptStrMap = {
@@ -117,7 +121,9 @@ std::map<int32_t, std::string> g_interactiveOptStrMap = {
     {RESUME_MIC_PROCESS, "call resume mic process"},
     {STOP_MIC_PROCESS, "call stop mic process"},
     {CHANGE_MIC_PROCESS_VOL, "change mic process volume"},
-    {RELEASE_MIC_PROCESS, "release mic process"}
+    {RELEASE_MIC_PROCESS, "release mic process"},
+
+    {EXIT_INTERACTIVE_TEST, "exit interactive run test"},
 };
 
 std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
@@ -560,15 +566,35 @@ void AutoRunSpk()
         cout << "open spk file path failed!" << g_spkfilePath << endl;
         return;
     }
-    g_audioProcessTest->InitSpk(loopCount, false);
-    g_audioProcessTest->StartSpk();
-    int volShift = 15; // helf of 1 << 16
-    g_audioProcessTest->SetSpkVolume(1 << volShift);
-    unique_lock<mutex> lock(g_autoRunMutex);
-    g_autoRunCV.wait(lock);
-    cout << "AutoRunSpk end" << endl;
-    g_audioProcessTest->StopSpk();
-    g_audioProcessTest->ReleaseSpk();
+    if (g_audioProcessTest->InitSpk(loopCount, false) != SUCCESS) {
+        cout << "Spk init failed!" << endl;
+        return;
+    }
+
+    do {
+        if (!g_audioProcessTest->StartSpk()) {
+            cout << "Spk start failed!" << endl;
+            break;
+        }
+        int volShift = 15; // helf of 1 << 16
+        if (!g_audioProcessTest->SetSpkVolume(1 << volShift)) {
+            cout << "Spk set volume " << volShift << " failed!" << endl;
+            break;
+        }
+
+        unique_lock<mutex> lock(g_autoRunMutex);
+        g_autoRunCV.wait(lock);
+        cout << "AutoRunSpk end" << endl;
+
+        if (!g_audioProcessTest->StopSpk()) {
+            cout << "Spk stop failed!" << endl;
+            break;
+        }
+    } while (false);
+
+    if (!g_audioProcessTest->ReleaseSpk()) {
+        cout << "Spk release failed!" << endl;
+    }
     CloseSpkFile();
 }
 
@@ -580,15 +606,36 @@ void AutoRunMic()
         cout << "open mic file path failed!" << g_spkfilePath << endl;
         return;
     }
-    g_audioProcessTest->InitMic(false);
-    g_audioProcessTest->StartMic();
-    int volShift = 15; // helf of 1 << 16
-    g_audioProcessTest->SetMicVolume(1 << volShift);
-    cout << "wait " << recordTimeS << "s for capture frame..." << endl;
-    ClockTime::RelativeSleep(recordTimeS * SECOND_TO_NANOSECOND);
-    cout << "AutoRunMic end" << endl;
-    g_audioProcessTest->StopMic();
-    g_audioProcessTest->ReleaseMic();
+
+    if (g_audioProcessTest->InitMic(false) != SUCCESS) {
+        cout << "Mic init failed!" << endl;
+        return;
+    }
+
+    do {
+        if (!g_audioProcessTest->StartMic()) {
+            cout << "Mic start failed!" << endl;
+            break;
+        }
+        int volShift = 15; // helf of 1 << 16
+        if (!g_audioProcessTest->SetMicVolume(1 << volShift)) {
+            cout << "Mic set volume " << volShift << " failed!" << endl;
+            break;
+        }
+
+        cout << "wait " << recordTimeS << "s for capture frame..." << endl;
+        ClockTime::RelativeSleep(recordTimeS * SECOND_TO_NANOSECOND);
+        cout << "AutoRunMic end" << endl;
+
+        if (!g_audioProcessTest->StopMic()) {
+            cout << "Mic stop failed!" << endl;
+            break;
+        }
+    } while (false);
+
+    if (!g_audioProcessTest->ReleaseMic()) {
+        cout << "Mic release failed!" << endl;
+    }
     CloseMicFile();
 }
 
@@ -600,64 +647,64 @@ string ConfigSpkTest(bool isRemote)
     g_spkfilePath = palyFilePath;
 
     if (!OpenSpkFile()) {
-        cout << "open spk file path failed!" << g_spkfilePath << endl;
-        return "open spk wav file fail";
+        cout << "Open spk file path failed!" << g_spkfilePath << endl;
+        return "Open spk wav file fail";
     }
     int32_t ret = g_audioProcessTest->InitSpk(0, isRemote);
     if (ret != SUCCESS) {
-        return "init failed";
+        return "Spk init failed";
     }
-    return "init SUCCESS";
+    return "Spk init SUCCESS";
 }
 
 string CallStartSpk()
 {
     if (!g_audioProcessTest->StartSpk()) {
-        return "start failed";
+        return "Spk start failed";
     }
-    return "start SUCCESS";
+    return "Spk start SUCCESS";
 }
 
 string CallPauseSpk()
 {
     if (!g_audioProcessTest->PauseSpk()) {
-        return "Pause failed";
+        return "Spk pause failed";
     }
-    return "Pause SUCCESS";
+    return "Spk pause SUCCESS";
 }
 
 string CallResumeSpk()
 {
     if (!g_audioProcessTest->ResumeSpk()) {
-        return "Resume failed";
+        return "Spk resume failed";
     }
-    return "Resume SUCCESS";
+    return "Spk resume SUCCESS";
 }
 
 string CallStopSpk()
 {
     if (!g_audioProcessTest->StopSpk()) {
-        return "Stop failed";
+        return "Spk stop failed";
     }
-    return "Stop SUCCESS";
+    return "Spk stop SUCCESS";
 }
 
 string SetSpkVolume()
 {
     int32_t vol = GetUserInput();
     if (!g_audioProcessTest->SetSpkVolume(vol)) {
-        return "SetVolume failed";
+        return "Spk set volume failed";
     }
-    return "SetVolume SUCCESS";
+    return "Spk set volume SUCCESS";
 }
 
 string CallReleaseSpk()
 {
     if (!g_audioProcessTest->ReleaseSpk()) {
-        return "Release failed";
+        return "Spk release failed";
     }
     CloseSpkFile();
-    return "Release SUCCESS";
+    return "Spk release SUCCESS";
 }
 
 string ConfigMicTest(bool isRemote)
@@ -667,82 +714,81 @@ string ConfigMicTest(bool isRemote)
     }
 
     if (!OpenMicFile()) {
-        cout << "open mic file path failed!" << g_spkfilePath << endl;
-        return "open mic pcm file fail";
+        cout << "Open mic file path failed!" << g_spkfilePath << endl;
+        return "Open mic pcm file fail";
     }
 
     int32_t ret = g_audioProcessTest->InitMic(isRemote);
     if (ret != SUCCESS) {
-        return "init failed";
+        return "Mic init failed";
     }
-    return "init SUCCESS";
+    return "Mic init SUCCESS";
 }
 
 string CallStartMic()
 {
     if (!g_audioProcessTest->StartMic()) {
-        return "start failed";
+        return "Mic start failed";
     }
-    return "start SUCCESS";
+    return "Mic start SUCCESS";
 }
 
 string CallPauseMic()
 {
     if (!g_audioProcessTest->PauseMic()) {
-        return "Pause failed";
+        return "Mic pause failed";
     }
-    return "Pause SUCCESS";
+    return "Mic pause SUCCESS";
 }
 
 string CallResumeMic()
 {
     if (!g_audioProcessTest->ResumeMic()) {
-        return "Resume failed";
+        return "Mic resume failed";
     }
-    return "Resume SUCCESS";
+    return "Mic resume SUCCESS";
 }
 
 string CallStopMic()
 {
     if (!g_audioProcessTest->StopMic()) {
-        return "Stop failed";
+        return "Mic stop failed";
     }
-    return "Stop SUCCESS";
+    return "Mic stop SUCCESS";
 }
 
 string SetMicVolume()
 {
     int32_t vol = GetUserInput();
     if (!g_audioProcessTest->SetMicVolume(vol)) {
-        return "SetVolume failed";
+        return "Mic set volume failed";
     }
-    return "SetVolume SUCCESS";
+    return "Mic set volume SUCCESS";
 }
 
 string CallReleaseMic()
 {
     if (!g_audioProcessTest->ReleaseMic()) {
-        return "Release failed";
+        return "Mic release failed";
     }
     CloseMicFile();
-    return "Release SUCCESS";
+    return "Mic release SUCCESS";
 }
 
 void InteractiveRun()
 {
     cout << "Interactive run process test enter." << endl;
-    OperationCode optCode = INVALID_OPERATION; // invalid code
-    while (true) {
+    bool isInteractiveRun = true;
+    while (isInteractiveRun) {
         PrintInteractiveUsage();
+        OperationCode optCode = INVALID_OPERATION;
         int32_t res = GetUserInput();
         if (g_interactiveOptStrMap.count(res)) {
             optCode = static_cast<OperationCode>(res);
-        } else {
-            optCode = INVALID_OPERATION;
         }
         switch (optCode) {
-            case INVALID_OPERATION:
-                cout << "invalid input" << endl;
+            case EXIT_INTERACTIVE_TEST:
+                isInteractiveRun = false;
                 break;
             case INIT_LOCAL_SPK_PROCESS:
                 cout << ConfigSpkTest(false) << endl;
@@ -763,10 +809,11 @@ void InteractiveRun()
                     cout << (*func)() << endl;
                     break;
                 }
-                cout << "invalid input :" << optCode << endl;
+                cout << "Invalid input :" << optCode << endl;
                 break;
         }
     }
+    cout << "Interactive run process test end." << endl;
 }
 
 bool SetSysPara(std::string key, int32_t &value)
@@ -791,26 +838,33 @@ int main()
 
     PrintUsage();
     g_audioProcessTest = make_shared<AudioProcessTest>();
-    PrintProcTestUsage();
-    AudioProcessTestType procTestType = INVALID_PROC_TEST;
-    int32_t res = GetUserInput();
-    if (g_audioProcessTestType.count(res)) {
-        procTestType = static_cast<AudioProcessTestType>(res);
-    }
-    switch (procTestType) {
-        case INTERACTIVE_RUN_SPK_TEST:
-        case INTERACTIVE_RUN_MIC_TEST:
-            InteractiveRun();
-            break;
-        case AUTO_RUN_SPK_TEST:
-            AutoRunSpk();
-            break;
-        case AUTO_RUN_MIC_TEST:
-            AutoRunMic();
-            break;
-        default:
-            cout << "invalid input, test end." << endl;
-            break;
+
+    bool isProcTestRun = true;
+    while (isProcTestRun) {
+        PrintProcTestUsage();
+        AudioProcessTestType procTestType = INVALID_PROC_TEST;
+        int32_t res = GetUserInput();
+        if (g_audioProcessTestType.count(res)) {
+            procTestType = static_cast<AudioProcessTestType>(res);
+        }
+        switch (procTestType) {
+            case INTERACTIVE_RUN_SPK_TEST:
+            case INTERACTIVE_RUN_MIC_TEST:
+                InteractiveRun();
+                break;
+            case AUTO_RUN_SPK_TEST:
+                AutoRunSpk();
+                break;
+            case AUTO_RUN_MIC_TEST:
+                AutoRunMic();
+                break;
+            case EXIT_PROC_TEST:
+                isProcTestRun = false;
+                break;
+            default:
+                cout << "invalid input, procTestType: " << procTestType << endl;
+                break;
+        }
     }
     AUDIO_INFO_LOG("AudioProcessClientTest test end.");
     return 0;
