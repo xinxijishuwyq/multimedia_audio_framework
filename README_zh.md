@@ -384,11 +384,11 @@ void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
 ## 音效全局查询<a name="section645572311287_009"></a>
 以下是音频子系统支持的音效全局查询功能。
 
-1. **使用getAudioEffectInfoArray接口查询指定ContentType和StreamUsage下可以支持的音效模式**\
+1. **使用getAudioEffectInfoArray接口查询指定[**ContentType**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)和[**StreamUsage**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)下可以支持的音效模式**
     ```
     getAudioEffectInfoArray(content: ContentType, usage: StreamUsage, callback: AsyncCallback<AudioEffectInfoArray>): void;
     ```
-    有关支持的音效模式，请参阅 **AudioEffectMode** 中的枚举[**audio_effect.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_effect.h)
+    有关支持的音效模式，请参阅 [**audio_effect.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_effect.h)中的枚举**AudioEffectMode**。
 
 
 ## 相关仓<a name="section340mcpsimp"></a>
