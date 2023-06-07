@@ -33,9 +33,9 @@
 #include "device_init_callback.h"
 #include "data_share_observer_callback.h"
 #include "uri.h"
-#include "audio_server_death_recipient.h"
 
 #ifdef BLUETOOTH_ENABLE
+#include "audio_server_death_recipient.h"
 #include "audio_bluetooth_manager.h"
 #endif
 
@@ -56,11 +56,15 @@ const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
+#ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
+#endif
 static int32_t startDeviceId = 1;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper;
 mutex g_adProxyMutex;
+#ifdef BLUETOOTH_ENABLE
 mutex g_btProxyMutex;
+#endif
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -2950,6 +2954,7 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     return maxRendererInstances_;
 }
 
+#ifdef BLUETOOTH_ENABLE
 const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
 {
     lock_guard<mutex> lock(g_btProxyMutex);
@@ -2992,6 +2997,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
     g_btProxy = nullptr;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
 }
+#endif
 
 void AudioPolicyService::RegisterBluetoothListener()
 {
