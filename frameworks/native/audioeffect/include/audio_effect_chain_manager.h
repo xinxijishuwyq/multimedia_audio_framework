@@ -48,7 +48,7 @@ public:
     void SetEffectMode(std::string mode);
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
-    void AddEffectHandle(AudioEffectHandle effectHandle);
+    void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
@@ -57,6 +57,7 @@ private:
     std::string sceneType;
     std::string effectMode;
     std::vector<AudioEffectHandle> standByEffectHandles;
+    std::vector<AudioEffectLibrary*> libHandles;
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
