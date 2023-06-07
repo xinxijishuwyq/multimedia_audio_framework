@@ -265,7 +265,6 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             RendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
             RendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
             *it = move(RendererChangeInfo);
-            AUDIO_DEBUG_LOG("AudioStreamCollector: Playback details updated, to be dispatched");
 
             mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
                 audioRendererChangeInfos_);

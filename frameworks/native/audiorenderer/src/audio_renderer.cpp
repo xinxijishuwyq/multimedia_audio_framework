@@ -815,7 +815,7 @@ int32_t AudioRendererPrivate::GetCurrentOutputDevices(DeviceInfo &deviceInfo) co
     }
 
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
-        if ((*it)->sessionId == sessionId) {
+        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
             deviceInfo = (*it)->outputDeviceInfo;
         }
     }
