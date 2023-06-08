@@ -304,8 +304,6 @@ private:
 
     std::string GetGroupName(const std::string& deviceName, const GroupType type);
 
-    InternalDeviceType GetCurrentActiveDevice(DeviceRole role) const;
-
     bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
 
     int32_t DeviceParamsCheck(DeviceRole targetRole,
@@ -363,11 +361,13 @@ private:
 
     void AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType);
 
-    void OnPreferOutputDeviceUpdated(InternalDeviceType devType, std::string networkId);
+    void OnPreferOutputDeviceUpdated(DeviceType devType, std::string networkId);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetEarpieceState();
+
+    void SetVolumeForSwitchDevice(DeviceType deviceType);
 
     void SetVoiceCallVolume(int32_t volume);
 
@@ -397,7 +397,6 @@ private:
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
-    int32_t switchVolumeDelay_ = 200000; // us
     int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
