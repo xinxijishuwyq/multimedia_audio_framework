@@ -186,7 +186,8 @@ private:
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
     void InitVolumeMapIndex();
     void UpdateVolumeMapIndex();
-    void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType, std::vector<VolumePoint> &volumePoints);
+    void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
+        std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel);
     void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
