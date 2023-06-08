@@ -229,7 +229,7 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
         AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
         return;
     }
-    float volumeDb = static_cast<float>(volumeLevel) / GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    float volumeDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, currentActiveDevice_);
     gsp->SetVoiceVolume(volumeDb);
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
@@ -479,6 +479,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
 }
+
 
 int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
     sptr<AudioDeviceDescriptor> deviceDescriptor)
@@ -3040,11 +3041,25 @@ float AudioPolicyService::GetMaxStreamVolume()
     return audioPolicyManager_.GetMaxStreamVolume();
 }
 
+bool AudioPolicyService::IsVolumeUnadjustable()
+{
+    return audioPolicyManager_.IsVolumeUnadjustable();
+}
+
+void AudioPolicyService::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfoMap)
+{
+    return audioPolicyManager_.GetStreamVolumeInfoMap(streamVolumeInfoMap);
+}
+
+float AudioPolicyService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    return audioPolicyManager_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+}
+
 int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& supportedEffectConfig)
 {
     int32_t ret = audioEffectManager_.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

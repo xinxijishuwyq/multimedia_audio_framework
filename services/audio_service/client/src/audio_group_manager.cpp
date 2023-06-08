@@ -365,5 +365,34 @@ int32_t AudioGroupManager::SetMicStateChangeCallback(
     int32_t clientId = static_cast<int32_t>(getpid());
     return AudioPolicyManager::GetInstance().SetMicStateChangeCallback(clientId, callback);
 }
+
+bool AudioGroupManager::IsVolumeUnadjustable()
+{
+    if (netWorkId_ != LOCAL_NETWORK_ID) {
+        AUDIO_ERR_LOG("AudioGroupManager::IsVolumeUnadjustable is only supported for LOCAL_NETWORK_ID.");
+        return ERROR;
+    }
+    return AudioPolicyManager::GetInstance().IsVolumeUnadjustable();
+}
+
+int32_t AudioGroupManager::AdjustVolumeByStep(VolumeAdjustType adjustType)
+{
+    return AudioPolicyManager::GetInstance().AdjustVolumeByStep(adjustType);
+}
+
+int32_t AudioGroupManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+{
+    return AudioPolicyManager::GetInstance().AdjustSystemVolumeByStep(volumeType, adjustType);
+}
+
+float AudioGroupManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    /* Call Audio Policy GetSystemVolumeInDb */
+    if (netWorkId_ != LOCAL_NETWORK_ID) {
+        AUDIO_ERR_LOG("AudioGroupManager::GetSystemVolumeInDb is only supported for LOCAL_NETWORK_ID.");
+        return ERROR;
+    }
+    return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -239,6 +239,36 @@ void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, Message
     reply.WriteBool(isActive);
 }
 
+void AudioPolicyManagerStub::AdjustVolumeByStepInternal(MessageParcel &data, MessageParcel &reply)
+{
+    VolumeAdjustType adjustType = static_cast<VolumeAdjustType>(data.ReadInt32());
+    int32_t result = AdjustVolumeByStep(adjustType);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t volumeLevel = data.ReadInt32();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    float result = GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+    reply.WriteFloat(result);
+}
+
+void AudioPolicyManagerStub::IsVolumeUnadjustableInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isVolumeUnadjustable = IsVolumeUnadjustable();
+    reply.WriteBool(isVolumeUnadjustable);
+}
+
+void AudioPolicyManagerStub::AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    VolumeAdjustType adjustType = static_cast<VolumeAdjustType>(data.ReadInt32());
+    int32_t result = AdjustSystemVolumeByStep(volumeType, adjustType);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_DEVICES AudioManagerStub");
@@ -1203,7 +1233,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         case GET_VOLUME_GROUP_INFO:
             GetVolumeGroupInfoInternal(data, reply);
             break;
-            
+
         case GET_NETWORKID_BY_GROUP_ID:
             GetNetworkIdByGroupIdInternal(data, reply);
             break;
@@ -1262,6 +1292,22 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         
         case QUERY_EFFECT_SCENEMODE:
             QueryEffectSceneModeInternal(data, reply);
+            break;
+
+        case IS_VOLUME_UNADJUSTABLE:
+            IsVolumeUnadjustableInternal(data, reply);
+            break;
+
+        case ADJUST_VOLUME_BY_STEP:
+            AdjustVolumeByStepInternal(data, reply);
+            break;
+
+        case ADJUST_SYSTEM_VOLUME_BY_STEP:
+            AdjustSystemVolumeByStepInternal(data, reply);
+            break;
+
+        case GET_SYSTEM_VOLUME_IN_DB:
+            GetSystemVolumeInDbInternal(data, reply);
             break;
 
         default:

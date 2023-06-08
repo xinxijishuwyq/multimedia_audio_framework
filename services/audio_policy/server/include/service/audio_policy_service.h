@@ -40,6 +40,7 @@
 #include "iport_observer.h"
 #include "parser_factory.h"
 #include "audio_effect_manager.h"
+#include "audio_volume_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -248,6 +249,12 @@ public:
     float GetMaxStreamVolume(void);
 
     int32_t GetMaxRendererInstances();
+
+    bool IsVolumeUnadjustable();
+
+    void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
+
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
     std::string GetLocalDevicesType();
 

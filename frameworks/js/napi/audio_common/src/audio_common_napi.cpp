@@ -249,5 +249,20 @@ bool AudioCommonNapi::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMod
     }
     return result;
 }
+
+bool AudioCommonNapi::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
+{
+    bool result = false;
+    switch (adjustType) {
+        case VolumeAdjustType::VOLUME_ADJUST_TURN_UP:
+        case VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

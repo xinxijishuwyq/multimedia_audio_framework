@@ -19,8 +19,9 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "parameter.h"
-
+#include "parameters.h"
 #include "audio_adapter_manager.h"
+#include "audio_volume_parser.h"
 
 using namespace std;
 
@@ -35,6 +36,13 @@ bool AudioAdapterManager::Init()
         testModeOn_ = true;
     }
 
+    std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
+    if (!audiovolumeParser->LoadConfig(streamVolumeInfos_)) {
+        AUDIO_INFO_LOG("Audio Volume Config Load Configuration successfully");
+        useNonlinearAlgo_ = 1;
+        UpdateVolumeMapIndex();
+    }
+
     // init volume before kvstore start by local prop for bootanimation
     char currentVolumeValue[3] = {0};
     auto ret = GetParameter("persist.multimedia.audio.mediavolume", "7",
@@ -46,6 +54,9 @@ bool AudioAdapterManager::Init()
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
+
+    isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
+    AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
 
     return true;
 }
@@ -101,20 +112,34 @@ int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callb
 
 int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
-    return MAX_VOLUME_LEVEL;
+    return maxVolumeIndexMap_[volumeType];
 }
 
 int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
-    if (volumeType == STREAM_VOICE_ASSISTANT || volumeType == STREAM_VOICE_CALL ||
-        volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY) {
-        return (MIN_VOLUME_LEVEL + 1);
+    return minVolumeIndexMap_[volumeType];
+}
+
+void AudioAdapterManager::SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel)
+{
+    if (streamType == STREAM_MUSIC) {
+        int ret = SetParameter("persist.multimedia.audio.mediavolume", std::to_string(volumeLevel).c_str());
+        if (ret == 0) {
+            AUDIO_INFO_LOG("Save media volume for boot success %{public}d", volumeLevel);
+        } else {
+            AUDIO_ERR_LOG("Save media volume for boot failed, result %{public}d", ret);
+        }
     }
-    return MIN_VOLUME_LEVEL;
 }
 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
 {
+    AUDIO_INFO_LOG("SetSystemVolumeLevel %{public}d", volumeLevel);
+    if (volumeLevel < GetMinVolumeLevel(streamType) || volumeLevel > GetMaxVolumeLevel(streamType)) {
+        AUDIO_ERR_LOG("volumeLevel not in scope.");
+        return ERR_OPERATION_FAILED;
+    }
+
     if (volumeLevel == 0 &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
@@ -135,14 +160,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     }
 
     // Save volume in local prop for bootanimation
-    if (streamType == STREAM_MUSIC) {
-        int ret = SetParameter("persist.multimedia.audio.mediavolume", std::to_string(volumeLevel).c_str());
-        if (ret == 0) {
-            AUDIO_INFO_LOG("Save media volume for boot success %{public}d", volumeLevel);
-        } else {
-            AUDIO_ERR_LOG("Save media volume for boot failed, result %{public}d", ret);
-        }
-    }
+    SaveMediaVolumeToLocal(streamType, volumeLevel);
 
     UpdateRingerModeForVolume(streamType, volumeLevel);
 
@@ -155,8 +173,15 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         volumeLevelMap_[streamForVolumeMap] = volumeLevel;
         WriteVolumeToKvStore(currentActiveDevice_, streamType, volumeLevel);
     }
+    float volumeDb;
+    if (useNonlinearAlgo_) {
+        volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+    } else {
+        volumeDb = CalculateVolumeDb(volumeLevel);
+    }
 
-    float volumeDb = CalculateVolumeDb(volumeLevel);
+    AUDIO_INFO_LOG("SetSystemVolumeLevel for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
+        streamType, currentActiveDevice_, volumeLevel);
     return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
 }
 
@@ -682,6 +707,25 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
     }
 }
 
+DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+            return EARPIECE_VOLUME_TYPE;
+        case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_FILE_SOURCE:
+            return SPEAKER_VOLUME_TYPE;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_USB_HEADSET:
+            return HEADSET_VOLUME_TYPE;
+        default:
+            return SPEAKER_VOLUME_TYPE;
+    }
+}
+
 bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
 {
     DistributedKvDataManager manager;
@@ -749,13 +793,13 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     if (isFirstBoot == true) {
         auto iter = deviceList_.begin();
         while (iter != deviceList_.end()) {
-            WriteVolumeToKvStore(*iter, STREAM_MUSIC, DEFAULT_VOLUME_LEVEL);
-            WriteVolumeToKvStore(*iter, STREAM_RING, DEFAULT_VOLUME_LEVEL);
-            WriteVolumeToKvStore(*iter, STREAM_VOICE_CALL, DEFAULT_VOLUME_LEVEL);
-            WriteVolumeToKvStore(*iter, STREAM_VOICE_ASSISTANT, DEFAULT_VOLUME_LEVEL);
-            WriteVolumeToKvStore(*iter, STREAM_ALARM, DEFAULT_VOLUME_LEVEL);
-            WriteVolumeToKvStore(*iter, STREAM_ACCESSIBILITY, DEFAULT_VOLUME_LEVEL);
-            WriteVolumeToKvStore(*iter, STREAM_ULTRASONIC, MAX_VOLUME_LEVEL);
+            WriteVolumeToKvStore(*iter, STREAM_MUSIC, volumeLevelMap_[STREAM_MUSIC]);
+            WriteVolumeToKvStore(*iter, STREAM_RING, volumeLevelMap_[STREAM_RING]);
+            WriteVolumeToKvStore(*iter, STREAM_VOICE_CALL, volumeLevelMap_[STREAM_VOICE_CALL]);
+            WriteVolumeToKvStore(*iter, STREAM_VOICE_ASSISTANT, volumeLevelMap_[STREAM_VOICE_ASSISTANT]);
+            WriteVolumeToKvStore(*iter, STREAM_ALARM, volumeLevelMap_[STREAM_ALARM]);
+            WriteVolumeToKvStore(*iter, STREAM_ACCESSIBILITY, volumeLevelMap_[STREAM_ACCESSIBILITY]);
+            WriteVolumeToKvStore(*iter, STREAM_ULTRASONIC, volumeLevelMap_[STREAM_ULTRASONIC]);
             iter++;
         }
         AUDIO_INFO_LOG("Wrote default stream volumes to KvStore");
@@ -1131,6 +1175,139 @@ float AudioAdapterManager::GetMinStreamVolume() const
 float AudioAdapterManager::GetMaxStreamVolume() const
 {
     return MAX_STREAM_VOLUME;
+}
+
+bool AudioAdapterManager::IsVolumeUnadjustable()
+{
+    return isVolumeUnadjustable_;
+}
+
+float AudioAdapterManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("GetSystemVolumeInDb for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
+        volumeType, deviceType, volumeLevel);
+    if (useNonlinearAlgo_) {
+        getSystemVolumeInDb_ = CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
+    } else {
+        getSystemVolumeInDb_ = CalculateVolumeDb(volumeLevel);
+    }
+    AUDIO_INFO_LOG("Get system volume in db success %{public}f", getSystemVolumeInDb_);
+
+    return getSystemVolumeInDb_;
+}
+
+uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx)
+{
+    int32_t leftPos = 0;
+    int32_t rightPos = volumePoints.size() - 1;
+    int32_t midPos = 0;
+    while (leftPos <= rightPos) {
+        midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
+        int32_t c = volumePoints[midPos].index - idx;
+        if (c == 0) {
+            leftPos = midPos;
+            break;
+        } else if (c < 0) {
+            leftPos = midPos + 1;
+        } else {
+            rightPos = midPos - 1;
+        }
+    }
+    return leftPos;
+}
+
+float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType,
+    DeviceType deviceType, int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
+        streamType, deviceType, volumeLevel);
+    AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
+    int minVolIndex = GetMinVolumeLevel(streamAlias);
+    int maxVolIndex = GetMaxVolumeLevel(streamAlias);
+    if (minVolIndex < 0 || maxVolIndex < 0 || minVolIndex >= maxVolIndex) {
+        return 0.0f;
+    }
+    if (volumeLevel < minVolIndex) {
+        volumeLevel = minVolIndex;
+    }
+    if (volumeLevel > maxVolIndex) {
+        volumeLevel = maxVolIndex;
+    }
+
+    DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType);
+    std::vector<VolumePoint> volumePoints;
+    GetVolumePoints(streamAlias, deviceCategory, volumePoints);
+    int pointSize = volumePoints.size();
+
+    int volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
+    int idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
+    int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
+    if (position == 0) {
+        AUDIO_INFO_LOG("position = 0, return 0.0");
+        return 0.0f;
+    } else if (position >= pointSize) {
+        AUDIO_INFO_LOG("position > pointSize, return %{public}f", exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
+        return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
+    }
+    float indexFactor = ((float)(idxRatio - volumePoints[position-1].index)) /
+        (float(volumePoints[position].index - volumePoints[position-1].index));
+
+    float dbValue = (volumePoints[position-1].dbValue / 100.0f) +
+        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position-1].dbValue / 100.0f));
+
+    AUDIO_INFO_LOG(" index=[%{public}d, %{public}d, %{public}d]"
+        "db=[%{public}0.1f %{public}0.1f %{public}0.1f] factor=[%{public}f]",
+        volumePoints[position-1].index, idxRatio, volumePoints[position].index,
+        ((float)volumePoints[position - 1].dbValue / 100.0f), dbValue,
+        ((float)volumePoints[position].dbValue / 100.0f), exp(dbValue * 0.115129f));
+
+    return exp(dbValue * 0.115129f);
+}
+
+void AudioAdapterManager::InitVolumeMapIndex()
+{
+    useNonlinearAlgo_ = 0;
+    for (auto streamType : streamTypeList_) {
+        minVolumeIndexMap_[streamType] = MIN_VOLUME_LEVEL;
+        maxVolumeIndexMap_[streamType] = MAX_VOLUME_LEVEL;
+        volumeLevelMap_[streamType] = DEFAULT_VOLUME_LEVEL;
+        AUDIO_DEBUG_LOG("streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
+            streamType, minVolumeIndexMap_[streamType],
+            maxVolumeIndexMap_[streamType], volumeLevelMap_[streamType]);
+    }
+
+    volumeLevelMap_[STREAM_ULTRASONIC] = MAX_VOLUME_LEVEL;
+}
+
+void AudioAdapterManager::UpdateVolumeMapIndex()
+{
+    for (auto streamVolInfoPair : streamVolumeInfos_) {
+        auto streamVolInfo = streamVolInfoPair.second;
+        minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minLevel;
+        maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxLevel;
+        volumeLevelMap_[streamVolInfo->streamType] = streamVolInfo->defaultLevel;
+        AUDIO_DEBUG_LOG("update streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
+            streamVolInfo->streamType, minVolumeIndexMap_[streamVolInfo->streamType],
+            maxVolumeIndexMap_[streamVolInfo->streamType], volumeLevelMap_[streamVolInfo->streamType]);
+    }
+}
+
+void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
+    std::vector<VolumePoint> &volumePoints)
+{
+    auto streamVolInfo = streamVolumeInfos_.find(streamType);
+    auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
+    volumePoints = deviceVolInfo->second->volumePoints;
+}
+
+void AudioAdapterManager::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos)
+{
+    streamVolumeInfos = streamVolumeInfos_;
+}
+
+DeviceType AudioAdapterManager::GetActiveDevice()
+{
+    return currentActiveDevice_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

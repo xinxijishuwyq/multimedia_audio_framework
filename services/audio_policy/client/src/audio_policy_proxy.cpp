@@ -1383,6 +1383,90 @@ int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
     return reply.ReadInt32();
 }
 
+bool AudioPolicyProxy::IsVolumeUnadjustable()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("IsVolumeUnadjustable: WriteInterfaceToken failed");
+        return false;
+    }
+    int32_t error = Remote()->SendRequest(IS_VOLUME_UNADJUSTABLE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("isvolumeadjustable failed, error: %d", error);
+    }
+    return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::AdjustVolumeByStep(VolumeAdjustType adjustType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: AdjustVolumeByStep WriteInterfaceToken failed");
+        return IPC_PROXY_ERR;
+    }
+
+    data.WriteInt32(adjustType);
+
+    int32_t error = Remote()->SendRequest(ADJUST_VOLUME_BY_STEP, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetAudioLatencyFromXml, error: %d", error);
+        return ERR_TRANSACTION_FAILED;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: AdjustSystemVolumeByStep WriteInterfaceToken failed");
+        return IPC_PROXY_ERR;
+    }
+    data.WriteInt32(volumeType);
+    data.WriteInt32(adjustType);
+
+    int32_t error = Remote()->SendRequest(ADJUST_SYSTEM_VOLUME_BY_STEP, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetAudioLatencyFromXml, error: %d", error);
+        return ERR_TRANSACTION_FAILED;
+    }
+
+    return reply.ReadInt32();
+}
+
+float AudioPolicyProxy::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: GetSystemVolumeInDb failed");
+        return false;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    data.WriteInt32(volumeLevel);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+
+    int32_t error = Remote()->SendRequest(GET_SYSTEM_VOLUME_IN_DB, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetSystemVolumeInDb failed, error: %d", error);
+    }
+
+    return reply.ReadFloat();
+}
+
 uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
 {
     MessageParcel data;

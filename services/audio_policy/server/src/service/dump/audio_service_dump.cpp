@@ -211,6 +211,12 @@ const std::string AudioServiceDump::GetStreamName(AudioStreamType streamType)
         case STREAM_TTS:
             name = "TTS";
             break;
+        case STREAM_ACCESSIBILITY:
+            name = "ACCESSIBILITY";
+            break;
+        case STREAM_ULTRASONIC:
+            name = "ULTRASONIC";
+            break;
         default:
             name = "UNKNOWN";
     }
@@ -352,6 +358,27 @@ const std::string AudioServiceDump::GetConnectTypeName(ConnectType connectType)
     }
     const string connectTypeName = connectName;
     return connectTypeName;
+}
+
+const std::string AudioServiceDump::GetDeviceVolumeTypeName(DeviceVolumeType deviceType)
+{
+    string device;
+    switch (deviceType) {
+        case EARPIECE_VOLUME_TYPE:
+            device = "EARPIECE";
+            break;
+        case SPEAKER_VOLUME_TYPE:
+            device = "SPEAKER";
+            break;
+        case HEADSET_VOLUME_TYPE:
+            device = "HEADSET";
+            break;
+        default:
+            device = "UNKNOWN";
+    }
+
+    const string deviceTypeName = device;
+    return deviceTypeName;
 }
 
 void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
@@ -626,6 +653,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     AudioFocusInfoDump(dumpString);
     GroupInfoDump(dumpString);
     EffectManagerInfoDump(dumpString);
+    StreamVolumeInfosDump(dumpString);
 }
 
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
@@ -881,6 +909,34 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
         }
     }
     asDump->audioData_.streamData.sourceOutputs.push_back(sourceOutputInfo);
+}
+
+void AudioServiceDump::DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos)
+{
+    AppendFormat(dumpString, "    volume points:\n");
+    for (auto it = deviceVolumeInfos.cbegin(); it != deviceVolumeInfos.cend(); ++it) {
+        AppendFormat(dumpString, "      device:%s \n", GetDeviceVolumeTypeName(it->first).c_str());
+        auto volumePoints = it->second->volumePoints;
+        for (auto it = volumePoints.cbegin(); it != volumePoints.cend(); ++it) {
+            AppendFormat(dumpString, "        [%d, %d]\n", it->index, it->dbValue);
+        }
+    }
+    AppendFormat(dumpString, "\n");
+}
+
+void AudioServiceDump::StreamVolumeInfosDump(std::string& dumpString)
+{
+    dumpString += "\nVolume config of streams:\n";
+
+    for (auto it = audioData_.policyData.streamVolumeInfos.cbegin();
+        it != audioData_.policyData.streamVolumeInfos.cend(); ++it) {
+        AppendFormat(dumpString, "  %s:  ", GetStreamName(it->first).c_str());
+        auto streamVolumeInfo = it->second;
+        AppendFormat(dumpString, "minLevel = %d  ", streamVolumeInfo->minLevel);
+        AppendFormat(dumpString, "maxLevel = %d  ", streamVolumeInfo->maxLevel);
+        AppendFormat(dumpString, "defaultLevel = %d\n", streamVolumeInfo->defaultLevel);
+        DeviceVolumeInfosDump(dumpString, streamVolumeInfo->deviceVolumeInfos);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

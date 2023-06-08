@@ -72,6 +72,17 @@ public:
 };
 #endif
 
+enum VolumeAdjustType {
+    /**
+     * Adjust volume up
+     */
+    VOLUME_ADJUST_TURN_UP = 0,
+    /**
+     * Adjust volume down
+     */
+    VOLUME_ADJUST_TURN_DOWN = 1,
+};
+
 enum DeviceFlag {
     /**
      * Device flag none.
@@ -985,6 +996,12 @@ public:
      * @since 10
      */
     virtual void OnAudioPolicyServiceDied() = 0;
+};
+
+enum DeviceVolumeType {
+    EARPIECE_VOLUME_TYPE = 0,
+    SPEAKER_VOLUME_TYPE = 1,
+    HEADSET_VOLUME_TYPE = 2,
 };
 } // namespace AudioStandard
 } // namespace OHOS

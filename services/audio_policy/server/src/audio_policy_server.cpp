@@ -42,6 +42,9 @@
 #include "audio_volume_key_event_callback_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
 
+#include "parameter.h"
+#include "parameters.h"
+
 using OHOS::Security::AccessToken::PrivacyKit;
 using namespace std;
 
@@ -77,6 +80,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     if (mPolicyService.SetAudioSessionCallback(this)) {
         AUDIO_DEBUG_LOG("AudioPolicyServer: SetAudioSessionCallback failed");
     }
+
+    volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
+    AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
@@ -180,7 +186,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
         int32_t volumeLevelInInt = GetSystemVolumeLevelForKey(streamInFocus, true);
-        if (volumeLevelInInt <= MIN_VOLUME_LEVEL) {
+        if (volumeLevelInInt <= GetMinVolumeLevel(streamInFocus)) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
@@ -191,7 +197,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 AUDIO_DEBUG_LOG("volume lower than min, trigger cb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
-                volumeEvent.volume = MIN_VOLUME_LEVEL;
+                volumeEvent.volume = GetMinVolumeLevel(streamInFocus);
                 volumeEvent.updateUi = true;
                 volumeEvent.volumeGroupId = 0;
                 volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -223,7 +229,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
         int32_t volumeLevelInInt = GetSystemVolumeLevelForKey(streamInFocus, true);
-        if (volumeLevelInInt >= MAX_VOLUME_LEVEL) {
+        if (volumeLevelInInt >= GetMaxVolumeLevel(streamInFocus)) {
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
@@ -234,7 +240,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 AUDIO_DEBUG_LOG("volume greater than max, trigger cb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
-                volumeEvent.volume = MAX_VOLUME_LEVEL;
+                volumeEvent.volume = GetMaxVolumeLevel(streamInFocus);
                 volumeEvent.updateUi = true;
                 volumeEvent.volumeGroupId = 0;
                 volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -315,6 +321,54 @@ float AudioPolicyServer::GetSingleStreamVolume(int32_t streamId)
     return mPolicyService.GetSingleStreamVolume(streamId);
 }
 
+bool AudioPolicyServer::IsVolumeUnadjustable()
+{
+    return mPolicyService.IsVolumeUnadjustable();
+}
+
+int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
+{
+    AudioStreamType streamInFocus = GetStreamInFocus();
+    if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
+        streamInFocus = AudioStreamType::STREAM_MUSIC;
+    }
+
+    int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
+    int32_t ret = ERROR;
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_UP) {
+        ret = SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt + volumeStep_, false);
+        AUDIO_INFO_LOG("AdjustVolumeByStep Up, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
+    }
+
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN) {
+        ret = SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt - volumeStep_, false);
+        AUDIO_INFO_LOG("AdjustVolumeByStep Down, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
+    }
+    return ret;
+}
+
+int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+{
+    int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
+    int32_t ret = ERROR;
+
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_UP) {
+        ret = SetSystemVolumeLevelForKey(volumeType, volumeLevelInInt + volumeStep_, false);
+        AUDIO_INFO_LOG("AdjustSystemVolumeByStep Up, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
+    }
+
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN) {
+        ret = SetSystemVolumeLevelForKey(volumeType, volumeLevelInInt - volumeStep_, false);
+        AUDIO_INFO_LOG("AdjustSystemVolumeByStep Down, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
+    }
+    return ret;
+}
+
+float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    return mPolicyService.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+}
+
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
 {
     if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
@@ -374,6 +428,10 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelForKey(AudioStreamType streamType
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevelForKey streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
         streamType, volumeLevel, isUpdateUi);
+    if (IsVolumeUnadjustable()) {
+        AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
+        return ERR_OPERATION_FAILED;
+    }
     if (streamType == STREAM_ALL) {
         for (auto audioSteamType : GET_STREAM_ALL_VOLUME_TYPES) {
             int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
@@ -1553,9 +1611,15 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.audioFocusInfoList = audioFocusInfoList_;
     GetDeviceInfo(policyData);
     GetGroupInfo(policyData);
+    GetStreamVolumeInfoMap(policyData.streamVolumeInfos);
 
     // Get Audio Effect Manager Information
     mPolicyService.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
+}
+
+void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
+{
+    mPolicyService.GetStreamVolumeInfoMap(streamVolumeInfos);
 }
 
 void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)

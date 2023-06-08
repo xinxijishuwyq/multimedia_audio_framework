@@ -28,6 +28,7 @@
 #include "audio_log.h"
 #include "nocopyable.h"
 #include "audio_effect_manager.h"
+#include "audio_volume_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,6 +83,7 @@ typedef struct {
     std::vector<GroupInfo> groupInfos;
     OriginalEffectConfig oriEffectConfig;
     std::vector<Effect> availableEffects;
+    StreamVolumeInfoMap streamVolumeInfos;
 } PolicyData;
 
 typedef struct {
@@ -124,12 +126,15 @@ private:
     void GroupInfoDump(std::string& dumpString);
     void EffectManagerInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
+    void StreamVolumeInfosDump(std::string& dumpString);
+    void DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos);
     static const std::string GetStreamName(AudioStreamType streamType);
     static const std::string GetSourceName(SourceType sourceType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);
     static const std::string GetContentTypeName(ContentType contentType);
     static const std::string GetDeviceTypeName(DeviceType deviceType);
     static const std::string GetConnectTypeName(ConnectType connectType);
+    static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
     static bool IsEndWith(const std::string &mainStr, const std::string &toMatch);
     static bool IsValidModule (const std::string moduleName);
 

@@ -85,6 +85,14 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) override;
 
+    bool IsVolumeUnadjustable() override;
+
+    int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) override;
+
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType) override;
+
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
 
@@ -235,6 +243,8 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
+
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
@@ -319,6 +329,7 @@ private:
 
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
+    int32_t volumeStep_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;

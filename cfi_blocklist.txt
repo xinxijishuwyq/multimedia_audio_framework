@@ -15,6 +15,7 @@ src:*frameworks/native/pulseaudio/modules/hdi/hdi_source.c
 src:*frameworks/native/ohaudio/OHAudioStreamBuilder.cpp
 src:*frameworks/native/ohaudio/OHAudioRenderer.cpp
 src:*frameworks/native/ohaudio/OHAudioCapturer.cpp
+src:*services/audio_policy/server/src/service/config/audio_volume_parser.cpp
 fun:*AudioFocusParser*
 fun:*AudioToneParser*
 fun:*XMLParser*
