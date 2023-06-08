@@ -112,7 +112,7 @@ AudioEffectChain::~AudioEffectChain() {}
 
 void AudioEffectChain::Dump()
 {    
-    for (AudioEffectHandle handle: applyEffHandles) {
+    for (AudioEffectHandle handle: *applyEffHandles) {
         AUDIO_INFO_LOG("Dump currEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
             handle);
     }
@@ -140,13 +140,13 @@ void ReleaseEffects(std::vector<AudioEffectLibrary*> &libHandles, std::vector<Au
 void AudioEffectChain::AddEffectHandleBegin()
 {
     if (effectIdx == 0) { // first is using in apply
-        setLibHandles = secondLibHandles;
-        setEffHandles = secondEffHandles;
+        setLibHandles = &secondLibHandles;
+        setEffHandles = &secondEffHandles;
     } else {
-        setLibHandles = firstLibHandles;
-        setEffHandles = firstEffHandles;
+        setLibHandles = &firstLibHandles;
+        setEffHandles = &firstEffHandles;
     }
-    ReleaseEffects(setLibHandles, setEffHandles);
+    ReleaseEffects(*setLibHandles, *setEffHandles);
 }
 
 template <typename T>
@@ -203,8 +203,8 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         return;
     }
 
-    setLibHandles.emplace_back(libHandle);
-    setEffHandles.emplace_back(handle);
+    setLibHandles->emplace_back(libHandle);
+    setEffHandles->emplace_back(handle);
 }
 
 void AudioEffectChain::AddEffectHandleEnd()
@@ -226,10 +226,10 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         effectIdx = 1 - effectIdx; // switch effectIdx between 0 and 1
     }
     if (effectIdx == 0) {
-        applyEffHandles = firstEffHandles;
+        applyEffHandles = &firstEffHandles;
         ReleaseEffects(secondLibHandles, secondEffHandles);
     } else {
-        applyEffHandles = secondEffHandles;
+        applyEffHandles = &secondEffHandles;
         ReleaseEffects(firstLibHandles, firstEffHandles);
     }
 
@@ -242,7 +242,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
-    for (AudioEffectHandle handle: applyEffHandles) {
+    for (AudioEffectHandle handle: *applyEffHandles) {
         if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
             audioBufOut.raw = bufOut;
@@ -278,12 +278,12 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 bool AudioEffectChain::IsEmptyEffectHandles(bool isFlip)
 {
     if (isFlip) {
-        return setEffHandles.empty();
+        return setEffHandles->empty();
     }
     if (setFlag) {
-        return setEffHandles.empty();
+        return setEffHandles->empty();
     } else {
-        return applyEffHandles.empty();
+        return applyEffHandles->empty();
     }
     return true; // in case but should not happen
 }

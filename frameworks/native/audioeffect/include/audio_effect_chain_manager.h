@@ -65,9 +65,9 @@ private:
     AudioBuffer audioBufOut;
     bool setFlag;
     uint32_t effectIdx = 0;
-    std::vector<AudioEffectHandle> &applyEffHandles = firstEffHandles;
-    std::vector<AudioEffectHandle> &setEffHandles = secondEffHandles;
-    std::vector<AudioEffectLibrary*> &setLibHandles = secondLibHandles;
+    std::vector<AudioEffectHandle> *applyEffHandles = &firstEffHandles;
+    std::vector<AudioEffectHandle> *setEffHandles = &secondEffHandles;
+    std::vector<AudioEffectLibrary*> *setLibHandles = &secondLibHandles;
 };
 
 class AudioEffectChainManager {
