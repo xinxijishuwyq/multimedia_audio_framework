@@ -192,7 +192,7 @@ public:
      * @return true/false.
      */
     virtual bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-                                          std::unordered_map<std::string, std::string> &map) = 0;
+        std::unordered_map<std::string, std::string> &map) = 0;
 
     /**
      * Set output device sink for effect chain manager.

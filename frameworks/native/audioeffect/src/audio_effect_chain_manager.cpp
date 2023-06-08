@@ -132,6 +132,7 @@ void AudioEffectChain::AddEffectHandleBegin()
         libHandles[i]->releaseEffect(standByEffectHandles[i]);
     }
     standByEffectHandles.clear();
+    libHandles.clear();
 }
 
 template <typename T>
