@@ -111,9 +111,8 @@ AudioEffectChain::AudioEffectChain(std::string scene)
 AudioEffectChain::~AudioEffectChain() {}
 
 void AudioEffectChain::Dump()
-{
-    std::vector<AudioEffectHandle> *effHandles = effectIdx == 0 ? &firstEffHandles : &secondEffHandles;
-    for (AudioEffectHandle handle: *effHandles) {
+{    
+    for (AudioEffectHandle handle: applyEffHandles) {
         AUDIO_INFO_LOG("Dump currEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
             handle);
     }
@@ -129,22 +128,25 @@ void AudioEffectChain::SetEffectMode(std::string mode)
     effectMode = mode;
 }
 
+void ReleaseEffects(std::vector<AudioEffectLibrary*> &libHandles, std::vector<AudioEffectHandle> &effHandles)
+{
+    for (uint32_t i = 0; i < libHandles.size() && i < effHandles.size(); ++i) {
+        libHandles[i]->releaseEffect(effHandles[i]);
+    }
+    libHandles.clear();
+    effHandles.clear();
+}
+
 void AudioEffectChain::AddEffectHandleBegin()
 {
-    std::vector<AudioEffectLibrary*> *libHandles;
-    std::vector<AudioEffectHandle> *effHandles;
     if (effectIdx == 0) { // first is using in apply
-        libHandles = &secondLibHandles;
-        effHandles = &secondEffHandles;
+        setLibHandles = secondLibHandles;
+        setEffHandles = secondEffHandles;
     } else {
-        libHandles = &firstLibHandles;
-        effHandles = &firstEffHandles;
+        setLibHandles = firstLibHandles;
+        setEffHandles = firstEffHandles;
     }
-    for (uint32_t i = 0; i < libHandles->size() && i < effHandles->size(); ++i) {
-        (*libHandles)[i]->releaseEffect((*effHandles)[i]);
-    }
-    libHandles->clear();
-    effHandles->clear();
+    ReleaseEffects(setLibHandles, setEffHandles);
 }
 
 template <typename T>
@@ -201,13 +203,8 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         return;
     }
 
-    if (effectIdx == 0) { // first is using in apply
-        secondLibHandles.emplace_back(libHandle);
-        secondEffHandles.emplace_back(handle);
-    } else {
-        firstLibHandles.emplace_back(libHandle);
-        firstEffHandles.emplace_back(handle);
-    }
+    setLibHandles.emplace_back(libHandle);
+    setEffHandles.emplace_back(handle);
 }
 
 void AudioEffectChain::AddEffectHandleEnd()
@@ -225,10 +222,16 @@ void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen)
 {
     if (setFlag) {
+        setFlag = false;
         effectIdx = 1 - effectIdx; // switch effectIdx between 0 and 1
     }
-    setFlag = false;
-    auto effHandles = effectIdx == 0 ? &firstEffHandles : &secondEffHandles;
+    if (effectIdx == 0) {
+        applyEffHandles = firstEffHandles;
+        ReleaseEffects(secondLibHandles, secondEffHandles);
+    } else {
+        applyEffHandles = secondEffHandles;
+        ReleaseEffects(firstLibHandles, firstEffHandles);
+    }
 
     if (IsEmptyEffectHandles(false)) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
@@ -239,7 +242,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
-    for (AudioEffectHandle handle: *effHandles) {
+    for (AudioEffectHandle handle: applyEffHandles) {
         if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
             audioBufOut.raw = bufOut;
@@ -274,13 +277,15 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 
 bool AudioEffectChain::IsEmptyEffectHandles(bool isFlip)
 {
-    std::vector<AudioEffectHandle> *effHandles;
     if (isFlip) {
-        effHandles = effectIdx == 1 ? &firstEffHandles : &secondEffHandles;
-    } else {
-        effHandles = effectIdx == 0 ? &firstEffHandles : &secondEffHandles;
+        return setEffHandles.empty();
     }
-    return effHandles->empty();
+    if (setFlag) {
+        return setEffHandles.empty();
+    } else {
+        return applyEffHandles.empty();
+    }
+    return true; // in case but should not happen
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
