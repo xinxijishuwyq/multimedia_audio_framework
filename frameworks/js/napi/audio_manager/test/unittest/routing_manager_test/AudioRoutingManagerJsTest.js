@@ -420,34 +420,32 @@ describe("AudioRoutingManagerJsTest", function () {
             done();
             return;
           }
-          expect(true).assertTrue();
-          done();
-        });
-        routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, true, (err) => {
-          console.info(`${TAG} setCommunicationDevice enter`);
-          if (err) {
-            console.error(`${TAG} setCommunicationDevice ERROR: ${err.message}`);
-            expect(false).assertTrue();
-            done();
-            return;
-          }
-          routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, (err, value) => {
-            console.info(`${TAG} isCommunicationDeviceActive return: `+ JSON.stringify(value));
+          routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, false, (err) => {
+            console.info(`${TAG} setCommunicationDevice enter`);
             if (err) {
-              console.error(`${TAG} isCommunicationDeviceActive ERROR: ${err.message}`);
+              console.error(`${TAG} setCommunicationDevice ERROR: ${err.message}`);
               expect(false).assertTrue();
               done();
               return;
             }
-            if (!value) {
-              console.error(`${TAG} isCommunicationDeviceActive reurn false`);
-              expect(false).assertTrue();
+            routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, (err, value) => {
+              console.info(`${TAG} isCommunicationDeviceActive return: `+ JSON.stringify(value));
+              if (err) {
+                console.error(`${TAG} isCommunicationDeviceActive ERROR: ${err.message}`);
+                expect(false).assertTrue();
+                done();
+                return;
+              }
+              if (value) {
+                console.error(`${TAG} isCommunicationDeviceActive reurn true`);
+                expect(false).assertTrue();
+                done();
+                return;
+              }
+              expect(true).assertTrue();
               done();
               return;
-            }
-            expect(true).assertTrue();
-            done();
-            return;
+            });
           });
         });
       });
@@ -514,36 +512,34 @@ describe("AudioRoutingManagerJsTest", function () {
             done();
             return;
           }
-          expect(true).assertTrue();
-          done();
-        });
-        routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, false, (err) => {
-          console.info(`${TAG} setCommunicationDevice enter`);
-          if (err) {
-            console.error(`${TAG} setCommunicationDevice ERROR: ${err.message}`);
-            expect(false).assertTrue();
-            done();
-            return;
-          }
-          routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, (err, value) => {
-            console.info(`${TAG} isCommunicationDeviceActive return: `+ JSON.stringify(value));
+          routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, true, (err) => {
+            console.info(`${TAG} setCommunicationDevice enter`);
             if (err) {
-              console.error(`${TAG} isCommunicationDeviceActive ERROR: ${err.message}`);
+              console.error(`${TAG} setCommunicationDevice ERROR: ${err.message}`);
               expect(false).assertTrue();
               done();
               return;
             }
-            if (!value) {
-              console.error(`${TAG} isCommunicationDeviceActive reurn false`);
-              expect(false).assertTrue();
+            routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, (err, value) => {
+              console.info(`${TAG} isCommunicationDeviceActive return: `+ JSON.stringify(value));
+              if (err) {
+                console.error(`${TAG} isCommunicationDeviceActive ERROR: ${err.message}`);
+                expect(false).assertTrue();
+                done();
+                return;
+              }
+              if (!value) {
+                console.error(`${TAG} isCommunicationDeviceActive reurn false`);
+                expect(false).assertTrue();
+                done();
+                return;
+              }
+              expect(true).assertTrue();
               done();
               return;
-            }
-            expect(true).assertTrue();
-            done();
-            return;
-          });
-        })
+            });
+          })
+        });
       });
     });
   });
