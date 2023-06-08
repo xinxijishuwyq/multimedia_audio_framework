@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,13 +21,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class FastAudioRendererSink : public IAudioRendererSink {
+class FastAudioRendererSink : public IMmapAudioRendererSink {
 public:
-    static FastAudioRendererSink *GetInstance(void);
-
-    virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame) = 0;
-    virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
+    static IMmapAudioRendererSink *GetInstance(void);
 
     FastAudioRendererSink() = default;
     ~FastAudioRendererSink() = default;

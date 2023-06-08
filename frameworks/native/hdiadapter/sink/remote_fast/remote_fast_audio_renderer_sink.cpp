@@ -121,7 +121,7 @@ private:
 };
 
 std::map<std::string, RemoteFastAudioRendererSinkInner *> allRFSinks;
-RemoteFastAudioRendererSink *RemoteFastAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
+IMmapAudioRendererSink *RemoteFastAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
     RemoteFastAudioRendererSinkInner *audioRenderer = nullptr;
@@ -178,9 +178,6 @@ void RemoteFastAudioRendererSinkInner::DeInit()
         audioRender_ = nullptr;
     }
 
-    if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
-    }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     // remove map recorder.

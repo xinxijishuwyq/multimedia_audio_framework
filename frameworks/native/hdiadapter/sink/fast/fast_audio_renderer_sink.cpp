@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -55,6 +55,7 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
 }
+
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
 public:
     int32_t Init(IAudioSinkAttr attr) override;
@@ -90,6 +91,21 @@ public:
 
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
+
+private:
+    void KeepRunningLock();
+    void KeepRunningUnlock();
+
+    int32_t PrepareMmapBuffer();
+    void ReleaseMmapBuffer();
+
+    int32_t CheckPositionTime();
+    void PreparePosition();
+
+    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    int32_t CreateRender(const struct AudioPort &renderPort);
+    int32_t InitAudioManager();
+
 private:
     IAudioSinkAttr attr_;
     bool rendererInited_;
@@ -123,19 +139,6 @@ private:
 
     int privFd_ = INVALID_FD; // invalid fd
 #endif
-
-    void KeepRunningLock();
-    void KeepRunningUnlock();
-
-    int32_t PrepareMmapBuffer();
-    void ReleaseMmapBuffer();
-
-    int32_t CheckPositionTime();
-    void PreparePosition();
-
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
-    int32_t CreateRender(const struct AudioPort &renderPort);
-    int32_t InitAudioManager();
 };
 
 FastAudioRendererSinkInner::FastAudioRendererSinkInner()
@@ -151,7 +154,7 @@ FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
     FastAudioRendererSinkInner::DeInit();
 }
 
-FastAudioRendererSink *FastAudioRendererSink::GetInstance()
+IMmapAudioRendererSink *FastAudioRendererSink::GetInstance()
 {
     static FastAudioRendererSinkInner audioRenderer;
 

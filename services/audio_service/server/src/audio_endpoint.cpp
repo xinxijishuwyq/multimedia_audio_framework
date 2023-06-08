@@ -136,9 +136,9 @@ private:
     std::vector<IAudioProcessStream *> processList_;
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
 
-    std::atomic<bool> isInited = false;
+    std::atomic<bool> isInited_ = false;
 
-    FastAudioRendererSink *fastSink_ = nullptr;
+    IMmapAudioRendererSink *fastSink_ = nullptr;
     IMmapAudioCapturerSource *fastSource_ = nullptr;
 
     LinearPosTimeModel readTimeModel_;
@@ -158,7 +158,6 @@ private:
     std::thread endpointWorkThread_;
     std::mutex loopThreadLock_;
     std::condition_variable workThreadCV_;
-    bool isThreadEnd_ = false;
     int64_t lastHandleProcessTime_ = 0;
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
@@ -202,13 +201,15 @@ void AudioEndpointInner::Release()
 {
     // Wait for thread end and then clear other data to avoid using any cleared data in thread.
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
-    if (!isInited) {
+    if (!isInited_.load()) {
         AUDIO_WARNING_LOG("already released");
         return;
     }
+
+    isInited_.store(false);
+    workThreadCV_.notify_all();
     if (endpointWorkThread_.joinable()) {
         AUDIO_INFO_LOG("AudioEndpoint join work thread start");
-        isThreadEnd_ = true;
         endpointWorkThread_.join();
         AUDIO_INFO_LOG("AudioEndpoint join work thread end");
     }
@@ -229,7 +230,6 @@ void AudioEndpointInner::Release()
         AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
     }
-    isInited = false;
 #ifdef DUMP_PROCESS_FILE
     if (dcp_) {
         fclose(dcp_);
@@ -244,7 +244,7 @@ void AudioEndpointInner::Release()
 
 AudioEndpointInner::~AudioEndpointInner()
 {
-    if (isInited) {
+    if (isInited_.load()) {
         AudioEndpointInner::Release();
     }
     AUDIO_INFO_LOG("~AudioEndpoint()");
@@ -306,8 +306,10 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
 
     endpointStatus_ = UNLINKED;
+    isInited_.store(true);
     endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
+
 #ifdef DUMP_PROCESS_FILE
     dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
     if (dump_hdi_ == nullptr) {
@@ -354,10 +356,9 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
 
     endpointStatus_ = UNLINKED;
+    isInited_.store(true);
     endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
-
-    isInited = true;
 
 #ifdef DUMP_PROCESS_FILE
     dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
@@ -1192,7 +1193,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Record endpoint work loop fuc start.");
-    while (!isThreadEnd_) {
+    while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
             continue;
         }
@@ -1235,7 +1236,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
     int32_t ret = 0;
-    while (!isThreadEnd_) {
+    while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
             continue;
         }

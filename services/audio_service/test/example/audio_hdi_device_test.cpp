@@ -151,7 +151,7 @@ public:
         return true;
     }
 private:
-    FastAudioRendererSink *hdiRenderSink_ = nullptr;
+    IMmapAudioRendererSink *hdiRenderSink_ = nullptr;
     unique_ptr<thread> timeThread_ = nullptr;
     int64_t deltaTime = 4000000; // 4ms
     bool stopThread = false;

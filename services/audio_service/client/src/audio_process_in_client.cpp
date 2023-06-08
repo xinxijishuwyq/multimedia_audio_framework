@@ -355,7 +355,6 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
 // the buffer will be used by client
 int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    AUDIO_INFO_LOG("%{public}s enter, audio mode:%{public}d", __func__, processConfig_.audioMode);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "%{public}s not inited!", __func__);
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
@@ -382,7 +381,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     CHECK_AND_BREAK_LOG(bufDesc.buffer == callbackBuffer_.get(),
         "%{public}s the buffer is not created by client.", __func__);
 
-    AUDIO_INFO_LOG("%{public}s bufDesc check end, audio mode:%{public}d", __func__, processConfig_.audioMode);
+    AUDIO_DEBUG_LOG("%{public}s bufDesc check end, audio mode %{public}d.", __func__, processConfig_.audioMode);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         BufferDesc curWriteBuffer = {nullptr, 0, 0};
         uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
@@ -411,7 +410,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
 
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
 {
-    AUDIO_INFO_LOG("SetVolume to %{public}d", vol);
+    AUDIO_INFO_LOG("SetVolume proc client mode %{public}d to %{public}d.", processConfig_.audioMode, vol);
     Trace trace("AudioProcessInClient::SetVolume");
     if (vol < 0 || vol > PROCESS_VOLUME_MAX) {
         AUDIO_ERR_LOG("SetVolume failed, invalid volume:%{public}d", vol);
@@ -534,7 +533,8 @@ int32_t AudioProcessInClientInner::Stop()
     threadStatusCV_.notify_all();
 
     streamStatus_->store(StreamStatus::STREAM_STOPPED);
-    AUDIO_INFO_LOG("Success stop form %{public}s", GetStatusInfo(oldStatus).c_str());
+    AUDIO_INFO_LOG("Success stop proc client mode %{public}d form %{public}s.",
+        processConfig_.audioMode, GetStatusInfo(oldStatus).c_str());
     return SUCCESS;
 }
 
@@ -558,7 +558,7 @@ int32_t AudioProcessInClientInner::Release()
     }
 
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
-    AUDIO_INFO_LOG("Success Released");
+    AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
     isInited_ = false;
     return SUCCESS;
 }
@@ -614,15 +614,14 @@ bool AudioProcessInClientInner::PrepareNext(uint64_t curHandPos, int64_t &wakeUp
     }
 
     int64_t nextServerHandleTime = GetPredictNextHandleTime(curHandPos) + handleModifyTime;
-    AUDIO_DEBUG_LOG("%{public}s mode %{public}d, curHandPos %{public}" PRIu64", nextServerHandleTime "
-        "%{public}" PRIu64".", __func__, processConfig_.audioMode, curHandPos, nextServerHandleTime);
     if (nextServerHandleTime < ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
     } else {
         wakeUpTime = nextServerHandleTime;
     }
-    AUDIO_INFO_LOG("%{public}s end, audioMode %{public}d, curReadPos %{public}" PRIu64", wakeUpTime "
-        "%{public}" PRIu64".", __func__, processConfig_.audioMode, curHandPos, wakeUpTime);
+    AUDIO_DEBUG_LOG("%{public}s end, audioMode %{public}d, curReadPos %{public}" PRIu64", nextServerHandleTime "
+        "%{public}" PRId64" wakeUpTime %{public}" PRId64".", __func__, processConfig_.audioMode, curHandPos,
+        nextServerHandleTime, wakeUpTime);
     return true;
 }
 
@@ -790,7 +789,7 @@ int32_t AudioProcessInClientInner::RecordPrepareCurrent(uint64_t curReadPos)
     SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
     while (!curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READING)
         && tryCount > 0) {
-        AUDIO_INFO_LOG("%{public}s unready, curReadSpan %{public}" PRIu64", curSpanStatus %{public}d, wait 2ms.",
+        AUDIO_WARNING_LOG("%{public}s unready, curReadSpan %{public}" PRIu64", curSpanStatus %{public}d, wait 2ms.",
             __func__, curReadPos, curReadSpan->spanStatus.load());
         targetStatus = SpanStatus::SPAN_WRITE_DONE;
         tryCount--;

@@ -83,16 +83,20 @@ public:
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+
 private:
-    static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
+    void AudioServerDied(pid_t pid);
+    void RegisterPolicyServerDeathRecipient();
+
+private:
+    static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t MAX_VOLUME = 15;
     static constexpr int32_t MIN_VOLUME = 0;
     static std::unordered_map<int, float> AudioStreamVolumeMap;
     static std::map<std::string, std::string> audioParameters;
-    void AudioServerDied(pid_t pid);
-    void RegisterPolicyServerDeathRecipient();
+
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::shared_ptr<AudioParameterCallback> callback_;

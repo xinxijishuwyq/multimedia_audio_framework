@@ -194,7 +194,6 @@ private:
 
 int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG(g_micPcmFile != nullptr, ERR_INVALID_HANDLE,
         "%{public}s g_micPcmFile is null.", __func__);
 
@@ -206,7 +205,6 @@ int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
 
 int32_t AudioProcessTestCallback::RenderFromFile(const BufferDesc &bufDesc)
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG(g_spkWavFile != nullptr, ERR_INVALID_HANDLE,
         "%{public}s g_spkWavFile is null.", __func__);
 
