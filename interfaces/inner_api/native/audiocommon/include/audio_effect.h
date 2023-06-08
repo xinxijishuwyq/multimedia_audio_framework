@@ -33,6 +33,9 @@ namespace AudioStandard {
 // audio effect manager info
 constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
 constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+constexpr uint32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sceneType + effectMode + deviceType
+constexpr uint32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
+constexpr uint32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
 
 struct Library {
     std::string name;
