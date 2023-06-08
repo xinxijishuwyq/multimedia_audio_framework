@@ -366,6 +366,8 @@ private:
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
+    void UpdateEffectDefaultSink(DeviceType deviceType);
+
     void LoadEffectSinks();
     
     DeviceType FindConnectedHeadset();
