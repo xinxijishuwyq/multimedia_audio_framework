@@ -28,7 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 class RemoteFastAudioCapturerSource : public IMmapAudioCapturerSource {
 public:
-    static RemoteFastAudioCapturerSource *GetInstance(const std::string& deviceNetworkId);
+    static IMmapAudioCapturerSource *GetInstance(const std::string& deviceNetworkId);
 
     int32_t Init(IAudioSourceAttr &attr) override;
     bool IsInited(void) override;

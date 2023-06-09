@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License") override;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,6 +48,14 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetInputRoute(DeviceType deviceType) override;
     uint64_t GetTransactionId() override;
+
+private:
+    explicit RemoteAudioCapturerSource(std::string deviceNetworkId);
+    ~RemoteAudioCapturerSource();
+
+    int32_t CreateCapture(struct AudioPort &capturePort);
+    int32_t InitAudioManager();
+
 private:
     static std::map<std::string, RemoteAudioCapturerSource *> allRemoteSources;
 
@@ -55,9 +63,6 @@ private:
     const uint32_t audioBufferSize = 16 * 1024;
     const uint32_t internalInputStreamId = 1;
     const uint32_t deepBufferCapturePeriodSize = 4096;
-
-    explicit RemoteAudioCapturerSource(std::string deviceNetworkId);
-    ~RemoteAudioCapturerSource();
 
     IAudioSourceAttr attr_;
     std::string deviceNetworkId_;
@@ -73,8 +78,6 @@ private:
     struct AudioCapture *audioCapture_;
     struct AudioPort audioPort;
 
-    int32_t CreateCapture(struct AudioPort &capturePort);
-    int32_t InitAudioManager();
 #ifdef DEBUG_CAPTURE_DUMP
     FILE *pfd;
 #endif // DEBUG_CAPTURE_DUMP

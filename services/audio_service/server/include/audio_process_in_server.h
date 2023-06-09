@@ -64,9 +64,12 @@ public:
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
+
 private:
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+
+private:
     AudioProcessConfig processConfig_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 
