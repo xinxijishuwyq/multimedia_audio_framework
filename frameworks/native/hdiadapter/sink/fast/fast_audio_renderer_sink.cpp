@@ -608,10 +608,10 @@ void FastAudioRendererSinkInner::KeepRunningLock()
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
-    int32_t timeOut = -1;
     if (mKeepRunningLock != nullptr) {
         AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock lock");
-        mKeepRunningLock->Lock(timeOut); // -1 for lasting.
+        int32_t timeOut = -1; // -1 for lasting.
+        mKeepRunningLock->Lock(timeOut);
     } else {
         AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
     }
