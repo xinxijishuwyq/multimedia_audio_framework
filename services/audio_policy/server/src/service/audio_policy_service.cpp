@@ -814,12 +814,6 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
     }
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string sinkName = GetPortName(deviceType);
-    bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
-    CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -1061,6 +1055,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
     }
 
+    UpdateEffectDefaultSink(deviceType);
     result = audioPolicyManager_.SelectDevice(deviceRole, deviceType, portName);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
     audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -1129,6 +1124,7 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
     std::string portName = GetPortName(deviceType);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
 
+    UpdateEffectDefaultSink(deviceType);
     int32_t result = audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
     audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -1709,6 +1705,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
                     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
                     IOHandles_[moduleInfo.name] = ioHandle;
                     std::string portName = GetPortName(deviceType);
+                    UpdateEffectDefaultSink(deviceType);
                     audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
                     audioPolicyManager_.SuspendAudioDevice(portName, false);
 
@@ -1936,6 +1933,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                 IOHandles_[moduleInfo.name] = ioHandle;
                 auto devType = GetDeviceType(moduleInfo.name);
                 if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
+                    UpdateEffectDefaultSink(devType);
                     result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
                     if (result != SUCCESS) {
                         AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
@@ -1992,6 +1990,15 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
         return;
     }
     gsp->SetAudioBalanceValue(audioBalance);
+}
+
+void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string sinkName = GetPortName(deviceType);
+    bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
+    CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
 }
 
 void AudioPolicyService::LoadEffectSinks()
@@ -2404,6 +2411,7 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
         auto moduleInfoList = fileClass->second;
         for (auto &moduleInfo : moduleInfoList) {
             if (module == moduleInfo.name) {
+                UpdateEffectDefaultSink(deviceType);
                 moduleInfo.channels = to_string(channelCount);
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
                 IOHandles_[moduleInfo.name] = ioHandle;

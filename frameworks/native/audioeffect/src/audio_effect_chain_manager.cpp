@@ -104,15 +104,31 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig.outputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
     ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
+    setFlag = false;
+    effectIdx = 0;
+    setLibHandles = &secondLibHandles;
+    setEffHandles = &secondEffHandles;
+    applyEffHandles = &firstEffHandles;
 }
 
 AudioEffectChain::~AudioEffectChain() {}
 
-void AudioEffectChain::Dump()
+void AudioEffectChain::Dump(bool isApply)
 {
-    for (AudioEffectHandle handle: standByEffectHandles) {
-        AUDIO_INFO_LOG("Dump standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
-            handle);
+    if (isApply) {
+        AUDIO_INFO_LOG("Dump applyEffectHandles for [%{public}s], chain size is %{public}zu", sceneType.c_str(),
+            applyEffHandles->size());
+        for (AudioEffectHandle handle: *applyEffHandles) {
+            AUDIO_INFO_LOG("Dump applyEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
+                handle);
+        }
+    } else {
+        AUDIO_INFO_LOG("Dump setEffectHandles for [%{public}s], chain size is %{public}zu", sceneType.c_str(),
+            setEffHandles->size());
+        for (AudioEffectHandle handle: *setEffHandles) {
+            AUDIO_INFO_LOG("Dump setEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
+                handle);
+        }
     }
 }
 
@@ -126,13 +142,25 @@ void AudioEffectChain::SetEffectMode(std::string mode)
     effectMode = mode;
 }
 
+void ReleaseEffects(std::vector<AudioEffectLibrary*> &libHandles, std::vector<AudioEffectHandle> &effHandles)
+{
+    for (uint32_t i = 0; i < libHandles.size() && i < effHandles.size(); ++i) {
+        libHandles[i]->releaseEffect(effHandles[i]);
+    }
+    libHandles.clear();
+    effHandles.clear();
+}
+
 void AudioEffectChain::AddEffectHandleBegin()
 {
-    for (uint32_t i = 0; i < standByEffectHandles.size() && i < libHandles.size(); ++i) {
-        libHandles[i]->releaseEffect(standByEffectHandles[i]);
+    if (effectIdx == 0) { // first is using in apply
+        setLibHandles = &secondLibHandles;
+        setEffHandles = &secondEffHandles;
+    } else {
+        setLibHandles = &firstLibHandles;
+        setEffHandles = &firstEffHandles;
     }
-    standByEffectHandles.clear();
-    libHandles.clear();
+    ReleaseEffects(*setLibHandles, *setEffHandles);
 }
 
 template <typename T>
@@ -188,13 +216,14 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
             sceneType.c_str(), effectMode.c_str());
         return;
     }
-    standByEffectHandles.emplace_back(handle);
-    libHandles.emplace_back(libHandle);
+
+    setLibHandles->emplace_back(libHandle);
+    setEffHandles->emplace_back(handle);
 }
 
 void AudioEffectChain::AddEffectHandleEnd()
 {
-    // used for crossfading in the near future
+    setFlag = true;
 }
 
 void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
@@ -206,7 +235,19 @@ void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen)
 {
-    if (IsEmptyEffectHandles()) {
+    if (setFlag) {
+        setFlag = false;
+        effectIdx = 1 - effectIdx; // switch effectIdx between 0 and 1
+    }
+    if (effectIdx == 0) {
+        applyEffHandles = &firstEffHandles;
+        ReleaseEffects(secondLibHandles, secondEffHandles);
+    } else {
+        applyEffHandles = &secondEffHandles;
+        ReleaseEffects(firstLibHandles, firstEffHandles);
+    }
+
+    if (IsEmptyEffectHandles(false)) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
         return;
     }
@@ -215,7 +256,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
-    for (AudioEffectHandle handle: standByEffectHandles) {
+    for (AudioEffectHandle handle: *applyEffHandles) {
         if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
             audioBufOut.raw = bufOut;
@@ -248,9 +289,17 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
     }
 }
 
-bool AudioEffectChain::IsEmptyEffectHandles()
+bool AudioEffectChain::IsEmptyEffectHandles(bool isFlip)
 {
-    return standByEffectHandles.empty();
+    if (isFlip) {
+        return setEffHandles->empty();
+    }
+    if (setFlag) {
+        return setEffHandles->empty();
+    } else {
+        return applyEffHandles->empty();
+    }
+    return true; // in case but should not happen
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
@@ -274,12 +323,17 @@ int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, std::string effe
     }
     if (!libEntry->audioEffectLibHandle) {
         AUDIO_ERR_LOG("AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr",
-                      effect.c_str(), libName.c_str());
+            effect.c_str(), libName.c_str());
         return ERROR;
     }
     if (!libEntry->audioEffectLibHandle->createEffect) {
         AUDIO_ERR_LOG("CreateEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
-                      effect.c_str(), libName.c_str());
+            effect.c_str(), libName.c_str());
+        return ERROR;
+    }
+    if (!libEntry->audioEffectLibHandle->releaseEffect) {
+        AUDIO_ERR_LOG("ReleaseEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
+            effect.c_str(), libName.c_str());
         return ERROR;
     }
     return SUCCESS;
@@ -459,7 +513,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     }
     audioEffectChain->AddEffectHandleEnd();
 
-    if (audioEffectChain->IsEmptyEffectHandles()) {
+    audioEffectChain->Dump(false);
+    if (effectChain != effectNone && audioEffectChain->IsEmptyEffectHandles(true)) {
         AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
     }
     
@@ -474,7 +529,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
     // if the effectChain exist, see if it is empty
     auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
-    return !audioEffectChain->IsEmptyEffectHandles();
+    return !audioEffectChain->IsEmptyEffectHandles(false);
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
@@ -491,12 +546,12 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
     return SUCCESS;
 }
 
-void AudioEffectChainManager::Dump()
+void AudioEffectChainManager::Dump(bool isApply)
 {
     AUDIO_INFO_LOG("<-------- AudioEffectChainManager::Dump START -------->");
     for (auto item = SceneTypeToEffectChainMap.begin(); item != SceneTypeToEffectChainMap.end(); ++item) {
         AudioEffectChain *audioEffectChain = item->second;
-        audioEffectChain->Dump();
+        audioEffectChain->Dump(isApply);
     }
     AUDIO_INFO_LOG("<-------- AudioEffectChainManager::Dump END -------->");
 }
