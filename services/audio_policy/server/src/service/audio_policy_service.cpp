@@ -1053,9 +1053,9 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
         int32_t muteDuration = 500000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
+        UpdateEffectDefaultSink(deviceType);
     }
 
-    UpdateEffectDefaultSink(deviceType);
     result = audioPolicyManager_.SelectDevice(deviceRole, deviceType, portName);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
     audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -1994,11 +1994,23 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string sinkName = GetPortName(deviceType);
-    bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
-    CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
+   switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+            const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+            CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+            std::string sinkName = GetPortName(deviceType);
+            bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
+            CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");       
+        }
+        default:
+            break;
+    }
 }
 
 void AudioPolicyService::LoadEffectSinks()
