@@ -51,23 +51,16 @@ public:
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
-    bool IsEmptyEffectHandles(bool isFlip);
-    void Dump(bool isApply);
+    bool IsEmptyEffectHandles();
+    void Dump();
 private:
     std::string sceneType;
     std::string effectMode;
-    std::vector<AudioEffectLibrary*> firstLibHandles;
-    std::vector<AudioEffectLibrary*> secondLibHandles;
-    std::vector<AudioEffectHandle> firstEffHandles;
-    std::vector<AudioEffectHandle> secondEffHandles;
+    std::vector<AudioEffectHandle> standByEffectHandles;
+    std::vector<AudioEffectLibrary*> libHandles;
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
-    bool setFlag;
-    uint32_t effectIdx = 0;
-    std::vector<AudioEffectLibrary*> *setLibHandles;
-    std::vector<AudioEffectHandle> *setEffHandles;
-    std::vector<AudioEffectHandle> *applyEffHandles;
 };
 
 class AudioEffectChainManager {
@@ -87,7 +80,7 @@ public:
     std::string GetDeviceTypeName();
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
-    void Dump(bool isApply);
+    void Dump();
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;
     std::map<std::string, std::string> EffectToLibraryNameMap;
