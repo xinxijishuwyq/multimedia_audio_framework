@@ -1994,7 +1994,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
-   switch (deviceType) {
+    switch (deviceType) {
         case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
@@ -2006,7 +2006,7 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
             CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
             std::string sinkName = GetPortName(deviceType);
             bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
-            CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");       
+            CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
         }
         default:
             break;
