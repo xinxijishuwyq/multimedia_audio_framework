@@ -18,11 +18,11 @@ import("//foundation/multimedia/audio_framework/ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-histreamer_ext_dir = "//foundation/multimedia/histreamer_ext"
 
 group("audio_effect_library_packages") {
   deps = []
   if ("${product_name}" == "m40" && target_cpu == "arm64") {
+    histreamer_ext_dir = "//foundation/multimedia/histreamer_ext"
     deps += [ "$histreamer_ext_dir/audio_effect:audio_effect_library", ]
   }
 }
