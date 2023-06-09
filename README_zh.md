@@ -375,7 +375,6 @@ void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
 ```
 
 2. (可选) 静态接口 **RegisterBluetoothScoAgListener**(), **UnregisterBluetoothScoAgListener**(), 可用于注册蓝牙SCO的侦听器。
-
 ## 支持设备<a name="section645572311287_008"></a>
 以下是音频子系统支持的设备类型列表。
 
@@ -387,7 +386,6 @@ void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
     蓝牙A2DP（高级音频分配模式）耳机，用于无线传输音频。
 4. **Internal Speaker and MIC**\
     支持内置扬声器和麦克风，并将分别用作播放和录制的默认设备。
-
 
 ## 相关仓<a name="section340mcpsimp"></a>
 
