@@ -171,7 +171,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         return;
     }
     // Set param
-    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) + 
+    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
         NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
