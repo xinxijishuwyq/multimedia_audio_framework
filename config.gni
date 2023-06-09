@@ -35,5 +35,11 @@ audio_fwk_path = "//foundation/multimedia/audio_framework"
 drivers_audio_path = "//drivers/peripheral/audio"
 daudio_path = "//foundation/distributedhardware/distributed_audio"
 third_party_path = "//third_party"
+histreamer_ext_dir = "//foundation/multimedia/histreamer_ext"
 
 fwk_native_hdiadapter_path = "${audio_fwk_path}/frameworks/native/hdiadapter"
+if ("${product_name}" == "m40") {
+  close_source_flag = true
+} else {
+  close_source_flag = false
+}
