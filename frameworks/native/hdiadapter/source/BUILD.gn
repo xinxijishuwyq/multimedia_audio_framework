@@ -51,7 +51,7 @@ ohos_shared_library("fast_audio_capturer_source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "fast/fast_audio_capturer_source.cpp" ]
@@ -60,14 +60,12 @@ ohos_shared_library("fast_audio_capturer_source") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//drivers/peripheral/audio/interfaces/include",
+    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_fwk_path}/frameworks/native/audioutils/include",
+    "${audio_fwk_path}/frameworks/native/hdiadapter/source/common",
   ]
 
-  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
-  deps += [ multimedia_audio_framework_hdi_audio_client ]
+  deps = [ "${audio_fwk_path}/frameworks/native/audioutils:audio_utils" ]
 
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
