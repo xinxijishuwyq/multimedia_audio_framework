@@ -42,21 +42,9 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
         <volumecurve deviceClass="speaker">
-            <point idx="1"   decibel="-5500"/>
-            <point idx="6"   decibel="-5000"/>
-            <point idx="13"  decibel="-4600"/>
-            <point idx="20"  decibel="-4200"/>
-            <point idx="26"  decibel="-3800"/>
-            <point idx="33"  decibel="-3400"/>
-            <point idx="40"  decibel="-3000"/>
-            <point idx="46"  decibel="-2600"/>
-            <point idx="53"  decibel="-2200"/>
-            <point idx="60"  decibel="-1800"/>
-            <point idx="66"  decibel="-1500"/>
-            <point idx="73"  decibel="-1200"/>
-            <point idx="80"  decibel="-900"/>
-            <point idx="86"  decibel="-600"/>
-            <point idx="93"  decibel="-300"/>
+            <point idx="0"   decibel="-2700"/>
+            <point idx="33"  decibel="-1800"/>
+            <point idx="66"  decibel="-900"/>
             <point idx="100" decibel="-0"/>
         </volumecurve>
         <volumecurve deviceClass="headset">

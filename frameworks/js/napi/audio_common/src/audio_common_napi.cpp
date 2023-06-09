@@ -254,8 +254,8 @@ bool AudioCommonNapi::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
 {
     bool result = false;
     switch (adjustType) {
-        case VolumeAdjustType::VOLUME_ADJUST_TURN_UP:
-        case VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN:
+        case VolumeAdjustType::VOLUME_ADJUST_UP:
+        case VolumeAdjustType::VOLUME_ADJUST_DOWN:
             result = true;
             break;
         default:
