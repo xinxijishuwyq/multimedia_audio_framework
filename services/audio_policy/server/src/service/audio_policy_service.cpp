@@ -2062,7 +2062,14 @@ void AudioPolicyService::LoadEffectSinks()
     IOHandles_[moduleInfo.name] = ioHandle;
 
     moduleInfo.lib = "libmodule-effect-sink.z.so";
-    moduleInfo.rate = "48000";
+    char device[50] = {0};
+    int ret = GetParameter("const.build.product", " ", device, sizeof(device));
+    std::string deviceString(device);
+    if (ret > 0 && deviceString.compare("default") == 0) {
+        moduleInfo.rate = "44100";
+    } else {
+        moduleInfo.rate = "48000";
+    }
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
         AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());

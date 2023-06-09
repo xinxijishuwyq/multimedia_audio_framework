@@ -108,6 +108,7 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
     ContentType contentType, StreamUsage streamUsage)
 {
     int i;
+    int sceneFlag = 0;
     AudioStreamType streamType =  AudioStream::GetStreamType(contentType, streamUsage);
     std::string effectScene = AudioServiceClient::GetEffectSceneName(streamType);
     SupportedEffectConfig supportedEffectConfig;
@@ -117,8 +118,15 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
         for (i = 0; i < streamNum; i++) {
             if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
                 UpdateEffectInfoArray(supportedEffectConfig, audioSceneEffectInfo, i);
+                sceneFlag = 1;
                 break;
             }
+        }
+        if (sceneFlag == 0) {
+            AudioEffectMode audioEffectMode = effectModeMap.at("EFFECT_NONE");
+            audioSceneEffectInfo.mode.push_back(audioEffectMode);
+            audioEffectMode = effectModeMap.at("EFFECT_DEFAULT");
+            audioSceneEffectInfo.mode.push_back(audioEffectMode);
         }
     }
     return ret;

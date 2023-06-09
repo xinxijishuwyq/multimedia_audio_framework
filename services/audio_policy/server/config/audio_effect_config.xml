@@ -15,21 +15,15 @@
 -->
 <audio_effects_conf version="1.0">
     <libraries>
-        <library name="histen" path="libhistenprocessing.z.so"/>
-        <library name="hvs" path="libhvsprocessing.z.so"/>
+        <library name="histen" path="libaudio_integration.z.so"/>
     </libraries>
 
     <effects>
         <effect name="histen" library="histen"/>
-        <effect name="hvs" library="hvs"/>
     </effects>
 
     <effectChains>
         <effectChain name="EFFECTCHAIN_SPK_MUSIC">
-            <apply effect="histen"/>
-        </effectChain>
-        <effectChain name="EFFECTCHAIN_HEADSET_MUSIC">
-            <apply effect="hvs"/>
             <apply effect="histen"/>
         </effectChain>
     </effectChains>
@@ -40,13 +34,31 @@
     <postProcess>
         <stream scene="SCENE_MUSIC">
             <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_WIRED_HEADSET" effectChain="EFFECTCHAIN_HEADSET_MUSIC"/>
                 <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
             </streamEffectMode>
         </stream>
         <stream scene="SCENE_MOVIE">
                 <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_WIRED_HEADSET" effectChain="EFFECTCHAIN_HEADSET_MUSIC"/>
+                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            </streamEffectMode>    
+        </stream>
+        <stream scene="SCENE_GAME">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            </streamEffectMode>    
+        </stream>
+        <stream scene="SCENE_SPEECH">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            </streamEffectMode>    
+        </stream>
+        <stream scene="SCENE_RING">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+            </streamEffectMode>    
+        </stream>
+        <stream scene="SCENE_OTHERS">
+                <streamEffectMode mode="EFFECT_DEFAULT">
                 <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
             </streamEffectMode>    
         </stream>

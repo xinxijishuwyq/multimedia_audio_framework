@@ -253,8 +253,6 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    MoveEffectSinkInputsToSink(name);
-
     return SUCCESS;
 }
 
@@ -358,16 +356,6 @@ std::vector<uint32_t> PulseAudioServiceAdapterImpl::GetTargetSinks(std::string a
     return targetSinkIds;
 }
 
-bool IsValidSceneType(std::string sceneType)
-{
-    for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++it) {
-        if (it->second == sceneType) {
-            return true;
-        }
-    }
-    return false;
-}
-
 int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 {
     std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
@@ -382,10 +370,6 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
         if (std::find(remoteSinks.begin(), remoteSinks.end(), sink) != remoteSinks.end()) {
             AUDIO_INFO_LOG("[SetLocalDefaultSink] sink-input[%{public}d] connects with remote device[%{public}d]",
                 sinkInput.paStreamId, sinkInput.deviceSinkId);
-            continue;
-        }
-        // the sink inputs connected to effect sink remain the same
-        if (IsValidSceneType(sinkInput.sinkName)) {
             continue;
         }
         // move the remaining sink inputs to the default sink
@@ -787,16 +771,6 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
     }
 
     return stream;
-}
-
-void PulseAudioServiceAdapterImpl::MoveEffectSinkInputsToSink(std::string name)
-{
-    std::vector<SinkInput> allSinkInputs = GetAllSinkInputs();
-    // move all sink inputs to new sink
-    for (auto sinkInput : allSinkInputs) {
-        uint32_t invalidSinkId = PA_INVALID_INDEX;
-        MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
-    }
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +24,7 @@
 #include <pulsecore/log.h>
 #include <pulsecore/namereg.h>
 
+#include "audio_effect_chain_adapter.h"
 #include "audio_log.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
@@ -44,6 +45,14 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
+static pa_hook_result_t MoveSinkInputIntoSink(pa_sink_input *si, pa_sink *sink)
+{
+    if (si->sink != sink) {
+        pa_sink_input_move_to(si, sink, false);
+    }
+    return PA_HOOK_OK;
+}
+
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {
     pa_sink *effectSink;
@@ -52,27 +61,32 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
 
-    // check default/none
-    if (pa_safe_streq(sceneMode, "EFFECT_NONE")) {
-        pa_sink_input_move_to(si, c->default_sink, false); //if bypass move to hdi sink
-        return PA_HOOK_OK;
-    }
-
-    if (pa_safe_streq(c->default_sink->name, "Bt_Speaker")) {
-        pa_sink_input_move_to(si, c->default_sink, false); //if bluetooth activated
-        return PA_HOOK_OK;
+    bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
+    // if EFFECT_NONE mode or effect chain does not exist
+    if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
+        return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
     }
 
     effectSink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
         // classify sinkinput to default sink
-        pa_sink_input_move_to(si, c->default_sink, false);
+        MoveSinkInputIntoSink(si, c->default_sink);
     } else {
         // classify sinkinput to effect sink
-        pa_sink_input_move_to(si, effectSink, false);
+        MoveSinkInputIntoSink(si, effectSink);
     }
 
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t DefaultSinkChangedCb(pa_core *c, pa_sink *s, struct userdata *u)
+{
+    uint32_t idx;
+    pa_sink_input *si;
+    PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
+        SinkInputProplistChangedCb(c, si, u);
+    }
     return PA_HOOK_OK;
 }
 
@@ -101,8 +115,10 @@ int pa__init(pa_module *m)
     u->core = m->core;
     u->module = m;
     
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED],
-                           PA_HOOK_LATE, (pa_hook_cb_t) SinkInputProplistChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)SinkInputProplistChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_DEFAULT_SINK_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)DefaultSinkChangedCb, u);
 
     pa_modargs_free(ma);
 

@@ -496,7 +496,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 }
 
 bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-                                                 std::unordered_map<std::string, std::string> &map)
+    std::unordered_map<std::string, std::string> &map)
 {
     int32_t error;
 
