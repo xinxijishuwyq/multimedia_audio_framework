@@ -335,12 +335,12 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
     int32_t ret = ERROR;
-    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_UP) {
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_UP) {
         ret = SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt + volumeStep_, false);
         AUDIO_INFO_LOG("AdjustVolumeByStep Up, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
     }
 
-    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN) {
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_DOWN) {
         ret = SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt - volumeStep_, false);
         AUDIO_INFO_LOG("AdjustVolumeByStep Down, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
     }
@@ -352,12 +352,12 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
     int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
     int32_t ret = ERROR;
 
-    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_UP) {
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_UP) {
         ret = SetSystemVolumeLevelForKey(volumeType, volumeLevelInInt + volumeStep_, false);
         AUDIO_INFO_LOG("AdjustSystemVolumeByStep Up, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
     }
 
-    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN) {
+    if (adjustType == VolumeAdjustType::VOLUME_ADJUST_DOWN) {
         ret = SetSystemVolumeLevelForKey(volumeType, volumeLevelInInt - volumeStep_, false);
         AUDIO_INFO_LOG("AdjustSystemVolumeByStep Down, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
     }
