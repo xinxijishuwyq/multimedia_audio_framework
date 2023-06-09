@@ -52,11 +52,7 @@ public:
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles(bool isFlip);
-<<<<<<< HEAD
     void Dump(bool isApply);
-=======
-    void Dump();
->>>>>>> df832c0321b0c8f701166ac5512f2122c61fe8dd
 private:
     std::string sceneType;
     std::string effectMode;
@@ -69,15 +65,9 @@ private:
     AudioBuffer audioBufOut;
     bool setFlag;
     uint32_t effectIdx = 0;
-<<<<<<< HEAD
     std::vector<AudioEffectLibrary*> *setLibHandles;
     std::vector<AudioEffectHandle> *setEffHandles;
     std::vector<AudioEffectHandle> *applyEffHandles;
-=======
-    std::vector<AudioEffectHandle> *applyEffHandles = &firstEffHandles;
-    std::vector<AudioEffectHandle> *setEffHandles = &secondEffHandles;
-    std::vector<AudioEffectLibrary*> *setLibHandles = &secondLibHandles;
->>>>>>> df832c0321b0c8f701166ac5512f2122c61fe8dd
 };
 
 class AudioEffectChainManager {
