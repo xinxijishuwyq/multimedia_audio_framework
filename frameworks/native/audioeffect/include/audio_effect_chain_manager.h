@@ -90,6 +90,7 @@ private:
     uint32_t frameLen = DEFAULT_FRAMELEN;
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     std::string deviceSink = DEFAULT_DEVICE_SINK;
+    bool isInitialized = false;
 };
 
 }  // namespace AudioStandard
