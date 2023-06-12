@@ -174,7 +174,11 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
     DeviceInfo deviceInfo;
     if (config.audioMode == AUDIO_MODE_RECORD) {
         deviceInfo.deviceId = 1;
-        deviceInfo.networkId = "remote_mmap_dmic";
+        if (config.isRemote) {
+            deviceInfo.networkId = "remote_mmap_dmic";
+        } else {
+            deviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
         deviceInfo.deviceRole = INPUT_DEVICE;
         deviceInfo.deviceType = DEVICE_TYPE_MIC;
     } else {

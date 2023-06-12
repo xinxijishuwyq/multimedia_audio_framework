@@ -41,7 +41,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;

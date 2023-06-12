@@ -35,13 +35,16 @@
               "ability_manager",
               "appexecfwk_base",
               "ace_napi",
+              "drivers_interface_audio",
+              "eventhandler",
+              "hiviewdfx_hilog_native",
               "ipc_single",
               "libhilog",
               "native_dataability",
               "native_rdb",
+              "power_manager",
               "samgr_proxy",
-              "system_ability_fwk",
-              "eventhandler"
+              "system_ability_fwk"
             ],
             "third_party": [
               "libsnd",
