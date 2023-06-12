@@ -37,30 +37,5 @@
                 <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
             </streamEffectMode>
         </stream>
-        <stream scene="SCENE_MOVIE">
-                <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamEffectMode>    
-        </stream>
-        <stream scene="SCENE_GAME">
-                <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamEffectMode>    
-        </stream>
-        <stream scene="SCENE_SPEECH">
-                <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamEffectMode>    
-        </stream>
-        <stream scene="SCENE_RING">
-                <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamEffectMode>    
-        </stream>
-        <stream scene="SCENE_OTHERS">
-                <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-            </streamEffectMode>    
-        </stream>
     </postProcess>
 </audio_effects_conf>
