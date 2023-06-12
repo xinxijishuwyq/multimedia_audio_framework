@@ -356,7 +356,7 @@ DeviceType AudioEffectChainManager::GetDeviceType()
 
 std::string AudioEffectChainManager::GetDeviceTypeName()
 {
-    std::string name = SUPPORTED_DEVICE_TYPE.find(DEVICE_TYPE_INVALID)->second;
+    std::string name = "";
     auto device = SUPPORTED_DEVICE_TYPE.find(deviceType);
     if (device != SUPPORTED_DEVICE_TYPE.end()) {
         name = device->second;
@@ -501,6 +501,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
 {
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
     CHECK_AND_RETURN_RET_LOG(effectMode != "", false, "null effectMode");
+    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
     if (!isInitialized) {
         AUDIO_INFO_LOG("AudioEffectChainManager has not been initialized");
         return false;
@@ -512,6 +513,8 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
     // if the effectChain exist, see if it is empty
     auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+    CHECK_AND_RETURN_RET_LOG(audioEffectChain != nullptr, false, "null SceneTypeToEffectChainMap[%{public}s]",
+        sceneType.c_str());
     return !audioEffectChain->IsEmptyEffectHandles();
 }
 
