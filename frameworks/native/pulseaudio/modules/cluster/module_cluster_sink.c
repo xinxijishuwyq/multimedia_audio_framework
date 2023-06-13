@@ -76,7 +76,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
         MoveSinkInputIntoSink(si, c->default_sink);
     } else {
         // classify sinkinput to effect sink
-        if (!EffectChainManagerSetFlag(sceneType, true)) {
+        if (EffectChainManagerSetFlag(sceneType, true) != 0) { // setFlag fail
             MoveSinkInputIntoSink(si, c->default_sink);
         } else {
             MoveSinkInputIntoSink(si, effectSink);
