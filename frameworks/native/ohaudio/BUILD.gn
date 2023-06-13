@@ -61,6 +61,8 @@ ohos_shared_library("ohaudio") {
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
+  innerapi_tags = [ "ndk" ]
+
   output_name = "ohaudio"
   output_extension = "so"
   subsystem_name = "multimedia"

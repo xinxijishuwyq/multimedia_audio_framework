@@ -131,7 +131,6 @@
             "//foundation/multimedia/audio_framework/test:audio_module_test",
             "//foundation/multimedia/audio_framework/test:audio_fuzz_test",
             "//foundation/multimedia/audio_framework/test:audio_benchmark_test",
-            "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:oh_audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
