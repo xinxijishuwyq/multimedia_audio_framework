@@ -89,6 +89,17 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
     return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
 }
 
+int32_t EffectChainManagerSetFlag(const char *sceneType, bool effectFlag)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
+    return audioEffectChainManager->SetFlagAudioEffectChain(sceneTypeString, effectFlag);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -104,6 +115,7 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig.outputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
     ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
+    effectFlag = false;
 }
 
 AudioEffectChain::~AudioEffectChain() {}
@@ -215,7 +227,7 @@ void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen)
 {
-    if (IsEmptyEffectHandles()) {
+    if (!effectFlag || IsEmptyEffectHandles()) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
         return;
     }
@@ -255,6 +267,11 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
         ioBufferConfig.outputCfg.samplingRate = samplingRate;
         ioBufferConfig.outputCfg.channels = channels;
     }
+}
+
+void AudioEffectChain::SetEffectFlag(bool flag)
+{
+    effectFlag = flag;
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -499,13 +516,13 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 
 bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
 {
-    CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
-    CHECK_AND_RETURN_RET_LOG(effectMode != "", false, "null effectMode");
-    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
     if (!isInitialized) {
         AUDIO_INFO_LOG("AudioEffectChainManager has not been initialized");
         return false;
     }
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
+    CHECK_AND_RETURN_RET_LOG(effectMode != "", false, "null effectMode");
+    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");    
 
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap.count(effectChainKey)) {
@@ -516,6 +533,23 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     CHECK_AND_RETURN_RET_LOG(audioEffectChain != nullptr, false, "null SceneTypeToEffectChainMap[%{public}s]",
         sceneType.c_str());
     return !audioEffectChain->IsEmptyEffectHandles();
+}
+
+int32_t AudioEffectChainManager::SetFlagAudioEffectChain(std::string sceneType, bool effectFlag)
+{
+    if (!isInitialized) {
+        AUDIO_INFO_LOG("AudioEffectChainManager has not been initialized");
+        return ERROR;
+    }
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", ERROR, "null deviceType");
+
+    // if the effectChain exist, see if it is empty
+    auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+    CHECK_AND_RETURN_RET_LOG(audioEffectChain != nullptr, ERROR, "null SceneTypeToEffectChainMap[%{public}s]",
+        sceneType.c_str());
+    audioEffectChain->SetEffectFlag(effectFlag);
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)

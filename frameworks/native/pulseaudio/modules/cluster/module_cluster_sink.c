@@ -64,6 +64,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
     if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
+        EffectChainManagerSetFlag(sceneType, false);
         return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
     }
 
@@ -71,10 +72,15 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
         // classify sinkinput to default sink
+        EffectChainManagerSetFlag(sceneType, false);
         MoveSinkInputIntoSink(si, c->default_sink);
     } else {
         // classify sinkinput to effect sink
-        MoveSinkInputIntoSink(si, effectSink);
+        if (!EffectChainManagerSetFlag(sceneType, true)) {
+            MoveSinkInputIntoSink(si, c->default_sink);
+        } else {
+            MoveSinkInputIntoSink(si, effectSink);
+        }
     }
 
     return PA_HOOK_OK;

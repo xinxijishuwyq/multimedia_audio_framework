@@ -51,6 +51,7 @@ public:
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
+    void SetEffectFlag(bool flag);
     bool IsEmptyEffectHandles();
     void Dump();
 private:
@@ -61,6 +62,7 @@ private:
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
+    bool effectFlag;
 };
 
 class AudioEffectChainManager {
@@ -74,6 +76,7 @@ public:
     int32_t CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
     bool ExistAudioEffectChain(std::string sceneType, std::string effectMode);
+    int32_t SetFlagAudioEffectChain(std::string sceneType, bool effectFlag);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
     DeviceType GetDeviceType();
