@@ -43,7 +43,6 @@ class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance()
     {
-        AUDIO_INFO_LOG("Enter AudioPolicyManager::GetInstance");
         static AudioPolicyManager policyManager;
         return policyManager;
     }
