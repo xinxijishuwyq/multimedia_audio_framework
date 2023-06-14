@@ -327,6 +327,7 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
 
 void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 {
+    Trace trace("PAStreamUnderFlow");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamUnderFlowCb: userdata is null");
         return;
