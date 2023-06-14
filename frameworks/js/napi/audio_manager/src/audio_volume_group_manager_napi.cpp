@@ -54,7 +54,6 @@ struct AudioVolumeGroupManagerAsyncContext {
     bool isMute;
     bool isActive;
     bool isTrue;
-    bool isVolumeUnadjustable;
     double volumeInDb;
     std::string key;
     std::string valueStr;
@@ -267,21 +266,6 @@ static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
         HiLog::Error(LABEL, "ERROR: AudioManagerAsyncContext* is Null!");
-    }
-}
-
-static void GetVolumeUnadjustableAsyncCallbackComplete(napi_env env, napi_status status, void *data)
-{
-    auto asyncContext = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-    napi_value valueParam = nullptr;
-
-    if (asyncContext != nullptr) {
-        if (!asyncContext->status) {
-            napi_get_boolean(env, asyncContext->isVolumeUnadjustable, &valueParam);
-        }
-        CommonCallbackRoutine(env, asyncContext, valueParam);
-    } else {
-        HiLog::Error(LABEL, "ERROR: AudioVolumeGroupManagerAsyncContext* is Null!");
     }
 }
 
@@ -1111,49 +1095,20 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
 napi_value AudioVolumeGroupManagerNapi::IsVolumeUnadjustable(napi_env env, napi_callback_info info)
 {
     napi_status status;
-    const int32_t refCount = 1;
     napi_value result = nullptr;
+    void* native = nullptr;
 
     GET_PARAMS(env, info, ARGS_ONE);
-
-    unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
-    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
-    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+    NAPI_ASSERT(env, argc <= ARGS_ONE, "requires 1 parameters maximum");
+    status = napi_unwrap(env, thisVar, &native);
+    auto* audioVolumeGroupManagerNapi = reinterpret_cast<AudioVolumeGroupManagerNapi*>(native);
+    if (status != napi_ok || audioVolumeGroupManagerNapi == nullptr) {
         AUDIO_ERR_LOG("IsVolumeUnadjustable unwrap failure!");
         return nullptr;
     }
 
-    if (argc > PARAM0) {
-        napi_valuetype valueType = napi_undefined;
-        napi_typeof(env, argv[PARAM0], &valueType);
-        if (valueType == napi_function) {
-            napi_create_reference(env, argv[PARAM0], refCount, &asyncContext->callbackRef);
-        }
-    }
-
-    if (asyncContext->callbackRef == nullptr) {
-        napi_create_promise(env, &asyncContext->deferred, &result);
-    } else {
-        napi_get_undefined(env, &result);
-    }
-
-    napi_value resource = nullptr;
-    napi_create_string_utf8(env, "IsVolumeUnadjustable", NAPI_AUTO_LENGTH, &resource);
-
-    status = napi_create_async_work(
-        env, nullptr, resource,
-        [](napi_env env, void *data) {
-            auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-            context->isVolumeUnadjustable = context->objectInfo->audioGroupMngr_->IsVolumeUnadjustable();
-            context->status = SUCCESS;
-        },
-        GetVolumeUnadjustableAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
-    if (status != napi_ok) {
-        result = nullptr;
-    } else {
-        NAPI_CALL(env, napi_queue_async_work(env, asyncContext->work));
-        asyncContext.release();
-    }
+    bool isVolumeUnadjustable = audioVolumeGroupManagerNapi->audioGroupMngr_->IsVolumeUnadjustable();
+    napi_get_boolean(env, isVolumeUnadjustable, &result);
 
     AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi: IsVolumeUnadjustable is successful");
     return result;
