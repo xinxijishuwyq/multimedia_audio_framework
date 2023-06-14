@@ -1535,7 +1535,7 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
         clientTokenId = IPCSkeleton::GetCallingTokenID();
     }
 
-    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, MICROPHONE_PERMISSION);
     if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
         return false;
@@ -2128,12 +2128,20 @@ bool AudioPolicyServer::IsAudioRendererLowLatencySupported(const AudioStreamInfo
 
 int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfos: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
     AUDIO_INFO_LOG("SetSystemSoundUri:: key: %{public}s, uri: %{public}s", key.c_str(), uri.c_str());
     return mPolicyService.SetSystemSoundUri(key, uri);
 }
 
 std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("GetVolumeGroupInfos: No system permission");
+        return "";
+    }
     AUDIO_INFO_LOG("GetSystemSoundUri:: key: %{public}s", key.c_str());
     return mPolicyService.GetSystemSoundUri(key);
 }
