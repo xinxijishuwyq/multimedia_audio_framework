@@ -86,6 +86,7 @@ private:
     bool ConnectToPulseAudio();
     std::string GetNameByStreamType(AudioStreamType streamType);
     AudioStreamType GetIdByStreamType(std::string streamType);
+    void UpdateClusterModule();
 
     static constexpr uint32_t PA_CONNECT_RETRY_SLEEP_IN_MICRO_SECONDS = 500000;
     pa_context *mContext = NULL;
@@ -95,6 +96,7 @@ private:
     std::mutex mMutex;
     bool isSetDefaultSink_ = false;
     bool isSetDefaultSource_ = false;
+    int32_t swapFlag = 0;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

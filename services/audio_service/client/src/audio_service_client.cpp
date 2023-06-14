@@ -2818,6 +2818,7 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
     pa_stream_flush(paStream, NULL, NULL);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
+
     pa_threaded_mainloop_unlock(mainLoop);
 
     return AUDIO_CLIENT_SUCCESS;

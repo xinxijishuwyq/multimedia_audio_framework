@@ -107,6 +107,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
     pa_proplist *proplist = pa_proplist_new();
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "com.ohos.pulseaudio.service");
+    pa_proplist_sets(proplist, "device.swap", "0");
     mContext = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(mMainLoop), nullptr, proplist);
     pa_proplist_free(proplist);
 
@@ -124,6 +125,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
         }
     }
 
+    swapFlag = 0;
     return true;
 
 Fail:
@@ -252,6 +254,8 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     isSetDefaultSink_ = true;
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
+    
+    UpdateClusterModule();
 
     return SUCCESS;
 }
@@ -1247,6 +1251,38 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
         default:
             break;
     }
+}
+
+void PulseAudioServiceAdapterImpl::UpdateClusterModule()
+{
+    unique_ptr<UserData> userData = make_unique<UserData>();
+    userData->thiz = this;
+
+    lock_guard<mutex> lock(mMutex);
+
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("UpdateClusterModule mContext is nullptr");
+        return;
+    }
+
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    swapFlag = 1 - swapFlag;
+    pa_proplist *proplist = pa_proplist_new();
+    pa_proplist_sets(proplist, "device.swap", std::to_string(swapFlag).c_str());
+    pa_operation *operation = pa_context_proplist_update(mContext, PA_UPDATE_REPLACE, proplist, nullptr, nullptr);
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("UpdateClusterModule pa_context_proplist_update returned nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return;
+    }
+
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
 }
 } // namespace AudioStandard
 } // namespace OHOS

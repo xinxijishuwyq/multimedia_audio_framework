@@ -35,9 +35,8 @@ typedef struct BufferAttr {
 int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerGetFrameLen();
-int32_t EffectChainManagerGetDeviceType();
-int32_t EffectChainManagerSetFlag(const char *sceneType, bool effectFlag);
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode);
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode, uint32_t product);
+bool EffectChainManagerInitialized();
 
 #ifdef __cplusplus
 }
