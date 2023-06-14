@@ -91,6 +91,7 @@ void RemoteFastAudioCapturerSource::DeInit()
         if (routeHandle_ != -1) {
             audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
         }
+        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;

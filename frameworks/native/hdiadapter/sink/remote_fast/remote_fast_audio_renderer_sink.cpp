@@ -178,6 +178,9 @@ void RemoteFastAudioRendererSinkInner::DeInit()
         audioRender_ = nullptr;
     }
 
+    if ((audioManager_ != nullptr) && (audioAdapter_ != nullptr)) {
+        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+    }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     // remove map recorder.
