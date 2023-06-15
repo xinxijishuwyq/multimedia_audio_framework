@@ -146,6 +146,7 @@ private:
     };
 
     const std::vector<AudioStreamType> streamTypeList_ = {
+        // all volume types except STREAM_ALL
         STREAM_MUSIC,
         STREAM_RING,
         STREAM_VOICE_CALL,
@@ -155,6 +156,13 @@ private:
         STREAM_ULTRASONIC
     };
 
+    const std::vector<DeviceType> deviceList_ = {
+        // The three devices represent the three volume groups(build-in, wireless, wired).
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_WIRED_HEADSET
+    };
+
     AudioAdapterManager()
         : ringerMode_(RINGER_MODE_NORMAL),
           audioPolicyKvStore_(nullptr)
@@ -162,9 +170,7 @@ private:
         InitVolumeMapIndex();
     }
 
-    bool ConnectToPulseAudio(void);
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
-    std::string GetStreamNameByStreamType(DeviceType deviceType, AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
@@ -172,6 +178,7 @@ private:
     bool LoadVolumeMap(void);
     void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
+    std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
@@ -179,7 +186,7 @@ private:
     bool LoadMuteStatusMap(void);
     bool LoadMuteStatusFromKvStore(DeviceType deviceType, AudioStreamType streamType);
     void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
-    std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
+    std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     int32_t WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri);
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
     void InitVolumeMapIndex();
@@ -224,13 +231,6 @@ private:
     bool testModeOn_ {false};
     float getSystemVolumeInDb_;
     bool useNonlinearAlgo_;
-
-    std::vector<DeviceType> deviceList_ = {
-        DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_WIRED_HEADSET
-    };
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
