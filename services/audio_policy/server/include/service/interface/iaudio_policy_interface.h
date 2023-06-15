@@ -96,6 +96,8 @@ public:
     virtual float GetMinStreamVolume() const = 0;
 
     virtual float GetMaxStreamVolume() const = 0;
+    
+    virtual int32_t UpdateSwapDeviceStatus() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

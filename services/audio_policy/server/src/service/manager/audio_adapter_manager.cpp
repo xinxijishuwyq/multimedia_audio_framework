@@ -1131,5 +1131,14 @@ float AudioAdapterManager::GetMaxStreamVolume() const
 {
     return MAX_STREAM_VOLUME;
 }
+
+int32_t AudioAdapterManager::UpdateSwapDeviceStatus()
+{
+    if (!audioServiceAdapter_) {
+        AUDIO_ERR_LOG("UpdateSwapDeviceStatus audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+    return audioServiceAdapter_->UpdateSwapDeviceStatus();
+}
 } // namespace AudioStandard
 } // namespace OHOS

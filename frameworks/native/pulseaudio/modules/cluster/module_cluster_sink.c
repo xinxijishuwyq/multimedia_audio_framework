@@ -33,18 +33,15 @@ PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_LOAD_ONCE(false);
 PA_MODULE_USAGE(
         "sink_name=<name of sink> "
-        "device_type=<product> "
 );
 
 struct userdata {
     pa_core *core;
     pa_module *module;
-    uint32_t product;
 };
 
 static const char * const VALID_MODARGS[] = {
     "sink_name",
-    "device_type",
     NULL
 };
 
@@ -64,7 +61,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
 
-    bool existFlag = EffectChainManagerExist(sceneType, sceneMode, u->product);
+    bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
     if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
         return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
@@ -83,21 +80,8 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t DefaultSinkChangedCb(pa_core *c, pa_sink *s, struct userdata *u)
-{    
-    uint32_t idx;
-    pa_sink_input *si;
-    PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
-        SinkInputProplistChangedCb(c, si, u);
-    }
-    return PA_HOOK_OK;
-}
-
 static pa_hook_result_t ClientProplistChangedCb(pa_core *c, pa_client *client, struct userdata *u)
 {
-    if (!EffectChainManagerInitialized()) {
-        return PA_HOOK_OK;
-    }
     const char *name = pa_proplist_gets(client->proplist, "application.name");
     if (!pa_safe_streq(name, "PulseAudio Service")) {
         return PA_HOOK_OK;
@@ -131,21 +115,12 @@ int pa__init(pa_module *m)
         return InitFail(m, ma);
     }
 
-    uint32_t product;
-    if (pa_modargs_get_value_u32(ma, "device_type", &product) < 0) {
-        pa_log("Failed to parse product type");
-        return InitFail(m, ma);
-    }
-
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;
     u->module = m;
-    u->product = product;
     
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputProplistChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_DEFAULT_SINK_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)DefaultSinkChangedCb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_CLIENT_PROPLIST_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)ClientProplistChangedCb, u);
 

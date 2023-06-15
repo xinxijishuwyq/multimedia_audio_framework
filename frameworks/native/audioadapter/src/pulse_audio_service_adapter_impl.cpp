@@ -103,11 +103,12 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
         pa_context_set_subscribe_callback(mContext, nullptr, nullptr);
         pa_context_unref(mContext);
     }
-
+	
+	swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "com.ohos.pulseaudio.service");
-    pa_proplist_sets(proplist, "device.swap", "0");
+    pa_proplist_sets(proplist, "device.swap.status", "0");
     mContext = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(mMainLoop), nullptr, proplist);
     pa_proplist_free(proplist);
 
@@ -125,7 +126,6 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
         }
     }
 
-    swapFlag = 0;
     return true;
 
 Fail:
@@ -254,8 +254,6 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
     isSetDefaultSink_ = true;
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
-    
-    UpdateClusterModule();
 
     return SUCCESS;
 }
@@ -1253,36 +1251,28 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
     }
 }
 
-void PulseAudioServiceAdapterImpl::UpdateClusterModule()
+int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
 {
-    unique_ptr<UserData> userData = make_unique<UserData>();
-    userData->thiz = this;
-
-    lock_guard<mutex> lock(mMutex);
-
     if (mContext == nullptr) {
         AUDIO_ERR_LOG("UpdateClusterModule mContext is nullptr");
-        return;
+        return ERROR;
     }
-
     pa_threaded_mainloop_lock(mMainLoop);
 
-    swapFlag = 1 - swapFlag;
+    swapStatus = 1 - swapStatus;
     pa_proplist *proplist = pa_proplist_new();
-    pa_proplist_sets(proplist, "device.swap", std::to_string(swapFlag).c_str());
+    pa_proplist_sets(proplist, "device.swap.status", std::to_string(swapStatus).c_str());
     pa_operation *operation = pa_context_proplist_update(mContext, PA_UPDATE_REPLACE, proplist, nullptr, nullptr);
     if (operation == nullptr) {
         AUDIO_ERR_LOG("UpdateClusterModule pa_context_proplist_update returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
-        return;
+        return ERROR;
     }
 
-    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mMainLoop);
-    }
-
+    AUDIO_INFO_LOG("audio_effect_chain, finish operation");
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

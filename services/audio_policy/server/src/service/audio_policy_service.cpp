@@ -814,6 +814,7 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
     }
+	UpdateEffectDefaultSink(deviceType);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -1053,7 +1054,6 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
         int32_t muteDuration = 500000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
-        UpdateEffectDefaultSink(deviceType);
     }
 
     result = audioPolicyManager_.SelectDevice(deviceRole, deviceType, portName);
@@ -1124,7 +1124,6 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
     std::string portName = GetPortName(deviceType);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
 
-    UpdateEffectDefaultSink(deviceType);
     int32_t result = audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
     audioPolicyManager_.SuspendAudioDevice(portName, false);
@@ -1640,15 +1639,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
     }
 
-    if (GetDeviceRole(currentActiveDevice_) == OUTPUT_DEVICE) {
-        AudioIOHandle ioHandle = GetAudioIOHandle(currentActiveDevice_);
-        std::string portName = GetPortName(currentActiveDevice_);
-        CHECK_AND_RETURN_LOG(portName != PORT_NONE, "Invalid port %{public}s", portName.c_str());
-        UpdateEffectDefaultSink(currentActiveDevice_);
-        int32_t ret = audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveDevice_, portName, true);
-        CHECK_AND_RETURN_LOG(portName != PORT_NONE, "SetDeviceActive failed %{public}d", ret);
-    }
-
     OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     UpdateTrackerDeviceChange(deviceChangeDescriptor);
@@ -1714,7 +1704,6 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
                     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
                     IOHandles_[moduleInfo.name] = ioHandle;
                     std::string portName = GetPortName(deviceType);
-                    UpdateEffectDefaultSink(deviceType);
                     audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
                     audioPolicyManager_.SuspendAudioDevice(portName, false);
 
@@ -1942,7 +1931,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                 IOHandles_[moduleInfo.name] = ioHandle;
                 auto devType = GetDeviceType(moduleInfo.name);
                 if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
-                    UpdateEffectDefaultSink(devType);
                     result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
                     if (result != SUCCESS) {
                         AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
@@ -2003,6 +1991,12 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
+    char device[50] = {0};
+    int ret = GetParameter("const.build.product", " ", device, sizeof(device));
+    std::string deviceString(device);
+    if (ret > 0 && deviceString.compare("default") == 0 && deviceType == DEVICE_TYPE_WIRED_HEADSET) {
+        deviceType = DEVICE_TYPE_SPEAKER;
+    }
     switch (deviceType) {
         case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
@@ -2016,6 +2010,8 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
             std::string sinkName = GetPortName(deviceType);
             bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
             CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
+            int res = audioPolicyManager_.UpdateSwapDeviceStatus();
+            CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
         }
         default:
             break;
@@ -2024,24 +2020,18 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 
 void AudioPolicyService::LoadEffectSinks()
 {
-    char device[50] = {0};
-    int ret = GetParameter("const.build.product", " ", device, sizeof(device));
-    std::string deviceString(device);
-
     // Create sink for each effect
     AudioModuleInfo moduleInfo = {};
     moduleInfo.lib = "libmodule-cluster-sink.z.so";
     moduleInfo.name = "CLUSTER";
-    if (ret > 0 && deviceString.compare("default") == 0) {
-        moduleInfo.deviceType = "0";
-    } else {
-        moduleInfo.deviceType = "1";
-    }
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
     IOHandles_[moduleInfo.name] = ioHandle;
 
     moduleInfo.lib = "libmodule-effect-sink.z.so";
+    char device[50] = {0};
+    int ret = GetParameter("const.build.product", " ", device, sizeof(device));
+    std::string deviceString(device);
     if (ret > 0 && deviceString.compare("default") == 0) {
         moduleInfo.rate = "44100";
     } else {
@@ -2438,7 +2428,6 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
         auto moduleInfoList = fileClass->second;
         for (auto &moduleInfo : moduleInfoList) {
             if (module == moduleInfo.name) {
-                UpdateEffectDefaultSink(deviceType);
                 moduleInfo.channels = to_string(channelCount);
                 AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
                 IOHandles_[moduleInfo.name] = ioHandle;

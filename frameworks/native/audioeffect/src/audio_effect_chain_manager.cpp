@@ -67,7 +67,7 @@ int32_t EffectChainManagerGetFrameLen()
     return audioEffectChainManager->GetFrameLen();
 }
 
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode, uint32_t product)
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
@@ -79,14 +79,7 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode, uint
     if (effectMode) {
         effectModeString = effectMode;
     }
-    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString, product);
-}
-
-bool EffectChainManagerInitialized()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    return audioEffectChainManager->GetIsInitialied();
+    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
 }
 
 namespace OHOS {
@@ -110,10 +103,12 @@ AudioEffectChain::~AudioEffectChain() {}
 
 void AudioEffectChain::Dump()
 {
+    reloadMutex.lock();
     for (AudioEffectHandle handle: standByEffectHandles) {
         AUDIO_INFO_LOG("Dump standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
             handle);
     }
+    reloadMutex.unlock();
 }
 
 std::string AudioEffectChain::GetEffectMode()
@@ -126,8 +121,9 @@ void AudioEffectChain::SetEffectMode(std::string mode)
     effectMode = mode;
 }
 
-void AudioEffectChain::ReleaseEffectHandles()
+void AudioEffectChain::AddEffectHandleBegin()
 {
+    reloadMutex.lock();
     for (uint32_t i = 0; i < standByEffectHandles.size() && i < libHandles.size(); ++i) {
         if (!libHandles[i]) {
             continue;
@@ -201,6 +197,11 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     libHandles.emplace_back(libHandle);
 }
 
+void AudioEffectChain::AddEffectHandleEnd()
+{
+    reloadMutex.unlock();
+}
+
 void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 {
     for (uint32_t i = 0; i < totalLen; ++i) {
@@ -219,6 +220,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
+    reloadMutex.lock();
     for (AudioEffectHandle handle: standByEffectHandles) {
         if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
@@ -235,6 +237,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         }
         count++;
     }
+    reloadMutex.unlock();
 
     if (count % FACTOR_TWO == 0) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
@@ -254,7 +257,10 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 
 bool AudioEffectChain::IsEmptyEffectHandles()
 {
-    return standByEffectHandles.empty();
+    reloadMutex.lock();
+    bool ret = standByEffectHandles.empty();
+    reloadMutex.unlock();
+    return ret;
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
@@ -307,15 +313,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     isInitialized = false;
 }
 
-AudioEffectChainManager::~AudioEffectChainManager()
-{
-    for (auto it = SceneTypeToEffectChainMap.begin(); it != SceneTypeToEffectChainMap.end(); ++it) {
-        if (!it->second) {
-            continue;
-        }
-        it->second->ReleaseEffectHandles();
-    }
-}
+AudioEffectChainManager::~AudioEffectChainManager() {}
 
 AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 {
@@ -327,13 +325,36 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
 {
     deviceType = (DeviceType)device;
     deviceSink = sinkName;
+
+    if (!isInitialized) {
+        AUDIO_INFO_LOG("AudioEffectChainManager has not beed initialized yet");
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("Set deviceType to [%{public}d] and corresponding sink is [%{public}s]", device, sinkName.c_str());
+
+    std::string sceneType;
+    for (auto scene = AUDIO_SUPPORTED_SCENE_TYPES.begin(); scene != AUDIO_SUPPORTED_SCENE_TYPES.end();
+        ++scene) {
+        sceneType = scene->second;
+        if (!SceneTypeToEffectChainMap.count(sceneType)) {
+            AUDIO_ERR_LOG("Set effect chain for [%{public}s] but it does not exist", sceneType.c_str());
+            continue;
+        }
+        AUDIO_INFO_LOG("Set effect chain for scene name %{public}s", sceneType.c_str());
+        auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
+        if (SetAudioEffectChain(sceneType, audioEffectChain->GetEffectMode()) != SUCCESS) {
+            AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
+            continue;
+        }
+    }
+    Dump();
     return SUCCESS;
 }
 
 std::string AudioEffectChainManager::GetDeviceTypeName()
 {
     std::string name = "";
-    auto device = SUPPORTED_DEVICE_TYPE.find(DEVICE_TYPE_SPEAKER); // this version only supports speaker
+    auto device = SUPPORTED_DEVICE_TYPE.find(deviceType);
     if (device != SUPPORTED_DEVICE_TYPE.end()) {
         name = device->second;
     }
@@ -454,7 +475,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 
     int ret;
     audioEffectChain->SetEffectMode(effectMode);
-    audioEffectChain->ReleaseEffectHandles();
+    audioEffectChain->AddEffectHandleBegin();
     for (std::string effect: EffectChainToEffectsMap[effectChain]) {
         AudioEffectHandle handle = nullptr;
         AudioEffectDescriptor descriptor;
@@ -466,7 +487,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
             continue;
         }
         audioEffectChain->AddEffectHandle(handle, EffectToLibraryEntryMap[effect]->audioEffectLibHandle);
-    }    
+    }
+    audioEffectChain->AddEffectHandleEnd();
 
     if (audioEffectChain->IsEmptyEffectHandles()) {
         AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
@@ -475,26 +497,20 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     return SUCCESS;
 }
 
-bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode, uint32_t product)
+bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
 {
     CHECK_AND_RETURN_RET_LOG(isInitialized, ERROR, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
-    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");    
-
-    if (product == 0 && deviceType != DEVICE_TYPE_SPEAKER && deviceType != DEVICE_TYPE_WIRED_HEADSET) {
+    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
+    if (!isInitialized) {
+        AUDIO_INFO_LOG("AudioEffectChainManager has not been initialized");
         return false;
     }
 
-    if (product == 1 && deviceType != DEVICE_TYPE_SPEAKER) {
-        return false;
-    }
-
-    // if the effectchain does not exist
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap.count(effectChainKey)) {
         return false;
     }
-
     // if the effectChain exist, see if it is empty
     auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
     CHECK_AND_RETURN_RET_LOG(audioEffectChain != nullptr, false, "null SceneTypeToEffectChainMap[%{public}s]",
@@ -514,11 +530,6 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen);
     
     return SUCCESS;
-}
-
-bool AudioEffectChainManager::GetIsInitialied()
-{
-    return isInitialized;
 }
 
 void AudioEffectChainManager::Dump()
