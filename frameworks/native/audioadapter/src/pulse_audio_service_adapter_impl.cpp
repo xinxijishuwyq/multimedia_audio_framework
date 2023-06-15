@@ -516,77 +516,6 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
     return streamSet;
 }
 
-
-int32_t PulseAudioServiceAdapterImpl::SetMute(AudioStreamType streamType, bool mute)
-{
-    lock_guard<mutex> lock(mMutex);
-
-    unique_ptr<UserData> userData = make_unique<UserData>();
-    userData->thiz = this;
-    userData->mute = mute;
-    userData->streamType = streamType;
-
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] SetMute mContext is nullptr");
-        return ERROR;
-    }
-    pa_threaded_mainloop_lock(mMainLoop);
-
-    pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
-        PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteCb, reinterpret_cast<void*>(userData.get()));
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_get_sink_input_info_list returned nullptr");
-        pa_threaded_mainloop_unlock(mMainLoop);
-        return ERROR;
-    }
-
-    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mMainLoop);
-    }
-
-    pa_operation_unref(operation);
-    pa_threaded_mainloop_unlock(mMainLoop);
-
-    return SUCCESS;
-}
-
-bool PulseAudioServiceAdapterImpl::IsMute(AudioStreamType streamType)
-{
-    lock_guard<mutex> lock(mMutex);
-    if (!isSetDefaultSink_) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsMute not SetDefaultSink first");
-        return false;
-    }
-    unique_ptr<UserData> userData = make_unique<UserData>();
-    userData->thiz = this;
-    userData->streamType = streamType;
-    userData->mute = false;
-
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsMute mContext is nullptr");
-        return false;
-    }
-
-    pa_threaded_mainloop_lock(mMainLoop);
-
-    pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
-        PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteStatusCb, reinterpret_cast<void*>(userData.get()));
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] pa_context_get_sink_input_info_list returned nullptr");
-        pa_threaded_mainloop_unlock(mMainLoop);
-        return false;
-    }
-
-    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mMainLoop);
-    }
-
-    pa_operation_unref(operation);
-    pa_threaded_mainloop_unlock(mMainLoop);
-
-    return (userData->mute) ? true : false;
-}
-
 bool PulseAudioServiceAdapterImpl::IsStreamActive(AudioStreamType streamType)
 {
     lock_guard<mutex> lock(mMutex);
@@ -773,82 +702,6 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
     return stream;
 }
 
-void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteStatusCb(pa_context *c, const pa_sink_input_info *i, int eol,
-    void *userdata)
-{
-    UserData *userData = reinterpret_cast<UserData*>(userdata);
-    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
-
-    if (eol < 0) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
-        return;
-    }
-
-    if (eol) {
-        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
-        return;
-    }
-
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Proplist for sink input (%{public}d).", i->index);
-        return;
-    }
-
-    const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
-    if (streamtype == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType.");
-        return;
-    }
-
-    string streamType(streamtype);
-    if (!streamType.compare(thiz->GetNameByStreamType(userData->streamType))) {
-        userData->mute = i->mute;
-        AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] Mute : %{public}d for stream : %{public}s",
-            userData->mute, i->name);
-    }
-
-    return;
-}
-
-void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoMuteCb(pa_context *c, const pa_sink_input_info *i,
-    int eol, void *userdata)
-{
-    UserData *userData = reinterpret_cast<UserData*>(userdata);
-    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
-
-    if (eol < 0) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
-        return;
-    }
-
-    if (eol) {
-        pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
-        return;
-    }
-
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Proplist for sink input (%{public}d).", i->index);
-        return;
-    }
-
-    const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
-    if (streamtype == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType.");
-        return;
-    }
-
-    string streamType(streamtype);
-    if (!streamType.compare(thiz->GetNameByStreamType(userData->streamType))) {
-        pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, (userData->mute) ? 1 : 0, nullptr, nullptr));
-        AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] Applied Mute : %{public}d for stream : %{public}s",
-            userData->mute, i->name);
-    }
-
-    return;
-}
-
 void PulseAudioServiceAdapterImpl::PaMoveSinkInputCb(pa_context *c, int success, void *userdata)
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
@@ -985,25 +838,22 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     string streamType(streamtype);
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
-    AudioStreamType streamID = thiz->GetIdByStreamType(streamType);
-    std::pair<float, bool> volumeDbCbPair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
-    float volumeDbCb = volumeDbCbPair.first;
-    bool muteStatus = volumeDbCbPair.second;
+    AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamType);
+    float volumeDbCb = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamtype);
     float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
 
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
-    if (streamID == userData->streamType || userData->isSubscribingCb) {
-        pa_operation_unref(pa_context_set_sink_input_mute(c, i->index, muteStatus ? 1 : 0, nullptr, nullptr));
+    if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
-    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"
-        ", volumeDbCb %{public}f, muteStatus %{public}d", vol, uid, volumeFactor, volumeDbCb, muteStatus);
+    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"\
+        ", volumeDbCb %{public}f", vol, uid, volumeFactor, volumeDbCb);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamID, "VOLUME", vol,
+        "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamTypeID, "VOLUME", vol,
         "SYSVOLUME", volumeDbCb, "VOLUMEFACTOR", volumeFactor, "POWERVOLUMEFACTOR", powerVolumeFactor);
 }
 

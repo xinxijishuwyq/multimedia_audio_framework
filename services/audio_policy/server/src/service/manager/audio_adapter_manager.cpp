@@ -123,7 +123,7 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 void AudioAdapterManager::SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel)
 {
     if (streamType == STREAM_MUSIC) {
-        int ret = SetParameter("persist.multimedia.audio.mediavolume", std::to_string(volumeLevel).c_str());
+        int32_t ret = SetParameter("persist.multimedia.audio.mediavolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
             AUDIO_INFO_LOG("Save media volume for boot success %{public}d", volumeLevel);
         } else {
@@ -134,7 +134,8 @@ void AudioAdapterManager::SaveMediaVolumeToLocal(AudioStreamType streamType, int
 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevel %{public}d", volumeLevel);
+    AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
+        streamType, currentActiveDevice_, volumeLevel);
     if (volumeLevel < GetMinVolumeLevel(streamType) || volumeLevel > GetMaxVolumeLevel(streamType)) {
         AUDIO_ERR_LOG("volumeLevel not in scope.");
         return ERR_OPERATION_FAILED;
@@ -148,23 +149,11 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         return SUCCESS;
     }
 
-    if (!audioServiceAdapter_) {
-        AUDIO_ERR_LOG("SetSystemVolumeLevel audio adapter null");
-        return ERR_OPERATION_FAILED;
-    }
-
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
         bool isFirstBoot = false;
         InitAudioPolicyKvStore(isFirstBoot);
     }
-
-    // Save volume in local prop for bootanimation
-    SaveMediaVolumeToLocal(streamType, volumeLevel);
-
-    UpdateRingerModeForVolume(streamType, volumeLevel);
-
-    UpdateMuteStatusForVolume(streamType, volumeLevel);
 
     if (volumeLevel != 0 || isFromVolumeKey) {
         // If volume == 0, we just need to set mute and don't need to wirte volume data to KVStore.
@@ -173,16 +162,12 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         volumeLevelMap_[streamForVolumeMap] = volumeLevel;
         WriteVolumeToKvStore(currentActiveDevice_, streamType, volumeLevel);
     }
-    float volumeDb;
-    if (useNonlinearAlgo_) {
-        volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
-    } else {
-        volumeDb = CalculateVolumeDb(volumeLevel);
-    }
 
-    AUDIO_INFO_LOG("SetSystemVolumeLevel for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
-        streamType, currentActiveDevice_, volumeLevel);
-    return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
+    UpdateRingerModeForVolume(streamType, volumeLevel);
+
+    UpdateMuteStatusForVolume(streamType, volumeLevel);
+
+    return SetVolumeDb(streamType);
 }
 
 void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel)
@@ -202,12 +187,39 @@ void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, 
 
 void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel)
 {
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+
     //The mute status is automatically updated based on the stream volume
     if (volumeLevel > 0 && GetStreamMute(streamType)) {
-        SetStreamMute(streamType, false);
+        muteStatusMap_[streamForVolumeMap] = false;
+        WriteMuteStatusToKvStore(currentActiveDevice_, streamType, false);
     } else if (volumeLevel == 0 && !GetStreamMute(streamType)) {
-        SetStreamMute(streamType, true);
+        muteStatusMap_[streamForVolumeMap] = true;
+        WriteMuteStatusToKvStore(currentActiveDevice_, streamType, true);
     }
+}
+
+int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
+{
+    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
+    int32_t volumeLevel = volumeLevelMap_[streamForVolumeMap] * (muteStatusMap_[streamForVolumeMap] ? 0 : 1);
+
+    // Save volume in local prop for bootanimation
+    SaveMediaVolumeToLocal(streamType, volumeLevel);
+
+    float volumeDb = 1.0f;
+    if (useNonlinearAlgo_) {
+        volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_, volumeLevel);
+    } else {
+        volumeDb = CalculateVolumeDb(volumeLevel);
+    }
+
+    if (!audioServiceAdapter_) {
+        AUDIO_ERR_LOG("SetSystemVolumeLevel audio adapter null");
+        return ERR_OPERATION_FAILED;
+    }
+    AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
+    return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
 }
 
 int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey)
@@ -230,6 +242,7 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
+    AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d, mute %{public}d", streamType, mute);
     if (mute &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
@@ -237,19 +250,19 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
     }
-    if (!audioServiceAdapter_) {
-        AUDIO_ERR_LOG("SetStreamMute: audio adapter null");
-        return ERR_OPERATION_FAILED;
-    }
+
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     muteStatusMap_[streamForVolumeMap] = mute;
     WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
-    int32_t result =  audioServiceAdapter_->SetMute(streamType, mute);
-    if (result == SUCCESS && !mute && volumeLevelMap_[streamForVolumeMap] == 0) {
+
+    if (!mute && volumeLevelMap_[streamForVolumeMap] == 0) {
         AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d is unmuted, but the volume is 0. Set to 1.", streamType);
-        SetSystemVolumeLevel(streamType, 1);
+        volumeLevelMap_[streamForVolumeMap] = 1;
+        WriteVolumeToKvStore(currentActiveDevice_, streamType, 1);
     }
-    return result;
+
+    // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
+    return SetVolumeDb(streamType);
 }
 
 int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute)
@@ -263,10 +276,6 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 {
-    if (!audioServiceAdapter_) {
-        AUDIO_ERR_LOG("GetStreamMute audio adapter null");
-        return false;
-    }
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     return muteStatusMap_[streamForVolumeMap];
 }
@@ -394,16 +403,13 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     currentActiveDevice_ = deviceType;
     LoadVolumeMap();
     LoadMuteStatusMap();
-    std::unordered_map<AudioStreamType, bool> muteStatusMapForNewDevice = muteStatusMap_;
 
     auto iter = streamTypeList_.begin();
     while (iter != streamTypeList_.end()) {
-        // update volume level for every stream type
-        SetSystemVolumeLevel(*iter, volumeLevelMap_[*iter]);
-        // update mute status for every stream type
-        SetStreamMute(*iter, muteStatusMapForNewDevice[*iter]);
+        // update volume level and mute status for each stream type
+        SetVolumeDb(*iter);
         AUDIO_INFO_LOG("SetVolumeForSwitchDevice: volume: %{public}d, mute: %{public}d for stream type %{public}d",
-            volumeLevelMap_[*iter], muteStatusMapForNewDevice[*iter], *iter);
+            volumeLevelMap_[*iter], muteStatusMap_[*iter], *iter);
         iter++;
     }
 }
@@ -1222,8 +1228,8 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     AUDIO_INFO_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
     AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
-    int minVolIndex = GetMinVolumeLevel(streamAlias);
-    int maxVolIndex = GetMaxVolumeLevel(streamAlias);
+    int32_t minVolIndex = GetMinVolumeLevel(streamAlias);
+    int32_t maxVolIndex = GetMaxVolumeLevel(streamAlias);
     if (minVolIndex < 0 || maxVolIndex < 0 || minVolIndex >= maxVolIndex) {
         return 0.0f;
     }
@@ -1237,10 +1243,10 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType);
     std::vector<VolumePoint> volumePoints;
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
-    int pointSize = volumePoints.size();
+    int32_t pointSize = volumePoints.size();
 
-    int volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
-    int idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
+    int32_t volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
+    int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
     if (position == 0) {
         AUDIO_INFO_LOG("position = 0, return 0.0");
