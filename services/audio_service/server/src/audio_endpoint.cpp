@@ -414,7 +414,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
 
     // spanDuration_ may be less than the correct time of dstSpanSizeInframe_.
     spanDuration_ = dstSpanSizeInframe_ * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
-    int64_t temp = spanDuration_ / 4 * 3; // 3/4 spanDuration
+    int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
     serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // at least 1ms ahead.
     AUDIO_INFO_LOG("%{public}s spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
         __func__, spanDuration_, serverAheadReadTime_);
@@ -528,6 +528,7 @@ void AudioEndpointInner::RecordReSyncPosition()
 
 void AudioEndpointInner::ReSyncPosition()
 {
+    Trace loopTrace("AudioEndpoint::ReSyncPosition");
     uint64_t curHdiReadPos = 0;
     int64_t readTime = 0;
     if (!GetDeviceHandleInfo(curHdiReadPos, readTime)) {
@@ -684,13 +685,13 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStrea
             int32_t ret = GetProcLastWriteDoneInfo(processBuffer, curWriteFrame, proHandleFrame, proHandleTime);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "%{public}s get process last write done info fail, ret %{public}d.", __func__, ret);
+            processBuffer->SetHandleInfo(proHandleFrame, proHandleTime);
         } else {
-            proHandleFrame = processBuffer->GetCurReadFrame();
-            proHandleTime = lastHandleProcessTime_;
+            // For output device, handle info is updated in CheckAllBufferReady
+            processBuffer->GetHandleInfo(proHandleFrame, proHandleTime);
         }
-        processBuffer->SetHandleInfo(proHandleFrame, proHandleTime);
-        AUDIO_INFO_LOG("%{public}s set process buf handle pos %{public}" PRIu64", handle time %{public}" PRId64", "
-            "deviceRole %{public}d.", __func__, proHandleFrame, proHandleTime, deviceInfo_.deviceRole);
+        AUDIO_INFO_LOG("OnUpdateHandleInfo set process handle pos[%{public}" PRIu64"] time [%{public}" PRId64"], "
+            "deviceRole %{public}d.", proHandleFrame, proHandleTime, deviceInfo_.deviceRole);
         isFind = true;
         break;
     }
@@ -796,21 +797,24 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
 bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
 {
     bool isAllReady = true;
-    std::lock_guard<std::mutex> lock(listLock_);
-    for (size_t i = 0; i < processBufferList_.size(); i++) {
-        std::shared_ptr<OHAudioBuffer> tempBuffer = processBufferList_[i];
-        uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
-        lastHandleProcessTime_ = checkTime;
-        processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_); // update info for each process
-        if (tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
-            continue; // process not running
-        }
-        uint64_t curRead = tempBuffer->GetCurReadFrame();
-        SpanInfo *curReadSpan = tempBuffer->GetSpanInfo(curRead);
-        if (curReadSpan == nullptr || curReadSpan->spanStatus != SpanStatus::SPAN_WRITE_DONE) {
-            AUDIO_WARNING_LOG("Find one process not ready"); // print uid of the process?
-            isAllReady = false;
-            break;
+    {
+        // lock list without sleep
+        std::lock_guard<std::mutex> lock(listLock_);
+        for (size_t i = 0; i < processBufferList_.size(); i++) {
+            std::shared_ptr<OHAudioBuffer> tempBuffer = processBufferList_[i];
+            uint64_t eachCurReadPos = processBufferList_[i]->GetCurReadFrame();
+            lastHandleProcessTime_ = checkTime;
+            processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_); // update handle info
+            if (tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
+                continue; // process not running
+            }
+            uint64_t curRead = tempBuffer->GetCurReadFrame();
+            SpanInfo *curReadSpan = tempBuffer->GetSpanInfo(curRead);
+            if (curReadSpan == nullptr || curReadSpan->spanStatus != SpanStatus::SPAN_WRITE_DONE) {
+                AUDIO_WARNING_LOG("Find one process not ready"); // print uid of the process?
+                isAllReady = false;
+                break;
+            }
         }
     }
 
@@ -828,7 +832,6 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
 
 void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
-    Trace trace("AudioEndpoint::ProcessData");
     size_t srcListSize = srcDataList.size();
 
     for (size_t i = 0; i < srcListSize; i++) {
@@ -868,6 +871,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     std::vector<AudioStreamData> audioDataList;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
+        Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
         SpanInfo *curReadSpan = processBufferList_[i]->GetSpanInfo(curRead);
         if (curReadSpan == nullptr) {
             AUDIO_ERR_LOG("GetSpanInfo failed, can not get client curReadSpan");
@@ -901,7 +905,8 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 
     dstStreamData.volumeStart = curWriteSpan->volumeStart;
     dstStreamData.volumeEnd = curWriteSpan->volumeEnd;
-    curWriteSpan->writeStartTime = ClockTime::GetCurNano();
+
+    Trace trace("AudioEndpoint::WriteDstBuffer=>" + std::to_string(curWritePos));
     // do write work
     if (audioDataList.size() == 0) {
         memset_s(dstStreamData.bufferDesc.buffer, dstStreamData.bufferDesc.bufLength, 0,
@@ -909,7 +914,6 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
     } else {
         ProcessData(audioDataList, dstStreamData);
     }
-    curWriteSpan->writeDoneTime = ClockTime::GetCurNano(); // debug server time cost
 
 #ifdef DUMP_PROCESS_FILE
     if (dump_hdi_ != nullptr) {
@@ -977,8 +981,8 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 
 bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime)
 {
-    Trace prepareTrace("AudioEndpoint::PrepareNextLoop");
     uint64_t nextHandlePos = curWritePos + dstSpanSizeInframe_;
+    Trace prepareTrace("AudioEndpoint::PrepareNextLoop " + std::to_string(nextHandlePos));
     int64_t nextHdiReadTime = GetPredictNextReadTime(nextHandlePos);
     wakeUpTime = nextHdiReadTime - serverAheadReadTime_;
 
@@ -1013,7 +1017,7 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
             }
             processBufferList_[i]->SetCurReadFrame(eachCurReadPos + dstSpanSizeInframe_); // use client span size
         } else if (processBufferList_[i]->GetStreamStatus()->load() == StreamStatus::STREAM_RUNNING) {
-            AUDIO_WARNING_LOG("Current span not ready:%{public}d", targetStatus);
+            AUDIO_WARNING_LOG("Current %{public}" PRIu64" span not ready:%{public}d", eachCurReadPos, targetStatus);
         }
     }
     return true;
@@ -1021,7 +1025,7 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
 
 bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime)
 {
-    Trace trace("AudioEndpoint::GetDeviceHandleInfo");
+    Trace trace("AudioEndpoint::GetMmapHandlePosition");
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
     int32_t ret = 0;
@@ -1044,8 +1048,10 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
         AUDIO_ERR_LOG("Call adapter GetMmapHandlePosition failed: %{public}d", ret);
         return false;
     }
-
+    trace.End();
     nanoTime = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
+    Trace infoTrace("AudioEndpoint::GetDeviceHandleInfo frames=>" + std::to_string(frames) + " " +
+        std::to_string(nanoTime) + " at " + std::to_string(ClockTime::GetCurNano()));
     nanoTime += DELTA_TO_REAL_READ_START_TIME; // global delay in server
     return true;
 }
