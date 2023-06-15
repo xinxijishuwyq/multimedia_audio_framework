@@ -1535,7 +1535,7 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
         clientTokenId = IPCSkeleton::GetCallingTokenID();
     }
 
-    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, MICROPHONE_PERMISSION);
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
     if (res != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
         AUDIO_ERR_LOG("Permission denied [tid:%{public}d]", clientTokenId);
         return false;

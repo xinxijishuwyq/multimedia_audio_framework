@@ -624,6 +624,9 @@ void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &
 void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string permissionName = data.ReadString();
+    if (!permissionName.compare(MICROPHONE_PERMISSION)) {
+        permissionName = MICROPHONE_PERMISSION;
+    }
     uint32_t appTokenId = data.ReadUint32();
     uint32_t appUid = data.ReadInt32();
     bool privacyFlag = data.ReadBool();
