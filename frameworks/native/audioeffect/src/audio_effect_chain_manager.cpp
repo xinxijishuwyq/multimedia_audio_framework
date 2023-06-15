@@ -30,6 +30,8 @@
 #include "audio_errors.h"
 #include "audio_effect.h"
 
+// #define DEVICE_FLAG
+
 using namespace OHOS::AudioStandard;
 
 int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr)
@@ -361,6 +363,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
     deviceType = (DeviceType)device;
     deviceSink = sinkName;
 
+#ifdef DEVICE_FLAG
     std::string sceneType;
     for (auto scene = AUDIO_SUPPORTED_SCENE_TYPES.begin(); scene != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++scene) {
@@ -376,7 +379,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
             continue;
         }
     }
-    Dump();
+#endif
     return SUCCESS;
 }
 
@@ -502,24 +505,6 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         effectChain = effectNone;
     }
 
-    // int ret;
-    // std::vector<AudioEffectHandle> effHandles;
-    // std::vector<AudioEffectLibrary *> libHandles;
-    // for (std::string effect: EffectChainToEffectsMap[effectChain]) {
-    //     AudioEffectHandle handle = nullptr;
-    //     AudioEffectDescriptor descriptor;
-    //     descriptor.libraryName = EffectToLibraryNameMap[effect];
-    //     descriptor.effectName = effect;
-    //     ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
-    //     if (ret != 0) {
-    //         AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
-    //         continue;
-    //     }
-    //     effHandles.emplace_back(handle);
-    //     libHandles.emplace_back(EffectToLibraryEntryMap[effect]->audioEffectLibHandle);
-    // }
-    // audioEffectChain->SetEffectChain(effHandles, libHandles);
-
     int ret;
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->AddEffectHandleBegin();
@@ -554,6 +539,12 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
 
+#ifndef DEVICE_FLAG
+    if (deviceType != DEVICE_TYPE_SPEAKER) {
+        return false;
+    }
+#endif
+
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap.count(effectChainKey)) {
         return false;
@@ -567,11 +558,17 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
 {
+#ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap.count(sceneType)) {
-        AUDIO_ERR_LOG("Scene type [%{public}s] does not exist", sceneType.c_str());
         CopyBuffer(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
         return ERROR;
     }
+#else
+    if (deviceType != DEVICE_TYPE_SPEAKER || !SceneTypeToEffectChainMap.count(sceneType)) {
+        CopyBuffer(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
+        return SUCCESS;
+    }
+#endif
 
     auto *audioEffectChain = SceneTypeToEffectChainMap[sceneType];
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen);
