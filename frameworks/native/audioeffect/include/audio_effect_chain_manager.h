@@ -50,6 +50,7 @@ public:
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
+    void SetEffectChain(std::vector<AudioEffectHandle> &effHandles, std::vector<AudioEffectLibrary *> &libHandles);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
