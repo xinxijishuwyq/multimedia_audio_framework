@@ -1269,7 +1269,6 @@ int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
         return ERROR;
     }
 
-    AUDIO_INFO_LOG("audio_effect_chain, finish operation");
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
     return SUCCESS;

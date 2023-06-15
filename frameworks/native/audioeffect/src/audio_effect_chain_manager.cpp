@@ -99,16 +99,19 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
 }
 
-AudioEffectChain::~AudioEffectChain() {}
+AudioEffectChain::~AudioEffectChain()
+{
+    std::lock_guard<std::mutex> lock(reloadMutex);
+    ReleaseEffectChain();
+}
 
 void AudioEffectChain::Dump()
 {
-    reloadMutex.lock();
+    std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
         AUDIO_INFO_LOG("Dump standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
             handle);
     }
-    reloadMutex.unlock();
 }
 
 std::string AudioEffectChain::GetEffectMode()
@@ -121,9 +124,19 @@ void AudioEffectChain::SetEffectMode(std::string mode)
     effectMode = mode;
 }
 
-void AudioEffectChain::AddEffectHandleBegin()
+template <typename T>
+int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string value)
 {
-    reloadMutex.lock();
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        if (it->second == value) {
+            return it->first;
+        }
+    }
+    return -1;
+}
+
+void AudioEffectChain::ReleaseEffectChain()
+{
     for (uint32_t i = 0; i < standByEffectHandles.size() && i < libHandles.size(); ++i) {
         if (!libHandles[i]) {
             continue;
@@ -140,15 +153,10 @@ void AudioEffectChain::AddEffectHandleBegin()
     libHandles.clear();
 }
 
-template <typename T>
-int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string value)
+void AudioEffectChain::AddEffectHandleBegin()
 {
-    for (auto it = map.begin(); it != map.end(); ++it) {
-        if (it->second == value) {
-            return it->first;
-        }
-    }
-    return -1;
+    reloadMutex.lock();
+    ReleaseEffectChain();
 }
 
 void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle)
@@ -202,6 +210,17 @@ void AudioEffectChain::AddEffectHandleEnd()
     reloadMutex.unlock();
 }
 
+void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle> &effHandles, 
+    std::vector<AudioEffectLibrary *> &libHandles)
+{
+    std::lock_guard<std::mutex> lock(reloadMutex);
+    AddEffectHandleBegin();
+    for (uint32_t i = 0; i < effHandles.size(); i++) {
+        AddEffectHandle(effHandles[i], libHandles[i]);
+    }
+}
+
+
 void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
 {
     for (uint32_t i = 0; i < totalLen; ++i) {
@@ -220,7 +239,8 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
-    reloadMutex.lock();
+{
+    std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
         if (count % FACTOR_TWO == 0) {
             audioBufIn.raw = bufIn;
@@ -237,7 +257,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         }
         count++;
     }
-    reloadMutex.unlock();
+}
 
     if (count % FACTOR_TWO == 0) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
@@ -257,10 +277,8 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 
 bool AudioEffectChain::IsEmptyEffectHandles()
 {
-    reloadMutex.lock();
-    bool ret = standByEffectHandles.empty();
-    reloadMutex.unlock();
-    return ret;
+    std::lock_guard<std::mutex> lock(reloadMutex);
+    return standByEffectHandles.empty();
 }
 
 int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
@@ -313,7 +331,12 @@ AudioEffectChainManager::AudioEffectChainManager()
     isInitialized = false;
 }
 
-AudioEffectChainManager::~AudioEffectChainManager() {}
+AudioEffectChainManager::~AudioEffectChainManager()
+{
+    for (auto effChain = SceneTypeToEffectChainMap.begin(); effChain != SceneTypeToEffectChainMap.end(); ++effChain) {
+        effChain->second->ReleaseEffectChain();
+    }
+}
 
 AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 {
@@ -323,14 +346,20 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 
 int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string &sinkName)
 {
-    deviceType = (DeviceType)device;
-    deviceSink = sinkName;
-
     if (!isInitialized) {
+        deviceType = (DeviceType)device;
+        deviceSink = sinkName;
         AUDIO_INFO_LOG("AudioEffectChainManager has not beed initialized yet");
         return SUCCESS;
     }
+
+    if (deviceType == (DeviceType)device) {
+        return SUCCESS;
+    }
+
     AUDIO_INFO_LOG("Set deviceType to [%{public}d] and corresponding sink is [%{public}s]", device, sinkName.c_str());
+    deviceType = (DeviceType)device;
+    deviceSink = sinkName;
 
     std::string sceneType;
     for (auto scene = AUDIO_SUPPORTED_SCENE_TYPES.begin(); scene != AUDIO_SUPPORTED_SCENE_TYPES.end();
@@ -472,6 +501,24 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
             effectChain.c_str(), effectNone.c_str());
         effectChain = effectNone;
     }
+
+    // int ret;
+    // std::vector<AudioEffectHandle> effHandles;
+    // std::vector<AudioEffectLibrary *> libHandles;
+    // for (std::string effect: EffectChainToEffectsMap[effectChain]) {
+    //     AudioEffectHandle handle = nullptr;
+    //     AudioEffectDescriptor descriptor;
+    //     descriptor.libraryName = EffectToLibraryNameMap[effect];
+    //     descriptor.effectName = effect;
+    //     ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
+    //     if (ret != 0) {
+    //         AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
+    //         continue;
+    //     }
+    //     effHandles.emplace_back(handle);
+    //     libHandles.emplace_back(EffectToLibraryEntryMap[effect]->audioEffectLibHandle);
+    // }
+    // audioEffectChain->SetEffectChain(effHandles, libHandles);
 
     int ret;
     audioEffectChain->SetEffectMode(effectMode);

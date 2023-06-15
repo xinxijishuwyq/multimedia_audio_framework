@@ -47,6 +47,7 @@ public:
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
+    void ReleaseEffectChain();
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
