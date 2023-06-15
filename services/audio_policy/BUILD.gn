@@ -152,7 +152,6 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
-    "server/src/service/data_share_observer_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
     "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
@@ -199,11 +198,6 @@ ohos_shared_library("audio_policy_service") {
 
   external_deps = [
     "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:ability_context_native",
-    "ability_runtime:ability_manager",
-    "ability_runtime:app_context",
-    "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtoken_setproc",
@@ -211,8 +205,6 @@ ohos_shared_library("audio_policy_service") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "config_policy:configpolicy_util",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",

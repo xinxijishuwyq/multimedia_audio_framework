@@ -144,14 +144,6 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
-    void CreateDataShareHelperInstance();
-
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    void RegisterNameMonitorHelper();
-
-    void SetDisplayName(const std::string &deviceName);
-
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
