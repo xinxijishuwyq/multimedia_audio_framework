@@ -1991,12 +1991,6 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
-    char device[50] = {0};
-    int ret = GetParameter("const.build.product", " ", device, sizeof(device));
-    std::string deviceString(device);
-    if (ret > 0 && deviceString.compare("default") == 0 && deviceType == DEVICE_TYPE_WIRED_HEADSET) {
-        deviceType = DEVICE_TYPE_SPEAKER;
-    }
     switch (deviceType) {
         case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
