@@ -814,12 +814,7 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
     }
-
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string sinkName = GetPortName(deviceType);
-    bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
-    CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
+	UpdateEffectDefaultSink(deviceType);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -1992,6 +1987,33 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
         return;
     }
     gsp->SetAudioBalanceValue(audioBalance);
+}
+
+void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
+{
+    if (effectActiveDevice_ == deviceType) {
+        return;
+    }
+    effectActiveDevice_ = deviceType;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {            
+            const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+            CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+            std::string sinkName = GetPortName(deviceType);
+            bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
+            CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
+            int res = audioPolicyManager_.UpdateSwapDeviceStatus();
+            CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
+        }
+        default:
+            break;
+    }
 }
 
 void AudioPolicyService::LoadEffectSinks()

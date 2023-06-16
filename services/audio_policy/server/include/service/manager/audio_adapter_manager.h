@@ -113,6 +113,8 @@ public:
     float GetMinStreamVolume(void) const;
 
     float GetMaxStreamVolume(void) const;
+
+    int32_t UpdateSwapDeviceStatus();
 private:
     friend class PolicyCallbackImpl;
 

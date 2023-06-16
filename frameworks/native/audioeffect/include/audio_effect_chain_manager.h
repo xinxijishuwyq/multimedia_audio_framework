@@ -26,6 +26,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
@@ -46,14 +47,17 @@ public:
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
+    void ReleaseEffectChain();
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
+    void SetEffectChain(std::vector<AudioEffectHandle> &effHandles, std::vector<AudioEffectLibrary *> &libHandles);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
 private:
+    std::mutex reloadMutex;
     std::string sceneType;
     std::string effectMode;
     std::vector<AudioEffectHandle> standByEffectHandles;
@@ -76,7 +80,6 @@ public:
     bool ExistAudioEffectChain(std::string sceneType, std::string effectMode);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
-    DeviceType GetDeviceType();
     std::string GetDeviceTypeName();
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);

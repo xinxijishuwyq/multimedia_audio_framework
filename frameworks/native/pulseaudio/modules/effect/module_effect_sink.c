@@ -243,8 +243,8 @@ void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 
 static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
 {
-    pa_assert(a);
-    pa_assert(b);
+    pa_assert(src);
+    pa_assert(dst);
     int ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -270,8 +270,8 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
 
 static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
 {
-    pa_assert(a);
-    pa_assert(b);
+    pa_assert(src);
+    pa_assert(dst);
     int ret;
     switch (format) {
         case PA_SAMPLE_S16LE:

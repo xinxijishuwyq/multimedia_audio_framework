@@ -80,8 +80,12 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t DefaultSinkChangedCb(pa_core *c, pa_sink *s, struct userdata *u)
+static pa_hook_result_t ClientProplistChangedCb(pa_core *c, pa_client *client, struct userdata *u)
 {
+    const char *name = pa_proplist_gets(client->proplist, "application.name");
+    if (!pa_safe_streq(name, "PulseAudio Service")) {
+        return PA_HOOK_OK;
+    }
     uint32_t idx;
     pa_sink_input *si;
     PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
@@ -117,8 +121,8 @@ int pa__init(pa_module *m)
     
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputProplistChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_DEFAULT_SINK_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)DefaultSinkChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_CLIENT_PROPLIST_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)ClientProplistChangedCb, u);
 
     pa_modargs_free(ma);
 
