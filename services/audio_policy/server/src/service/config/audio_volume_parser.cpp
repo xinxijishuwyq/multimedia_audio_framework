@@ -53,19 +53,31 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
-
-    if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_volume_config"))) {
-        if ((currNode->children) && (currNode->children->next)) {
-            currNode = currNode->children->next;
-            ParseStreamInfos(currNode, streamVolumeInfoMap);
-        } else {
-            AUDIO_ERR_LOG("empty volume config in : %s", path);
-            return SUCCESS;
-        }
-    } else {
+    if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_volume_config"))) {
         AUDIO_ERR_LOG("Missing tag - audio_volume_config in : %s", path);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return ERROR;
     }
+    if (currNode->children) {
+        currNode = currNode->children;
+    } else {
+        AUDIO_ERR_LOG("empty volume config in : %s", path);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return ERROR;
+    }
+
+    while (currNode != nullptr) {
+        if ((currNode->type == XML_ELEMENT_NODE) &&
+            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("volume_type")))) {
+            ParseStreamInfos(currNode, streamVolumeInfoMap);
+            break;
+        } else {
+            currNode = currNode->next;
+        }
+    }
+
     xmlFreeDoc(doc);
     xmlCleanupParser();
     return SUCCESS;
