@@ -30,7 +30,7 @@
 #include "audio_errors.h"
 #include "audio_effect.h"
 
-// #define DEVICE_FLAG
+#define DEVICE_FLAG
 
 using namespace OHOS::AudioStandard;
 
@@ -212,7 +212,7 @@ void AudioEffectChain::AddEffectHandleEnd()
     reloadMutex.unlock();
 }
 
-void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle> &effHandles, 
+void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle> &effHandles,
     std::vector<AudioEffectLibrary *> &libHandles)
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
