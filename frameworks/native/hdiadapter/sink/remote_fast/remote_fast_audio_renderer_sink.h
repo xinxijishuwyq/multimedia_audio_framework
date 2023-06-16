@@ -17,13 +17,13 @@
 #define REMOTE_FAST_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
-#include "fast_audio_renderer_sink.h"
+#include "i_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class RemoteFastAudioRendererSink : public FastAudioRendererSink {
+class RemoteFastAudioRendererSink : public IMmapAudioRendererSink {
 public:
-    static RemoteFastAudioRendererSink *GetInstance(const std::string &deviceNetworkId);
+    static IMmapAudioRendererSink *GetInstance(const std::string &deviceNetworkId);
 
     RemoteFastAudioRendererSink() = default;
     ~RemoteFastAudioRendererSink() = default;

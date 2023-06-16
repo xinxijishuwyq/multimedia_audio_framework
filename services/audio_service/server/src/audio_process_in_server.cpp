@@ -220,11 +220,7 @@ int32_t AudioProcessInServer::InitBufferStatus()
             AUDIO_ERR_LOG("InitBufferStatus failed, null spaninfo");
             return ERR_ILLEGAL_STATE;
         }
-        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-            spanInfo->spanStatus = SPAN_WRITE_DONE;
-        } else {
-            spanInfo->spanStatus = SPAN_READ_DONE;
-        }
+        spanInfo->spanStatus = SPAN_READ_DONE;
         spanInfo->offsetInFrame = 0;
 
         spanInfo->readStartTime = 0;

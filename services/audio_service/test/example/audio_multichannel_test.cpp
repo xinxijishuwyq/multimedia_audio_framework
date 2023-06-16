@@ -29,7 +29,7 @@ namespace {
     constexpr uint8_t CHANNEL_INDEX = 2;
     constexpr uint8_t SLEEP_TIME = 2;
     constexpr uint8_t MAX_FRAME_COUNT = 10;
-    
+
     constexpr int32_t SAMPLE_FORMAT_U8 = 8;
     constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License") override;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,21 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef FAST_AUDIO_RENDERER_SINK_H
-#define FAST_AUDIO_RENDERER_SINK_H
+#ifndef FAST_AUDIO_CAPTURER_SOURCE_H
+#define FAST_AUDIO_CAPTURER_SOURCE_H
+
+#include <map>
 
 #include "audio_info.h"
-#include "i_audio_renderer_sink.h"
+#include "i_audio_capturer_source.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class FastAudioRendererSink : public IMmapAudioRendererSink {
+class FastAudioCapturerSource : public IMmapAudioCapturerSource {
 public:
-    static IMmapAudioRendererSink *GetInstance(void);
-
-    FastAudioRendererSink() = default;
-    ~FastAudioRendererSink() = default;
+    static FastAudioCapturerSource *GetInstance();
+    FastAudioCapturerSource() = default;
+    virtual ~FastAudioCapturerSource() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // FAST_AUDIO_RENDERER_SINK_H
+#endif  // AUDIO_CAPTURER_SOURCE_H

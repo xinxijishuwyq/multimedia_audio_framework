@@ -536,7 +536,7 @@ bool AudioStream::StopAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS,sessionId: %{public}d", sessionId_);
+    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
@@ -593,7 +593,7 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 
     ReleaseStream(releaseRunner);
     state_ = RELEASED;
-    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS,sessionId: %{public}d", sessionId_);
+    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
@@ -673,7 +673,7 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
         writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (writeBufferPool_[i] == nullptr) {
             AUDIO_INFO_LOG(
-            "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
+                "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
 

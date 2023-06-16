@@ -40,6 +40,7 @@
 #include "iport_observer.h"
 #include "parser_factory.h"
 #include "audio_effect_manager.h"
+#include "audio_volume_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,9 +64,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false) const;
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
@@ -142,14 +143,6 @@ public:
     void OnAudioInterruptEnable(bool enable);
 
     void OnUpdateRouteSupport(bool isSupported);
-
-    void CreateDataShareHelperInstance();
-
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    void RegisterNameMonitorHelper();
-
-    void SetDisplayName(const std::string &deviceName);
 
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
@@ -228,6 +221,10 @@ public:
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
+#ifdef BLUETOOTH_ENABLE
+    static void BluetoothServiceCrashedCallback(pid_t pid);
+#endif
+
     void RegisterBluetoothListener();
 
     void UnregisterBluetoothListener();
@@ -244,6 +241,14 @@ public:
     float GetMaxStreamVolume(void);
 
     int32_t GetMaxRendererInstances();
+
+    bool IsVolumeUnadjustable();
+
+    void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
+
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
+    std::string GetLocalDevicesType();
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
@@ -291,8 +296,6 @@ private:
 
     std::string GetGroupName(const std::string& deviceName, const GroupType type);
 
-    InternalDeviceType GetCurrentActiveDevice(DeviceRole role) const;
-
     bool IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
 
     int32_t DeviceParamsCheck(DeviceRole targetRole,
@@ -309,6 +312,8 @@ private:
     int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
 
     int32_t HandleA2dpDevice(DeviceType deviceType);
+
+    int32_t HandleFileDevice(DeviceType deviceType);
 
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
@@ -348,11 +353,15 @@ private:
 
     void AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType);
 
-    void OnPreferOutputDeviceUpdated(InternalDeviceType devType, std::string networkId);
+    void OnPreferOutputDeviceUpdated(DeviceType devType, std::string networkId);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetEarpieceState();
+
+    void SetVolumeForSwitchDevice(DeviceType deviceType);
+
+    void SetVoiceCallVolume(int32_t volume);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -382,7 +391,6 @@ private:
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
-    int32_t switchVolumeDelay_ = 200000; // us
     int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
@@ -393,6 +401,7 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
+    std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;

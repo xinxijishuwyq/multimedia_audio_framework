@@ -73,19 +73,6 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 
     /* Call Audio Policy SetSystemVolumeLevel */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-
-    if (volumeType == STREAM_ALL) {
-        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
-            StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volume, API_9);
-            AUDIO_DEBUG_LOG("SetVolume of STREAM_ALL, volumeType=%{public}d ", StreamVolType);
-            if (setResult != SUCCESS) {
-                return setResult;
-            }
-        }
-        return SUCCESS;
-    }
-
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volume, API_9);
 }
 
@@ -122,11 +109,6 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             return ERR_NOT_SUPPORTED;
     }
 
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
-        AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for volumeType=%{public}d ", volumeType);
-    }
-
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(StreamVolType);
 }
@@ -152,7 +134,6 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
             AUDIO_ERR_LOG("GetMaxVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
-        volumeType = STREAM_MUSIC;
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
@@ -185,7 +166,6 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
             AUDIO_ERR_LOG("GetMinVolume: No system permission");
             return ERR_PERMISSION_DENIED;
         }
-        volumeType = STREAM_MUSIC;
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
@@ -226,19 +206,6 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
 
     /* Call Audio Policy SetStreamMute */
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-
-    if (volumeType == STREAM_ALL) {
-        for (auto audioVolumeType : GET_STREAM_ALL_VOLUME_TYPES) {
-            StreamVolType = (AudioStreamType)audioVolumeType;
-            int32_t setResult = AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_9);
-            AUDIO_DEBUG_LOG("SetMute of STREAM_ALL for volumeType=%{public}d ", StreamVolType);
-            if (setResult != SUCCESS) {
-                return setResult;
-            }
-        }
-        return SUCCESS;
-    }
-
     return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_9);
 }
 
@@ -272,10 +239,6 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         default:
             AUDIO_ERR_LOG("IsStreamMute volumeType=%{public}d not supported", volumeType);
             return false;
-    }
-
-    if (volumeType == STREAM_ALL) {
-        volumeType = STREAM_MUSIC;
     }
 
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
@@ -401,6 +364,35 @@ int32_t AudioGroupManager::SetMicStateChangeCallback(
     }
     int32_t clientId = static_cast<int32_t>(getpid());
     return AudioPolicyManager::GetInstance().SetMicStateChangeCallback(clientId, callback);
+}
+
+bool AudioGroupManager::IsVolumeUnadjustable()
+{
+    if (netWorkId_ != LOCAL_NETWORK_ID) {
+        AUDIO_ERR_LOG("AudioGroupManager::IsVolumeUnadjustable is only supported for LOCAL_NETWORK_ID.");
+        return ERROR;
+    }
+    return AudioPolicyManager::GetInstance().IsVolumeUnadjustable();
+}
+
+int32_t AudioGroupManager::AdjustVolumeByStep(VolumeAdjustType adjustType)
+{
+    return AudioPolicyManager::GetInstance().AdjustVolumeByStep(adjustType);
+}
+
+int32_t AudioGroupManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+{
+    return AudioPolicyManager::GetInstance().AdjustSystemVolumeByStep(volumeType, adjustType);
+}
+
+float AudioGroupManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    /* Call Audio Policy GetSystemVolumeInDb */
+    if (netWorkId_ != LOCAL_NETWORK_ID) {
+        AUDIO_ERR_LOG("AudioGroupManager::GetSystemVolumeInDb is only supported for LOCAL_NETWORK_ID.");
+        return ERROR;
+    }
+    return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

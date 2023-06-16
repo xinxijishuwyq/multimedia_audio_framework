@@ -50,6 +50,13 @@ public:
         LISTENER_CLIENT
     };
 
+    const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+        STREAM_MUSIC,
+        STREAM_RING,
+        STREAM_VOICE_CALL,
+        STREAM_VOICE_ASSISTANT
+    };
+
     explicit AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate = true);
 
     virtual ~AudioPolicyServer() = default;
@@ -77,6 +84,14 @@ public:
     bool GetStreamMute(AudioStreamType streamType) override;
 
     bool IsStreamActive(AudioStreamType streamType) override;
+
+    bool IsVolumeUnadjustable() override;
+
+    int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) override;
+
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType) override;
+
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) override;
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) override;
@@ -228,6 +243,8 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    void GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos);
+
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
@@ -290,9 +307,12 @@ private:
     void OnAudioFocusInfoChange();
     void UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType);
 
-    // for audio volume
+    // for audio volume and mute status
     int32_t SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t GetSystemVolumeLevelForKey(AudioStreamType streamType, bool isFromVolumeKey);
     float GetSystemVolumeDb(AudioStreamType streamType);
+    int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute);
 
     // common
     void GetPolicyData(PolicyData &policyData);
@@ -309,6 +329,7 @@ private:
 
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
+    int32_t volumeStep_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;

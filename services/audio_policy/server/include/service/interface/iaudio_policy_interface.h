@@ -21,6 +21,7 @@
 #include "audio_policy_manager.h"
 #include "audio_policy_types.h"
 #include "audio_session_callback.h"
+#include "audio_volume_config.h"
 
 #include <memory>
 #include <string>
@@ -41,9 +42,9 @@ public:
 
     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey) = 0;
 
-    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) = 0;
 
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
@@ -98,6 +99,12 @@ public:
     virtual float GetMaxStreamVolume() const = 0;
     
     virtual int32_t UpdateSwapDeviceStatus() = 0;
+
+    virtual bool IsVolumeUnadjustable() = 0;
+
+    virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
+
+    virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

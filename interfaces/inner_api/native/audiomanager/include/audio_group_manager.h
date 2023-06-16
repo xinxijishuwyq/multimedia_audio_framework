@@ -52,12 +52,6 @@ public:
 
 class AudioGroupManager {
 public:
-    const std::vector<AudioVolumeType> GET_STREAM_ALL_VOLUME_TYPES {
-        STREAM_MUSIC,
-        STREAM_RING,
-        STREAM_VOICE_CALL,
-        STREAM_VOICE_ASSISTANT
-    };
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
 
@@ -78,6 +72,10 @@ public:
     int32_t SetMicrophoneMute(bool isMute);
     bool IsMicrophoneMute(API_VERSION api_v = API_9);
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+    bool IsVolumeUnadjustable();
+    int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
+    int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 private:
     int32_t groupId_;
     ConnectType connectType_ = CONNECT_TYPE_LOCAL;

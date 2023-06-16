@@ -4617,7 +4617,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Interrupt_002, TestSiz
     const std::shared_ptr<AudioStream> audioStream_ = std::make_shared<AudioStream>(AudioStreamType::STREAM_MEDIA,
         AUDIO_MODE_PLAYBACK, appInfo_.appUid);
     ASSERT_NE(nullptr, audioStream_);
-   
+
     shared_ptr<AudioRendererInterruptCallbackImpl> interruptCallbackImpl =
         make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt);
     EXPECT_NE(nullptr, interruptCallbackImpl);
@@ -4825,7 +4825,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_005, TestSize
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    
+
     unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
 
     audioRendererProxyObj->SaveRendererObj(audioRendererPrivate.get());

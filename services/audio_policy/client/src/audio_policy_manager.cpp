@@ -1094,6 +1094,46 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
     return gsp->GetMaxRendererInstances();
 }
 
+bool AudioPolicyManager::IsVolumeUnadjustable()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsStreamActive: audio policy manager proxy is NULL.");
+        return false;
+    }
+    return gsp->IsVolumeUnadjustable();
+}
+
+int32_t AudioPolicyManager::AdjustVolumeByStep(VolumeAdjustType adjustType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("AdjustVolumeByStep: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->AdjustVolumeByStep(adjustType);
+}
+
+int32_t AudioPolicyManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("AdjustSystemVolumeByStep: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->AdjustSystemVolumeByStep(volumeType, adjustType);
+}
+
+float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetSystemVolumeInDb: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+}
+
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

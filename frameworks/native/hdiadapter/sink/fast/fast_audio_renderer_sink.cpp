@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,7 +41,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
+const uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -55,6 +55,7 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
 }
+
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
 public:
     int32_t Init(IAudioSinkAttr attr) override;
@@ -90,6 +91,21 @@ public:
 
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
+
+private:
+    void KeepRunningLock();
+    void KeepRunningUnlock();
+
+    int32_t PrepareMmapBuffer();
+    void ReleaseMmapBuffer();
+
+    int32_t CheckPositionTime();
+    void PreparePosition();
+
+    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    int32_t CreateRender(const struct AudioPort &renderPort);
+    int32_t InitAudioManager();
+
 private:
     IAudioSinkAttr attr_;
     bool rendererInited_;
@@ -111,6 +127,8 @@ private:
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
 
+    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+
 #ifdef DEBUG_DIRECT_USE_HDI
     char *bufferAddresss_ = nullptr;
     bool isFirstWrite_ = true;
@@ -121,15 +139,6 @@ private:
 
     int privFd_ = INVALID_FD; // invalid fd
 #endif
-    int32_t PrepareMmapBuffer();
-    void ReleaseMmapBuffer();
-
-    int32_t CheckPositionTime();
-    void PreparePosition();
-
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
-    int32_t CreateRender(const struct AudioPort &renderPort);
-    int32_t InitAudioManager();
 };
 
 FastAudioRendererSinkInner::FastAudioRendererSinkInner()
@@ -145,7 +154,7 @@ FastAudioRendererSinkInner::~FastAudioRendererSinkInner()
     FastAudioRendererSinkInner::DeInit();
 }
 
-FastAudioRendererSink *FastAudioRendererSink::GetInstance()
+IMmapAudioRendererSink *FastAudioRendererSink::GetInstance()
 {
     static FastAudioRendererSinkInner audioRenderer;
 
@@ -159,6 +168,7 @@ bool FastAudioRendererSinkInner::IsInited()
 
 void FastAudioRendererSinkInner::DeInit()
 {
+    KeepRunningUnlock();
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
@@ -588,10 +598,38 @@ int32_t FastAudioRendererSinkInner::Start(void)
             return ERR_NOT_STARTED;
         }
     }
+    KeepRunningLock();
     started_ = true;
     AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
     return SUCCESS;
 }
+
+void FastAudioRendererSinkInner::KeepRunningLock()
+{
+    if (mKeepRunningLock == nullptr) {
+        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
+            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+    }
+
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock lock");
+        int32_t timeOut = -1; // -1 for lasting.
+        mKeepRunningLock->Lock(timeOut);
+    } else {
+        AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
+    }
+}
+
+void FastAudioRendererSinkInner::KeepRunningUnlock()
+{
+    if (mKeepRunningLock != nullptr) {
+        AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock UnLock");
+        mKeepRunningLock->UnLock();
+    } else {
+        AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
+    }
+}
+
 
 int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
 {
@@ -712,6 +750,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
         AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
+    KeepRunningUnlock();
 
     if (started_) {
         int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));

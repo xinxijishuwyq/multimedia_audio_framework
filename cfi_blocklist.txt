@@ -1,3 +1,4 @@
+src:*frameworks/native/bluetoothclient/audio_bluetooth_manager.cpp
 src:*frameworks/native/hdiadapter/sink/primary/audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/source/primary/audio_capturer_source.cpp
 src:*services/audio_policy/server/src/service/listener/device_status_listener.cpp
@@ -8,12 +9,14 @@ src:*services/audio_service/server/src/audio_server.cpp
 src:*frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp
+src:*frameworks/native/hdiadapter/source/fast/fast_audio_capturer_source.cpp
 src:*frameworks/native/hdiadapter/source/remote_fast/remote_fast_audio_capturer_source.cpp
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_sink.c
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_source.c
 src:*frameworks/native/ohaudio/OHAudioStreamBuilder.cpp
 src:*frameworks/native/ohaudio/OHAudioRenderer.cpp
 src:*frameworks/native/ohaudio/OHAudioCapturer.cpp
+src:*services/audio_policy/server/src/service/config/audio_volume_parser.cpp
 fun:*AudioFocusParser*
 fun:*AudioToneParser*
 fun:*XMLParser*

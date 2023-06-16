@@ -13,29 +13,36 @@
  * limitations under the License.
  */
 
+#ifndef ST_AUDIO_VOLUME_CONFIG_H
+#define ST_AUDIO_VOLUME_CONFIG_H
 
-#include "data_share_observer_callback.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
 
-DataShareObserverCallBack::DataShareObserverCallBack()
-    : audioPolicyService_(AudioPolicyService::GetAudioPolicyService())
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-}
+struct VolumePoint {
+    uint32_t index;
+    int32_t dbValue;
+};
 
-void DataShareObserverCallBack::OnChange()
-{
-    std::string devicesName = "";
-    int32_t ret = audioPolicyService_.GetDeviceNameFromDataShareHelper(devicesName);
-    AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", devicesName.c_str());
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Local UpdateDisplayName init device failed");
-        return;
-    }
-    audioPolicyService_.SetDisplayName(devicesName);
-}
+struct DeviceVolumeInfo {
+    DeviceVolumeType deviceType;
+    std::vector<VolumePoint> volumePoints;
+};
+
+typedef std::map<DeviceVolumeType, std::shared_ptr<DeviceVolumeInfo>> DeviceVolumeInfoMap;
+
+struct StreamVolumeInfo {
+    AudioVolumeType streamType;
+    int minLevel;
+    int maxLevel;
+    int defaultLevel;
+    DeviceVolumeInfoMap deviceVolumeInfos;
+};
+
+typedef std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> StreamVolumeInfoMap;
 } // namespace AudioStandard
 } // namespace OHOS
+
+#endif // ST_AUDIO_VOLUME_CONFIG_H

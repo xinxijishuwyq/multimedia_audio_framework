@@ -106,6 +106,10 @@ private:
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxRendererInstancesInternal(MessageParcel &data, MessageParcel &reply);
+    void AdjustVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
+    void AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
+    void IsVolumeUnadjustableInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard

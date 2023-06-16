@@ -24,6 +24,7 @@
 #include "iaudio_policy_interface.h"
 #include "types.h"
 #include "audio_log.h"
+#include "audio_volume_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,13 +41,11 @@ public:
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_COUNT = 5;
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
     static constexpr float MIN_VOLUME = 0.0f;
-
+    static constexpr uint32_t NUMBER_TWO = 2;
     bool Init();
     void Deinit(void);
     void InitKVStore();
     bool ConnectServiceAdapter();
-
-    std::string GetPolicyManagerName();
 
     static IAudioPolicyInterface& GetInstance()
     {
@@ -60,9 +59,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false);
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
@@ -115,6 +114,20 @@ public:
     float GetMaxStreamVolume(void) const;
 
     int32_t UpdateSwapDeviceStatus();
+
+    bool IsVolumeUnadjustable();
+
+    float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType, int32_t volumeLevel);
+
+    void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
+
+    DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
+
+    DeviceType GetActiveDevice();
+
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
+    bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 private:
     friend class PolicyCallbackImpl;
 
@@ -134,22 +147,32 @@ private:
         uint32_t idx;
     };
 
+    const std::vector<AudioStreamType> streamTypeList_ = {
+        // all volume types except STREAM_ALL
+        STREAM_MUSIC,
+        STREAM_RING,
+        STREAM_VOICE_CALL,
+        STREAM_VOICE_ASSISTANT,
+        STREAM_ALARM,
+        STREAM_ACCESSIBILITY,
+        STREAM_ULTRASONIC
+    };
+
+    const std::vector<DeviceType> deviceList_ = {
+        // The three devices represent the three volume groups(build-in, wireless, wired).
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_WIRED_HEADSET
+    };
+
     AudioAdapterManager()
         : ringerMode_(RINGER_MODE_NORMAL),
           audioPolicyKvStore_(nullptr)
     {
-        volumeLevelMap_[STREAM_MUSIC] = DEFAULT_VOLUME_LEVEL;
-        volumeLevelMap_[STREAM_RING] = DEFAULT_VOLUME_LEVEL;
-        volumeLevelMap_[STREAM_VOICE_CALL] = DEFAULT_VOLUME_LEVEL;
-        volumeLevelMap_[STREAM_VOICE_ASSISTANT] = DEFAULT_VOLUME_LEVEL;
-        volumeLevelMap_[STREAM_ALARM] = DEFAULT_VOLUME_LEVEL;
-        volumeLevelMap_[STREAM_ACCESSIBILITY] = DEFAULT_VOLUME_LEVEL;
-        volumeLevelMap_[STREAM_ULTRASONIC] = MAX_VOLUME_LEVEL;
+        InitVolumeMapIndex();
     }
 
-    bool ConnectToPulseAudio(void);
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
-    std::string GetStreamNameByStreamType(DeviceType deviceType, AudioStreamType streamType);
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
@@ -157,16 +180,27 @@ private:
     bool LoadVolumeMap(void);
     void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
+    std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
-    bool LoadMuteStatusFromKvStore(AudioStreamType streamType);
+    bool LoadMuteStatusFromKvStore(DeviceType deviceType, AudioStreamType streamType);
     void WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
-    std::string GetStreamTypeKeyForMute(DeviceType deviceType, AudioStreamType streamType);
+    std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     int32_t WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri);
     std::string LoadSystemSoundUriFromKvStore(const std::string &key);
+    void InitVolumeMapIndex();
+    void UpdateVolumeMapIndex();
+    void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
+        std::vector<VolumePoint> &volumePoints);
+    uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
+    void SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel);
+    void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
+    void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetVolumeDb(AudioStreamType streamType);
+
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -187,19 +221,18 @@ private:
 
     std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;
-    std::unordered_map<AudioStreamType, int> muteStatusMap_;
+    std::unordered_map<AudioStreamType, int> minVolumeIndexMap_;
+    std::unordered_map<AudioStreamType, int> maxVolumeIndexMap_;
+    StreamVolumeInfoMap streamVolumeInfos_;
+    std::unordered_map<AudioStreamType, bool> muteStatusMap_;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode ringerMode_;
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;
+    bool isVolumeUnadjustable_;
     bool testModeOn_ {false};
-
-    std::vector<DeviceType> deviceList_ = {
-        DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_WIRED_HEADSET
-    };
+    float getSystemVolumeInDb_;
+    bool useNonlinearAlgo_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -218,18 +251,21 @@ public:
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(
             audioAdapterManager_->GetStreamIDByType(streamType));
-        if (audioAdapterManager_->ringerMode_ != RINGER_MODE_NORMAL) {
-            if (streamForVolumeMap == STREAM_RING) {
-                return AudioAdapterManager::MIN_VOLUME;
-            }
-        }
 
-        if (audioAdapterManager_->GetStreamMute(streamForVolumeMap)) {
-            return AudioAdapterManager::MIN_VOLUME;
+        bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
+        if (muteStatus) {
+            return 0.0f;
         }
 
         int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
-        return audioAdapterManager_->CalculateVolumeDb(volumeLevel);
+        float volumeDb = 1.0f;
+        if (audioAdapterManager_->IsUseNonlinearAlgo()) {
+            volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
+                audioAdapterManager_->GetActiveDevice(), volumeLevel);
+        } else {
+            volumeDb = audioAdapterManager_->CalculateVolumeDb(volumeLevel);
+        }
+        return volumeDb;
     }
 
     void OnSessionRemoved(const uint32_t sessionID)

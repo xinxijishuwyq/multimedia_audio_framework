@@ -122,9 +122,8 @@ void AudioManagerCallbackNapi::SaveAudioManagerDeviceChangeCbRef(DeviceFlag devi
     napi_ref callbackRef = nullptr;
     const int32_t refCount = 1;
 
-    bool isSameCallback = true;
     for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
-        isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: audio manager has same callback, nothing to do");
     }
 
@@ -177,9 +176,8 @@ void AudioManagerCallbackNapi::SaveRoutingManagerDeviceChangeCbRef(DeviceFlag de
     napi_ref callbackRef = nullptr;
     const int32_t refCount = 1;
 
-    bool isSameCallback = true;
     for (auto it = routingManagerDeviceChangeCbList_.begin(); it != routingManagerDeviceChangeCbList_.end(); ++it) {
-        isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);
+        bool isSameCallback = AudioCommonNapi::IsSameCallback(env_, callback, (*it).first->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: has same callback, nothing to do");
     }
 

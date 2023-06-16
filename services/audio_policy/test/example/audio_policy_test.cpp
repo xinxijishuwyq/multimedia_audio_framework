@@ -79,8 +79,8 @@ static void PrintUsage(void)
     cout << "-n\n\tGet the discount volume factor or Get single stream volume" << endl << endl;
     cout << "-s\n\tGet Stream Status" << endl << endl;
     cout << "-B\n\tSet AudioMonoState (using 1 or 0 instead of true of false)" << endl;
-    cout << "-F\n\tAudioFocusInfoListTest (using 1 or 0 instead of true of false)" << endl;
     cout << "\tSet AudioBalanceValue (using [9, 11] instead of [-1, 1])" << endl << endl;
+    cout << "-F\n\tAudioFocusInfoListTest (using 1 or 0 instead of true of false)" << endl;
     cout << "AUTHOR" << endl << endl;
     cout << "\tWritten by Sajeesh Sidharthan and Anurup M" << endl << endl;
 }

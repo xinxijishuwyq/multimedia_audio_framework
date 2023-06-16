@@ -468,8 +468,8 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     u->attrs.isBigEndian = GetEndianInfo(ss.format);
     u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
     u->attrs.deviceNetworkId = pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID);
-    if (pa_modargs_get_value_s32(ma, "device_type", &u->attrs.device_type) < 0) {
-        AUDIO_ERR_LOG("Failed to parse device_type argument");
+    if (pa_modargs_get_value_s32(ma, "device_type", &u->attrs.deviceType) < 0) {
+        AUDIO_ERR_LOG("Failed to parse deviceType argument");
     }
 
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"

@@ -194,10 +194,13 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
 
     int32_t clientId = getpid();
     DeviceFlag flag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-    sptr<IRemoteObject> object;
-    AudioPolicyUnitTest::GetIRemoteObject(object);
+    sptr<IRemoteObject> object = nullptr;
 
     int32_t ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    AudioPolicyUnitTest::GetIRemoteObject(object);
+    ret = audioPolicyProxy->SetDeviceChangeCallback(clientId, flag, object);
     EXPECT_EQ(FAILURE, ret);
 
     ret = audioPolicyProxy->UnsetDeviceChangeCallback(clientId, flag);
@@ -411,6 +414,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListe
 
     ret = AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientId);
     EXPECT_EQ(SUCCESS, ret);
+
+    callback = nullptr;
+    ret = AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientId, callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -461,6 +468,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_001, TestSize
     AudioPolicyUnitTest::GetIRemoteObject(object);
     int32_t ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
     EXPECT_EQ(true, ret <= 0);
+
+    object = nullptr;
+    ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
+    EXPECT_EQ(true, ret > 0);
 }
 
 /**
@@ -552,6 +563,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetRingerModeCallback_001, Test
     std::shared_ptr<AudioRingerModeCallback> callback = nullptr;
     int32_t ret = AudioPolicyManager::GetInstance().SetRingerModeCallback(clientId, callback);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
 
 /**
@@ -811,6 +825,96 @@ HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Lev
 
     streamSetStateEventInternal.streamSetState= StreamSetState::STREAM_PAUSE;
     audioClientTrackerCallbackStub->PausedStreamImpl(streamSetStateEventInternal);
+}
+
+/**
+* @tc.name  : Test Audio_Policy_SetRingerMode_001 via legal state
+* @tc.number: Audio_Policy_SetRingerMode_001
+* @tc.desc  : Test SetRingerMode interface. Returns success.
+*/
+HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    API_VERSION api_v = API_9;
+    AudioRingerMode ringMode = AudioRingerMode::RINGER_MODE_SILENT;
+    int32_t ret = audioPolicyProxy->SetRingerMode(ringMode, api_v);
+    EXPECT_EQ(FAILURE, ret);
+
+    AudioRingerMode ringModeRet = audioPolicyProxy->GetRingerMode();
+    EXPECT_EQ(ringMode, ringModeRet);
+
+    int32_t clientId= getpid();
+    sptr<IRemoteObject> object = nullptr;
+    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    AudioPolicyUnitTest::GetIRemoteObject(object);
+    ret = audioPolicyProxy->SetRingerModeCallback(clientId, object, api_v);
+    EXPECT_EQ(FAILURE, ret);
+
+    ret = audioPolicyProxy->UnsetRingerModeCallback(clientId);
+    EXPECT_EQ(FAILURE, ret);
+}
+
+/**
+* @tc.name  : Test Audio_Policy_Callback via illegal state
+* @tc.number: Audio_Policy_SetCallback_001
+* @tc.desc  : Test set callback interface when object is nullptr
+*/
+HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    int32_t ret = -1;
+    int32_t clientId= getpid();
+    API_VERSION api_v = API_9;
+    sptr<IRemoteObject> object = nullptr;
+    ret = audioPolicyProxy->SetPreferOutputDeviceChangeCallback(clientId, object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    ret = audioPolicyProxy->RegisterFocusInfoChangeCallback(clientId, object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    ret = audioPolicyProxy->SetVolumeKeyEventCallback(clientId, object, api_v);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    ret = audioPolicyProxy->RegisterAudioRendererEventListener(clientId, object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    ret = audioPolicyProxy->RegisterAudioCapturerEventListener(clientId, object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    const std::string key = "testkey";
+    const std::string uri = "testuri";
+    ret = audioPolicyProxy->SetSystemSoundUri(key, uri);
+    EXPECT_EQ(FAILURE, ret);
+}
+
+/**
+* @tc.name  : Test Audio_Policy_SetSystemSoundUri_001
+* @tc.number: Audio_Policy_SetSystemSoundUri_001
+* @tc.desc  : Test audio policy instance
+*/
+HWTEST(AudioPolicyUnitTest, Audio_Policy_SetSystemSoundUri_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    API_VERSION api_v = API_9;
+    AudioRingerMode ringMode = AudioRingerMode::RINGER_MODE_SILENT;
+    ret = AudioPolicyManager::GetInstance().SetRingerMode(ringMode, api_v);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringModeRet = AudioPolicyManager::GetInstance().GetRingerMode();
+    EXPECT_EQ(ringMode, ringModeRet);
+
+    const std::string key = "testkey";
+    const std::string uri = "testuri";
+    ret = AudioPolicyManager::GetInstance().SetSystemSoundUri(key, uri);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
