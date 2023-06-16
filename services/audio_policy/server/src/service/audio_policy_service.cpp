@@ -1991,6 +1991,10 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
+    if (effectActiveDevice_ == deviceType) {
+        return;
+    }
+    effectActiveDevice_ = deviceType;
     switch (deviceType) {
         case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
