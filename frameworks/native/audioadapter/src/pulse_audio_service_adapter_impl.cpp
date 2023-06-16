@@ -104,7 +104,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
         pa_context_unref(mContext);
     }
 	
-	swapStatus = 0;
+    swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "com.ohos.pulseaudio.service");
