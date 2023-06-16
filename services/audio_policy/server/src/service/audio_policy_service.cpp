@@ -814,7 +814,7 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
         it->second->OnPreferOutputDeviceUpdated(desc);
     }
-	UpdateEffectDefaultSink(deviceType);
+    UpdateEffectDefaultSink(deviceType);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -2002,7 +2002,7 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {            
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
             const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
             CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
             std::string sinkName = GetPortName(deviceType);

@@ -97,8 +97,9 @@ static pa_hook_result_t ClientProplistChangedCb(pa_core *c, pa_client *client, s
 int InitFail(pa_module *m, pa_modargs *ma)
 {
     AUDIO_ERR_LOG("Failed to create cluster module");
-    if (ma)
+    if (ma) {
         pa_modargs_free(ma);
+    }
     pa__done(m);
     return -1;
 }
@@ -118,7 +119,7 @@ int pa__init(pa_module *m)
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;
     u->module = m;
-    
+
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputProplistChangedCb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_CLIENT_PROPLIST_CHANGED], PA_HOOK_LATE,
