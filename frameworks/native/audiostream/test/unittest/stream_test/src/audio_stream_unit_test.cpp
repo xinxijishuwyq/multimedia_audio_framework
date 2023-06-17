@@ -401,7 +401,7 @@ HWTEST(AudioStreamUnitTest, Audio_Stream_SetStreamRenderRate_002, TestSize.Level
 
     std::shared_ptr<AudioRendererWriteCallback> callback = nullptr;
     ret = audioStream_->SetRendererWriteCallback(callback);
-    EXPECT_EQ(true, ret < 0);
+    EXPECT_LT(ret, 0);
 }
 
 /**

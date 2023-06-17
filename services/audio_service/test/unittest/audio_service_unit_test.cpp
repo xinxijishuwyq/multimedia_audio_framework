@@ -87,26 +87,26 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
     buffer = OHAudioBuffer::CreateFormLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     ret=audioProcessProxy->ResolveBuffer(buffer);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->Start();
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     bool isFlush = true;
     ret = audioProcessProxy->Pause(isFlush);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->Resume();
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->Stop();
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->RequestHandleInfo();
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->Release();
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 }
 
 /**
@@ -128,7 +128,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 
     bool isMute = true;
     ret = audioManagerProxy->SetMicrophoneMute(isMute);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     bool isMuteRet = audioManagerProxy->IsMicrophoneMute();
     EXPECT_EQ(false, isMuteRet);
@@ -161,7 +161,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
     bool connected = true;
     audioManagerProxy->NotifyDeviceInfo(networkId, connected);
     ret = audioManagerProxy->CheckRemoteDeviceState(networkId, DeviceRole::OUTPUT_DEVICE, true);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 }
 
 /**

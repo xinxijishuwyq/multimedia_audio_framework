@@ -2964,21 +2964,21 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerCallback_001, TestSize
     callback = std::make_shared<AudioCapturerReadCallbackTest>();
 
     ret = audioCapturer->SetCapturerReadCallback(callback);
-    EXPECT_EQ(ret < 0, true);
+    EXPECT_LT(ret, 0);
 
     BufferDesc bufDesc;
     ret = audioCapturer->GetBufferDesc(bufDesc);
-    EXPECT_EQ(true, ret < 0);
+    EXPECT_LT(ret, 0);
 
     ret = audioCapturer->Enqueue(bufDesc);
-    EXPECT_EQ(true, ret < 0);
+    EXPECT_LT(ret, 0);
 
     BufferQueueState bufState;
     ret = audioCapturer->GetBufQueueState(bufState);
-    EXPECT_EQ(true, ret < 0);
+    EXPECT_LT(ret, 0);
 
     ret = audioCapturer->Clear();
-    EXPECT_EQ(true, ret < 0);
+    EXPECT_LT(ret, 0);
     audioCapturer->Release();
 }
 } // namespace AudioStandard
