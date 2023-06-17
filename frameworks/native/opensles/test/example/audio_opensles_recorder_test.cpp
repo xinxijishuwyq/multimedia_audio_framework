@@ -122,8 +122,8 @@ static void OpenSLESCaptureTest()
 
     SLDataFormat_PCM format_pcm = {
         SL_DATAFORMAT_PCM,
-        OHOS::AudioStandard::AudioChannel::MONO,
-        OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_44100,
+        1,
+        SL_SAMPLINGRATE_48,
         SL_PCMSAMPLEFORMAT_FIXED_16,
         0,
         0,
