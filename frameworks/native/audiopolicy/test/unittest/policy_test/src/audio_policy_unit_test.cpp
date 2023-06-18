@@ -467,7 +467,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_001, TestSize
     sptr<IRemoteObject> object;
     AudioPolicyUnitTest::GetIRemoteObject(object);
     int32_t ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
-    EXPECT_EQ(true, ret <= 0);
+    EXPECT_LE(ret, 0);
 
     object = nullptr;
     ret = audioPolicyProxy->SetMicStateChangeCallback(clientId, object);
@@ -678,7 +678,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     int ret = capturerStub->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(true, ret <= 0);
+    EXPECT_LE(ret, 0);
 
     code = capturerStub->ON_ERROR;
     capturerStub->OnRemoteRequest(code, data, reply, option);
@@ -706,7 +706,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     int ret = rendererStub->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(true, ret <= 0);
+    EXPECT_LE(ret, 0);
 
     code = rendererStub->ON_ERROR;
     rendererStub->OnRemoteRequest(code, data, reply, option);
@@ -738,7 +738,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level
 
     code = ringermodeStub->ON_ERROR;
     ret = ringermodeStub->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(true, ret <= 0);
+    EXPECT_LE(ret, 0);
 }
 
 /**
@@ -769,7 +769,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1
 
     code = routingManagerStub->ON_ERROR;
     ret = routingManagerStub->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(true, ret <= 0);
+    EXPECT_LE(ret, 0);
 }
 
 /**

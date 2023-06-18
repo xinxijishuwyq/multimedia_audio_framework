@@ -4681,15 +4681,15 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize
 
     float minVolume = audioRenderer->GetMinStreamVolume();
     float maxVolume = audioRenderer->GetMaxStreamVolume();
-    EXPECT_EQ(minVolume < maxVolume, true);
+    EXPECT_LT(minVolume, maxVolume);
 
     DeviceInfo deviceInfo;
     ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
     EXPECT_EQ(SUCCESS, ret);
 
     float count = audioRenderer->GetUnderflowCount();
-    EXPECT_EQ(count >= 0, true);
-
+    EXPECT_GE(count, 0);
+    
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);

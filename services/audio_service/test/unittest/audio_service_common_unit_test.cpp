@@ -214,11 +214,11 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_004, TestSize.Level1)
 
     writeFrame = 1000;
     ret = oHAudioBuffer->SetCurWriteFrame(writeFrame);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     writeFrame = 3000 + 2;
     ret = oHAudioBuffer->SetCurWriteFrame(writeFrame);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 }
 
 /**
@@ -244,11 +244,11 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_005, TestSize.Level1)
 
     readFrame = 2000;
     ret = oHAudioBuffer->SetCurReadFrame(readFrame);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     readFrame = 3000 + 2;
     ret = oHAudioBuffer->SetCurReadFrame(readFrame);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 }
 
 /**
@@ -268,7 +268,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
 
     posInFrame = 3000 + 1;
     ret = oHAudioBuffer->GetBufferByFrame(posInFrame, bufferDesc);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     uint64_t writePosInFrame = 1000;
     ret = oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
@@ -276,7 +276,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
 
     writePosInFrame = 3000 +1;
     ret = oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 
     uint64_t readPosInFrame = 1000;
     ret = oHAudioBuffer->GetReadbuffer(readPosInFrame, bufferDesc);
@@ -284,7 +284,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
 
     readPosInFrame = 3000;
     ret = oHAudioBuffer->GetReadbuffer(readPosInFrame, bufferDesc);
-    EXPECT_EQ(ret < TEST_RET_NUM, true);
+    EXPECT_LT(ret, TEST_RET_NUM);
 }
 
 /**
