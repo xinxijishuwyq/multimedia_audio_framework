@@ -91,8 +91,9 @@ private:
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
-    static constexpr int64_t MAX_WRITE_COST_DUTATION_NANO = 5000000; // 5ms
-    static constexpr int64_t MAX_READ_COST_DUTATION_NANO = 5000000; // 5ms
+    static constexpr int64_t MAX_WRITE_COST_DURATION_NANO = 5000000; // 5ms
+    static constexpr int64_t MAX_READ_COST_DURATION_NANO = 5000000; // 5ms
+    static constexpr int64_t WRITE_BEFORE_DURATION_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_RESYNC_SLEEP_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
     enum ThreadStatus : uint32_t {
@@ -356,6 +357,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
 int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "%{public}s not inited!", __func__);
+    Trace trace("AudioProcessInClient::GetBufferDesc");
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         ReadFromProcessClient();
@@ -381,10 +383,10 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     CHECK_AND_BREAK_LOG(bufDesc.buffer == callbackBuffer_.get(),
         "%{public}s the buffer is not created by client.", __func__);
 
-    AUDIO_DEBUG_LOG("%{public}s bufDesc check end, audio mode %{public}d.", __func__, processConfig_.audioMode);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         BufferDesc curWriteBuffer = {nullptr, 0, 0};
         uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
+        Trace trace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
         int32_t ret = audioBuffer_->GetWriteBuffer(curWritePos, curWriteBuffer);
         if (ret != SUCCESS || curWriteBuffer.buffer == nullptr || curWriteBuffer.bufLength != spanSizeInByte_ ||
             curWriteBuffer.dataLength != spanSizeInByte_) {
@@ -411,7 +413,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
 {
     AUDIO_INFO_LOG("SetVolume proc client mode %{public}d to %{public}d.", processConfig_.audioMode, vol);
-    Trace trace("AudioProcessInClient::SetVolume");
+    Trace trace("AudioProcessInClient::SetVolume " + std::to_string(vol));
     if (vol < 0 || vol > PROCESS_VOLUME_MAX) {
         AUDIO_ERR_LOG("SetVolume failed, invalid volume:%{public}d", vol);
         return ERR_INVALID_PARAM;
@@ -605,12 +607,12 @@ int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)
 
 bool AudioProcessInClientInner::PrepareNext(uint64_t curHandPos, int64_t &wakeUpTime)
 {
-    Trace trace("AudioProcessInClient::PrepareNext");
+    Trace trace("AudioProcessInClient::PrepareNext " + std::to_string(curHandPos));
     int64_t handleModifyTime = 0;
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         handleModifyTime = RECORD_HANDLE_DELAY_NANO;
     } else {
-        handleModifyTime = -ONE_MILLISECOND_DURATION;
+        handleModifyTime = -WRITE_BEFORE_DURATION_NANO;
     }
 
     int64_t nextServerHandleTime = GetPredictNextHandleTime(curHandPos) + handleModifyTime;
@@ -736,12 +738,12 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
 
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime > curTime && wakeUpTime - curTime < MAX_READ_COST_DUTATION_NANO + clientReadCost) {
+        if (wakeUpTime > curTime && wakeUpTime - curTime < MAX_READ_COST_DURATION_NANO + clientReadCost) {
             ClockTime::AbsoluteSleep(wakeUpTime);
         } else {
             Trace trace("RecordBigWakeUpTime");
             AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
-            ClockTime::RelativeSleep(MAX_READ_COST_DUTATION_NANO);
+            ClockTime::RelativeSleep(MAX_READ_COST_DURATION_NANO);
         }
     }
     AUDIO_INFO_LOG("%{public}s end.", __func__);
@@ -765,7 +767,7 @@ int32_t AudioProcessInClientInner::RecordReSyncServicePos()
         if (serverHandlePos > 0) {
             break;
         }
-        ClockTime::RelativeSleep(MAX_READ_COST_DUTATION_NANO);
+        ClockTime::RelativeSleep(MAX_READ_COST_DURATION_NANO);
         tryTimes--;
     }
     AUDIO_INFO_LOG("%{public}s get handle info OK, tryTimes %{public}d, serverHandlePos %{public}" PRIu64", "
@@ -819,7 +821,7 @@ int32_t AudioProcessInClientInner::RecordFinishHandleCurrent(uint64_t &curReadPo
     curReadSpan->readDoneTime = ClockTime::GetCurNano();
 
     clientReadCost = curReadSpan->readDoneTime - curReadSpan->readStartTime;
-    if (clientReadCost > MAX_READ_COST_DUTATION_NANO) {
+    if (clientReadCost > MAX_READ_COST_DURATION_NANO) {
         AUDIO_WARNING_LOG("Client write cost too long...");
     }
 
@@ -834,6 +836,7 @@ int32_t AudioProcessInClientInner::RecordFinishHandleCurrent(uint64_t &curReadPo
 
 bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
 {
+    Trace trace("AudioProcessInClient::PrepareCurrent " + std::to_string(curWritePos));
     SpanInfo *tempSpan = audioBuffer_->GetSpanInfo(curWritePos);
     if (tempSpan == nullptr) {
         AUDIO_ERR_LOG("GetSpanInfo failed!");
@@ -848,7 +851,8 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
         targetStatus = SpanStatus::SPAN_READ_DONE;
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION + ONE_MILLISECOND_DURATION);
     }
-    if (tryCount <= 0) {
+    // If the last attempt is successful, tryCount will be equal to zero.
+    if (tryCount < 0) {
         AUDIO_ERR_LOG("wait on current span  %{public}" PRIu64" too long...", curWritePos);
         return false;
     }
@@ -858,6 +862,7 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
 
 bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64_t &clientWriteCost)
 {
+    Trace trace("AudioProcessInClient::FinishHandleCurrent " + std::to_string(curWritePos));
     SpanInfo *tempSpan = audioBuffer_->GetSpanInfo(curWritePos);
     if (tempSpan == nullptr) {
         AUDIO_ERR_LOG("GetSpanInfo failed!");
@@ -881,7 +886,7 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     tempSpan->volumeStart = processVolume_;
     tempSpan->volumeEnd = processVolume_;
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
-    if (clientWriteCost > MAX_WRITE_COST_DUTATION_NANO) {
+    if (clientWriteCost > MAX_WRITE_COST_DURATION_NANO) {
         AUDIO_WARNING_LOG("Client write cost too long...");
         // todo
         // handle write time out: send underrun msg to client, reset time model with latest server handle time.
@@ -935,13 +940,12 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         // start safe sleep
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime > curTime && wakeUpTime - curTime < MAX_WRITE_COST_DUTATION_NANO + clientWriteCost) {
-            ClockTime::AbsoluteSleep(wakeUpTime);
-        } else {
-            Trace trace("BigWakeUpTime");
+        if (wakeUpTime - curTime > MAX_WRITE_COST_DURATION_NANO + clientWriteCost) {
+            Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
+                "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
             AUDIO_WARNING_LOG("wakeUpTime is too late...");
-            ClockTime::RelativeSleep(MAX_WRITE_COST_DUTATION_NANO);
         }
+        ClockTime::AbsoluteSleep(wakeUpTime);
     }
     AUDIO_INFO_LOG("AudioProcessInClient Callback loop end.");
 }

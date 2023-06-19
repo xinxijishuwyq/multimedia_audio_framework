@@ -105,7 +105,7 @@ int32_t AudioProcessProxy::RequestHandleInfo()
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option; // MessageOption::TF_ASYNC?
+    MessageOption option(MessageOption::TF_ASYNC); // MessageOption::TF_ASYNC for no delay
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 

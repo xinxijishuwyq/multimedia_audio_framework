@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 #include "v1_0/iaudio_manager.h"
 #include "fast_audio_capturer_source.h"
@@ -95,6 +96,7 @@ private:
     uint32_t eachReadFrameSize_ = 0;
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+private:
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
     int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size,
     const std::string &adapterNameCase, enum AudioPortDirection portFlag, struct AudioPort &capturePort);
@@ -103,6 +105,7 @@ private:
     int32_t InitAudioManager();
     uint32_t PcmFormatToBits(AudioSampleFormat format);
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    int32_t CheckPositionTime();
 };
 
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -410,6 +413,31 @@ int32_t FastAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t request
     return ERR_DEVICE_NOT_SUPPORTED;
 }
 
+int32_t FastAudioCapturerSourceInner::CheckPositionTime()
+{
+    int32_t tryCount = 10;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t maxHandleCost = 10000000; // ns
+    int64_t waitTime = 2000000; // 2ms
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(waitTime); // us
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
+            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
+}
+
 int32_t FastAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
@@ -428,6 +456,10 @@ int32_t FastAudioCapturerSourceInner::Start(void)
     if (!started_) {
         ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
+            return ERR_NOT_STARTED;
+        }
+        if (CheckPositionTime() != SUCCESS) {
+            AUDIO_ERR_LOG("FastAudioCapturerSource::CheckPositionTime failed!");
             return ERR_NOT_STARTED;
         }
         started_ = true;
