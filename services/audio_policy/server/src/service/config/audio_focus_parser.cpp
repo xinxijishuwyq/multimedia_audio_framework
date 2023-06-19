@@ -87,17 +87,30 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
-    if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_focus_policy"))) {
-        if ((currNode->children) && (currNode->children->next)) {
-            currNode = currNode->children->next;
-            ParseStreams(currNode, focusMap);
-        } else {
-            AUDIO_ERR_LOG("empty focus policy in : %s", AUDIO_FOCUS_CONFIG_FILE);
-            return SUCCESS;
-        }
-    } else {
+    if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_focus_policy"))) {
         AUDIO_ERR_LOG("Missing tag - focus_policy in : %s", AUDIO_FOCUS_CONFIG_FILE);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return ERROR;
+    }
+
+    if (currNode->children) {
+        currNode = currNode->children;
+    } else {
+        AUDIO_ERR_LOG("Missing child: %s", AUDIO_FOCUS_CONFIG_FILE);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return ERROR;
+    }
+
+    while (currNode != nullptr) {
+        if ((currNode->type == XML_ELEMENT_NODE) &&
+            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("focus_type")))) {
+            ParseStreams(currNode, focusMap);
+            break;
+        } else {
+            currNode = currNode->next;
+        }
     }
 
     xmlFreeDoc(doc);
