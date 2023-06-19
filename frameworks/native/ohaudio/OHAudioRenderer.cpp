@@ -86,7 +86,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* rendere
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
-    OHOS::AudioStandard::RendererState rendererState = audioRenderer->GetStatus();
+    OHOS::AudioStandard::RendererState rendererState = audioRenderer->GetCurrentState();
     *state = (OH_AudioStream_State)rendererState;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -209,7 +209,7 @@ bool OHAudioRenderer::Release()
     return audioRenderer_->Release();
 }
 
-RendererState OHAudioRenderer::GetStatus()
+RendererState OHAudioRenderer::GetCurrentState()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, RENDERER_INVALID, "renderer client is nullptr");
     return audioRenderer_->GetStatus();

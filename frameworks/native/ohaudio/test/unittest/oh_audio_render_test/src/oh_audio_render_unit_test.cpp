@@ -266,6 +266,112 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_002, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test OH_AudioRenderer_GetCurrentState API via legal state.
+* @tc.number: OH_AudioRenderer_GetCurrentState_001
+* @tc.desc  : Test OH_AudioRenderer_GetCurrentState interface. Return true if the result state is
+*             AUDIOSTREAM_STATE_PREPARED.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_State state;
+    result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(state == AUDIOSTREAM_STATE_PREPARED);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetCurrentState API via legal state.
+* @tc.number: OH_AudioRenderer_GetCurrentState_002
+* @tc.desc  : Test OH_AudioRenderer_GetCurrentState interface. Return true if the result state is
+*             AUDIOSTREAM_STATE_RUNNING.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioRenderer_Start(audioRenderer);
+
+    OH_AudioStream_State state;
+    result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(state == AUDIOSTREAM_STATE_RUNNING);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetCurrentState API via legal state.
+* @tc.number: OH_AudioRenderer_GetCurrentState_003
+* @tc.desc  : Test OH_AudioRenderer_GetCurrentState interface. Return true if the result state is
+*             AUDIOSTREAM_STATE_PAUSED.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioRenderer_Start(audioRenderer);
+    OH_AudioRenderer_Pause(audioRenderer);
+
+    OH_AudioStream_State state;
+    result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(state == AUDIOSTREAM_STATE_PAUSED);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetCurrentState API via legal state.
+* @tc.number: OH_AudioRenderer_GetCurrentState_004
+* @tc.desc  : Test OH_AudioRenderer_GetCurrentState interface. Return true if the result state is
+*             AUDIOSTREAM_STATE_STOPPED.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioRenderer_Start(audioRenderer);
+    OH_AudioRenderer_Stop(audioRenderer);
+
+    OH_AudioStream_State state;
+    result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(state == AUDIOSTREAM_STATE_STOPPED);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetCurrentState API via legal state.
+* @tc.number: OH_AudioRenderer_GetCurrentState_005
+* @tc.desc  : Test OH_AudioRenderer_GetCurrentState interface. Return true if the result state is
+*             AUDIOSTREAM_STATE_RELEASED.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_005, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioRenderer_Start(audioRenderer);
+    OH_AudioRenderer_Release(audioRenderer);
+
+    OH_AudioStream_State state;
+    result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(state == AUDIOSTREAM_STATE_RELEASED);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
 * @tc.name  : Test OH_AudioRenderer_GetLatencyMode API via legal state.
 * @tc.number: OH_Audio_Render_GetParameter_001
 * @tc.desc  : Test OH_AudioRenderer_GetLatencyMode interface. Returns true if latencyMode is

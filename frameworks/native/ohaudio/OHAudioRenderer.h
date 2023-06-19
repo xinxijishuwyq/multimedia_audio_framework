@@ -49,7 +49,7 @@ class OHAudioRenderer {
         bool Stop();
         bool Flush();
         bool Release();
-        RendererState GetStatus();
+        RendererState GetCurrentState();
         void GetStreamId(uint32_t& streamId);
         AudioChannel GetChannelCount();
         int32_t GetSamplingRate();
