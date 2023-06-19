@@ -241,25 +241,25 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufOut.frameLength = frameLen;
     int ret;
     int count = 0;
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    for (AudioEffectHandle handle: standByEffectHandles) {
-        if (count % FACTOR_TWO == 0) {
-            audioBufIn.raw = bufIn;
-            audioBufOut.raw = bufOut;
-        } else {
-            audioBufOut.raw = bufIn;
-            audioBufIn.raw = bufOut;
+    {
+        std::lock_guard<std::mutex> lock(reloadMutex);
+        for (AudioEffectHandle handle: standByEffectHandles) {
+            if (count % FACTOR_TWO == 0) {
+                audioBufIn.raw = bufIn;
+                audioBufOut.raw = bufOut;
+            } else {
+                audioBufOut.raw = bufIn;
+                audioBufIn.raw = bufOut;
+            }
+            ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
+            if (ret != 0) {
+                AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
+                    sceneType.c_str(), effectMode.c_str());
+                continue;
+            }
+            count++;
         }
-        ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
-                sceneType.c_str(), effectMode.c_str());
-            continue;
-        }
-        count++;
     }
-}
 
     if (count % FACTOR_TWO == 0) {
         CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
@@ -330,7 +330,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     frameLen = DEFAULT_FRAMELEN;
     deviceType = DEVICE_TYPE_SPEAKER;
     deviceSink = DEFAULT_DEVICE_SINK;
-    isInitialized = false;
+    isInitialized_ = false;
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -348,7 +348,7 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 
 int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string &sinkName)
 {
-    if (!isInitialized) {
+    if (!isInitialized_) {
         deviceType = (DeviceType)device;
         deviceSink = sinkName;
         AUDIO_INFO_LOG("AudioEffectChainManager has not beed initialized yet");
@@ -450,7 +450,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
         SceneTypeAndModeToEffectChainNameMap[item->first] = item->second;
     }
 
-    isInitialized = true;
+    isInitialized_ = true;
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap.size());
     AUDIO_INFO_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap.size());
     AUDIO_INFO_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
@@ -459,7 +459,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 
 int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
 {
-    CHECK_AND_RETURN_RET_LOG(isInitialized, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
     
     AudioEffectChain *audioEffectChain;
@@ -531,10 +531,10 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 
 bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
 {
-    CHECK_AND_RETURN_RET_LOG(isInitialized, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
     CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
-    if (!isInitialized) {
+    if (!isInitialized_) {
         AUDIO_INFO_LOG("AudioEffectChainManager has not been initialized");
         return false;
     }
