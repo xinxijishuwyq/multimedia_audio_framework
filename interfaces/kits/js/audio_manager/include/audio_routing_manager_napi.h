@@ -18,7 +18,6 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "audio_renderer_info_napi.h"
 #include "audio_system_manager.h"
 #include "audio_manager_callback_napi.h"
 #include "audio_routing_manager.h"

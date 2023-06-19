@@ -333,37 +333,6 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。\
 请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
 
-### 铃声管理<a name="section645572311287_006"></a>
-可以使用提供的接口[**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) 和 [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h)实现铃声播放功能。
-1. 使用 **CreateRingtoneManager** 接口创建 **IRingtoneSoundManager** 实例。
-    ```
-    std::shared_ptr<IRingtoneSoundManager> ringtoneManagerClient = RingtoneFactory::CreateRingtoneManager();
-    ```
-2. 使用 **SetSystemRingtoneUri** 接口设置系统铃声Uri
-    ```
-    std::string uri = "/data/media/test.wav";
-    RingtoneType ringtoneType = RINGTONE_TYPE_DEFAULT;
-    ringtoneManagerClient->SetSystemRingtoneUri(context, uri, ringtoneType);
-    ```
-3. 使用 **GetRingtonePlayer** 接口获取 **IRingtonePlayer** 实例。
-    ```
-    std::unique_ptr<IRingtonePlayer> ringtonePlayer = ringtoneManagerClient->GetRingtonePlayer(context, ringtoneType);
-    ```
-4. 使用 **Configure** 接口配置铃声播放器。
-    ```
-    float volume = 1;
-    bool loop = true;
-    ringtonePlayer.Configure(volume, loop);
-    ```
-5. 使用 **Start**, **Stop**, 和 **Release** 接口在铃声播放器实例上控制播放状态。
-    ```
-    ringtonePlayer.Start();
-    ringtonePlayer.Stop();
-    ringtonePlayer.Release();
-    ```
-6. 使用 **GetTitle** 接口获取当前系统铃声的标题。
-7. 使用 **GetRingtoneState** 接口获取铃声播放状态 - **RingtoneState**
-8. 使用 **GetAudioRendererInfo** 获取 **AudioRendererInfo** 检查内容类型和流使用情况。
 ### 蓝牙SCO呼叫<a name="section645572311287_007"></a>
 可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
 

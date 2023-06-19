@@ -303,37 +303,6 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
 JavaScript applications can call the audio management APIs to control the volume and devices.  
 For details, see [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis/js-apis-audio.md#audiomanager).
 
-### Ringtone Management
-You can use the APIs provided in [**iringtone_sound_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_sound_manager.h) and [**iringtone_player.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audioringtone/include/iringtone_player.h) to implement ringtone playback.
-1. Call **CreateRingtoneManager()** to create an **IRingtoneSoundManager** instance.
-    ```
-    std::shared_ptr<IRingtoneSoundManager> ringtoneManagerClient = RingtoneFactory::CreateRingtoneManager();
-    ```
-2. Call **SetSystemRingtoneUri()** to set the system ringtone URI.
-    ```
-    std::string uri = "/data/media/test.wav";
-    RingtoneType ringtoneType = RINGTONE_TYPE_DEFAULT;
-    ringtoneManagerClient->SetSystemRingtoneUri(context, uri, ringtoneType);
-    ```
-3. Call **GetRingtonePlayer()** to obtain an **IRingtonePlayer** instance.
-    ```
-    std::unique_ptr<IRingtonePlayer> ringtonePlayer = ringtoneManagerClient->GetRingtonePlayer(context, ringtoneType);
-    ```
-4. Call **Configure()** to configure the ringtone player.
-    ```
-    float volume = 1;
-    bool loop = true;
-    ringtonePlayer.Configure(volume, loop);
-    ```
-5. Call **Start()**, **Stop()**, and **Release()** to control the playback state of the ringtone player.
-    ```
-    ringtonePlayer.Start();
-    ringtonePlayer.Stop();
-    ringtonePlayer.Release();
-    ```
-6. Call **GetTitle()** to obtain the title of the system ringtone.
-7. Call **GetRingtoneState()** to obtain the ringtone state.
-8. Call **GetAudioRendererInfo()** to obtain the content type and stream usage.
 ### Bluetooth SCO Call
 You can use the APIs provided in [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) to implement Bluetooth calls over synchronous connection-oriented (SCO) links.
 
