@@ -124,6 +124,8 @@ public:
  */
 class AudioRenderer {
 public:
+    static int32_t CheckMaxRendererInstances();
+
     /**
      * @brief create renderer instance.
      *
