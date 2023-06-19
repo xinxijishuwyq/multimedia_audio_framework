@@ -81,6 +81,17 @@ OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer)
     }
 }
 
+
+OH_AudioStream_Result OH_AudioCapturer_GetCurrentState(OH_AudioCapturer* capturer, OH_AudioStream_State* state)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+
+    OHOS::AudioStandard::CapturerState capturerState = audioCapturer->GetCurrentState();
+    *state = (OH_AudioStream_State)capturerState;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioCapturer_GetLatencyMode(OH_AudioCapturer* capturer,
     OH_AudioStream_LatencyMode* latencyMode)
 {
@@ -193,6 +204,12 @@ bool OHAudioCapturer::Release()
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
     return audioCapturer_->Release();
+}
+
+CapturerState OHAudioCapturer::GetCurrentState()
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, CAPTURER_INVALID, "capturer client is nullptr");
+    return audioCapturer_->GetStatus();
 }
 
 void OHAudioCapturer::GetStreamId(uint32_t &streamId)

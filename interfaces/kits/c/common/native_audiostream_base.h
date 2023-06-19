@@ -140,23 +140,23 @@ typedef enum {
     /**
      * The prepared state.
      */
-    AUDIOSTREAM_STATE_PREPARED,
+    AUDIOSTREAM_STATE_PREPARED = 1,
     /**
      * The stream is running.
      */
-    AUDIOSTREAM_STATE_RUNNING,
+    AUDIOSTREAM_STATE_RUNNING = 2,
     /**
      * The stream is stopped.
      */
-    AUDIOSTREAM_STATE_STOPPED,
-    /**
-     * The stream is paused.
-     */
-    AUDIOSTREAM_STATE_PAUSED,
+    AUDIOSTREAM_STATE_STOPPED = 3,
     /**
      * The stream is released.
      */
-    AUDIOSTREAM_STATE_RELEASED
+    AUDIOSTREAM_STATE_RELEASED = 4,
+    /**
+     * The stream is paused.
+     */
+    AUDIOSTREAM_STATE_PAUSED = 5,
 } OH_AudioStream_State;
 
 /**
