@@ -223,7 +223,7 @@ void AudioEffectChain::SetEffectChain(std::vector<AudioEffectHandle> &effHandles
 }
 
 
-void CopyBuffer(float *bufIn, float *bufOut, uint32_t totalLen)
+void CopyBuffer(const float *bufIn, float *bufOut, uint32_t totalLen)
 {
     for (uint32_t i = 0; i < totalLen; ++i) {
         bufOut[i] = bufIn[i];
@@ -239,7 +239,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     audioBufIn.frameLength = frameLen;
     audioBufOut.frameLength = frameLen;
-    int ret;
     int count = 0;
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
@@ -251,7 +250,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
             audioBufOut.raw = bufIn;
             audioBufIn.raw = bufOut;
         }
-        ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
+        int ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
         if (ret != 0) {
             AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
                 sceneType.c_str(), effectMode.c_str());
@@ -283,7 +282,7 @@ bool AudioEffectChain::IsEmptyEffectHandles()
     return standByEffectHandles.empty();
 }
 
-int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
+int32_t FindEffectLib(const std::string effect, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
     AudioEffectLibEntry **libEntry, std::string &libName)
 {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
@@ -296,7 +295,7 @@ int32_t FindEffectLib(std::string effect, std::vector<std::unique_ptr<AudioEffec
     return ERROR;
 }
 
-int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, std::string effect, std::string libName)
+int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string effect, const std::string libName)
 {
     if (!libEntry) {
         AUDIO_ERR_LOG("Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
@@ -364,10 +363,9 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
     deviceSink = sinkName;
 
 #ifdef DEVICE_FLAG
-    std::string sceneType;
     for (auto scene = AUDIO_SUPPORTED_SCENE_TYPES.begin(); scene != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++scene) {
-        sceneType = scene->second;
+        std::string sceneType = scene->second;
         if (!SceneTypeToEffectChainMap.count(sceneType)) {
             AUDIO_ERR_LOG("Set effect chain for [%{public}s] but it does not exist", sceneType.c_str());
             continue;
@@ -418,10 +416,9 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 
     // Construct EffectToLibraryEntryMap that stores libEntry for each effect name
     AudioEffectLibEntry *libEntry = nullptr;
-    int32_t ret;
     std::string libName;
     for (std::string effect: effectSet) {
-        ret = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
+        int32_t ret = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
         if (ret == ERROR) {
             AUDIO_ERR_LOG("Couldn't find libEntry of effect %{public}s", effect.c_str());
             continue;
@@ -505,7 +502,6 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         effectChain = effectNone;
     }
 
-    int ret;
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->AddEffectHandleBegin();
     for (std::string effect: EffectChainToEffectsMap[effectChain]) {
@@ -513,7 +509,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         AudioEffectDescriptor descriptor;
         descriptor.libraryName = EffectToLibraryNameMap[effect];
         descriptor.effectName = effect;
-        ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
+        int ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         if (ret != 0) {
             AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
             continue;

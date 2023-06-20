@@ -156,6 +156,8 @@ private:
     static void AsyncSetSamplingRate(napi_env env, void *data);
     static void AsyncGetCurrentOutputDevices(napi_env env, void *data);
     static void AsyncSetAudioEffectMode(napi_env env, void *data);
+    static void AsyncGetAudioEffectMode(napi_env env, void *data);
+
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);

@@ -80,7 +80,7 @@ static int32_t UpdateUnsupportedScene(std::string &scene)
     return isSupported;
 }
 
-static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, std::string &mode, int i, int j)
+static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, const std::string &mode, int i, int j)
 {
     StreamEffectMode streamEffectMode;
     streamEffectMode.mode = mode;
@@ -94,13 +94,11 @@ static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, std::stri
         }
         j += 1;
     }
-    i += 1;
     stream.streamEffectMode.push_back(streamEffectMode);
 }
 
 static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string &mode, int i)
 {
-    int j = 0;
     int isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
         (mode != "EFFECT_DEFAULT")) {
@@ -109,11 +107,12 @@ static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string
         isSupported = -1;
     }
     if (isSupported == 0) {
+        int j = 0; 
         UpdateUnsupportedDevicePre(pp, stream, mode, i, j);
     }
 }
 
-static void UpdateUnsupportedDevicePost(Postprocess &pp, Stream &stream, std::string &mode, int i, int j)
+static void UpdateUnsupportedDevicePost(Postprocess &pp, Stream &stream, const std::string &mode, int i, int j)
 {
     StreamEffectMode streamEffectMode;
     streamEffectMode.mode = mode;
@@ -127,13 +126,11 @@ static void UpdateUnsupportedDevicePost(Postprocess &pp, Stream &stream, std::st
         }
         j += 1;
     }
-    i += 1;
     stream.streamEffectMode.push_back(streamEffectMode);
 }
 
 static void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::string &mode, int i)
 {
-    int j = 0;
     int isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
         (mode != "EFFECT_DEFAULT")) {
@@ -142,13 +139,13 @@ static void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::stri
         isSupported = -1;
     }
     if (isSupported == 0) {
+        int j = 0;
         UpdateUnsupportedDevicePost(pp, stream, mode, i, j);
     }
 }
 
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
-    int i;
     int32_t isDuplicate = 0;
     int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
@@ -157,7 +154,7 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
     if ((it == preProcessNew.stream.end()) && (isSupported == 0)) {
         Stream stream;
         stream.scene = pp.stream;
-        i = 0;
+        int i = 0;
         for (auto &mode: pp.mode) {
             UpdateUnsupportedModePre(pp, stream, mode, i);
         }
@@ -170,7 +167,6 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
 
 static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess &pp)
 {
-    int i;
     int32_t isDuplicate = 0;
     int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&pp](const Stream& x) {
@@ -179,7 +175,7 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess
     if ((it == postProcessNew.stream.end()) && (isSupported == 0)) {
         Stream stream;
         stream.scene = pp.stream;
-        i = 0;
+        int i = 0; 
         for (auto &mode: pp.mode) {
             UpdateUnsupportedModePost(pp, stream, mode, i);
         }
@@ -194,7 +190,7 @@ void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableL
 {
     int count = 0;
     std::vector<int> deviceDelIdx;
-    for (auto &ec: supportedEffectConfig_.effectChains) {
+    for (const auto &ec: supportedEffectConfig_.effectChains) {
         for (auto &effectName: ec.apply) {
             auto it = std::find_if(availableEffects_.begin(), availableEffects_.end(),
                 [&effectName](const Effect& effect) {
@@ -247,13 +243,12 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
 
 void AudioEffectManager::UpdateDuplicateBypassMode(ProcessNew &preProcessNew)
 {
-    int flag, count;
-    flag = 0;
+    int flag = 0; 
     std::vector<int> deviceDelIdx;
     for (auto &stream: preProcessNew.stream) {
-        count = 0;
+        int count = 0;
         deviceDelIdx.clear();
-        for (auto &streamEffectMode: stream.streamEffectMode) {
+        for (const auto &streamEffectMode: stream.streamEffectMode) {
             if (streamEffectMode.mode == "EFFECT_NONE") {
                 deviceDelIdx.push_back(count);
             }
@@ -382,18 +377,17 @@ static void UpdateUnavailableEffectChainsRecord(std::vector<std::string> &availa
             }
         }
     }
-    modeCount += 1;
 }
 
 int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout,
     ProcessNew &processNew)
 {
-    int modeCount, ret;
+    int ret;
     
     std::vector<int> modeDelIdx;
     for (auto &stream: processNew.stream) {
         modeDelIdx.clear();
-        modeCount = 0;
+        int modeCount = 0; 
         for (auto &streamEffectMode: stream.streamEffectMode) {
             UpdateUnavailableEffectChainsRecord(availableLayout, stream, streamEffectMode, modeDelIdx, modeCount);
         }

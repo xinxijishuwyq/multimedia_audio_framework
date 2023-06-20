@@ -96,7 +96,7 @@ void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr
     }
 }
 
-AudioEffectLibEntry *FindLibrary(const std::string name, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
+AudioEffectLibEntry *FindLibrary(const std::string name, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : libList) {
         if (lib->libraryName == name) {

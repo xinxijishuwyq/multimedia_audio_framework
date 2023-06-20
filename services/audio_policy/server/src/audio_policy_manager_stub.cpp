@@ -921,12 +921,11 @@ void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data
 
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
-    int k;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
     int countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (k = 0; k < countDev; k++) {
+        for (int k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
@@ -934,24 +933,22 @@ static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, Message
 }
 static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-    int j;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
     int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (j = 0; j < countMode; j++) {
+        for (int j = 0; j < countMode; j++) {
             PreprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
 }
 static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
 {
-    int k;
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
     int countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (k = 0; k < countDev; k++) {
+        for (int k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
@@ -959,13 +956,12 @@ static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, Messag
 }
 static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
 {
-    int j;
     // i th stream
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
     int countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (j = 0; j < countMode; j++) {
+        for (int j = 0; j < countMode; j++) {
             PostprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
