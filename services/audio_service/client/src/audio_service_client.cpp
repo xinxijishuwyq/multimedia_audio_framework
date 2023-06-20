@@ -240,8 +240,7 @@ void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
 
-    AUDIO_DEBUG_LOG("AAudioServiceClient::PAStreamSetBufAttrSuccessCb is called");
-    AUDIO_ERR_LOG("AAudioServiceClient::PAStreamSetBufAttrSuccessCb SetBufAttr %s", success ? "success" : "faild");
+    AUDIO_INFO_LOG("SetBufAttr %{public}s", success ? "success" : "faild");
 
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -1253,14 +1252,15 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 
     while (length > 0) {
         size_t writableSize;
+        size_t origWritableSize = 0;
 
         Trace trace1("PaWriteStream Wait");
         while (!(writableSize = pa_stream_writable_size(paStream))) {
             pa_threaded_mainloop_wait(mainLoop);
         }
-        Trace trace2("PaWriteStream Write");
 
         AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
+        origWritableSize = writableSize;
         if (writableSize > length) {
             writableSize = length;
         }
@@ -1272,6 +1272,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             break;
         }
 
+        Trace trace2("PaWriteStream Write:" + std::to_string(writableSize) + "/" + std::to_string(origWritableSize));
         error = pa_stream_write(paStream, (void *)buffer, writableSize, nullptr, 0LL,
                                 PA_SEEK_RELATIVE);
         if (error < 0) {

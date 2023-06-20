@@ -814,7 +814,6 @@ int32_t AudioStream::GetBufQueueState(BufferQueueState &bufState)
 
 int32_t AudioStream::Enqueue(const BufferDesc &bufDesc)
 {
-    AUDIO_INFO_LOG("AudioStream::Enqueue");
     if ((renderMode_ != RENDER_MODE_CALLBACK) && (captureMode_ != CAPTURE_MODE_CALLBACK)) {
         AUDIO_ERR_LOG("AudioStream::Enqueue not supported. Render or capture mode is not callback.");
         return ERR_INCORRECT_MODE;
