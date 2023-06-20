@@ -19,7 +19,6 @@
 #include "audio_common_napi.h"
 #include "audio_errors.h"
 #include "audio_parameters_napi.h"
-#include "audio_renderer_info_napi.h"
 #include "audio_renderer_napi.h"
 #include "audio_ringermode_callback_napi.h"
 #include "audio_manager_callback_napi.h"
