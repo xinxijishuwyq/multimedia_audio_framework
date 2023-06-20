@@ -358,7 +358,6 @@ ohos_executable("audio_hdi_device_test") {
   cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
 
   sources = [
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp",
     "test/example/audio_hdi_device_test.cpp",
   ]

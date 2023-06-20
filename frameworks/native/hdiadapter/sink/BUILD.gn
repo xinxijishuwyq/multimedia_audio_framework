@@ -64,8 +64,6 @@ ohos_shared_library("fast_audio_renderer_sink") {
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
     "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
-    "//commonlibrary/c_utils/base/include",
-    "//drivers/peripheral/audio/interfaces/include",
   ]
 
   deps = [
@@ -73,10 +71,10 @@ ohos_shared_library("fast_audio_renderer_sink") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  deps += [ multimedia_audio_framework_hdi_audio_client ]
-
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_audio:audio_idl_headers",
+    "drivers_interface_audio:libaudio_proxy_1.0",
     "hiviewdfx_hilog_native:libhilog",
     "power_manager:powermgr_client",
   ]
