@@ -136,17 +136,16 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_, volumeLevel);
-    if (volumeLevel < GetMinVolumeLevel(streamType) || volumeLevel > GetMaxVolumeLevel(streamType)) {
-        AUDIO_ERR_LOG("volumeLevel not in scope.");
-        return ERR_OPERATION_FAILED;
-    }
-
     if (volumeLevel == 0 &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetSystemVolumeLevel this type can not set mute");
         return SUCCESS;
+    }
+    if (volumeLevel < GetMinVolumeLevel(streamType) || volumeLevel > GetMaxVolumeLevel(streamType)) {
+        AUDIO_ERR_LOG("volumeLevel not in scope.");
+        return ERR_OPERATION_FAILED;
     }
 
     // In case if KvStore didnot connect during bootup
