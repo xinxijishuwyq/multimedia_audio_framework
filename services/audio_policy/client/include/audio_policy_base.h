@@ -121,8 +121,8 @@ public:
 
     virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
 
-    virtual bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId, int32_t appUid,
-        bool privacyFlag, AudioPermissionState state) = 0;
+    virtual bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+        AudioPermissionState state) = 0;
 
     virtual bool getUsingPemissionFromPrivacy(const std::string &permission, uint32_t appTokenId,
         AudioPermissionState state) = 0;

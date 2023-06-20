@@ -1511,6 +1511,12 @@ int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallback(const int32_t /* cl
     return SUCCESS;
 }
 
+bool AudioPolicyServer::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+    AudioPermissionState state)
+{
+    return VerifyClientPermission(MICROPHONE_PERMISSION, appTokenId, appUid, privacyFlag, state);
+}
+
 bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
     bool privacyFlag, AudioPermissionState state)
 {

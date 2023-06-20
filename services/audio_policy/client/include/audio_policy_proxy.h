@@ -123,8 +123,8 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    bool VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId, int32_t appUid,
-        bool privacyFlag, AudioPermissionState state) override;
+    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+        AudioPermissionState state) override;
 
     bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
         AudioPermissionState state) override;
