@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "remote_audio_renderer_sink.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,11 +39,6 @@ AudioService::AudioService()
 AudioService::~AudioService()
 {
     AUDIO_INFO_LOG("~AudioService()");
-}
-
-inline void DumpProcessConfig(const AudioProcessConfig &config)
-{
-    AUDIO_INFO_LOG("Dump AudioProcessConfig: sample rate:%{public}d", config.streamInfo.samplingRate);
 }
 
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
@@ -85,7 +81,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
-    DumpProcessConfig(config);
+    AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
 
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo);
@@ -172,6 +168,14 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 {
     // send the config to AudioPolicyServera and get the device info.
     DeviceInfo deviceInfo;
+    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+    if (ret) {
+        AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType is%{public}d", deviceInfo.deviceType);
+        return deviceInfo;
+    } else {
+        AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
+    }
+
     if (config.audioMode == AUDIO_MODE_RECORD) {
         deviceInfo.deviceId = 1;
         if (config.isRemote) {
@@ -184,7 +188,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
     } else {
         deviceInfo.deviceId = 6; // 6 for test
         if (config.isRemote) {
-        deviceInfo.networkId = REMOTE_NETWORK_ID;
+            deviceInfo.networkId = REMOTE_NETWORK_ID;
         } else {
             deviceInfo.networkId = LOCAL_NETWORK_ID;
         }
@@ -228,6 +232,7 @@ void AudioService::Dump(std::stringstream &dumpStringStream)
         dumpStringStream << std::endl << "Endpoint device id:" << item.first << std::endl;
         item.second->Dump(dumpStringStream);
     }
+    PolicyHandler::GetInstance().Dump(dumpStringStream);
 }
 } // namespace AudioStandard
 } // namespace OHOS

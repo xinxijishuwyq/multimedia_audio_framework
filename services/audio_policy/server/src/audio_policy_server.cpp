@@ -2144,6 +2144,8 @@ void AudioPolicyServer::RegisterParamCallback()
     AUDIO_INFO_LOG("RegisterParamCallback");
     remoteParameterCallback_ = std::make_shared<RemoteParameterCallback>(this);
     mPolicyService.SetParameterCallback(remoteParameterCallback_);
+    // regiest policy provider in audio server
+    mPolicyService.RegiestPolicy();
 }
 
 void AudioPolicyServer::RegisterBluetoothListener()

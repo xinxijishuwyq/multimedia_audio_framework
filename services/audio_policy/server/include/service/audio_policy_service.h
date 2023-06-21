@@ -41,11 +41,12 @@
 #include "parser_factory.h"
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
+#include "policy_provider_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
-    public IAudioAccessibilityConfigObserver {
+    public IAudioAccessibilityConfigObserver, public PolicyProviderStub {
 public:
     static AudioPolicyService& GetAudioPolicyService()
     {
@@ -222,6 +223,17 @@ public:
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
+
+    void RegiestPolicy();
+
+    // override for IPolicyProvider
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+
+    int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
+
+    bool GetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol);
+
+    bool SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol);
 
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid);
@@ -446,6 +458,9 @@ private:
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
+
+    std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
+    volatile Volume *volumeVector_ = nullptr;
 
     std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,

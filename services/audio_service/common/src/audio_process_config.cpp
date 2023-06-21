@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
-#include "i_audio_process.h"
+#include "audio_process_config.h"
+
+#include <sstream>
 
 #include "audio_errors.h"
 #include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
-int32_t IAudioProcess::WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel)
+int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel)
 {
     // AppInfo
     parcel.WriteInt32(config.appInfo.appUid);
@@ -51,10 +53,10 @@ int32_t IAudioProcess::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     return SUCCESS;
 }
 
-int32_t IAudioProcess::ReadConfigFromParcel(AudioProcessConfig &config, MessageParcel &parcel)
+int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageParcel &parcel)
 {
     // AppInfo
-    config.appInfo.appPid = parcel.ReadInt32();
+    config.appInfo.appUid = parcel.ReadInt32();
     config.appInfo.appTokenId = parcel.ReadUint32();
     config.appInfo.appPid = parcel.ReadInt32();
 
@@ -80,6 +82,32 @@ int32_t IAudioProcess::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.isRemote = parcel.ReadBool();
 
     return SUCCESS;
+}
+
+std::string ProcessConfig::DumpProcessConfig(const AudioProcessConfig &config)
+{
+    std::stringstream temp;
+
+    // AppInfo
+    temp << "appInfo:pid<" << config.appInfo.appPid << "> uid<" << config.appInfo.appUid << "> tokenId<" <<
+        config.appInfo.appTokenId << "> ";
+
+    // streamInfo
+    temp << "streamInfo:format(" << config.streamInfo.format << ") encoding(" << config.streamInfo.encoding <<
+        ") channels(" << config.streamInfo.channels << ") samplingRate(" << config.streamInfo.samplingRate << ") ";
+
+    // audioMode
+    if (config.audioMode == AudioMode::AUDIO_MODE_PLAYBACK) {
+        temp << "[rendererInfo]:streamUsage(" << config.rendererInfo.streamUsage << ") contentType(" <<
+            config.rendererInfo.contentType << ") flag(" << config.rendererInfo.rendererFlags << ") ";
+    } else {
+        temp << "[capturerInfo]:sourceType(" << config.capturerInfo.sourceType << ") flag(" <<
+            config.capturerInfo.capturerFlags << ") ";
+    }
+
+    temp << "isRemote<" << (config.isRemote ? "true" : "false") << ">";
+
+    return temp.str();
 }
 } // namespace AudioStandard
 } // namespace OHOS

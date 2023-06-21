@@ -13,29 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef I_AUDIO_PROCESS_STREAM_H
-#define I_AUDIO_PROCESS_STREAM_H
+#ifndef POLICY_PROVIDER_PROXY_H
+#define POLICY_PROVIDER_PROXY_H
 
-#include <memory>
-
-#include "audio_info.h"
-#include "oh_audio_buffer.h"
+#include "i_policy_provider_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class IAudioProcessStream {
+class PolicyProviderProxy : public IRemoteProxy<IPolicyProviderIpc> {
 public:
-    /**
-     * Get buffer of client for AudioEndpoint.
-    */
-    virtual std::shared_ptr<OHAudioBuffer> GetStreamBuffer() = 0;
+    explicit PolicyProviderProxy(const sptr<IRemoteObject>& impl);
+    virtual ~PolicyProviderProxy();
 
-    virtual AudioStreamInfo GetStreamInfo() = 0;
+    int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
 
-    virtual AudioStreamType GetAudioStreamType() = 0;
+    int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
-    virtual ~IAudioProcessStream() = default;
+private:
+    static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // I_AUDIO_PROCESS_STREAM_H
+#endif // POLICY_PROVIDER_PROXY_H

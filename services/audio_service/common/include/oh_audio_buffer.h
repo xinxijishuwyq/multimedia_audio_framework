@@ -22,6 +22,7 @@
 #include "message_parcel.h"
 
 #include "audio_info.h"
+#include "audio_shared_memory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -92,22 +93,6 @@ struct SpanInfo {
     bool isMute;
     int32_t volumeStart;
     int32_t volumeEnd;
-};
-
-class AudioSharedMemory {
-public:
-    virtual ~AudioSharedMemory() = default;
-
-    virtual uint8_t *GetBase() = 0;
-    virtual size_t GetSize() = 0;
-    virtual int GetFd() = 0;
-    virtual std::string GetName() = 0;
-
-    static std::shared_ptr<AudioSharedMemory> CreateFormLocal(size_t size, const std::string &name);
-    static std::shared_ptr<AudioSharedMemory> CreateFromRemote(int fd, size_t size, const std::string &name);
-
-    static int32_t WriteToParcel(const std::shared_ptr<AudioSharedMemory> &memory, MessageParcel &parcel);
-    static std::shared_ptr<AudioSharedMemory> ReadFromParcel(MessageParcel &parcel);
 };
 
 class OHAudioBuffer {
