@@ -621,17 +621,13 @@ void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::VerifyClientPermissionInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::VerifyClientMicrophonePermissionInternal(MessageParcel &data, MessageParcel &reply)
 {
-    std::string permissionName = data.ReadString();
-    if (!permissionName.compare(MICROPHONE_PERMISSION)) {
-        permissionName = MICROPHONE_PERMISSION;
-    }
     uint32_t appTokenId = data.ReadUint32();
     uint32_t appUid = data.ReadInt32();
     bool privacyFlag = data.ReadBool();
     AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
+    bool ret = VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state);
     reply.WriteBool(ret);
 }
 
@@ -1150,8 +1146,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             GetDevicesInternal(data, reply);
             break;
 
-        case QUERY_PERMISSION:
-            VerifyClientPermissionInternal(data, reply);
+        case QUERY_MICROPHONE_PERMISSION:
+            VerifyClientMicrophonePermissionInternal(data, reply);
             break;
 
         case SELECT_OUTPUT_DEVICE:

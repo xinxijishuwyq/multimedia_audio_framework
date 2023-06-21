@@ -603,12 +603,11 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::VerifyClientPermission(const std::string &permissionName,
-    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
+bool AudioServiceClient::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+    AudioPermissionState state)
 {
     // for capturer check for MICROPHONE PERMISSION
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId, appUid,
-        privacyFlag, state)) {
+    if (!AudioPolicyManager::GetInstance().VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state)) {
         AUDIO_ERR_LOG("Client doesn't have MICROPHONE permission");
         return false;
     }

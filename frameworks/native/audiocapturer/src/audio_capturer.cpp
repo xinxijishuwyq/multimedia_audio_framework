@@ -146,8 +146,8 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     AUDIO_INFO_LOG("AudioCapturer::SetParams");
-    if (!audioStream_->VerifyClientPermission(MICROPHONE_PERMISSION, appInfo_.appTokenId, appInfo_.appUid,
-        true, AUDIO_PERMISSION_START)) {
+    if (!audioStream_->VerifyClientMicrophonePermission(appInfo_.appTokenId, appInfo_.appUid, true,
+        AUDIO_PERMISSION_START)) {
         AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
         return ERR_PERMISSION_DENIED;
     }

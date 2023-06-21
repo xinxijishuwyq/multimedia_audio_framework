@@ -178,8 +178,8 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0, int32_t appUid = INVALID_UID,
-        bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START) override;
+    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+        AudioPermissionState state) override;
 
     bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
         AudioPermissionState state = AUDIO_PERMISSION_START) override;
@@ -318,6 +318,8 @@ private:
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
+    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0, int32_t appUid = INVALID_UID,
+        bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START);
 
     // externel function call
     void SubscribeKeyEvents();

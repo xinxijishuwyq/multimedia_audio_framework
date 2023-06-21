@@ -902,15 +902,15 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::VerifyClientPermission(const std::string &permissionName,
-    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
+bool AudioPolicyManager::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
+    AudioPermissionState state)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("VerifyClientPermission: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("VerifyClientMicrophonePermission: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->VerifyClientPermission(permissionName, appTokenId, appUid, privacyFlag, state);
+    return gsp->VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state);
 }
 
 bool AudioPolicyManager::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
