@@ -1114,7 +1114,6 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             SetAudioManagerInterruptCbInternal(data, reply);
             break;
 
-
         case UNSET_INTERRUPT_CALLBACK:
             UnsetAudioManagerInterruptCbInternal(data, reply);
             break;
