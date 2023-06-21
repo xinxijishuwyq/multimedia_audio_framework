@@ -158,7 +158,6 @@ private:
     static void AsyncSetAudioEffectMode(napi_env env, void *data);
     static void AsyncGetAudioEffectMode(napi_env env, void *data);
 
-
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
                                        napi_value* argv, const std::string& cbName);
     static napi_value RegisterRendererCallback(napi_env env, napi_value* argv,

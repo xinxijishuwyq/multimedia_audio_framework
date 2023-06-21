@@ -250,7 +250,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
             audioBufOut.raw = bufIn;
             audioBufIn.raw = bufOut;
         }
-        int ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
+        int32_t ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
         if (ret != 0) {
             AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
                 sceneType.c_str(), effectMode.c_str());
@@ -509,7 +509,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
         AudioEffectDescriptor descriptor;
         descriptor.libraryName = EffectToLibraryNameMap[effect];
         descriptor.effectName = effect;
-        int ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
+        int32_t ret = EffectToLibraryEntryMap[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         if (ret != 0) {
             AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
             continue;
