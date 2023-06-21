@@ -92,6 +92,7 @@ private:
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
+    static void CreateRendererFailed();
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value SetRenderRate(napi_env env, napi_callback_info info);

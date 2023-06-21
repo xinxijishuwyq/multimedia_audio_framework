@@ -58,7 +58,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
 #endif
 }
 
-static int32_t CheckMaxRendererInstances()
+int32_t AudioRenderer::CheckMaxRendererInstances()
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
@@ -109,7 +109,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(CheckMaxRendererInstances() == SUCCESS, nullptr, "Too many renderer instances");
+    CHECK_AND_RETURN_RET_LOG(AudioRenderer::CheckMaxRendererInstances() == SUCCESS, nullptr,
+        "Too many renderer instances");
     ContentType contentType = rendererOptions.rendererInfo.contentType;
     CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_ULTRASONIC, nullptr,
                              "Invalid content type");

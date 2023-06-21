@@ -496,6 +496,15 @@ static shared_ptr<AbilityRuntime::Context> GetAbilityContext(napi_env env)
     return faContext;
 }
 
+void AudioRendererNapi::CreateRendererFailed()
+{
+    HiLog::Error(LABEL, "Renderer Create failed");
+    AudioRendererNapi::isConstructSuccess_ = NAPI_ERR_SYSTEM;
+    if (AudioRenderer::CheckMaxRendererInstances() == ERR_OVERFLOW) {
+        AudioRendererNapi::isConstructSuccess_ = NAPI_ERR_STREAM_LIMIT;
+    }
+}
+
 napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -531,9 +540,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererNapi->audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
 
     if (rendererNapi->audioRenderer_ == nullptr) {
-        HiLog::Error(LABEL, "Renderer Create failed");
-        unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
-        AudioRendererNapi::isConstructSuccess_ = NAPI_ERR_SYSTEM;
+        CreateRendererFailed();
     }
 
     if (rendererNapi->audioRenderer_ != nullptr && rendererNapi->callbackNapi_ == nullptr) {
