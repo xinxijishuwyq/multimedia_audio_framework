@@ -453,7 +453,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
             continue;
         }
-        if (LOCAL_NETWORK_ID == networkId && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
+        if (networkId == LOCAL_NETWORK_ID && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
             AUDIO_INFO_LOG("Sink-input[%{public}zu] route to effect sink, don't move", i);
             continue;
         }
@@ -469,7 +469,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     }
 
     int32_t ret = SUCCESS;
-    ret = (LOCAL_NETWORK_ID == networkId) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
+    ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
                                             MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
