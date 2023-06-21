@@ -26,10 +26,10 @@
 
 #include <sys/mman.h>
 
-#include "audio_manager.h"
 #include "power_mgr_client.h"
 #include "securec.h"
 #include "running_lock.h"
+#include "v1_0/iaudio_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -115,10 +115,12 @@ private:
     float rightVolume_;
     int32_t routeHandle_ = -1;
     std::string adapterNameCase_;
-    struct AudioManager *audioManager_;
-    struct AudioAdapter *audioAdapter_;
-    struct AudioRender *audioRender_;
+    struct IAudioManager *audioManager_;
+    struct IAudioAdapter *audioAdapter_;
+    struct IAudioRender *audioRender_;
+    struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort_ = {};
+    uint32_t renderId_ = 0;
 
     size_t bufferSize_ = 0;
     uint32_t bufferTotalFrameSize_ = 0;
@@ -172,7 +174,7 @@ void FastAudioRendererSinkInner::DeInit()
     started_ = false;
     rendererInited_ = false;
     if ((audioRender_ != nullptr) && (audioAdapter_ != nullptr)) {
-        audioAdapter_->DestroyRender(audioAdapter_, audioRender_);
+        audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
 
@@ -180,7 +182,7 @@ void FastAudioRendererSinkInner::DeInit()
         if (routeHandle_ != -1) {
             audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
         }
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
@@ -216,7 +218,7 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
             continue;
         }
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portNum; port++) {
+            for (uint32_t port = 0; port < desc->portsLen; port++) {
                 // Only find out the port of out in the sound card
                 if (desc->ports[port].dir == portFlag) {
                     renderPort = desc->ports[port];
@@ -234,7 +236,7 @@ int32_t FastAudioRendererSinkInner::InitAudioManager()
 {
     AUDIO_INFO_LOG("FastAudioRendererSink: Initialize audio proxy manager");
 
-    audioManager_ = GetAudioManagerFuncs();
+    audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -282,7 +284,7 @@ int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int6
     }
 
     struct AudioTimeStamp timestamp = {};
-    int32_t ret = audioRender_->attr.GetMmapPosition((AudioHandle)audioRender_, &frames, &timestamp);
+    int32_t ret = audioRender_->GetMmapPosition(audioRender_, &frames, &timestamp);
     if (ret != 0) {
         AUDIO_ERR_LOG("Hdi GetMmapPosition filed, ret:%{public}d!", ret);
         return ERR_OPERATION_FAILED;
@@ -338,7 +340,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
     int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc = {0};
-    int32_t ret = audioRender_->attr.ReqMmapBuffer((AudioHandle)audioRender_, reqBufferFrameSize, &desc);
+    int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
     if (ret != 0) {
         AUDIO_ERR_LOG("ReqMmapBuffer failed, ret:%{public}d", ret);
         return ERR_OPERATION_FAILED;
@@ -411,11 +413,12 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
-    deviceDesc.desc = nullptr;
-    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_);
+    char desc[] = "";
+    deviceDesc.desc = desc;
+    ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
-        audioManager_->UnloadAdapter(audioManager_, audioAdapter_);
+        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
 
@@ -434,23 +437,24 @@ int32_t FastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
         return ERR_NOT_STARTED;
     }
 
-    int32_t size = 0;
+    uint32_t size = MAX_AUDIO_ADAPTER_NUM;
     int32_t ret;
-    struct AudioAdapterDescriptor *descs = nullptr;
-    ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
+    AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
+    ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
     }
 
-    int32_t index = SwitchAdapterRender(descs, adapterNameCase_, port, audioPort_, size);
+    int32_t index = SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_,
+        size);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Fail");
         return ERR_NOT_STARTED;
     }
 
-    struct AudioAdapterDescriptor *desc = &descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
+    adapterDesc_ = descs[index];
+    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
         AUDIO_ERR_LOG("Load Adapter Fail");
         return ERR_NOT_STARTED;
     }
@@ -588,7 +592,7 @@ int32_t FastAudioRendererSinkInner::Start(void)
     }
 
     if (!started_) {
-        ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Start(audioRender_);
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Start failed!");
             return ERR_NOT_STARTED;
@@ -651,7 +655,7 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    ret = audioRender_->SetVolume(audioRender_, volume);
     if (ret) {
         AUDIO_ERR_LOG("FastAudioRendererSink::Set volume failed!");
     }
@@ -753,7 +757,7 @@ int32_t FastAudioRendererSinkInner::Stop(void)
     KeepRunningUnlock();
 
     if (started_) {
-        int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+        int32_t ret = audioRender_->Stop(audioRender_);
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed! ret: %{public}d.", ret);
             return ERR_OPERATION_FAILED;
@@ -779,7 +783,7 @@ int32_t FastAudioRendererSinkInner::Pause(void)
     }
 
     if (!paused_) {
-        ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Pause(audioRender_);
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Pause failed!");
             return ERR_OPERATION_FAILED;
@@ -805,7 +809,7 @@ int32_t FastAudioRendererSinkInner::Resume(void)
     }
 
     if (paused_) {
-        ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Resume(audioRender_);
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Resume failed!");
             return ERR_OPERATION_FAILED;
@@ -821,7 +825,7 @@ int32_t FastAudioRendererSinkInner::Reset(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Flush(audioRender_);
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Reset failed!");
             return ERR_OPERATION_FAILED;
@@ -836,7 +840,7 @@ int32_t FastAudioRendererSinkInner::Flush(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+        ret = audioRender_->Flush(audioRender_);
         if (ret != 0) {
             AUDIO_ERR_LOG("FastAudioRendererSink::Flush failed!");
             return ERR_OPERATION_FAILED;
