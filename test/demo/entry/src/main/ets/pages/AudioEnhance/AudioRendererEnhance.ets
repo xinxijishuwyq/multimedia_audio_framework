@@ -25,62 +25,61 @@ struct Index {
     Row() {
       Column() {
         Button() {
-          Text("音频管理").fontSize(30).fontColor(Color.White)
+          Text("音频流获取最大最小音量").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioManager' })
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/GetStreamVolume' })
         })
 
         Button() {
-          Text("音频录制").fontSize(30).fontColor(Color.White)
+          Text("获取当次播放欠载音频帧数量").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioCapturer' })
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/GetUnderflowCount' })
         })
 
         Button() {
-          Text("音频渲染").fontSize(30).fontColor(Color.White)
+          Text("支持设置和读取播放速率和音调").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioRenderer' })
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/SetAndGetStreamSamplingRate' })
         })
 
         Button() {
-          Text("DTMF播放器").fontSize(30).fontColor(Color.White)
+          Text("获取音频流输出设备描述符").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/TonePlayer' })
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/GetCurrentOutputDevices' })
         })
 
         Button() {
-          Text("音频焦点").fontSize(30).fontColor(Color.White)
+          Text("注册和去注册音频设备监听").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioFocus' })
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/DeviceChangeCallback' })
         })
 
         Button() {
-          Text("音频框架增强").fontSize(30).fontColor(Color.White)
+          Text("多实例").fontSize(30).fontColor(Color.White)
         }.width('100%')
-        .margin({ bottom: 10 })
+        .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance' })
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/AudioRenderMultiInstance' })
         })
 
       }.width('90%')
       .margin('5%')
-
     }
     .height('100%').width('100%');
 

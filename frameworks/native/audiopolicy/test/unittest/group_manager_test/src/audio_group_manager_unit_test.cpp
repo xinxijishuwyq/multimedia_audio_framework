@@ -27,12 +27,21 @@ namespace {
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
     std::string networkId = "LocalDevice";
+    constexpr int32_t ERROR_62980101 = -62980101;
 }
 
-void AudioGroupManagerUnitTest::SetUpTestCase(void) {}
-void AudioGroupManagerUnitTest::TearDownTestCase(void) {}
+void AudioGroupManagerUnitTest::SetUpTestCase(void)
+{
+    system("param set debug.media_service.histreamer 0");
+}
+void AudioGroupManagerUnitTest::TearDownTestCase(void)
+{
+    system("param set debug.media_service.histreamer 0");
+}
 void AudioGroupManagerUnitTest::SetUp(void) {}
 void AudioGroupManagerUnitTest::TearDown(void) {}
+
+
 
 /**
 * @tc.name  : Test AudioVolume API
@@ -437,6 +446,290 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
         bool isMute;
         ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING, isMute);
         EXPECT_EQ(false, isMute);
+    }
+}
+
+/**
+* @tc.name  : Test IsVolumeUnadjustable API
+* @tc.number: Audio_Group_Manager_IsVolumeUnadjustable_001
+* @tc.desc  : Test volume is unadjustable or adjustable functionality
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_IsVolumeUnadjustable_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->IsVolumeUnadjustable();
+        GTEST_LOG_(INFO) << "Is volume unadjustable: " << ret;
+        EXPECT_EQ(false, ret);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustVolumeByStep_001
+* @tc.desc  : Test adjust volume to up by step functionality
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t ret = -1;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, 7);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_ADJUST_TURN_UP);
+        GTEST_LOG_(INFO) << "Adjust volume by step: " << ret;
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustVolumeByStep_002
+* @tc.desc  : Test adjust volume to down by step functionality
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t ret = -1;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN);
+        GTEST_LOG_(INFO) << "Adjust volume by step: " << ret;
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustSystemVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_001
+* @tc.desc  : Test adjust system volume by step to up of STREAM_RECORDING stream
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t FirstVolume = 7;
+    int32_t ret = -1;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, FirstVolume);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_TURN_UP);
+        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        EXPECT_EQ(SUCCESS, ret);
+
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_GT(SecondVolume, FirstVolume);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustSystemVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_002
+* @tc.desc  : Test adjust system volume by step to down of STREAM_RECORDING stream
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_002, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t FirstVolume = 7;
+    int32_t ret = -1;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, FirstVolume);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN);
+        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        EXPECT_EQ(SUCCESS, ret);
+
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_GT(FirstVolume, SecondVolume);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustSystemVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
+* @tc.desc  : Test adjust system volume by step to up of STREAM_RING stream when is max volume
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_003, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t ret = -1;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        auto maxVol = audioGroupMngr_->GetMaxVolume(AudioVolumeType::STREAM_RING);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, maxVol);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_TURN_UP);
+        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        EXPECT_EQ(ERROR_62980101, ret);
+
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
+        EXPECT_EQ(maxVol, SecondVolume);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustSystemVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_003
+* @tc.desc  : Test adjust system volume by step to down of STREAM_MUSIC stream when is min volume
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_004, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t ret = -1;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        auto minVol = audioGroupMngr_->GetMinVolume(AudioVolumeType::STREAM_MUSIC);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, minVol);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_MUSIC, VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN);
+        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        EXPECT_EQ(ERROR_62980101, ret);
+
+        int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
+        EXPECT_EQ(minVol, SecondVolume);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ACCESSIBILITY, 3, DeviceType::DEVICE_TYPE_SPEAKER);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, 3, DeviceType::DEVICE_TYPE_SPEAKER);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_CALL, 3, DeviceType::DEVICE_TYPE_SPEAKER);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_MUSIC, 3, DeviceType::DEVICE_TYPE_WIRED_HEADPHONES);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_005, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_RING, 3, DeviceType::DEVICE_TYPE_EARPIECE);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_006, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_CALL, 3, DeviceType::DEVICE_TYPE_WIRED_HEADSET);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_007, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ULTRASONIC, 3, DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_008, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_ASSISTANT, 3, DeviceType::DEVICE_TYPE_USB_HEADSET);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
     }
 }
 } // namespace AudioStandard

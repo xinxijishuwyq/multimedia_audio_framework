@@ -42,6 +42,21 @@
     "pages/focus/AvplayerInterruptAvplayer",
     "pages/focus/CapturerInterruptCapturer",
     "pages/focus/CapturerInterruptRenderer",
-    "pages/focus/RendererInterruptRenderer"
+    "pages/focus/RendererInterruptRenderer",
+
+    "pages/AudioEnhance",
+    "pages/AudioEnhance/AudioRendererEnhance",
+    "pages/AudioEnhance/audiorender/GetStreamVolume",
+    "pages/AudioEnhance/audiorender/SetAndGetStreamSamplingRate",
+    "pages/AudioEnhance/audiorender/GetUnderflowCount",
+    "pages/AudioEnhance/audiorender/GetCurrentOutputDevices",
+    "pages/AudioEnhance/audiorender/DeviceChangeCallback",
+    "pages/AudioEnhance/audiorender/AudioRenderMultiInstance",
+    "pages/AudioEnhance/AudioManagerEnhance",
+    "pages/AudioEnhance/audiomanager/Configuration",
+    "pages/AudioEnhance/audiomanager/IsVolumeUnadjustable",
+    "pages/AudioEnhance/audiomanager/AdjustVolumeByStep",
+    "pages/AudioEnhance/audiomanager/AdjustSystemVolumeByStep",
+    "pages/AudioEnhance/audiomanager/GetSystemVolumeInDb"
   ]
 }

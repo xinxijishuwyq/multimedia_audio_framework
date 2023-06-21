@@ -26,13 +26,16 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    std::string networkId = "LocalDevice";
+}
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
 
 void AudioCapturerStateCallbackFuzz::OnCapturerStateChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 const int32_t LIMITSIZE = 4;
-void AudioManagerFuzzTest(const uint8_t* data, size_t size)
+void AudioManagerFuzzTest_audio_framework(const uint8_t* data, size_t size)
 {
     if ((data == nullptr) || (size < LIMITSIZE)) {
         return;
@@ -114,6 +117,26 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
+
+void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
+{
+    if ((data == nullptr) || (size < LIMITSIZE)) {
+        return;
+    }
+
+    int32_t volume = *reinterpret_cast<const int32_t *>(data);
+    AudioVolumeType type = *reinterpret_cast<const AudioVolumeType *>(data);
+    VolumeAdjustType adjustType = *reinterpret_cast<const VolumeAdjustType *>(data);
+    DeviceType device = *reinterpret_cast<const DeviceType *>(data);
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t groupId = infos[0]->volumeGroupId_;
+    auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+    audioGroupMngr_->IsVolumeUnadjustable();
+    audioGroupMngr_->AdjustVolumeByStep(adjustType);
+    audioGroupMngr_->AdjustSystemVolumeByStep(type, adjustType);
+    audioGroupMngr_->GetSystemVolumeInDb(type, volume, device);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -121,8 +144,9 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
+    OHOS::AudioStandard::AudioManagerFuzzTest_audio_framework(data, size);
     OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
+    OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);
     return 0;
 }
