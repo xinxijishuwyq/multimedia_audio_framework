@@ -86,8 +86,8 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
 static void OnDeviceStatusChange(const std::string &info, DeviceStatusListener *devListener)
 {
     CHECK_AND_RETURN_LOG(!info.empty(), "OnDeviceStatusChange invalid info");
-    AudioDeviceType hdiDeviceType = AUDIO_DEVICE_UNKOWN;
-    AudioEventType hdiEventType = AUDIO_EVENT_UNKOWN;
+    AudioDeviceType hdiDeviceType = AUDIO_DEVICE_UNKNOWN;
+    AudioEventType hdiEventType = AUDIO_EVENT_UNKNOWN;
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d", &hdiEventType, &hdiDeviceType) < EVENT_PARAMS) {
         AUDIO_WARNING_LOG("[DeviceStatusListener]: Failed to scan info string %{public}s", info.c_str());
         return;
