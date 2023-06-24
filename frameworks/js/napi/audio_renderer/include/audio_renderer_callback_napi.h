@@ -28,6 +28,7 @@ public:
     explicit AudioRendererCallbackNapi(napi_env env);
     virtual ~AudioRendererCallbackNapi();
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void RemoveCallbackReference(const std::string &callbackName);
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
 private:
