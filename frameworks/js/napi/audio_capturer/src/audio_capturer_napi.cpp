@@ -1181,7 +1181,7 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
 void AudioCapturerNapi::UnregisterCapturerCallback(napi_env env, const std::string& cbName,
     AudioCapturerNapi *capturerNapi)
 {
-    CHECK_AND_RETURN_LOG(capturerNapi->callbackNapi_ != nullptr, "rendererCallbackNapi is nullptr");
+    CHECK_AND_RETURN_LOG(capturerNapi->callbackNapi_ != nullptr, "capturerCallbackNapi is nullptr");
 
     std::shared_ptr<AudioCapturerCallbackNapi> cb =
         std::static_pointer_cast<AudioCapturerCallbackNapi>(capturerNapi->callbackNapi_);
@@ -1203,7 +1203,7 @@ napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis
         capturerNapi->audioCapturer_->UnsetCapturerPeriodPositionCallback();
         capturerNapi->periodPositionCBNapi_ = nullptr;
     } else if (!cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
-        UnregisterRendererCallback(env, cbName, capturerNapi);
+        UnregisterCapturerCallback(env, cbName, capturerNapi);
     } else {
         bool unknownCallback = true;
         THROW_ERROR_ASSERT(env, !unknownCallback, NAPI_ERR_UNSUPPORTED);
