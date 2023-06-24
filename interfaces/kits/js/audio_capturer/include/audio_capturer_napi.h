@@ -111,14 +111,15 @@ private:
     static bool ParseStreamInfo(napi_env env, napi_value root, AudioStreamInfo* streamInfo);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
-                                       napi_value* argv, const std::string& cbName);
+        napi_value* argv, const std::string& cbName);
     static napi_value RegisterCapturerCallback(napi_env env, napi_value* argv,
-                                               const std::string& cbName, AudioCapturerNapi *capturerNapi);
+        const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value RegisterPositionCallback(napi_env env, napi_value* argv,
-                                               const std::string& cbName, AudioCapturerNapi *capturerNapi);
+        const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
-                                                     const std::string& cbName, AudioCapturerNapi *capturerNapi);
+        const std::string& cbName, AudioCapturerNapi *capturerNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName);
+    static void UnregisterCapturerCallback(napi_env env, const std::string& cbName, AudioCapturerNapi *capturerNapi);
 
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sCapturerOptions_;

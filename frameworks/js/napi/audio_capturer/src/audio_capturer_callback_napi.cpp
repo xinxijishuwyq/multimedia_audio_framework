@@ -52,6 +52,19 @@ void AudioCapturerCallbackNapi::SaveCallbackReference(const std::string &callbac
     }
 }
 
+void AudioCapturerCallbackNapi::RemoveCallbackReference(const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+        interruptCallback_ = nullptr;
+    } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+        stateChangeCallback_ = nullptr;
+    } else {
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+    }
+}
+
 static void SetValueInt32(const napi_env& env, const std::string& fieldStr, const int intValue, napi_value& result)
 {
     napi_value value = nullptr;
