@@ -19,7 +19,6 @@
 #include <servmgr_hdi.h>
 
 #include "audio_module_info.h"
-#include "audio_events.h"
 #include "idevice_status_observer.h"
 
 namespace OHOS {
