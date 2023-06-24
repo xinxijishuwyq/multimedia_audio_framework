@@ -159,17 +159,20 @@ private:
     static void AsyncSetAudioEffectMode(napi_env env, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
-                                       napi_value* argv, const std::string& cbName);
+        napi_value* argv, const std::string& cbName);
     static napi_value RegisterRendererCallback(napi_env env, napi_value* argv,
-                                               const std::string& cbName, AudioRendererNapi *rendererNapi);
+        const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterPositionCallback(napi_env env, napi_value* argv,
-                                               const std::string& cbName, AudioRendererNapi *rendererNapi);
+        const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value* argv,
-                                                     const std::string& cbName, AudioRendererNapi *rendererNapi);
+        const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value RegisterDataRequestCallback(napi_env env, napi_value* argv,
-                                                     const std::string& cbName, AudioRendererNapi *rendererNapi);
+        const std::string& cbName, AudioRendererNapi *rendererNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* argv,
         const std::string& cbName);
+    static void UnregisterRendererCallback(napi_env env, napi_value* argv,
+        const std::string& cbName, AudioRendererNapi *rendererNapi);
+
     static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
     static napi_value CreateAudioRendererRateObject(napi_env env);
     static napi_value CreateInterruptEventTypeObject(napi_env env);

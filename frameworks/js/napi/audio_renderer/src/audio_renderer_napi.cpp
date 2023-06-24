@@ -2481,6 +2481,8 @@ napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis
         rendererNapi->periodPositionCBNapi_ = nullptr;
     } else if (!cbName.compare(DEVICECHANGE_CALLBACK_NAME)) {
         UnregisterRendererDeviceChangeCallback(env, argc, argv, rendererNapi);
+    } else if (!cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
+        UnregisterRendererCallback(env, argv, cbName, rendererNapi);
     } else {
         bool unknownCallback = true;
         THROW_ERROR_ASSERT(env, !unknownCallback, NAPI_ERR_UNSUPPORTED);
@@ -2489,6 +2491,16 @@ napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     return result;
+}
+
+void AudioRendererNapi::UnregisterRendererCallback(napi_env env, napi_value* /* argv */,
+    const std::string& cbName, AudioRendererNapi *rendererNapi)
+{
+    CHECK_AND_RETURN_LOG(rendererNapi->callbackNapi_ != nullptr, "rendererCallbackNapi is nullptr");
+
+    std::shared_ptr<AudioRendererCallbackNapi> cb =
+        std::static_pointer_cast<AudioRendererCallbackNapi>(rendererNapi->callbackNapi_);
+    cb->RemoveCallbackReference(cbName);
 }
 
 napi_value AudioRendererNapi::Off(napi_env env, napi_callback_info info)

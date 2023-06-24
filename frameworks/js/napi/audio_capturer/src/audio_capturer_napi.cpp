@@ -14,19 +14,21 @@
  */
 
 #include "audio_capturer_napi.h"
-#include "ability.h"
-#include "audio_capturer_callback_napi.h"
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_manager_napi.h"
-#include "audio_parameters_napi.h"
-#include "capturer_period_position_callback_napi.h"
-#include "capturer_position_callback_napi.h"
 
+#include "ability.h"
 #include "hilog/log.h"
 #include "napi_base_context.h"
 #include "securec.h"
 #include "xpower_event_js.h"
+
+#include "audio_errors.h"
+#include "audio_log.h"
+#include "audio_common_napi.h"
+#include "audio_parameters_napi.h"
+#include "audio_capturer_callback_napi.h"
+#include "capturer_period_position_callback_napi.h"
+#include "capturer_position_callback_napi.h"
+#include "audio_manager_napi.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -1176,6 +1178,16 @@ napi_value AudioCapturerNapi::On(napi_env env, napi_callback_info info)
     return RegisterCallback(env, jsThis, argv, callbackName);
 }
 
+void AudioCapturerNapi::UnregisterCapturerCallback(napi_env env, const std::string& cbName,
+    AudioCapturerNapi *capturerNapi)
+{
+    CHECK_AND_RETURN_LOG(capturerNapi->callbackNapi_ != nullptr, "capturerCallbackNapi is nullptr");
+
+    std::shared_ptr<AudioCapturerCallbackNapi> cb =
+        std::static_pointer_cast<AudioCapturerCallbackNapi>(capturerNapi->callbackNapi_);
+    cb->RemoveCallbackReference(cbName);
+}
+
 napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName)
 {
     AudioCapturerNapi *capturerNapi = nullptr;
@@ -1190,6 +1202,8 @@ napi_value AudioCapturerNapi::UnregisterCallback(napi_env env, napi_value jsThis
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
         capturerNapi->audioCapturer_->UnsetCapturerPeriodPositionCallback();
         capturerNapi->periodPositionCBNapi_ = nullptr;
+    } else if (!cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
+        UnregisterCapturerCallback(env, cbName, capturerNapi);
     } else {
         bool unknownCallback = true;
         THROW_ERROR_ASSERT(env, !unknownCallback, NAPI_ERR_UNSUPPORTED);
