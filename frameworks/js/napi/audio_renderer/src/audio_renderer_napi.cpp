@@ -2493,7 +2493,7 @@ napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis
     return result;
 }
 
-napi_value AudioRendererNapi::UnregisterRendererCallback(napi_env env, napi_value* /* argv */,
+void AudioRendererNapi::UnregisterRendererCallback(napi_env env, napi_value* /* argv */,
     const std::string& cbName, AudioRendererNapi *rendererNapi)
 {
     THROW_ERROR_ASSERT(env, rendererNapi->callbackNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
