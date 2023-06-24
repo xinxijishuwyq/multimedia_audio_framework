@@ -2496,7 +2496,7 @@ napi_value AudioRendererNapi::UnregisterCallback(napi_env env, napi_value jsThis
 void AudioRendererNapi::UnregisterRendererCallback(napi_env env, napi_value* /* argv */,
     const std::string& cbName, AudioRendererNapi *rendererNapi)
 {
-    THROW_ERROR_ASSERT(env, rendererNapi->callbackNapi_ != nullptr, NAPI_ERR_NO_MEMORY);
+    CHECK_AND_RETURN_LOG(rendererNapi->callbackNapi_ != nullptr, "rendererCallbackNapi is nullptr");
 
     std::shared_ptr<AudioRendererCallbackNapi> cb =
         std::static_pointer_cast<AudioRendererCallbackNapi>(rendererNapi->callbackNapi_);
