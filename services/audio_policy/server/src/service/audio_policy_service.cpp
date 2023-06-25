@@ -1594,6 +1594,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
         }
 
         currentActiveDevice_ = priorityDev;
+        UpdateEffectDefaultSink(priorityDev);
     } else {
         // The disconnected device is not current acitve device. No need to change active device.
         AUDIO_INFO_LOG("Current acitve device: %{public}d. No need to change", currentActiveDevice_);
