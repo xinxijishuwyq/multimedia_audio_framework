@@ -282,7 +282,8 @@ bool AudioEffectChain::IsEmptyEffectHandles()
     return standByEffectHandles.empty();
 }
 
-int32_t FindEffectLib(const std::string effect, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
+int32_t FindEffectLib(const std::string effect,
+    const std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
     AudioEffectLibEntry **libEntry, std::string &libName)
 {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
