@@ -313,6 +313,7 @@ private:
     int32_t GetSystemVolumeLevelForKey(AudioStreamType streamType, bool isFromVolumeKey);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute);
+    AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
     // common
     void GetPolicyData(PolicyData &policyData);
