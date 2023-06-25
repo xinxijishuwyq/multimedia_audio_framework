@@ -239,7 +239,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     audioBufIn.frameLength = frameLen;
     audioBufOut.frameLength = frameLen;
-    int count = 0;
+    int32_t count = 0;
     {
         std::lock_guard<std::mutex> lock(reloadMutex);
         for (AudioEffectHandle handle: standByEffectHandles) {
@@ -250,7 +250,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
                 audioBufOut.raw = bufIn;
                 audioBufIn.raw = bufOut;
             }
-            ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
+            int32_t ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
             if (ret != 0) {
                 AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
                     sceneType.c_str(), effectMode.c_str());
@@ -258,13 +258,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
             }
             count++;
         }
-        int32_t ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
-                sceneType.c_str(), effectMode.c_str());
-            continue;
-        }
-        count++;
     }
 
     if (count % FACTOR_TWO == 0) {
