@@ -103,7 +103,7 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
     EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->RequestHandleInfo();
-    EXPECT_LT(ret, TEST_RET_NUM);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = audioProcessProxy->Release();
     EXPECT_LT(ret, TEST_RET_NUM);
@@ -128,10 +128,10 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 
     bool isMute = true;
     ret = audioManagerProxy->SetMicrophoneMute(isMute);
-    EXPECT_LT(ret, TEST_RET_NUM);
+    EXPECT_EQ(ret, SUCCESS);
 
     bool isMuteRet = audioManagerProxy->IsMicrophoneMute();
-    EXPECT_EQ(false, isMuteRet);
+    EXPECT_EQ(true, isMuteRet);
 }
 
 /**
