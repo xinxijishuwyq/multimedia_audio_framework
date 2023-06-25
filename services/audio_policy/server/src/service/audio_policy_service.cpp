@@ -831,10 +831,13 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    for (auto it = activeOutputDeviceCbsMap_.begin(); it != activeOutputDeviceCbsMap_.end(); ++it) {
+    for (auto it = preferOutputDeviceCbsMap_.begin(); it != preferOutputDeviceCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
-        auto desc = GetPreferOutputDeviceDescriptors(rendererInfo);
-        it->second->OnPreferOutputDeviceUpdated(desc);
+        auto deviceDescs = GetPreferOutputDeviceDescriptors(rendererInfo);
+        if (!(it->second->hasBTPermission_)) {
+            UpdateDescWhenNoBTPermission(deviceDescs);
+        }
+        it->second->OnPreferOutputDeviceUpdated(deviceDescs);
     }
 
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -2088,13 +2091,14 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
 }
 
 int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-    const sptr<IRemoteObject> &object)
+    const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
+        callback->hasBTPermission_ = hasBTPermission;
         deviceChangeCbsMap_[{clientId, flag}] = callback;
     }
     AUDIO_INFO_LOG("SetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
@@ -2135,13 +2139,14 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, De
 }
 
 int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-    const sptr<IRemoteObject> &object)
+    const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (callback != nullptr) {
-        activeOutputDeviceCbsMap_[clientId] = callback;
+        callback->hasBTPermission_ = hasBTPermission;
+        preferOutputDeviceCbsMap_[clientId] = callback;
     }
 
     return SUCCESS;
@@ -2151,7 +2156,7 @@ int32_t AudioPolicyService::UnsetPreferOutputDeviceChangeCallback(const int32_t 
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    if (activeOutputDeviceCbsMap_.erase(clientId) == 0) {
+    if (preferOutputDeviceCbsMap_.erase(clientId) == 0) {
         AUDIO_ERR_LOG("client not present in %{public}s", __func__);
         return ERR_INVALID_OPERATION;
     }
@@ -2594,6 +2599,19 @@ std::vector<sptr<OHOS::AudioStandard::AudioDeviceDescriptor>> AudioPolicyService
     return devices;
 }
 
+void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    AUDIO_WARNING_LOG("UpdateDescWhenNoBTPermission: No bt permission");
+
+    for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
+        if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
+            || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
+            desc->deviceName_ = "";
+            desc->macAddress_ = "";
+        }
+    }
+}
+
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     Trace trace("AudioPolicyService::TriggerDeviceChangedCallback");
@@ -2606,6 +2624,9 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
         deviceChangeAction.flag = it->first.second;
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first.second, desc);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
+            if (!(it->second->hasBTPermission_)) {
+                UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
+            }
             it->second->OnDeviceChange(deviceChangeAction);
         }
     }
