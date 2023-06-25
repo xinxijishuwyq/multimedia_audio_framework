@@ -12,8 +12,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
 import fs from '@ohos.file.fs';
 
@@ -40,24 +38,46 @@ struct GetCurrentOutputDevices {
   @State minVolume: number = 0
   @State maxVolume: number = 0
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
+  @State isWrite: boolean = false
 
-  async onBackPress() {
-    if (this.audioRenderer == null) {
-      this.returnMsg += `audioRenderer instance had not created\n`
-      return
+  async onBackPress(){
+    if(this.audioRenderer!==null){
+      await this.audioRenderer.release()
     }
-    await this.audioRenderer.release()
-    this.audioRenderer = null
+  }
+
+  async createRender() {
+    this.returnMsg = ``
+    if(this.audioRenderer != null){
+      this.returnMsg += `audioRenderer instance had created, Do not click repeatedly\n`
+      return
+    }else{
+      try {
+        this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions)
+        this.returnMsg += `audioRenderer create success \n`
+      } catch (err) {
+        this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
+        return
+      }
+    }
   }
 
   async renderPlay() {
-    try {
-      this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions)
-      this.returnMsg += `audioRenderer create success \n`
-    } catch (err) {
-      this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
+    this.returnMsg = ``
+    if(this.audioRenderer == null) {
+      await this.createRender()
+    }else{
+      if(this.isWrite == false){
+        await this.audioRenderer.release()
+        this.audioRenderer = null
+        await this.createRender();
+      }
+    }
+    if(this.isWrite == true){
+      this.returnMsg += `不要重复点击 播放音乐 按钮 \n`
       return
     }
+    this.isWrite = true
     let bufferSize
     try {
       bufferSize = await this.audioRenderer.getBufferSize()
@@ -82,7 +102,6 @@ struct GetCurrentOutputDevices {
 
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer write start.......... \n`;
-      // while(true){
       for (let i = 0;i < len; i++) {
         let options = {
           offset: i * bufferSize,
@@ -91,11 +110,11 @@ struct GetCurrentOutputDevices {
         let readsize = await fs.read(file.fd, buf, options);
         let writeSize = await this.audioRenderer.write(buf);
       }
-      // }
       this.returnMsg += `audioRenderer write end. \n`;
     } catch (err) {
       this.returnMsg += `audioRenderer write : Error: ${JSON.stringify(err)}\n`
     }
+    this.isWrite = false
   }
 
   getCurrentOutputDevicesCallback() {
@@ -106,7 +125,7 @@ struct GetCurrentOutputDevices {
     let _this = this
     this.audioRenderer.getCurrentOutputDevices((err, deviceInfo) => {
       if (err) {
-        _this.returnMsg = `audioRenderer getCurrentOutputDevices callback : Error: ${JSON.stringify(err)}`
+        _this.returnMsg = `audioRenderer getCurrentOutputDevices callback : Error: ${JSON.stringify(err)}\n`
       } else {
         _this.returnMsg = `audioRenderer getCurrentOutputDevices callback : Success,返回值：` + _this.getInfoArray(deviceInfo)
       }
@@ -131,18 +150,8 @@ struct GetCurrentOutputDevices {
         _this.returnMsg = `audioRenderer getCurrentOutputDevicesCallback promise : Success,返回值：` + _this.getInfoArray(AudioDeviceDescriptor)
       })
       .catch(err => {
-        _this.returnMsg = `audioRenderer getCurrentOutputDevicesCallback promise : Error: ${JSON.stringify(err)}`
+        _this.returnMsg = `audioRenderer getCurrentOutputDevicesCallback promise : Error: ${JSON.stringify(err)}\n`
       })
-  }
-
-  async createRender() {
-    try {
-      this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions)
-      this.returnMsg += `audioRenderer create success \n`
-    } catch (err) {
-      this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
-      return
-    }
   }
 
   build() {

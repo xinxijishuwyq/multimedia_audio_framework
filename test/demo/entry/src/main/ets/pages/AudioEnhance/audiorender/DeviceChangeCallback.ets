@@ -28,8 +28,8 @@ struct DeviceChangeCallback {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      content: audio.ContentType.CONTENT_TYPE_SPEECH,
-      usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
+      content: audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
       rendererFlags: 0
     }
   }

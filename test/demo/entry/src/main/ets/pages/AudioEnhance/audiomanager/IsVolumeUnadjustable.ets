@@ -169,7 +169,6 @@ struct IsVolumeUnadjustable {
   }
 
   async renderPlay() {
-
     if (this.audioRenderer !== null) {
       await this.audioRenderer.release()
       this.audioRenderer = null
@@ -194,7 +193,6 @@ struct IsVolumeUnadjustable {
       this.returnMsg = `audioRenderer start : Error: ${JSON.stringify(err)}\n`
       return
     }
-
 
     let path = this.path
     try {
@@ -224,10 +222,8 @@ struct IsVolumeUnadjustable {
     } catch (err) {
       this.returnMsg = `audioRenderer write : Error: ${JSON.stringify(err)}\n`
     }
-
     await this.audioRenderer.release()
     this.audioRenderer = null
-
   }
 
   async getVolumeRange() {
@@ -277,8 +273,8 @@ struct IsVolumeUnadjustable {
 
             if (this.selectedVolumeTypeKey !== "请选择") {
               Divider().strokeWidth(1).color(Color.Blue).margin({ bottom: 20 })
+              Text("请选择setVolume要设置的音量:").fontSize(20)
               Row() {
-                Text("音量").fontSize(20)
                 Slider({
                   value: this.selectedVolume,
                   min: this.minVolume,
@@ -308,21 +304,8 @@ struct IsVolumeUnadjustable {
           Column() {
             Row() {
               Button() {
-                Text("IsVolumeUnadjustable Callback").fontSize(20).fontColor(Color.White)
-              }.width('49%').height(60).margin({ right: 10 })
-              .onClick(() => {
-                let _this = this;
-                this.audioVolumeGroupManager.isVolumeUnadjustable((err, value) => {
-                  if (err) {
-                    _this.returnMsg = 'IsVolumeUnadjustable Callback err:' + JSON.stringify(err);
-                    return;
-                  }
-                  _this.returnMsg = "IsVolumeUnadjustable Callback:SUCCESS 返回值 " + value;
-                })
-              })
-              Button() {
-                Text("IsVolumeUnadjustable Promise").fontSize(20).fontColor(Color.White)
-              }.width('49%').height(60).margin({ right: 10 })
+                Text("IsVolumeUnadjustable开关").fontSize(20).fontColor(Color.White)
+              }.width('90%').height(60).margin({ right: 10 })
               .onClick(() => {
                 let _this = this;
                 this.audioVolumeGroupManager.isVolumeUnadjustable()
@@ -330,7 +313,7 @@ struct IsVolumeUnadjustable {
                     _this.returnMsg = `isVolumeUnadjustable : Success, 返回值  ${value}`
                   })
                   .catch((err) => {
-                    _this.returnMsg = `IsVolumeUnadjustable Promise err: ${JSON.stringify(err)}`
+                    _this.returnMsg = `IsVolumeUnadjustable err: ${JSON.stringify(err)}`
                   })
               })
             }.margin({ top: 10 })
@@ -350,7 +333,7 @@ struct IsVolumeUnadjustable {
                     _this.returnMsg = 'setVolume Callback err:' + JSON.stringify(err);
                     return;
                   }
-                  _this.returnMsg = "setVolume Callback:SUCCESS 返回值 " + value;
+                  _this.returnMsg = "setVolume Callback:SUCCESS";
                 })
               })
 
@@ -365,7 +348,7 @@ struct IsVolumeUnadjustable {
                 let _this = this;
                 this.audioVolumeGroupManager.setVolume(this.selectedVolumeType, this.selectedVolume)
                   .then(value => {
-                    _this.returnMsg = "setVolume Promise:SUCCESS 返回值 " + value;
+                    _this.returnMsg = "setVolume Promise:SUCCESS";
                   })
                   .catch((err) => {
                     _this.returnMsg = 'setVolume Promise err:' + JSON.stringify(err);
