@@ -554,13 +554,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
 
     bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
-        for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
-            if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
-                || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-                desc->deviceName_ = "";
-                desc->macAddress_ = "";
-            }
-        }
+        mPolicyService.UpdateDescWhenNoBTPermission(deviceDescs);
     }
 
     return deviceDescs;
@@ -573,13 +567,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDevic
         mPolicyService.GetPreferOutputDeviceDescriptors(rendererInfo);
     bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
-        for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
-            if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
-                || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-                desc->deviceName_ = "";
-                desc->macAddress_ = "";
-            }
-        }
+        mPolicyService.UpdateDescWhenNoBTPermission(deviceDescs);
     }
 
     return deviceDescs;
@@ -815,8 +803,10 @@ int32_t AudioPolicyServer::SetDeviceChangeCallback(const int32_t /* clientId */,
         default:
             break;
     }
+
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.SetDeviceChangeCallback(clientPid, flag, object);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
+    return mPolicyService.SetDeviceChangeCallback(clientPid, flag, object, hasBTPermission);
 }
 
 int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId */, DeviceFlag flag)
@@ -830,7 +820,8 @@ int32_t AudioPolicyServer::SetPreferOutputDeviceChangeCallback(const int32_t /* 
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientPid, object);
+    bool hasBTPermission = VerifyClientPermission(USE_BLUETOOTH_PERMISSION);
+    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientPid, object, hasBTPermission);
 }
 
 int32_t AudioPolicyServer::UnsetPreferOutputDeviceChangeCallback(const int32_t /* clientId */)

@@ -30,6 +30,9 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
+    bool hasBTPermission_ = true;
+    bool hasSystemPermission_ = true;
+
     enum AudioPolicyManagerListenerMsg {
         ON_ERROR = 0,
         ON_INTERRUPT,

@@ -29,6 +29,9 @@ public:
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
 
+    bool hasBTPermission_ = true;
+    bool hasSystemPermission_ = true;
+
     enum AudioRingerModeUpdateListenerMsg {
         ON_ERROR = 0,
         ON_MIC_STATE_UPDATED,

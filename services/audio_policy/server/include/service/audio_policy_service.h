@@ -174,11 +174,13 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object);
+    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
 
-    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object);
+    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
 
     int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
 
@@ -251,6 +253,8 @@ public:
     std::string GetLocalDevicesType();
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
+
+    void UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDescriptor>> &desc);
 
 private:
     AudioPolicyService()
@@ -417,8 +421,7 @@ private:
     std::string activeBTDevice_;
 
     std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
-    std::unordered_map<int32_t,
-        sptr<IStandardAudioRoutingManagerListener>> activeOutputDeviceCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferOutputDeviceCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
