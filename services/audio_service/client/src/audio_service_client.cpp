@@ -165,6 +165,7 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
 
 void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamStopSuccessCb in");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAStreamStopSuccessCb: userdata is null");
         return;
@@ -180,7 +181,35 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
         streamCb->OnStateChange(asClient->state_);
     }
     asClient->streamCmdStatus = success;
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamStopSuccessCb: start signal");
     pa_threaded_mainloop_signal(mainLoop, 0);
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamStopSuccessCb out");
+}
+
+void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamAsyncStopSuccessCb in");
+    if (!userdata) {
+        AUDIO_ERR_LOG("AudioServiceClient::PAStreamAsyncStopSuccessCb: userdata is null");
+        return;
+    }
+
+    AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
+    unique_lock<mutex> lockstopping(asClient->stoppingMutex_);
+
+    asClient->state_ = STOPPED;
+    asClient->WriteStateChangedSysEvents();
+    std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(asClient->state_);
+    }
+    asClient->streamCmdStatus = success;
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamAsyncStopSuccessCb: start signal");
+    lockstopping.unlock();
+    pa_threaded_mainloop_signal(mainLoop, 0);
+    asClient->dataCv.notify_one();
+    AUDIO_DEBUG_LOG("AudioServiceClient::PAStreamAsyncStopSuccessCb out");
 }
 
 void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata)
@@ -216,6 +245,15 @@ void AudioServiceClient::PAStreamDrainSuccessCb(pa_stream *stream, int32_t succe
 
     asClient->streamDrainStatus = success;
     pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
+void AudioServiceClient::PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    pa_operation *operation = pa_stream_cork(asClient->paStream, 1, asClient->PAStreamCorkSuccessCb, userdata);
+    pa_operation_unref(operation);
+
+    asClient->streamDrainStatus = success;
 }
 
 void AudioServiceClient::PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata)
@@ -1036,6 +1074,9 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("Enter AudioServiceClient::StartStream");
     int error;
     lock_guard<mutex> lockdata(dataMutex);
+    unique_lock<mutex> stoppinglock(stoppingMutex_);
+    dataCv.wait(stoppinglock, [this] {return state_ != STOPPING;});
+    stoppinglock.unlock();
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
@@ -1097,24 +1138,39 @@ int32_t AudioServiceClient::StopStream()
 {
     lock_guard<mutex> lockdata(dataMutex);
     lock_guard<mutex> lockctrl(ctrlMutex);
-    PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
-    int32_t ret = CorkStream();
-    if (ret) {
-        return ret;
-    }
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        PAStreamCorkSuccessCb = PAStreamAsyncStopSuccessCb;
+        state_ = STOPPING;
+        DrainAudioCache();
+        pa_threaded_mainloop_lock(mainLoop);
 
-    if (!streamCmdStatus) {
-        AUDIO_ERR_LOG("Stream Stop Failed");
-        return AUDIO_CLIENT_ERR;
-    } else {
-        AUDIO_INFO_LOG("Stream Stopped Successfully");
-        if (internalRdBufLen) {
-            (void)pa_stream_drop(paStream);
-            internalReadBuffer = nullptr;
-            internalRdBufLen = 0;
-            internalRdBufIndex = 0;
-        }
+        streamDrainStatus = 0;
+        pa_operation *operation = pa_stream_drain(paStream, PAStreamDrainInStopCb, (void *)this);
+
+        pa_operation_unref(operation);
+
+        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_SUCCESS;
+    } else {
+        PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+        int32_t ret = CorkStream();
+        if (ret) {
+            return ret;
+        }
+
+        if (!streamCmdStatus) {
+            AUDIO_ERR_LOG("Stream Stop Failed");
+            return AUDIO_CLIENT_ERR;
+        } else {
+            AUDIO_INFO_LOG("Stream Stopped Successfully");
+            if (internalRdBufLen) {
+                (void)pa_stream_drop(paStream);
+                internalReadBuffer = nullptr;
+                internalRdBufLen = 0;
+                internalRdBufIndex = 0;
+            }
+            return AUDIO_CLIENT_SUCCESS;
+        }
     }
 }
 
@@ -1255,6 +1311,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 
         Trace trace1("PaWriteStream Wait");
         while (!(writableSize = pa_stream_writable_size(paStream))) {
+            AUDIO_DEBUG_LOG("AudioServiceClient::PaWriteStream: wait");
             pa_threaded_mainloop_wait(mainLoop);
         }
 

@@ -87,7 +87,9 @@ enum State {
     /** Released */
     RELEASED,
     /** Paused */
-    PAUSED
+    PAUSED,
+    /** Stopping */
+    STOPPING
 };
 
 class AudioStreamCallback {
@@ -549,6 +551,7 @@ private:
     pa_sample_spec sampleSpec;
 
     std::mutex dataMutex;
+    std::condition_variable dataCv;
     std::mutex ctrlMutex;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;
@@ -556,6 +559,7 @@ private:
     std::mutex rendererPeriodReachedMutex_;
     std::mutex runnerMutex_;
     std::mutex writeCallbackMutex_;
+    std::mutex stoppingMutex_;
     bool runnerReleased_ = false;
     AudioCache acache;
     const void *internalReadBuffer;
@@ -701,9 +705,11 @@ private:
     static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
     static void PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata);
