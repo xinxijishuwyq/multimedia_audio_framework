@@ -486,7 +486,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_001, Te
         ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, 7);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_ADJUST_TURN_UP);
+        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_ADJUST_UP);
         GTEST_LOG_(INFO) << "Adjust volume by step: " << ret;
         EXPECT_EQ(SUCCESS, ret);
     }
@@ -507,7 +507,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, Te
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN);
+        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_ADJUST_DOWN);
         GTEST_LOG_(INFO) << "Adjust volume by step: " << ret;
         EXPECT_EQ(SUCCESS, ret);
     }
@@ -531,7 +531,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
         ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, FirstVolume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_TURN_UP);
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_UP);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(SUCCESS, ret);
 
@@ -558,7 +558,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
         ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, FirstVolume);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN);
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_DOWN);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(SUCCESS, ret);
 
@@ -585,7 +585,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
         ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, maxVol);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_TURN_UP);
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING, VolumeAdjustType::VOLUME_ADJUST_UP);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(ERROR_62980101, ret);
 
@@ -612,7 +612,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
         ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, minVol);
         EXPECT_EQ(SUCCESS, ret);
 
-        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_MUSIC, VolumeAdjustType::VOLUME_ADJUST_TURN_DOWN);
+        ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_MUSIC, VolumeAdjustType::VOLUME_ADJUST_DOWN);
         GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
         EXPECT_EQ(ERROR_62980101, ret);
 
