@@ -375,9 +375,16 @@ bool AudioCapturerPrivate::Flush() const
     return audioStream_->FlushAudioStream();
 }
 
-bool AudioCapturerPrivate::Release() const
+bool AudioCapturerPrivate::Release()
 {
     AUDIO_INFO_LOG("AudioCapturer::Release");
+
+    std::lock_guard<std::mutex> lock(lock_);
+    if (!isValid_) {
+        AUDIO_ERR_LOG("Release when capturer invalid");
+        return false;
+    }
+
     if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
         AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Release monitor permission failed");
@@ -578,6 +585,12 @@ int32_t AudioCapturerPrivate::Clear() const
 int32_t AudioCapturerPrivate::GetBufQueueState(BufferQueueState &bufState) const
 {
     return audioStream_->GetBufQueueState(bufState);
+}
+
+void AudioCapturerPrivate::SetValid(bool valid)
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    isValid_ = valid;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

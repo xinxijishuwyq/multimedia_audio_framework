@@ -75,10 +75,18 @@ AudioCapturerNapi::AudioCapturerNapi()
 
 AudioCapturerNapi::~AudioCapturerNapi() = default;
 
+void AudioCapturerNapi::SetValid(bool valid)
+{
+    if (audioCapturer_ != nullptr) {
+        audioCapturer_->SetValid(valid);
+    }
+}
+
 void AudioCapturerNapi::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
 {
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioCapturerNapi *>(nativeObject);
+        obj->SetValid(false);
         delete obj;
     }
 }

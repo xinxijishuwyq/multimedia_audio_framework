@@ -16,6 +16,7 @@
 #ifndef AUDIO_CAPTURER_PRIVATE_H
 #define AUDIO_CAPTURER_PRIVATE_H
 
+#include <mutex>
 #include "audio_interrupt_callback.h"
 #include "audio_stream.h"
 #include "audio_capturer_proxy_obj.h"
@@ -39,7 +40,7 @@ public:
     bool Pause() const override;
     bool Stop() const override;
     bool Flush() const override;
-    bool Release() const override;
+    bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetCapturerPositionCallback(int64_t markPosition,
@@ -57,6 +58,7 @@ public:
     int32_t Clear()const override;
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
     void SetApplicationCachePath(const std::string cachePath) override;
+    void SetValid(bool valid) override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -78,6 +80,8 @@ private:
         {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
         {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC}
     };
+    std::mutex lock_;
+    bool isValid_ = true;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

@@ -42,6 +42,9 @@ public:
     };
 
     static napi_value Init(napi_env env, napi_value exports);
+
+    void SetValid(bool valid);
+
 private:
     struct AudioCapturerAsyncContext {
         napi_env env;
