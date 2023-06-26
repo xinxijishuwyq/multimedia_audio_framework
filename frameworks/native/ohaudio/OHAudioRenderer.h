@@ -55,9 +55,10 @@ class OHAudioRenderer {
         int32_t GetSamplingRate();
         AudioSampleFormat GetSampleFormat();
         AudioEncodingType GetEncodingType();
-        int32_t GetFramesWritten();
+        int64_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
         void GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
 

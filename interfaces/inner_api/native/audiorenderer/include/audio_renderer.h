@@ -706,6 +706,13 @@ public:
     virtual AudioEffectMode GetAudioEffectMode() const = 0;
 
     /**
+     * @brief Gets the audio frame size that has been written.
+     *
+     * @return Returns the audio frame size that has been written.
+     */
+    virtual int64_t GetFramesWritten() const = 0;
+
+    /**
      * @brief Sets the audio effect mode.
      *
      * * @param effectMode The audio effect mode at which the stream needs to be rendered.
