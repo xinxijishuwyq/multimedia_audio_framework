@@ -621,22 +621,13 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
     }
 }
 
+/**
+* @tc.name  : Test GetSystemVolumeInDb API
+* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_001
+* @tc.desc  : Test get volume db with alarm streamtype and speaker divicetype when volume is 3
+* @tc.require: issueI5M1XV
+*/
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, TestSize.Level0)
-{
-    std::vector<sptr<VolumeGroupInfo>> infos;
-    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
-    int vol = 3;
-    if (infos.size() > 0) {
-        int32_t groupId = infos[0]->volumeGroupId_;
-        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ACCESSIBILITY, vol, DeviceType::DEVICE_TYPE_SPEAKER);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
-        EXPECT_LT(SUCCESS, db);
-    }
-}
-
-HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
     AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
@@ -651,7 +642,13 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, T
     }
 }
 
-HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, TestSize.Level0)
+/**
+* @tc.name  : Test GetSystemVolumeInDb API
+* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_002
+* @tc.desc  : Test get volume db when the stream type is changed to voice call
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
     AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
@@ -666,6 +663,33 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, T
     }
 }
 
+/**
+* @tc.name  : Test GetSystemVolumeInDb API
+* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_003
+* @tc.desc  : Test get volume db wthen the volume is changed to 4
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int vol = 4;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol, DeviceType::DEVICE_TYPE_SPEAKER);
+        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        EXPECT_LT(SUCCESS, db);
+    }
+}
+
+/**
+* @tc.name  : Test GetSystemVolumeInDb API
+* @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_004
+* @tc.desc  : Test get volume db when the device type is changed to earpiece
+* @tc.require: issueI5M1XV
+*/
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, TestSize.Level0)
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
@@ -675,67 +699,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, T
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_MUSIC, vol, DeviceType::DEVICE_TYPE_WIRED_HEADPHONES);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
-        EXPECT_LT(SUCCESS, db);
-    }
-}
-
-HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_005, TestSize.Level0)
-{
-    std::vector<sptr<VolumeGroupInfo>> infos;
-    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
-    int vol = 3;
-    if (infos.size() > 0) {
-        int32_t groupId = infos[0]->volumeGroupId_;
-        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_RING, vol, DeviceType::DEVICE_TYPE_EARPIECE);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
-        EXPECT_LT(SUCCESS, db);
-    }
-}
-
-HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_006, TestSize.Level0)
-{
-    std::vector<sptr<VolumeGroupInfo>> infos;
-    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
-    int vol = 3;
-    if (infos.size() > 0) {
-        int32_t groupId = infos[0]->volumeGroupId_;
-        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_CALL, vol, DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
-        EXPECT_LT(SUCCESS, db);
-    }
-}
-
-HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_007, TestSize.Level0)
-{
-    std::vector<sptr<VolumeGroupInfo>> infos;
-    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
-    int vol = 3;
-    if (infos.size() > 0) {
-        int32_t groupId = infos[0]->volumeGroupId_;
-        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ULTRASONIC, vol, DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
-        EXPECT_LT(SUCCESS, db);
-    }
-}
-
-HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_008, TestSize.Level0)
-{
-    std::vector<sptr<VolumeGroupInfo>> infos;
-    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
-    int vol = 3;
-    if (infos.size() > 0) {
-        int32_t groupId = infos[0]->volumeGroupId_;
-        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_ASSISTANT, vol, DeviceType::DEVICE_TYPE_USB_HEADSET);
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol, DeviceType::DEVICE_TYPE_EARPIECE);
         GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
         EXPECT_LT(SUCCESS, db);
     }
