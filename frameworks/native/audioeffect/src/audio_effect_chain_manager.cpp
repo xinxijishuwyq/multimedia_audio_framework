@@ -279,7 +279,7 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 bool AudioEffectChain::IsEmptyEffectHandles()
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
-    return standByEffectHandles.empty();
+    return standByEffectHandles.size() == 0;
 }
 
 int32_t FindEffectLib(const std::string effect,
