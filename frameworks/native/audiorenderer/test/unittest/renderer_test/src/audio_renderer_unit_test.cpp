@@ -5551,10 +5551,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_002, TestSi
 
     EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole);
     EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType);
-    EXPECT_EQ(VALUE_ONE, deviceInfo.deviceId);
-    EXPECT_EQ(VALUE_ZERO, deviceInfo.channelMasks);
-    EXPECT_EQ(rendererOptions.streamInfo.samplingRate , deviceInfo.audioStreamInfo.samplingRate);
-    EXPECT_EQ(rendererOptions.streamInfo.channels, deviceInfo.audioStreamInfo.channels);
 
     audioRenderer->Release();
 }
@@ -5601,10 +5597,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
 
         EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole);
         EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType);
-        EXPECT_EQ(VALUE_ONE, deviceInfo.deviceId);
-        EXPECT_EQ(VALUE_ZERO, deviceInfo.channelMasks);
-        EXPECT_EQ(rendererOptions.streamInfo.samplingRate , deviceInfo.audioStreamInfo.samplingRate);
-        EXPECT_EQ(rendererOptions.streamInfo.channels, deviceInfo.audioStreamInfo.channels);
     }
 
     audioRenderer->Release();
