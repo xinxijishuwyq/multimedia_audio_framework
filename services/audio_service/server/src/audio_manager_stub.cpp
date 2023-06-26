@@ -236,14 +236,14 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return AUDIO_OK;
         }
         case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
-            int32_t i, count;
+            int32_t i;
             vector<EffectChain> effectChains = {};
             vector<int32_t> countEffect = {};
             int32_t countChains = data.ReadInt32();
             CHECK_AND_RETURN_RET_LOG(countChains >= 0 && countChains <= AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT,
                 AUDIO_ERR, "Create audio effect chain manager failed, please check log");
             for (i = 0; i < countChains; i++) {
-                count = data.ReadInt32();
+                int32_t count = data.ReadInt32();
                 CHECK_AND_RETURN_RET_LOG(count >= 0 && count <= AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT,
                     AUDIO_ERR, "Create audio effect chain manager failed, please check log");
                 countEffect.emplace_back(count);
@@ -259,12 +259,12 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
 
             unordered_map<string, string> sceneTypeToEffectChainNameMap;
-            string key, value;
+            string value;
             int32_t mapSize = data.ReadInt32();
             CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
                 AUDIO_ERR, "Create audio effect chain manager failed, please check log");
             for (i = 0; i < mapSize; i++) {
-                key = data.ReadString();
+                string key = data.ReadString();
                 value = data.ReadString();
                 sceneTypeToEffectChainNameMap[key] = value;
             }

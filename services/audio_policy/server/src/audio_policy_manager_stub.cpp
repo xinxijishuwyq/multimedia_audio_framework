@@ -915,53 +915,49 @@ void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data
     reply.WriteInt32(result);
 }
 
-static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
+static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i, int32_t j)
 {
-    int k;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
-    int countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    int32_t countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (k = 0; k < countDev; k++) {
+        for (int32_t k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
     }
 }
-static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
+static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i)
 {
-    int j;
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
-    int countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
+    int32_t countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (j = 0; j < countMode; j++) {
+        for (int32_t j = 0; j < countMode; j++) {
             PreprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
 }
-static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i, int j)
+static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i, int32_t j)
 {
-    int k;
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
-    int countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    int32_t countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (k = 0; k < countDev; k++) {
+        for (int32_t k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
     }
 }
-static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int i)
+static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i)
 {
-    int j;
     // i th stream
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
     int countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (j = 0; j < countMode; j++) {
+        for (int32_t j = 0; j < countMode; j++) {
             PostprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
@@ -969,7 +965,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 
 void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int i;
+    int32_t i;
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
     if (ret == -1) {
@@ -977,8 +973,8 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
         return;
     }
 
-    int countPre = supportedEffectConfig.preProcessNew.stream.size();
-    int countPost = supportedEffectConfig.postProcessNew.stream.size();
+    int32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
+    int32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
     reply.WriteInt32(countPre);
     reply.WriteInt32(countPost);
 

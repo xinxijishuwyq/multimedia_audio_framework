@@ -61,9 +61,20 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
 
+    const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
+    if (pa_safe_streq(deviceString, "remote")) {
+        return PA_HOOK_OK;
+    }
+
+    const char *appUser = pa_proplist_gets(si->proplist, "application.process.user");
+    if (pa_safe_streq(appUser, "daudio")) {
+        return PA_HOOK_OK;
+    }
+
     bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
+    const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
     // if EFFECT_NONE mode or effect chain does not exist
-    if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
+    if (pa_safe_streq(clientUid, "1003") || pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
         return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
     }
 
@@ -80,8 +91,12 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t DefaultSinkChangedCb(pa_core *c, pa_sink *s, struct userdata *u)
+static pa_hook_result_t ClientProplistChangedCb(pa_core *c, pa_client *client, struct userdata *u)
 {
+    const char *name = pa_proplist_gets(client->proplist, "application.name");
+    if (!pa_safe_streq(name, "PulseAudio Service")) {
+        return PA_HOOK_OK;
+    }
     uint32_t idx;
     pa_sink_input *si;
     PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
@@ -93,8 +108,9 @@ static pa_hook_result_t DefaultSinkChangedCb(pa_core *c, pa_sink *s, struct user
 int InitFail(pa_module *m, pa_modargs *ma)
 {
     AUDIO_ERR_LOG("Failed to create cluster module");
-    if (ma)
+    if (ma) {
         pa_modargs_free(ma);
+    }
     pa__done(m);
     return -1;
 }
@@ -114,11 +130,11 @@ int pa__init(pa_module *m)
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;
     u->module = m;
-    
+
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputProplistChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_DEFAULT_SINK_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)DefaultSinkChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_CLIENT_PROPLIST_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)ClientProplistChangedCb, u);
 
     pa_modargs_free(ma);
 

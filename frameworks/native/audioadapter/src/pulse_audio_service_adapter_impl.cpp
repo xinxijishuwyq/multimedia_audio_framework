@@ -103,10 +103,12 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
         pa_context_set_subscribe_callback(mContext, nullptr, nullptr);
         pa_context_unref(mContext);
     }
-
+	
+    swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "com.ohos.pulseaudio.service");
+    pa_proplist_sets(proplist, "device.swap.status", "0");
     mContext = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(mMainLoop), nullptr, proplist);
     pa_proplist_free(proplist);
 
@@ -1097,6 +1099,29 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
         default:
             break;
     }
+}
+
+int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
+{
+    if (mContext == nullptr) {
+        AUDIO_ERR_LOG("UpdateClusterModule mContext is nullptr");
+        return ERROR;
+    }
+    pa_threaded_mainloop_lock(mMainLoop);
+
+    swapStatus = 1 - swapStatus;
+    pa_proplist *proplist = pa_proplist_new();
+    pa_proplist_sets(proplist, "device.swap.status", std::to_string(swapStatus).c_str());
+    pa_operation *operation = pa_context_proplist_update(mContext, PA_UPDATE_REPLACE, proplist, nullptr, nullptr);
+    if (operation == nullptr) {
+        AUDIO_ERR_LOG("UpdateClusterModule pa_context_proplist_update returned nullptr");
+        pa_threaded_mainloop_unlock(mMainLoop);
+        return ERROR;
+    }
+
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(mMainLoop);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

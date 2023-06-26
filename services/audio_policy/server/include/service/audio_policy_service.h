@@ -379,6 +379,8 @@ private:
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
+    void UpdateEffectDefaultSink(DeviceType deviceType);
+
     void LoadEffectSinks();
     
     DeviceType FindConnectedHeadset();
@@ -399,6 +401,7 @@ private:
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
+    DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;

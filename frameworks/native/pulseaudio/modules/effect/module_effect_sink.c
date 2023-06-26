@@ -243,8 +243,8 @@ void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 
 static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, float *dst)
 {
-    pa_assert(a);
-    pa_assert(b);
+    pa_assert(src);
+    pa_assert(dst);
     int ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -270,8 +270,8 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
 
 static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, void *dst)
 {
-    pa_assert(a);
-    pa_assert(b);
+    pa_assert(src);
+    pa_assert(dst);
     int ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
@@ -333,8 +333,6 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
         pa_memblock_unref(nchunk.memblock);
     }
     
-    void *src;
-    float *bufIn, *bufOut;
     size_t targetLength = pa_memblockq_get_tlength(u->bufInQ);
     int iterNum = pa_memblockq_get_length(u->bufInQ) / targetLength;
     chunk->index = 0;
@@ -350,6 +348,8 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
         }
         pa_memblockq_drop(u->bufInQ, tchunk.length);
 
+        void *src;
+        float *bufIn, *bufOut;
         src = pa_memblock_acquire_chunk(&tchunk);
         bufIn = u->bufferAttr->bufIn;
         bufOut = u->bufferAttr->bufOut;

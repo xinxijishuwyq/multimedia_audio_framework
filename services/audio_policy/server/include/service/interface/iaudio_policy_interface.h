@@ -97,6 +97,8 @@ public:
     virtual float GetMinStreamVolume() const = 0;
 
     virtual float GetMaxStreamVolume() const = 0;
+    
+    virtual int32_t UpdateSwapDeviceStatus() = 0;
 
     virtual bool IsVolumeUnadjustable() = 0;
 

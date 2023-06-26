@@ -26,6 +26,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
@@ -34,7 +35,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t NUM_SET_EFFECT_PARAM = 3;
-const uint32_t DEFAULT_FRAMELEN = 480;
+const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = 2;
 const uint32_t FACTOR_TWO = 2;
@@ -46,14 +47,17 @@ public:
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
+    void ReleaseEffectChain();
     void AddEffectHandleBegin();
     void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
+    void SetEffectChain(std::vector<AudioEffectHandle> &effHandles, std::vector<AudioEffectLibrary *> &libHandles);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
 private:
+    std::mutex reloadMutex;
     std::string sceneType;
     std::string effectMode;
     std::vector<AudioEffectHandle> standByEffectHandles;
@@ -76,20 +80,20 @@ public:
     bool ExistAudioEffectChain(std::string sceneType, std::string effectMode);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
-    DeviceType GetDeviceType();
     std::string GetDeviceTypeName();
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
 private:
-    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;
-    std::map<std::string, std::string> EffectToLibraryNameMap;
-    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap;
-    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap;
-    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap;
-    uint32_t frameLen = DEFAULT_FRAMELEN;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    std::string deviceSink = DEFAULT_DEVICE_SINK;
+    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
+    std::map<std::string, std::string> EffectToLibraryNameMap_;
+    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
+    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap_;
+    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap_;
+    uint32_t frameLen_ = DEFAULT_FRAMELEN;
+    DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    bool isInitialized_ = false;
 };
 
 }  // namespace AudioStandard
