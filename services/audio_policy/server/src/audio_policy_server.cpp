@@ -197,7 +197,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 AUDIO_DEBUG_LOG("volume lower than min, trigger cb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
-                volumeEvent.volume = GetMinVolumeLevel(streamInFocus);
+                volumeEvent.volume = volumeLevelInInt;
                 volumeEvent.updateUi = true;
                 volumeEvent.volumeGroupId = 0;
                 volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -230,6 +230,9 @@ void AudioPolicyServer::SubscribeKeyEvents()
         }
         int32_t volumeLevelInInt = GetSystemVolumeLevelForKey(streamInFocus, true);
         if (volumeLevelInInt >= GetMaxVolumeLevel(streamInFocus)) {
+            if (volumeLevelInInt > 0 && GetStreamMute(streamInFocus)) {
+                SetStreamMute(streamInFocus, false);
+            }
             for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
                 std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
                 if (volumeChangeCb == nullptr) {
@@ -240,7 +243,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
                 AUDIO_DEBUG_LOG("volume greater than max, trigger cb clientPid : %{public}d", it->first);
                 VolumeEvent volumeEvent;
                 volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
-                volumeEvent.volume = GetMaxVolumeLevel(streamInFocus);
+                volumeEvent.volume = volumeLevelInInt;
                 volumeEvent.updateUi = true;
                 volumeEvent.volumeGroupId = 0;
                 volumeEvent.networkId = LOCAL_NETWORK_ID;
