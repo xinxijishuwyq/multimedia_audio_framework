@@ -625,11 +625,12 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, T
 {
     std::vector<sptr<VolumeGroupInfo>> infos;
     AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int vol = 3;
     if (infos.size() > 0) {
         int32_t groupId = infos[0]->volumeGroupId_;
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
-        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ACCESSIBILITY, 3, DeviceType::DEVICE_TYPE_SPEAKER);
+        float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ACCESSIBILITY, vol, DeviceType::DEVICE_TYPE_SPEAKER);
         GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
         EXPECT_LT(SUCCESS, db);
     }
