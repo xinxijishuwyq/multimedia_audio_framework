@@ -52,21 +52,29 @@ extern "C" {
 typedef enum {
     /**
      * The call was successful.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SUCCESS = 0,
 
     /**
      * This means that the function was executed with an invalid input parameter.
+     *
+     * @since 10
      */
     AUDIOSTREAM_ERROR_INVALID_PARAM = 1,
 
     /**
      * Execution status exception.
+     *
+     * @since 10
      */
     AUDIOSTREAM_ERROR_ILLEGAL_STATE = 2,
 
     /**
      * An system error has occurred.
+     *
+     * @since 10
      */
     AUDIOSTREAM_ERROR_SYSTEM = 3
 } OH_AudioStream_Result;
@@ -79,11 +87,15 @@ typedef enum {
 typedef enum {
     /**
      * The type for audio stream is renderer.
+     *
+     * @since 10
      */
     AUDIOSTREAM_TYPE_RENDERER = 1,
 
     /**
      * The type for audio stream is capturer.
+     *
+     * @since 10
      */
     AUDIOSTREAM_TYPE_CAPTURER = 2
 } OH_AudioStream_Type;
@@ -96,18 +108,26 @@ typedef enum {
 typedef enum {
     /**
      * Unsigned 8 format.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SAMPLE_U8 = 0,
     /**
      * Signed 16 bit integer, little endian.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SAMPLE_S16LE = 1,
     /**
      * Signed 24 bit integer, little endian.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SAMPLE_S24LE = 2,
     /**
      * Signed 32 bit integer, little endian.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SAMPLE_S32LE = 3,
 } OH_AudioStream_SampleFormat;
@@ -120,6 +140,8 @@ typedef enum {
 typedef enum {
     /**
      * PCM encoding type.
+     *
+     * @since 10
      */
     AUDIOSTREAM_ENCODING_TYPE_RAW = 0,
 } OH_AudioStream_EncodingType;
@@ -134,54 +156,80 @@ typedef enum {
 typedef enum {
     /**
      * Unknown usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_UNKNOWN = 0,
     /**
      * Music usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_MUSIC = 1,
     /**
      * Voice communication usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_VOICE_COMMUNICATION = 2,
     /**
      * Voice assistant usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_VOICE_ASSISTANT = 3,
     /**
      * Alarm usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_ALARM = 4,
     /**
      * Voice message usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_VOICE_MESSAGE = 5,
     /**
      * Ringtone usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_RINGTONE = 6,
     /**
      * Notification usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_NOTIFICATION = 7,
     /**
      * Accessibility usage, such as screen reader.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_ACCESSIBILITY = 8,
     /**
      * Movie or video usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_MOVIE = 10,
     /**
      * Game sound effect usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_GAME = 11,
     /**
      * Audiobook usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_AUDIOBOOK = 12,
     /**
      * Navigation usage.
+     *
+     * @since 10
      */
     AUDIOSTREAM_USAGE_NAVIGATION = 13,
 } OH_AudioStream_Usage;
@@ -194,10 +242,14 @@ typedef enum {
 typedef enum {
     /**
      * This is a normal audio scene.
+     *
+     * @since 10
      */
     AUDIOSTREAM_LATENCY_MODE_NORMAL = 0,
     /**
      * This is a low latency audio scene.
+     *
+     * @since 10
      */
     AUDIOSTREAM_LATENCY_MODE_FAST = 1
 } OH_AudioStream_LatencyMode;
@@ -210,6 +262,8 @@ typedef enum {
 typedef enum {
     /**
      * The routing of the audio has changed.
+     *
+     * @since 10
      */
     AUDIOSTREAM_EVENT_ROUTING_CHANGED = 0
 } OH_AudioStream_Event;
@@ -222,30 +276,44 @@ typedef enum {
 typedef enum {
     /**
      * The invalid state.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_INVALID = -1,
     /**
      * Create new instance state.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_NEW = 0,
     /**
      * The prepared state.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_PREPARED = 1,
     /**
      * The stream is running.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_RUNNING = 2,
     /**
      * The stream is stopped.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_STOPPED = 3,
     /**
      * The stream is released.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_RELEASED = 4,
     /**
      * The stream is paused.
+     *
+     * @since 10
      */
     AUDIOSTREAM_STATE_PAUSED = 5,
 } OH_AudioStream_State;
@@ -258,10 +326,14 @@ typedef enum {
 typedef enum {
     /**
      * Force type, system change audio state.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_FORCE = 0,
     /**
      * Share type, application change audio state.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_SHARE = 1
 } OH_AudioInterrupt_ForceType;
@@ -274,26 +346,38 @@ typedef enum {
 typedef enum {
     /**
      * None.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_HINT_NONE = 0,
     /**
      * Resume the stream.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_HINT_RESUME = 1,
     /**
      * Pause the stream.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_HINT_PAUSE = 2,
     /**
      * Stop the stream.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_HINT_STOP = 3,
     /**
      * Ducked the stream.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_HINT_DUCK = 4,
     /**
      * Unducked the stream.
+     *
+     * @since 10
      */
     AUDIOSTREAM_INTERRUPT_HINT_UNDUCK = 5
 } OH_AudioInterrupt_Hint;
@@ -306,22 +390,32 @@ typedef enum {
 typedef enum {
     /**
      * Invalid type.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SOURCE_TYPE_INVALID = -1,
     /**
      * Mic source type.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SOURCE_TYPE_MIC = 0,
     /**
      * Voice recognition source type.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION = 1,
     /**
      * Playback capture source type.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SOURCE_TYPE_PLAYBACK_CAPTURE = 2,
     /**
      * Voice communication source type.
+     *
+     * @since 10
      */
     AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION = 7
 } OH_AudioStream_SourceType;
@@ -359,6 +453,8 @@ typedef struct OH_AudioRenderer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to write audio data
+     *
+     * @since 10
      */
     int32_t (*OH_AudioRenderer_OnWriteData)(
             OH_AudioRenderer* renderer,
@@ -369,6 +465,8 @@ typedef struct OH_AudioRenderer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to handle audio renderer stream events.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioRenderer_OnStreamEvent)(
             OH_AudioRenderer* renderer,
@@ -378,6 +476,8 @@ typedef struct OH_AudioRenderer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to handle audio interrupt events.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioRenderer_OnInterrptEvent)(
             OH_AudioRenderer* renderer,
@@ -388,6 +488,8 @@ typedef struct OH_AudioRenderer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to handle audio error result.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioRenderer_OnError)(
             OH_AudioRenderer* renderer,
@@ -404,6 +506,8 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to read audio data.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioCapturer_OnReadData)(
             OH_AudioCapturer* capturer,
@@ -414,6 +518,8 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to handle audio capturer stream events.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioCapturer_OnStreamEvent)(
             OH_AudioCapturer* capturer,
@@ -423,6 +529,8 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to handle audio interrupt events.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioCapturer_OnInterrptEvent)(
             OH_AudioCapturer* renderer,
@@ -433,6 +541,8 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
     /**
      * This function pointer will point to the callback function that
      * is used to handle audio error result.
+     *
+     * @since 10
      */
     int32_t (*OH_AudioCapturer_OnError)(
             OH_AudioCapturer* capturer,
