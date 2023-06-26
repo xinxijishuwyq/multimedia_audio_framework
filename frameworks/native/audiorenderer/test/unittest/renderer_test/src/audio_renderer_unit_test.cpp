@@ -37,7 +37,6 @@ namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
-    const int32_t VALUE_ONE = 1;
     const int32_t VALUE_INVALID = -2;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
