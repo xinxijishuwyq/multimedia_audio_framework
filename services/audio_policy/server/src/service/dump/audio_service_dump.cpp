@@ -914,11 +914,11 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
 void AudioServiceDump::DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos)
 {
     AppendFormat(dumpString, "    volume points:\n");
-    for (auto it = deviceVolumeInfos.cbegin(); it != deviceVolumeInfos.cend(); ++it) {
-        AppendFormat(dumpString, "      device:%s \n", GetDeviceVolumeTypeName(it->first).c_str());
-        auto volumePoints = it->second->volumePoints;
-        for (auto it = volumePoints.cbegin(); it != volumePoints.cend(); ++it) {
-            AppendFormat(dumpString, "        [%d, %d]\n", it->index, it->dbValue);
+    for (auto iter = deviceVolumeInfos.cbegin(); iter != deviceVolumeInfos.cend(); ++iter) {
+        AppendFormat(dumpString, "      device:%s \n", GetDeviceVolumeTypeName(iter->first).c_str());
+        auto volumePoints = iter->second->volumePoints;
+        for (auto volPoint = volumePoints.cbegin(); volPoint != volumePoints.cend(); ++volPoint) {
+            AppendFormat(dumpString, "        [%d, %d]\n", volPoint->index, volPoint->dbValue);
         }
     }
     AppendFormat(dumpString, "\n");
