@@ -426,7 +426,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
     // switch between local devices
-    if (!isCurrentRemoteRenderer && LOCAL_NETWORK_ID == networkId && currentActiveDevice_ != deviceType) {
+    if (!isCurrentRemoteRenderer && networkId == LOCAL_NETWORK_ID && currentActiveDevice_ != deviceType) {
         if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
             deviceType = FetchHighPriorityDevice(true);
         }
@@ -2027,7 +2027,7 @@ void AudioPolicyService::LoadEffectLibrary()
     }
 
     audioEffectManager_.UpdateAvailableEffects(successLoadedEffects);
-    audioEffectManager_.GetAvailableAEConfig();
+    audioEffectManager_.BuildAvailableAEConfig();
 
     // Initialize EffectChainManager in audio service through IPC
     SupportedEffectConfig supportedEffectConfig;

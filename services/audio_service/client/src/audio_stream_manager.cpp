@@ -83,7 +83,7 @@ bool AudioStreamManager::IsAudioRendererLowLatencySupported(const AudioStreamInf
 }
 
 static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
-    AudioSceneEffectInfo &audioSceneEffectInfo, int32_t i)
+    int32_t i, AudioSceneEffectInfo &audioSceneEffectInfo)
 {
     uint32_t j;
     AudioEffectMode audioEffectMode;
@@ -116,7 +116,7 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
         int32_t sceneFlag = 0;
         for (int32_t i = 0; i < streamNum; i++) {
             if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
-                UpdateEffectInfoArray(supportedEffectConfig, audioSceneEffectInfo, i);
+                UpdateEffectInfoArray(supportedEffectConfig, i, audioSceneEffectInfo);
                 sceneFlag = 1;
                 break;
             }

@@ -85,14 +85,14 @@ public:
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
 private:
-    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap;
-    std::map<std::string, std::string> EffectToLibraryNameMap;
-    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap;
-    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap;
-    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap;
-    uint32_t frameLen = DEFAULT_FRAMELEN;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    std::string deviceSink = DEFAULT_DEVICE_SINK;
+    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
+    std::map<std::string, std::string> EffectToLibraryNameMap_;
+    std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
+    std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap_;
+    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap_;
+    uint32_t frameLen_ = DEFAULT_FRAMELEN;
+    DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
 };
 

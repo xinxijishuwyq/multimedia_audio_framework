@@ -395,7 +395,7 @@ int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::strin
     return ret;
 }
 
-void AudioEffectManager::GetAvailableAEConfig()
+void AudioEffectManager::BuildAvailableAEConfig()
 {
     int32_t ret;
     std::vector<std::string> availableLayout;
@@ -410,6 +410,7 @@ void AudioEffectManager::GetAvailableAEConfig()
         AUDIO_INFO_LOG("[supportedEffectConfig LOG13]: postProcess is none!");
     }
 
+    // Update duplicate defined modes, devices, and unsupported effect chain.
     UpdateAvailableAEConfig(oriEffectConfig_);
     UpdateEffectChains(availableLayout);
 
