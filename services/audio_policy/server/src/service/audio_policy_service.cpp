@@ -453,8 +453,8 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
             continue;
         }
-        if (networkId == LOCAL_NETWORK_ID && audioEffectManager_.CheckEffectSinkName(sinkInputs[i].sinkName)) {
-            AUDIO_INFO_LOG("Sink-input[%{public}zu] route to effect sink, don't move", i);
+        if (sinkInputs[i].streamType == STREAM_DEFAULT) {
+            AUDIO_INFO_LOG("Sink-input[%{public}zu] of effect sink, don't move", i);
             continue;
         }
         AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());

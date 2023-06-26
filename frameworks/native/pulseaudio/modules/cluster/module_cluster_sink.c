@@ -61,6 +61,18 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
 
+    // for master device, sink input connected to remote, do not move!
+    const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
+    if (pa_safe_streq(deviceString, "remote")) {
+        return PA_HOOK_OK;
+    }
+
+    // for slave device, sink input from master device, do not move!
+    const char *appUser = pa_proplist_gets(si->proplist, "application.process.user");
+    if (pa_safe_streq(appUser, "daudio")) {
+        return PA_HOOK_OK;
+    }
+
     bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
     if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
