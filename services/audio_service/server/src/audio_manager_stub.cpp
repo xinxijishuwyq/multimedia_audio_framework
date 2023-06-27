@@ -259,13 +259,12 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
 
             unordered_map<string, string> sceneTypeToEffectChainNameMap;
-            string value;
             int32_t mapSize = data.ReadInt32();
             CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
                 AUDIO_ERR, "Create audio effect chain manager failed, please check log");
             for (i = 0; i < mapSize; i++) {
                 string key = data.ReadString();
-                value = data.ReadString();
+                string value = data.ReadString();
                 sceneTypeToEffectChainNameMap[key] = value;
             }
 

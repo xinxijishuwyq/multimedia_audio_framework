@@ -814,7 +814,7 @@ void InteractiveRun()
     cout << "Interactive run process test end." << endl;
 }
 
-bool SetSysPara(std::string key, int32_t &value)
+bool SetSysPara(const std::string key, int32_t &value)
 {
     auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
     if (res < 0) {

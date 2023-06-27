@@ -1156,9 +1156,8 @@ uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint>
 {
     int32_t leftPos = 0;
     int32_t rightPos = volumePoints.size() - 1;
-    int32_t midPos = 0;
     while (leftPos <= rightPos) {
-        midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
+        int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
         int32_t c = volumePoints[midPos].index - idx;
         if (c == 0) {
             leftPos = midPos;
