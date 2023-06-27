@@ -27,7 +27,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    std::string networkId = "LocalDevice";
+    std::string g_networkId = "LocalDevice";
 }
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) {}
@@ -35,7 +35,7 @@ void AudioRendererStateCallbackFuzz::OnRendererStateChange(
 void AudioCapturerStateCallbackFuzz::OnCapturerStateChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 const int32_t LIMITSIZE = 4;
-void AudioManagerFuzzTest_audio_framework(const uint8_t* data, size_t size)
+void AudioManagerFuzzAudioFrameworkTest(const uint8_t* data, size_t size)
 {
     if ((data == nullptr) || (size < LIMITSIZE)) {
         return;
@@ -129,7 +129,7 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
     VolumeAdjustType adjustType = *reinterpret_cast<const VolumeAdjustType *>(data);
     DeviceType device = *reinterpret_cast<const DeviceType *>(data);
     std::vector<sptr<VolumeGroupInfo>> infos;
-    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    AudioSystemManager::GetInstance()->GetVolumeGroups(g_networkId, infos);
     int32_t groupId = infos[0]->volumeGroupId_;
     auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
     audioGroupMngr_->IsVolumeUnadjustable();
@@ -144,7 +144,7 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerFuzzTest_audio_framework(data, size);
+    OHOS::AudioStandard::AudioManagerFuzzAudioFrameworkTest(data, size);
     OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);

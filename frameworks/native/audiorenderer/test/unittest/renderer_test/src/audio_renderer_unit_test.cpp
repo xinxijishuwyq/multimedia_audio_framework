@@ -4984,7 +4984,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMinStreamVolume_Stability_001, T
  * @tc.number: Audio_Renderer_GetMaxStreamVolume_001
  * @tc.desc  : Test GetMaxStreamVolume interface to get the max volume value.
  */
- HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMaxStreamVolume_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMaxStreamVolume_001, TestSize.Level1)
 {
     AudioRendererOptions rendererOptions;
 
