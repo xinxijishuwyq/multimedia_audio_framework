@@ -55,12 +55,12 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_001, TestSize.Level0)
 * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal OH_AudioStream_Type.
 * @tc.number: OH_Audio_Capture_Generate_002
 * @tc.desc  : Test OH_AudioStreamBuilder_GenerateCapturer interface. Returns error code, if the stream type is
-*             AUDIOSTREAM_TYPE_RERNDERER.
+*             AUDIOSTREAM_TYPE_RENDERER.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
 

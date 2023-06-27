@@ -58,7 +58,7 @@ typedef enum {
     /**
      * The type for audio stream is renderer.
      */
-    AUDIOSTREAM_TYPE_RERNDERER = 1,
+    AUDIOSTREAM_TYPE_RENDERER = 1,
 
     /**
      * The type for audio stream is capturer.

@@ -30,7 +30,7 @@ extern "C" {
  * @since 10
  *
  * @param builder The builder reference to the created result.
- * @param type The stream type to be created. {@link #AUDIOSTREAM_TYPE_RERNDERER} or {@link #AUDIOSTREAM_TYPE_CAPTURER}
+ * @param type The stream type to be created. {@link #AUDIOSTREAM_TYPE_RENDERER} or {@link #AUDIOSTREAM_TYPE_CAPTURER}
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder** builder, OH_AudioStream_Type type);

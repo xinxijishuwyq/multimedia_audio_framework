@@ -107,7 +107,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInfo(OH_AudioStreamBuilde
 
 OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder** builder, OH_AudioStream_Type type)
 {
-    int32_t streamType = type == AUDIOSTREAM_TYPE_RERNDERER ? RENDERER_TYPE : CAPTURER_TYPE;
+    int32_t streamType = type == AUDIOSTREAM_TYPE_RENDERER ? RENDERER_TYPE : CAPTURER_TYPE;
     OHAudioStreamBuilder *streamBuilder = new OHAudioStreamBuilder(streamType);
 
     *builder = (OH_AudioStreamBuilder*)streamBuilder;
