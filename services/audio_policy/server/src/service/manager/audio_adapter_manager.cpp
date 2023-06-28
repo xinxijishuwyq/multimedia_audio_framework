@@ -1213,6 +1213,10 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
     if (position == 0) {
+        if (minVolIndex != 0) {
+            AUDIO_INFO_LOG("Min volume index not zero, use min db: %{public}0.1f", volumePoints[0].dbValue / 100.0f);
+            return exp((volumePoints[0].dbValue / 100.0f) * 0.115129f);
+        }
         AUDIO_INFO_LOG("position = 0, return 0.0");
         return 0.0f;
     } else if (position >= pointSize) {
