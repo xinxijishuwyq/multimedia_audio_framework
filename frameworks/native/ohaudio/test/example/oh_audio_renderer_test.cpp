@@ -62,7 +62,7 @@ void PlayerTest(char *argv[])
 
     // 1. create builder
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     ret = OH_AudioStreamBuilder_Create(&builder, type);
     printf("createcallback ret: %d \n", ret);
 

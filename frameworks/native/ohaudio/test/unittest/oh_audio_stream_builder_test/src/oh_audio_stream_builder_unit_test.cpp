@@ -70,14 +70,14 @@ void OHAudioStreamBuilderUnitTest::SetUp(void) { }
 void OHAudioStreamBuilderUnitTest::TearDown(void) { }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_Create API via legal state, AUDIOSTREAM_TYPE_RERNDERER.
+* @tc.name  : Test OH_AudioStreamBuilder_Create API via legal state, AUDIOSTREAM_TYPE_RENDERER.
 * @tc.number: OH_AudioStreamBuilder_Create_001
 * @tc.desc  : Test OH_AudioStreamBuilder_Create interface. Returns true if result is successful.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = nullptr;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -284,7 +284,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, Tes
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_009, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -327,7 +327,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, Tes
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_011, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -408,12 +408,12 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_014, Tes
 * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via illegal state.
 * @tc.number: OH_AudioStreamBuilder_SetParameter_015
 * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns error code, if the builder type is
-*             AUDIOSTREAM_TYPE_RERNDERER.
+*             AUDIOSTREAM_TYPE_RENDERER.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_015, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -450,12 +450,12 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_016, Tes
 * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerCallback API via illegal state.
 * @tc.number: OH_AudioStreamBuilder_SetParameter_017
 * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerCallback interface. Returns error code, if the builder type is
-*             AUDIOSTREAM_TYPE_RERNDERER.
+*             AUDIOSTREAM_TYPE_RENDERER.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -640,7 +640,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_002, 
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -662,7 +662,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, 
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -683,7 +683,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 

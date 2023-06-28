@@ -31,7 +31,7 @@ void OHAudioRenderUnitTest::TearDown(void) { }
 OH_AudioStreamBuilder* OHAudioRenderUnitTest::CreateRenderBuilder()
 {
     OH_AudioStreamBuilder* builder;
-    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RERNDERER;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStreamBuilder_Create(&builder, type);
     return builder;
 }
