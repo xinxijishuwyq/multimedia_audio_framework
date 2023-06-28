@@ -34,7 +34,6 @@ ohos_shared_library("audio_capturer_source") {
   ]
 
   deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
-  deps += [ multimedia_audio_framework_hdi_audio_client ]
 
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
@@ -99,13 +98,10 @@ ohos_shared_library("remote_audio_capturer_source") {
     "//drivers/peripheral/audio/interfaces/include",
   ]
 
-  if ("${product_name}" == "m40") {
-    deps = [ "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client" ]
-  } else {
-    deps = [ multimedia_audio_framework_hdi_audio_client ]
-  }
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "distributed_audio:daudio_client",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -131,14 +127,11 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 
   include_dirs += [ multimedia_audio_framework_drivers ]
 
-  deps = [
-    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${multimedia_distributed_audio}/services/hdfaudioclient:daudio_client",
-    multimedia_audio_framework_hdi_audio_client,
-  ]
+  deps = [ "${audio_fwk_path}/frameworks/native/audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",
+    "distributed_audio:daudio_client",
     "hiviewdfx_hilog_native:libhilog",
   ]
 

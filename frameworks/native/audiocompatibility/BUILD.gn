@@ -44,12 +44,6 @@ ohos_shared_library("audio_capturer_gateway") {
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
-  if ("${product_name}" == "m40") {
-  } else {
-    deps +=
-        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
-  }
-
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
@@ -88,12 +82,6 @@ ohos_shared_library("audio_renderer_gateway") {
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
-
-  if ("${product_name}" == "m40") {
-  } else {
-    deps +=
-        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
-  }
 
   external_deps = [
     "access_token:libaccesstoken_sdk",

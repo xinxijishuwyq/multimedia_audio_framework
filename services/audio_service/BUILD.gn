@@ -366,7 +366,6 @@ ohos_executable("audio_hdi_device_test") {
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
-    multimedia_audio_framework_hdi_audio_client,
   ]
 
   external_deps = [
