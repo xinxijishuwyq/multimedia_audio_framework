@@ -218,6 +218,16 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         return ERR_OPERATION_FAILED;
     }
     AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
+    if (streamType == STREAM_MUSIC) {
+        audioServiceAdapter_->SetVolumeDb(STREAM_MOVIE, volumeDb);
+        audioServiceAdapter_->SetVolumeDb(STREAM_GAME, volumeDb);
+        audioServiceAdapter_->SetVolumeDb(STREAM_SPEECH, volumeDb);
+    } else if (streamType == STREAM_RING) {
+        audioServiceAdapter_->SetVolumeDb(STREAM_SYSTEM, volumeDb);
+        audioServiceAdapter_->SetVolumeDb(STREAM_NOTIFICATION, volumeDb);
+        audioServiceAdapter_->SetVolumeDb(STREAM_SYSTEM_ENFORCED, volumeDb);
+        audioServiceAdapter_->SetVolumeDb(STREAM_DTMF, volumeDb);
+    }
     return audioServiceAdapter_->SetVolumeDb(streamType, volumeDb);
 }
 
@@ -691,19 +701,24 @@ AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)
 AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType streamType)
 {
     switch (streamType) {
-        case STREAM_MUSIC:
-            return STREAM_MUSIC;
-        case STREAM_NOTIFICATION:
-        case STREAM_DTMF:
-        case STREAM_SYSTEM:
-        case STREAM_RING:
-            return STREAM_RING;
-        case STREAM_ALARM:
-            return STREAM_ALARM;
         case STREAM_VOICE_CALL:
             return STREAM_VOICE_CALL;
+        case STREAM_RING:
+        case STREAM_SYSTEM:
+        case STREAM_NOTIFICATION:
+        case STREAM_SYSTEM_ENFORCED:
+        case STREAM_DTMF:
+            return STREAM_RING;
+        case STREAM_MUSIC:
+        case STREAM_MEDIA:
+        case STREAM_MOVIE:
+        case STREAM_GAME:
+        case STREAM_SPEECH:
+            return STREAM_MUSIC;
         case STREAM_VOICE_ASSISTANT:
             return STREAM_VOICE_ASSISTANT;
+        case STREAM_ALARM:
+            return STREAM_ALARM;
         case STREAM_ACCESSIBILITY:
             return STREAM_ACCESSIBILITY;
         case STREAM_ULTRASONIC:

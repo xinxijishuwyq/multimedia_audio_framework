@@ -93,9 +93,10 @@ bool AudioPolicyService::Init(void)
     std::string AUDIO_FOCUS_CONFIG_FILE = "system/etc/audio/audio_interrupt_policy_config.xml";
 
     if (audioFocusParser->LoadConfig(focusMap_)) {
-        AUDIO_ERR_LOG("Audio Interrupt Load Configuration failed");
+        AUDIO_ERR_LOG("Failed to load audio interrupt configuration!");
         return false;
     }
+    AUDIO_INFO_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
 
     if (deviceStatusListener_->RegisterDeviceStatusListener()) {
         AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");

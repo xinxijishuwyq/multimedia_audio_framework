@@ -78,6 +78,9 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
+    if (audioStreamType == STREAM_MEDIA) {
+        audioStreamType = STREAM_MUSIC;
+    }
 #ifdef OHCORE
     return std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
@@ -178,7 +181,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
         AUDIO_DEBUG_LOG("AudioRendererPrivate::Audio stream created");
         // Initializing with default values
         rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
-        rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+        rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     }
 
     rendererProxyObj_ = std::make_shared<AudioRendererProxyObj>();

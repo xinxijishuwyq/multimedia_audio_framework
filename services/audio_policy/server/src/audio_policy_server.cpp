@@ -180,7 +180,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
         if (mPolicyService.GetLocalDevicesType().compare("tablet") == 0) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
-            streamInFocus = GetStreamInFocus();
+            streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
         }
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
             streamInFocus = AudioStreamType::STREAM_MUSIC;
@@ -223,7 +223,7 @@ void AudioPolicyServer::SubscribeKeyEvents()
         if (mPolicyService.GetLocalDevicesType().compare("tablet") == 0) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
-            streamInFocus = GetStreamInFocus();
+            streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
         }
         if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
             streamInFocus = AudioStreamType::STREAM_MUSIC;
@@ -255,6 +255,38 @@ void AudioPolicyServer::SubscribeKeyEvents()
     });
     if (upKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume up failed ");
+    }
+}
+
+AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_VOICE_CALL:
+            return STREAM_VOICE_CALL;
+        case STREAM_RING:
+        case STREAM_SYSTEM:
+        case STREAM_NOTIFICATION:
+        case STREAM_SYSTEM_ENFORCED:
+        case STREAM_DTMF:
+            return STREAM_RING;
+        case STREAM_MUSIC:
+        case STREAM_MEDIA:
+        case STREAM_MOVIE:
+        case STREAM_GAME:
+        case STREAM_SPEECH:
+            return STREAM_MUSIC;
+        case STREAM_VOICE_ASSISTANT:
+            return STREAM_VOICE_ASSISTANT;
+        case STREAM_ALARM:
+            return STREAM_ALARM;
+        case STREAM_ACCESSIBILITY:
+            return STREAM_ACCESSIBILITY;
+        case STREAM_ULTRASONIC:
+            return STREAM_ULTRASONIC;
+        case STREAM_ALL:
+            return STREAM_ALL;
+        default:
+            return STREAM_MUSIC;
     }
 }
 
@@ -331,7 +363,7 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
 
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
-    AudioStreamType streamInFocus = GetStreamInFocus();
+    AudioStreamType streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
@@ -1598,7 +1630,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.callStatus = GetAudioScene();
 
     // Get stream volumes
-    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_TTS; stream++) {
+    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_ULTRASONIC; stream++) {
         AudioStreamType streamType = (AudioStreamType)stream;
 
         if (AudioServiceDump::IsStreamSupported(streamType)) {

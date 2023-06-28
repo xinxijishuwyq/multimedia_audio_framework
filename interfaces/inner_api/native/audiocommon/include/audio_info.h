@@ -234,7 +234,7 @@ enum AudioStreamType {
      */
     STREAM_VOICE_CALL = 0,
     /**
-     * Indicates audio streams for music playback.
+     * Indicates audio streams for music.
      */
     STREAM_MUSIC = 1,
     /**
@@ -242,11 +242,12 @@ enum AudioStreamType {
      */
     STREAM_RING = 2,
     /**
-     * Indicates audio streams media.
+     * Indicates audio streams for media.
+     * Deprecated
      */
     STREAM_MEDIA = 3,
     /**
-     * Indicates Audio streams for voice assistant
+     * Indicates audio streams used for voice assistant and text-to-speech (TTS).
      */
     STREAM_VOICE_ASSISTANT = 4,
     /**
@@ -263,6 +264,7 @@ enum AudioStreamType {
     STREAM_NOTIFICATION = 7,
     /**
      * Indicates audio streams for voice calls routed through a connected Bluetooth device.
+     * Deprecated
      */
     STREAM_BLUETOOTH_SCO = 8,
     /**
@@ -275,6 +277,7 @@ enum AudioStreamType {
     STREAM_DTMF = 10,
     /**
      * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
+     * Deprecated
      */
     STREAM_TTS =  11,
     /**
@@ -283,12 +286,34 @@ enum AudioStreamType {
     STREAM_ACCESSIBILITY = 12,
     /**
      * Indicates special scene used for recording.
+     * Deprecated
      */
     STREAM_RECORDING = 13,
     /**
+     * Indicates audio streams for movie.
+     * New
+     */
+    STREAM_MOVIE = 14,
+    /**
+     * Indicates audio streams for game.
+     * New
+     */
+    STREAM_GAME = 15,
+    /**
+     * Indicates audio streams for speech.
+     * New
+     */
+    STREAM_SPEECH = 16,
+    /**
+     * Indicates audio streams for enforced audible.
+     * New
+     */
+    STREAM_SYSTEM_ENFORCED = 17,
+    /**
      * Indicates audio streams used for ultrasonic ranging.
      */
-    STREAM_ULTRASONIC = 14,
+    STREAM_ULTRASONIC = 18,
+
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
@@ -460,6 +485,10 @@ enum ContentType {
     CONTENT_TYPE_MOVIE = 3,
     CONTENT_TYPE_SONIFICATION = 4,
     CONTENT_TYPE_RINGTONE = 5,
+    // other ContentType
+    CONTENT_TYPE_PROMPT = 6,
+    CONTENT_TYPE_GAME = 7,
+    CONTENT_TYPE_DTMF = 8,
     CONTENT_TYPE_ULTRASONIC = 9
 };
 
@@ -469,14 +498,26 @@ enum ContentType {
 enum StreamUsage {
     STREAM_USAGE_UNKNOWN = 0,
     STREAM_USAGE_MEDIA = 1,
+    STREAM_USAGE_MUSIC = 1,
     STREAM_USAGE_VOICE_COMMUNICATION = 2,
     STREAM_USAGE_VOICE_ASSISTANT = 3,
     STREAM_USAGE_ALARM = 4,
+    STREAM_USAGE_VOICE_MESSAGE = 5,
     STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
-    STREAM_USAGE_RANGING = 7,
+    STREAM_USAGE_RINGTONE = 6,
+    STREAM_USAGE_NOTIFICATION = 7,
     STREAM_USAGE_ACCESSIBILITY = 8,
     STREAM_USAGE_SYSTEM = 9,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION = 10
+    STREAM_USAGE_MOVIE = 10,
+    STREAM_USAGE_GAME = 11,
+    STREAM_USAGE_AUDIOBOOK = 12,
+    STREAM_USAGE_NAVIGATION = 13,
+    STREAM_USAGE_DTMF = 14,
+    STREAM_USAGE_ENFORCED_TONE = 15,
+    STREAM_USAGE_ULTRASONIC = 16,
+    //other StreamUsage
+    STREAM_USAGE_RANGING,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 
 /**
