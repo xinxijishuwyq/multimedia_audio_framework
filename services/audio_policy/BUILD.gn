@@ -167,7 +167,6 @@ ohos_shared_library("audio_policy_service") {
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
     "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_config.para",
@@ -214,6 +213,7 @@ ohos_shared_library("audio_policy_service") {
     "init:libbegetutil",
     "input:libmmi-client",
     "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
