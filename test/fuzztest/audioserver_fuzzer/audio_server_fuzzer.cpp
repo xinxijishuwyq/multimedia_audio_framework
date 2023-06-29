@@ -62,6 +62,12 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr =
         std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioServerPtr->OnRemoteRequest(code, data, reply, option);
+    
+    std::string netWorkId(reinterpret_cast<const char*>(rawData), size);
+    AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
+    std::string condition(reinterpret_cast<const char*>(rawData), size);
+    std::string value(reinterpret_cast<const char*>(rawData), size);
+    AudioServerPtr->OnAudioParameterChange(netWorkId, key, condition, value);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

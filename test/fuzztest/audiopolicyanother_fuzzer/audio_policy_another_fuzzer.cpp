@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "audio_info.h"
 #include "audio_policy_server.h"
+#include "audio_manager_listener_stub.h"
 #include "message_parcel.h"
 
 using namespace std;
@@ -185,6 +186,29 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     AudioPolicyServerPtr->UpdateStreamState(clientUid, streamSetState, audioStreamType);
 }
+
+void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
+{
+    sptr<AudioVolumeKeyEventCallbackStub> listener =
+        new(std::nothrow) AudioVolumeKeyEventCallbackStub();
+    VolumeEvent volumeEvent = {};
+    volumeEvent.volumeType =  *reinterpret_cast<const AudioStreamType *>(rawData);
+    volumeEvent.volume = *reinterpret_cast<const int32_t *>(rawData);
+    volumeEvent.updateUi = *reinterpret_cast<const bool *>(rawData);
+    volumeEvent.volumeGroupId = *reinterpret_cast<const int32_t *>(rawData);
+    std::string id(reinterpret_cast<const char*>(rawData), size);
+    volumeEvent.networkId = id;
+
+    MessageParcel data;
+    data.WriteInt32(static_cast<int32_t>(volumeEvent.volumeType));
+    data.WriteInt32(volumeEvent.volume);
+    data.WriteBool(volumeEvent.updateUi);
+    data.WriteInt32(volumeEvent.volumeGroupId);
+    data.WriteString(volumeEvent.networkId);
+    MessageParcel reply;
+    MessageOption option;
+    listener->OnRemoteRequest(AudioVolumeKeyEventCallbackStub::ON_VOLUME_KEY_EVENT, data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -196,6 +220,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioDeviceFuzzTest(data, size);
     OHOS::AudioStandard::AudioInterruptFuzzTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
+    OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
     return 0;
 }
 
