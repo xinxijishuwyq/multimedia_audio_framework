@@ -829,7 +829,12 @@ describe("AudioRendererInterruptUnitTest", function() {
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
             console.log("31.eventAction=" + JSON.stringify(eventAction))
-            expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
+            if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_BEGIN) {
+                expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_DUCK)
+            } else if (eventAction.eventType == audio.InterruptType.INTERRUPT_TYPE_END) {
+                expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_UNDUCK)
+            } else {
+            }
         })
         await start(render2, done)
         await sleep(500)
@@ -1121,9 +1126,6 @@ describe("AudioRendererInterruptUnitTest", function() {
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_045', 0, async function (done) {
         let render1 = await createAudioRenderer(renderInfo['ULTRASONIC'], streamInfo['44100'])
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
-        render1.on("audioInterrupt", async(eventAction) => {
-            console.log("45.eventAction=" + JSON.stringify(eventAction))
-        })
         await start(render1, done)
 
         let render2 = await createAudioRenderer(renderInfo['ULTRASONIC'], streamInfo['48000'])
@@ -1132,11 +1134,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             console.log("45_2.eventAction=" + JSON.stringify(eventAction))
             expect(eventAction.hintType).assertEqual(audio.InterruptHint.INTERRUPT_HINT_STOP)
         })
-        await start(render2, done)
-        await sleep(500)
-        await release(render1, done)
-        await release(render2, done)
-        done()
+        await startFail(render2, done, render1)
     })
 
     it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_046', 0, async function (done) {
