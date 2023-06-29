@@ -35,7 +35,7 @@ void AudioRendererStateCallbackFuzz::OnRendererStateChange(
 void AudioCapturerStateCallbackFuzz::OnCapturerStateChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 const int32_t LIMITSIZE = 4;
-void AudioManagerFuzzTestFramework(const uint8_t* data, size_t size)
+void AudioManagerFuzzTest(const uint8_t* data, size_t size)
 {
     if ((data == nullptr) || (size < LIMITSIZE)) {
         return;
@@ -144,7 +144,7 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioManagerFuzzTestFramework(data, size);
+    OHOS::AudioStandard::AudioManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioRoutingManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioStreamManagerFuzzTest(data, size);
     OHOS::AudioStandard::AudioGroupManagerFuzzTest(data, size);
