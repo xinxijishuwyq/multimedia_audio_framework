@@ -112,11 +112,15 @@ int32_t AudioAdapterManager::SetAudioSessionCallback(AudioSessionCallback *callb
 
 int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
+    CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_ULTRASONIC,
+        ERR_INVALID_PARAM, "Invalid stream type");
     return maxVolumeIndexMap_[volumeType];
 }
 
 int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
+    CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_ULTRASONIC,
+        ERR_INVALID_PARAM, "Invalid stream type");
     return minVolumeIndexMap_[volumeType];
 }
 
