@@ -449,6 +449,7 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
 
     if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
+            AUDIO_ERR_LOG("ERR_WRITE_FAILED");
             return ERR_WRITE_FAILED;
         }
         isFirstWrite_ = false;
