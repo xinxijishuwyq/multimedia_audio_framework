@@ -32,25 +32,44 @@
         "hisysevent_config": [ "//foundation/multimedia/audio_framework/hisysevent.yaml" ],
         "deps": {
           "components": [
-              "ability_manager",
-              "appexecfwk_base",
-              "ace_napi",
-              "drivers_interface_audio",
-              "eventhandler",
-              "hiviewdfx_hilog_native",
-              "ipc_single",
-              "libhilog",
-              "napi",
-              "native_dataability",
-              "native_rdb",
-              "power_manager",
-              "samgr_proxy",
-              "system_ability_fwk"
+            "ability_base",
+            "ability_runtime",
+            "access_token",
+            "accessibility",
+            "bluetooth",
+            "bundle_framework",
+            "c_utils",
+            "common_event_service",
+            "config_policy",
+            "device_manager",
+            "distributed_audio",
+            "drivers_interface_audio",
+            "drivers_peripheral_audio",
+            "eventhandler",
+            "hdf_core",
+            "hicollie",
+            "hisysevent_native",
+            "hitrace_native",
+            "hiview",
+            "hiviewdfx_hilog_native",
+            "init",
+            "input",
+            "ipc",
+            "kv_store",
+            "napi",
+            "power_manager",
+            "resource_management",
+            "resource_schedule_service",
+            "safwk",
+            "samgr"
             ],
-            "third_party": [
-              "libsnd",
-              "pulseaudio"
-            ]
+          "third_party": [
+            "bounds_checking_function",
+            "glib",
+            "libsnd",
+            "libxml2",
+            "pulseaudio"
+          ]
         },
         "build": {
           "group_type": {

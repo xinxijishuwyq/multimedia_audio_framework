@@ -44,8 +44,6 @@ ohos_shared_library("audio_capturer_gateway") {
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
 
-  deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
-
   if ("${product_name}" == "m40") {
   } else {
     deps +=
@@ -90,8 +88,6 @@ ohos_shared_library("audio_renderer_gateway") {
     "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
     "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
   ]
-
-  deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
 
   if ("${product_name}" == "m40") {
   } else {
