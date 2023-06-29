@@ -1974,7 +1974,7 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
             int res = audioPolicyManager_.UpdateSwapDeviceStatus();
             CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
             break;
-        }        
+        }
         default:
             break;
     }
