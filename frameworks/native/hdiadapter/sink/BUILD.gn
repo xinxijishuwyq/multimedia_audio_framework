@@ -37,8 +37,6 @@ ohos_shared_library("audio_renderer_sink") {
 
   deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
 
-  deps += [ multimedia_audio_framework_hdi_audio_client ]
-
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_1.0",
@@ -152,14 +150,10 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  if ("${product_name}" == "m40") {
-    deps += [ "//foundation/distributedhardware/distributed_audio/services/hdfaudioclient:daudio_client" ]
-  } else {
-    deps +=
-        [ "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client" ]
-  }
-
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "distributed_audio:daudio_client",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -190,12 +184,12 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 
   deps = [
     "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${daudio_path}/services/hdfaudioclient:daudio_client",
     "${third_party_path}/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [
     "c_utils:utils",
+    "distributed_audio:daudio_client",
     "hiviewdfx_hilog_native:libhilog",
   ]
 

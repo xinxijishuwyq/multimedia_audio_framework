@@ -15,8 +15,6 @@ declare_args() {
   audio_framework_feature_dtmf_tone = true
   audio_framework_feature_opensl_es = true
 
-  multimedia_audio_framework_hdi_audio_client =
-      "//drivers/peripheral/audio/hal/hdi_binder/proxy:hdi_audio_client"
   ipc_dir =
       "//foundation/communication/ipc/interfaces/innerkits/ipc_single/include"
 
@@ -26,14 +24,10 @@ declare_args() {
 
   multimedia_audio_framework_drivers =
       "//drivers/peripheral/audio/interfaces/include/"
-
-  multimedia_distributed_audio =
-      "//foundation/distributedhardware/distributed_audio"
 }
 
 audio_fwk_path = "//foundation/multimedia/audio_framework"
 drivers_audio_path = "//drivers/peripheral/audio"
-daudio_path = "//foundation/distributedhardware/distributed_audio"
 third_party_path = "//third_party"
 histreamer_ext_dir = "//foundation/multimedia/histreamer_ext"
 
