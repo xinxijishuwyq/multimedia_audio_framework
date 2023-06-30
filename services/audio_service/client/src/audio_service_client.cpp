@@ -2211,7 +2211,8 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
-    int32_t systemVolumeLevel = AudioSystemManager::GetInstance()->GetVolume(client.mStreamType);
+    AudioVolumeType volumeType = GetVolumeTypeFromStreamType(client.mStreamType);
+    int32_t systemVolumeLevel = AudioSystemManager::GetInstance()->GetVolume(volumeType);
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(client.mStreamType,
         systemVolumeLevel, deviceType);
@@ -2247,6 +2248,37 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         "SYSVOLUME", systemVolumeDb,
         "VOLUMEFACTOR", client.mVolumeFactor,
         "POWERVOLUMEFACTOR", client.mPowerVolumeFactor);
+}
+
+AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_VOICE_CALL:
+            return STREAM_VOICE_CALL;
+        case STREAM_RING:
+        case STREAM_SYSTEM:
+        case STREAM_NOTIFICATION:
+        case STREAM_SYSTEM_ENFORCED:
+        case STREAM_DTMF:
+            return STREAM_RING;
+        case STREAM_MUSIC:
+        case STREAM_MEDIA:
+        case STREAM_MOVIE:
+        case STREAM_GAME:
+        case STREAM_SPEECH:
+            return STREAM_MUSIC;
+        case STREAM_VOICE_ASSISTANT:
+            return STREAM_VOICE_ASSISTANT;
+        case STREAM_ALARM:
+            return STREAM_ALARM;
+        case STREAM_ACCESSIBILITY:
+            return STREAM_ACCESSIBILITY;
+        case STREAM_ULTRASONIC:
+            return STREAM_ULTRASONIC;
+        default:
+            AUDIO_ERR_LOG("GetVolumeTypeFromStreamType streamType = %{public}d not supported", streamType);
+            return streamType;
+    }
 }
 
 int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererRate)

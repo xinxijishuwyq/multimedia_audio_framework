@@ -716,6 +716,7 @@ private:
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
+    static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
     // OnRenderMarkReach SetRenderMarkReached UnsetRenderMarkReach  by eventHandler
     void SendRenderMarkReachedRequestEvent(uint64_t mFrameMarkPosition);
