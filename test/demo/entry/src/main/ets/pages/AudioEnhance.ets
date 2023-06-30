@@ -18,66 +18,45 @@ import router from '@ohos.router';
 @Entry
 @Component
 struct Index {
-  @State message: string = 'Hello World'
-  @State message1: string = 'Hello World1'
 
   build() {
     Row() {
       Column() {
         Button() {
-          Text("音频管理").fontSize(30).fontColor(Color.White)
+          Text("音频流播放功能增强").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioManager' })
+          router.pushUrl({ url: 'pages/AudioEnhance/AudioRendererEnhance' })
         })
 
         Button() {
-          Text("音频录制").fontSize(30).fontColor(Color.White)
+          Text("音频流录制功能增强").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioCapturer' })
+          router.pushUrl({ url: 'pages/' })
         })
 
         Button() {
-          Text("音频渲染").fontSize(30).fontColor(Color.White)
+          Text("音频策略管理功能增强").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioRenderer' })
+          router.pushUrl({ url: 'pages/AudioEnhance/AudioManagerEnhance' })
         })
 
         Button() {
-          Text("DTMF播放器").fontSize(30).fontColor(Color.White)
+          Text("麦克风信息管理").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/TonePlayer' })
+          router.pushUrl({ url: 'pages/' })
         })
-
-        Button() {
-          Text("音频焦点").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioFocus' })
-        })
-
-        Button() {
-          Text("音频框架增强").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 10 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance' })
-        })
-
       }.width('90%')
       .margin('5%')
 

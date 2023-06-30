@@ -37,8 +37,10 @@ namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
+    const int32_t VALUE_INVALID = -2;
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
+    const int32_t VALUE_ERROR = -62980098;
     const int32_t RENDERER_FLAG = 0;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
@@ -4932,6 +4934,670 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_003, TestSize.Le
 
     AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
     EXPECT_EQ(EFFECT_DEFAULT, effectMode);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetMinStreamVolume
+ * @tc.number: Audio_Renderer_GetMinStreamVolume_001
+ * @tc.desc  : Test GetMinStreamVolume interface to get the min volume value.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMinStreamVolume_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    float volume = audioRenderer->GetMinStreamVolume();
+    EXPECT_EQ(0.0, volume);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetMinStreamVolume
+ * @tc.number: Audio_Renderer_GetMinStreamVolume_Stability_001
+ * @tc.desc  : Test GetMinStreamVolume interface to get the min volume value for 1000 times.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMinStreamVolume_Stability_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        float volume = audioRenderer->GetMinStreamVolume();
+        EXPECT_EQ(0.0, volume);
+    }
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetMaxStreamVolume
+ * @tc.number: Audio_Renderer_GetMaxStreamVolume_001
+ * @tc.desc  : Test GetMaxStreamVolume interface to get the max volume value.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMaxStreamVolume_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    float volume = audioRenderer->GetMaxStreamVolume();
+    EXPECT_EQ(1.0, volume);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetMaxStreamVolume
+ * @tc.number: Audio_Renderer_GetMaxStreamVolume_Stability_001
+ * @tc.desc  : Test GetMaxStreamVolume interface to get the max volume value for 1000 times.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetMaxStreamVolume_Stability_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        float volume = audioRenderer->GetMaxStreamVolume();
+        EXPECT_EQ(1.0, volume);
+    }
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetUnderflowCount
+ * @tc.number: Audio_Renderer_GetUnderflowCount_001
+ * @tc.desc  : Test GetUnderflowCount interface get underflow value.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->GetUnderflowCount();
+    EXPECT_GE(ret, SUCCESS);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetUnderflowCount
+ * @tc.number: Audio_Renderer_GetUnderflowCount_Stability_001
+ * @tc.desc  : Test GetUnderflowCount interface get underflow value for 1000 times.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        ret = audioRenderer->GetUnderflowCount();
+        EXPECT_GE(ret, SUCCESS);
+    }
+
+    audioRenderer->Release();
+}
+/**
+ * @tc.name  : Test SetRendererSamplingRate
+ * @tc.number: Audio_Renderer_SetRendererSamplingRate_001
+ * @tc.desc  : Test SetRendererSamplingRate interface for valid samplingRate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererSamplingRate_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t samplingRate = 44100;
+    ret = audioRenderer->SetRendererSamplingRate(samplingRate);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetRendererSamplingRate
+ * @tc.number: Audio_Renderer_SetRendererSamplingRate_002
+ * @tc.desc  : Test SetRendererSamplingRate interface for invalid samplingRate.
+ */
+
+
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererSamplingRate_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t invalidRate_1 = 0;
+    ret = audioRenderer->SetRendererSamplingRate(invalidRate_1);
+    EXPECT_EQ(VALUE_INVALID, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetRendererSamplingRate
+ * @tc.number: Audio_Renderer_SetRendererSamplingRate_Stability_001
+ * @tc.desc  : Test SetRendererSamplingRate interface with valid samplingRate for 1000 times.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererSamplingRate_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t samplingRate = 44100;
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        ret = audioRenderer->SetRendererSamplingRate(samplingRate);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRendererSamplingRate
+ * @tc.number: Audio_Renderer_GetRendererSamplingRate_001
+ * @tc.desc  : Test GetRendererSamplingRate get default samplingRate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t ret = audioRenderer->GetRendererSamplingRate();
+    EXPECT_EQ(SAMPLE_RATE_44100, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRendererSamplingRate
+ * @tc.number: Audio_Renderer_GetRendererSamplingRate_002
+ * @tc.desc  : Test GetRendererSamplingRate get valid samplingRate after set valid samplingRate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t samplingRate = 48000;
+    ret = audioRenderer->SetRendererSamplingRate(samplingRate);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint32_t retSamplerate = audioRenderer->GetRendererSamplingRate();
+    EXPECT_EQ(samplingRate, retSamplerate);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRendererSamplingRate
+ * @tc.number: Audio_Renderer_GetRendererSamplingRate_003
+ * @tc.desc  : Test GetRendererSamplingRate get default samplingRate after set invalid samplingRate.
+ */
+
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t samplingRate = 0;
+    ret = audioRenderer->SetRendererSamplingRate(samplingRate);
+    EXPECT_EQ(VALUE_INVALID, ret);
+
+    uint32_t retSamplerate = audioRenderer->GetRendererSamplingRate();
+    EXPECT_EQ(SAMPLE_RATE_44100, retSamplerate);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRendererSamplingRate
+ * @tc.number: Audio_Renderer_GetRendererSamplingRate_004
+ * @tc.desc  : Test GetRendererSamplingRate get valid samplingRate after set invalid samplingRate.
+ */
+
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    uint32_t validRate = 48000;
+    ret = audioRenderer->SetRendererSamplingRate(validRate);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint32_t invalidRate = 0;
+    ret = audioRenderer->SetRendererSamplingRate(invalidRate);
+    EXPECT_EQ(VALUE_INVALID, ret);
+
+    uint32_t retSampleRate = audioRenderer->GetRendererSamplingRate();
+    EXPECT_EQ(validRate, retSampleRate);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetRendererSamplingRate
+ * @tc.number: Audio_Renderer_GetRendererSamplingRate_Stability_001
+ * @tc.desc  : Test GetRendererSamplingRate get valid samplingRate 1000 times after set valid samplingRate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererSamplingRate_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        uint32_t samplingRate = 48000;
+        ret = audioRenderer->SetRendererSamplingRate(samplingRate);
+        EXPECT_EQ(SUCCESS, ret);
+
+        uint32_t retSampleRate = audioRenderer->GetRendererSamplingRate();
+        EXPECT_EQ(samplingRate, retSampleRate);
+    }
+
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test RegisterAudioRendererEventListener via legal state
+* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_001
+* @tc.desc  : Test registerAudioRendererEventListener interface. Returns success.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
+        make_shared<AudioRendererDeviceChangeCallbackTest>();
+    int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test RegisterAudioRendererEventListener via legal state
+* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_002
+* @tc.desc  : Test registerAudioRendererEventListener interface. Returns ERR_INVALID_PARAM.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, nullptr);
+    EXPECT_EQ(VALUE_ERROR, ret);
+}
+
+/**
+* @tc.name  : Test RegisterAudioRendererEventListener via legal state
+* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_Stability_001
+* @tc.desc  : Test registerAudioRendererEventListener interface valid callback 1000 times.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_Stability_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
+            make_shared<AudioRendererDeviceChangeCallbackTest>();
+        int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test RegisterAudioRendererEventListener via legal state
+* @tc.number: Audio_Renderer_RegisterAudioRendererEventListener_Stability_002
+* @tc.desc  : Test registerAudioRendererEventListener interface valid callback 1000 times.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioRendererEventListener_Stability_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, nullptr);
+        EXPECT_EQ(VALUE_ERROR, ret);
+    }
+}
+
+/**
+* @tc.name  : Test UnregisterAudioRendererEventListener via legal state
+* @tc.number: Audio_Renderer_UnregisterAudioRendererEventListener_001
+* @tc.desc  : Test UnregisterAudioRendererEventListener interface. Returns success.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_UnregisterAudioRendererEventListener_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
+        make_shared<AudioRendererDeviceChangeCallbackTest>();
+    int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+
+/**
+* @tc.name  : Test UnregisterAudioRendererEventListener via legal state
+* @tc.number: Audio_Renderer_UnregisterAudioRendererEventListener_Stability_00
+* @tc.desc  : Test UnregisterAudioRendererEventListener interface valid callback 1000 times.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_UnregisterAudioRendererEventListener_Stability_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        shared_ptr<AudioRendererDeviceChangeCallbackTest> callback =
+            make_shared<AudioRendererDeviceChangeCallbackTest>();
+        int32_t ret = audioRenderer->RegisterAudioRendererEventListener(clientId, callback);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioRenderer->UnregisterAudioRendererEventListener(clientId);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test RegisterAudioPolicyServerDiedCb via legal state
+* @tc.number: Audio_Renderer_RegisterAudioPolicyServerDiedCb_001
+* @tc.desc  : Test registerAudioRendererEventListener interface. Returns success.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioPolicyServerDiedCb_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererPolicyServiceDiedCallbackTest> callback =
+        make_shared<AudioRendererPolicyServiceDiedCallbackTest>();
+    int32_t ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->UnregisterAudioPolicyServerDiedCb(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test RegisterAudioPolicyServerDiedCb via legal state
+* @tc.number: Audio_Renderer_RegisterAudioPolicyServerDiedCb_002
+* @tc.desc  : Test registerAudioRendererEventListener interface. Returns ERR_INVALID_PARAM.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioPolicyServerDiedCb_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    int32_t ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientId, nullptr);
+    EXPECT_EQ(VALUE_ERROR, ret);
+}
+
+/**
+* @tc.name  : Test RegisterAudioPolicyServerDiedCb via legal state
+* @tc.number: Audio_Renderer_RegisterAudioPolicyServerDiedCb_Stability_001
+* @tc.desc  : Test registerAudioRendererEventListener interface valid callback 1000 times.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioPolicyServerDiedCb_Stability_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        shared_ptr<AudioRendererPolicyServiceDiedCallbackTest> callback =
+            make_shared<AudioRendererPolicyServiceDiedCallbackTest>();
+        int32_t ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientId, callback);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioRenderer->UnregisterAudioPolicyServerDiedCb(clientId);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test RegisterAudioPolicyServerDiedCb via legal state
+* @tc.number: Audio_Renderer_RegisterAudioPolicyServerDiedCb_002
+* @tc.desc  : Test registerAudioRendererEventListener interface invalid callback 1000 times.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterAudioPolicyServerDiedCb_Stability_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        int32_t ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientId, nullptr);
+        EXPECT_EQ(VALUE_ERROR, ret);
+    }
+}
+
+/**
+* @tc.name  : Test UnregisterAudioPolicyServerDiedCb via legal state
+* @tc.number: Audio_Renderer_UnregisterAudioPolicyServerDiedCb_001
+* @tc.desc  : Test UnregisterAudioPolicyServerDiedCb interface. Returns success.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_UnregisterAudioPolicyServerDiedCb_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    shared_ptr<AudioRendererPolicyServiceDiedCallbackTest> callback =
+        make_shared<AudioRendererPolicyServiceDiedCallbackTest>();
+    int32_t ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->UnregisterAudioPolicyServerDiedCb(clientId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test UnregisterAudioPolicyServerDiedCb via legal state
+* @tc.number: Audio_Renderer_UnregisterAudioPolicyServerDiedCb_Stability_001
+* @tc.desc  : Test UnregisterAudioPolicyServerDiedCb interface valid callback 1000 times.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_UnregisterAudioPolicyServerDiedCb_Stability_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    int32_t clientId = getpid();
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        shared_ptr<AudioRendererPolicyServiceDiedCallbackTest> callback =
+            make_shared<AudioRendererPolicyServiceDiedCallbackTest>();
+        int32_t ret = audioRenderer->RegisterAudioPolicyServerDiedCb(clientId, callback);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioRenderer->UnregisterAudioPolicyServerDiedCb(clientId);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+ * @tc.name  : Test GetCurrentOutputDevices API after calling create
+ * @tc.number: Audio_Renderer_GetCurrentOutputDevices_001
+ * @tc.desc  : Test GetCurrentOutputDevices interface. Check whether renderer info returns proper data
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    DeviceInfo deviceInfo;
+    ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetCurrentOutputDevices API after calling create
+ * @tc.number: Audio_Renderer_GetCurrentOutputDevices_002
+ * @tc.desc  : Test GetCurrentOutputDevices interface.Check the deviceinfo is proper data when using speaker.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    DeviceInfo deviceInfo;
+    audioRenderer->GetCurrentOutputDevices(deviceInfo);
+
+    EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole);
+    EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetCurrentOutputDevices API after calling create
+ * @tc.number: Audio_Renderer_GetCurrentOutputDevices_001
+ * @tc.desc  : Test GetCurrentOutputDevices interface check if it is success for 1000 times
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        DeviceInfo deviceInfo;
+        ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetCurrentOutputDevices API after calling create
+ * @tc.number: Audio_Renderer_GetCurrentOutputDevices_001
+ * @tc.desc  : Test GetCurrentOutputDevices interface check proper data when using speaker for 1000 times
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        DeviceInfo deviceInfo;
+        audioRenderer->GetCurrentOutputDevices(deviceInfo);
+
+        EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole);
+        EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType);
+    }
+
     audioRenderer->Release();
 }
 } // namespace AudioStandard
