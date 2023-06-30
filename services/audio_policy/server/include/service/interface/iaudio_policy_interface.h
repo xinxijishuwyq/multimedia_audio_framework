@@ -19,7 +19,7 @@
 #include "audio_module_info.h"
 #include "audio_info.h"
 #include "audio_policy_manager.h"
-#include "audio_policy_types.h"
+#include "audio_policy_ipc_interface_code.h"
 #include "audio_session_callback.h"
 #include "audio_volume_config.h"
 

@@ -17,7 +17,8 @@
 #define I_AUDIO_POLICY_BASE_H
 
 #include "audio_interrupt_callback.h"
-#include "audio_policy_types.h"
+#include "audio_policy_ipc_interface_code.h"
+
 #include "i_audio_volume_key_event_callback.h"
 #include "ipc_types.h"
 #include "iremote_broker.h"

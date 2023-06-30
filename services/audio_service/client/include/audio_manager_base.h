@@ -21,6 +21,7 @@
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
 #include "audio_effect.h"
+#include "pulseaudio_ipc_interface_code.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -205,33 +206,6 @@ public:
      * Request thread priority for client thread.
      */
     virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;
-
-    enum {
-        GET_MAX_VOLUME = 0,
-        GET_MIN_VOLUME = 1,
-        GET_DEVICES = 2,
-        GET_AUDIO_PARAMETER = 3,
-        SET_AUDIO_PARAMETER = 4,
-        SET_MICROPHONE_MUTE = 5,
-        IS_MICROPHONE_MUTE = 6,
-        SET_AUDIO_SCENE = 7,
-        UPDATE_ROUTE_REQ = 8,
-        RETRIEVE_COOKIE = 9,
-        GET_TRANSACTION_ID = 10,
-        SET_PARAMETER_CALLBACK = 11,
-        GET_REMOTE_AUDIO_PARAMETER = 12,
-        SET_REMOTE_AUDIO_PARAMETER = 13,
-        NOTIFY_DEVICE_INFO = 14,
-        CHECK_REMOTE_DEVICE_STATE = 15,
-        SET_VOICE_VOLUME = 16,
-        SET_AUDIO_MONO_STATE = 17,
-        SET_AUDIO_BALANCE_VALUE = 18,
-        CREATE_AUDIOPROCESS = 19,
-        LOAD_AUDIO_EFFECT_LIBRARIES = 20,
-        REQUEST_THREAD_PRIORITY = 21,
-        CREATE_AUDIO_EFFECT_CHAIN_MANAGER = 22,
-        SET_OUTPUT_DEVICE_SINK = 23,
-    };
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
