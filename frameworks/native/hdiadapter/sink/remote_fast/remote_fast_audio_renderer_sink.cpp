@@ -255,7 +255,7 @@ int32_t RemoteFastAudioRendererSinkInner::InitAudioManager()
     }
     AUDIO_INFO_LOG("dlopen successful");
 
-    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle, "GetAudioManagerFuncs"));
+    GetAudioManagerFuncs = reinterpret_cast<struct AudioManager *(*)()>(dlsym(handle, "GetAudioManagerFuncs"));
     if (GetAudioManagerFuncs == nullptr) {
         AUDIO_ERR_LOG("dlsym GetAudioManagerFuncs fail.");
         return ERR_INVALID_HANDLE;

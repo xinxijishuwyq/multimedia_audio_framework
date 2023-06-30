@@ -438,9 +438,9 @@ int32_t FastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     }
 
     uint32_t size = MAX_AUDIO_ADAPTER_NUM;
-    int32_t ret;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
-    ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
+    int32_t ret = audioManager_->GetAllAdapters(audioManager_,
+        (struct AudioAdapterDescriptor *)&descs, &size);
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail");
         return ERR_NOT_STARTED;
