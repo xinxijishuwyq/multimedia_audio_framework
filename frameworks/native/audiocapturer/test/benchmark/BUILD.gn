@@ -18,11 +18,11 @@ ohos_benchmarktest("BenchmarkAudioCapturerTest") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/common/include",
+    "../../../common/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
   sources = [ "benchmark_audiocapturer_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer" ]
+  deps = [ "../../../audiocapturer:audio_capturer" ]
 }
 
 group("benchmarktest") {

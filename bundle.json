@@ -1,7 +1,7 @@
 {
     "name": "@ohos/audio_framework",
     "description": "Audio standard provides managers and provides the audio resources to application for play/record audio",
-    "version": "3.1",
+    "version": "4.0",
     "license": "Apache License 2.0",
     "publishAs": "code-segment",
     "segment": {
@@ -27,8 +27,8 @@
           "audio_framework_feature_opensl_es"
         ],
         "adapted_system_type": [ "standard" ],
-        "rom": "",
-        "ram": "",
+        "rom": "4500KB",
+        "ram": "11000KB",
         "hisysevent_config": [ "//foundation/multimedia/audio_framework/hisysevent.yaml" ],
         "deps": {
           "components": [

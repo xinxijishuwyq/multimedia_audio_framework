@@ -12,14 +12,14 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
-import("//foundation/multimedia/audio_framework/ressche_part.gni")
+import("../../../config.gni")
+import("../../../ressche_part.gni")
 
 ohos_static_library("audio_schedule") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../../cfi_blocklist.txt"
   }
 
   include_dirs = [ "include" ]

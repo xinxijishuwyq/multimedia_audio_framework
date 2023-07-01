@@ -14,8 +14,8 @@
 import("//build/ohos.gni")
 import("//build/ohos/ace/ace.gni")
 import("//build/test.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/multimedia_aafwk.gni")
+import("../../../../../../config.gni")
+import("../../../../../../multimedia_aafwk.gni")
 
 module_output_path = "multimedia_audio_framework/audio_routing_manager"
 
@@ -23,8 +23,8 @@ ohos_unittest("audio_routing_manager_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   cflags = [
@@ -36,5 +36,5 @@ ohos_unittest("audio_routing_manager_test") {
     "hiviewdfx_hilog_native:libhilog",
   ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
+  deps = [ "../../../../../../services/audio_service:audio_client" ]
 }

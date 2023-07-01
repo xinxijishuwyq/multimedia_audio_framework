@@ -18,10 +18,10 @@ import("//foundation/multimedia/audio_framework/config.gni")
 ohos_ndk_headers("ohaudio_header") {
   dest_dir = "$ndk_headers_out_dir/ohaudio"
   sources = [
-    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/native_audiocapturer.h",
-    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/native_audiorenderer.h",
-    "${audio_fwk_path}/interfaces/kits/c/common/native_audiostream_base.h",
-    "${audio_fwk_path}/interfaces/kits/c/common/native_audiostreambuilder.h",
+    "audio_capturer/native_audiocapturer.h",
+    "audio_renderer/native_audiorenderer.h",
+    "common/native_audiostream_base.h",
+    "common/native_audiostreambuilder.h",
   ]
 }
 

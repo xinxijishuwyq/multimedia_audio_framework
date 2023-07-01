@@ -12,10 +12,8 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
-
-import("//foundation/multimedia/audio_framework/audio_ohcore.gni")
+import("../../../audio_ohcore.gni")
+import("../../../config.gni")
 
 ohos_shared_library("audio_capturer_gateway") {
   install_enable = true
@@ -28,20 +26,18 @@ ohos_shared_library("audio_capturer_gateway") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//utils/native/base/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
+  include_dirs += [ multimedia_audio_framework_drivers ]
   include_dirs += audio_gateway_include_dirs
 
   sources = audio_capturer_gateway_sources
 
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_client",
   ]
 
   external_deps = [
@@ -67,20 +63,18 @@ ohos_shared_library("audio_renderer_gateway") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//utils/native/base/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
   ]
 
+  include_dirs += [ multimedia_audio_framework_drivers ]
   include_dirs += audio_gateway_include_dirs
 
   sources = audio_renderer_gateway_sources
 
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_client",
   ]
 
   external_deps = [

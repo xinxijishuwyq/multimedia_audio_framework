@@ -13,14 +13,13 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../config.gni")
 
 ohos_fuzztest("AudioStreamCollectorFuzzTest") {
   module_out_path = "multimedia_audio_framework/audiostreamcollector_fuzzer"
-  fuzz_config_file = "//foundation/multimedia/audio_framework/test/fuzztest/audiostreamcollector_fuzzer"
+  fuzz_config_file = "../audiostreamcollector_fuzzer"
 
-  include_dirs = [ "//foundation/multimedia/audio_framework/services/audio_policy/server/include" ]
+  include_dirs = [ "../../../services/audio_policy/server/include" ]
 
   cflags = [
     "-g",
@@ -28,11 +27,11 @@ ohos_fuzztest("AudioStreamCollectorFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  configs = [ "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_public_config" ]
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_stream_collector_fuzzer.cpp" ]
 
-  deps = [ "${audio_fwk_path}/services/audio_policy:audio_policy_service" ]
+  deps = [ "../../../services/audio_policy:audio_policy_service" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

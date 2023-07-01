@@ -12,18 +12,18 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../config.gni")
 
 config("audio_config") {
   include_dirs = [
-    "${audio_fwk_path}/interfaces/inner_api/native/audiorenderer/include",
-    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocapturer/include",
-    "${audio_fwk_path}/frameworks/native/audiocapturer/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiostream/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
-    "${audio_fwk_path}/services/audio_service/client/include",
+    "../audiocapturer/include",
+    "../audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiostream/include",
+    "../../../services/audio_service/client/include",
   ]
 
   cflags = [
@@ -36,26 +36,26 @@ ohos_shared_library("ohaudio") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../../cfi_blocklist.txt"
   }
   include_dirs = [
-    "${audio_fwk_path}/interfaces/kits/c/",
-    "${audio_fwk_path}/interfaces/kits/c/common/",
-    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
-    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+    "../../../interfaces/kits/c/",
+    "../../../interfaces/kits/c/common/",
+    "../../../interfaces/kits/c/audio_renderer/",
+    "../../../interfaces/kits/c/audio_capturer/",
   ]
 
   configs = [ ":audio_config" ]
 
   sources = [
-    "${audio_fwk_path}/frameworks/native/ohaudio/OHAudioCapturer.cpp",
-    "${audio_fwk_path}/frameworks/native/ohaudio/OHAudioRenderer.cpp",
-    "${audio_fwk_path}/frameworks/native/ohaudio/OHAudioStreamBuilder.cpp",
+    "./OHAudioCapturer.cpp",
+    "./OHAudioRenderer.cpp",
+    "./OHAudioStreamBuilder.cpp",
   ]
 
   deps = [
-    "${audio_fwk_path}/frameworks/native/audiocapturer:audio_capturer",
-    "${audio_fwk_path}/frameworks/native/audiorenderer:audio_renderer",
+    "../audiocapturer:audio_capturer",
+    "../audiorenderer:audio_renderer",
   ]
   cflags = [ "-Werror" ]
 
@@ -80,10 +80,10 @@ ohos_executable("oh_audio_capturer_test") {
   install_enable = false
 
   include_dirs = [
-    "${audio_fwk_path}/interfaces/kits/c/",
-    "${audio_fwk_path}/interfaces/kits/c/common/",
-    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
-    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+    "../../../interfaces/kits/c/",
+    "../../../interfaces/kits/c/common/",
+    "../../../interfaces/kits/c/audio_renderer/",
+    "../../../interfaces/kits/c/audio_capturer/",
   ]
 
   sources = [ "test/example/oh_audio_capturer_test.cpp" ]
@@ -102,10 +102,10 @@ ohos_executable("oh_audio_renderer_test") {
   install_enable = false
 
   include_dirs = [
-    "${audio_fwk_path}/interfaces/kits/c/",
-    "${audio_fwk_path}/interfaces/kits/c/common/",
-    "${audio_fwk_path}/interfaces/kits/c/audio_renderer/",
-    "${audio_fwk_path}/interfaces/kits/c/audio_capturer/",
+    "../../../interfaces/kits/c/",
+    "../../../interfaces/kits/c/common/",
+    "../../../interfaces/kits/c/audio_renderer/",
+    "../../../interfaces/kits/c/audio_capturer/",
   ]
 
   sources = [ "test/example/oh_audio_renderer_test.cpp" ]

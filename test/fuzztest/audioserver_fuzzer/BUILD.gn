@@ -13,16 +13,15 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
+import("../../../config.gni")
 
 ohos_fuzztest("AudioServerFuzzTest") {
   module_out_path = "multimedia_audio_framework/audioserver"
-  fuzz_config_file =
-      "//foundation/multimedia/audio_framework/test/fuzztest/audioserver_fuzzer"
+  fuzz_config_file = "../audioserver_fuzzer"
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/sink/common",
-    "//foundation/multimedia/audio_framework/services/audio_service/server/include",
+    "../../../frameworks/native/hdiadapter/sink/common",
+    "../../../services/audio_service/server/include",
   ]
 
   cflags = [
@@ -34,15 +33,13 @@ ohos_fuzztest("AudioServerFuzzTest") {
 
   sources = [ "audio_server_fuzzer.cpp" ]
 
-  configs = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_service_config" ]
+  configs = [ "../../../services/audio_service:audio_service_config" ]
 
-  deps = [
-    "$hdf_uhdf_path/hdi:libhdi",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_service",
-  ]
+  deps = [ "../../../services/audio_service:audio_service" ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
+    "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "ipc:ipc_single",
     "power_manager:powermgr_client",

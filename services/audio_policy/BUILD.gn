@@ -12,10 +12,9 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/accessibility.gni")
-import("//foundation/multimedia/audio_framework/bluetooth_part.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../accessibility.gni")
+import("../../bluetooth_part.gni")
+import("../../config.gni")
 
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
@@ -43,25 +42,25 @@ ohos_prebuilt_etc("audio_policy_init") {
 
 config("audio_policy_public_config") {
   include_dirs = [
-    "${audio_fwk_path}/services/audio_service/client/include",
-    "${audio_fwk_path}/services/audio_service/common/include",
-    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
-    "${audio_fwk_path}/frameworks/native/audioadapter/include",
-    "${audio_fwk_path}/frameworks/native/audiopolicy/include",
-    "${audio_fwk_path}/frameworks/native/audioutils/include",
-    "${audio_fwk_path}/frameworks/native/bluetoothclient",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/common",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/config",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/interface",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/listener",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/manager",
-    "${audio_fwk_path}/services/audio_policy/server/include/service",
-    "${audio_fwk_path}/services/audio_policy/common/include",
-    "${audio_fwk_path}/services/audio_policy/server/include",
-    "${audio_fwk_path}/services/audio_policy/client/include",
+    "common/include",
+    "client/include",
+    "server/include",
+    "server/include/service",
+    "server/include/service/common",
+    "server/include/service/config",
+    "server/include/service/effect",
+    "server/include/service/interface",
+    "server/include/service/listener",
+    "server/include/service/manager",
+    "../audio_service/client/include",
+    "../audio_service/common/include",
+    "../../frameworks/native/audiorenderer/include",
+    "../../frameworks/native/audioadapter/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/bluetoothclient",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   cflags = [
@@ -88,7 +87,7 @@ ohos_shared_library("audio_dump") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "server/src/service/dump/audio_service_dump.cpp" ]
@@ -101,20 +100,20 @@ ohos_shared_library("audio_dump") {
   ]
 
   include_dirs = [
+    "$pulseaudio_build_path/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "../../../../drivers/peripheral/audio/interfaces/include",
+    "../../../../foundation/communication/bluetooth/interfaces/inner_api/include",
+    "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
     "../../../../foundation/systemabilitymgr/safwk/services/safwk/include",
-    "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "../../../../drivers/peripheral/audio/interfaces/include",
+    "../../../../utils/system/safwk/native/include",
+    "//third_party/bounds_checking_function/include",
+    "//third_party/cJSON",
     "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
-    "$pulseaudio_build_path/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-    "//third_party/cJSON",
-    "../../../../foundation/communication/bluetooth/interfaces/inner_api/include",
   ]
 
   external_deps = [
@@ -130,7 +129,7 @@ ohos_shared_library("audio_policy_service") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [
@@ -167,16 +166,19 @@ ohos_shared_library("audio_policy_service") {
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audioadapter:pulse_audio_service_adapter",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_config.para",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_config.para.dac",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_dump",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_config.para",
+    "../audio_policy:audio_config.para.dac",
+    "../audio_policy:audio_dump",
+    "../audio_service:audio_client",
     "//third_party/libxml2:xml2",
   ]
 
   include_dirs = [
+    "$pulseaudio_build_path/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "../../../../drivers/peripheral/audio/interfaces/include",
     "../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
     "../../../../foundation/systemabilitymgr/safwk/services/safwk/include",
     "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
@@ -185,11 +187,6 @@ ohos_shared_library("audio_policy_service") {
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
-    "$pulseaudio_build_path/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-    "//third_party/cJSON",
   ]
 
   include_dirs += [ multimedia_audio_framework_drivers ]
@@ -225,7 +222,7 @@ ohos_shared_library("audio_policy_service") {
   }
 
   if (bluetooth_part_enable == true) {
-    deps += [ "//foundation/multimedia/audio_framework/frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
     include_dirs += [ "../../../../foundation/communication/bluetooth/interfaces/inner_api/include" ]
   }
@@ -269,27 +266,27 @@ ohos_prebuilt_etc("audio_effect_config") {
 }
 
 ohos_prebuilt_etc("audio_config.para") {
-  source = "//foundation/multimedia/audio_framework/services/audio_policy/etc/audio_config.para"
+  source = "etc/audio_config.para"
   part_name = "audio_framework"
   module_install_dir = "etc/param"
 }
 
 ohos_prebuilt_etc("audio_config.para.dac") {
-  source = "//foundation/multimedia/audio_framework/services/audio_policy/etc/audio_config.para.dac"
+  source = "etc/audio_config.para.dac"
   part_name = "audio_framework"
   module_install_dir = "etc/param"
 }
 
 config("audio_policy_client_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "${audio_fwk_path}/services/audio_service/common/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/server/include",
+    "client/include",
+    "common/include",
+    "server/include",
+    "../audio_service/client/include",
+    "../audio_service/common/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   cflags = [
@@ -306,7 +303,7 @@ ohos_shared_library("audio_policy_client") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -316,7 +313,7 @@ ohos_shared_library("audio_policy_client") {
   }
 
   sources = [
-    "//foundation/multimedia/audio_framework/services/audio_service/client/src/audio_device_descriptor.cpp",
+    "../audio_service/client/src/audio_device_descriptor.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_policy_manager.cpp",
@@ -361,8 +358,8 @@ ohos_executable("audio_policy_test") {
   configs = [ ":audio_policy_client_config" ]
 
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../audio_policy:audio_policy_client",
+    "../audio_service:audio_client",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
