@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
@@ -23,15 +23,14 @@ group("libsl") {
 
 config("audio_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "//commonlibrary/c_utils/base/include",
+    "../audiocapturer/include",
+    "../audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiostream/include",
+    "../../../services/audio_service/client/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -52,14 +51,14 @@ if (!audio_framework_feature_opensl_es) {
     sanitize = {
       cfi = true
       debug = false
-      blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+      blocklist = "../../../cfi_blocklist.txt"
     }
     include_dirs = [
       "$opensles_dir/api/$opensles_version",
-      "${audio_fwk_path}/frameworks/native/opensles/include",
-      "${audio_fwk_path}/interfaces/inner_api/native/andiorenderer/include/",
-      "${audio_fwk_path}/interfaces/inner_api/native/andiocapturer/include/",
-      "${audio_fwk_path}/interfaces/inner_api/native/andiomanager/include/",
+      "include",
+      "../../../interfaces/inner_api/native/andiocapturer/include/",
+      "../../../interfaces/inner_api/native/andiomanager/include/",
+      "../../../interfaces/inner_api/native/andiorenderer/include/",
     ]
 
     configs = [ ":audio_config" ]
@@ -67,30 +66,30 @@ if (!audio_framework_feature_opensl_es) {
     sources = [
       "$opensles_dir/api/$opensles_version/OpenSLES_IID.c",
       "$opensles_dir/api/$opensles_version/OpenSLES_OpenHarmony_IID.c",
-      "${audio_fwk_path}/frameworks/native/opensles/src/adapter/audiocapturer_adapter.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/adapter/audioplayer_adapter.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/adapter/readorwritecallback_adapter.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/itf/engine_itf.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/itf/object_itf.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/itf/openharmony_buffer_queue_itf.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/itf/play_itf.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/itf/record_itf.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/itf/volume_itf.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/obj/audiocapturer_obj.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/obj/audioplayer_obj.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/obj/engine_obj.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/obj/output_mix_obj.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/util/builder.cpp",
-      "${audio_fwk_path}/frameworks/native/opensles/src/util/table_struct.cpp",
+      "src/adapter/audiocapturer_adapter.cpp",
+      "src/adapter/audioplayer_adapter.cpp",
+      "src/adapter/readorwritecallback_adapter.cpp",
+      "src/itf/engine_itf.cpp",
+      "src/itf/object_itf.cpp",
+      "src/itf/openharmony_buffer_queue_itf.cpp",
+      "src/itf/play_itf.cpp",
+      "src/itf/record_itf.cpp",
+      "src/itf/volume_itf.cpp",
+      "src/obj/audiocapturer_obj.cpp",
+      "src/obj/audioplayer_obj.cpp",
+      "src/obj/engine_obj.cpp",
+      "src/obj/output_mix_obj.cpp",
+      "src/util/builder.cpp",
+      "src/util/table_struct.cpp",
     ]
 
     cflags = [ "-Werror" ]
 
     deps = [
       ":libsl",
-      "${audio_fwk_path}/frameworks/native/audiocapturer:audio_capturer",
-      "${audio_fwk_path}/frameworks/native/audiorenderer:audio_renderer",
-      "${audio_fwk_path}/services/audio_service:audio_client",
+      "../../../services/audio_service:audio_client",
+      "../audiocapturer:audio_capturer",
+      "../audiorenderer:audio_renderer",
     ]
 
     external_deps = [
@@ -114,16 +113,15 @@ group("audio_opensles_test_packages") {
 
 config("audio_operation_config") {
   include_dirs = [
-    "${audio_fwk_path}/interfaces/inner_api/native/audiorenderer/include",
-    "${audio_fwk_path}/frameworks/native/audiorenderer/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocapturer/include",
-    "${audio_fwk_path}/frameworks/native/audiocapturer/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiostream/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
-    "${audio_fwk_path}/services/audio_service/client/include",
-    "${audio_fwk_path}/services/audio_service/test/example",
-    "//commonlibrary/c_utils/base/include",
+    "../audiocapturer/include",
+    "../audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiostream/include",
+    "../../../services/audio_service/client/include",
+    "../../../services/audio_service/test/example",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -136,7 +134,7 @@ config("audio_operation_config") {
 
 config("audio_opensles_config") {
   include_dirs = [
-    "${audio_fwk_path}/frameworks/native/opensles/include",
+    "include",
     "$opensles_dir/api/1.0.1",
   ]
 }

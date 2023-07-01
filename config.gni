@@ -15,9 +15,6 @@ declare_args() {
   audio_framework_feature_dtmf_tone = true
   audio_framework_feature_opensl_es = true
 
-  ipc_dir =
-      "//foundation/communication/ipc/interfaces/innerkits/ipc_single/include"
-
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 
   multimedia_audio_framework_pulse_audio_src = "//third_party/pulseaudio/src"
@@ -26,12 +23,9 @@ declare_args() {
       "//drivers/peripheral/audio/interfaces/include/"
 }
 
-audio_fwk_path = "//foundation/multimedia/audio_framework"
-drivers_audio_path = "//drivers/peripheral/audio"
 third_party_path = "//third_party"
 histreamer_ext_dir = "//foundation/multimedia/histreamer_ext"
 
-fwk_native_hdiadapter_path = "${audio_fwk_path}/frameworks/native/hdiadapter"
 if ("${product_name}" == "m40" || "${product_name}" == "higeneric") {
   close_source_flag = true
 } else {

@@ -65,7 +65,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 ├── sa_profile                         # 服务配置文件
 ├── services                           # 服务代码
 ├── LICENSE                            # 证书文件
-└── ohos.build                         # 编译文件
+└── bundle.json                        # 编译文件
 ```
 
 ## 使用说明<a name="section112738505318"></a>

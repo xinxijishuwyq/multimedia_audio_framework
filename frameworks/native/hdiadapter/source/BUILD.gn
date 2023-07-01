@@ -12,14 +12,13 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../../config.gni")
 
 ohos_shared_library("audio_capturer_source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "primary/audio_capturer_source.cpp" ]
@@ -28,12 +27,12 @@ ohos_shared_library("audio_capturer_source") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
+    "common",
+    "../../audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils" ]
+  deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
@@ -50,7 +49,7 @@ ohos_shared_library("fast_audio_capturer_source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "fast/fast_audio_capturer_source.cpp" ]
@@ -59,12 +58,12 @@ ohos_shared_library("fast_audio_capturer_source") {
   cflags_cc = cflags
 
   include_dirs = [
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioutils/include",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source/common",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../audioutils/include",
+    "common",
   ]
 
-  deps = [ "${audio_fwk_path}/frameworks/native/audioutils:audio_utils" ]
+  deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
@@ -81,7 +80,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "remote/remote_audio_capturer_source.cpp" ]
@@ -93,10 +92,10 @@ ohos_shared_library("remote_audio_capturer_source") {
   }
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//drivers/peripheral/audio/interfaces/include",
+    "common",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
+  include_dirs += [ multimedia_audio_framework_drivers ]
 
   external_deps = [
     "distributed_audio:daudio_client",
@@ -111,7 +110,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "remote_fast/remote_fast_audio_capturer_source.cpp" ]
@@ -120,14 +119,14 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   cflags_cc = cflags
 
   include_dirs = [
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioutils/include",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source/common",
+    "common",
+    "../../audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_drivers ]
 
-  deps = [ "${audio_fwk_path}/frameworks/native/audioutils:audio_utils" ]
+  deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",
@@ -143,7 +142,7 @@ ohos_shared_library("audio_capturer_file_source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -155,10 +154,11 @@ ohos_shared_library("audio_capturer_file_source") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//drivers/peripheral/audio/interfaces/include",
+    "common",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
+
+  include_dirs += [ multimedia_audio_framework_drivers ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
@@ -170,7 +170,7 @@ ohos_shared_library("capturer_source_adapter") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -185,13 +185,14 @@ ohos_shared_library("capturer_source_adapter") {
   cflags_cc = cflags
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/common",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/primary",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/file",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source/remote",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//drivers/peripheral/audio/interfaces/include",
+    "common",
+    "file",
+    "primary",
+    "remote",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
+
+  include_dirs += [ multimedia_audio_framework_drivers ]
 
   deps = [
     ":audio_capturer_file_source",

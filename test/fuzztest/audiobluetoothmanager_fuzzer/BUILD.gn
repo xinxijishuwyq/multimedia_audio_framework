@@ -19,12 +19,11 @@ import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
   module_out_path = "multimedia_audio_framework/audiobluetoothmanager_fuzzer"
-  fuzz_config_file =
-      "${audio_fwk_path}/test/fuzztest/audiobluetoothmanager_fuzzer"
+  fuzz_config_file = "../audiobluetoothmanager_fuzzer"
 
   include_dirs = [
-    "${audio_fwk_path}/services/audio_policy/server/include/service",
-    "${audio_fwk_path}/services/audio_policy/server/include",
+    "../../../services/audio_policy/server/include/service",
+    "../../../services/audio_policy/server/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -37,12 +36,11 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  configs =
-      [ "${audio_fwk_path}/services/audio_policy:audio_policy_public_config" ]
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audiobluetoothmanager_fuzzer.cpp" ]
 
-  deps = [ "${audio_fwk_path}/services/audio_policy:audio_policy_service" ]
+  deps = [ "../../../services/audio_policy:audio_policy_service" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

@@ -18,12 +18,13 @@ ohos_benchmarktest("BenchmarkAudioRendererTest") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/common/include",
+    "../../../common/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
   sources = [ "benchmark_audiorenderer_test.cpp" ]
-  deps = [ "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer:audio_renderer" ]
-  resource_config_file = "//foundation/multimedia/audio_framework/test/resource/audio_renderer/ohos_test.xml"
+  deps = [ "../../../audiorenderer:audio_renderer" ]
+  resource_config_file =
+      "../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
 
 group("benchmarktest") {

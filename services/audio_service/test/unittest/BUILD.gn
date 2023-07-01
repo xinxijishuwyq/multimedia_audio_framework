@@ -13,8 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../../config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -25,13 +24,13 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "../../common/include",
-    "../../../../services/audio_service/client/include",
-    "../../../../interfaces/inner_api/native/audiocommon/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
     "$pulseaudio_build_path/include",
+    "../../common/include",
+    "../../client/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
   ]
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -49,9 +48,9 @@ ohos_unittest("audio_balance_unit_test") {
 
   deps = [
     "$pulseaudio_build_path/src/pulse:pulse",
-    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${audio_fwk_path}/services/audio_service:audio_client",
-    "${audio_fwk_path}/services/audio_service:audio_common",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_client",
+    "../../../audio_service:audio_common",
     "//third_party/googletest:gtest_main",
   ]
 

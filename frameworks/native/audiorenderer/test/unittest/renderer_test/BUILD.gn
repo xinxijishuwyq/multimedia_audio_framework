@@ -22,12 +22,12 @@ ohos_unittest("audio_renderer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
-    "../../../../../../frameworks/native/common/include",
-    "../../../../../../frameworks/native/audiorenderer/include",
     "../../../../../../services/audio_policy/client/include",
-    "../../../../../../frameworks/native/audiostream/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
@@ -52,5 +52,6 @@ ohos_unittest("audio_renderer_unit_test") {
     "hiviewdfx_hilog_native:libhilog",
   ]
 
-  resource_config_file = "//foundation/multimedia/audio_framework/test/resource/audio_renderer/ohos_test.xml"
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }

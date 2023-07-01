@@ -12,20 +12,20 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/audio_ohcore.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../audio_ohcore.gni")
+import("../../../config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
 config("audio_effect_config") {
   include_dirs = [
-    "${audio_fwk_path}/interfaces/inner_api/native/audiorenderer/include",
-    "${audio_fwk_path}/frameworks/native/audioeffect/include",
-    "${audio_fwk_path}/frameworks/native/audiostream/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
-    "${audio_fwk_path}/services/audio_service/client/include",
-    "${audio_fwk_path}/services/audio_service/test/example",
+    "include",
+    "../audiostream/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../services/audio_service/client/include",
+    "../../../services/audio_service/test/example",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -40,7 +40,7 @@ ohos_shared_library("audio_effect") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../../cfi_blocklist.txt"
   }
   install_enable = true
 

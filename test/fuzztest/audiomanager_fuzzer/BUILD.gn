@@ -14,15 +14,16 @@
 #####################hydra-fuzz#################################################
 import("//build/config/features.gni")
 import("//build/test.gni")
+import("../../../config.gni")
 ##############################fuzztest##########################################
 ohos_fuzztest("AudioManagerFuzzTest") {
   module_out_path = "multimedia_audio_framework/audiomanager"
-  fuzz_config_file = "//foundation/multimedia/audio_framework/test/fuzztest/audiomanager_fuzzer"
+  fuzz_config_file = "../audiomanager_fuzzer"
 
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/common/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/common/include",
   ]
 
   cflags = [
@@ -34,7 +35,7 @@ ohos_fuzztest("AudioManagerFuzzTest") {
 
   sources = [ "audio_manager_fuzzer.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
+  deps = [ "../../../services/audio_service:audio_client" ]
   external_deps = [ "c_utils:utils" ]
 }
 

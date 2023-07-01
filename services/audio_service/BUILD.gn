@@ -12,9 +12,8 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
-import("//foundation/multimedia/audio_framework/ressche_part.gni")
+import("../../config.gni")
+import("../../ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -38,14 +37,14 @@ ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
 
   install_enable = true
 
   include_dirs = [
     "common/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   sources = [
@@ -62,7 +61,7 @@ ohos_shared_library("audio_common") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
 
-  deps = [ "${audio_fwk_path}/frameworks/native/audioutils:audio_utils" ]
+  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",
@@ -78,20 +77,18 @@ ohos_shared_library("audio_common") {
 
 config("audio_client_public_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/client/include",
-    "${audio_fwk_path}/services/audio_service/common/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/common/include",
+    "client/include",
+    "common/include",
+    "../audio_policy/client/include",
+    "../audio_policy/common/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/audiostream/include",
+    "../../frameworks/native/audioutils/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/inner_api/native/audiorenderer/include",
   ]
-
-  include_dirs += [ ipc_dir ]
 
   cflags = [
     "-Wall",
@@ -108,7 +105,7 @@ ohos_shared_library("audio_client") {
     cfi = true
     integer_overflow = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [
@@ -131,20 +128,20 @@ ohos_shared_library("audio_client") {
   deps = [
     ":audio_common",
     "$pulseaudio_build_path/src/pulse:pulse",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils:audio_utils",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_policy_client",
   ]
 
   include_dirs = [
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
+    "server/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
     "$pulseaudio_build_path/include",
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
+    "../../../../commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
-    "${audio_fwk_path}/services/audio_service/server/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -176,32 +173,33 @@ ohos_prebuilt_etc("audio_service_init") {
 
 config("audio_service_config") {
   visibility = [ ":*" ]
-  visibility += [ "//foundation/multimedia/audio_framework/test/fuzztest/*" ]
+  visibility += [ "../../test/fuzztest/*" ]
 
   include_dirs = [
     "common/include",
-    "server/include",
     "client/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiomanager/include",
-    "${audio_fwk_path}/frameworks/native/audiopolicy/include",
-    "${audio_fwk_path}/frameworks/native/audioeffect/include",
-    "${audio_fwk_path}/frameworks/native/audioutils/include",
-    "${audio_fwk_path}/frameworks/native/audioschedule/include",
-    "${fwk_native_hdiadapter_path}/sink/bluetooth",
-    "${fwk_native_hdiadapter_path}/sink/common",
-    "${fwk_native_hdiadapter_path}/sink/file",
-    "${fwk_native_hdiadapter_path}/sink/fast",
-    "${fwk_native_hdiadapter_path}/sink/remote_fast",
-    "${fwk_native_hdiadapter_path}/sink/primary",
-    "${fwk_native_hdiadapter_path}/sink/remote",
-    "${fwk_native_hdiadapter_path}/source/common",
-    "${fwk_native_hdiadapter_path}/source/fast",
-    "${fwk_native_hdiadapter_path}/source/primary",
-    "${fwk_native_hdiadapter_path}/source/remote_fast",
-    "//drivers/peripheral/audio/interfaces/include",
-    "${audio_fwk_path}/services/audio_policy/server/include/service/effect",
+    "server/include",
+    "../audio_policy/server/include/service/effect",
+    "../../frameworks/native/audioeffect/include",
+    "../../frameworks/native/audiopolicy/include",
+    "../../frameworks/native/audioschedule/include",
+    "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/hdiadapter/sink/bluetooth",
+    "../../frameworks/native/hdiadapter/sink/common",
+    "../../frameworks/native/hdiadapter/sink/file",
+    "../../frameworks/native/hdiadapter/sink/fast",
+    "../../frameworks/native/hdiadapter/sink/remote",
+    "../../frameworks/native/hdiadapter/sink/remote_fast",
+    "../../frameworks/native/hdiadapter/sink/primary",
+    "../../frameworks/native/hdiadapter/source/common",
+    "../../frameworks/native/hdiadapter/source/fast",
+    "../../frameworks/native/hdiadapter/source/primary",
+    "../../frameworks/native/hdiadapter/source/remote_fast",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
   ]
+
+  include_dirs += [ multimedia_audio_framework_drivers ]
 
   if (target_cpu == "arm") {
     cflags = [ "-DBINDER_IPC_32BIT" ]
@@ -212,7 +210,7 @@ ohos_shared_library("audio_process_service") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -227,13 +225,13 @@ ohos_shared_library("audio_process_service") {
 
   deps = [
     ":audio_common",
-    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
-    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
+    "../../frameworks/native/audioschedule:audio_schedule",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
+    "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
   ]
 
   public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
@@ -253,7 +251,7 @@ ohos_shared_library("audio_service") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -274,16 +272,16 @@ ohos_shared_library("audio_service") {
     ":audio_common",
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
-    "${audio_fwk_path}/frameworks/native/audioeffect:audio_effect",
-    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
-    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${fwk_native_hdiadapter_path}/sink:audio_renderer_sink",
-    "${fwk_native_hdiadapter_path}/sink:bluetooth_renderer_sink",
-    "${fwk_native_hdiadapter_path}/sink:remote_audio_renderer_sink",
-    "${fwk_native_hdiadapter_path}/sink:remote_fast_audio_renderer_sink",
-    "${fwk_native_hdiadapter_path}/sink:renderer_sink_adapter",
-    "${fwk_native_hdiadapter_path}/source:audio_capturer_source",
-    "${fwk_native_hdiadapter_path}/source:capturer_source_adapter",
+    "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audioschedule:audio_schedule",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
+    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
+    "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
   ]
 
   external_deps = [
@@ -319,9 +317,9 @@ ohos_executable("audio_process_client_test") {
   install_enable = false
 
   include_dirs = [
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioutils/include",
-    "${audio_fwk_path}/services/audio_service/client/include",
+    "../../frameworks/native/audioutils/include",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "client/include",
   ]
 
   sources = [ "test/example/audio_process_client_test.cpp" ]
@@ -344,28 +342,26 @@ ohos_executable("audio_hdi_device_test") {
   install_enable = false
 
   include_dirs = [
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioutils/include",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/common",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/fast",
-    "//commonlibrary/c_utils/base/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//commonlibrary/c_utils/base/include",
+    "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/hdiadapter/sink",
+    "../../frameworks/native/hdiadapter/sink/common",
+    "../../frameworks/native/hdiadapter/sink/fast",
+    "../../interfaces/inner_api/native/audiocommon/include",
   ]
+
+  include_dirs += [ multimedia_audio_framework_drivers ]
 
   cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
 
   sources = [
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp",
+    "../../frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp",
     "test/example/audio_hdi_device_test.cpp",
   ]
 
   deps = [
-    "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
   ]
 
   external_deps = [
@@ -388,13 +384,13 @@ ohos_executable("audio_service_playback_test") {
   deps = [ ":audio_client" ]
 
   include_dirs = [
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "$pulseaudio_dir/src",
+    "$pulseaudio_build_path/include",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
+    "$pulseaudio_dir/src",
+    "../../../../commonlibrary/c_utils/base/include",
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
     "//third_party/bounds_checking_function/include",
   ]
 
@@ -415,13 +411,13 @@ ohos_executable("audio_service_record_test") {
   configs = [ ":audio_client_public_config" ]
 
   include_dirs = [
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "$pulseaudio_dir/src",
+    "$pulseaudio_build_path/include",
     "$pulseaudio_dir/confgure/src",
     "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
+    "$pulseaudio_dir/src",
+    "../../../../commonlibrary/c_utils/base/include",
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
     "//third_party/bounds_checking_function/include",
   ]
 
@@ -443,13 +439,13 @@ ohos_executable("audio_multichannel_test") {
   configs = [ ":audio_client_public_config" ]
 
   include_dirs = [
+    "$pulseaudio_build_path/include",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_dir/src",
     "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "../../../../utils/system/safwk/native/include",
     "../../../../commonlibrary/c_utils/base/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
     "//third_party/bounds_checking_function/include",
   ]
 

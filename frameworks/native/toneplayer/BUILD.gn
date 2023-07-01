@@ -12,24 +12,23 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
 config("audio_toneplayer_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiorenderer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/include",
-    "//foundation/multimedia/audio_framework/services/audio_service/client",
-    "//foundation/multimedia/audio_framework/services/test",
-    "//commonlibrary/c_utils/base/include",
+    "include",
+    "../audiostream/include",
+    "../audioutils/include",
+    "../audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/toneplayer/include",
+    "../../../services/audio_policy/include",
+    "../../../services/audio_service/client",
+    "../../../services/test",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
   ]
@@ -49,7 +48,7 @@ if (!audio_framework_feature_dtmf_tone) {
     sanitize = {
       cfi = true
       debug = false
-      blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+      blocklist = "../../../cfi_blocklist.txt"
     }
     install_enable = true
 
@@ -60,10 +59,10 @@ if (!audio_framework_feature_dtmf_tone) {
     defines = [ "FEATURE_DTMF_TONE" ]
 
     deps = [
-      "${audio_fwk_path}/frameworks/native/audiorenderer:audio_renderer",
-      "${audio_fwk_path}/frameworks/native/audioutils:audio_utils",
-      "${audio_fwk_path}/services/audio_policy:audio_policy_client",
-      "${audio_fwk_path}/services/audio_service:audio_client",
+      "../../../services/audio_policy:audio_policy_client",
+      "../../../services/audio_service:audio_client",
+      "../audiorenderer:audio_renderer",
+      "../audioutils:audio_utils",
     ]
 
     public_configs = [ ":audio_external_library_config" ]
@@ -107,7 +106,7 @@ if (!audio_framework_feature_dtmf_tone) {
 
 config("audio_external_library_config") {
   include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/toneplayer/include",
+    "include",
+    "../../../interfaces/inner_api/native/toneplayer/include",
   ]
 }

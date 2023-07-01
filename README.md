@@ -47,7 +47,7 @@ The structure of the repository directory is as follows:
 ├── sa_profile                         # Service configuration profile
 ├── services                           # Service code
 ├── LICENSE                            # License file
-└── ohos.build                         # Build file
+└── bundle.json                        # Build file
 ```
 
 ## Usage Guidelines

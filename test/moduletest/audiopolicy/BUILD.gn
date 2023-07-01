@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_policy"
 
@@ -25,13 +26,15 @@ ohos_moduletest("audio_policy_module_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./1.0/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   sources = [ "1.0/src/audio_policy_test.cpp" ]
 
-  deps = [ "//foundation/multimedia/audio_framework/services/audio_service:audio_client" ]
-  external_deps = [ "c_utils:utils" ]
+  deps = [ "../../../services/audio_service:audio_client" ]
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 }

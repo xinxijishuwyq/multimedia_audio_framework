@@ -19,18 +19,18 @@ ohos_shared_library("pulse_audio_service_adapter") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../cfi_blocklist.txt"
   }
   install_enable = true
-  sources = [ "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/src/pulse_audio_service_adapter_impl.cpp" ]
+  sources = [ "src/pulse_audio_service_adapter_impl.cpp" ]
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
 
   include_dirs = [
     "$pulseaudio_build_path/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audioadapter/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
+    "include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
     "//third_party/pulseaudio/include",
@@ -49,5 +49,5 @@ ohos_shared_library("pulse_audio_service_adapter") {
 }
 
 config("audio_external_library_config") {
-  include_dirs = [ "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include" ]
+  include_dirs = [ "../../../interfaces/inner_api/native/audiocommon/include" ]
 }

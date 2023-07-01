@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../../../config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -26,8 +26,8 @@ config("cluster_config") {
     "$pulseaudio_dir",
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioeffect/include",
+    "../../../audioeffect/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   cflags = [
@@ -43,7 +43,7 @@ ohos_shared_library("module-cluster-sink") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "${audio_fwk_path}/cfi_blocklist.txt"
+    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [ "module_cluster_sink.c" ]
 
@@ -55,8 +55,8 @@ ohos_shared_library("module-cluster-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "${audio_fwk_path}/frameworks/native/audioeffect:audio_effect",
     "${third_party_path}/bounds_checking_function:libsec_shared",
+    "../../../audioeffect:audio_effect",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

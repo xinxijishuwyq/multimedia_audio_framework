@@ -12,8 +12,8 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
-import("//foundation/multimedia/audio_framework/ressche_part.gni")
+import("../../../../../config.gni")
+import("../../../../../ressche_part.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -27,20 +27,20 @@ config("hdi_config") {
     "$pulseaudio_dir",
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
-    "${audio_fwk_path}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_fwk_path}/frameworks/native/audioschedule/include",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/common",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/primary",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/file",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/bluetooth",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink/remote",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source/common",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source/primary",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source/file",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/source/remote",
-    "//drivers/peripheral/audio/interfaces/include",
-    "//commonlibrary/c_utils/base/include",
+    "../../../audioschedule/include",
+    "../../../hdiadapter/sink/bluetooth",
+    "../../../hdiadapter/sink/common",
+    "../../../hdiadapter/sink/file",
+    "../../../hdiadapter/sink/primary",
+    "../../../hdiadapter/sink/remote",
+    "../../../hdiadapter/source/common",
+    "../../../hdiadapter/source/file",
+    "../../../hdiadapter/source/primary",
+    "../../../hdiadapter/source/remote",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
+
+  include_dirs += [ multimedia_audio_framework_drivers ]
 
   cflags = [
     "-Wall",
@@ -55,7 +55,7 @@ ohos_shared_library("module-hdi-sink") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [
     "hdi_sink.c",
@@ -75,8 +75,8 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "${audio_fwk_path}/frameworks/native/audioschedule:audio_schedule",
-    "${audio_fwk_path}/frameworks/native/hdiadapter/sink:renderer_sink_adapter",
+    "../../../audioschedule:audio_schedule",
+    "../../../hdiadapter/sink:renderer_sink_adapter",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -93,7 +93,7 @@ ohos_shared_library("module-hdi-source") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [
     "hdi_source.c",
@@ -108,7 +108,7 @@ ohos_shared_library("module-hdi-source") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "//foundation/multimedia/audio_framework/frameworks/native/hdiadapter/source:capturer_source_adapter",
+    "../../../hdiadapter/source:capturer_source_adapter",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 

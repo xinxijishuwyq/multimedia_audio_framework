@@ -12,8 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("//drivers/hdf_core/adapter/uhdf2/uhdf.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
+import("../../../../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_policy"
 
@@ -21,13 +20,12 @@ ohos_unittest("audio_policy_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include",
-    "//foundation/multimedia/audio_framework/services/audio_policy/client/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-    "//foundation/multimedia/audio_framework/frameworks/native/audiostream/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
+    "../../../../audiostream/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../../../../services/audio_policy/client/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -58,8 +56,8 @@ ohos_unittest("audio_policy_unit_test") {
   }
 
   deps = [
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
-    "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_service",
-    "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_policy:audio_policy_service",
+    "../../../../../../services/audio_service:audio_client",
   ]
 }

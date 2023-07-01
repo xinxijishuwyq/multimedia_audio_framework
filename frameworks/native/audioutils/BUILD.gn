@@ -12,18 +12,17 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("audio_utils") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "//foundation/multimedia/audio_framework/cfi_blocklist.txt"
+    blocklist = "../../../cfi_blocklist.txt"
   }
   install_enable = true
   include_dirs = [
-    "//foundation/multimedia/audio_framework/frameworks/native/audioutils/include",
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
+    "./include",
+    "../../../interfaces/inner_api/native/audiocommon/include/",
   ]
 
   sources = [ "./src/audio_utils.cpp" ]
