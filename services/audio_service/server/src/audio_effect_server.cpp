@@ -43,7 +43,7 @@ bool ResolveLibrary(const std::string &path, std::string &resovledPath)
     return false;
 }
 
-static bool LoadLibrary(const std::string relativePath, std::unique_ptr<AudioEffectLibEntry>& libEntry) noexcept
+static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<AudioEffectLibEntry>& libEntry) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
@@ -96,7 +96,7 @@ void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr
     }
 }
 
-AudioEffectLibEntry *FindLibrary(const std::string name,
+AudioEffectLibEntry *FindLibrary(const std::string &name,
     const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : libList) {
@@ -108,7 +108,7 @@ AudioEffectLibEntry *FindLibrary(const std::string name,
     return nullptr;
 }
 
-static bool LoadEffect(const Effect &effect, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
+static bool LoadEffect(const Effect &effect, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
 {
     AudioEffectLibEntry *currentLibEntry = FindLibrary(effect.libraryName, libList);
     if (currentLibEntry == nullptr) {
