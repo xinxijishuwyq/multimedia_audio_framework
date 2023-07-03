@@ -127,7 +127,7 @@ void AudioEffectChain::SetEffectMode(std::string mode)
 }
 
 template <typename T>
-int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, std::string value)
+int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, const std::string &value)
 {
     for (auto it = map.begin(); it != map.end(); ++it) {
         if (it->second == value) {
@@ -282,7 +282,7 @@ bool AudioEffectChain::IsEmptyEffectHandles()
     return standByEffectHandles.size() == 0;
 }
 
-int32_t FindEffectLib(const std::string effect,
+int32_t FindEffectLib(const std::string &effect,
     const std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
     AudioEffectLibEntry **libEntry, std::string &libName)
 {
@@ -296,7 +296,7 @@ int32_t FindEffectLib(const std::string effect,
     return ERROR;
 }
 
-int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string effect, const std::string libName)
+int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect, const std::string &libName)
 {
     if (!libEntry) {
         AUDIO_ERR_LOG("Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
