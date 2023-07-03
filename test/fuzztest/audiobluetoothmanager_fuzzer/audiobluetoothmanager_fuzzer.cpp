@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 #include "audio_info.h"
-#include "audio_bluetooth_manager.h"
 #define private public
 #include "audio_policy_server.h"
 #undef private
