@@ -988,6 +988,9 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);
 
+    if (g_adProxy == nullptr) {
+        return;
+    }
     auto ret = SUCCESS;
 
     switch (deviceType) {
