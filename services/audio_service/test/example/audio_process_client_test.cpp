@@ -23,6 +23,7 @@
 #include <thread>
 #include <mutex>
 #include <map>
+#include <securec.h>
 
 #include "audio_log.h"
 #include "audio_errors.h"
@@ -48,6 +49,9 @@ namespace {
         CHANGE_SPK_PROCESS_VOL = 6,
         RELEASE_SPK_PROCESS = 7,
 
+        START_LOOP_TEST = 10,
+        END_LOOP_TEST = 11,
+
         INIT_LOCAL_MIC_PROCESS = 20,
         INIT_REMOTE_MIC_PROCESS = 21,
         START_MIC_PROCESS = 22,
@@ -66,8 +70,12 @@ namespace {
         AUTO_RUN_SPK_TEST = 2,
         INTERACTIVE_RUN_MIC_TEST = 3,
         AUTO_RUN_MIC_TEST = 4,
-        EXIT_PROC_TEST = 5,
+        INTERACTIVE_RUN_LOOP = 5,
+        EXIT_PROC_TEST = 6,
     };
+    static constexpr size_t CACHE_BUFFER_SIZE = 960;
+    bool g_loopTest = false;
+    int64_t g_stampTime = 0;
 }
 
 class AudioProcessTest;
@@ -78,6 +86,9 @@ FILE *g_spkWavFile = nullptr;
 FILE *g_micPcmFile = nullptr;
 mutex g_autoRunMutex;
 condition_variable g_autoRunCV;
+
+unique_ptr<uint8_t[]> g_byteBuffer = nullptr;
+BufferDesc g_cacheBuffer = {nullptr, 0, 0};
 
 string ConfigSpkTest(bool isRemote);
 string CallStartSpk();
@@ -101,6 +112,7 @@ std::map<int32_t, std::string> g_audioProcessTestType = {
     {AUTO_RUN_SPK_TEST, "Auto run spk process test"},
     {INTERACTIVE_RUN_MIC_TEST, "Interactive run mic process test"},
     {AUTO_RUN_MIC_TEST, "Auto run mic process test"},
+    {INTERACTIVE_RUN_LOOP, "Roundtrip latency test"},
     {EXIT_PROC_TEST, "Exit audio process test"},
 };
 
@@ -113,6 +125,9 @@ std::map<int32_t, std::string> g_interactiveOptStrMap = {
     {STOP_SPK_PROCESS, "call stop spk process"},
     {CHANGE_SPK_PROCESS_VOL, "change spk process volume"},
     {RELEASE_SPK_PROCESS, "release spk process"},
+
+    {START_LOOP_TEST, "start loop"},
+    {END_LOOP_TEST, "end loop"},
 
     {INIT_LOCAL_MIC_PROCESS, "call local mic init process"},
     {INIT_REMOTE_MIC_PROCESS, "call remote mic init process"},
@@ -150,10 +165,53 @@ public:
     ~AudioProcessTestCallback() = default;
 
     void OnHandleData(size_t length) override;
+    void InitSignalBuffer(const BufferDesc &signalSoundBuffer)
+    {
+        int ret = memset_s(signalSoundBuffer.buffer, signalSoundBuffer.bufLength, 0, signalSoundBuffer.bufLength);
+        if (ret != EOK) {
+            return;
+        }
+        const int channels = 2; // 2 channels
+        const int samplePerChannel = 96 / channels; // 96 for 1ms
+        int16_t *signalData = static_cast<int16_t *>(static_cast<void *>(signalSoundBuffer.buffer));
+        int16_t bound = 10;
+        for (int idx = 0; idx < samplePerChannel; idx++) {
+            signalData[channels * idx] = bound + static_cast<int16_t>(sinf(2.0f * static_cast<float>(M_PI) * idx /
+                samplePerChannel) * (SHRT_MAX - bound));
+            for (int c = 1; c < channels; c++) {
+                signalData[channels * idx + c] = signalData[channels * idx];
+            }
+        }
+    };
 
 private:
     int32_t CaptureToFile(const BufferDesc &bufDesc);
     int32_t RenderFromFile(const BufferDesc &bufDesc);
+
+    void HandleWriteData(const BufferDesc &bufDesc)
+    {
+        loopCount_++;
+        int32_t periodCount = loopCount_ % 400; // 400 * 0.005 = 2s
+
+        if (periodCount == 0) {
+            InitSignalBuffer(bufDesc); // set signal data
+            int64_t temp = ClockTime::GetCurNano() - g_stampTime;
+            std::cout << "client read-write latency:" << (temp / AUDIO_MS_PER_SECOND) << " us" << std::endl;
+            return;
+        }
+
+        int32_t keepQuiteHold = 50;
+        if (periodCount > keepQuiteHold) {
+            return;
+        }
+
+        // copy mic data in the cache buffer
+        int ret = memcpy_s(static_cast<void *>(bufDesc.buffer), bufDesc.bufLength,
+            static_cast<void *>(g_cacheBuffer.buffer), g_cacheBuffer.bufLength);
+        if (ret != EOK) {
+            AUDIO_WARNING_LOG("memcpy_s failed.");
+        }
+    };
 
 private:
     std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
@@ -200,6 +258,12 @@ int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
     size_t cnt = fwrite(bufDesc.buffer, 1, bufDesc.bufLength, g_micPcmFile);
     CHECK_AND_RETURN_RET_LOG(cnt == bufDesc.bufLength, ERR_WRITE_FAILED,
         "%{public}s fwrite fail, cnt %{public}zu, bufLength %{public}zu.", __func__, cnt, bufDesc.bufLength);
+    int ret = memcpy_s(static_cast<void *>(g_cacheBuffer.buffer), bufDesc.bufLength,
+        static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+    if (ret != EOK) {
+        AUDIO_WARNING_LOG("memcpy_s failed.");
+    }
+    g_stampTime = ClockTime::GetCurNano();
     return SUCCESS;
 }
 
@@ -248,15 +312,17 @@ void AudioProcessTestCallback::OnHandleData(size_t length)
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s capture to file fail, ret %{public}d.",
             __func__, ret);
     } else {
-        ret = RenderFromFile(bufDesc);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s render from file fail, ret %{public}d.",
-            __func__, ret);
+        if (!g_loopTest) {
+            ret = RenderFromFile(bufDesc);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s render from file fail, ret %{public}d.", __func__, ret);
+        } else {
+            HandleWriteData(bufDesc);
+        }
     }
     ret = procClient_->Enqueue(bufDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s enqueue buf fail, clientMode %{public}d, ret %{public}d.",
         __func__, clientMode_, ret);
-    AUDIO_INFO_LOG("%{public}s enqueue end, clientMode %{public}d, bufLength %{public}zu.",
-        __func__, clientMode_, bufDesc.bufLength);
+
     callBack.End();
 }
 
@@ -707,10 +773,6 @@ string CallReleaseSpk()
 
 string ConfigMicTest(bool isRemote)
 {
-    if (!isRemote) {
-        return "Local mic init is not supported.";
-    }
-
     if (!OpenMicFile()) {
         cout << "Open mic file path failed!" << g_spkfilePath << endl;
         return "Open mic pcm file fail";
@@ -773,8 +835,49 @@ string CallReleaseMic()
     return "Mic release SUCCESS";
 }
 
+string StartLoopTest()
+{
+    std::cout << ConfigMicTest(false);
+    std::cout << CallStartMic();
+    std::cout << endl;
+
+    int32_t ret = g_audioProcessTest->InitSpk(0, false);
+    if (ret != SUCCESS) {
+        CallReleaseMic();
+        return "init spk failed";
+    } else {
+        std::cout << "init spk success" << endl;
+    }
+
+    std::cout << CallStartSpk();
+    std::cout << endl;
+    return "StartLoopTest success!";
+}
+
+string EndLoopTest()
+{
+    std::cout << CallReleaseSpk();
+    std::cout << endl;
+    std::cout << CallStopMic();
+    std::cout << endl;
+    std::cout << CallReleaseMic();
+    std::cout << endl;
+    return "EndLooptest";
+}
+
+void InitCachebuffer()
+{
+    g_byteBuffer = std::make_unique<uint8_t []>(CACHE_BUFFER_SIZE);
+    g_cacheBuffer.buffer = g_byteBuffer.get();
+    g_cacheBuffer.bufLength = CACHE_BUFFER_SIZE;
+    g_cacheBuffer.dataLength = CACHE_BUFFER_SIZE;
+}
+
 void InteractiveRun()
 {
+    if (g_loopTest) {
+        InitCachebuffer();
+    }
     cout << "Interactive run process test enter." << endl;
     bool isInteractiveRun = true;
     while (isInteractiveRun) {
@@ -793,6 +896,12 @@ void InteractiveRun()
                 break;
             case INIT_REMOTE_SPK_PROCESS:
                 cout << ConfigSpkTest(true) << endl;
+                break;
+            case START_LOOP_TEST:
+                cout << StartLoopTest() << endl;
+                break;
+            case END_LOOP_TEST:
+                cout << EndLoopTest() << endl;
                 break;
             case INIT_LOCAL_MIC_PROCESS:
                 cout << ConfigMicTest(false) << endl;
@@ -848,6 +957,10 @@ int main()
         switch (procTestType) {
             case INTERACTIVE_RUN_SPK_TEST:
             case INTERACTIVE_RUN_MIC_TEST:
+                InteractiveRun();
+                break;
+            case INTERACTIVE_RUN_LOOP:
+                g_loopTest = true;
                 InteractiveRun();
                 break;
             case AUTO_RUN_SPK_TEST:

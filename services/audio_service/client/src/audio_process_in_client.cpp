@@ -330,7 +330,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
         "%{public}s audio buffer is null.", __func__);
     uint64_t curReadPos = audioBuffer_->GetCurReadFrame();
-
+    Trace trace("AudioProcessInClient::ReadProcessData-<" + std::to_string(curReadPos));
     BufferDesc readbufDesc = {nullptr, 0, 0};
     int32_t ret = audioBuffer_->GetReadbuffer(curReadPos, readbufDesc);
     if (ret != SUCCESS || readbufDesc.buffer == nullptr || readbufDesc.bufLength != spanSizeInByte_ ||
@@ -708,7 +708,7 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             continue;
         }
         threadStatus_ = INRUNNING;
-        Trace traceLoop("AudioProcessInClient RecordProcessCallbackFuc InRunning");
+        Trace traceLoop("AudioProcessInClient Record InRunning");
         if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
