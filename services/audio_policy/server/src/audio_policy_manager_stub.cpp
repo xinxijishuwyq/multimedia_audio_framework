@@ -17,7 +17,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "audio_policy_types.h"
+#include "audio_policy_ipc_interface_code.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -998,310 +998,310 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         return -1;
     }
     switch (code) {
-        case GET_MAX_VOLUMELEVEL:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
             GetMaxVolumeLevelInternal(data, reply);
             break;
 
-        case GET_MIN_VOLUMELEVEL:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUMELEVEL):
             GetMinVolumeLevelInternal(data, reply);
             break;
 
-        case SET_SYSTEM_VOLUMELEVEL:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
             SetSystemVolumeLevelInternal(data, reply);
             break;
 
-        case SET_RINGER_MODE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE):
             SetRingerModeInternal(data, reply);
             break;
 
-        case GET_RINGER_MODE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RINGER_MODE):
             GetRingerModeInternal(reply);
             break;
 
-        case SET_AUDIO_SCENE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SCENE):
             SetAudioSceneInternal(data, reply);
             break;
 
-        case GET_AUDIO_SCENE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_SCENE):
             GetAudioSceneInternal(reply);
             break;
 
-        case SET_MICROPHONE_MUTE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE):
             SetMicrophoneMuteInternal(data, reply);
             break;
 
-        case SET_MICROPHONE_MUTE_AUDIO_CONFIG:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_AUDIO_CONFIG):
             SetMicrophoneMuteAudioConfigInternal(data, reply);
             break;
 
-        case IS_MICROPHONE_MUTE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE):
             IsMicrophoneMuteInternal(data, reply);
             break;
 
-        case GET_SYSTEM_VOLUMELEVEL:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
             GetSystemVolumeLevelInternal(data, reply);
             break;
 
-        case SET_STREAM_MUTE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
             SetStreamMuteInternal(data, reply);
             break;
 
-        case GET_STREAM_MUTE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
             GetStreamMuteInternal(data, reply);
             break;
 
-        case IS_STREAM_ACTIVE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
             IsStreamActiveInternal(data, reply);
             break;
 
-        case SET_DEVICE_ACTIVE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
             SetDeviceActiveInternal(data, reply);
             break;
 
-        case IS_DEVICE_ACTIVE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
             IsDeviceActiveInternal(data, reply);
             break;
 
-        case GET_ACTIVE_OUTPUT_DEVICE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE):
             GetActiveOutputDeviceInternal(data, reply);
             break;
 
-        case GET_ACTIVE_INPUT_DEVICE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_INPUT_DEVICE):
             GetActiveInputDeviceInternal(data, reply);
             break;
 
-        case SET_RINGERMODE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGERMODE_CALLBACK):
             SetRingerModeCallbackInternal(data, reply);
             break;
 
-        case UNSET_RINGERMODE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_RINGERMODE_CALLBACK):
             UnsetRingerModeCallbackInternal(data, reply);
             break;
 
-        case SET_MIC_STATE_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MIC_STATE_CHANGE_CALLBACK):
             SetMicStateChangeCallbackInternal(data, reply);
             break;
 
-        case SET_DEVICE_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CHANGE_CALLBACK):
             SetDeviceChangeCallbackInternal(data, reply);
             break;
 
-        case UNSET_DEVICE_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_DEVICE_CHANGE_CALLBACK):
             UnsetDeviceChangeCallbackInternal(data, reply);
             break;
 
-        case SET_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK):
             SetInterruptCallbackInternal(data, reply);
             break;
 
-        case UNSET_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
             UnsetInterruptCallbackInternal(data, reply);
             break;
 
-        case ACTIVATE_INTERRUPT:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT):
             ActivateInterruptInternal(data, reply);
             break;
 
-        case DEACTIVATE_INTERRUPT:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT):
             DeactivateInterruptInternal(data, reply);
             break;
 
-        case SET_INTERRUPT_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INTERRUPT_CALLBACK):
             SetAudioManagerInterruptCbInternal(data, reply);
             break;
 
-        case UNSET_INTERRUPT_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_INTERRUPT_CALLBACK):
             UnsetAudioManagerInterruptCbInternal(data, reply);
             break;
 
-        case REQUEST_AUDIO_FOCUS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS):
             RequestAudioFocusInternal(data, reply);
             break;
 
-        case ABANDON_AUDIO_FOCUS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS):
             AbandonAudioFocusInternal(data, reply);
             break;
 
-        case SET_VOLUME_KEY_EVENT_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOLUME_KEY_EVENT_CALLBACK):
             SetVolumeKeyEventCallbackInternal(data, reply);
             break;
 
-        case UNSET_VOLUME_KEY_EVENT_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_VOLUME_KEY_EVENT_CALLBACK):
             UnsetVolumeKeyEventCallbackInternal(data, reply);
             break;
 
-        case GET_STREAM_IN_FOCUS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS):
             GetStreamInFocusInternal(reply);
             break;
 
-        case GET_SESSION_INFO_IN_FOCUS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_INFO_IN_FOCUS):
             GetSessionInfoInFocusInternal(reply);
             break;
 
-        case GET_DEVICES:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES):
             GetDevicesInternal(data, reply);
             break;
 
-        case QUERY_MICROPHONE_PERMISSION:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION):
             VerifyClientMicrophonePermissionInternal(data, reply);
             break;
 
-        case SELECT_OUTPUT_DEVICE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE):
             SelectOutputDeviceInternal(data, reply);
             break;
 
-        case GET_SELECTED_DEVICE_INFO:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELECTED_DEVICE_INFO):
             GetSelectedDeviceInfoInternal(data, reply);
             break;
 
-        case SELECT_INPUT_DEVICE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_INPUT_DEVICE):
             SelectInputDeviceInternal(data, reply);
             break;
 #ifdef FEATURE_DTMF_TONE
-        case GET_TONEINFO:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_TONEINFO):
             GetToneInfoInternal(data, reply);
             break;
-        case GET_SUPPORTED_TONES:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_TONES):
             GetSupportedTonesInternal(data, reply);
             break;
 #endif
-        case RECONFIGURE_CHANNEL:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::RECONFIGURE_CHANNEL):
             ReconfigureAudioChannelInternal(data, reply);
             break;
 
-        case GET_AUDIO_LATENCY:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_LATENCY):
             GetAudioLatencyFromXmlInternal(data, reply);
             break;
 
-        case GET_SINK_LATENCY:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINK_LATENCY):
             GetSinkLatencyFromXmlInternal(data, reply);
             break;
 
-        case REGISTER_PLAYBACK_EVENT:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_PLAYBACK_EVENT):
             RegisterAudioRendererEventListenerInternal(data, reply);
             break;
 
-        case UNREGISTER_PLAYBACK_EVENT:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_PLAYBACK_EVENT):
             UnregisterAudioRendererEventListenerInternal(data, reply);
             break;
 
-        case REGISTER_RECORDING_EVENT:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_RECORDING_EVENT):
             RegisterAudioCapturerEventListenerInternal(data, reply);
             break;
 
-        case UNREGISTER_RECORDING_EVENT:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_RECORDING_EVENT):
             UnregisterAudioCapturerEventListenerInternal(data, reply);
             break;
 
-        case REGISTER_TRACKER:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);
             break;
 
-        case UPDATE_TRACKER:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_TRACKER):
             UpdateTrackerInternal(data, reply);
             break;
 
-        case GET_RENDERER_CHANGE_INFOS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RENDERER_CHANGE_INFOS):
             GetRendererChangeInfosInternal(data, reply);
             break;
 
-        case GET_CAPTURER_CHANGE_INFOS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_CAPTURER_CHANGE_INFOS):
             GetCapturerChangeInfosInternal(data, reply);
             break;
 
-        case UPDATE_STREAM_STATE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_STREAM_STATE):
             UpdateStreamStateInternal(data, reply);
             break;
 
-        case SET_LOW_POWER_STREM_VOLUME:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME):
             SetLowPowerVolumeInternal(data, reply);
             break;
 
-        case GET_LOW_POWRR_STREM_VOLUME:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME):
             GetLowPowerVolumeInternal(data, reply);
             break;
 
-        case GET_SINGLE_STREAM_VOLUME:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINGLE_STREAM_VOLUME):
             GetSingleStreamVolumeInternal(data, reply);
             break;
 
-        case GET_VOLUME_GROUP_INFO:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_GROUP_INFO):
             GetVolumeGroupInfoInternal(data, reply);
             break;
 
-        case GET_NETWORKID_BY_GROUP_ID:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_NETWORKID_BY_GROUP_ID):
             GetNetworkIdByGroupIdInternal(data, reply);
             break;
 
-        case IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED):
              IsAudioRendererLowLatencySupportedInternal(data, reply);
              break;
 
-        case GET_USING_PEMISSION_FROM_PRIVACY:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY):
              getUsingPemissionFromPrivacyInternal(data, reply);
              break;
 
-        case GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):
             GetPreferOutputDeviceDescriptorsInternal(data, reply);
             break;
 
-        case SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
             SetPreferOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
-        case UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
             UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
-        case GET_AUDIO_FOCUS_INFO_LIST:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST):
             GetAudioFocusInfoListInternal(data, reply);
             break;
 
-        case REGISTER_FOCUS_INFO_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_FOCUS_INFO_CHANGE_CALLBACK):
             RegisterFocusInfoChangeCallbackInternal(data, reply);
             break;
 
-        case UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK):
             UnregisterFocusInfoChangeCallbackInternal(data, reply);
             break;
 
-        case SET_SYSTEM_SOUND_URI:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_SOUND_URI):
             SetSystemSoundUriInternal(data, reply);
             break;
 
-        case GET_SYSTEM_SOUND_URI:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_SOUND_URI):
             GetSystemSoundUriInternal(data, reply);
             break;
 
-        case GET_MIN_VOLUME_STREAM:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUME_STREAM):
             GetMinStreamVolumeInternal(data, reply);
             break;
 
-        case GET_MAX_VOLUME_STREAM:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_STREAM):
             GetMaxStreamVolumeInternal(data, reply);
             break;
 
-        case GET_MAX_RENDERER_INSTANCES:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_RENDERER_INSTANCES):
             GetMaxRendererInstancesInternal(data, reply);
             break;
         
-        case QUERY_EFFECT_SCENEMODE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE):
             QueryEffectSceneModeInternal(data, reply);
             break;
 
-        case IS_VOLUME_UNADJUSTABLE:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_VOLUME_UNADJUSTABLE):
             IsVolumeUnadjustableInternal(data, reply);
             break;
 
-        case ADJUST_VOLUME_BY_STEP:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_VOLUME_BY_STEP):
             AdjustVolumeByStepInternal(data, reply);
             break;
 
-        case ADJUST_SYSTEM_VOLUME_BY_STEP:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_SYSTEM_VOLUME_BY_STEP):
             AdjustSystemVolumeByStepInternal(data, reply);
             break;
 
-        case GET_SYSTEM_VOLUME_IN_DB:
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUME_IN_DB):
             GetSystemVolumeInDbInternal(data, reply);
             break;
 

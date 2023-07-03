@@ -57,7 +57,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
     }
 
     switch (code) {
-        case SET_AUDIO_PARAMETER: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_PARAMETER): {
             AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER AudioManagerStub");
             const std::string key = data.ReadString();
             const std::string value = data.ReadString();
@@ -66,7 +66,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             SetAudioParameter(key, value);
             return AUDIO_OK;
         }
-        case GET_AUDIO_PARAMETER: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER): {
             AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER AudioManagerStub");
             const std::string key = data.ReadString();
             AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER key received from client= %{public}s", key.c_str());
@@ -74,7 +74,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteString(value);
             return AUDIO_OK;
         }
-        case RETRIEVE_COOKIE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RETRIEVE_COOKIE): {
             AUDIO_DEBUG_LOG("RETRIEVE_COOKIE AudioManagerStub");
             int32_t size = 0;
             const char *cookieInfo = RetrieveCookie(size);
@@ -87,7 +87,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             return AUDIO_OK;
         }
-        case GET_TRANSACTION_ID: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID): {
             AUDIO_DEBUG_LOG("GET_TRANSACTION_ID AudioManagerStub");
             DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
             DeviceRole deviceRole = (static_cast<DeviceRole>(data.ReadInt32()));
@@ -97,7 +97,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 
             return AUDIO_OK;
         }
-        case SET_MICROPHONE_MUTE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_MICROPHONE_MUTE): {
             AUDIO_DEBUG_LOG("SET_MICROPHONE_MUTE AudioManagerStub");
             bool isMute = data.ReadBool();
             AUDIO_DEBUG_LOG("SET_MICROPHONE_MUTE isMute value from client= %{public}d", isMute);
@@ -105,13 +105,13 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
-        case IS_MICROPHONE_MUTE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_MICROPHONE_MUTE): {
             AUDIO_DEBUG_LOG("IS_MICROPHONE_MUTE AudioManagerStub");
             bool isMute = IsMicrophoneMute();
             reply.WriteBool(isMute);
             return AUDIO_OK;
         }
-        case SET_AUDIO_SCENE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE): {
             AUDIO_DEBUG_LOG("SET_AUDIO_SCENE AudioManagerStub");
             AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
             DeviceType activeDevice = (static_cast<DeviceType>(data.ReadInt32()));
@@ -119,7 +119,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
-        case UPDATE_ROUTE_REQ: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTE_REQ): {
             AUDIO_DEBUG_LOG("UPDATE_ROUTE_REQ AudioManagerStub");
             DeviceType type = static_cast<DeviceType>(data.ReadInt32());
             DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
@@ -127,7 +127,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(ret);
             return AUDIO_OK;
         }
-        case SET_PARAMETER_CALLBACK: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK): {
             AUDIO_DEBUG_LOG("SET_PARAMETER_CALLBACK AudioManagerStub");
             sptr<IRemoteObject> object = data.ReadRemoteObject();
             if (object == nullptr) {
@@ -138,7 +138,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
-        case SET_REMOTE_AUDIO_PARAMETER: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_REMOTE_AUDIO_PARAMETER): {
             AUDIO_DEBUG_LOG("SET_AUDIO_PARAMETER AudioManagerStub");
             const std::string networkId = data.ReadString();
             AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
@@ -149,7 +149,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             SetAudioParameter(networkId, key, condtion, value);
             return AUDIO_OK;
         }
-        case GET_REMOTE_AUDIO_PARAMETER: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::GET_REMOTE_AUDIO_PARAMETER): {
             AUDIO_DEBUG_LOG("GET_AUDIO_PARAMETER AudioManagerStub");
             const std::string networkId = data.ReadString();
             AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
@@ -159,14 +159,14 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteString(value);
             return AUDIO_OK;
         }
-        case NOTIFY_DEVICE_INFO: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO): {
             AUDIO_DEBUG_LOG("NOTIFY_DEVICE_INFO AudioManagerStub");
             const std::string networkId = data.ReadString();
             const bool connected = data.ReadBool();
             NotifyDeviceInfo(networkId, connected);
             return AUDIO_OK;
         }
-        case CHECK_REMOTE_DEVICE_STATE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_REMOTE_DEVICE_STATE): {
             AUDIO_DEBUG_LOG("CHECK_REMOTE_DEVICE_STATE AudioManagerStub");
             std::string networkId = data.ReadString();
             DeviceRole deviceRole = static_cast<DeviceRole>(data.ReadInt32());
@@ -175,26 +175,26 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
-        case SET_VOICE_VOLUME: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME): {
             AUDIO_DEBUG_LOG("SET_VOICE_VOLUME AudioManagerStub");
             const float volume = data.ReadFloat();
             int32_t result = SetVoiceVolume(volume);
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
-        case SET_AUDIO_MONO_STATE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE): {
             AUDIO_DEBUG_LOG("SET_AUDIO_MONO_STATE AudioManagerStub");
             bool audioMonoState = data.ReadBool();
             SetAudioMonoState(audioMonoState);
             return AUDIO_OK;
         }
-        case SET_AUDIO_BALANCE_VALUE: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_BALANCE_VALUE): {
             AUDIO_DEBUG_LOG("SET_AUDIO_BALANCE_VALUE AudioManagerStub");
             float audioBalanceValue = data.ReadFloat();
             SetAudioBalanceValue(audioBalanceValue);
             return AUDIO_OK;
         }
-        case CREATE_AUDIOPROCESS: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS): {
             AUDIO_INFO_LOG("CREATE_AUDIOPROCESS AudioManagerStub");
             AudioProcessConfig config;
             IAudioProcess::ReadConfigFromParcel(config, data);
@@ -206,7 +206,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteRemoteObject(process);
             return AUDIO_OK;
         }
-        case LOAD_AUDIO_EFFECT_LIBRARIES: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES): {
             vector<Library> libList = {};
             vector<Effect> effectList = {};
             int32_t countLib = data.ReadInt32();
@@ -229,13 +229,13 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             return AUDIO_OK;
         }
-        case REQUEST_THREAD_PRIORITY: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY): {
             uint32_t tid = data.ReadUint32();
             string bundleName = data.ReadString();
             RequestThreadPriority(tid, bundleName);
             return AUDIO_OK;
         }
-        case CREATE_AUDIO_EFFECT_CHAIN_MANAGER: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER): {
             int32_t i;
             vector<EffectChain> effectChains = {};
             vector<int32_t> countEffect = {};
@@ -275,7 +275,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             return AUDIO_OK;
         }
-        case SET_OUTPUT_DEVICE_SINK: {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK): {
             int32_t deviceType = data.ReadInt32();
             CHECK_AND_RETURN_RET_LOG(deviceType >= DEVICE_TYPE_NONE && deviceType <= DEVICE_TYPE_MAX, AUDIO_ERR,
                 "Set output device sink failed, please check log");

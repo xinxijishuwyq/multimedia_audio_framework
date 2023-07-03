@@ -43,7 +43,8 @@ void AudioServerBalanceFuzzer(const uint8_t *rawData, size_t size, std::shared_p
     data.WriteFloat(balanceValue);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(AudioManagerStub::SET_AUDIO_BALANCE_VALUE, data, reply, option);
+    AudioServerPtr->OnRemoteRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_BALANCE_VALUE), data, reply, option);
 }
 
 bool Convert2Bool(const uint8_t *ptr)
@@ -58,7 +59,8 @@ void AudioServerMonoFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<
     data.WriteBool(monoState);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(AudioManagerStub::SET_AUDIO_MONO_STATE, data, reply, option);
+    AudioServerPtr->OnRemoteRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE), data, reply, option);
 }
 
 void AudioServerBalanceFuzzTest(const uint8_t *rawData, size_t size)

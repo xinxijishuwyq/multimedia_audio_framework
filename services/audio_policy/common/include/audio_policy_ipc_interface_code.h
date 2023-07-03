@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,14 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_TYPES_H
-#define ST_AUDIO_POLICY_TYPES_H
+#ifndef ST_AUDIO_POLICY_INTERFACE_H
+#define ST_AUDIO_POLICY_INTERFACE_H
 
 #include <audio_info.h>
 
+/* SAID: 3009 */
 namespace OHOS {
 namespace AudioStandard {
-enum AudioPolicyCommand {
+enum class AudioPolicyInterfaceCode {
     GET_MAX_VOLUMELEVEL,
     GET_MIN_VOLUMELEVEL,
     SET_SYSTEM_VOLUMELEVEL,
@@ -102,4 +103,4 @@ enum AudioPolicyCommand {
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_AUDIO_POLICY_TYPES_H
+#endif // ST_AUDIO_POLICY_INTERFACE_H
