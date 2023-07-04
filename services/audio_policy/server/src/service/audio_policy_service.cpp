@@ -2631,7 +2631,7 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDes
 {
     AUDIO_WARNING_LOG("UpdateDescWhenNoBTPermission: No bt permission");
 
-    for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
+    for (sptr<AudioDeviceDescriptor> &desc : deviceDescs) {
         if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
             || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             sptr<AudioDeviceDescriptor> copyDesc = new AudioDeviceDescriptor(desc);
