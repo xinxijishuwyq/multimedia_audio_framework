@@ -54,6 +54,7 @@ public:
         std::string networkId);
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
+    AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
     virtual ~AudioDeviceDescriptor();
 
     bool Marshalling(Parcel &parcel) const override;

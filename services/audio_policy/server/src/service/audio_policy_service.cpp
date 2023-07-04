@@ -2634,8 +2634,10 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDes
     for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
         if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
             || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-            desc->deviceName_ = "";
-            desc->macAddress_ = "";
+            sptr<AudioDeviceDescriptor> copyDesc = new AudioDeviceDescriptor(desc);
+            copyDesc->deviceName_ = "";
+            copyDesc->macAddress_ = "";
+            desc = copyDesc;
         }
     }
 }

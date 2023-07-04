@@ -71,6 +71,28 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     displayName_ = deviceDescriptor.displayName_;
 }
 
+AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    if (deviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("Error input parameter");
+        return;
+    }
+    deviceId_ = deviceDescriptor->deviceId_;
+    deviceName_ = deviceDescriptor->deviceName_;
+    macAddress_ = deviceDescriptor->macAddress_;
+    deviceType_ = deviceDescriptor->deviceType_;
+    deviceRole_ = deviceDescriptor->deviceRole_;
+    audioStreamInfo_.channels = deviceDescriptor->audioStreamInfo_.channels;
+    audioStreamInfo_.encoding = deviceDescriptor->audioStreamInfo_.encoding;
+    audioStreamInfo_.format = deviceDescriptor->audioStreamInfo_.format;
+    audioStreamInfo_.samplingRate = deviceDescriptor->audioStreamInfo_.samplingRate;
+    channelMasks_ = deviceDescriptor->channelMasks_;
+    volumeGroupId_ = deviceDescriptor->volumeGroupId_;
+    interruptGroupId_ = deviceDescriptor->interruptGroupId_;
+    networkId_ = deviceDescriptor->networkId_;
+    displayName_ = deviceDescriptor->displayName_;
+}
+
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
 {}
 
