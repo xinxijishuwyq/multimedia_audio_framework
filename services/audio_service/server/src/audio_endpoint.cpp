@@ -956,8 +956,6 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
         }
     }
     int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);
-    AUDIO_INFO_LOG("%{public}s end, posInFrame %{public}" PRIu64", nextHdiWriteTime %{public}" PRIu64"",
-        __func__, posInFrame, nextHdiWriteTime);
     return nextHdiWriteTime;
 }
 
@@ -965,7 +963,8 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 {
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
-    wakeUpTime = nextHdiWriteTime + serverAheadReadTime_;
+    int64_t tempDelay = 12000000; // 12ms
+    wakeUpTime = nextHdiWriteTime + tempDelay;
 
     int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set dst buffer write frame fail, ret %{public}d.",
@@ -974,8 +973,6 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s set dst buffer read frame fail, ret %{public}d.",
         __func__, ret);
 
-    AUDIO_INFO_LOG("%{public}s end, dstAudioBuffer curReadPos %{public}" PRIu64", nextHandlePos %{public}" PRIu64", "
-        "wakeUpTime %{public}" PRId64"", __func__, curReadPos, nextHandlePos, wakeUpTime);
     return true;
 }
 
@@ -1122,6 +1119,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 {
     CHECK_AND_RETURN_RET_LOG(procBuf != nullptr, ERR_INVALID_HANDLE, "%{public}s process buffer is null.", __func__);
     uint64_t curWritePos = procBuf->GetCurWriteFrame();
+    Trace trace("AudioEndpoint::WriteProcessData-<" + std::to_string(curWritePos));
     SpanInfo *curWriteSpan = procBuf->GetSpanInfo(curWritePos);
     CHECK_AND_RETURN_RET_LOG(curWriteSpan != nullptr, ERR_INVALID_HANDLE,
         "%{public}s get write span info of procBuf fail.", __func__);
@@ -1173,6 +1171,7 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
 
 int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
 {
+    Trace trace("AudioEndpoint::ReadDstBuffer=<" + std::to_string(curReadPos));
     AUDIO_DEBUG_LOG("%{public}s enter, dstAudioBuffer curReadPos %{public}" PRIu64".", __func__, curReadPos);
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_INVALID_HANDLE,
         "%{public}s dst audio buffer is null.", __func__);
