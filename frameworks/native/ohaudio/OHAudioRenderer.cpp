@@ -138,7 +138,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer
 }
 
 OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
-    OH_AudioStream_Usage* usage, OH_AudioStream_Content* content)
+    OH_AudioStream_Usage* usage)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
@@ -146,7 +146,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     *usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
-    *content = (OH_AudioStream_Content)rendererInfo.contentType;
     return AUDIOSTREAM_SUCCESS;
 }
 

@@ -78,12 +78,12 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
-    OH_AudioStream_Usage usage, OH_AudioStream_Content content)
+    OH_AudioStream_Usage usage)
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
     StreamUsage streamUsage = (StreamUsage)usage;
-    ContentType contentType = (ContentType)content;
+    ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
     return audioStreamBuilder->SetRendererInfo(streamUsage, contentType);
 }
 
