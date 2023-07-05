@@ -28,6 +28,7 @@
 #include "audio_manager_listener_stub.h"
 #include "device_manager.h"
 #include "device_init_callback.h"
+#include "device_manager_impl.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -102,6 +103,8 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
         return false;
     }
+
+    RegisterRemoteDevStatusCallback();
 
     // Get device type from const.product.devicetype when starting.
     char devicesType[100] = {0}; // 100 for system parameter usage
@@ -1785,6 +1788,28 @@ void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
             it++;
         }
     }
+}
+
+void AudioPolicyService::SetRemoteDisplayName(const std::string &deviceName)
+{
+    for (auto& deviceInfo : connectedDevices_) {
+        if (deviceInfo->networkId_ != LOCAL_NETWORK_ID) {
+            deviceInfo->displayName_ = deviceName;
+        }
+    }
+}
+
+void AudioPolicyService::RegisterRemoteDevStatusCallback()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::shared_ptr<DistributedHardware::DmInitCallback> initCallback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, initCallback);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Init device manage failed");
+        return;
+    }
+    std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
+    DistributedHardware::DeviceManager::GetInstance().RegisterDevStatusCallback(AUDIO_SERVICE_PKG, "", callback);
 }
 
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
