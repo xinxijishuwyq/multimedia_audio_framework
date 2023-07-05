@@ -256,6 +256,8 @@ public:
 
     void UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDescriptor>> &desc);
 
+    void SetRemoteDisplayName(const std::string &deviceName);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -370,6 +372,8 @@ private:
     void RemoveDeviceInRouterMap(std::string networkId);
 
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
+
+    void RegisterRemoteDevStatusCallback();
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
         const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
