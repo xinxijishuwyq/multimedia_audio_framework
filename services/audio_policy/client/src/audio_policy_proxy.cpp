@@ -1892,7 +1892,7 @@ int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::s
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("SetSystemSoundUri WriteInterfaceToken failed");
         return IPC_PROXY_ERR;
     }
     data.WriteString(key);
@@ -1913,7 +1913,7 @@ std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("GetSystemSoundUri WriteInterfaceToken failed");
         return "";
     }
     data.WriteString(key);
@@ -2099,5 +2099,30 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     }
     return 0;
 }
+
+int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" SetPlaybackCapturerFilterInfos WriteInterfaceToken failed");
+        return ERROR;
+    }
+    size_t ss = filterOptions.size();
+    data.WriteInt32(ss);
+    for (size_t i = 0; i < ss; i++) {
+        data.WriteInt32(filterOptions[i].usage);
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetPlaybackCapturerFilterInfos failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

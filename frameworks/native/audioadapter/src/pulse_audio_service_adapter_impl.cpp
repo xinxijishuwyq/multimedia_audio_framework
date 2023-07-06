@@ -1054,6 +1054,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         uint32_t sessionID = sourceIndexSessionIDMap[idx];
         AUDIO_ERR_LOG("[ProcessSourceOutputEvent] sessionID: %{public}d removed", sessionID);
         g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
+        g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
     }
 }
 

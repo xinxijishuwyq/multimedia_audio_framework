@@ -527,8 +527,17 @@ enum SourceType {
     SOURCE_TYPE_INVALID = -1,
     SOURCE_TYPE_MIC,
     SOURCE_TYPE_VOICE_RECOGNITION = 1,
+    SOURCE_TYPE_PLAYBACK_CAPTURE = 2,
     SOURCE_TYPE_VOICE_COMMUNICATION = 7,
     SOURCE_TYPE_ULTRASONIC = 8
+};
+
+/**
+ * Enumerates audio stream privacy type for playback capture.
+ */
+enum AudioPrivacyType {
+    PRIVACY_TYPE_PUBLIC = 0,
+    PRIVACY_TYPE_PRIVATE = 1
 };
 
 /**
@@ -684,6 +693,7 @@ struct AudioRendererDesc {
 struct AudioRendererOptions {
     AudioStreamInfo streamInfo;
     AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 };
 
 struct MicStateChangeEvent {
@@ -721,9 +731,18 @@ enum AudioScene {
     AUDIO_SCENE_PHONE_CHAT,
 };
 
+struct CaptureFilterOptions {
+    StreamUsage usage;
+};
+
+struct AudioPlaybackCaptureConfig {
+    std::vector<CaptureFilterOptions> filterOptions;
+};
+
 struct AudioCapturerOptions {
     AudioStreamInfo streamInfo;
     AudioCapturerInfo capturerInfo;
+    AudioPlaybackCaptureConfig playbackCaptureConfig;
 };
 
 struct AppInfo {
@@ -776,6 +795,30 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_48000,
     SAMPLE_RATE_64000,
     SAMPLE_RATE_96000
+};
+
+const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
+    STREAM_USAGE_UNKNOWN,
+    STREAM_USAGE_MEDIA,
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_VOICE_COMMUNICATION,
+    STREAM_USAGE_VOICE_ASSISTANT,
+    STREAM_USAGE_ALARM,
+    STREAM_USAGE_VOICE_MESSAGE,
+    STREAM_USAGE_NOTIFICATION_RINGTONE,
+    STREAM_USAGE_RINGTONE,
+    STREAM_USAGE_NOTIFICATION,
+    STREAM_USAGE_ACCESSIBILITY,
+    STREAM_USAGE_SYSTEM,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK,
+    STREAM_USAGE_NAVIGATION,
+    STREAM_USAGE_DTMF,
+    STREAM_USAGE_ENFORCED_TONE,
+    STREAM_USAGE_ULTRASONIC,
+    STREAM_USAGE_RANGING,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 
 struct BufferDesc {

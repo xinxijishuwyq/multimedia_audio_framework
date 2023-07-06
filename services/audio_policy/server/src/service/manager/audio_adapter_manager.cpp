@@ -479,6 +479,15 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
+AudioIOHandle AudioAdapterManager::LoadLoopback(const LoopbackModuleInfo &moduleInfo)
+{
+    std::string moduleArgs = GetLoopbackModuleArgs(moduleInfo);
+    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", moduleInfo.lib.c_str(), moduleArgs.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    return audioServiceAdapter_->OpenAudioPort(moduleInfo.lib, moduleArgs.c_str());
+}
+
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
@@ -522,6 +531,21 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" open_mic_speaker=");
         args.append(audioModuleInfo.OpenMicSpeaker);
     }
+}
+
+std::string AudioAdapterManager::GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const
+{
+    std::string args;
+
+    if (moduleInfo.sink.empty() || moduleInfo.source.empty()) {
+        return "";
+    }
+
+    args.append(" source=");
+    args.append(moduleInfo.source);
+    args.append(" sink=");
+    args.append(moduleInfo.sink);
+    return args;
 }
 
 // Private Members
@@ -620,6 +644,15 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
         }
     } else if (audioModuleInfo.lib == EFFECT_SINK) {
         UpdateCommonArgs(audioModuleInfo, args);
+        if (!audioModuleInfo.name.empty()) {
+            args.append(" sink_name=");
+            args.append(audioModuleInfo.name);
+        }
+        if (!audioModuleInfo.sceneName.empty()) {
+            args.append(" scene_name=");
+            args.append(audioModuleInfo.sceneName);
+        }
+    } else if (audioModuleInfo.lib == INNER_CAPTURER_SINK || audioModuleInfo.lib == RECEIVER_SINK) {
         if (!audioModuleInfo.name.empty()) {
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);

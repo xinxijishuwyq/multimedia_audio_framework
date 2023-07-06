@@ -17,7 +17,7 @@ import("../../../../../config.gni")
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
-config("cluster_config") {
+config("abstract_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
@@ -26,8 +26,6 @@ config("cluster_config") {
     "$pulseaudio_dir",
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
-    "../../../audioeffect/include",
-    "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -40,25 +38,23 @@ config("cluster_config") {
   ]
 }
 
-ohos_shared_library("module-cluster-sink") {
+ohos_shared_library("module-loopback") {
   sanitize = {
     cfi = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }
-  sources = [ "module_cluster_sink.c" ]
+  sources = [ "module_loopback.c" ]
 
-  configs = [ ":cluster_config" ]
+  configs = [ ":abstract_config" ]
 
-  cflags = [ "-DPA_MODULE_NAME=libmodule_cluster_sink_z_so" ]
+  cflags = [ "-DPA_MODULE_NAME=libmodule_loopback_z_so" ]
 
   deps = [
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "${third_party_path}/bounds_checking_function:libsec_shared",
-    "../../../audioeffect:audio_effect",
-    "../../../playbackcapturer:playback_capturer",
+    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

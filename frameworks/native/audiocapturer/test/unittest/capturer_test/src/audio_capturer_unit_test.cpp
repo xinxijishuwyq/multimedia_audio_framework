@@ -33,6 +33,7 @@ namespace {
     const string AUDIO_CAPTURE_FILE2 = "/data/audiocapturetest_nonblocking.pcm";
     const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
     const string AUDIO_FLUSH_STABILITY_TEST_FILE = "/data/audiocapture_flush_stability_test.pcm";
+    const string AUDIO_PLAYBACK_CAPTURER_TEST_FILE = "/data/audiocapturer_playbackcapturer_test.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
@@ -545,6 +546,68 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_020, TestSize.Level0)
     appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
     ASSERT_EQ(nullptr, audioCapturer);
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_021
+* @tc.desc  : Test Create interface with AudioCapturerOptions below.
+*             Returns audioCapturer instance, if create is successful.
+*             capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_48000;
+*             capturerOptions.streamInfo.encoding = ENCODING_PCM;
+*             capturerOptions.streamInfo.format = SAMPLE_S32LE;
+*             capturerOptions.streamInfo.channels = STEREO;
+*             capturerOptions.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+*             capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_021, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    vector<CaptureFilterOptions> filterOptions = {};
+    CaptureFilterOptions filterOption;
+    filterOption.usage = StreamUsage::STREAM_USAGE_MEDIA;
+    filterOptions.push_back(filterOption);
+    filterOption.usage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+    filterOptions.push_back(filterOption);
+    capturerOptions.playbackCaptureConfig.filterOptions = filterOptions;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_022
+* @tc.desc  : Test Create interface with AudioCapturerOptions below.
+*             Returns audioCapturer instance, if create is successful.
+*             capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_48000;
+*             capturerOptions.streamInfo.encoding = ENCODING_PCM;
+*             capturerOptions.streamInfo.format = SAMPLE_S32LE;
+*             capturerOptions.streamInfo.channels = STEREO;
+*             capturerOptions.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+*             capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_022, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
 }
 
 /**
@@ -1252,6 +1315,30 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_005, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test Start API via legal state, CAPTURER_PREPARED.
+* @tc.number: Audio_Capturer_Start_006
+* @tc.desc  : Test Start interface. Returns true if start is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_006, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    audioCapturer->Release();
+}
+
+/**
 * @tc.name  : Test Read API via isBlockingRead = true.
 * @tc.number: Audio_Capturer_Read_001
 * @tc.desc  : Test Read interface. Returns number of bytes read, if the read is successful.
@@ -1514,6 +1601,60 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_007, TestSize.Level1)
     EXPECT_EQ(ERR_ILLEGAL_STATE, bytesRead);
 
     free(buffer);
+}
+
+/**
+* @tc.name  : Test Read API via isBlockingRead = true.
+* @tc.number: Audio_Capturer_Read_008
+* @tc.desc  : Test Read interface. Returns number of bytes read, if the read is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_008, TestSize.Level1)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+    FILE *capFile = fopen(AUDIO_PLAYBACK_CAPTURER_TEST_FILE.c_str(), "wb");
+    ASSERT_NE(nullptr, capFile);
+
+    size_t size = 1;
+    int32_t bytesRead = 0;
+    int32_t numBuffersToCapture = READ_BUFFERS_COUNT;
+
+    while (numBuffersToCapture) {
+        bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+        if (bytesRead <= 0) {
+            break;
+        } else if (bytesRead > 0) {
+            fwrite(buffer, size, bytesRead, capFile);
+            numBuffersToCapture--;
+        }
+    }
+
+    audioCapturer->Flush();
+    audioCapturer->Stop();
+    audioCapturer->Release();
+
+    free(buffer);
+    fclose(capFile);
 }
 
 /**
@@ -1956,6 +2097,49 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_005, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test Stop API.
+* @tc.number: Audio_Capturer_Stop_006
+* @tc.desc  : Test Stop interface. Returns true, if the stop is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Stop_006, TestSize.Level1)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    EXPECT_GE(bytesRead, VALUE_ZERO);
+
+    audioCapturer->Flush();
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    audioCapturer->Release();
+
+    free(buffer);
+}
+
+/**
 * @tc.name  : Test Release API.
 * @tc.number: Audio_Capturer_Release_001
 * @tc.desc  : Test Release interface. Returns true, if the release is successful.
@@ -2067,6 +2251,48 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_005, TestSize.Level1)
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test Release API.
+* @tc.number: Audio_Capturer_Release_006
+* @tc.desc  : Test Release interface. Returns true, if the release is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Release_006, TestSize.Level1)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    capturerOptions.streamInfo.channels = AudioChannel::STEREO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    EXPECT_GE(bytesRead, VALUE_ZERO);
+
+    audioCapturer->Flush();
+    audioCapturer->Stop();
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    free(buffer);
 }
 
 /**

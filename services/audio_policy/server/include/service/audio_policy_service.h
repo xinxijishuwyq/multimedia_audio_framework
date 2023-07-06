@@ -258,6 +258,10 @@ public:
 
     void SetRemoteDisplayName(const std::string &deviceName);
 
+    int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> options);
+
+    void UnloadLoopback();
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -386,7 +390,15 @@ private:
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
     void LoadEffectSinks();
-    
+
+    void LoadSinksForCapturer();
+
+    void LoadInnerCapturerSink();
+
+    void LoadReceiverSink();
+
+    void LoadLoopback();
+
     DeviceType FindConnectedHeadset();
 
     bool interruptEnabled_ = true;
