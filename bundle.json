@@ -20,7 +20,8 @@
           "SystemCapability.Multimedia.Audio.Volume",
           "SystemCapability.Multimedia.Audio.Communication",
           "SystemCapability.Multimedia.Audio.Tone",
-          "SystemCapability.Multimedia.Audio.Interrupt"
+          "SystemCapability.Multimedia.Audio.Interrupt",
+          "SystemCapability.Multimedia.Audio.PlaybackCapture"
         ],
         "features": [
           "audio_framework_feature_dtmf_tone",
