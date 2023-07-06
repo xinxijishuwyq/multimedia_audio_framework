@@ -182,6 +182,7 @@ private:
     static napi_value CreateAudioStateObject(napi_env env);
     static napi_value CreateAudioSampleFormatObject(napi_env env);
     static napi_value CreateAudioEffectModeObject(napi_env env);
+    static napi_value CreateAudioPrivacyTypeObject(napi_env env);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
     static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
         AudioRendererNapi *rendererNapi);
@@ -192,6 +193,7 @@ private:
     static napi_ref audioState_;
     static napi_ref sampleFormat_;
     static napi_ref audioEffectMode_;
+    static napi_ref audioPrivacyType_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
     static std::mutex createMutex_;
@@ -244,6 +246,11 @@ static const std::map<std::string, RendererState> audioStateMap = {
     {"STATE_STOPPED", RENDERER_STOPPED},
     {"STATE_RELEASED", RENDERER_RELEASED},
     {"STATE_PAUSED", RENDERER_PAUSED}
+};
+
+static const std::map<std::string, AudioPrivacyType> audioPrivacyTypeMap = {
+    {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
+    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
 };
 } // namespace AudioStandard
 } // namespace OHOS

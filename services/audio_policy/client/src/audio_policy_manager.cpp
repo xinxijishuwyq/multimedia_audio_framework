@@ -1144,5 +1144,17 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
     int error = gsp->QueryEffectSceneMode(supportedEffectConfig);
     return error;
 }
+
+int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions)
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::SetPlaybackCapturerFilterInfos");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetPlaybackCapturerFilterInfos: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->SetPlaybackCapturerFilterInfos(filterOptions);
+}
 } // namespace AudioStandard
 } // namespace OHOS

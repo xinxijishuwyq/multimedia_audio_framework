@@ -184,6 +184,7 @@ config("audio_service_config") {
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audioschedule/include",
     "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/playbackcapturer/include",
     "../../frameworks/native/hdiadapter/sink/bluetooth",
     "../../frameworks/native/hdiadapter/sink/common",
     "../../frameworks/native/hdiadapter/sink/file",
@@ -282,6 +283,7 @@ ohos_shared_library("audio_service") {
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
+    "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
   external_deps = [

@@ -135,6 +135,7 @@ AudioStream::~AudioStream()
 void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
+    SetStreamUsage(rendererInfo.streamUsage);
 }
 
 void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -984,6 +985,16 @@ int32_t AudioStream::SetAudioEffectMode(AudioEffectMode effectMode)
 AudioEffectMode AudioStream::GetAudioEffectMode()
 {
     return GetStreamAudioEffectMode();
+}
+
+void AudioStream::SetInnerCapturerState(bool isInnerCapturer)
+{
+    SetStreamInnerCapturerState(isInnerCapturer);
+}
+
+void AudioStream::SetPrivacyType(AudioPrivacyType privacyType)
+{
+    SetStreamPrivacyType(privacyType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

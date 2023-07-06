@@ -65,7 +65,9 @@ public:
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo);
     virtual ~AudioCapturerPrivate();
-    bool isChannelChange_ = false; 
+    bool isChannelChange_ = false;
+    void SetCapturerState(bool state);
+
 private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

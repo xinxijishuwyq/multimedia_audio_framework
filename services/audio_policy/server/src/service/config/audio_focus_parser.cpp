@@ -43,7 +43,9 @@ AudioFocusParser::AudioFocusParser()
             false}},
         {"SOURCE_TYPE_VOICE_COMMUNICATION", {AudioStreamType::STREAM_DEFAULT,
             SourceType::SOURCE_TYPE_VOICE_COMMUNICATION, false}},
-        {"SOURCE_TYPE_ULTRASONIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_ULTRASONIC, false}}
+        {"SOURCE_TYPE_ULTRASONIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_ULTRASONIC, false}},
+        {"SOURCE_TYPE_PLAYBACK_CAPTURE", {AudioStreamType::STREAM_DEFAULT,
+            SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE, false}}
     };
 
     // Initialize action map with string vs InterruptActionType

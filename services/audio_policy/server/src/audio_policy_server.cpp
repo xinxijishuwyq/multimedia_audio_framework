@@ -1106,6 +1106,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         }
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
             std::make_pair((iterActive->first).audioFocusType, incomingFocusType);
+
         CHECK_AND_RETURN_RET_LOG(focusMap.find(audioFocusTypePair) != focusMap.end(), ERR_INVALID_PARAM,
             "ProcessFocusEntry: audio focus type pair is invalid");
         AudioFocusEntry focusEntry = focusMap[audioFocusTypePair];
@@ -1419,6 +1420,11 @@ void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
     // Though it is not present in the owners list, check and clear its entry from callback map
     lock.unlock();
     (void)UnsetAudioInterruptCallback(removedSessionID);
+}
+
+void AudioPolicyServer::OnPlaybackCapturerStop()
+{
+    mPolicyService.UnloadLoopback();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus()
@@ -2198,6 +2204,11 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
 {
     int32_t ret = mPolicyService.QueryEffectManagerSceneMode(supportedEffectConfig);
     return ret;
+}
+
+int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> options)
+{
+    return mPolicyService.SetPlaybackCapturerFilterInfos(options);
 }
 } // namespace AudioStandard
 } // namespace OHOS

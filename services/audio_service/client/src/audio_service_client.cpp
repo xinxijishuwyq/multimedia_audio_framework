@@ -45,6 +45,7 @@ const int32_t NO_OF_PREBUF_TIMES = 6;
 
 const string PATH_SEPARATOR = "/";
 const string COOKIE_FILE_NAME = "cookie";
+static const string INNER_CAPTURER_SOURCE = "InnerCapturer.monitor";
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
 {
@@ -521,6 +522,9 @@ AudioServiceClient::AudioServiceClient()
     setBufferSize = 0;
     PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
     rendererSampleRate = 0;
+
+    mPrivacyType = PRIVACY_TYPE_PUBLIC;
+    mStreamUsage = STREAM_USAGE_UNKNOWN;
 }
 
 void AudioServiceClient::ResetPAAudioClient()
@@ -810,6 +814,19 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
     return streamName;
 }
 
+const char* AudioServiceClient::GetDeviceNameForConnect()
+{
+    const char* deviceName = nullptr;
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        std::string selectDevice =  AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+            mStreamType);
+        deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
+        deviceName = isInnerCapturerStream ? INNER_CAPTURER_SOURCE.c_str() : nullptr;
+    }
+    return deviceName;
+}
+
 int32_t AudioServiceClient::ConnectStreamToPA()
 {
     AUDIO_INFO_LOG("Enter AudioServiceClient::ConnectStreamToPA");
@@ -820,9 +837,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    std::string selectDevice = AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
-        mStreamType);
-    const char *deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+    const char *deviceName = GetDeviceNameForConnect();
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -856,7 +871,8 @@ int32_t AudioServiceClient::ConnectStreamToPA()
             return AUDIO_CLIENT_INIT_ERR;
         }
     } else {
-        result = pa_stream_connect_record(paStream, nullptr, nullptr,
+        AUDIO_INFO_LOG("pa_stream_connect_record connect to:%{public}s", deviceName ? deviceName : "null");
+        result = pa_stream_connect_record(paStream, deviceName, nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
                                           | PA_STREAM_START_CORKED
@@ -957,6 +973,13 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(pa_context_get_index(context)).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
+
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
+        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream).c_str());
+    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
+        pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
+    }
 
     AUDIO_INFO_LOG("Creating stream of channels %{public}d", audioParams.channels);
     pa_channel_map map;
@@ -2907,5 +2930,24 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
 
     return AUDIO_CLIENT_SUCCESS;
 }
+
+void AudioServiceClient::SetStreamInnerCapturerState(bool isInnerCapturer)
+{
+    AUDIO_DEBUG_LOG("SetStreamInnerCapturerState: %{public}d", isInnerCapturer);
+    isInnerCapturerStream = isInnerCapturer;
+}
+
+void AudioServiceClient::SetStreamPrivacyType(AudioPrivacyType privacyType)
+{
+    AUDIO_DEBUG_LOG("SetStreamPrivacyType: %{public}d", privacyType);
+    mPrivacyType = privacyType;
+}
+
+void AudioServiceClient::SetStreamUsage(StreamUsage usage)
+{
+    AUDIO_DEBUG_LOG("SetStreamUsage: %{public}d", usage);
+    mStreamUsage = usage;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

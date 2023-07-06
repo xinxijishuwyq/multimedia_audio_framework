@@ -498,6 +498,12 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetStreamAudioEffectMode(AudioEffectMode effectMode);
+
+    void SetStreamInnerCapturerState(bool isInnerCapturer);
+
+    void SetStreamPrivacyType(AudioPrivacyType privacyType);
+
+    void SetStreamUsage(StreamUsage usage);
 	
     int32_t SetAudioCaptureMode(AudioCaptureMode captureMode);
     AudioCaptureMode GetAudioCaptureMode();
@@ -572,6 +578,9 @@ private:
     bool isMainLoopStarted;
     bool isContextConnected;
     bool isStreamConnected;
+    bool isInnerCapturerStream;
+    AudioPrivacyType mPrivacyType;
+    StreamUsage mStreamUsage;
 
     std::unique_ptr<uint8_t[]> preBuf_ {nullptr};
     uint32_t sinkLatencyInMsec_ {0};
@@ -642,6 +651,7 @@ private:
 
     uint32_t underFlowCount;
     int32_t ConnectStreamToPA();
+    const char* GetDeviceNameForConnect();
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

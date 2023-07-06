@@ -48,6 +48,7 @@ napi_ref AudioRendererNapi::interruptForceType_ = nullptr;
 napi_ref AudioRendererNapi::audioState_ = nullptr;
 napi_ref AudioRendererNapi::sampleFormat_ = nullptr;
 napi_ref AudioRendererNapi::audioEffectMode_ = nullptr;
+napi_ref AudioRendererNapi::audioPrivacyType_ = nullptr;
 mutex AudioRendererNapi::createMutex_;
 int32_t AudioRendererNapi::isConstructSuccess_ = SUCCESS;
 
@@ -375,6 +376,36 @@ napi_value AudioRendererNapi::CreateAudioEffectModeObject(napi_env env)
     return result;
 }
 
+napi_value AudioRendererNapi::CreateAudioPrivacyTypeObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: audioPrivacyTypeMap) {
+            propName = iter.first;
+            status = AddNamedProperty(env, result, propName, iter.second);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to add named prop in CreateAudioPrivacyTypeObject!");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &audioPrivacyType_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateAudioPrivacyTypeObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
 static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const DeviceInfo &deviceInfo)
 {
     SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole), valueParam);
@@ -453,6 +484,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioState", CreateAudioStateObject(env)),
         DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateAudioSampleFormatObject(env)),
         DECLARE_NAPI_PROPERTY("AudioEffectMode", CreateAudioEffectModeObject(env)),
+        DECLARE_NAPI_PROPERTY("AudioPrivacyType", CreateAudioPrivacyTypeObject(env)),
     };
 
     status = napi_define_class(env, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -529,6 +561,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererOptions.rendererInfo.contentType = sRendererOptions_->rendererInfo.contentType;
     rendererOptions.rendererInfo.streamUsage = sRendererOptions_->rendererInfo.streamUsage;
     rendererOptions.rendererInfo.rendererFlags = sRendererOptions_->rendererInfo.rendererFlags;
+    rendererOptions.privacyType = sRendererOptions_->privacyType;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);
     std::string cacheDir = "";
@@ -1019,6 +1052,7 @@ void AudioRendererNapi::GetRendererAsyncCallbackComplete(napi_env env, napi_stat
             rendererOptions->rendererInfo.contentType = asyncContext->rendererOptions.rendererInfo.contentType;
             rendererOptions->rendererInfo.streamUsage = asyncContext->rendererOptions.rendererInfo.streamUsage;
             rendererOptions->rendererInfo.rendererFlags = asyncContext->rendererOptions.rendererInfo.rendererFlags;
+            rendererOptions->privacyType = asyncContext->rendererOptions.privacyType;
 
             valueParam = CreateAudioRendererWrapper(env, rendererOptions);
             asyncContext->status = AudioRendererNapi::isConstructSuccess_;
@@ -2537,6 +2571,12 @@ bool AudioRendererNapi::ParseRendererOptions(napi_env env, napi_value root, Audi
 
     if (napi_get_named_property(env, root, "streamInfo", &res) == napi_ok) {
         ParseStreamInfo(env, res, &(opts->streamInfo));
+    }
+
+    if (napi_get_named_property(env, root, "privacyType", &res) == napi_ok) {
+        int32_t intValue = {0};
+        napi_get_value_int32(env, res, &intValue);
+        opts->privacyType = static_cast<AudioPrivacyType>(intValue);
     }
 
     return true;
