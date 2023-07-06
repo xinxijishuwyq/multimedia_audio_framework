@@ -48,6 +48,7 @@ namespace AudioStandard {
         SET_OUTPUT_DEVICE_SINK = 23,
         CREATE_PLAYBACK_CAPTURER_MANAGER = 24,
         SET_SUPPORT_STREAM_USAGE = 25,
+        REGISET_POLICY_PROVIDER = 26,
     };
 } // namespace AudioStandard
 } // namespace OHOS

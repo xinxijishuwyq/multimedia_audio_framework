@@ -13,29 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef I_AUDIO_PROCESS_STREAM_H
-#define I_AUDIO_PROCESS_STREAM_H
+#ifndef AUDIO_PROCESS_CONFIG_H
+#define AUDIO_PROCESS_CONFIG_H
 
-#include <memory>
+#include <string>
+
+#include "message_parcel.h"
 
 #include "audio_info.h"
-#include "oh_audio_buffer.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class IAudioProcessStream {
+class ProcessConfig {
 public:
-    /**
-     * Get buffer of client for AudioEndpoint.
-    */
-    virtual std::shared_ptr<OHAudioBuffer> GetStreamBuffer() = 0;
+    static int32_t WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel);
 
-    virtual AudioStreamInfo GetStreamInfo() = 0;
+    static int32_t ReadConfigFromParcel(AudioProcessConfig &config, MessageParcel &parcel);
 
-    virtual AudioStreamType GetAudioStreamType() = 0;
-
-    virtual ~IAudioProcessStream() = default;
+    static std::string DumpProcessConfig(const AudioProcessConfig &config);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // I_AUDIO_PROCESS_STREAM_H
+#endif // AUDIO_PROCESS_CONFIG_H

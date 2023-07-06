@@ -56,6 +56,7 @@ public:
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBuffer> GetStreamBuffer() override;
     AudioStreamInfo GetStreamInfo() override;
+    AudioStreamType GetAudioStreamType() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::stringstream &dumpStringStream);
