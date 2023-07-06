@@ -69,7 +69,7 @@ if (!audio_framework_feature_dtmf_tone) {
 
     external_deps = [
       "c_utils:utils",
-      "hiviewdfx_hilog_native:libhilog",
+      "hilog:libhilog",
       "ipc:ipc_single",
     ]
 
@@ -97,7 +97,7 @@ if (!audio_framework_feature_dtmf_tone) {
 
     deps = [ ":audio_toneplayer" ]
 
-    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    external_deps = [ "hilog:libhilog" ]
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"

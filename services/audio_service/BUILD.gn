@@ -65,8 +65,8 @@ ohos_shared_library("audio_common") {
 
   external_deps = [
     "c_utils:utils",
-    "hisysevent_native:libhisysevent",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
   ]
 
@@ -151,8 +151,8 @@ ohos_shared_library("audio_client") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "eventhandler:libeventhandler",
-    "hisysevent_native:libhisysevent",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
@@ -240,7 +240,7 @@ ohos_shared_library("audio_process_service") {
   external_deps = [
     "c_utils:utils",
     "hicollie:libhicollie",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
 
@@ -290,7 +290,7 @@ ohos_shared_library("audio_service") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hicollie:libhicollie",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_single",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
@@ -333,7 +333,7 @@ ohos_executable("audio_process_client_test") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
   ]
 
@@ -369,7 +369,7 @@ ohos_executable("audio_hdi_device_test") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "power_manager:powermgr_client",
   ]
 
@@ -398,7 +398,7 @@ ohos_executable("audio_service_playback_test") {
   ]
 
   external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_single",
   ]
 
@@ -427,7 +427,7 @@ ohos_executable("audio_service_record_test") {
   deps = [ ":audio_client" ]
 
   external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_single",
   ]
   part_name = "audio_framework"
@@ -455,7 +455,7 @@ ohos_executable("audio_multichannel_test") {
   deps = [ ":audio_client" ]
 
   external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_single",
   ]
 

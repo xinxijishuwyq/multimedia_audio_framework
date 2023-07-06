@@ -58,5 +58,5 @@ ohos_unittest("audio_oh_render_unit_test") {
 
   deps = [ "../../../../ohaudio:ohaudio" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 }

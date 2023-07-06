@@ -60,5 +60,5 @@ ohos_unittest("audio_opensles_recorder_unit_test") {
 
   deps = [ "../../../../opensles:opensles" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 }

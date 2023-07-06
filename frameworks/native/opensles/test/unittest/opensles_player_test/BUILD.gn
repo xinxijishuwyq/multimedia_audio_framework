@@ -63,7 +63,7 @@ ohos_unittest("audio_opensles_player_unit_test") {
 
   deps = [ "../../../../opensles:opensles" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"

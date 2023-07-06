@@ -61,7 +61,7 @@ ohos_shared_library("module-inner-capturer-sink") {
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -90,7 +90,7 @@ ohos_shared_library("module-receiver-sink") {
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

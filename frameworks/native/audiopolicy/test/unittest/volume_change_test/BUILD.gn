@@ -32,5 +32,5 @@ ohos_unittest("audio_volume_change_unit_test") {
   sources = [ "src/audio_volume_change_unit_test.cpp" ]
 
   deps = [ "../../../../../../services/audio_service:audio_client" ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 }
