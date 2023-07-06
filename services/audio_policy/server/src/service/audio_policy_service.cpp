@@ -3079,8 +3079,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         }
         deviceInfo.deviceRole = OUTPUT_DEVICE;
     }
-
-    deviceInfo.audioStreamInfo = config.streamInfo;
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
+    deviceInfo.audioStreamInfo = targetStreamInfo;
     deviceInfo.deviceName = "mmap_device";
     return SUCCESS;
 }

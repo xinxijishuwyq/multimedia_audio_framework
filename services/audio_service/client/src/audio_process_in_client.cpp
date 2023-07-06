@@ -69,6 +69,7 @@ public:
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid);
     static bool CheckIfSupport(const AudioProcessConfig &config);
+    static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
 
 private:
     // move it to a common folder
@@ -100,7 +101,6 @@ private:
     static constexpr int64_t WRITE_BEFORE_DURATION_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_RESYNC_SLEEP_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
-    static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -205,7 +205,9 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     }
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config);
+    AudioProcessConfig resetConfig = config;
+    resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");
@@ -271,6 +273,44 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     return true;
 }
 
+inline size_t GetFormatSize(const AudioStreamInfo &info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+
+    size_t channelSize = 0;
+    switch (info.channels) {
+        case MONO:
+            channelSize = 1; // size is 1
+            break;
+        case STEREO:
+            channelSize = 2; // size is 2
+            break;
+        default:
+            channelSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * channelSize;
+    return result;
+}
+
 bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Call Init.");
@@ -278,9 +318,10 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
         config.streamInfo.channels != g_targetStreamInfo.channels) {
         needConvert_ = true;
     }
-    size_t formatSize = (config.streamInfo.format == SAMPLE_S16LE ? 1 : 2);
-    size_t channelSize = (config.streamInfo.channels == MONO ? 1 : 2);
-    clientByteSizePerFrame_ = formatSize * channelSize;
+    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
+    }
+    AUDIO_INFO_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
     bool isBufferInited = InitAudioBuffer();
     CHECK_AND_RETURN_RET_LOG(isBufferInited, isBufferInited, "%{public}s init audio buffer fail.", __func__);
     processConfig_ = config;
@@ -370,7 +411,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
 #ifdef DUMP_CLIENT
     if (dcp_ != nullptr) {
-        fwrite(static_cast<void *>(bufDesc.buffer), 1, spanSizeInByte_, dcp_);
+        fwrite(static_cast<void *>(readbufDesc.buffer), 1, spanSizeInByte_, dcp_);
     }
 #endif
 
@@ -526,8 +567,8 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             Trace traceConvert("AudioProcessInClient::ChannelFormatConvert");
             AudioStreamData srcData = {processConfig_.streamInfo, bufDesc, 0, 0};
             AudioStreamData dstData = {g_targetStreamInfo, curWriteBuffer, 0, 0};
-            bool ret = ChannelFormatConvert(srcData, dstData);
-            CHECK_AND_RETURN_RET_LOG(ret == true, ERR_OPERATION_FAILED, "Convert data failed!");
+            bool succ = ChannelFormatConvert(srcData, dstData);
+            CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
         }
 
 #ifdef DUMP_CLIENT

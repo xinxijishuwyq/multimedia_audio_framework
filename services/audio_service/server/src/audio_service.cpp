@@ -195,8 +195,8 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
         deviceInfo.deviceRole = OUTPUT_DEVICE;
         deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
     }
-
-    deviceInfo.audioStreamInfo = config.streamInfo;
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
+    deviceInfo.audioStreamInfo = targetStreamInfo;
     deviceInfo.deviceName = "mmap_device";
     return deviceInfo;
 }
