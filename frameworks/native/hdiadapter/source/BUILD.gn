@@ -97,10 +97,12 @@ ohos_shared_library("remote_audio_capturer_source") {
   ]
   include_dirs += [ multimedia_audio_framework_drivers ]
 
-  external_deps = [
-    "distributed_audio:daudio_client",
-    "hiviewdfx_hilog_native:libhilog",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  defines = []
+  if (audio_framework_feature_daudio_enable) {
+    defines += [ "PRODUCT_M40" ]
+    external_deps += [ "distributed_audio:daudio_client" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -130,9 +132,13 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 
   external_deps = [
     "c_utils:utils",
-    "distributed_audio:daudio_client",
     "hiviewdfx_hilog_native:libhilog",
   ]
+  defines = []
+  if (audio_framework_feature_daudio_enable) {
+    defines += [ "PRODUCT_M40" ]
+    external_deps += [ "distributed_audio:daudio_client" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

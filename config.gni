@@ -14,6 +14,12 @@
 declare_args() {
   audio_framework_feature_dtmf_tone = true
   audio_framework_feature_opensl_es = true
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.distributedhardware_distributed_audio)) {
+    audio_framework_feature_daudio_enable = true
+  } else {
+    audio_framework_feature_daudio_enable = false
+  }
 
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 

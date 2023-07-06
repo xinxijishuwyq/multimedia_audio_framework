@@ -247,7 +247,7 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
     }
     AUDIO_INFO_LOG("daudio manager created");
 #else
-    audioManager_ = GetAudioManagerFuncs();
+    audioManager_ = nullptr;
 #endif // PRODUCT_M40
     CHECK_AND_RETURN_RET_LOG((audioManager_ != nullptr), ERR_INVALID_HANDLE, "Initialize audio proxy failed!");
 
