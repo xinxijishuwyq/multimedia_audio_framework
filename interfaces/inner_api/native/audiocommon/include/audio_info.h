@@ -39,7 +39,7 @@ constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
-constexpr uint32_t STREAM_FLAG_FAST = 4;
+constexpr uint32_t STREAM_FLAG_FAST = 1;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";

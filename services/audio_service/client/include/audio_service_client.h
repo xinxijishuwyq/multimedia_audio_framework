@@ -276,6 +276,9 @@ public:
     */
     uint8_t GetSampleSize() const;
 
+    void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetPrivacyType(AudioPrivacyType privacyType) override;
+
     /**
     * Provides the underflow count required for this audio stream
     * created using CreateStream
@@ -479,10 +482,6 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetStreamAudioEffectMode(AudioEffectMode effectMode);
-
-    void SetStreamInnerCapturerState(bool isInnerCapturer);
-
-    void SetStreamPrivacyType(AudioPrivacyType privacyType);
 
     void SetStreamUsage(StreamUsage usage);
 	

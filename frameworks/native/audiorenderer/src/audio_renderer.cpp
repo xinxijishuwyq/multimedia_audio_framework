@@ -149,9 +149,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
 
-    AudioPrivacyType privacyType = rendererOptions.privacyType;
-    audioRenderer->SetAudioPrivacyType(privacyType);
-
+    audioRenderer->privacyType_ = rendererOptions.privacyType;
     AudioRendererParams params;
     params.sampleFormat = rendererOptions.streamInfo.format;
     params.sampleRate = rendererOptions.streamInfo.samplingRate;
@@ -240,6 +238,10 @@ int32_t AudioRendererPrivate::GetLatency(uint64_t &latency) const
 
 void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 {
+    privacyType_ = privacyType;
+    if (audioStream_ == nullptr) {
+        return;
+    }
     audioStream_->SetPrivacyType(privacyType);
 }
 
@@ -275,6 +277,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     audioStream_->SetRendererInfo(rendererInfo_);
 
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
+
+    SetAudioPrivacyType(privacyType_);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     if (ret) {

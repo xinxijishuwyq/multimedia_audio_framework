@@ -90,6 +90,7 @@ public:
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
 
+    AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
     std::string cachePath_;
 

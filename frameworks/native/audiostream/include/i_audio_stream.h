@@ -113,6 +113,10 @@ public:
     // Recording related APIs
     virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
 
+    // for inner capturer
+    virtual void SetInnerCapturerState(bool isInnerCapturer) = 0;
+    virtual void SetPrivacyType(AudioPrivacyType privacyType) = 0;
+
     virtual uint32_t GetUnderflowCount() = 0;
 
     virtual void SetRendererPositionCallback(int64_t markPosition,
