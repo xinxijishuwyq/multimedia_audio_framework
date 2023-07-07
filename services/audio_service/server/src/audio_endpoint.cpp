@@ -809,6 +809,9 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             lastHandleProcessTime_ = checkTime;
             processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_); // update handle info
             if (tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
+                // Process is not running, server will continue to check the same location in the next cycle.
+                int64_t duration = 5000000; // 5ms
+                processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_ + duration);
                 continue; // process not running
             }
             uint64_t curRead = tempBuffer->GetCurReadFrame();
