@@ -18,13 +18,6 @@ import("../../ressche_part.gni")
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
-group("audio_effect_library_packages") {
-  deps = []
-  if (close_source_flag == true && target_cpu == "arm64") {
-    deps += [ "${histreamer_ext_dir}/audio_effect:audio_effect_library" ]
-  }
-}
-
 group("audio_service_packages") {
   deps = [
     ":audio_common",
