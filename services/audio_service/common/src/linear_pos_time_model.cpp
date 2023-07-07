@@ -25,6 +25,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int64_t NANO_COUNT_PER_SECOND = 1000000000;
     static constexpr int32_t MAX_SUPPORT_SAMPLE_RETE = 384000;
+    static constexpr int64_t REASONABLE_BOUND_IN_NANO = 10000000; // 10ms
 }
 LinearPosTimeModel::LinearPosTimeModel()
 {
@@ -57,13 +58,51 @@ void LinearPosTimeModel::ResetFrameStamp(uint64_t frame, int64_t nanoTime)
     return;
 }
 
-void LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
+bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
 {
-    AUDIO_INFO_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
-    // todo calclulate for ap-dsp-delta-time.
-    stampFrame_ = frame;
-    stampNanoTime_ = nanoTime;
-    return;
+    if (frame == stampFrame_ && nanoTime == stampNanoTime_) {
+        return true;
+    }
+    int64_t deltaFrame = 0;
+    int64_t reasonableDeltaTime = 0;
+    if (frame > stampFrame_) {
+        deltaFrame = static_cast<int64_t>(frame - stampFrame_);
+    } else {
+        deltaFrame = -static_cast<int64_t>(stampFrame_ - frame);
+    }
+    reasonableDeltaTime = stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+
+    // note: compare it with current time?
+    if (nanoTime <= (reasonableDeltaTime + REASONABLE_BOUND_IN_NANO) &&
+        nanoTime >= (reasonableDeltaTime - REASONABLE_BOUND_IN_NANO)) {
+        return true;
+    }
+    return false;
+}
+
+bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
+{
+    if (IsReasonable(frame, nanoTime)) {
+        AUDIO_INFO_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
+        stampFrame_ = frame;
+        stampNanoTime_ = nanoTime;
+        return true;
+    }
+    AUDIO_WARNING_LOG("Unreasonable pos-time[ %{public}" PRIu64" %{public}" PRId64"] "
+        " stamp pos-time[ %{public}" PRIu64" %{public}" PRId64"].", frame, nanoTime, stampFrame_, stampNanoTime_);
+    // note: keep it in queue.
+    return false;
+}
+
+bool LinearPosTimeModel::GetFrameStamp(uint64_t &frame, int64_t &nanoTime)
+{
+    if (!isConfiged) {
+        AUDIO_ERR_LOG("GetFrameStamp is not configed!");
+        return false;
+    }
+    frame = stampFrame_;
+    nanoTime = stampNanoTime_;
+    return true;
 }
 
 void LinearPosTimeModel::SetSpanCount(uint64_t spanCountInFrame)
@@ -82,15 +121,13 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
         return invalidTime;
     }
     if (posInFrame >= stampFrame_) {
-        CHECK_AND_RETURN_RET_LOG((posInFrame - stampFrame_ < (uint64_t)sampleRate_), invalidTime,
-            "posInFrame %{public}" PRIu64""
-            " is too large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
+        CHECK_AND_BREAK_LOG((posInFrame - stampFrame_ < (uint64_t)sampleRate_), "posInFrame %{public}" PRIu64" is too"
+            " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         deltaFrame = posInFrame - stampFrame_;
         return stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     } else {
-        CHECK_AND_RETURN_RET_LOG((stampFrame_ - posInFrame < (uint64_t)sampleRate_), invalidTime,
-            "posInFrame %{public}" PRIu64""
-            " is too small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
+        CHECK_AND_BREAK_LOG((stampFrame_ - posInFrame < (uint64_t)sampleRate_), "posInFrame %{public}" PRIu64" is too"
+            " small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         deltaFrame = stampFrame_ - posInFrame;
         return stampNanoTime_ - deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     }

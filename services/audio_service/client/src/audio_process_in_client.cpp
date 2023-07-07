@@ -761,7 +761,10 @@ void AudioProcessInClientInner::UpdateHandleInfo()
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
-    handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+    bool isSuccess = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+    if (!isSuccess) {
+        handleTimeModel_.ResetFrameStamp(serverHandlePos, serverHandleTime);
+    }
 }
 
 int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)
