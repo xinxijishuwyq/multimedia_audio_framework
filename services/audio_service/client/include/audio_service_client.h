@@ -277,9 +277,8 @@ public:
     uint8_t GetSampleSize() const;
 
     void SetStreamInnerCapturerState(bool isInnerCapturer);
+
     void SetStreamPrivacyType(AudioPrivacyType privacyType);
-    void SetInnerCapturerState(bool isInnerCapturer) override;
-    void SetPrivacyType(AudioPrivacyType privacyType) override;
 
     /**
     * Provides the underflow count required for this audio stream

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,18 +38,9 @@ public:
     void OnHandleData(size_t length) override;
 
 private:
-    // static constexpr long WAV_HEADER_SIZE = 42;
     std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
     std::shared_ptr<AudioRendererWriteCallback> renderCallback_ = nullptr;
-    // int32_t loopCount_ = 2; // play 2 times
-    // AudioMode clientMode_ = AUDIO_MODE_PLAYBACK;
-    // bool needSkipWavHeader_ = true;
-    // bool renderFinish_ = false;
-    // FILE *spkWavFile_ = nullptr;
-    // FILE *micWavFile_ = nullptr;
 };
-
-
 
 class FastAudioStream : public IAudioStream {
 public:
@@ -97,13 +88,11 @@ public:
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
+    int64_t GetFramesWritten() override;
+    int64_t GetFramesRead() override;
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
-
-    // std::vector<AudioSampleFormat> GetSupportedFormats() const;
-    // std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;
-    // std::vector<AudioSamplingRate> GetSupportedSamplingRates() const;
 
     // Common APIs
     bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
@@ -137,36 +126,7 @@ public:
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
     void SetApplicationCachePath(const std::string cachePath) override;
 
-
 private:
-    // AudioStreamType eStreamType_;
-    // AudioMode eMode_;
-    // State state_;
-    // bool resetTime_;
-    // uint64_t resetTimestamp_;
-    // struct timespec baseTimestamp_ = {0};
-    // AudioRenderMode renderMode_;
-    // AudioCaptureMode captureMode_;
-    // std::queue<BufferDesc> freeBufferQ_;
-    // std::queue<BufferDesc> filledBufferQ_;
-    // std::array<std::unique_ptr<uint8_t[]>, MAX_WRITECB_NUM_BUFFERS> writeBufferPool_ = {};
-    // std::array<std::unique_ptr<uint8_t[]>, MAX_READCB_NUM_BUFFERS> readBufferPool_ = {};
-    // std::unique_ptr<std::thread> writeThread_ = nullptr;
-    // std::unique_ptr<std::thread> readThread_ = nullptr;
-    // bool isReadyToWrite_;
-    // bool isReadyToRead_;
-    // void WriteCbTheadLoop();
-    // void ReadCbThreadLoop();
-    // std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
-    // AudioRendererInfo rendererInfo_;
-    // AudioCapturerInfo capturerInfo_;
-    // uint32_t sessionId_;
-
-    // bool isFirstRead_;
-    // bool isFirstWrite_;
-
-    // std::mutex bufferQueueLock_;
-    // std::condition_variable bufferQueueCV_;
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;

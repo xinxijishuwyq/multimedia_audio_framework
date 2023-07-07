@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,8 @@
 #include "parameter.h"
 #include "pcm2wav.h"
 
+static constexpr int32_t SLEEP_TIME_NS = 2000000000;
+
 namespace OHOS {
 namespace AudioStandard {
 class PlaybackTest : public AudioRendererWriteCallback,
@@ -29,13 +31,12 @@ class PlaybackTest : public AudioRendererWriteCallback,
 public:
     int32_t InitRenderer();
     int32_t StartPlay();
-    int32_t StopPlay();
     void OnWriteData(size_t length) override;
     bool OpenSpkFile(const std::string spkFilePath);
 
 private:
     std::unique_ptr<AudioStandard::AudioRenderer> audioRenderer_ = nullptr;
-    static constexpr long WAV_HEADER_SIZE = 42;
+    static constexpr long WAV_HEADER_SIZE = 44;
     int32_t loopCount_ = 2; // play 2 times
     bool needSkipWavHeader_ = true;
     bool renderFinish_ = false;
@@ -49,7 +50,7 @@ void PlaybackTest::OnWriteData(size_t length)
         AUDIO_ERR_LOG("audioRenderer is nullptr.");
         return;
     }
-    audioRenderer_ -> GetBufferDesc(bufDesc);
+    audioRenderer_->GetBufferDesc(bufDesc);
 
     if (spkWavFile_ == nullptr) {
         AUDIO_ERR_LOG("spkWavFile_ is nullptr.");
@@ -65,7 +66,6 @@ void PlaybackTest::OnWriteData(size_t length)
             fseek(spkWavFile_, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
         } else if (loopCount_ == 0) {
             renderFinish_ = true;
-            // g_autoRunCV.notify_all();
         } else {
             fseek(spkWavFile_, WAV_HEADER_SIZE, SEEK_SET);
         }
@@ -102,52 +102,38 @@ int32_t PlaybackTest::InitRenderer()
 {
     AudioStandard::AudioRendererOptions rendererOptions = {
         {
-            static_cast<AudioStandard::AudioSamplingRate>(48000),
+            AudioStandard::AudioSamplingRate::SAMPLE_RATE_48000,
             AudioStandard::AudioEncodingType::ENCODING_PCM,
-            static_cast<AudioStandard::AudioSampleFormat>(1),
-            static_cast<AudioStandard::AudioChannel>(2),
+            AudioStandard::AudioSampleFormat::SAMPLE_S16LE,
+            AudioStandard::AudioChannel::STEREO,
         },
         {
-            static_cast<AudioStandard::ContentType>(2),
-            static_cast<AudioStandard::StreamUsage>(1),
+            AudioStandard::ContentType::CONTENT_TYPE_MUSIC,
+            AudioStandard::StreamUsage::STREAM_USAGE_MEDIA,
             4, // fast audio stream
         }
     };
     audioRenderer_ = AudioStandard::AudioRenderer::Create(rendererOptions);
     if (audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("wuhaobo Audio renderer create failed.");
+        AUDIO_ERR_LOG("Audio renderer create failed.");
         return -1;
     }
-    // obTestCb_ = std::make_shared<OHTestCallback>();
     std::string path = "/data/test.wav";
     OpenSpkFile(path);
-    int32_t ret = audioRenderer_ -> SetRendererWriteCallback(shared_from_this());
+    int32_t ret = audioRenderer_->SetRendererWriteCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
-    AUDIO_INFO_LOG("wuhaobo Audio renderer create success.");
+    AUDIO_INFO_LOG("Audio renderer create success.");
     return 0;
 }
 
 int32_t PlaybackTest::StartPlay()
 {
     if (audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("wuhaobo Audiorenderer init failed.");
+        AUDIO_ERR_LOG("Audiorenderer init failed.");
         return -1;
     }
     if (!audioRenderer_->Start()) {
-        AUDIO_ERR_LOG("wuhaobo Audio renderer start failed.");
-        return -1;
-    }
-    return 0;
-}
-
-int32_t PlaybackTest::StopPlay()
-{
-    if (audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("wuhaobo Audiorenderer init failed.");
-        return -1;
-    }
-    if (!audioRenderer_->Stop()) {
-        AUDIO_ERR_LOG("wuhaobo Audio renderer stop failed.");
+        AUDIO_ERR_LOG("Audio renderer start failed.");
         return -1;
     }
     return 0;
@@ -187,6 +173,6 @@ int main(int argc, char* argv[])
         return -1;
     }
     cout << "Playing ..." << endl;
-    usleep(2000000000);
+    usleep(SLEEP_TIME_NS);
     return 0;
 }

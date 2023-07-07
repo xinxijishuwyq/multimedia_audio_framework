@@ -428,9 +428,9 @@ ohos_executable("audio_faststream_playback_test") {
   ]
 
   external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-    "ipc:ipc_single",
+    "hilog:libhilog",
     "init:libbegetutil",
+    "ipc:ipc_single",
   ]
 
   part_name = "audio_framework"
