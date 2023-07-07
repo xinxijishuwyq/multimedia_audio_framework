@@ -173,6 +173,7 @@ ohos_shared_library("audio_policy_service") {
     "../audio_policy:audio_config.para.dac",
     "../audio_policy:audio_dump",
     "../audio_service:audio_client",
+    "../audio_service:audio_common",
     "//third_party/libxml2:xml2",
   ]
 

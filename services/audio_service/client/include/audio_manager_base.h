@@ -203,6 +203,13 @@ public:
     virtual bool SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
 
     /**
+     * Regiest policy provider.
+     *
+     * @return result code.
+     */
+    virtual int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) = 0;
+
+    /**
      * Request thread priority for client thread.
      */
     virtual void RequestThreadPriority(uint32_t tid, std::string bundleName) = 0;

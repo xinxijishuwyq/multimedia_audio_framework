@@ -116,6 +116,14 @@ bool AudioPolicyService::Init(void)
     (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
     localDevicesType_ = devicesType;
 
+    if (policyVolumeMap_ == nullptr) {
+        size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
+        AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
+        policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "PolicyVolumeMap");
+        CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
+            false, "Get shared memory failed!");
+        volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
+    }
     return true;
 }
 
@@ -180,6 +188,9 @@ void AudioPolicyService::Deinit(void)
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();
     }
+    volumeVector_ = nullptr;
+    policyVolumeMap_ = nullptr;
+
     return;
 }
 
@@ -210,6 +221,10 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     if (result == SUCCESS && streamType == STREAM_VOICE_CALL) {
         SetVoiceCallVolume(volumeLevel);
     }
+    // todo
+    Volume vol = {false, 1.0f, 0};
+    vol.volumeFloat = GetSystemVolumeInDb(streamType, volumeLevel, currentActiveDevice_);
+    SetSharedVolume(streamType, currentActiveDevice_, vol);
     return result;
 }
 
@@ -3017,6 +3032,101 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
         volumeGroupInfos.push_back(info);
     }
     return volumeGroupInfos;
+}
+
+void AudioPolicyService::RegiestPolicy()
+{
+    AUDIO_INFO_LOG("Enter RegiestPolicy");
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RegiestPolicy g_adProxy null");
+        return;
+    }
+    sptr<IRemoteObject> object = this->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegiestPolicy AsObject is nullptr");
+        return;
+    }
+    int32_t ret = gsp->RegiestPolicyProvider(object);
+    AUDIO_INFO_LOG("RegiestPolicy result:%{public}d", ret);
+}
+
+int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+{
+    AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
+    // todo
+    // check process in routerMap, return target device for it
+    // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
+    // genarate the unique deviceid?
+
+    if (config.audioMode == AUDIO_MODE_RECORD) {
+        deviceInfo.deviceId = 1;
+        if (config.isRemote) {
+            deviceInfo.networkId = "remote_mmap_dmic";
+        } else {
+            deviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+        deviceInfo.deviceRole = INPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_MIC;
+    } else {
+        deviceInfo.deviceId = 6; // 6 for test
+        if (config.isRemote) {
+            deviceInfo.networkId = REMOTE_NETWORK_ID;
+            deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
+        } else {
+            deviceInfo.networkId = LOCAL_NETWORK_ID;
+            deviceInfo.deviceType = currentActiveDevice_;
+        }
+        deviceInfo.deviceRole = OUTPUT_DEVICE;
+    }
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
+    deviceInfo.audioStreamInfo = targetStreamInfo;
+    deviceInfo.deviceName = "mmap_device";
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
+{
+    CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
+        ERR_OPERATION_FAILED, "Get shared memory failed!");
+
+    // init volume map
+    // todo device
+    for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
+        float volFloat = GetSystemVolumeDb(g_volumeIndexVector[i].first);
+        volumeVector_[i].isMute = false;
+        volumeVector_[i].volumeFloat = volFloat;
+        volumeVector_[i].volumeInt = 0;
+    }
+    buffer = policyVolumeMap_;
+
+    return SUCCESS;
+}
+
+bool AudioPolicyService::GetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol)
+{
+    size_t index = 0;
+    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+        index >= IPolicyProvider::GetVolumeVectorSize()) {
+        return false;
+    }
+    vol.isMute = volumeVector_[index].isMute;
+    vol.volumeFloat = volumeVector_[index].volumeFloat;
+    vol.volumeInt = volumeVector_[index].volumeInt;
+    return true;
+}
+
+bool AudioPolicyService::SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol)
+{
+    size_t index = 0;
+    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+        index >= IPolicyProvider::GetVolumeVectorSize()) {
+        return false;
+    }
+    volumeVector_[index].isMute = vol.isMute;
+    volumeVector_[index].volumeFloat = vol.volumeFloat;
+    volumeVector_[index].volumeInt = vol.volumeInt;
+    return true;
 }
 
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)

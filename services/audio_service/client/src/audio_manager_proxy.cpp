@@ -386,6 +386,32 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioManagerProxy: RegiestPolicyProvider object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER), data,
+        reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegiestPolicyProvider failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 void AudioManagerProxy::SetAudioMonoState(bool audioMono)
 {
     MessageParcel data;
@@ -434,7 +460,7 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return nullptr;
     }
-    IAudioProcess::WriteConfigToParcel(config, data);
+    ProcessConfig::WriteConfigToParcel(config, data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
     if (error != ERR_NONE) {

@@ -197,7 +197,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS): {
             AUDIO_INFO_LOG("CREATE_AUDIOPROCESS AudioManagerStub");
             AudioProcessConfig config;
-            IAudioProcess::ReadConfigFromParcel(config, data);
+            ProcessConfig::ReadConfigFromParcel(config, data);
             sptr<IRemoteObject> process = CreateAudioProcess(config);
             if (process == nullptr) {
                 AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
@@ -308,6 +308,16 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             int32_t ret = SetSupportStreamUsage(usage);
             reply.WriteInt32(ret);
+        }
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER): {
+            AUDIO_DEBUG_LOG("REGISET_POLICY_PROVIDER AudioManagerStub");
+            sptr<IRemoteObject> object = data.ReadRemoteObject();
+            if (object == nullptr) {
+                AUDIO_ERR_LOG("AudioManagerStub: REGISET_POLICY_PROVIDER obj is null");
+                return AUDIO_ERR;
+            }
+            int32_t result = RegiestPolicyProvider(object);
+            reply.WriteInt32(result);
             return AUDIO_OK;
         }
         default: {

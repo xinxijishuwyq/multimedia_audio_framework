@@ -188,6 +188,12 @@ AudioStreamInfo AudioProcessInServer::GetStreamInfo()
     return processConfig_.streamInfo;
 }
 
+AudioStreamType AudioProcessInServer::GetAudioStreamType()
+{
+    // todo
+    return STREAM_MUSIC;
+}
+
 inline uint32_t PcmFormatToBits(AudioSampleFormat format)
 {
     switch (format) {

@@ -32,6 +32,7 @@
 #include "fast_audio_capturer_source.h"
 #include "i_audio_capturer_source.h"
 #include "linear_pos_time_model.h"
+#include "policy_handler.h"
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
 
@@ -109,6 +110,7 @@ private:
     bool IsAnyProcessRunning();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
+    void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList);
 
     std::string GetStatusStr(EndpointStatus status);
 
@@ -341,6 +343,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
     attr.sampleFmt = dstStreamInfo_.format;
     attr.deviceNetworkId = deviceInfo.networkId.c_str();
+    attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType);
 
     fastSink_->Init(attr);
     if (!fastSink_->IsInited()) {
@@ -864,11 +867,9 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
     }
 }
 
-bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
+// call with listLock_ hold
+void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList)
 {
-    std::lock_guard<std::mutex> lock(listLock_);
-
-    std::vector<AudioStreamData> audioDataList;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
@@ -878,7 +879,15 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             continue;
         }
         AudioStreamData streamData;
-        streamData.volumeStart = curReadSpan->volumeStart;
+        Volume vol = {true, 1.0f, 0};
+        AudioStreamType streamType = processList_[i]->GetAudioStreamType();
+        DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+        if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
+            PolicyHandler::GetInstance().GetSharedVolume(streamType, deviceType, vol)) {
+            streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat);
+        } else {
+            streamData.volumeStart = curReadSpan->volumeStart;
+        }
         streamData.volumeEnd = curReadSpan->volumeEnd;
         streamData.streamInfo = processList_[i]->GetStreamInfo();
         SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
@@ -893,6 +902,14 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 #endif
         }
     }
+}
+
+bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
+{
+    std::lock_guard<std::mutex> lock(listLock_);
+
+    std::vector<AudioStreamData> audioDataList;
+    GetAllReadyProcessData(audioDataList);
 
     AudioStreamData dstStreamData;
     dstStreamData.streamInfo = dstStreamInfo_;

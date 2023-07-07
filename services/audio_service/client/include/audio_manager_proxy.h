@@ -55,6 +55,7 @@ public:
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
+    int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

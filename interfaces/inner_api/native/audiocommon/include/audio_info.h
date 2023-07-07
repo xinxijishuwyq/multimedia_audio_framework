@@ -967,6 +967,12 @@ struct AudioStreamData {
     int32_t volumeEnd;
 };
 
+struct Volume {
+    bool isMute = false;
+    float volumeFloat = 1.0f;
+    uint32_t volumeInt = 0;
+};
+
 struct DeviceInfo {
     DeviceType deviceType;
     DeviceRole deviceRole;

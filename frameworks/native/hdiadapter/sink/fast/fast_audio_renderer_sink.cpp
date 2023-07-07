@@ -409,10 +409,30 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     param.format = ConverToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(attr_.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
-    AUDIO_INFO_LOG("FastAudioRendererSink Create render format: %{public}d", param.format);
+    AUDIO_INFO_LOG("FastAudioRendererSink Create render format: %{public}d and device:%{public}d", param.format,
+        attr_.deviceType);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.pins = PIN_OUT_SPEAKER;
+    switch (static_cast<DeviceType>(attr_.deviceType)) {
+        case DEVICE_TYPE_EARPIECE:
+            deviceDesc.pins = PIN_OUT_EARPIECE;
+            break;
+        case DEVICE_TYPE_SPEAKER:
+            deviceDesc.pins = PIN_OUT_SPEAKER;
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            deviceDesc.pins = PIN_OUT_HEADSET;
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            deviceDesc.pins = PIN_OUT_USB_EXT;
+            break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            deviceDesc.pins = PIN_OUT_BLUETOOTH_SCO;
+            break;
+        default:
+            deviceDesc.pins = PIN_OUT_SPEAKER;
+            break;
+    }
     char desc[] = "";
     deviceDesc.desc = desc;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);

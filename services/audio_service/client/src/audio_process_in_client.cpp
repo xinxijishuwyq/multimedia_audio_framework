@@ -68,8 +68,13 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid);
+    static bool CheckIfSupport(const AudioProcessConfig &config);
+    static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
 
 private:
+    // move it to a common folder
+    static bool ChannelFormatConvert(const AudioStreamData &srcData, const AudioStreamData &dstData);
+
     bool InitAudioBuffer();
 
     bool PrepareCurrent(uint64_t curWritePos);
@@ -103,6 +108,9 @@ private:
         INVALID
     };
     AudioProcessConfig processConfig_;
+    bool needConvert_ = false;
+    size_t clientByteSizePerFrame_ = 0;
+    size_t clientSpanSizeInByte_ = 0;
     sptr<IAudioProcess> processProxy_ = nullptr;
     std::shared_ptr<OHAudioBuffer> audioBuffer_ = nullptr;
 
@@ -191,9 +199,15 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 {
     AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, isRemote %{public}d.",
         config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.isRemote);
+    if (config.audioMode == AUDIO_MODE_PLAYBACK && !AudioProcessInClientInner::CheckIfSupport(config)) {
+        AUDIO_ERR_LOG("CheckIfSupport failed!");
+        return nullptr;
+    }
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config);
+    AudioProcessConfig resetConfig = config;
+    resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");
@@ -242,19 +256,72 @@ bool AudioProcessInClientInner::InitAudioBuffer()
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
+
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK && clientByteSizePerFrame_ != 0) {
+        clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+    } else {
+        clientSpanSizeInByte_ = spanSizeInByte_;
+    }
+
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
         "spanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_);
 
-    callbackBuffer_ = std::make_unique<uint8_t[]>(spanSizeInByte_);
+    callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
-    memset_s(callbackBuffer_.get(), spanSizeInByte_, 0, spanSizeInByte_);
+    memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
 
     return true;
+}
+
+inline size_t GetFormatSize(const AudioStreamInfo &info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+
+    size_t channelSize = 0;
+    switch (info.channels) {
+        case MONO:
+            channelSize = 1; // size is 1
+            break;
+        case STEREO:
+            channelSize = 2; // size is 2
+            break;
+        default:
+            channelSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * channelSize;
+    return result;
 }
 
 bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Call Init.");
+    if (config.streamInfo.format != g_targetStreamInfo.format ||
+        config.streamInfo.channels != g_targetStreamInfo.channels) {
+        needConvert_ = true;
+    }
+    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
+    }
+    AUDIO_INFO_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
     bool isBufferInited = InitAudioBuffer();
     CHECK_AND_RETURN_RET_LOG(isBufferInited, isBufferInited, "%{public}s init audio buffer fail.", __func__);
     processConfig_ = config;
@@ -344,7 +411,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
 #ifdef DUMP_CLIENT
     if (dcp_ != nullptr) {
-        fwrite(static_cast<void *>(bufDesc.buffer), 1, spanSizeInByte_, dcp_);
+        fwrite(static_cast<void *>(readbufDesc.buffer), 1, spanSizeInByte_, dcp_);
     }
 #endif
 
@@ -364,9 +431,106 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
     }
 
     bufDesc.buffer = callbackBuffer_.get();
-    bufDesc.dataLength = spanSizeInByte_;
-    bufDesc.bufLength = spanSizeInByte_;
+    bufDesc.dataLength = clientSpanSizeInByte_;
+    bufDesc.bufLength = clientSpanSizeInByte_;
     return SUCCESS;
+}
+
+bool AudioProcessInClientInner::CheckIfSupport(const AudioProcessConfig &config)
+{
+    if (config.streamInfo.encoding != ENCODING_PCM || config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
+        return false;
+    }
+
+    if (config.streamInfo.format != SAMPLE_S16LE && config.streamInfo.format != SAMPLE_S32LE) {
+        return false;
+    }
+
+    if (config.streamInfo.channels != MONO && config.streamInfo.channels != STEREO) {
+        return false;
+    }
+    return true;
+}
+
+inline bool S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2;
+    if (srcDesc.bufLength != dstDesc.bufLength / half || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
+        return false;
+    }
+    int16_t *stcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half;
+    for (size_t idx = 0; idx < count; idx++) {
+        *(dstPtr++) = *stcPtr;
+        *(dstPtr++) = *stcPtr++;
+    }
+    return true;
+}
+
+inline bool S32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t quarter = 4;
+    if (srcDesc.bufLength != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr ||
+        srcDesc.bufLength % quarter != 0) {
+        return false;
+    }
+    int32_t *stcPtr = reinterpret_cast<int32_t *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / quarter;
+
+    double maxInt32 = INT32_MAX;
+    double maxInt16 = INT16_MAX;
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t temp = static_cast<int16_t>((static_cast<double>(*stcPtr) / maxInt32) * maxInt16);
+        stcPtr++;
+        *(dstPtr++) = temp;
+        *(dstPtr++) = temp;
+    }
+    return true;
+}
+
+inline bool S32StereoS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    size_t half = 2;
+    if (srcDesc.bufLength / half != dstDesc.bufLength || srcDesc.buffer == nullptr || dstDesc.buffer == nullptr ||
+        dstDesc.bufLength % half != 0) {
+        return false;
+    }
+    int32_t *stcPtr = reinterpret_cast<int32_t *>(srcDesc.buffer);
+    int16_t *dstPtr = reinterpret_cast<int16_t *>(dstDesc.buffer);
+    size_t count = srcDesc.bufLength / half / half;
+    double maxInt32 = INT32_MAX;
+    double maxInt16 = INT16_MAX;
+    for (size_t idx = 0; idx < count; idx++) {
+        int16_t temp = static_cast<int16_t>((static_cast<double>(*stcPtr) / maxInt32) * maxInt16);
+        stcPtr++;
+        *(dstPtr++) = temp;
+    }
+    return true;
+}
+
+// only support MONO to STEREO and SAMPLE_S32LE to SAMPLE_S16LE
+bool AudioProcessInClientInner::ChannelFormatConvert(const AudioStreamData &srcData, const AudioStreamData &dstData)
+{
+    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
+        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
+        return false;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
+        return true; // no need convert
+    }
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
+        return S16MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
+        return S32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
+        return S32StereoS16Stereo(srcData.bufferDesc, dstData.bufferDesc);
+    }
+
+    return false;
 }
 
 int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
@@ -374,9 +538,10 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     Trace trace("AudioProcessInClient::Enqueue");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "%{public}s not inited!", __func__);
 
-    if (bufDesc.buffer == nullptr || bufDesc.bufLength != spanSizeInByte_ || bufDesc.dataLength != spanSizeInByte_) {
+    if (bufDesc.buffer == nullptr || bufDesc.bufLength != clientSpanSizeInByte_ ||
+        bufDesc.dataLength != clientSpanSizeInByte_) {
         AUDIO_ERR_LOG("%{public}s bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
-            __func__, bufDesc.bufLength, bufDesc.dataLength, spanSizeInByte_);
+            __func__, bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
         return ERR_INVALID_PARAM;
     }
     // check if this buffer is form us.
@@ -394,17 +559,26 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             return ERR_OPERATION_FAILED;
         }
 
-        ret = memcpy_s(static_cast<void *>(curWriteBuffer.buffer), spanSizeInByte_, static_cast<void *>(bufDesc.buffer),
-            spanSizeInByte_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
+        if (!needConvert_) {
+            ret = memcpy_s(static_cast<void *>(curWriteBuffer.buffer), spanSizeInByte_,
+                static_cast<void *>(bufDesc.buffer), spanSizeInByte_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
+        } else {
+            Trace traceConvert("AudioProcessInClient::ChannelFormatConvert");
+            AudioStreamData srcData = {processConfig_.streamInfo, bufDesc, 0, 0};
+            AudioStreamData dstData = {g_targetStreamInfo, curWriteBuffer, 0, 0};
+            bool succ = ChannelFormatConvert(srcData, dstData);
+            CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
+        }
+
 #ifdef DUMP_CLIENT
         if (dcp_ != nullptr) {
-            fwrite(static_cast<void *>(bufDesc.buffer), 1, spanSizeInByte_, dcp_);
+            fwrite(static_cast<void *>(bufDesc.buffer), 1, clientSpanSizeInByte_, dcp_);
         }
 #endif
     }
 
-    CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), spanSizeInByte_, 0, spanSizeInByte_) == EOK,
+    CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) == EOK,
         "%{public}s reset callback buffer fail.", __func__);
 
     return SUCCESS;
