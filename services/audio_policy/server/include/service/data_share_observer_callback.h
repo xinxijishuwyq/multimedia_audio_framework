@@ -13,26 +13,25 @@
  * limitations under the License.
  */
 
+#ifndef ST_DATA_SHARE_OBSERVER_CALLBACK_H
+#define ST_DATA_SHARE_OBSERVER_CALLBACK_H
 
-#include "device_init_callback.h"
+#include "datashare_helper.h"
+#include "audio_policy_service.h"
+#include "data_ability_observer_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
-
-DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
-    : audioPolicyService_(AudioPolicyService::GetAudioPolicyService())
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-}
-
-void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
-{
-    std::string strDeviceName(dmDeviceBasicInfo.deviceName);
-    AUDIO_INFO_LOG("OnDeviceChanged:remote name [%{public}s]", strDeviceName.c_str());
-
-    //OnDeviceChanged listeren did not report networkId information
-    audioPolicyService_.SetDisplayName(strDeviceName, false);
-}
+class DataShareObserverCallBack : public AAFwk::DataAbilityObserverStub {
+public:
+    explicit DataShareObserverCallBack();
+    ~DataShareObserverCallBack() override {};
+    void OnChange() override;
+    
+private:
+    AudioPolicyService& audioPolicyService_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
+
+#endif // ST_DATA_SHARE_OBSERVER_CALLBACK_H
