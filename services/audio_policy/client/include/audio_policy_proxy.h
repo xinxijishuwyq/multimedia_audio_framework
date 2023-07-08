@@ -50,6 +50,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
+    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) override;
+
+    bool CloseWakeUpAudioCapturer() override;
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;

@@ -35,6 +35,7 @@ typedef struct {
     const char *filePath;
     const char *deviceNetworkId;
     int32_t deviceType;
+    int32_t sourceType;
 } SourceAttr;
 
 struct CapturerSourceAdapter {
@@ -51,7 +52,7 @@ struct CapturerSourceAdapter {
     int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
 };
 
-int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId,
+int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
     struct CapturerSourceAdapter **sourceAdapter);
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
 const char *GetDeviceClass(int32_t deviceClass);

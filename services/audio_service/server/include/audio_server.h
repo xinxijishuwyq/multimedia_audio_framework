@@ -29,11 +29,12 @@
 #include "audio_server_death_recipient.h"
 #include "audio_system_manager.h"
 #include "i_audio_renderer_sink.h"
+#include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback {
+class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -77,10 +78,14 @@ public:
     // ISinkParameterCallback
     void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) override;
+    // IAudioSourceCallback
+    void OnWakeupClose() override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
+
+    int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) override;
 
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
 
@@ -105,9 +110,12 @@ private:
     int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
-    std::shared_ptr<AudioParameterCallback> callback_;
+    std::shared_ptr<AudioParameterCallback> audioParameterCallback_;
+    std::shared_ptr<WakeUpSourceCallback> wakeupCallback_;
     std::mutex setParameterCallbackMutex_;
+    std::mutex setWakeupCloseCallbackMutex_;
     std::mutex audioParameterMutex_;
+    std::mutex wakeupCloseMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };

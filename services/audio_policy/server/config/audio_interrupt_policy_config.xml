@@ -36,6 +36,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -50,6 +51,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -90,6 +92,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -115,6 +118,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -143,6 +147,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -173,6 +178,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -201,6 +207,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -228,6 +235,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -251,6 +259,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -292,6 +301,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -306,6 +316,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -339,6 +350,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -375,6 +387,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -405,6 +418,7 @@
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -417,6 +431,7 @@
             <deny>
                 <focus_type value="SOURCE_TYPE_MIC"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP"/>
             </deny>
             <shared>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -462,6 +477,7 @@
                 <focus_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
@@ -476,6 +492,7 @@
                 <focus_type value="SOURCE_TYPE_MIC"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP"/>
             </deny>
             <shared>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -520,6 +537,7 @@
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
@@ -551,6 +569,36 @@
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>nil</private>
+        </focus_table>
+    </focus_type>
+    <focus_type value="SOURCE_TYPE_VOICE_WAKEUP">
+        <focus_table>
+            <deny>
+                <focus_type value="SOURCE_TYPE_MIC"/>
+            </deny>
+            <shared>
+                <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_SYSTEM" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_MUSIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_MOVIE" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_GAME" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_SPEECH" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_ALARM" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_NOTIFICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_SYSTEM_ENFORCED" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_DTMF" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_WAKEUP" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
+
+            </shared>
+            <private>
+                <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="STOP" action_on="existing"/>
+            </private>
         </focus_table>
     </focus_type>
 </audio_focus_policy>

@@ -51,8 +51,10 @@ static int32_t CapturerSourceInitInner(void *wapper, const SourceAttr *attr)
     return IAudioCapturerSourceInit(wapper, (IAudioSourceAttr *)attr);
 }
 
-int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, struct CapturerSourceAdapter **sourceAdapter)
+int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
+        struct CapturerSourceAdapter **sourceAdapter)
 {
+    AUDIO_INFO_LOG("%{public}s: %{public}d", __func__, sourceType);
     AUDIO_INFO_LOG("%{public}s: %{public}s", __func__, device);
     if ((device == NULL) || (deviceNetworkId == NULL) || (sourceAdapter == NULL)) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
@@ -65,7 +67,7 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, struc
         return ERROR;
     }
 
-    if (FillinSourceWapper(device, deviceNetworkId, &adapter->wapper) != SUCCESS) {
+    if (FillinSourceWapper(device, deviceNetworkId, sourceType, &adapter->wapper) != SUCCESS) {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         free(adapter);
         return ERROR;

@@ -139,6 +139,9 @@ const std::string AudioContainerClientBase::GetStreamNameGa(AudioStreamType audi
         case STREAM_ACCESSIBILITY:
             name = "accessibility";
             break;
+        case STREAM_WAKEUP:
+            name = "wakeup";
+            break;
         default:
             name = "unknown";
     }

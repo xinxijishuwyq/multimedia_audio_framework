@@ -671,9 +671,25 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
     std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
     AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
 
-    if (callback_ != nullptr) {
-        callback_->OnAudioParameterChange(netWorkId, key, condition, value);
+    if (audioParameterCallback_ != nullptr) {
+        audioParameterCallback_->OnAudioParameterChange(netWorkId, key, condition, value);
     }
+}
+
+void AudioServer::OnWakeupClose()
+{
+    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
+    AUDIO_INFO_LOG("OnWakeupClose Callback start");
+    {
+        std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
+        if (wakeupCallback_ == nullptr) {
+            AUDIO_ERR_LOG("OnWakeupClose callback is nullptr.");
+            return;
+        } else {
+            callback = wakeupCallback_;
+        }
+    }
+    callback->OnWakeupClose();
 }
 
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
@@ -693,8 +709,43 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     std::shared_ptr<AudioParameterCallback> callback = std::make_shared<AudioManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
-    callback_ = callback;
+    audioParameterCallback_ = callback;
     AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
+
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_) {
+        AUDIO_ERR_LOG("SetWakeupCloseCallback refused for %{public}d", callingUid);
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "SetWakeupCloseCallback set listener object is nullptr");
+
+    sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
+
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
+        "SetWakeupCloseCallback listener obj cast failed");
+
+    std::shared_ptr<WakeUpSourceCallback> wakeupCallback = std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(wakeupCallback != nullptr, ERR_INVALID_PARAM,
+        "SetWakeupCloseCallback failed to create cb obj");
+
+    {
+        std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
+        wakeupCallback_ = wakeupCallback;
+    }
+
+    IAudioCapturerSource* audioCapturerSourceInstance =
+        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
+    if (audioCapturerSourceInstance != nullptr) {
+        audioCapturerSourceInstance->RegisterWakeupCloseCallback(this);
+    }
+    AUDIO_INFO_LOG("SetWakeupCloseCallback done");
 
     return SUCCESS;
 }

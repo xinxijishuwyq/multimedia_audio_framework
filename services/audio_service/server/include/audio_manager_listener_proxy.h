@@ -29,6 +29,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioManagerListenerProxy);
     void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) override;
+    void OnWakeupClose() override;
 
 private:
     static inline BrokerDelegator<AudioManagerListenerProxy> delegator_;
@@ -36,14 +37,14 @@ private:
         const std::string& condition, const std::string& value);
 };
 
-class AudioManagerListenerCallback : public AudioParameterCallback {
+class AudioManagerListenerCallback : public AudioParameterCallback, public WakeUpSourceCallback {
 public:
     AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
     virtual ~AudioManagerListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
     void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) override;
-
+    void OnWakeupClose() override;
 private:
     sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
 };

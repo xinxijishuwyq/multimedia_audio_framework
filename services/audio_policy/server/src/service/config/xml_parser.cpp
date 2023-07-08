@@ -204,6 +204,11 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
                 moduleInfo.OpenMicSpeaker = value;
             }
 
+            value = ExtractPropertyValue("source_type", *portNode);
+            if (!value.empty()) {
+                moduleInfo.sourceType = value;
+            }
+
             value = ExtractPropertyValue("file", *portNode);
             if (!value.empty()) {
                 moduleInfo.fileName = value;

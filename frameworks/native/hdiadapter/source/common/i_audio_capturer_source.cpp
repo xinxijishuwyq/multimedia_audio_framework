@@ -28,26 +28,28 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *devceClass, const char *deviceNetworkId)
+IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass, const char *deviceNetworkId,
+    const SourceType sourceType)
 {
-    AUDIO_DEBUG_LOG("%{public}s Source:GetInstance[%{public}s]", devceClass, deviceNetworkId);
+    AUDIO_DEBUG_LOG("%{public}s Source:GetInstance deviceNetworkId:[%{public}s] sourceType:[%{public}d]",
+        deviceClass, deviceNetworkId, sourceType);
     const char *deviceClassPrimary = "primary";
     const char *deviceClassA2DP = "a2dp";
     const char *deviceClassFile = "file_io";
     const char *deviceClassRemote = "remote";
 
-    if (!strcmp(devceClass, deviceClassPrimary)) {
-        return AudioCapturerSource::GetInstance();
+    if (!strcmp(deviceClass, deviceClassPrimary)) {
+        return AudioCapturerSource::GetInstance(sourceType);
     }
-    if (!strcmp(devceClass, deviceClassA2DP)) {
+    if (!strcmp(deviceClass, deviceClassA2DP)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
-    if (!strcmp(devceClass, deviceClassFile)) {
+    if (!strcmp(deviceClass, deviceClassFile)) {
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
-    if (!strcmp(devceClass, deviceClassRemote)) {
+    if (!strcmp(deviceClass, deviceClassRemote)) {
         std::string networkId = deviceNetworkId;
         RemoteAudioCapturerSource *rSource = RemoteAudioCapturerSource::GetInstance(networkId);
         return rSource;
@@ -63,9 +65,10 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId, void **wapper)
+int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
+    const SourceType sourceType, void **wapper)
 {
-    IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass, deviceNetworkId);
+    IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass, deviceNetworkId, sourceType);
 
     if (iSource != nullptr) {
         *wapper = static_cast<void *>(iSource);

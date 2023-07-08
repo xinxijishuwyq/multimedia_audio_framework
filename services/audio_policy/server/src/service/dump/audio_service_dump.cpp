@@ -171,6 +171,7 @@ bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
         case STREAM_RING:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_WAKEUP:
             return true;
         default:
             return false;
@@ -217,6 +218,9 @@ const std::string AudioServiceDump::GetStreamName(AudioStreamType streamType)
         case STREAM_ULTRASONIC:
             name = "ULTRASONIC";
             break;
+        case STREAM_WAKEUP:
+            name = "WAKEUP";
+            break;
         default:
             name = "UNKNOWN";
     }
@@ -243,6 +247,9 @@ const std::string AudioServiceDump::GetSourceName(SourceType sourceType)
             break;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
             name = "VOICE_COMMUNICATION";
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            name = "WAKEUP";
             break;
         default:
             name = "UNKNOWN";
@@ -327,6 +334,9 @@ const std::string AudioServiceDump::GetDeviceTypeName(DeviceType deviceType)
             break;
         case DEVICE_TYPE_MIC:
             device = "MIC";
+            break;
+        case DEVICE_TYPE_WAKEUP:
+            device = "WAKEUP";
             break;
         case DEVICE_TYPE_NONE:
             device = "NONE";
