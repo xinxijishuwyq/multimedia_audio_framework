@@ -41,8 +41,8 @@ ohos_shared_library("pulse_audio_service_adapter") {
   deps = [ "$pulseaudio_build_path/src/pulse:pulse" ]
 
   external_deps = [
-    "hisysevent_native:libhisysevent",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
   ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"

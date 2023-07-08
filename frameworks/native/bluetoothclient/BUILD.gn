@@ -33,7 +33,7 @@ ohos_shared_library("audio_bluetooth_client") {
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   part_name = "audio_framework"

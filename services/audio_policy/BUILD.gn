@@ -118,7 +118,7 @@ ohos_shared_library("audio_dump") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   subsystem_name = "multimedia"
@@ -207,8 +207,8 @@ ohos_shared_library("audio_policy_service") {
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
-    "hisysevent_native:libhisysevent",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "init:libbegetutil",
     "input:libmmi-client",
     "ipc:ipc_single",
@@ -336,7 +336,7 @@ ohos_shared_library("audio_policy_client") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
@@ -369,7 +369,7 @@ ohos_executable("audio_policy_test") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_single",
   ]
 

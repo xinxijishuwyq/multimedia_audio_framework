@@ -65,7 +65,7 @@ ohos_shared_library("module-effect-sink") {
     "../../../audioeffect:audio_effect",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

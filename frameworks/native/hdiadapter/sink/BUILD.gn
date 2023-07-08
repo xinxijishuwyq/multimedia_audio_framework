@@ -39,7 +39,7 @@ ohos_shared_library("audio_renderer_sink") {
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_1.0",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "power_manager:powermgr_client",
   ]
 
@@ -74,7 +74,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
     "c_utils:utils",
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_1.0",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "power_manager:powermgr_client",
   ]
 
@@ -114,7 +114,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "power_manager:powermgr_client",
   ]
 
@@ -152,7 +152,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
     "../../audioutils:audio_utils",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
   defines = []
   if (audio_framework_feature_daudio_enable) {
     defines += [ "PRODUCT_M40" ]
@@ -194,7 +194,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
   defines = []
   if (audio_framework_feature_daudio_enable) {
@@ -226,7 +226,7 @@ ohos_shared_library("audio_renderer_file_sink") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -270,7 +270,7 @@ ohos_shared_library("renderer_sink_adapter") {
     ":remote_fast_audio_renderer_sink",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
