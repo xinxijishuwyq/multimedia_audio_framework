@@ -400,6 +400,10 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
             AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
             return audioServiceAdapter_->SetDefaultSource(name);
         }
+        case InternalDeviceType::DEVICE_TYPE_WAKEUP: {
+            AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
+            return audioServiceAdapter_->SetDefaultSource(name);
+        }
         default:
             break;
     }
@@ -626,6 +630,11 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(" device_type=");
             args.append(audioModuleInfo.deviceType);
         }
+
+        if (!audioModuleInfo.sourceType.empty()) {
+            args.append(" source_type=");
+            args.append(audioModuleInfo.sourceType);
+        }
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
@@ -703,6 +712,8 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
             return type + "_accessibility_volume";
         case STREAM_ULTRASONIC:
             return type + "_ultrasonic_volume";
+        case STREAM_WAKEUP:
+            return type + "wakeup";
         default:
             AUDIO_ERR_LOG("GetVolumeKeyForKvStore: streamType %{public}d is not supported for kvStore", streamType);
             return "";

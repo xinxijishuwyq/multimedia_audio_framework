@@ -49,6 +49,7 @@ namespace AudioStandard {
         CREATE_PLAYBACK_CAPTURER_MANAGER = 24,
         SET_SUPPORT_STREAM_USAGE = 25,
         REGISET_POLICY_PROVIDER = 26,
+        SET_WAKEUP_CLOSE_CALLBACK = 27,
     };
 } // namespace AudioStandard
 } // namespace OHOS

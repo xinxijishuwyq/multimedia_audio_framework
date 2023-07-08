@@ -68,11 +68,14 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_ULTRASONIC) {
         return nullptr;
     }
-
-    AudioStreamType audioStreamType = STREAM_MUSIC;
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        audioStreamType = STREAM_VOICE_CALL;
+    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        if (AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions) != SUCCESS) {
+            AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error!");
+            return nullptr;
+        }
     }
+
+    AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
 
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
@@ -406,6 +409,17 @@ bool AudioCapturerPrivate::Release()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
+    AudioCapturerInfo currertCapturer;
+    this->GetCapturerInfo(currertCapturer);
+    SourceType sourceType = currertCapturer.sourceType;
+    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        bool ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("can not destory wakeup config");
+        } else {
+            AUDIO_INFO_LOG("start destory wakeup config");
+        }
+    }
     return audioStream_->ReleaseAudioStream();
 }
 
@@ -561,6 +575,18 @@ std::vector<AudioEncodingType> AudioCapturer::GetSupportedEncodingTypes()
 std::vector<AudioSamplingRate> AudioCapturer::GetSupportedSamplingRates()
 {
     return AUDIO_SUPPORTED_SAMPLING_RATES;
+}
+
+AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
+{
+    switch (sourceType) {
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            return STREAM_VOICE_CALL;
+        case SOURCE_TYPE_WAKEUP:
+            return STREAM_WAKEUP;
+        default:
+            return STREAM_MUSIC;
+    }
 }
 
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode) const

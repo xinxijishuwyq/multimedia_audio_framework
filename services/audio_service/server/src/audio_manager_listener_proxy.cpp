@@ -63,6 +63,24 @@ void AudioManagerListenerProxy::OnAudioParameterChange(const std::string network
     }
 }
 
+void AudioManagerListenerProxy::OnWakeupClose()
+{
+    AUDIO_DEBUG_LOG("AudioManagerListenerProxy: OnWakeupClose at listener proxy");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+   
+    int error = Remote()->SendRequest(ON_WAKEUP_CLOSE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ON_WAKEUP_CLOSE failed, error: %{public}d", error);
+    }
+}
+
 AudioManagerListenerCallback::AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener)
     : listener_(listener)
 {
@@ -79,6 +97,13 @@ void AudioManagerListenerCallback::OnAudioParameterChange(const std::string netw
 {
     if (listener_ != nullptr) {
         listener_->OnAudioParameterChange(networkId, key, condition, value);
+    }
+}
+
+void AudioManagerListenerCallback::OnWakeupClose()
+{
+    if (listener_ != nullptr) {
+        listener_->OnWakeupClose();
     }
 }
 } // namespace AudioStandard

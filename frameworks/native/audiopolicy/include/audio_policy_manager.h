@@ -38,6 +38,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using InternalDeviceType = DeviceType;
+using InternalAudioCapturerOptions = AudioCapturerOptions;
 
 class AudioPolicyManager {
 public:
@@ -76,6 +77,10 @@ public:
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
+
+    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
+
+    bool CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 

@@ -412,6 +412,32 @@ int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &obje
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioManagerProxy: SetWakeupCloseCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return false;
+    }
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetWakeupCloseCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
 void AudioManagerProxy::SetAudioMonoState(bool audioMono)
 {
     MessageParcel data;

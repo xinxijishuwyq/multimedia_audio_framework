@@ -25,6 +25,7 @@
 #include <vector>
 #include <unistd.h>
 #include <unordered_map>
+#include <audio_source_type.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -181,6 +182,10 @@ enum DeviceType {
     /**
      * Indicates a microphone built in a device.
      */
+    DEVICE_TYPE_WAKEUP = 16,
+    /**
+     * Indicates a microphone built in a device.
+     */
     DEVICE_TYPE_USB_HEADSET = 22,
     /**
      * Indicates a debug sink device
@@ -314,6 +319,10 @@ enum AudioStreamType {
      */
     STREAM_ULTRASONIC = 18,
 
+    /**
+     * Indicates audio streams for wakeup.
+     */
+    STREAM_WAKEUP = 15,
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
@@ -520,17 +529,6 @@ enum StreamUsage {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 
-/**
-* Enumerates the capturer source type
-*/
-enum SourceType {
-    SOURCE_TYPE_INVALID = -1,
-    SOURCE_TYPE_MIC,
-    SOURCE_TYPE_VOICE_RECOGNITION = 1,
-    SOURCE_TYPE_PLAYBACK_CAPTURE = 2,
-    SOURCE_TYPE_VOICE_COMMUNICATION = 7,
-    SOURCE_TYPE_ULTRASONIC = 8
-};
 
 /**
  * Enumerates audio stream privacy type for playback capture.

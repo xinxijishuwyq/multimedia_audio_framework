@@ -97,6 +97,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
+    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
+
+    bool CloseWakeUpAudioCapturer();
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType) const;
@@ -235,6 +239,8 @@ public:
 
     bool SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol);
 
+    void SetWakeupCloseCallback(const std::shared_ptr<WakeUpSourceCallback>& callback);
+
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid);
 #endif
@@ -308,6 +314,8 @@ private:
 
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
+
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
@@ -457,6 +465,8 @@ private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
+
+    std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -474,6 +484,7 @@ private:
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_WAKEUP,
         DEVICE_TYPE_MIC
     };
 

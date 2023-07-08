@@ -441,6 +441,11 @@ uint64_t RemoteFastAudioCapturerSource::GetTransactionId()
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
+void RemoteFastAudioCapturerSource::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
+}
+
 int32_t RemoteFastAudioCapturerSource::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;

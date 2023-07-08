@@ -106,6 +106,10 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
+    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) override;
+
+    bool CloseWakeUpAudioCapturer() override;
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
@@ -266,7 +270,32 @@ public:
         void InterruptOnChange(const std::string networkId, const std::string& condition);
         void StateOnChange(const std::string networkId, const std::string& condition, const std::string& value);
     };
+
+    class WakeUpCallbackImpl : public WakeUpSourceCallback {
+    public:
+        void OnWakeupClose() override
+        {
+            std::unique_lock<std::mutex> uck(lock);
+            isClosed_ = true;
+            uck.unlock();
+            this->cv.notify_one();
+        }
+
+        void WaitClose()
+        {
+            std::unique_lock<std::mutex> uck(lock);
+            this->cv.wait(uck, [this] {return isClosed_;});
+            isClosed_ = false;
+        }
+
+    private:
+        std::mutex lock;
+        std::condition_variable cv;
+        bool isClosed_ = false;
+    };
+
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
+    std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
 
     class PerStateChangeCbCustomizeCallback : public Security::AccessToken::PermStateChangeCallbackCustomize {
     public:
@@ -287,6 +316,8 @@ protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
     void RegisterParamCallback();
+
+    void RegisterWakeupCloseCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
