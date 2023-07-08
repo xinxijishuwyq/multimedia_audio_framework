@@ -138,7 +138,7 @@ Fail:
 
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -175,7 +175,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 
 int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
 
     pa_threaded_mainloop_lock(mMainLoop);
     if (mContext == nullptr) {
@@ -319,7 +319,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
     AUDIO_INFO_LOG("GetAllSinks enter.");
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = {};
@@ -389,7 +389,7 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex,
     std::string sinkName)
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -428,7 +428,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
 int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex,
     std::string sourceName)
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
@@ -466,7 +466,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
 
 int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, float volumeDb)
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     if (userData == nullptr) {
@@ -507,7 +507,7 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
         return ERROR;
     }
     vector<SourceOutput> sourOutputs = GetAllSourceOutputs();
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
     int32_t streamSet = 0;
     for (uint32_t i = 0; i < sourOutputs.size(); i ++) {
         if (sourOutputs[i].uid == uid) {
@@ -524,7 +524,7 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
 
 bool PulseAudioServiceAdapterImpl::IsStreamActive(AudioStreamType streamType)
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
     if (!isSetDefaultSink_) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] IsStreamActive not SetDefaultSink first");
         return false;
@@ -570,7 +570,7 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     userData->thiz = this;
     userData->sinkInfos = GetAllSinks();
 
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
     if (mContext == nullptr) {
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] GetAllSinkInputs mContext is nullptr");
         return userData->sinkInputList;
@@ -599,7 +599,7 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 
 vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
-    lock_guard<mutex> lock(mMutex);
+    lock_guard<mutex> lock(lock_);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
