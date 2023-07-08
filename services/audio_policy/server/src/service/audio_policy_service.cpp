@@ -240,7 +240,8 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
         AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
         return;
     }
-    float volumeDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, currentActiveDevice_);
+    float volumeDb = static_cast<float>(volumeLevel) /
+        static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL));
     gsp->SetVoiceVolume(volumeDb);
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
