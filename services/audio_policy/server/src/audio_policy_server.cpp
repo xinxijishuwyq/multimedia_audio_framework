@@ -136,6 +136,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
             InitKVStore();
+            RegisterDataObserver();
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
@@ -2221,6 +2222,11 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     return mPolicyService.GetMaxRendererInstances();
+}
+
+void AudioPolicyServer::RegisterDataObserver()
+{
+    mPolicyService.RegisterDataObserver();
 }
 
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)

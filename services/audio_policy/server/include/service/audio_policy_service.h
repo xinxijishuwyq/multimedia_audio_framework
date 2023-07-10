@@ -149,6 +149,10 @@ public:
 
     void OnUpdateRouteSupport(bool isSupported);
 
+    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
+
+    void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
+
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones();
 
@@ -262,6 +266,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    void RegisterDataObserver();
+
     bool IsVolumeUnadjustable();
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
@@ -273,8 +279,6 @@ public:
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
     void UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDescriptor>> &desc);
-
-    void SetRemoteDisplayName(const std::string &deviceName);
 
     int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> options);
 
@@ -420,6 +424,10 @@ private:
     void LoadLoopback();
 
     DeviceType FindConnectedHeadset();
+
+    bool CreateDataShareHelperInstance();
+
+    void RegisterNameMonitorHelper();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

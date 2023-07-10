@@ -14,25 +14,27 @@
  */
 
 
-#include "device_init_callback.h"
+#include "data_share_observer_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
+DataShareObserverCallBack::DataShareObserverCallBack()
     : audioPolicyService_(AudioPolicyService::GetAudioPolicyService())
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 }
 
-void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
+void DataShareObserverCallBack::OnChange()
 {
-    std::string strDeviceName(dmDeviceBasicInfo.deviceName);
-    AUDIO_INFO_LOG("OnDeviceChanged:remote name [%{public}s]", strDeviceName.c_str());
-
-    //OnDeviceChanged listeren did not report networkId information
-    audioPolicyService_.SetDisplayName(strDeviceName, false);
+    std::string devicesName = "";
+    int32_t ret = audioPolicyService_.GetDeviceNameFromDataShareHelper(devicesName);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Local UpdateDisplayName init device failed");
+        return;
+    }
+    audioPolicyService_.SetDisplayName(devicesName, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
