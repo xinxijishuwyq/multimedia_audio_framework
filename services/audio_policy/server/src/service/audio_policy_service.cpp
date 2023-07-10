@@ -3250,6 +3250,7 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
 
 bool AudioPolicyService::GetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol)
 {
+    CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Get shared memory failed!");
     size_t index = 0;
     if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
@@ -3263,6 +3264,7 @@ bool AudioPolicyService::GetSharedVolume(AudioStreamType streamType, DeviceType 
 
 bool AudioPolicyService::SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol)
 {
+    CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Set shared memory failed!");
     size_t index = 0;
     if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
