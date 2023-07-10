@@ -551,7 +551,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         BufferDesc curWriteBuffer = {nullptr, 0, 0};
         uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
-        Trace trace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
+        Trace writeProcessDataTrace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
         int32_t ret = audioBuffer_->GetWriteBuffer(curWritePos, curWriteBuffer);
         if (ret != SUCCESS || curWriteBuffer.buffer == nullptr || curWriteBuffer.bufLength != spanSizeInByte_ ||
             curWriteBuffer.dataLength != spanSizeInByte_) {

@@ -453,9 +453,8 @@ int32_t FastAudioCapturerSourceInner::Start(void)
         AUDIO_ERR_LOG("mKeepRunningLock is null, start can not work well!");
     }
 
-    int32_t ret;
     if (!started_) {
-        ret = audioCapture_->Start(audioCapture_);
+        int32_t ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
             return ERR_NOT_STARTED;
         }
@@ -528,9 +527,8 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
         AUDIO_ERR_LOG("mKeepRunningLock is null, stop can not work well!");
     }
 
-    int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->Stop(audioCapture_);
+        int32_t ret = audioCapture_->Stop(audioCapture_);
         if (ret < 0) {
             AUDIO_ERR_LOG("Stop capture Failed");
             return ERR_OPERATION_FAILED;
@@ -543,9 +541,8 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
 
 int32_t FastAudioCapturerSourceInner::Pause(void)
 {
-    int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->Pause(audioCapture_);
+        int32_t ret = audioCapture_->Pause(audioCapture_);
         if (ret != 0) {
             AUDIO_ERR_LOG("pause capture Failed");
             return ERR_OPERATION_FAILED;
@@ -558,9 +555,8 @@ int32_t FastAudioCapturerSourceInner::Pause(void)
 
 int32_t FastAudioCapturerSourceInner::Resume(void)
 {
-    int32_t ret;
     if (paused_ && audioCapture_ != nullptr) {
-        ret = audioCapture_->Resume(audioCapture_);
+        int32_t ret = audioCapture_->Resume(audioCapture_);
         if (ret != 0) {
             AUDIO_ERR_LOG("resume capture Failed");
             return ERR_OPERATION_FAILED;
