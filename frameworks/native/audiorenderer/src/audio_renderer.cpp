@@ -412,6 +412,11 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        // When the cellular call stream is starting, only need to activate audio interrupt.
+        return true;
+    }
+
     return audioStream_->StartAudioStream(cmdType);
 }
 
@@ -449,6 +454,14 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     AUDIO_INFO_LOG("AudioRenderer::Pause");
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        // When the cellular call stream is pausing, only need to deactivate audio interrupt.
+        if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
+            AUDIO_ERR_LOG("AudioRenderer::Pause: DeactivateAudioInterrupt Failed");
+        }
+        return true;
+    }
+
     RendererState state = GetStatus();
     if (state != RENDERER_RUNNING) {
         // If the stream is not running, there is no need to pause and deactive audio interrupt
@@ -460,7 +473,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
     // When user is intentionally pausing, deactivate to remove from audioFocusInfoList_
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRenderer::DeactivateAudioInterrupt Failed");
+        AUDIO_ERR_LOG("AudioRenderer::Pause: DeactivateAudioInterrupt Failed");
     }
 
     return result;
@@ -469,10 +482,18 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Stop() const
 {
     AUDIO_INFO_LOG("AudioRenderer::Stop");
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        // When the cellular call stream is stopping, only need to deactivate audio interrupt.
+        if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
+            AUDIO_ERR_LOG("AudioRenderer::Stop: DeactivateAudioInterrupt Failed");
+        }
+        return true;
+    }
+
     bool result = audioStream_->StopAudioStream();
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRenderer: DeactivateAudioInterrupt Failed");
+        AUDIO_ERR_LOG("AudioRenderer::Stop: DeactivateAudioInterrupt Failed");
     }
 
     return result;
