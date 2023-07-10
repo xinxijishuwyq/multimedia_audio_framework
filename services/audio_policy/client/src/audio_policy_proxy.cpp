@@ -530,6 +530,50 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     return deviceInfo;
 }
 
+bool AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return false;
+    }
+    data.WriteInt32(static_cast<int32_t>(options.streamInfo.samplingRate));
+    data.WriteInt32(static_cast<int32_t>(options.streamInfo.encoding));
+    data.WriteInt32(static_cast<int32_t>(options.streamInfo.format));
+    data.WriteInt32(static_cast<int32_t>(options.streamInfo.channels));
+
+    data.WriteInt32(static_cast<int32_t>(options.capturerInfo.sourceType));
+    data.WriteInt32(options.capturerInfo.capturerFlags);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CreateWakeUpAudioCapturer failed, error: %d", error);
+        return false;
+    }
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::CloseWakeUpAudioCapturer()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return false;
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CLOSE_WAKEUP_AUDIOCAPTURER), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed, error: %d", error);
+        return false;
+    }
+    return reply.ReadInt32();
+}
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {

@@ -37,7 +37,7 @@ ohos_shared_library("audio_capturer_source") {
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_1.0",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "power_manager:powermgr_client",
   ]
 
@@ -68,7 +68,7 @@ ohos_shared_library("fast_audio_capturer_source") {
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_1.0",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "power_manager:powermgr_client",
   ]
 
@@ -97,10 +97,12 @@ ohos_shared_library("remote_audio_capturer_source") {
   ]
   include_dirs += [ multimedia_audio_framework_drivers ]
 
-  external_deps = [
-    "distributed_audio:daudio_client",
-    "hiviewdfx_hilog_native:libhilog",
-  ]
+  external_deps = [ "hilog:libhilog" ]
+  defines = []
+  if (audio_framework_feature_daudio_enable) {
+    defines += [ "PRODUCT_M40" ]
+    external_deps += [ "distributed_audio:daudio_client" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -130,9 +132,13 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 
   external_deps = [
     "c_utils:utils",
-    "distributed_audio:daudio_client",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
+  defines = []
+  if (audio_framework_feature_daudio_enable) {
+    defines += [ "PRODUCT_M40" ]
+    external_deps += [ "distributed_audio:daudio_client" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -160,7 +166,7 @@ ohos_shared_library("audio_capturer_file_source") {
 
   include_dirs += [ multimedia_audio_framework_drivers ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -201,7 +207,7 @@ ohos_shared_library("capturer_source_adapter") {
     ":remote_fast_audio_capturer_source",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

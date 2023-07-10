@@ -57,7 +57,7 @@ ohos_shared_library("module-loopback") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

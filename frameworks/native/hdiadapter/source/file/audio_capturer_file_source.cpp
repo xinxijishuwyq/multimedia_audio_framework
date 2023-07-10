@@ -61,6 +61,11 @@ int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice)
     return SUCCESS;
 }
 
+void AudioCapturerFileSource::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
+}
+
 int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     return SUCCESS;

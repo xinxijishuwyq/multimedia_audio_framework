@@ -71,7 +71,7 @@ ohos_shared_library("audio_renderer") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_single",
   ]
 
@@ -107,7 +107,7 @@ ohos_executable("audio_renderer_test") {
 
   deps = [ ":audio_renderer" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -123,7 +123,7 @@ ohos_executable("audio_latency_accuracy_test") {
 
   deps = [ ":audio_renderer" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -138,7 +138,7 @@ ohos_executable("audio_render_mode_callback_test") {
 
   deps = [ ":audio_renderer" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -173,7 +173,7 @@ ohos_executable("audio_voip_test") {
     "../audiocapturer:audio_capturer",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -191,7 +191,7 @@ ohos_executable("audio_interrupt_test") {
     "../../../services/audio_service:audio_client",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -206,7 +206,7 @@ ohos_executable("interrupt_multi_renderer_test") {
 
   deps = [ ":audio_renderer" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

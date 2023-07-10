@@ -35,11 +35,18 @@ typedef struct {
     const char *filePath;
     const char *deviceNetworkId;
     int32_t deviceType;
+    int32_t sourceType;
 } IAudioSourceAttr;
+
+class IAudioSourceCallback {
+public:
+    virtual void OnWakeupClose() = 0;
+};
 
 class IAudioCapturerSource {
 public:
-    static IAudioCapturerSource *GetInstance(const char *devceClass, const char *deviceNetworkId);
+    static IAudioCapturerSource *GetInstance(const char *devceClass, const char *deviceNetworkId,
+           const SourceType sourceType = SourceType::SOURCE_TYPE_MIC);
 
     virtual int32_t Init(IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
@@ -60,6 +67,7 @@ public:
     virtual int32_t SetInputRoute(DeviceType deviceType) = 0;
     virtual uint64_t GetTransactionId() = 0;
 
+    virtual void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) = 0;
     virtual ~IAudioCapturerSource() = default;
 };
 

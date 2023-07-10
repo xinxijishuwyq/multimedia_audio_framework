@@ -116,6 +116,14 @@ bool AudioPolicyService::Init(void)
     (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
     localDevicesType_ = devicesType;
 
+    if (policyVolumeMap_ == nullptr) {
+        size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
+        AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
+        policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "PolicyVolumeMap");
+        CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
+            false, "Get shared memory failed!");
+        volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
+    }
     return true;
 }
 
@@ -180,6 +188,9 @@ void AudioPolicyService::Deinit(void)
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();
     }
+    volumeVector_ = nullptr;
+    policyVolumeMap_ = nullptr;
+
     return;
 }
 
@@ -210,6 +221,10 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     if (result == SUCCESS && streamType == STREAM_VOICE_CALL) {
         SetVoiceCallVolume(volumeLevel);
     }
+    // todo
+    Volume vol = {false, 1.0f, 0};
+    vol.volumeFloat = GetSystemVolumeInDb(streamType, volumeLevel, currentActiveDevice_);
+    SetSharedVolume(streamType, currentActiveDevice_, vol);
     return result;
 }
 
@@ -225,7 +240,8 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
         AUDIO_ERR_LOG("SetVoiceVolume: gsp null");
         return;
     }
-    float volumeDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, currentActiveDevice_);
+    float volumeDb = static_cast<float>(volumeLevel) /
+        static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL));
     gsp->SetVoiceVolume(volumeDb);
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
@@ -786,6 +802,9 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_MIC:
             portName = PRIMARY_MIC;
             break;
+        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+            portName = PRIMARY_WAKEUP;
+            break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
             portName = FILE_SINK;
             break;
@@ -836,6 +855,31 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     return audioModuleInfo;
 }
 
+// private method
+AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourceType)
+{
+    AudioModuleInfo audioModuleInfo = {};
+    audioModuleInfo.lib = "libmodule-hdi-source.z.so";
+    audioModuleInfo.format = "s16le";
+    audioModuleInfo.name = "Built_in_wakeup";
+    audioModuleInfo.networkId = "LocalDevice";
+
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.className = "primary";
+    audioModuleInfo.fileName = "";
+
+    audioModuleInfo.channels = "1";
+    audioModuleInfo.rate = "16000";
+    audioModuleInfo.bufferSize = "1280";
+    audioModuleInfo.OpenMicSpeaker = "1";
+
+    std::stringstream sourceType_;
+    sourceType_ << static_cast<int32_t>(sourceType);
+    audioModuleInfo.sourceType = sourceType_.str();
+
+    return audioModuleInfo;
+}
+
 void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std::string networkId)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -849,6 +893,50 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
         it->second->OnPreferOutputDeviceUpdated(deviceDescs);
     }
     UpdateEffectDefaultSink(deviceType);
+}
+
+bool AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    auto sourceType = options.capturerInfo.sourceType;
+    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(sourceType);
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed %{public}d", ioHandle);
+    
+    {
+        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
+
+    auto devType = GetDeviceType(moduleInfo.name);
+    int32_t result = ERROR;
+    result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("SetWakeUpAudioCapturer failed!");
+        return false;
+    }
+    AUDIO_INFO_LOG("SetWakeUpAudioCapturer Active Success!");
+    return true;
+}
+
+bool AudioPolicyService::CloseWakeUpAudioCapturer()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    AudioIOHandle ioHandle;
+    {
+        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+        auto ioHandleIter = IOHandles_.find(PRIMARY_WAKEUP);
+        if (ioHandleIter == IOHandles_.end()) {
+            AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed");
+            return false;
+        } else {
+            ioHandle = ioHandleIter->second;
+            IOHandles_.erase(ioHandleIter);
+        }
+    }
+    audioPolicyManager_.CloseAudioPort(ioHandle);
+    return true;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
@@ -2561,6 +2649,9 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
         case InternalDeviceType::DEVICE_TYPE_MIC:
             ioHandle = IOHandles_[PRIMARY_MIC];
             break;
+        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+            ioHandle = IOHandles_[PRIMARY_WAKEUP];
+            break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
             ioHandle = IOHandles_[FILE_SINK];
             break;
@@ -2581,6 +2672,8 @@ InternalDeviceType AudioPolicyService::GetDeviceType(const std::string &deviceNa
         devType = InternalDeviceType::DEVICE_TYPE_SPEAKER;
     } else if (deviceName == "Built_in_mic") {
         devType = InternalDeviceType::DEVICE_TYPE_MIC;
+    } else if (deviceName == "Built_in_wakeup") {
+        devType = InternalDeviceType::DEVICE_TYPE_WAKEUP;
     } else if (deviceName == "fifo_output" || deviceName == "fifo_input") {
         devType = DEVICE_TYPE_BLUETOOTH_SCO;
     } else if (deviceName == "file_sink") {
@@ -2848,6 +2941,7 @@ bool AudioPolicyService::IsInputDevice(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_WAKEUP:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
             return true;
         default:
@@ -2882,6 +2976,7 @@ DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_WAKEUP:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
@@ -3019,6 +3114,101 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
     return volumeGroupInfos;
 }
 
+void AudioPolicyService::RegiestPolicy()
+{
+    AUDIO_INFO_LOG("Enter RegiestPolicy");
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RegiestPolicy g_adProxy null");
+        return;
+    }
+    sptr<IRemoteObject> object = this->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegiestPolicy AsObject is nullptr");
+        return;
+    }
+    int32_t ret = gsp->RegiestPolicyProvider(object);
+    AUDIO_INFO_LOG("RegiestPolicy result:%{public}d", ret);
+}
+
+int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
+{
+    AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
+    // todo
+    // check process in routerMap, return target device for it
+    // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
+    // genarate the unique deviceid?
+
+    if (config.audioMode == AUDIO_MODE_RECORD) {
+        deviceInfo.deviceId = 1;
+        if (config.isRemote) {
+            deviceInfo.networkId = "remote_mmap_dmic";
+        } else {
+            deviceInfo.networkId = LOCAL_NETWORK_ID;
+        }
+        deviceInfo.deviceRole = INPUT_DEVICE;
+        deviceInfo.deviceType = DEVICE_TYPE_MIC;
+    } else {
+        deviceInfo.deviceId = 6; // 6 for test
+        if (config.isRemote) {
+            deviceInfo.networkId = REMOTE_NETWORK_ID;
+            deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
+        } else {
+            deviceInfo.networkId = LOCAL_NETWORK_ID;
+            deviceInfo.deviceType = currentActiveDevice_;
+        }
+        deviceInfo.deviceRole = OUTPUT_DEVICE;
+    }
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
+    deviceInfo.audioStreamInfo = targetStreamInfo;
+    deviceInfo.deviceName = "mmap_device";
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
+{
+    CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
+        ERR_OPERATION_FAILED, "Get shared memory failed!");
+
+    // init volume map
+    // todo device
+    for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
+        float volFloat = GetSystemVolumeDb(g_volumeIndexVector[i].first);
+        volumeVector_[i].isMute = false;
+        volumeVector_[i].volumeFloat = volFloat;
+        volumeVector_[i].volumeInt = 0;
+    }
+    buffer = policyVolumeMap_;
+
+    return SUCCESS;
+}
+
+bool AudioPolicyService::GetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol)
+{
+    size_t index = 0;
+    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+        index >= IPolicyProvider::GetVolumeVectorSize()) {
+        return false;
+    }
+    vol.isMute = volumeVector_[index].isMute;
+    vol.volumeFloat = volumeVector_[index].volumeFloat;
+    vol.volumeInt = volumeVector_[index].volumeInt;
+    return true;
+}
+
+bool AudioPolicyService::SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol)
+{
+    size_t index = 0;
+    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+        index >= IPolicyProvider::GetVolumeVectorSize()) {
+        return false;
+    }
+    volumeVector_[index].isMute = vol.isMute;
+    volumeVector_[index].volumeFloat = vol.volumeFloat;
+    volumeVector_[index].volumeInt = vol.volumeInt;
+    return true;
+}
+
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Enter SetParameterCallback");
@@ -3044,6 +3234,28 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
+void AudioPolicyService::SetWakeupCloseCallback(const std::shared_ptr<WakeUpSourceCallback>& callback)
+{
+    AUDIO_INFO_LOG("Enter SetWakeupCloseCallback");
+    auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    if (wakeupCloseCbStub == nullptr) {
+        AUDIO_ERR_LOG("wakeupCloseCbStub is null");
+        return;
+    }
+    wakeupCloseCbStub->SetWakeupCloseCallback(callback);
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetWakeupCloseCallback gsp null");
+        return;
+    }
+    sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetWakeupCloseCallback listenerStub object is nullptr");
+        delete wakeupCloseCbStub;
+        return;
+    }
+    gsp->SetWakeupCloseCallback(object);
+}
 
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {

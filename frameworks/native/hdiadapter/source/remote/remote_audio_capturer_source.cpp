@@ -98,6 +98,11 @@ void RemoteAudioCapturerSource::DeInit()
 #endif // DEBUG_CAPTURE_DUMP
 }
 
+void RemoteAudioCapturerSource::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
+}
+
 int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size, const std::string &adapterNameCase,
     struct AudioPort &capturePort)
 {
@@ -144,6 +149,7 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = deepBufferCapturePeriodSize / (param.frameSize);
+    param.sourceType = attr_.sourceType;
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
@@ -247,7 +253,7 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
     }
     AUDIO_INFO_LOG("daudio manager created");
 #else
-    audioManager_ = GetAudioManagerFuncs();
+    audioManager_ = nullptr;
 #endif // PRODUCT_M40
     CHECK_AND_RETURN_RET_LOG((audioManager_ != nullptr), ERR_INVALID_HANDLE, "Initialize audio proxy failed!");
 

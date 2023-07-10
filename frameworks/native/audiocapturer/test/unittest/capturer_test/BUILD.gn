@@ -33,7 +33,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "-Werror",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   sources = [ "src/audio_capturer_unit_test.cpp" ]
 

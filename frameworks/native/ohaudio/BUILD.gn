@@ -59,7 +59,7 @@ ohos_shared_library("ohaudio") {
   ]
   cflags = [ "-Werror" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   innerapi_tags = [ "ndk" ]
 
@@ -92,7 +92,7 @@ ohos_executable("oh_audio_capturer_test") {
 
   deps = [ ":ohaudio" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -114,7 +114,7 @@ ohos_executable("oh_audio_renderer_test") {
 
   deps = [ ":ohaudio" ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

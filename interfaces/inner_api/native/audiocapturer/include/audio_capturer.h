@@ -512,6 +512,9 @@ public:
     virtual void SetValid(bool valid) = 0;
 
     virtual ~AudioCapturer();
+
+protected:
+    static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

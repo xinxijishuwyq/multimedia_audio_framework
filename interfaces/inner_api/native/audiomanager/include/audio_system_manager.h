@@ -247,6 +247,13 @@ public:
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) = 0;
 };
+
+class WakeUpSourceCallback {
+public:
+    virtual ~WakeUpSourceCallback() = default;
+    virtual void OnWakeupClose() = 0;
+};
+
 class AudioPreferOutputDeviceChangeCallback;
 
 class AudioFocusInfoChangeCallback {

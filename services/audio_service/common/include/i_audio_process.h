@@ -24,6 +24,7 @@
 #include "iremote_stub.h"
 
 #include "audio_info.h"
+#include "audio_process_config.h"
 #include "oh_audio_buffer.h"
 
 namespace OHOS {
@@ -49,10 +50,6 @@ public:
 
 class IAudioProcess : public AudioProcess, public IRemoteBroker {
 public:
-    static int32_t WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel);
-
-    static int32_t ReadConfigFromParcel(AudioProcessConfig &config, MessageParcel &parcel);
-
     virtual ~IAudioProcess() = default;
 
     // IPC code.

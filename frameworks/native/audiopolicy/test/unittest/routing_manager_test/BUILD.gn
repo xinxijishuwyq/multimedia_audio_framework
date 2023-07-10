@@ -33,7 +33,7 @@ ohos_unittest("audio_routing_manager_test") {
   ]
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
   deps = [ "../../../../../../services/audio_service:audio_client" ]

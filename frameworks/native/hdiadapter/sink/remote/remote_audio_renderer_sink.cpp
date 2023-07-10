@@ -342,7 +342,7 @@ struct AudioManager *RemoteAudioRendererSinkInner::GetAudioManager()
     }
     AUDIO_INFO_LOG("daudio manager created");
 #else
-    struct AudioManager *audioManager = GetAudioManagerFuncs();
+    struct AudioManager *audioManager = nullptr;
 #endif // PRODUCT_M40
     return audioManager;
 }

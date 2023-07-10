@@ -44,6 +44,7 @@ public:
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
+    int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
@@ -55,6 +56,7 @@ public:
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
+    int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

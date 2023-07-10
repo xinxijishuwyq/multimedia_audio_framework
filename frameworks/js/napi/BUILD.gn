@@ -90,8 +90,8 @@ ohos_shared_library("audio") {
     "ability_runtime:abilitykit_native",
     "ability_runtime:napi_base_context",
     "c_utils:utils",
+    "hilog:libhilog",
     "hiview:libxpower_event_js",
-    "hiviewdfx_hilog_native:libhilog",
     "napi:ace_napi",
     "resource_management:global_resmgr",
   ]

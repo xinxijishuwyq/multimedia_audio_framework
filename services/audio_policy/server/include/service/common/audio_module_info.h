@@ -34,6 +34,7 @@ static const std::string FILE_CLASS = "file_io";
 static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const std::string PRIMARY_SPEAKER = "Speaker";
 static const std::string PRIMARY_MIC = "Built_in_mic";
+static const std::string PRIMARY_WAKEUP = "Built_in_wakeup";
 static const std::string FILE_SINK = "file_sink";
 static const std::string FILE_SOURCE = "file_source";
 static const std::string PIPE_SINK = "fifo_output";
@@ -90,6 +91,7 @@ public:
     std::string networkId;
     std::string deviceType;
     std::string sceneName;
+    std::string sourceType;
     std::list<AudioModuleInfo> ports;
 };
 

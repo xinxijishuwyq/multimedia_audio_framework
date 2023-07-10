@@ -155,6 +155,13 @@ public:
     virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
 
     /**
+     * Set wakeupclose callback
+     *
+     * @return Returns the setting result
+     */
+    virtual int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) = 0;
+
+    /**
      * Set audio mono state for accessibility
      *
      * @param  audioMono the state of mono audio for accessibility
@@ -201,6 +208,13 @@ public:
      * @return true/false.
      */
     virtual bool SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
+
+    /**
+     * Regiest policy provider.
+     *
+     * @return result code.
+     */
+    virtual int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) = 0;
 
     /**
      * Request thread priority for client thread.

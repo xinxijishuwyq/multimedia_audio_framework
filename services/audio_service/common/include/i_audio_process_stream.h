@@ -32,6 +32,8 @@ public:
 
     virtual AudioStreamInfo GetStreamInfo() = 0;
 
+    virtual AudioStreamType GetAudioStreamType() = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard

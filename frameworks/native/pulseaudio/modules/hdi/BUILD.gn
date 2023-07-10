@@ -79,7 +79,7 @@ ohos_shared_library("module-hdi-sink") {
     "../../../hdiadapter/sink:renderer_sink_adapter",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
@@ -112,7 +112,7 @@ ohos_shared_library("module-hdi-source") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

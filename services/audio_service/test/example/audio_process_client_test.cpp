@@ -38,6 +38,10 @@ namespace AudioStandard {
 namespace {
     static constexpr long WAV_HEADER_SIZE = 42;
     static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
+    constexpr int32_t SAMPLE_FORMAT_U8 = 8;
+    constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
+    constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
+    constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
     enum OperationCode : int32_t {
         INVALID_OPERATION = -1,
         INIT_LOCAL_SPK_PROCESS = 0,
@@ -217,7 +221,6 @@ private:
     std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
     int32_t loopCount_ = -1; // for loop
     AudioMode clientMode_ = AUDIO_MODE_PLAYBACK;
-    bool needSkipWavHeader_ = true;
     bool renderFinish_ = false;
 };
 
@@ -272,10 +275,6 @@ int32_t AudioProcessTestCallback::RenderFromFile(const BufferDesc &bufDesc)
     CHECK_AND_RETURN_RET_LOG(g_spkWavFile != nullptr, ERR_INVALID_HANDLE,
         "%{public}s g_spkWavFile is null.", __func__);
 
-    if (needSkipWavHeader_) {
-        fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET);
-        needSkipWavHeader_ = false;
-    }
     if (feof(g_spkWavFile)) {
         if (loopCount_ < 0) {
             fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
@@ -326,6 +325,22 @@ void AudioProcessTestCallback::OnHandleData(size_t length)
     callBack.End();
 }
 
+inline AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
+{
+    switch (wavSampleFormat) {
+        case SAMPLE_FORMAT_U8:
+            return AudioSampleFormat::SAMPLE_U8;
+        case SAMPLE_FORMAT_S16LE:
+            return AudioSampleFormat::SAMPLE_S16LE;
+        case SAMPLE_FORMAT_S24LE:
+            return AudioSampleFormat::SAMPLE_S24LE;
+        case SAMPLE_FORMAT_S32LE:
+            return AudioSampleFormat::SAMPLE_S32LE;
+        default:
+            return AudioSampleFormat::INVALID_WIDTH;
+    }
+}
+
 int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
 {
     if (loopCount < 0) {
@@ -352,6 +367,23 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
     config.isRemote = isRemote;
+
+    if (!g_loopTest) {
+        wav_hdr wavHeader;
+        size_t headerSize = sizeof(wav_hdr);
+        size_t bytesRead = fread(&wavHeader, 1, headerSize, g_spkWavFile);
+        if (bytesRead != headerSize) {
+            AUDIO_ERR_LOG("RenderCallbackTest: File header reading error");
+        }
+
+        config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
+        config.streamInfo.format = GetSampleFormat(wavHeader.bitsPerSample);
+        config.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
+
+        cout << endl << "samplingRate:" << config.streamInfo.samplingRate << endl;
+        cout << "format:" << config.streamInfo.format << endl;
+        cout << "channels:" << config.streamInfo.channels << endl;
+    }
 
     spkProcessClient_ = AudioProcessInClient::Create(config);
     CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, ERR_INVALID_HANDLE,
