@@ -49,7 +49,7 @@ ohos_unittest("audio_renderer_multi_test") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   resource_config_file =
