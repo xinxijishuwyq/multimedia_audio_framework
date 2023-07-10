@@ -89,7 +89,7 @@ private:
     pa_threaded_mainloop *mMainLoop = NULL;
     static std::unordered_map<uint32_t, uint32_t> sinkIndexSessionIDMap;
     static std::unordered_map<uint32_t, uint32_t> sourceIndexSessionIDMap;
-    std::mutex mMutex;
+    std::mutex lock_;
     bool isSetDefaultSink_ = false;
     bool isSetDefaultSource_ = false;
     int32_t swapStatus = 0;
