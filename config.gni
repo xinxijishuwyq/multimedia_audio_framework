@@ -30,10 +30,3 @@ declare_args() {
 }
 
 third_party_path = "//third_party"
-histreamer_ext_dir = "//foundation/multimedia/histreamer_ext"
-
-if ("${product_name}" == "m40" || "${product_name}" == "higeneric") {
-  close_source_flag = true
-} else {
-  close_source_flag = false
-}

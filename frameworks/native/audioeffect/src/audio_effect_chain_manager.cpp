@@ -468,9 +468,6 @@ int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, B
         SceneTypeToEffectChainMap_[sceneType] = audioEffectChain;
     }
 
-    audioEffectChain->SetIOBufferConfig(true, bufferAttr->samplingRate, bufferAttr->numChanIn); // input
-    audioEffectChain->SetIOBufferConfig(false, bufferAttr->samplingRate, bufferAttr->numChanOut); // output
-
     std::string effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
     if (SetAudioEffectChain(sceneType, effectMode) != SUCCESS) {
         return ERROR;
