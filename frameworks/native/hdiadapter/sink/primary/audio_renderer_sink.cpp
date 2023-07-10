@@ -112,8 +112,7 @@ private:
     void AdjustAudioBalance(char *data, uint64_t len);
 #ifdef DUMPFILE
     FILE *pfd;
-    // Note: accessing to this directory requires selinux permission
-    const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
+    const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosink.pcm";
 #endif // DUMPFILE
 };
 

@@ -94,7 +94,7 @@ private:
 };
 
 #ifdef CAPTURE_DUMP
-const char *g_audioOutTestFilePath = "/data/local/tmp/audio_capture.pcm";
+const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosource.pcm";
 #endif // CAPTURE_DUMP
 bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
