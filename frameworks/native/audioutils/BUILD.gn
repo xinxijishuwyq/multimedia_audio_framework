@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../config.gni")
 
 ohos_shared_library("audio_utils") {
   sanitize = {
@@ -35,6 +36,12 @@ ohos_shared_library("audio_utils") {
     "init:libbegetutil",
     "ipc:ipc_single",
   ]
+
+  defines = []
+  if (audio_framework_feature_hitrace_enable) {
+    defines += [ "FEATURE_HITRACE_METER" ]
+    external_deps += [ "hitrace:hitrace_meter" ]
+  }
 
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]

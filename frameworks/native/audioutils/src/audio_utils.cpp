@@ -19,7 +19,9 @@
 #include <ostream>
 #include "audio_utils.h"
 #include "audio_log.h"
+#ifdef FEATURE_HITRACE_METER
 #include "hitrace_meter.h"
+#endif
 #include "parameter.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
@@ -87,21 +89,29 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
 
 void Trace::Count(const std::string &value, int64_t count, bool isEnable)
 {
+#ifdef FEATURE_HITRACE_METER
     CountTraceDebug(isEnable, HITRACE_TAG_ZAUDIO, value, count);
+#endif
 }
 
-Trace::Trace(const std::string &value, bool isShowLog, bool isEnable) : isEnable_(isEnable)
+Trace::Trace(const std::string &value, bool isShowLog, bool isEnable)
 {
+    value_ = value;
+    isShowLog_ = isShowLog;
+    isEnable_ = isEnable;
+    isFinished_ = false;
+#ifdef FEATURE_HITRACE_METER
     if (isShowLog) {
-        value_ = value;
         isShowLog_ = true;
         AUDIO_INFO_LOG("%{public}s start.", value_.c_str());
     }
     StartTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO, value);
+#endif
 }
 
 void Trace::End()
 {
+#ifdef FEATURE_HITRACE_METER
     if (!isFinished_) {
         FinishTraceDebug(isEnable_, HITRACE_TAG_ZAUDIO);
         isFinished_ = true;
@@ -109,6 +119,7 @@ void Trace::End()
             AUDIO_INFO_LOG("%{public}s end.", value_.c_str());
         }
     }
+#endif
 }
 
 Trace::~Trace()
