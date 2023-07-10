@@ -44,10 +44,6 @@ ohos_shared_library("audio_capturer") {
 
   configs = [ ":audio_capturer_config" ]
 
-  if ("${product_name}" == "ohcore") {
-    defines = [ "OHCORE" ]
-  }
-
   include_dirs = audio_gateway_include_dirs
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]

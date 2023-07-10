@@ -192,8 +192,6 @@ ohos_shared_library("audio_policy_service") {
     "//third_party/pulseaudio/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   external_deps = [
     "ability_base:want",
     "ability_base:zuri",

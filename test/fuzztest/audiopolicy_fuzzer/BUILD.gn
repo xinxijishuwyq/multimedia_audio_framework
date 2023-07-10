@@ -22,8 +22,6 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
 
   include_dirs = [ "../../../services/audio_policy/server/include" ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio_src ]

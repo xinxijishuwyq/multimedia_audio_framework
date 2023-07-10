@@ -63,8 +63,6 @@ ohos_shared_library("fast_audio_renderer_sink") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   deps = [
     "../../audioutils:audio_utils",
     "//third_party/bounds_checking_function:libsec_shared",
@@ -258,8 +256,6 @@ ohos_shared_library("renderer_sink_adapter") {
     "remote",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
-
-  include_dirs += [ multimedia_audio_framework_drivers ]
 
   deps = [
     ":audio_renderer_file_sink",

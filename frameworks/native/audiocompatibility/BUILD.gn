@@ -30,7 +30,6 @@ ohos_shared_library("audio_capturer_gateway") {
     "../../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
   include_dirs += audio_gateway_include_dirs
 
   sources = audio_capturer_gateway_sources
@@ -67,7 +66,6 @@ ohos_shared_library("audio_renderer_gateway") {
     "../../../interfaces/inner_api/native/audiorenderer/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
   include_dirs += audio_gateway_include_dirs
 
   sources = audio_renderer_gateway_sources
