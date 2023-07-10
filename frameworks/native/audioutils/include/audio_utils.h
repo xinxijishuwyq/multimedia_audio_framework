@@ -31,9 +31,9 @@ public:
     ~Trace();
 private:
     std::string value_;
-    bool isShowLog_ = false;
-    bool isEnable_ = true;
-    bool isFinished_ = false;
+    bool isShowLog_;
+    bool isEnable_;
+    bool isFinished_;
 };
 
 class ClockTime {
