@@ -261,10 +261,6 @@ ohos_shared_library("audio_service") {
 
   configs = [ ":audio_service_config" ]
 
-  if ("${product_name}" == "m40") {
-    cflags = [ "-DPRODUCT_M40" ]
-  }
-
   deps = [
     ":audio_common",
     ":audio_process_service",
