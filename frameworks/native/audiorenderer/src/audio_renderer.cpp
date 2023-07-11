@@ -995,6 +995,11 @@ AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
     return audioStream_->GetAudioEffectMode();
 }
 
+int64_t AudioRendererPrivate::GetFramesWritten() const
+{
+    return audioStream_->GetFramesWritten();
+}
+
 int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
 {
     return audioStream_->SetAudioEffectMode(effectMode);

@@ -629,5 +629,10 @@ void AudioCapturerPrivate::SetValid(bool valid)
     std::lock_guard<std::mutex> lock(lock_);
     isValid_ = valid;
 }
+
+int64_t AudioCapturerPrivate::GetFramesRead() const
+{
+    return audioStream_->GetFramesWritten();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -491,6 +491,20 @@ public:
     AudioEffectMode GetStreamAudioEffectMode();
 
     /**
+     * @brief Gets the audio frame size that has been written.
+     *
+     * @return Returns the audio frame size that has been written.
+     */
+    int64_t GetStreamFramesWritten();
+
+    /**
+     * @brief Gets the audio frame size that has been read.
+     *
+     * @return Returns the audio frame size that has been read.
+     */
+    int64_t GetStreamFramesRead();
+
+    /**
      * @brief Sets the audio effect mode.
      *
      * @param effectMode The audio effect mode at which the stream needs to be rendered.

@@ -77,6 +77,8 @@ public:
     float GetLowPowerVolume();
     float GetSingleStreamVolume();
     AudioEffectMode GetAudioEffectMode();
+    int64_t GetFramesWritten();
+    int64_t GetFramesRead();
     int32_t SetAudioEffectMode(AudioEffectMode effectMode);
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;

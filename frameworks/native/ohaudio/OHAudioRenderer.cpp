@@ -138,7 +138,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer
 }
 
 OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
-    OH_AudioStream_Usage* usage, OH_AudioStream_Content* content)
+    OH_AudioStream_Usage* usage)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
@@ -146,7 +146,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     *usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
-    *content = (OH_AudioStream_Content)rendererInfo.contentType;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -156,6 +155,35 @@ OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer* rendere
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     *encodingType = (OH_AudioStream_EncodingType)audioRenderer->GetEncodingType();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int64_t* frames)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *frames = audioRenderer->GetFramesWritten();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
+    clockid_t clockId, int64_t* framePosition, int64_t* timestamp)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    Timestamp stamp;
+    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    audioRenderer->GetAudioTime(stamp, base);
+    *framePosition = stamp.framePosition;
+    *timestamp = stamp.time.tv_nsec;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *frameSize = audioRenderer->GetFrameSizeInCallback();
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -258,15 +286,24 @@ AudioEncodingType OHAudioRenderer::GetEncodingType()
     return params.encodingType;
 }
 
-int32_t OHAudioRenderer::GetFramesWritten()
+int64_t OHAudioRenderer::GetFramesWritten()
 {
-    return 0;
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetFramesWritten();
 }
 
 void OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->GetAudioTime(timestamp, base);
+}
+
+int32_t OHAudioRenderer::GetFrameSizeInCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    size_t bufSize;
+    audioRenderer_->GetBufferSize(bufSize);
+    return (int32_t)bufSize;
 }
 
 int32_t OHAudioRenderer::GetBufferDesc(BufferDesc &bufDesc) const

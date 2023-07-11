@@ -477,8 +477,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_Usage usage;
-    OH_AudioStream_Content content;
-    result = OH_AudioRenderer_GetRendererInfo(audioRenderer, &usage, &content);
+    result = OH_AudioRenderer_GetRendererInfo(audioRenderer, &usage);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_TRUE(usage == AUDIOSTREAM_USAGE_MEDIA);
     EXPECT_TRUE(content == AUDIOSTREAM_CONTENT_TYPE_MUSIC);
