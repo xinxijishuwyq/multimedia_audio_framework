@@ -2932,13 +2932,13 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
     return AUDIO_CLIENT_SUCCESS;
 }
 
-void AudioServiceClient::SetInnerCapturerState(bool isInnerCapturer)
+void AudioServiceClient::SetStreamInnerCapturerState(bool isInnerCapturer)
 {
     AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", isInnerCapturer);
     isInnerCapturerStream = isInnerCapturer;
 }
 
-void AudioServiceClient::SetPrivacyType(AudioPrivacyType privacyType)
+void AudioServiceClient::SetStreamPrivacyType(AudioPrivacyType privacyType)
 {
     AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", privacyType);
     mPrivacyType = privacyType;

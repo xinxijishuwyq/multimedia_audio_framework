@@ -65,13 +65,16 @@ public:
     int32_t Clear() override;
     void SubmitAllFreeBuffers();
 
-    int32_t SetLowPowerVolume(float volume);
-    float GetLowPowerVolume();
-    float GetSingleStreamVolume();
-    AudioEffectMode GetAudioEffectMode();
-    int64_t GetFramesWritten();
-    int64_t GetFramesRead();
-    int32_t SetAudioEffectMode(AudioEffectMode effectMode);
+    void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetPrivacyType(AudioPrivacyType privacyType) override;
+
+    int32_t SetLowPowerVolume(float volume) override;
+    float GetLowPowerVolume() override;
+    float GetSingleStreamVolume() override;
+    AudioEffectMode GetAudioEffectMode() override;
+    int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
+    int64_t GetFramesWritten() override;
+    int64_t GetFramesRead() override;
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;

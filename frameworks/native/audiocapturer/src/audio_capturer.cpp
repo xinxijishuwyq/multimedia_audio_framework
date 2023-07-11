@@ -101,17 +101,19 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->cachePath_ = cachePath;
     }
 
-    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        capturer->SetCapturerState(true);
-        (void)AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(
-            capturerOptions.playbackCaptureConfig.filterOptions);
-    }
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     if (capturer->SetParams(params) != SUCCESS) {
         capturer = nullptr;
     }
-    if (isChange) {
+
+    if (capturer != nullptr && sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        capturer->SetCapturerState(true);
+        (void)AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(
+            capturerOptions.playbackCaptureConfig.filterOptions);
+    }
+
+    if (capturer != nullptr && isChange) {
         capturer->isChannelChange_ = true;
     }
 

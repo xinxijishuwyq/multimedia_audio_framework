@@ -99,6 +99,9 @@ public:
     virtual AudioEffectMode GetAudioEffectMode() = 0;
     virtual int32_t SetAudioEffectMode(AudioEffectMode effectMode) = 0;
 
+    virtual int64_t GetFramesWritten() = 0;
+    virtual int64_t GetFramesRead() = 0;
+
     // Common APIs
     virtual bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
     virtual bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
