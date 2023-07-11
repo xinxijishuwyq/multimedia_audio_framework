@@ -175,11 +175,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             resetTime_ = false;
             resetTimestamp_ = paTimeStamp;
         }
-        if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            timestamp.framePosition = GetStreamFramesWritten();
-        } else {
-            timestamp.framePosition = GetStreamFramesRead();
-        }
 
         timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
@@ -1000,16 +995,6 @@ void AudioStream::SetInnerCapturerState(bool isInnerCapturer)
 void AudioStream::SetPrivacyType(AudioPrivacyType privacyType)
 {
     SetStreamPrivacyType(privacyType);
-}
-
-int64_t AudioStream::GetFramesWritten()
-{
-    return GetStreamFramesWritten();
-}
-
-int64_t AudioStream::GetFramesRead()
-{
-    return GetStreamFramesRead();
 }
 } // namespace AudioStandard
 } // namespace OHOS

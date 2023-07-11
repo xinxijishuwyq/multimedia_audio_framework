@@ -59,7 +59,6 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
     void SetApplicationCachePath(const std::string cachePath) override;
     void SetValid(bool valid) override;
-    int64_t GetFramesRead() const override;
 
     std::shared_ptr<AudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};

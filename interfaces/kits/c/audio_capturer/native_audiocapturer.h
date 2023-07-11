@@ -13,30 +13,8 @@
  * limitations under the License.
  */
 
-/**
- * @addtogroup OHAudio
- * @{
- *
- * @brief Provide the definition of the C interface for the audio module.
- *
- * @syscap SystemCapability.Multimedia.Audio.Core
- *
- * @since 10
- * @version 1.0
- */
-
-/**
- * @file native_audiocapturer.h
- *
- * @brief Declare audio stream related interfaces for input type.
- *
- * @syscap SystemCapability.Multimedia.Audio.Core
- * @since 10
- * @version 1.0
- */
-
-#ifndef NATIVE_AUDIOCAPTURER_H
-#define NATIVE_AUDIOCAPTURER_H
+#ifndef ST_NATIVE_AUDIOCAPTURER_H
+#define ST_NATIVE_AUDIOCAPTURER_H
 
 #include <time.h>
 #include "native_audiostream_base.h"
@@ -184,51 +162,18 @@ OH_AudioStream_Result OH_AudioCapturer_GetEncodingType(OH_AudioCapturer* capture
 /*
  * Query the capturer info of the capturer client.
  *
+ * The rendere info includes {@link OH_AudioStream_Usage} value and {@link OH_AudioStream_Content} value.
+ *
  * @since 10
  *
  * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param sourceType Pointer to a variable that will be set for the stream sourceType.
+ * @param usage Pointer to a variable that will be set for the stream usage.
+ * @param content Pointer to a variable that will be set for the stream content.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioCapturer_GetCapturerInfo(OH_AudioCapturer* capturer,
     OH_AudioStream_SourceType* sourceType);
-
-/*
- * Query the frame size in callback, it is a fixed length of the buffer returned by each callback.
- *
- * @since 10
- *
- * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param frameSize Pointer to a variable that will be set for the frame size.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioCapturer_GetFrameSizeInCallback(OH_AudioCapturer* capturer, int32_t* frameSize);
-
-/*
- * Query the the time at which a particular frame was presented
- *
- * @since 10
- *
- * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param clockId {@link #CLOCK_MONOTONIC}
- * @param framePosition Pointer to a variable to receive the position
- * @param timestamp Pointer to a variable to receive the timestamp
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer,
-    clockid_t clockId, int64_t* framePosition, int64_t* timestamp);
-
-/*
- * Query the the number of frames that have been read since the stream was created.
- *
- * @since 10
- *
- * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer()
- * @param frames Pointer to a variable that will be set for the frame count number.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer, int64_t* frames);
 #ifdef __cplusplus
 }
 #endif
-#endif // NATIVE_AUDIOCAPTURER_H
+#endif // ST_NATIVE_AUDIORENDERER_H

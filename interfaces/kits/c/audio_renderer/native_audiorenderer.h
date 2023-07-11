@@ -13,30 +13,8 @@
  * limitations under the License.
  */
 
-/**
- * @addtogroup OHAudio
- * @{
- *
- * @brief Provide the definition of the C interface for the audio module.
- *
- * @syscap SystemCapability.Multimedia.Audio.Core
- *
- * @since 10
- * @version 1.0
- */
-
-/**
- * @file native_audiorenderer.h
- *
- * @brief Declare audio stream related interfaces for output type.
- *
- * @syscap SystemCapability.Multimedia.Audio.Core
- * @since 10
- * @version 1.0
- */
-
-#ifndef NATIVE_AUDIORENDERER_H
-#define NATIVE_AUDIORENDERER_H
+#ifndef ST_NATIVE_AUDIORENDERER_H
+#define ST_NATIVE_AUDIORENDERER_H
 
 #include <time.h>
 #include "native_audiostream_base.h"
@@ -168,16 +146,17 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer* renderer
 /*
  * Query the renderer info of the renderer client.
  *
- * The rendere info includes {@link OH_AudioStream_Usage} value.
+ * The rendere info includes {@link OH_AudioStream_Usage} value and {@link OH_AudioStream_Content} value.
  *
  * @since 10
  *
  * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
  * @param usage Pointer to a variable that will be set for the stream usage.
+ * @param content Pointer to a variable that will be set for the stream content.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* renderer,
-    OH_AudioStream_Usage* usage);
+    OH_AudioStream_Usage* usage, OH_AudioStream_Content* content);
 
 /*
  * Query the encoding type of the renderer client.
@@ -190,43 +169,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer* rendere
  */
 OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer* renderer,
     OH_AudioStream_EncodingType* encodingType);
-
-/*
- * Query the the number of frames that have been written since the stream was created.
- *
- * @since 10
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param frames Pointer to a variable that will be set for the frame count number.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int64_t* frames);
-
-/*
- * Query the the time at which a particular frame was presented.
- *
- * @since 10
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param clockId {@link #CLOCK_MONOTONIC}
- * @param framePosition Pointer to a variable to receive the position
- * @param timestamp Pointer to a variable to receive the timestamp
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
-    clockid_t clockId, int64_t* framePosition, int64_t* timestamp);
-
-/*
- * Query the frame size in callback, it is a fixed length that the stream want to be filled for each callback.
- *
- * @since 10
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param frameSize Pointer to a variable that will be set for the frame size.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize);
 #ifdef __cplusplus
 }
 #endif
-#endif // NATIVE_AUDIORENDERER_H
+#endif // ST_NATIVE_AUDIORENDERER_H
