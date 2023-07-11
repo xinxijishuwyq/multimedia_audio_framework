@@ -173,7 +173,6 @@ OHAudioRenderer::~OHAudioRenderer()
 
 bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
 {
-
     std::string cacheDir = "/data/storage/el2/base/haps/entry/files";
     audioRenderer_ = AudioRenderer::Create(cacheDir, rendererOptions);
     return audioRenderer_ != nullptr;
