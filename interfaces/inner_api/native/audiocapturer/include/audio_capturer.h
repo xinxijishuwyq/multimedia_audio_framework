@@ -511,14 +511,6 @@ public:
      */
     virtual void SetValid(bool valid) = 0;
 
-    /**
-     * @brief Gets the audio frame size that has been read.
-     *
-     * @return Returns the audio frame size that has been read.
-     * @since 10
-     */
-    virtual int64_t GetFramesRead() const = 0;
-
     virtual ~AudioCapturer();
 
 protected:

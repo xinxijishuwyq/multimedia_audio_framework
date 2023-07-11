@@ -87,7 +87,6 @@ public:
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
     void DestroyAudioRendererStateCallback() override;
     AudioEffectMode GetAudioEffectMode() const override;
-    int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
 
     AudioRendererInfo rendererInfo_ = {};

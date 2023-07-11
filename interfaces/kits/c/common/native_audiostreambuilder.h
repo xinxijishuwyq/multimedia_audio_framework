@@ -13,30 +13,8 @@
  * limitations under the License.
  */
 
-/**
- * @addtogroup OHAudio
- * @{
- *
- * @brief Provide the definition of the C interface for the audio module.
- *
- * @syscap SystemCapability.Multimedia.Audio.Core
- *
- * @since 10
- * @version 1.0
- */
-
-/**
- * @file native_audiostreambuilder.h
- *
- * @brief Declare audio stream builder related interfaces.
- *
- * @syscap SystemCapability.Multimedia.Audio.Core
- * @since 10
- * @version 1.0
- */
-
-#ifndef NATIVE_AUDIOSTREAM_BUILDER_H
-#define NATIVE_AUDIOSTREAM_BUILDER_H
+#ifndef ST_NATIVE_AUDIOSTREAM_BUILDER_H
+#define ST_NATIVE_AUDIOSTREAM_BUILDER_H
 
 #include "native_audiostream_base.h"
 #include "native_audiorenderer.h"
@@ -134,10 +112,11 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
  * @param usage Set the stream usage for the renderer client.
+ * @param content Set the stream content for the renderer client.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder,
-    OH_AudioStream_Usage usage);
+    OH_AudioStream_Usage usage, OH_AudioStream_Content content);
 
 /*
  * Set the capturer information of the stream client
@@ -203,4 +182,4 @@ OH_AudioStream_Result OH_AudioStreamBuilder_GenerateCapturer(OH_AudioStreamBuild
 }
 #endif
 
-#endif // NATIVE_AUDIOSTREAM_BUILDER_H
+#endif // ST_NATIVE_AUDIOSTREAM_BUILDER_H

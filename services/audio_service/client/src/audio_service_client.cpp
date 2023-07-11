@@ -2905,24 +2905,6 @@ AudioEffectMode AudioServiceClient::GetStreamAudioEffectMode()
     return effectMode;
 }
 
-int64_t AudioServiceClient::GetStreamFramesWritten()
-{
-    if (mFrameSize == 0) {
-        AUDIO_ERR_LOG("Error frame size");
-        return ERROR;
-    }
-    return mTotalBytesWritten / mFrameSize;
-}
-
-int64_t AudioServiceClient::GetStreamFramesRead()
-{
-    if (mFrameSize == 0) {
-        AUDIO_ERR_LOG("Error frame size");
-        return ERROR;
-    }
-    return mTotalBytesRead / mFrameSize;
-}
-
 int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffectMode)
 {
     AUDIO_INFO_LOG("SetStreamAudioEffectMode: %{public}d", audioEffectMode);
