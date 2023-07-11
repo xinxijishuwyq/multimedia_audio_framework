@@ -1168,6 +1168,11 @@ int32_t AudioServiceClient::StopStream()
         PAStreamCorkSuccessCb = PAStreamAsyncStopSuccessCb;
         state_ = STOPPING;
         DrainAudioCache();
+
+        if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+            return AUDIO_CLIENT_PA_ERR;
+        }
+
         pa_threaded_mainloop_lock(mainLoop);
 
         streamDrainStatus = 0;
