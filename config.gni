@@ -28,6 +28,13 @@ declare_args() {
     audio_framework_feature_hitrace_enable = false
   }
 
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.customization_config_policy)) {
+    audio_framework_config_policy_enable = true
+  } else {
+    audio_framework_config_policy_enable = false
+  }
+
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 
   multimedia_audio_framework_pulse_audio_src = "//third_party/pulseaudio/src"

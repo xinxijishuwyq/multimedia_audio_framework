@@ -205,7 +205,6 @@ ohos_shared_library("audio_policy_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "config_policy:configpolicy_util",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
@@ -222,6 +221,11 @@ ohos_shared_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (audio_framework_config_policy_enable) {
+    defines += [ "USB_CONFIG_POLICY" ]
+    external_deps += [ "config_policy:configpolicy_util" ]
+  }
 
   if (accessibility_enable == true) {
     sources +=
