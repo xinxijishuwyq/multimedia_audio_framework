@@ -226,7 +226,7 @@ bool RemoteAudioCapturerSource::IsInited(void)
 int32_t RemoteAudioCapturerSource::InitAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Initialize audio proxy manager");
-#ifdef PRODUCT_M40
+#ifdef FEATURE_DISTRIBUTE_AUDIO
 #ifdef __aarch64__
     char resolvedPath[100] = "/system/lib64/libdaudio_client.z.so";
 #else
@@ -254,7 +254,7 @@ int32_t RemoteAudioCapturerSource::InitAudioManager()
     AUDIO_INFO_LOG("daudio manager created");
 #else
     audioManager_ = nullptr;
-#endif // PRODUCT_M40
+#endif // FEATURE_DISTRIBUTE_AUDIO
     CHECK_AND_RETURN_RET_LOG((audioManager_ != nullptr), ERR_INVALID_HANDLE, "Initialize audio proxy failed!");
 
     return SUCCESS;

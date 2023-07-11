@@ -50,7 +50,7 @@ const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
-#ifdef PRODUCT_M40
+#ifdef FEATURE_DISTRIBUTE_AUDIO
 const uint32_t PARAM_VALUE_LENTH = 20;
 #endif
 }
@@ -166,7 +166,7 @@ void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback*
     if (paramCallbackRegistered_) {
         return;
     }
-#ifdef PRODUCT_M40
+#ifdef FEATURE_DISTRIBUTE_AUDIO
     // register to adapter
     ParamCallback adapterCallback = &RemoteAudioRendererSinkInner::ParamEventCallback;
     if (audioAdapter_ == nullptr) {
@@ -186,7 +186,7 @@ void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback*
 void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-#ifdef PRODUCT_M40
+#ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("RemoteAudioRendererSink::SetParameter: key %{public}d, condition: %{public}s, value: %{public}s",
         key, condition.c_str(), value.c_str());
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
@@ -203,7 +203,7 @@ void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, co
 
 std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
-#ifdef PRODUCT_M40
+#ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("RemoteAudioRendererSink::GetParameter: key %{public}d, condition: %{public}s", key,
         condition.c_str());
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
@@ -315,7 +315,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 struct AudioManager *RemoteAudioRendererSinkInner::GetAudioManager()
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Initialize audio proxy manager");
-#ifdef PRODUCT_M40
+#ifdef FEATURE_DISTRIBUTE_AUDIO
 #ifdef __aarch64__
     char resolvedPath[100] = "/system/lib64/libdaudio_client.z.so";
 #else
@@ -343,7 +343,7 @@ struct AudioManager *RemoteAudioRendererSinkInner::GetAudioManager()
     AUDIO_INFO_LOG("daudio manager created");
 #else
     struct AudioManager *audioManager = nullptr;
-#endif // PRODUCT_M40
+#endif // FEATURE_DISTRIBUTE_AUDIO
     return audioManager;
 }
 

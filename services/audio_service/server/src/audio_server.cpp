@@ -158,7 +158,6 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         return;
     }
 
-#ifdef PRODUCT_M40
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
@@ -178,7 +177,6 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         return;
     }
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-#endif
     HiviewDFX::XCollie::GetInstance().CancelTimer(id);
 }
 
@@ -205,7 +203,6 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: get audio parameter");
-#ifdef PRODUCT_M40
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
         AudioParamKey parmKey = AudioParamKey::NONE;
@@ -215,14 +212,14 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
     }
-#endif
-     if (AudioServer::audioParameters.count(key)) {
-         HiviewDFX::XCollie::GetInstance().CancelTimer(id);
-         return AudioServer::audioParameters[key];
-     } else {
-         HiviewDFX::XCollie::GetInstance().CancelTimer(id);
-         return "";
-     }
+
+    if (AudioServer::audioParameters.count(key)) {
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
+        return AudioServer::audioParameters[key];
+    } else {
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
+        return "";
+    }
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,

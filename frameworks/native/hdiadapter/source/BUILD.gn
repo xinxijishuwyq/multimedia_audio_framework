@@ -87,9 +87,6 @@ ohos_shared_library("remote_audio_capturer_source") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
   cflags_cc = cflags
-  if ("${product_name}" == "m40") {
-    cflags += [ "-DPRODUCT_M40" ]
-  }
 
   include_dirs = [
     "common",
@@ -100,7 +97,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   external_deps = [ "hilog:libhilog" ]
   defines = []
   if (audio_framework_feature_daudio_enable) {
-    defines += [ "PRODUCT_M40" ]
+    defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
     external_deps += [ "distributed_audio:daudio_client" ]
   }
 
@@ -136,7 +133,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   ]
   defines = []
   if (audio_framework_feature_daudio_enable) {
-    defines += [ "PRODUCT_M40" ]
+    defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
     external_deps += [ "distributed_audio:daudio_client" ]
   }
 
