@@ -147,6 +147,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
             RegisterBluetoothListener();
+            RegisterDataObserver();
             break;
         case ACCESSIBILITY_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility accessibility service start");
