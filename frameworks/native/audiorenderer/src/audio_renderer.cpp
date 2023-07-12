@@ -195,20 +195,6 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.audioFocusType.streamType = audioStreamType;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.mode = SHARE_MODE;
-
-#ifdef DUMP_CLIENT_PCM
-    std::stringstream strStream;
-    std::string dumpPatch;
-    strStream << "/data/local/tmp/";
-    strStream << appInfo_.appPid << ".pcm";
-    strStream >> dumpPatch;
-    AUDIO_INFO_LOG("Client dump using path: %{public}s with pid:%{public}d", dumpPatch.c_str(), getpid());
-
-    dcp_ = fopen(dumpPatch.c_str(), "a+");
-    if (dcp_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif
 }
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
@@ -275,6 +261,22 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         return ret;
     }
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
+
+#ifdef DUMP_CLIENT_PCM
+    uint32_t streamId = 0;
+    GetAudioStreamId(streamId);
+    std::stringstream strStream;
+    std::string dumpPatch;
+    strStream << "/data/storage/el2/base/haps/entry/files/";
+    strStream << "dump_pid" << appInfo_.appPid << "_stream" << streamId << ".pcm";
+    strStream >> dumpPatch;
+    AUDIO_INFO_LOG("Client dump using path: %{public}s", dumpPatch.c_str());
+
+    dcp_ = fopen(dumpPatch.c_str(), "w+");
+    if (dcp_ == nullptr) {
+        AUDIO_ERR_LOG("Error opening pcm test file!");
+    }
+#endif
 
     return InitAudioInterruptCallback();
 }
@@ -771,6 +773,11 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
+#ifdef DUMP_CLIENT_PCM
+    if (dcp_ != nullptr) {
+        fwrite((void *)(bufDesc.buffer), 1, bufDesc.bufLength, dcp_);
+    }
+#endif
     return audioStream_->Enqueue(bufDesc);
 }
 

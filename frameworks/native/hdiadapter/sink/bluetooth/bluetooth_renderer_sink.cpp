@@ -55,7 +55,7 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 }
 
 #ifdef BT_DUMPFILE
-const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_bt.pcm";
+const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosink.pcm";
 #endif // BT_DUMPFILE
 
 typedef struct {
@@ -453,9 +453,11 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
 
 #ifdef BT_DUMPFILE
-    size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-    if (writeResult != len) {
-        AUDIO_ERR_LOG("Failed to write the file.");
+    if (pfd) {
+        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
+        if (writeResult != len) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
     }
 #endif // BT_DUMPFILE
 
