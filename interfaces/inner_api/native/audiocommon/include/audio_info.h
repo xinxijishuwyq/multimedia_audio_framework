@@ -77,11 +77,11 @@ enum VolumeAdjustType {
     /**
      * Adjust volume up
      */
-    VOLUME_ADJUST_UP = 0,
+    VOLUME_UP = 0,
     /**
      * Adjust volume down
      */
-    VOLUME_ADJUST_DOWN = 1,
+    VOLUME_DOWN = 1,
 };
 
 enum DeviceFlag {
