@@ -1925,7 +1925,7 @@ bool AudioPolicyService::CreateDataShareHelperInstance()
 
     sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
-    
+
     lock_guard<mutex> lock(g_dataShareHelperMutex);
     g_dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject, SETTINGS_DATA_BASE_URI);
     CHECK_AND_RETURN_RET_LOG(g_dataShareHelper != nullptr, false, "CreateDataShareHelperInstance create fail.");
@@ -1944,7 +1944,7 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
 
     auto resultSet = g_dataShareHelper->Query(*uri, predicates, columns);
     CHECK_AND_RETURN_RET_LOG(resultSet != nullptr, ERROR, "GetDeviceNameFromDataShareHelper query fail.");
-    
+
     int32_t numRows = 0;
     resultSet->GetRowCount(numRows);
 
@@ -1952,7 +1952,6 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
         AUDIO_ERR_LOG("GetDeviceNameFromDataShareHelper row zero.");
         return ERROR;
     }
-
     int columnIndex;
     resultSet->GoToFirstRow();
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
