@@ -34,70 +34,65 @@ public:
     AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid);
     virtual ~AudioStream();
 
-    void SetRendererInfo(const AudioRendererInfo &rendererInfo);
-    void SetCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj);
-    int32_t GetAudioStreamInfo(AudioStreamParams &info);
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state);
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state);
-    int32_t GetAudioSessionID(uint32_t &sessionID);
-    State GetState();
-    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
-    int32_t GetBufferSize(size_t &bufferSize) const;
-    int32_t GetFrameCount(uint32_t &frameCount) const;
-    int32_t GetLatency(uint64_t &latency);
-    static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    int32_t SetAudioStreamType(AudioStreamType audioStreamType);
-    int32_t SetVolume(float volume);
-    float GetVolume();
-    int32_t SetRenderRate(AudioRendererRate renderRate);
-    AudioRendererRate GetRenderRate();
-    int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback);
-
-    void SetInnerCapturerState(bool isInnerCapturer);
-    void SetPrivacyType(AudioPrivacyType privacyType);
+        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+    int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
+    int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    State GetState() override;
+    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+    int32_t GetBufferSize(size_t &bufferSize) override;
+    int32_t GetFrameCount(uint32_t &frameCount) override;
+    int32_t GetLatency(uint64_t &latency) override;
+    int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
+    int32_t SetVolume(float volume) override;
+    float GetVolume() override;
+    int32_t SetRenderRate(AudioRendererRate renderRate) override;
+    AudioRendererRate GetRenderRate() override;
+    int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
 
     // callback mode api
-    int32_t SetRenderMode(AudioRenderMode renderMode);
-    AudioRenderMode GetRenderMode();
-    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback);
-    int32_t SetCaptureMode(AudioCaptureMode captureMode);
-    AudioCaptureMode GetCaptureMode();
-    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback);
-    int32_t GetBufferDesc(BufferDesc &bufDesc);
-    int32_t GetBufQueueState(BufferQueueState &bufState);
-    int32_t Enqueue(const BufferDesc &bufDesc);
-    int32_t Clear();
+    int32_t SetRenderMode(AudioRenderMode renderMode) override;
+    AudioRenderMode GetRenderMode() override;
+    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
+    int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
+    AudioCaptureMode GetCaptureMode() override;
+    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override;
+    int32_t GetBufQueueState(BufferQueueState &bufState) override;
+    int32_t Enqueue(const BufferDesc &bufDesc) override;
+    int32_t Clear() override;
     void SubmitAllFreeBuffers();
 
-    int32_t SetLowPowerVolume(float volume);
-    float GetLowPowerVolume();
-    float GetSingleStreamVolume();
-    AudioEffectMode GetAudioEffectMode();
-    int64_t GetFramesWritten();
-    int64_t GetFramesRead();
-    int32_t SetAudioEffectMode(AudioEffectMode effectMode);
+    void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetPrivacyType(AudioPrivacyType privacyType) override;
+
+    int32_t SetLowPowerVolume(float volume) override;
+    float GetLowPowerVolume() override;
+    float GetSingleStreamVolume() override;
+    AudioEffectMode GetAudioEffectMode() override;
+    int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
+    int64_t GetFramesWritten() override;
+    int64_t GetFramesRead() override;
 
     std::vector<AudioSampleFormat> GetSupportedFormats() const;
     std::vector<AudioEncodingType> GetSupportedEncodingTypes() const;
     std::vector<AudioSamplingRate> GetSupportedSamplingRates() const;
 
     // Common APIs
-    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT);
-    bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT);
-    bool StopAudioStream();
-    bool ReleaseAudioStream(bool releaseRunner = true);
-    bool FlushAudioStream();
+    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    bool StopAudioStream() override;
+    bool ReleaseAudioStream(bool releaseRunner = true) override;
+    bool FlushAudioStream() override;
 
     // Playback related APIs
-    bool DrainAudioStream();
-    size_t Write(uint8_t *buffer, size_t buffer_size);
+    bool DrainAudioStream() override;
+    size_t Write(uint8_t *buffer, size_t buffer_size) override;
 
     // Recording related APIs
-    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead);
+    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
 private:
     AudioStreamType eStreamType_;
@@ -123,8 +118,6 @@ private:
     AudioCapturerInfo capturerInfo_;
     uint32_t sessionId_;
 
-    static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
-    static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     bool isFirstRead_;
     bool isFirstWrite_;
 

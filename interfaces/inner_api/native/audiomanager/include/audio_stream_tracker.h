@@ -16,8 +16,9 @@
 #ifndef AUDIO_STREAM_TRACKER_H
 #define AUDIO_STREAM_TRACKER_H
 
-#include "audio_service_client.h"
+#include "audio_info.h"
 #include "audio_log.h"
+#include "audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

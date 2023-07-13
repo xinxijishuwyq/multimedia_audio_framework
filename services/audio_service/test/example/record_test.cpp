@@ -15,7 +15,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "audio_service_client.h"
+#include "audio_stream.h"
 #include "audio_log.h"
 
 using namespace OHOS::AudioStandard;
@@ -23,6 +23,7 @@ using namespace OHOS::AudioStandard;
 namespace {
 constexpr uint8_t DEFAULT_FORMAT = SAMPLE_S16LE;
 constexpr uint8_t DEFAULT_CHANNELS = 2;
+constexpr int32_t INIT_CLIENT_ERROR = -1;
 } // namespace
 
 class RecordTest : public AudioCapturerCallbacks {
@@ -72,10 +73,9 @@ static bool InitClient(std::unique_ptr<AudioServiceClient> &client, uint32_t sam
 
 int main(int argc, char* argv[])
 {
-    std::unique_ptr client = std::make_unique<AudioServiceClient>();
-    if (client == nullptr) {
-        return -1;
-    }
+    std::unique_ptr<AudioServiceClient> client = std::make_unique<AudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD,
+        getuid());
+    CHECK_AND_RETURN_RET_LOG(client != nullptr, INIT_CLIENT_ERROR, "AudioStream create error");
 
     int32_t rateArgIndex = 2;
     if (!InitClient(client, atoi(argv[rateArgIndex]))) {

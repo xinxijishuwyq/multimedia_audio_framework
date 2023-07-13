@@ -24,7 +24,6 @@
 #include "audio_manager_base.h"
 #include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_stream.h"
 #include "audio_policy_manager.h"
 #include "audio_volume_key_event_callback_stub.h"
 #include "audio_utils.h"

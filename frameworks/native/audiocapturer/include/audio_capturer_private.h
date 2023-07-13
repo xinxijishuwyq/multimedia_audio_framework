@@ -18,7 +18,7 @@
 
 #include <mutex>
 #include "audio_interrupt_callback.h"
-#include "audio_stream.h"
+#include "i_audio_stream.h"
 #include "audio_capturer_proxy_obj.h"
 
 namespace OHOS {
@@ -61,10 +61,12 @@ public:
     void SetValid(bool valid) override;
     int64_t GetFramesRead() const override;
 
-    std::shared_ptr<AudioStream> audioStream_;
+    std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
+    AudioStreamType audioStreamType_;
+    std::string cachePath_;
 
-    AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo);
+    AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
     bool isChannelChange_ = false;
     void SetCapturerState(bool state);
@@ -90,7 +92,7 @@ private:
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
 public:
-    explicit AudioCapturerInterruptCallbackImpl(const std::shared_ptr<AudioStream> &audioStream);
+    explicit AudioCapturerInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream);
     virtual ~AudioCapturerInterruptCallbackImpl();
 
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
@@ -99,7 +101,7 @@ private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
-    std::shared_ptr<AudioStream> audioStream_;
+    std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;
     std::shared_ptr<AudioCapturerCallback> cb_;

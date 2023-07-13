@@ -15,7 +15,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "audio_service_client.h"
+#include "audio_stream.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "pcm2wav.h"
@@ -142,8 +142,8 @@ int main(int argc, char* argv[])
     audioParams.format = DEFAULT_FORMAT;
     audioParams.samplingRate = wavHeader.SamplesPerSec;
     audioParams.channels = DEFAULT_CHANNELS;
-
-    std::unique_ptr client = std::make_unique<AudioServiceClient>();
+    std::unique_ptr<AudioServiceClient> client = std::make_unique<AudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
+        getuid());
     if (InitPlayback(client, audioParams) < 0) {
         AUDIO_INFO_LOG("Initialize playback failed");
         fclose(wavFile);
