@@ -803,7 +803,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
-    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl] GetSinkInputInfoVolumeCb");
+    AUDIO_DEBUG_LOG("[PulseAudioServiceAdapterImpl] GetSinkInputInfoVolumeCb");
     if (eol < 0) {
         delete userData;
         AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to get sink input information: %{public}s",
@@ -890,7 +890,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
 
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     if (streamtype == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType.");
+        AUDIO_DEBUG_LOG("[PulseAudioServiceAdapterImpl] Invalid StreamType.");
         return;
     }
 
