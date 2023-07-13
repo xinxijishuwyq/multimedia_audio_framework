@@ -319,6 +319,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     pa_sink_new_data_set_channel_map(&data, &map);
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_DESCRIPTION, _("Null Output"));
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_CLASS, "capturer");
+    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, "innercapturer");
 
     u->formats = pa_idxset_new(NULL, NULL);
     format = pa_format_info_new();
