@@ -209,7 +209,8 @@ public:
 
     virtual int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) = 0;
 
-    virtual int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions) = 0;
+    virtual int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions,
+        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
