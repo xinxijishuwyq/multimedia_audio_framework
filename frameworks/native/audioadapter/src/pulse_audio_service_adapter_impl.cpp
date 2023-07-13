@@ -305,6 +305,9 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
     }
 
     const char *adapterCStr = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_STRING);
+    if (adapterCStr == nullptr) {
+        adapterCStr = "";
+    }
     AUDIO_INFO_LOG("[PaGetSinksCb] sink[%{public}d] device[%{public}s] name[%{public}s]", i->index, adapterCStr,
         i->name);
     std::string sinkDeviceName(adapterCStr);

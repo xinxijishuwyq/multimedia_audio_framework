@@ -456,6 +456,7 @@ int CreateSink(pa_module *m, pa_modargs *ma, pa_sink *master, struct userdata *u
     pa_sink_new_data_set_channel_map(&sinkData, &sinkMap);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_MASTER_DEVICE, master->name);
     pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_CLASS, "filter");
+    pa_proplist_sets(sinkData.proplist, PA_PROP_DEVICE_STRING, "receiver");
 
     if (pa_modargs_get_proplist(ma, "sink_properties", sinkData.proplist, PA_UPDATE_REPLACE) < 0) {
         AUDIO_ERR_LOG("Invalid properties");
