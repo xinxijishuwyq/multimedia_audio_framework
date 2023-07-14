@@ -361,7 +361,9 @@ private:
         bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START);
 
     // externel function call
-    void SubscribeKeyEvents();
+    void VolumeKeyUpEvents(std::set<int32_t> &preKeys);
+    void VolumeKeyDownEvents(std::set<int32_t> &preKeys);
+    void SubscribeVolumeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
