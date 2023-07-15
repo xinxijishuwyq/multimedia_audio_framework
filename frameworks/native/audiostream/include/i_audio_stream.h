@@ -43,6 +43,47 @@ public:
         FAST_STREAM,
     };
 
+    struct SwitchInfo {
+        AudioStreamParams params;
+        AudioStreamType eStreamType;
+        int32_t appUid;
+        AudioRendererInfo rendererInfo;
+        AudioCapturerInfo capturerInfo;
+        State state;
+        uint32_t sessionId;
+        std::string cachePath = "";
+        uint32_t rendererSampleRate;
+        uint32_t underFlowCount;
+        AudioEffectMode effectMode;
+        AudioRenderMode renderMode;
+        AudioCaptureMode captureMode;
+        AudioRendererRate renderRate;
+        int32_t clientPid = 0;
+        int32_t clientUid = 0;
+        std::shared_ptr<AudioClientTracker> proxyObj;
+        AudioPrivacyType privacyType;
+        float volume;
+
+        bool streamTrackerRegistered = false;
+
+        uint64_t frameMarkPosition = 0;
+        uint64_t framePeriodNumber = 0;
+
+        uint64_t totalBytesWritten = 0;
+        uint64_t framePeriodWritten = 0;
+        std::shared_ptr<RendererPositionCallback> renderPositionCb;
+        std::shared_ptr<RendererPeriodPositionCallback> renderPeriodPositionCb;
+
+        uint64_t totalBytesRead = 0;
+        uint64_t framePeriodRead = 0;
+        std::shared_ptr<CapturerPositionCallback> capturePositionCb;
+        std::shared_ptr<CapturerPeriodPositionCallback> capturePeriodPositionCb;
+
+        // callback info
+        std::shared_ptr<AudioStreamCallback> audioStreamCallback;
+        std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback;
+    };
+
     virtual ~IAudioStream() = default;
 
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
@@ -142,6 +183,10 @@ public:
     virtual uint32_t GetRendererSamplingRate() = 0;
     virtual int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) = 0;
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
+
+    virtual IAudioStream::StreamClass GetStreamClass() = 0;
+    virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
+    virtual void GetSwitchInfo(SwitchInfo& info) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

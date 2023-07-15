@@ -69,6 +69,7 @@ int32_t PolicyProviderStub::HandleGetProcessDeviceInfo(MessageParcel &data, Mess
     reply.WriteString(deviceInfo.displayName);
     reply.WriteInt32(deviceInfo.interruptGroupId);
     reply.WriteInt32(deviceInfo.volumeGroupId);
+    reply.WriteBool(deviceInfo.isLowLatencyDevice);
 
     return AUDIO_OK;
 }

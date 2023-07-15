@@ -289,7 +289,7 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
 
 int32_t FastAudioStream::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AUDIO_INFO_LOG("GetBufferDesc in.");
+    AUDIO_DEBUG_LOG("GetBufferDesc in.");
     if (!processClient_) {
         AUDIO_ERR_LOG("spkClient is null.");
         return ERR_INVALID_OPERATION;
@@ -311,7 +311,7 @@ int32_t FastAudioStream::GetBufQueueState(BufferQueueState &bufState)
 
 int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
 {
-    AUDIO_INFO_LOG("Enqueue in");
+    AUDIO_DEBUG_LOG("Enqueue in");
     if (!processClient_) {
         AUDIO_ERR_LOG("spkClient is null.");
         return ERR_INVALID_OPERATION;
@@ -586,10 +586,48 @@ void FastAudioStream::SetPrivacyType(AudioPrivacyType privacyType)
     AUDIO_ERR_LOG("SetPrivacyType is not supported");
 }
 
+IAudioStream::StreamClass FastAudioStream::GetStreamClass()
+{
+    return IAudioStream::StreamClass::FAST_STREAM;
+}
+
+void FastAudioStream::SetStreamTrackerState(bool trackerRegisteredState)
+{
+    streamTrackerRegistered_ = trackerRegisteredState;
+}
+
+void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
+{
+    GetAudioStreamInfo(info.params);
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+
+    info.clientPid = clientPid_;
+    info.clientUid = clientUid_;
+
+    info.volume = GetVolume();
+    info.effectMode = GetAudioEffectMode();
+    info.renderMode = renderMode_;
+    info.captureMode = captureMode_;
+    info.renderRate = renderRate_;
+
+    if (spkProcClientCb_) {
+        info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
+    }
+}
+
 void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 {
-    CHECK_AND_RETURN_LOG(renderCallback_!= nullptr, "OnHandleData failed: renderCallback_ is null.");
-    renderCallback_->OnWriteData(length);
+    CHECK_AND_RETURN_LOG(rendererWriteCallback_!= nullptr, "OnHandleData failed: rendererWriteCallback_ is null.");
+    rendererWriteCallback_->OnWriteData(length);
+}
+
+std::shared_ptr<AudioRendererWriteCallback> FastAudioStreamRenderCallback::GetRendererWriteCallback() const
+{
+    return rendererWriteCallback_;
 }
 
 void FastAudioStreamCaptureCallback::OnHandleData(size_t length)

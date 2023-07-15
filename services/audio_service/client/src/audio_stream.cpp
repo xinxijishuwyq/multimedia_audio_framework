@@ -237,11 +237,22 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
+void AudioStream::RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj)
+{
+    if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
+        (void)GetSessionID(sessionId_);
+        AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
+        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
+        streamTrackerRegistered_ = true;
+    }
+}
+
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
+        " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
+        eStreamType_, info.encoding);
 
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");
@@ -284,12 +295,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     }
     state_ = PREPARED;
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
-
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        (void)GetSessionID(sessionId_);
-        AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
-    }
+    RegisterTracker(proxyObj);
     return SUCCESS;
 }
 
@@ -925,5 +931,25 @@ int64_t AudioStream::GetFramesRead()
 {
     return GetStreamFramesRead();
 }
+
+void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
+{
+    streamTrackerRegistered_ = trackerRegisteredState;
+}
+
+void AudioStream::GetSwitchInfo(SwitchInfo& info)
+{
+    GetAudioStreamParams(info.params);
+
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.renderMode = renderMode_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+    info.streamTrackerRegistered = streamTrackerRegistered_;
+    GetStreamSwitchInfo(info);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -59,6 +59,7 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
+    data.WriteBool(rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice);
 }
 
 void AudioRendererStateChangeListenerProxy::OnRendererStateChange(

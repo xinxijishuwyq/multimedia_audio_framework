@@ -280,7 +280,7 @@ int32_t AudioProcessInClientInner::OnEndpointChange(int32_t status)
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 {
     // note: Get the session id from server.
-    int32_t pid = processConfig_.appInfo.appUid;
+    int32_t pid = processConfig_.appInfo.appPid;
     if (pid < 0) {
         AUDIO_ERR_LOG("GetSessionID failed:%{public}d", pid);
         return ERR_OPERATION_FAILED;
@@ -382,6 +382,7 @@ void AudioProcessInClientInner::SetApplicationCachePath(const std::string &cache
     AUDIO_INFO_LOG("Using cachePath:%{public}s", cachePath.c_str());
     cachePath_ = cachePath;
 }
+
 
 bool AudioProcessInClientInner::InitAudioBuffer()
 {

@@ -2589,6 +2589,29 @@ static void UpdateCapturerInfoWhenNoPermission(const unique_ptr<AudioCapturerCha
     }
 }
 
+static bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote)
+{
+    // Distributed devices are low latency devices
+    if (isRemote) {
+        return true;
+    }
+
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+            return true;
+
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+            return false;
+        default:
+            return false;
+    }
+}
+
 static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
     bool hasSystemPermission)
 {
@@ -2605,6 +2628,9 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
         deviceInfo.deviceName = "";
         deviceInfo.macAddress = "";
     }
+
+    deviceInfo.isLowLatencyDevice = HasLowLatencyCapability(deviceInfo.deviceType,
+        desc->networkId_ != LOCAL_NETWORK_ID);
 
     if (hasSystemPermission) {
         deviceInfo.networkId = desc->networkId_;

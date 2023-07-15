@@ -118,6 +118,19 @@ public:
     virtual void RemoveAllCallbacks() = 0;
 };
 
+class AudioRendererErrorCallback {
+public:
+    virtual ~AudioRendererErrorCallback() = default;
+
+    /**
+     * Called when an unrecoverable exception occurs in the renderer
+     *
+     * @param errorCode Indicates error code of the exception.
+     * since 10
+     */
+    virtual void OnError(AudioErrors errorCode) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  * @since 8
@@ -723,6 +736,14 @@ public:
     virtual int32_t SetAudioEffectMode(AudioEffectMode effectMode) const = 0;
 
     /**
+     * @brief Registers the renderer error event callback listener.
+     *
+     * @param errorCallback Error callback pointer
+     * @since 10
+     */
+    virtual void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) = 0;
+
+    /**
      * @brief Registers the renderer event callback listener.
      *
      * @param clientPid client PID
@@ -769,6 +790,7 @@ public:
      * @since 10
      */
     virtual void DestroyAudioRendererStateCallback() = 0;
+
     virtual ~AudioRenderer();
 private:
     static std::mutex createRendererMutex_;

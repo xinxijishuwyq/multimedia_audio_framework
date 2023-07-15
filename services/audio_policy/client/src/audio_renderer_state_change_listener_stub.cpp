@@ -62,6 +62,7 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     rendererChangeInfo->outputDeviceInfo.networkId = data.ReadString();
     rendererChangeInfo->outputDeviceInfo.interruptGroupId = data.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.volumeGroupId = data.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice = data.ReadBool();
 
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, sessionid = %{public}d", rendererChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererState = %{public}d",

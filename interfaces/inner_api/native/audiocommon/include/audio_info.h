@@ -1026,6 +1026,7 @@ struct DeviceInfo {
     std::string displayName;
     int32_t interruptGroupId;
     int32_t volumeGroupId;
+    bool isLowLatencyDevice;
 };
 
 enum StreamSetState {
