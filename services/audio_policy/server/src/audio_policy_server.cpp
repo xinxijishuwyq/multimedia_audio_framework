@@ -1586,7 +1586,8 @@ bool AudioPolicyServer::VerifyClientPermission(const std::string &permissionName
     AUDIO_DEBUG_LOG("[%{public}s] [tid:%{public}d] [uid:%{public}d]", permissionName.c_str(), appTokenId, callerUid);
 
     // Root users should be whitelisted
-    if ((callerUid == ROOT_UID) || ((callerUid == MEDIA_SERVICE_UID) && (appUid == ROOT_UID))) {
+    if ((callerUid == ROOT_UID) || (callerUid == INTELL_VOICE_SERVICR_UID) ||
+        ((callerUid == MEDIA_SERVICE_UID) && (appUid == ROOT_UID))) {
         AUDIO_DEBUG_LOG("Root user. Permission GRANTED!!!");
         return true;
     }
