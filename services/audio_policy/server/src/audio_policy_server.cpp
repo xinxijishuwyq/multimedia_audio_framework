@@ -165,72 +165,61 @@ void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
 }
 
-void AudioPolicyServer::VolumeKeyUpEvents(std::set<int32_t> &preKeys)
+bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType,
+    const AudioStreamType &streamInFocus)
 {
-    MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    bool volLevelCheck = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
+        volLevel >= GetMaxVolumeLevel(streamInFocus) : volLevel <= GetMinVolumeLevel(streamInFocus);
+    if (volLevelCheck) {
+        if ((keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (volLevel > 0) && GetStreamMute(streamInFocus)) {
+            SetStreamMute(streamInFocus, false);
+        }
 
-    std::shared_ptr<OHOS::MMI::KeyOption> keyOption_up = std::make_shared<OHOS::MMI::KeyOption>();
-    keyOption_up->SetPreKeys(preKeys);
-    keyOption_up->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
-    keyOption_up->SetFinalKeyDown(true);
-    keyOption_up->SetFinalKeyDownDuration(0);
-    int32_t upKeySubId = im->SubscribeKeyEvent(keyOption_up, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
-        AUDIO_INFO_LOG("Receive volume key event: up");
-        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
-        AudioStreamType streamInFocus = AudioStreamType::STREAM_DEFAULT;
-        if ((mPolicyService.GetLocalDevicesType().compare("tablet") == 0) ||
-            (mPolicyService.GetLocalDevicesType().compare("2in1") == 0)) {
-            streamInFocus = AudioStreamType::STREAM_ALL;
-        } else {
-            streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
-        }
-        if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
-            streamInFocus = AudioStreamType::STREAM_MUSIC;
-        }
-        int32_t volumeLevelInInt = GetSystemVolumeLevelForKey(streamInFocus, true);
-        if (volumeLevelInInt >= GetMaxVolumeLevel(streamInFocus)) {
-            if (volumeLevelInInt > 0 && GetStreamMute(streamInFocus)) {
-                SetStreamMute(streamInFocus, false);
+        for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
+            std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
+            if (volumeChangeCb == nullptr) {
+                AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+                continue;
             }
-            for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
-                std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
-                if (volumeChangeCb == nullptr) {
-                    AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
-                    continue;
-                }
 
+            if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) {
                 AUDIO_DEBUG_LOG("volume greater than max, trigger cb clientPid : %{public}d", it->first);
-                VolumeEvent volumeEvent;
-                volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
-                volumeEvent.volume = volumeLevelInInt;
-                volumeEvent.updateUi = true;
-                volumeEvent.volumeGroupId = 0;
-                volumeEvent.networkId = LOCAL_NETWORK_ID;
-                volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
+            } else {
+                AUDIO_DEBUG_LOG("volume lower than min, trigger cb clientPid : %{public}d", it->first);
             }
-            return;
+            VolumeEvent volumeEvent;
+            volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
+            volumeEvent.volume = volLevel;
+            volumeEvent.updateUi = true;
+            volumeEvent.volumeGroupId = 0;
+            volumeEvent.networkId = LOCAL_NETWORK_ID;
+            volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
         }
-        SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt + 1, true);
-    });
-    if (upKeySubId < 0) {
-        AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume up failed ");
+        return true;
     }
+
+    return false;
 }
 
-void AudioPolicyServer::VolumeKeyDownEvents(std::set<int32_t> &preKeys)
+void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
+    if ((keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN)) {
+        AUDIO_ERR_LOG("VolumeKeyEvents: invalid key type : %{public}zu", keyType);
+        return;
+    }
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
 
-    std::shared_ptr<OHOS::MMI::KeyOption> keyOption_down = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOption_down != nullptr, "Invalid key option");
-    keyOption_down->SetPreKeys(preKeys);
-    keyOption_down->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
-    keyOption_down->SetFinalKeyDown(true);
-    keyOption_down->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
-    int32_t downKeySubId = im->SubscribeKeyEvent(keyOption_down, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
-        AUDIO_INFO_LOG("Receive volume key event: down");
+    std::set<int32_t> preKeys;
+    std::shared_ptr<OHOS::MMI::KeyOption> keyOption = std::make_shared<OHOS::MMI::KeyOption>();
+    CHECK_AND_RETURN_LOG(keyOption != nullptr, "Invalid key option");
+    keyOption->SetPreKeys(preKeys);
+    keyOption->SetFinalKey(keyType);
+    keyOption->SetFinalKeyDown(true);
+    keyOption->SetFinalKeyDownDuration(VOLUME_KEY_DURATION);
+    int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+        AUDIO_INFO_LOG("Receive volume key event: %{public}s.",
+            (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "key up" : "key down");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_DEFAULT;
         if ((mPolicyService.GetLocalDevicesType().compare("tablet") == 0) ||
@@ -243,37 +232,23 @@ void AudioPolicyServer::VolumeKeyDownEvents(std::set<int32_t> &preKeys)
             streamInFocus = AudioStreamType::STREAM_MUSIC;
         }
         int32_t volumeLevelInInt = GetSystemVolumeLevelForKey(streamInFocus, true);
-        if (volumeLevelInInt <= GetMinVolumeLevel(streamInFocus)) {
-            for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
-                std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
-                if (volumeChangeCb == nullptr) {
-                    AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
-                    continue;
-                }
-
-                AUDIO_DEBUG_LOG("volume lower than min, trigger cb clientPid : %{public}d", it->first);
-                VolumeEvent volumeEvent;
-                volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
-                volumeEvent.volume = volumeLevelInInt;
-                volumeEvent.updateUi = true;
-                volumeEvent.volumeGroupId = 0;
-                volumeEvent.networkId = LOCAL_NETWORK_ID;
-                volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
-            }
+        if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
             return;
         }
-        SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt - 1, true);
+
+        volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
+            ++volumeLevelInInt : --volumeLevelInInt;
+        SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt, true);
     });
-    if (downKeySubId < 0) {
-        AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume down failed ");
+    if (keySubId < 0) {
+        AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}zu option failed ", keyType);
     }
 }
 
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
-    std::set<int32_t> preKeys;
-    VolumeKeyDownEvents(preKeys);
-    VolumeKeyUpEvents(preKeys);
+    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
 }
 
 AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType streamType)
