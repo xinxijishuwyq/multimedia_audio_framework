@@ -1164,7 +1164,8 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
     return error;
 }
 
-int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions)
+int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions,
+    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
 {
     AUDIO_INFO_LOG("AudioPolicyManager::SetPlaybackCapturerFilterInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1173,7 +1174,7 @@ int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(std::vector<CaptureFi
         return ERROR;
     }
 
-    return gsp->SetPlaybackCapturerFilterInfos(filterOptions);
+    return gsp->SetPlaybackCapturerFilterInfos(filterOptions, appTokenId, appUid, privacyFlag, state);
 }
 } // namespace AudioStandard
 } // namespace OHOS

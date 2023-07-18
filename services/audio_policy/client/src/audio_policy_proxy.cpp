@@ -2144,7 +2144,8 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     return 0;
 }
 
-int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions)
+int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions,
+    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2159,6 +2160,11 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(std::vector<CaptureFilt
     for (size_t i = 0; i < ss; i++) {
         data.WriteInt32(filterOptions[i].usage);
     }
+    data.WriteUint32(appTokenId);
+    data.WriteInt32(appUid);
+    data.WriteBool(privacyFlag);
+    data.WriteInt32(state);
+
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);
     if (error != ERR_NONE) {

@@ -201,7 +201,8 @@ public:
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
-    int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions) override;
+    int32_t SetPlaybackCapturerFilterInfos(std::vector<CaptureFilterOptions> filterOptions,
+        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

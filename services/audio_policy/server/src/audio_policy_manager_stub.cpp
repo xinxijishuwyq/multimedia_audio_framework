@@ -1023,13 +1023,27 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
 {
     std::vector<CaptureFilterOptions> filterInfo;
     int32_t ss = data.ReadInt32();
+    int32_t tmp_usage;
+    if (ss < 0 || ss >= INT32_MAX) {
+        reply.WriteInt32(ERROR);
+        return;
+    }
     for (int32_t i = 0; i < ss; i++) {
+        tmp_usage = data.ReadInt32();
+        if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
+            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
+            continue;
+        }
         CaptureFilterOptions info;
-        info.usage = static_cast<StreamUsage>(data.ReadInt32());
+        info.usage = static_cast<StreamUsage>(tmp_usage);
         filterInfo.push_back(info);
     }
+    uint32_t appTokenId = data.ReadUint32();
+    uint32_t appUid = data.ReadInt32();
+    bool privacyFlag = data.ReadBool();
+    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
 
-    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo);
+    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo, appTokenId, appUid, privacyFlag, state);
     reply.WriteInt32(ret);
 }
 
