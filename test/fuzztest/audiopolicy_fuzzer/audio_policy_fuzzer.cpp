@@ -30,6 +30,10 @@ const int32_t LIMITSIZE = 4;
 const int32_t SHIFT_LEFT_8 = 8;
 const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
+const uint32_t LIMIT_ONE = 0;
+const uint32_t LIMIT_TWO = 30;
+const uint32_t LIMIT_THREE = 60;
+const uint32_t LIMIT_FOUR = 80;
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {
@@ -41,12 +45,59 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
     return (ptr[0] << SHIFT_LEFT_24) | (ptr[1] << SHIFT_LEFT_16) | (ptr[2] << SHIFT_LEFT_8) | (ptr[3]);
 }
 
-void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    uint32_t code = Convert2Uint32(rawData);
+    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_TWO - LIMIT_ONE + 1) + LIMIT_ONE;
+
+    rawData = rawData + OFFSET;
+    size = size - OFFSET;
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+
+    MessageParcel reply;
+    MessageOption option;
+    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
+        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+        
+    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+}
+
+void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_THREE - LIMIT_TWO + 1) + LIMIT_TWO;
+
+    rawData = rawData + OFFSET;
+    size = size - OFFSET;
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+
+    MessageParcel reply;
+    MessageOption option;
+    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
+        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+        
+    AudioPolicyServerPtr->OnRemoteRequest(code, data, reply, option);
+}
+
+void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_FOUR - LIMIT_THREE + 1) + LIMIT_THREE;
+
     rawData = rawData + OFFSET;
     size = size - OFFSET;
 
@@ -69,6 +120,8 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
+    OHOS::AudioStandard::AudioPolicyFuzzFirstLimitTest(data, size);
+    OHOS::AudioStandard::AudioPolicyFuzzSecondLimitTest(data, size);
+    OHOS::AudioStandard::AudioPolicyFuzzThirdLimitTest(data, size);
     return 0;
 }

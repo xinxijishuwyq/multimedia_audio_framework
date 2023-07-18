@@ -18,6 +18,8 @@
 #include <cstdint>
 
 #include "i_audio_renderer_sink.h"
+#include "audio_manager_base.h"
+#include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
 #include "message_parcel.h"
 using namespace std;
@@ -32,6 +34,8 @@ const int32_t LIMITSIZE = 4;
 const int32_t SHIFT_LEFT_8 = 8;
 const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
+const uint32_t LIMIT_MIN = 0;
+const uint32_t LIMIT_MAX = 30;
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
 {
@@ -48,7 +52,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    uint32_t code = Convert2Uint32(rawData);
+    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_MAX - LIMIT_MIN + 1) + LIMIT_MIN;
     rawData = rawData + OFFSET;
     size = size - OFFSET;
     
@@ -61,12 +65,22 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
 
     std::shared_ptr<AudioServer> AudioServerPtr =
         std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    if (code == static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK)) {
+        sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+        sptr<IRemoteObject> object = focusListenerStub->AsObject();
+        AudioServerPtr->SetParameterCallback(object);
+        return;
+    }
     AudioServerPtr->OnRemoteRequest(code, data, reply, option);
-    
-    std::string netWorkId(reinterpret_cast<const char*>(rawData), size);
+
+    if (size < LIMITSIZE) {
+        return;
+    }
+    std::string netWorkId(reinterpret_cast<const char*>(rawData), size - 1);
     AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
-    std::string condition(reinterpret_cast<const char*>(rawData), size);
-    std::string value(reinterpret_cast<const char*>(rawData), size);
+    std::string condition(reinterpret_cast<const char*>(rawData), size - 1);
+    std::string value(reinterpret_cast<const char*>(rawData), size - 1);
     AudioServerPtr->OnAudioParameterChange(netWorkId, key, condition, value);
 }
 } // namespace AudioStandard
