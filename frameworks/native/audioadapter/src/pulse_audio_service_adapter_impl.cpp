@@ -308,7 +308,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
     if (adapterCStr == nullptr) {
         adapterCStr = "";
     }
-    AUDIO_INFO_LOG("[PaGetSinksCb] sink[%{public}d] device[%{public}s] name[%{public}s]", i->index, adapterCStr,
+    AUDIO_DEBUG_LOG("[PaGetSinksCb] sink[%{public}d] device[%{public}s] name[%{public}s]", i->index, adapterCStr,
         i->name);
     std::string sinkDeviceName(adapterCStr);
     std::string sinkName(i->name);
@@ -516,7 +516,7 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
         if (sourOutputs[i].uid == uid) {
             pa_operation_unref(pa_context_set_source_output_mute(mContext, sourOutputs[i].paStreamId, (setMute ? 1 : 0),
                 nullptr, nullptr));
-            AUDIO_INFO_LOG("[SetSourceOutputMute] set source output Mute : %{public}s for stream :uid %{public}d",
+            AUDIO_DEBUG_LOG("[SetSourceOutputMute] set source output Mute : %{public}s for stream :uid %{public}d",
                 (setMute ? "true" : "false"), sourOutputs[i].uid);
             streamSet++;
         }
@@ -832,7 +832,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
     if ((streamtype == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
         (sessionCStr == nullptr)) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Invalid Stream parameter info.");
+        AUDIO_DEBUG_LOG("[PulseAudioServiceAdapterImpl] Invalid Stream parameter info.");
         return;
     }
 
@@ -858,8 +858,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
-    AUDIO_INFO_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d, volumeFactor %{public}f"\
-        ", volumeDbCb %{public}f", vol, uid, volumeFactor, volumeDbCb);
+    AUDIO_DEBUG_LOG("[PulseAudioServiceAdapterImpl]volume %{public}f for stream uid %{public}d"\
+        ", volumeFactor %{public}f, volumeDbCb %{public}f", vol, uid, volumeFactor, volumeDbCb);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamTypeID, "VOLUME", vol,
@@ -992,7 +992,7 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
 void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol,
     void *userdata)
 {
-    AUDIO_INFO_LOG("[PaGetAllSourceOutputsCb] in eol[%{public}d]", eol);
+    AUDIO_DEBUG_LOG("[PaGetAllSourceOutputsCb] in eol[%{public}d]", eol);
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
