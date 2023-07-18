@@ -956,6 +956,7 @@ int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* cli
 
 int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* clientId */)
 {
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     if (amInterruptCbsMap_.erase(clientPid) == 0) {
         AUDIO_ERR_LOG("UnsetAudioManagerInterruptCallback client %{public}d not present", clientPid);
