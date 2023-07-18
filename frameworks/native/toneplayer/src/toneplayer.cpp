@@ -365,7 +365,7 @@ void TonePlayerPrivate::OnInterrupt(const InterruptEvent &interruptEvent)
 
 void TonePlayerPrivate::OnWriteData(size_t length)
 {
-    AUDIO_INFO_LOG("OnWriteData Cbk: %{public}zu", length);
+    AUDIO_DEBUG_LOG("OnWriteData Cbk: %{public}zu", length);
     AudioToneRendererCallback();
 }
 
@@ -380,7 +380,7 @@ void TonePlayerPrivate::OnStateChange(const RendererState state,
 
 bool TonePlayerPrivate::CheckToneStopped()
 {
-    AUDIO_INFO_LOG("CheckToneStopped state: %{public}d tot: %{public}d max: %{public}d not calling",
+    AUDIO_DEBUG_LOG("CheckToneStopped state: %{public}d tot: %{public}d max: %{public}d not calling",
         tonePlayerState_, totalSample_, maxSample_);
     std::shared_ptr<ToneInfo> toneDesc = toneInfo_;
     if (tonePlayerState_ == TONE_PLAYER_STOPPED) {
@@ -506,7 +506,7 @@ bool TonePlayerPrivate::AudioToneSequenceGen(BufferDesc &bufDesc)
     while (totalBufAvailable) {
         uint32_t reqSamples = totalBufAvailable < processSize_ * CDOUBLE ? totalBufAvailable : processSize_;
         bool lSignal = false;
-        AUDIO_INFO_LOG("AudioToneDataThreadFunc, lReqSmp: %{public}d totalBufAvailable: %{public}d",
+        AUDIO_DEBUG_LOG("AudioToneDataThreadFunc, lReqSmp: %{public}d totalBufAvailable: %{public}d",
             reqSamples, totalBufAvailable);
         mutexLock_.lock();
 
@@ -652,7 +652,7 @@ int32_t TonePlayerPrivate::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t 
             break;
         }
         freqVal = freqs[i];
-        AUDIO_INFO_LOG("GetSamples Freq: %{public}d sampleCount_: %{public}d", freqVal, sampleCount_);
+        AUDIO_DEBUG_LOG("GetSamples Freq: %{public}d sampleCount_: %{public}d", freqVal, sampleCount_);
         index = sampleCount_;
         data = (uint8_t*)buffer;
         double factor = freqVal * 2 * pi / samplingRate_; // 2 is a parameter in the sine wave formula
