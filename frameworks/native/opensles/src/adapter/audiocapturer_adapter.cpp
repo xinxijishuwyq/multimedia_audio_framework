@@ -59,7 +59,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
     capturerOptions.streamInfo.channels = capturerParams.audioChannel;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = 0;
-    string cachePath = "/data/storage/el2/base/haps/entry/files";
+    string cachePath = "/data/storage/el2/base/temp";
     unique_ptr<AudioCapturer> capturerHolder = AudioCapturer::Create(capturerOptions, cachePath.c_str());
     if (!capturerHolder) {
         AUDIO_ERR_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter fail, ID: %{public}lu", id);
