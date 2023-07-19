@@ -300,7 +300,7 @@ void OHAudioCapturer::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, 
         AUDIO_ERR_LOG("read callback is nullptr");
     }
 
-    if (callbacks.OH_AudioCapturer_OnInterrptEvent != nullptr) {
+    if (callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr) {
         std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(callbacks,
             (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetCapturerCallback(callback);
@@ -360,11 +360,11 @@ void OHAudioCapturerModeCallback::OnReadData(size_t length)
 void OHAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioCapturer_OnInterrptEvent != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioCapturer_OnInterruptEvent != nullptr, "pointer to the fuction is nullptr");
 
     OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
     OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
-    callbacks_.OH_AudioCapturer_OnInterrptEvent(ohAudioCapturer_, userData_, type, hint);
+    callbacks_.OH_AudioCapturer_OnInterruptEvent(ohAudioCapturer_, userData_, type, hint);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
