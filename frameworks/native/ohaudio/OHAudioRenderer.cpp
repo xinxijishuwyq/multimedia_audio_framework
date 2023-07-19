@@ -318,7 +318,7 @@ int32_t OHAudioRenderer::Enqueue(const BufferDesc &bufDesc) const
     return audioRenderer_->Enqueue(bufDesc);
 }
 
-void OHAudioRenderer::SetRendererWriteCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)
+void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
@@ -329,6 +329,32 @@ void OHAudioRenderer::SetRendererWriteCallback(OH_AudioRenderer_Callbacks callba
         audioRenderer_->SetRendererWriteCallback(callback);
     } else {
         AUDIO_ERR_LOG("write callback is nullptr");
+    }
+
+    if (callbacks.OH_AudioRenderer_OnStreamEvent != nullptr) {
+        std::shared_ptr<AudioRendererDeviceChangeCallback> callback =
+            std::make_shared<OHAudioRendererDeviceChangeCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+        int32_t clientPid = getpid();
+        audioRenderer_->RegisterAudioRendererEventListener(clientPid, callback);
+    } else {
+        AUDIO_ERR_LOG("stream event callback is nullptr");
+    }
+
+    if (callbacks.OH_AudioRenderer_OnInterrptEvent != nullptr) {
+        std::shared_ptr<AudioRendererCallback> callback =
+            std::make_shared<OHAudioRendererCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+        audioRenderer_->SetRendererCallback(callback);
+    } else {
+        AUDIO_ERR_LOG("audio renderer callback is nullptr");
+    }
+
+    if (callbacks.OH_AudioRenderer_OnError != nullptr) {
+        std::shared_ptr<AudioRendererPolicyServiceDiedCallback> callback =
+            std::make_shared<OHServiceDiedCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+        int32_t clientPid = getpid();
+        audioRenderer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+    } else {
+        AUDIO_ERR_LOG("audio error callback is nullptr");
     }
 }
 
@@ -344,6 +370,32 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         (void*)bufDesc.buffer,
         bufDesc.bufLength);
     audioRenderer->Enqueue(bufDesc);
+}
+
+void OHAudioRendererDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnStreamEvent != nullptr, "pointer to the fuction is nullptr");
+
+    OH_AudioStream_Event event =  AUDIOSTREAM_EVENT_ROUTING_CHANGED;
+    callbacks_.OH_AudioRenderer_OnStreamEvent(ohAudioRenderer_, userData_, event);
+}
+
+void OHAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterrptEvent != nullptr, "pointer to the fuction is nullptr");
+    OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+    OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+    callbacks_.OH_AudioRenderer_OnInterrptEvent(ohAudioRenderer_, userData_, type, hint);
+}
+
+void OHServiceDiedCallback::OnAudioPolicyServiceDied()
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnError != nullptr, "pointer to the fuction is nullptr");
+    OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+    callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

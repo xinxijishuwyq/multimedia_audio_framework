@@ -281,7 +281,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     if (audioRenderer->Initialize(options)) {
-        audioRenderer->SetRendererWriteCallback(rendererCallbacks_, userData_);
+        audioRenderer->SetRendererCallback(rendererCallbacks_, userData_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
         return AUDIOSTREAM_SUCCESS;
     }
@@ -317,7 +317,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer** capturer
 
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();
     if (audioCapturer->Initialize(options)) {
-        audioCapturer->SetCapturerReadCallback(capturerCallbacks_, userData_);
+        audioCapturer->SetCapturerCallback(capturerCallbacks_, userData_);
         *capturer = (OH_AudioCapturer*)audioCapturer;
         return AUDIOSTREAM_SUCCESS;
     }
