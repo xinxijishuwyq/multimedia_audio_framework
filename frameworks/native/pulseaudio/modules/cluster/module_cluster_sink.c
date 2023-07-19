@@ -83,7 +83,8 @@ static bool IsSinkInputSupportInnerCapturer(pa_sink_input *si, struct userdata *
         usageSupport = IsStreamSupportInnerCapturer(usage);
     }
 
-    AUDIO_DEBUG_LOG("get privacyType:%{public}d, usage:%{public}d of sink input:%{public}d", privacyType, usage, si->index);
+    AUDIO_DEBUG_LOG("get privacyType:%{public}d, usage:%{public}d of sink input:%{public}d",
+        privacyType, usage, si->index);
     return privacySupport && usageSupport;
 }
 

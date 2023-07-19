@@ -744,15 +744,16 @@ static void source_output_suspend_cb(pa_source_output *o, pa_source_state_t old_
     /* If the source has been suspended, we need to handle this like
      * a source change when the source is resumed */
     if (suspended) {
-        if (u->sink_input->sink)
+        if (u->sink_input->sink) {
             pa_asyncmsgq_send(u->sink_input->sink->asyncmsgq, PA_MSGOBJECT(u->sink_input),
                 SINK_INPUT_MESSAGE_SOURCE_CHANGED, NULL, 0, NULL);
-        else
+        } else {
             u->output_thread_info.push_called = false;
-
-    } else
+        }
+    } else {
         /* Get effective source latency on unsuspend */
         update_effective_source_latency(u, u->source_output->source, u->sink_input->sink);
+    }
 
     pa_sink_input_cork(u->sink_input, suspended);
 
@@ -1109,10 +1110,10 @@ static void sink_input_suspend_cb(pa_sink_input *i, pa_sink_state_t old_state, p
     if (suspended) {
         u->output_thread_info.pop_called = false;
         u->output_thread_info.first_pop_done = false;
-
-    } else
+    } else {
         /* Set effective source latency on unsuspend */
         update_effective_source_latency(u, u->source_output->source, u->sink_input->sink);
+    }
 
     pa_source_output_cork(u->source_output, suspended);
 
@@ -1509,11 +1510,13 @@ int pa__init(pa_module *m) {
     pa_sink_input_put(u->sink_input);
     pa_source_output_put(u->source_output);
 
-    if (u->source_output->source->state != PA_SOURCE_SUSPENDED)
+    if (u->source_output->source->state != PA_SOURCE_SUSPENDED) {
         pa_sink_input_cork(u->sink_input, false);
+    }
 
-    if (u->sink_input->sink->state != PA_SINK_SUSPENDED)
+    if (u->sink_input->sink->state != PA_SINK_SUSPENDED) {
         pa_source_output_cork(u->source_output, false);
+    }
 
     pa_modargs_free(ma);
     return 0;
@@ -1521,19 +1524,20 @@ int pa__init(pa_module *m) {
 
 void pa__done(pa_module*m) {
     struct userdata *u;
-
     pa_assert(m);
 
-    if (!(u = m->userdata))
+    if (!(u = m->userdata)) {
         return;
+    }
 
     teardown(u);
 
-    if (u->memblockq)
+    if (u->memblockq) {
         pa_memblockq_free(u->memblockq);
-
-    if (u->asyncmsgq)
+    }
+    if (u->asyncmsgq) {
         pa_asyncmsgq_unref(u->asyncmsgq);
+    }
 
     pa_xfree(u);
 }
