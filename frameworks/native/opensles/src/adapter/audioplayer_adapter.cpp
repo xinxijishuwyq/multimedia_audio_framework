@@ -64,7 +64,7 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
-    string cachePath = "/data/storage/el2/base/temp";
+    string cachePath = "/data/storage/el2/base/haps/entry/files";
     unique_ptr<AudioRenderer> rendererHolder = AudioRenderer::Create(cachePath.c_str(), rendererOptions);
     if (!rendererHolder) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::CreateAudioPlayer fail, ID: %{public}lu", id);

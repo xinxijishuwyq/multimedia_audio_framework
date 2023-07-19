@@ -551,6 +551,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererNapi->env_ = env;
     rendererNapi->contentType_ = sRendererOptions_->rendererInfo.contentType;
     rendererNapi->streamUsage_ = sRendererOptions_->rendererInfo.streamUsage;
+    rendererNapi->rendererFlags_ = sRendererOptions_->rendererInfo.rendererFlags;
 
     AudioRendererOptions rendererOptions = {};
     rendererOptions.streamInfo.samplingRate = sRendererOptions_->streamInfo.samplingRate;
@@ -559,6 +560,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     rendererOptions.streamInfo.channels = sRendererOptions_->streamInfo.channels;
     rendererOptions.rendererInfo.contentType = sRendererOptions_->rendererInfo.contentType;
     rendererOptions.rendererInfo.streamUsage = sRendererOptions_->rendererInfo.streamUsage;
+    rendererOptions.rendererInfo.rendererFlags = sRendererOptions_->rendererInfo.rendererFlags;
     rendererOptions.privacyType = sRendererOptions_->privacyType;
 
     std::shared_ptr<AbilityRuntime::Context> abilityContext = GetAbilityContext(env);

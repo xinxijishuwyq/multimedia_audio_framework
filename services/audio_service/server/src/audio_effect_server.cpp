@@ -160,6 +160,7 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
                                          std::vector<Effect> &successEffectList)
 {
     // load library
+    sleep(6);
     LoadLibraries(libraries, effectLibEntries);
 
     // check effects
