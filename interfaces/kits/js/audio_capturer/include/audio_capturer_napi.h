@@ -137,7 +137,7 @@ private:
     DeviceRole deviceRole_;
     DeviceType deviceType_;
     SourceType sourceType_;
-    int32_t capturerFlags_;
+    int32_t capturerFlags_ = 0; // default flag 0
     napi_env env_;
     std::shared_ptr<CapturerPositionCallback> positionCBNapi_ = nullptr;
     std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCBNapi_ = nullptr;
