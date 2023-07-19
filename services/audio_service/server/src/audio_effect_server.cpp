@@ -29,6 +29,7 @@ namespace AudioStandard {
 #else
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
 #endif
+static constexpr int32_t SLEEP_TIME_FOR_AUDIO_EFFECT;
 
 bool ResolveLibrary(const std::string &path, std::string &resovledPath)
 {
@@ -160,7 +161,7 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, c
                                          std::vector<Effect> &successEffectList)
 {
     // load library
-    sleep(6);
+    sleep(SLEEP_TIME_FOR_AUDIO_EFFECT);
     LoadLibraries(libraries, effectLibEntries);
 
     // check effects

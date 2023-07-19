@@ -949,7 +949,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[0], &valueType);
     THROW_ERROR_ASSERT(env, valueType == napi_number, NAPI_ERR_INPUT_INVALID);
-    if (argc == PARAM2){
+    if (argc == PARAM2) {
         napi_typeof(env, argv[1], &valueType);
         THROW_ERROR_ASSERT(env, valueType == napi_function, NAPI_ERR_INPUT_INVALID);
     }
