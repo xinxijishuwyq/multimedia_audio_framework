@@ -203,7 +203,7 @@ private:
     StreamUsage streamUsage_;
     DeviceRole deviceRole_;
     DeviceType deviceType_;
-    int32_t rendererFlags_;
+    int32_t rendererFlags_ = 0; // default flag 0
     napi_env env_;
     std::queue<napi_async_work> writeRequestQ_;
     std::atomic<bool> scheduleFromApiCall_;

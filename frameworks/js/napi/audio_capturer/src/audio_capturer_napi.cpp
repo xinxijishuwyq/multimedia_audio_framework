@@ -194,7 +194,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(capturerNapi != nullptr, result, "No memory");
     capturerNapi->env_ = env;
     capturerNapi->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
-    capturerNapi->capturerFlags_ = sCapturerOptions_->capturerInfo.capturerFlags;
 
     AudioCapturerOptions capturerOptions = {};
     capturerOptions.streamInfo.samplingRate = sCapturerOptions_->streamInfo.samplingRate;
@@ -203,7 +202,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
-    capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
     capturerOptions.playbackCaptureConfig.filterOptions =
         sCapturerOptions_->playbackCaptureConfig.filterOptions;
