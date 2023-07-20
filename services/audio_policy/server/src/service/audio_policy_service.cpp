@@ -1897,7 +1897,7 @@ void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
 
 void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
 {
-    for (auto& deviceInfo : connectedDevices_) {
+    for (const auto& deviceInfo : connectedDevices_) {
         if ((isLocalDevice && deviceInfo->networkId_ == LOCAL_NETWORK_ID) ||
             (!isLocalDevice && deviceInfo->networkId_ != LOCAL_NETWORK_ID)) {
             deviceInfo->displayName_ = deviceName;
@@ -1963,7 +1963,7 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     lock_guard<mutex> lock(g_dataShareHelperMutex);
-    CHECK_AND_BREAK_LOG(g_dataShareHelper != g_dataShareHelper, "RegisterNameMonitorHelper g_dataShareHelper is NULL.");
+    CHECK_AND_BREAK_LOG(g_dataShareHelper != nullptr, "RegisterNameMonitorHelper g_dataShareHelper is NULL.");
     auto uri = std::make_shared<Uri>(SETTINGS_DATA_BASE_URI + "&key=" + PREDICATES_STRING);
     sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
     g_dataShareHelper->RegisterObserver(*uri, settingDataObserver);
@@ -2607,9 +2607,8 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<Audi
                 UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, desc, hasBTPermission,
                     hasSystemPermission);
             }
+            break;
         }
-
-        return status;
     }
 
     return status;
@@ -2635,9 +2634,8 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<Audi
                 UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc, hasBTPermission,
                     hasSystemPermission);
             }
+            break;
         }
-
-        return status;
     }
 
     return status;

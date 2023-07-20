@@ -101,7 +101,7 @@ private:
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
     int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size,
     const std::string &adapterNameCase, enum AudioPortDirection portFlag, struct AudioPort &capturePort);
-    int32_t CreateCapture(struct AudioPort &capturePort);
+    int32_t CreateCapture(const struct AudioPort &capturePort);
     int32_t PrepareMmapBuffer();
     int32_t InitAudioManager();
     uint32_t PcmFormatToBits(AudioSampleFormat format);
@@ -111,11 +111,9 @@ private:
 
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
-FastAudioCapturerSourceInner::FastAudioCapturerSourceInner() : capturerInited_(false), started_(false), paused_(false),
-    openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
-{
-    attr_ = {};
-}
+FastAudioCapturerSourceInner::FastAudioCapturerSourceInner() : attr_({}), capturerInited_(false), started_(false),
+    paused_(false), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
+{}
 
 FastAudioCapturerSourceInner::~FastAudioCapturerSourceInner()
 {
@@ -235,7 +233,7 @@ AudioFormat FastAudioCapturerSourceInner::ConverToHdiFormat(AudioSampleFormat fo
     return hdiFormat;
 }
 
-int32_t FastAudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
+int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capturePort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
