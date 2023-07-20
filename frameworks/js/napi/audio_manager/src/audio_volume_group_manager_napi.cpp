@@ -50,7 +50,7 @@ struct AudioVolumeGroupManagerAsyncContext {
     int32_t status = SUCCESS;
     int32_t groupId;
     int32_t adjustType;
-    int32_t volumeAjustStatus;
+    int32_t volumeAdjustStatus;
     bool isMute;
     bool isActive;
     bool isTrue;
@@ -216,7 +216,7 @@ static void GetVolumeAdjustByStepAsyncCallbackComplete(napi_env env, napi_status
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-            napi_create_int32(env, asyncContext->volumeAjustStatus, &valueParam);
+            napi_create_int32(env, asyncContext->volumeAdjustStatus, &valueParam);
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
@@ -1133,8 +1133,7 @@ void GetArgvForAdjustVolumeByStep(napi_env env, size_t argc, napi_value* argv,
         if (i == PARAM0 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->adjustType);
             if (!AudioCommonNapi::IsLegalInputArgumentVolumeAdjustType(asyncContext->adjustType)) {
-                asyncContext->status = (asyncContext->status ==
-                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         } else if (i == PARAM1) {
             if (valueType == napi_function) {
@@ -1177,8 +1176,15 @@ napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_ca
         [](napi_env env, void *data) {
             auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
-                context->volumeAjustStatus = context->objectInfo->audioGroupMngr_->AdjustVolumeByStep(
+                context->volumeAdjustStatus = context->objectInfo->audioGroupMngr_->AdjustVolumeByStep(
                     static_cast<VolumeAdjustType>(context->adjustType));
+                if (context->volumeAdjustStatus == SUCCESS) {
+                    context->status = SUCCESS;
+                } else if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
+                    context->status = NAPI_ERR_NO_PERMISSION;
+                } else {
+                    context->status = NAPI_ERR_SYSTEM;
+                }
             }
         },
         GetVolumeAdjustByStepAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1212,14 +1218,12 @@ void GetArgvForAdjustSystemVolumeByStep(napi_env env, size_t argc, napi_value* a
             napi_get_value_int32(env, argv[i], &asyncContext->volType);
             if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)
                 || asyncContext->volType == AudioManagerNapi::ALL) {
-                asyncContext->status = (asyncContext->status ==
-                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         } else if (i == PARAM1 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->adjustType);
             if (!AudioCommonNapi::IsLegalInputArgumentVolumeAdjustType(asyncContext->adjustType)) {
-                asyncContext->status = (asyncContext->status ==
-                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         } else if (i == PARAM2) {
             if (valueType == napi_function) {
@@ -1262,9 +1266,16 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
         [](napi_env env, void *data) {
             auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
-                context->volumeAjustStatus = context->objectInfo->audioGroupMngr_->AdjustSystemVolumeByStep(
+                context->volumeAdjustStatus = context->objectInfo->audioGroupMngr_->AdjustSystemVolumeByStep(
                     GetNativeAudioVolumeType(context->volType),
                     static_cast<VolumeAdjustType>(context->adjustType));
+                if (context->volumeAdjustStatus == SUCCESS) {
+                    context->status = SUCCESS;
+                } else if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
+                    context->status = NAPI_ERR_NO_PERMISSION;
+                } else {
+                    context->status = NAPI_ERR_SYSTEM;
+                }
             }
         },
         GetVolumeAdjustByStepAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1302,17 +1313,18 @@ void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
         if (i == PARAM0 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->volType);
             if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)) {
-                asyncContext->status = (asyncContext->status ==
-                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         } else if (i == PARAM1 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->volLevel);
             if (!AudioCommonNapi::IsLegalInputArgumentVolLevel(asyncContext->volLevel)) {
-                asyncContext->status = (asyncContext->status ==
-                    NAPI_ERR_INVALID_PARAM) ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         } else if (i == PARAM2 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->deviceType);
+            if (!AudioCommonNapi::IsLegalInputArgumentDeviceType(asyncContext->deviceType)) {
+                asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            }
             break;
         } else {
             asyncContext->status = NAPI_ERR_INVALID_PARAM;
@@ -1346,11 +1358,16 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_c
     status = napi_create_async_work(
         env, nullptr, resource,
         [](napi_env env, void *data) {
-            auto context = static_cast<AudioVolumeGroupManagerAsyncContext *>(data);
+            auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
                 context->volumeInDb = context->objectInfo->audioGroupMngr_->GetSystemVolumeInDb(
                     GetNativeAudioVolumeType(context->volType), context->volLevel,
                     static_cast<DeviceType>(context->deviceType));
+                if (context->volumeInDb < 0) {
+                    context->status = NAPI_ERR_SYSTEM;
+                } else {
+                    context->status = SUCCESS;
+                }
             }
         },
         GetVolumeDbAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);

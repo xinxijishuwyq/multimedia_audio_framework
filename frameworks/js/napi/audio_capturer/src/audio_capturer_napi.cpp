@@ -194,7 +194,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(capturerNapi != nullptr, result, "No memory");
     capturerNapi->env_ = env;
     capturerNapi->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
-    capturerNapi->capturerFlags_ = sCapturerOptions_->capturerInfo.capturerFlags;
 
     AudioCapturerOptions capturerOptions = {};
     capturerOptions.streamInfo.samplingRate = sCapturerOptions_->streamInfo.samplingRate;
@@ -203,7 +202,6 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     capturerOptions.streamInfo.channels = sCapturerOptions_->streamInfo.channels;
 
     capturerOptions.capturerInfo.sourceType = sCapturerOptions_->capturerInfo.sourceType;
-    capturerOptions.capturerInfo.capturerFlags = sCapturerOptions_->capturerInfo.capturerFlags;
 
     capturerOptions.playbackCaptureConfig.filterOptions =
         sCapturerOptions_->playbackCaptureConfig.filterOptions;
@@ -1365,10 +1363,8 @@ bool AudioCapturerNapi::ParseCaptureFilterOptionsVector(napi_env env, napi_value
                 filterOptions->usages.emplace_back(static_cast<StreamUsage>(val));
             }
         }
-        return true;
-    } else {
-        return false;
     }
+    return true;
 }
 
 bool AudioCapturerNapi::ParsePlaybackCaptureConfig(napi_env env, napi_value root,
@@ -1379,7 +1375,7 @@ bool AudioCapturerNapi::ParsePlaybackCaptureConfig(napi_env env, napi_value root
     if (napi_get_named_property(env, root, "filterOptions", &res) == napi_ok) {
         return ParseCaptureFilterOptionsVector(env, res, &(captureConfig->filterOptions));
     } else {
-        return false;
+        return true;
     }
 }
 

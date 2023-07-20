@@ -74,6 +74,7 @@ public:
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
     static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
+    static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
@@ -95,6 +96,7 @@ struct AutoRef {
 };
 
 const int32_t  NAPI_ERROR_INVALID_PARAM = 6800101;
+const int32_t  NAPI_ERR_NO_PERMISSION = 201;
 const int32_t  NAPI_ERR_PERMISSION_DENIED = 202;
 const int32_t  NAPI_ERR_INPUT_INVALID = 401;
 const int32_t  NAPI_ERR_INVALID_PARAM = 6800101;
