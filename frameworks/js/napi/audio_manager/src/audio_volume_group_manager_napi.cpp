@@ -50,7 +50,7 @@ struct AudioVolumeGroupManagerAsyncContext {
     int32_t status = SUCCESS;
     int32_t groupId;
     int32_t adjustType;
-    int32_t volumeAjustStatus;
+    int32_t volumeAdjustStatus;
     bool isMute;
     bool isActive;
     bool isTrue;
@@ -216,7 +216,7 @@ static void GetVolumeAdjustByStepAsyncCallbackComplete(napi_env env, napi_status
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-            napi_create_int32(env, asyncContext->volumeAjustStatus, &valueParam);
+            napi_create_int32(env, asyncContext->volumeAdjustStatus, &valueParam);
         }
         CommonCallbackRoutine(env, asyncContext, valueParam);
     } else {
@@ -1176,11 +1176,11 @@ napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_ca
         [](napi_env env, void *data) {
             auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
-                context->volumeAjustStatus = context->objectInfo->audioGroupMngr_->AdjustVolumeByStep(
+                context->volumeAdjustStatus = context->objectInfo->audioGroupMngr_->AdjustVolumeByStep(
                     static_cast<VolumeAdjustType>(context->adjustType));
-                if (context->volumeAjustStatus == SUCCESS) {
+                if (context->volumeAdjustStatus == SUCCESS) {
                     context->status = SUCCESS;
-                } else if (context->volumeAjustStatus == ERR_PERMISSION_DENIED) {
+                } else if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
                     context->status = NAPI_ERR_NO_PERMISSION;
                 } else {
                     context->status = NAPI_ERR_SYSTEM;
@@ -1266,12 +1266,12 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
         [](napi_env env, void *data) {
             auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
-                context->volumeAjustStatus = context->objectInfo->audioGroupMngr_->AdjustSystemVolumeByStep(
+                context->volumeAdjustStatus = context->objectInfo->audioGroupMngr_->AdjustSystemVolumeByStep(
                     GetNativeAudioVolumeType(context->volType),
                     static_cast<VolumeAdjustType>(context->adjustType));
-                if (context->volumeAjustStatus == SUCCESS) {
+                if (context->volumeAdjustStatus == SUCCESS) {
                     context->status = SUCCESS;
-                } else if (context->volumeAjustStatus == ERR_PERMISSION_DENIED) {
+                } else if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
                     context->status = NAPI_ERR_NO_PERMISSION;
                 } else {
                     context->status = NAPI_ERR_SYSTEM;
