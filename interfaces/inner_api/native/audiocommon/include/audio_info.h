@@ -325,7 +325,7 @@ enum AudioStreamType {
     /**
      * Indicates audio streams for wakeup.
      */
-    STREAM_WAKEUP = 15,
+    STREAM_WAKEUP = 19,
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
