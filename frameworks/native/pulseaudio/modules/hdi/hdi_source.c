@@ -478,8 +478,8 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    if (pa_modargs_get_value_s32(ma, "sourceType", &u->attrs.sourceType) < 0) {
-        AUDIO_ERR_LOG("Failed to parse sourceType argument");
+    if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.sourceType) < 0) {
+        AUDIO_ERR_LOG("Failed to parse source_type argument");
     }
     u->attrs.sourceType = (int32_t)(ConvertToHDIAudioInputType(u->attrs.sourceType));
     AUDIO_INFO_LOG("after convert sourceType argument %{public}d", u->attrs.sourceType);
