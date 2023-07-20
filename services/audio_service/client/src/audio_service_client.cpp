@@ -1538,8 +1538,8 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     if (!error && (length >= 0) && !acache.isFull) {
         uint8_t *cacheBuffer = acache.buffer.get();
         uint32_t offset = acache.readIndex;
-        uint32_t size = (acache.writeIndex - acache.readIndex);
-        if (size > 0) {
+        if (acache.writeIndex > acache.readIndex) {
+            uint32_t size = (acache.writeIndex - acache.readIndex);
             if (memcpy_s(cacheBuffer, acache.totalCacheSize, cacheBuffer + offset, size)) {
                 AUDIO_ERR_LOG("Update cache failed");
                 pa_threaded_mainloop_unlock(mainLoop);
