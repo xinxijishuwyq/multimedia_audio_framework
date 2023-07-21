@@ -399,34 +399,6 @@ static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
     return hdiAudioFormat;
 }
 
-static enum AudioInputType ConvertToHDIAudioInputType(int32_t currSourceType)
-{
-    enum AudioInputType hdiAudioInputType;
-    switch (currSourceType) {
-        case SOURCE_TYPE_INVALID:
-            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
-            break;
-        case SOURCE_TYPE_MIC:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_ULTRASONIC:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-        case SOURCE_TYPE_WAKEUP:
-            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_COMMUNICATION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
-            break;
-        default:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-    }
-    return hdiAudioInputType;
-}
-
 static bool GetEndianInfo(pa_sample_format_t format)
 {
     bool isBigEndian = false;
@@ -481,8 +453,6 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.sourceType) < 0) {
         AUDIO_ERR_LOG("Failed to parse source_type argument");
     }
-    u->attrs.sourceType = (int32_t)(ConvertToHDIAudioInputType(u->attrs.sourceType));
-    AUDIO_INFO_LOG("after convert sourceType argument %{public}d", u->attrs.sourceType);
 
     ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
         pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
