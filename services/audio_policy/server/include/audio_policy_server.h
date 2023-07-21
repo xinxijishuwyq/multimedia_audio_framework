@@ -362,8 +362,8 @@ private:
         bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START);
 
     // externel function call
-    void VolumeKeyUpEvents(std::set<int32_t> &preKeys);
-    void VolumeKeyDownEvents(std::set<int32_t> &preKeys);
+    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+    void RegisterVolumeKeyEvents(const int32_t keyType);
     void SubscribeVolumeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
