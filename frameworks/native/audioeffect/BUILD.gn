@@ -39,6 +39,7 @@ config("audio_effect_config") {
 ohos_shared_library("audio_effect") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../cfi_blocklist.txt"
   }
