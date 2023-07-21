@@ -305,12 +305,11 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         }
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE): {
             vector<int32_t> usage;
-            int32_t tmp_usage;
             int32_t cnt = data.ReadInt32();
             CHECK_AND_RETURN_RET_LOG(cnt >= 0 && cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
                 "Set support stream usage failed, please check");
             for (int32_t i = 0; i < cnt; i++) {
-                tmp_usage = data.ReadInt32();
+                int32_t tmp_usage = data.ReadInt32();
                 if (find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
                     AUDIO_SUPPORTED_STREAM_USAGES.end()) {
                     continue;

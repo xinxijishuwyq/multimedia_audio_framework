@@ -483,8 +483,6 @@ static void update_adjust_timer(struct userdata *u) {
 /* Called from main thread
  * Calculates minimum and maximum possible latency for source and sink */
 static void update_latency_boundaries(struct userdata *u, pa_source *source, pa_sink *sink) {
-    const char *s;
-
     if (source) {
         /* Source latencies */
         u->fixed_alsa_source = false;
@@ -493,6 +491,7 @@ static void update_latency_boundaries(struct userdata *u, pa_source *source, pa_
         else {
             u->min_source_latency = pa_source_get_fixed_latency(source);
             u->max_source_latency = u->min_source_latency;
+            const char *s;
             if ((s = pa_proplist_gets(source->proplist, PA_PROP_DEVICE_API))) {
                 if (pa_streq(s, "alsa"))
                     u->fixed_alsa_source = true;
@@ -712,7 +711,7 @@ static void source_output_kill_cb(pa_source_output *o) {
 }
 
 /* Called from main thread */
-static bool source_output_may_move_to_cb(pa_source_output *o, pa_source *dest) {
+static bool source_output_may_move_to_cb(pa_source_output *o, const pa_source *dest) {
     struct userdata *u;
 
     pa_source_output_assert_ref(o);
@@ -1076,7 +1075,7 @@ static void sink_input_state_change_cb(pa_sink_input *i, pa_sink_input_state_t s
 }
 
 /* Called from main thread */
-static bool sink_input_may_move_to_cb(pa_sink_input *i, pa_sink *dest) {
+static bool sink_input_may_move_to_cb(pa_sink_input *i, const pa_sink *dest) {
     struct userdata *u;
 
     pa_sink_input_assert_ref(i);
