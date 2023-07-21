@@ -47,6 +47,7 @@ if (!audio_framework_feature_dtmf_tone) {
   ohos_shared_library("audio_toneplayer") {
     sanitize = {
       cfi = true
+      cfi_cross_dso = true
       debug = false
       blocklist = "../../../cfi_blocklist.txt"
     }

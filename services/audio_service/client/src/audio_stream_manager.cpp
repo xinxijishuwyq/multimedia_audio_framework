@@ -130,5 +130,22 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
     }
     return ret;
 }
+
+bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
+{
+    switch (volumeType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_ASSISTANT:
+            break;
+        default:
+            AUDIO_ERR_LOG("IsStreamActive volumeType=%{public}d not supported", volumeType);
+            return false;
+    }
+
+    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
+    return AudioPolicyManager::GetInstance().IsStreamActive(StreamVolType);
+}
 } // namespace AudioStandard
 } // namespace OHOS
