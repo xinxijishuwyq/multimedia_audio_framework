@@ -25,13 +25,31 @@ namespace AudioStandard {
 class OHAudioCapturerModeCallback : public AudioCapturerReadCallback {
 public:
     OHAudioCapturerModeCallback(OH_AudioCapturer_Callbacks callbacks, OH_AudioCapturer* audioCapturer, void* userData)
+        : callbacks_(callbacks), ohAudioCapturer_(audioCapturer), userData_(userData)
     {
-        callbacks_ = callbacks;
-        ohAudioCapturer_ = audioCapturer;
-        userData_ = userData;
     }
 
     void OnReadData(size_t length) override;
+private:
+    OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer* ohAudioCapturer_;
+    void* userData_;
+};
+
+class OHAudioCapturerCallback : public AudioCapturerCallback {
+public:
+    OHAudioCapturerCallback(OH_AudioCapturer_Callbacks callbacks, OH_AudioCapturer* audioCapturer, void* userData)
+        : callbacks_(callbacks), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+
+    void OnStateChange(const CapturerState state) override
+    {
+        AUDIO_DEBUG_LOG("OHAudioCapturerCallback:: OnStateChange");
+    }
+
 private:
     OH_AudioCapturer_Callbacks callbacks_;
     OH_AudioCapturer* ohAudioCapturer_;
@@ -62,7 +80,7 @@ class OHAudioCapturer {
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
 
-        void SetCapturerReadCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
+        void SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
 
     private:
         std::unique_ptr<AudioCapturer> audioCapturer_;

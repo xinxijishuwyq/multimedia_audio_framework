@@ -288,7 +288,7 @@ AudioSampleFormat OHAudioCapturer::GetSampleFormat()
     return params.audioSampleFormat;
 }
 
-void OHAudioCapturer::SetCapturerReadCallback(OH_AudioCapturer_Callbacks callbacks, void* userData)
+void OHAudioCapturer::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData)
 {
     CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client is nullptr");
     audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
@@ -298,6 +298,14 @@ void OHAudioCapturer::SetCapturerReadCallback(OH_AudioCapturer_Callbacks callbac
         audioCapturer_->SetCapturerReadCallback(callback);
     } else {
         AUDIO_ERR_LOG("read callback is nullptr");
+    }
+
+    if (callbacks.OH_AudioCapturer_OnInterrptEvent != nullptr) {
+        std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(callbacks,
+            (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetCapturerCallback(callback);
+    } else {
+        AUDIO_ERR_LOG("capturer interrupt event callback is nullptr");
     }
 }
 
@@ -347,6 +355,16 @@ void OHAudioCapturerModeCallback::OnReadData(size_t length)
         (void*)bufDesc.buffer,
         bufDesc.bufLength);
     audioCapturer->Enqueue(bufDesc);
+}
+
+void OHAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
+{
+    CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioCapturer_OnInterrptEvent != nullptr, "pointer to the fuction is nullptr");
+
+    OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+    OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+    callbacks_.OH_AudioCapturer_OnInterrptEvent(ohAudioCapturer_, userData_, type, hint);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
