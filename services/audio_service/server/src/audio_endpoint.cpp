@@ -122,9 +122,13 @@ private:
     void EndpointWorkLoopFuc();
     void RecordEndpointWorkLoopFuc();
 
+    // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
+    void AsyncGetPosTime();
+
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
+    static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -162,6 +166,14 @@ private:
     std::mutex loopThreadLock_;
     std::condition_variable workThreadCV_;
     int64_t lastHandleProcessTime_ = 0;
+
+    std::thread updatePosTimeThread_;
+    std::mutex updateThreadLock_;
+    std::condition_variable updateThreadCV_;
+    std::atomic<bool> stopUpdateThread_ = false;
+
+    std::atomic<uint64_t> posInFrame_ = 0;
+    std::atomic<int64_t> timeInNano_ = 0;
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
@@ -215,6 +227,14 @@ void AudioEndpointInner::Release()
         AUDIO_INFO_LOG("AudioEndpoint join work thread start");
         endpointWorkThread_.join();
         AUDIO_INFO_LOG("AudioEndpoint join work thread end");
+    }
+
+    stopUpdateThread_.store(true);
+    updateThreadCV_.notify_all();
+    if (updatePosTimeThread_.joinable()) {
+        AUDIO_INFO_LOG("AudioEndpoint join update thread start");
+        updatePosTimeThread_.join();
+        AUDIO_INFO_LOG("AudioEndpoint join update thread end");
     }
 
     if (fastSink_ != nullptr) {
@@ -366,6 +386,10 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     isInited_.store(true);
     endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
+
+    // note: add this in record.
+    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
 #ifdef DUMP_PROCESS_FILE
     dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
@@ -809,6 +833,9 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             lastHandleProcessTime_ = checkTime;
             processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_); // update handle info
             if (tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
+                // Process is not running, server will continue to check the same location in the next cycle.
+                int64_t duration = 5000000; // 5ms
+                processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_ + duration);
                 continue; // process not running
             }
             uint64_t curRead = tempBuffer->GetCurReadFrame();
@@ -947,11 +974,13 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
     uint32_t startPeriodCnt = 20; // sync each time when start
     uint32_t oneBigPeriodCnt = 40; // 200ms
     if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
-        // todo sleep random little time but less than nextHdiReadTime - 2ms
-        uint64_t readFrame = 0;
-        int64_t readtime = 0;
-        if (GetDeviceHandleInfo(readFrame, readtime)) {
-            readTimeModel_.UpdataFrameStamp(readFrame, readtime);
+        updateThreadCV_.notify_all();
+    }
+    uint64_t readFrame = 0;
+    int64_t readtime = 0;
+    if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
+        if (readFrame != posInFrame_) {
+            readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
         }
     }
 
@@ -1068,6 +1097,31 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
         std::to_string(nanoTime) + " at " + std::to_string(ClockTime::GetCurNano()));
     nanoTime += DELTA_TO_REAL_READ_START_TIME; // global delay in server
     return true;
+}
+
+void AudioEndpointInner::AsyncGetPosTime()
+{
+    AUDIO_INFO_LOG("AsyncGetPosTime thread start.");
+    while (!stopUpdateThread_) {
+        std::unique_lock<std::mutex> lock(updateThreadLock_);
+        updateThreadCV_.wait_for(lock, std::chrono::milliseconds(UPDATE_THREAD_TIMEOUT));
+        if (stopUpdateThread_) {
+            break;
+        }
+        // get signaled, call get pos-time
+        uint64_t curHdiHandlePos = posInFrame_;
+        int64_t handleTime = timeInNano_;
+        if (!GetDeviceHandleInfo(curHdiHandlePos, handleTime)) {
+            AUDIO_WARNING_LOG("AsyncGetPosTime call GetDeviceHandleInfo failed.");
+            continue;
+        }
+        // keep it
+        if (posInFrame_ != curHdiHandlePos) {
+            posInFrame_ = curHdiHandlePos;
+            timeInNano_ = handleTime;
+        }
+    }
+    AUDIO_INFO_LOG("AsyncGetPosTime thread end.");
 }
 
 std::string AudioEndpointInner::GetStatusStr(EndpointStatus status)

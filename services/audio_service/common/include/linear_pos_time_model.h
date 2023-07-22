@@ -28,13 +28,18 @@ public:
 
     void ResetFrameStamp(uint64_t frame, int64_t nanoTime);
 
-    void UpdataFrameStamp(uint64_t frame, int64_t nanoTime);
+    bool UpdataFrameStamp(uint64_t frame, int64_t nanoTime);
+
+    bool GetFrameStamp(uint64_t &frame, int64_t &nanoTime);
 
     void SetSpanCount(uint64_t spanCountInFrame);
 
     int64_t GetTimeOfPos(uint64_t posInFrame);
 
     virtual ~LinearPosTimeModel() = default;
+private:
+    bool IsReasonable(uint64_t frame, int64_t nanoTime);
+
 private:
     bool isConfiged = false;
     int32_t sampleRate_ = 0;

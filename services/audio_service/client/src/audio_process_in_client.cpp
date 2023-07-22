@@ -64,6 +64,27 @@ public:
 
     int32_t Release() override;
 
+    // methods for support IAudioStream
+    int32_t GetSessionID(uint32_t &sessionID) override;
+
+    bool GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec) override;
+
+    int32_t GetBufferSize(size_t &bufferSize) override;
+
+    int32_t GetFrameCount(uint32_t &frameCount) override;
+
+    int32_t GetLatency(uint64_t &latency) override;
+
+    int32_t SetVolume(float vol) override;
+
+    float GetVolume() override;
+
+    int64_t GetFramesWritten() override;
+
+    int64_t GetFramesRead() override;
+
+    void SetApplicationCachePath(const std::string &cachePath) override;
+
     bool Init(const AudioProcessConfig &config);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -128,6 +149,7 @@ private:
     bool isInited_ = false;
     bool needReSyncPosition_ = true;
 
+    float volumeInFloat_ = 1.0f;
     int32_t processVolume_ = PROCESS_VOLUME_MAX; // 0 ~ 65536
     LinearPosTimeModel handleTimeModel_;
 
@@ -136,6 +158,8 @@ private:
     std::atomic<ThreadStatus> threadStatus_ = INVALID;
     std::mutex loopThreadLock_;
     std::condition_variable threadStatusCV_;
+
+    std::string cachePath_;
 #ifdef DUMP_CLIENT
     FILE *dcp_ = nullptr;
 #endif
@@ -241,6 +265,97 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         dcp_ = nullptr;
     }
 #endif
+}
+
+int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
+{
+    // note: Get the session id from server.
+    sessionID = 0; // 0 for debug
+    return SUCCESS;
+}
+
+bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec)
+{
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, false, "buffer is null, maybe not inited.");
+    uint64_t pos = 0;
+    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        pos = audioBuffer_->GetCurWriteFrame();
+    } else {
+        pos = audioBuffer_->GetCurReadFrame();
+    }
+
+    int64_t time = handleTimeModel_.GetTimeOfPos(pos);
+    int64_t deltaTime = 20000000; // note: 20ms
+    time += deltaTime;
+
+    sec = time / AUDIO_NS_PER_SECOND;
+    nanoSec = time % AUDIO_NS_PER_SECOND;
+    return true;
+}
+
+int32_t AudioProcessInClientInner::GetBufferSize(size_t &bufferSize)
+{
+    bufferSize = clientSpanSizeInByte_;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::GetFrameCount(uint32_t &frameCount)
+{
+    frameCount = spanSizeInFrame_;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::GetLatency(uint64_t &latency)
+{
+    latency = 20; // 20ms for debug
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::SetVolume(float vol)
+{
+    float minVol = 0.0f;
+    float maxVol = 1.0f;
+    if (vol < minVol || vol > maxVol) {
+        AUDIO_ERR_LOG("SetVolume failed to with invalid volume:%{public}f", vol);
+        return ERR_INVALID_PARAM;
+    }
+    int32_t volumeInt = static_cast<int32_t>(vol * PROCESS_VOLUME_MAX);
+    int32_t ret = SetVolume(volumeInt);
+    if (ret == SUCCESS) {
+        volumeInFloat_ = vol;
+    }
+    return ret;
+}
+
+float AudioProcessInClientInner::GetVolume()
+{
+    return volumeInFloat_;
+}
+
+int64_t AudioProcessInClientInner::GetFramesWritten()
+{
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK) {
+        AUDIO_ERR_LOG("Playback not support.");
+        return -1;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, -1, "buffer is null, maybe not inited.");
+    return audioBuffer_->GetCurWriteFrame();
+}
+
+int64_t AudioProcessInClientInner::GetFramesRead()
+{
+    if (processConfig_.audioMode != AUDIO_MODE_RECORD) {
+        AUDIO_ERR_LOG("Record not support.");
+        return -1;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, -1, "buffer is null, maybe not inited.");
+    return audioBuffer_->GetCurReadFrame();
+}
+
+void AudioProcessInClientInner::SetApplicationCachePath(const std::string &cachePath)
+{
+    AUDIO_INFO_LOG("Using cachePath:%{public}s", cachePath.c_str());
+    cachePath_ = cachePath;
 }
 
 bool AudioProcessInClientInner::InitAudioBuffer()
@@ -761,7 +876,10 @@ void AudioProcessInClientInner::UpdateHandleInfo()
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
-    handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+    bool isSuccess = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+    if (!isSuccess) {
+        handleTimeModel_.ResetFrameStamp(serverHandlePos, serverHandleTime);
+    }
 }
 
 int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame)

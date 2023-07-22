@@ -72,6 +72,27 @@ public:
     virtual int32_t Stop() = 0;
 
     virtual int32_t Release() = 0;
+
+    // methods for support IAudioStream
+    virtual int32_t GetSessionID(uint32_t &sessionID) = 0;
+
+    virtual bool GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec) = 0;
+
+    virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
+
+    virtual int32_t GetFrameCount(uint32_t &frameCount) = 0;
+
+    virtual int32_t GetLatency(uint64_t &latency) = 0;
+
+    virtual int32_t SetVolume(float vol) = 0;
+
+    virtual float GetVolume() = 0;
+
+    virtual int64_t GetFramesWritten() = 0;
+
+    virtual int64_t GetFramesRead() = 0;
+
+    virtual void SetApplicationCachePath(const std::string &cachePath) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
