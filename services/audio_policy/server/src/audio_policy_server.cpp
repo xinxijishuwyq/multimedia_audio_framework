@@ -171,10 +171,6 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
     bool volLevelCheck = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
         volLevel >= GetMaxVolumeLevel(streamInFocus) : volLevel <= GetMinVolumeLevel(streamInFocus);
     if (volLevelCheck) {
-        if ((keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (volLevel > 0) && GetStreamMute(streamInFocus)) {
-            SetStreamMute(streamInFocus, false);
-        }
-
         for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
             std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
             if (volumeChangeCb == nullptr) {
@@ -221,24 +217,26 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         AUDIO_INFO_LOG("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
-        AudioStreamType streamInFocus = AudioStreamType::STREAM_DEFAULT;
+        AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
         if ((mPolicyService.GetLocalDevicesType().compare("tablet") == 0) ||
             (mPolicyService.GetLocalDevicesType().compare("2in1") == 0)) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
             streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
         }
-        if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
-            streamInFocus = AudioStreamType::STREAM_MUSIC;
+        if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
+            AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
+            SetStreamMuteInternal(streamInFocus, false, true);
+            return;
         }
-        int32_t volumeLevelInInt = GetSystemVolumeLevelForKey(streamInFocus, true);
+        int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, false);
         if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
             return;
         }
 
         volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
             ++volumeLevelInInt : --volumeLevelInInt;
-        SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt, true);
+        SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true);
     });
     if (keySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}s option failed",
@@ -318,15 +316,15 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
         return ERR_PERMISSION_DENIED;
     }
-    return SetSystemVolumeLevelForKey(streamType, volumeLevel, false);
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
 {
-    return GetSystemVolumeLevelForKey(streamType, false);
+    return GetSystemVolumeLevelInternal(streamType, false);
 }
 
-int32_t AudioPolicyServer::GetSystemVolumeLevelForKey(AudioStreamType streamType, bool isFromVolumeKey)
+int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType, bool isFromVolumeKey)
 {
     if (streamType == STREAM_ALL) {
         streamType = STREAM_MUSIC;
@@ -365,12 +363,12 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     int32_t volumeLevelInInt = GetSystemVolumeLevel(streamInFocus);
     int32_t ret = ERROR;
     if (adjustType == VolumeAdjustType::VOLUME_UP) {
-        ret = SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt + volumeStep_, false);
+        ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt + volumeStep_, false);
         AUDIO_INFO_LOG("AdjustVolumeByStep Up, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
     }
 
     if (adjustType == VolumeAdjustType::VOLUME_DOWN) {
-        ret = SetSystemVolumeLevelForKey(streamInFocus, volumeLevelInInt - volumeStep_, false);
+        ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt - volumeStep_, false);
         AUDIO_INFO_LOG("AdjustVolumeByStep Down, VolumeLevel is %{public}d", GetSystemVolumeLevel(streamInFocus));
     }
     return ret;
@@ -382,12 +380,12 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
     int32_t ret = ERROR;
 
     if (adjustType == VolumeAdjustType::VOLUME_UP) {
-        ret = SetSystemVolumeLevelForKey(volumeType, volumeLevelInInt + volumeStep_, false);
+        ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt + volumeStep_, false);
         AUDIO_INFO_LOG("AdjustSystemVolumeByStep Up, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
     }
 
     if (adjustType == VolumeAdjustType::VOLUME_DOWN) {
-        ret = SetSystemVolumeLevelForKey(volumeType, volumeLevelInInt - volumeStep_, false);
+        ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt - volumeStep_, false);
         AUDIO_INFO_LOG("AdjustSystemVolumeByStep Down, VolumeLevel:%{public}d", GetSystemVolumeLevel(volumeType));
     }
     return ret;
@@ -405,10 +403,18 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, 
         return ERR_PERMISSION_DENIED;
     }
 
+    return SetStreamMuteInternal(streamType, mute, false);
+}
+
+int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi)
+{
+    AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
+        streamType, mute, isUpdateUi);
+
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
-            int32_t setResult = SetSingleStreamMute(audioStreamType, mute);
             AUDIO_INFO_LOG("SetMute of STREAM_ALL for StreamType = %{public}d ", audioStreamType);
+            int32_t setResult = SetSingleStreamMute(audioStreamType, mute, isUpdateUi);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -416,12 +422,12 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, 
         return SUCCESS;
     }
 
-    return SetSingleStreamMute(streamType, mute);
+    return SetSingleStreamMute(streamType, mute, isUpdateUi);
 }
 
-int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute)
+int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi)
 {
-    if (streamType == AudioStreamType::STREAM_RING) {
+    if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
         if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("SetStreamMute permission denied for stream type : %{public}d", streamType);
             return ERR_PERMISSION_DENIED;
@@ -439,7 +445,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
         volumeEvent.volume = GetSystemVolumeLevel(streamType);
-        volumeEvent.updateUi = false;
+        volumeEvent.updateUi = isUpdateUi;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
         volumeChangeCb->OnVolumeKeyEvent(volumeEvent);
@@ -453,9 +459,10 @@ float AudioPolicyServer::GetSystemVolumeDb(AudioStreamType streamType)
     return mPolicyService.GetSystemVolumeDb(streamType);
 }
 
-int32_t AudioPolicyServer::SetSystemVolumeLevelForKey(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
+int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
+    bool isUpdateUi)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevelForKey streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
+    AUDIO_INFO_LOG("SetSystemVolumeLevelInternal streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
         streamType, volumeLevel, isUpdateUi);
     if (IsVolumeUnadjustable()) {
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
@@ -463,8 +470,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelForKey(AudioStreamType streamType
     }
     if (streamType == STREAM_ALL) {
         for (auto audioSteamType : GET_STREAM_ALL_VOLUME_TYPES) {
-            int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d ", audioSteamType);
+            int32_t setResult = SetSingleStreamVolume(audioSteamType, volumeLevel, isUpdateUi);
             if (setResult != SUCCESS) {
                 return setResult;
             }
@@ -494,7 +501,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
             continue;
         }
 
-        AUDIO_DEBUG_LOG("SetSystemVolumeLevelForKey trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_DEBUG_LOG("SetSystemVolumeLevelInternal trigger volumeChangeCb clientPid : %{public}d", it->first);
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
         volumeEvent.volume = GetSystemVolumeLevel(streamType);
@@ -509,11 +516,6 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
 bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 {
-    if (streamType == STREAM_ALL) {
-        streamType = STREAM_MUSIC;
-        AUDIO_INFO_LOG("GetStreamMute of STREAM_ALL for streamType = %{public}d ", streamType);
-    }
-
     if (streamType == AudioStreamType::STREAM_RING) {
         if (!VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
             AUDIO_ERR_LOG("GetStreamMute permission denied for stream type : %{public}d", streamType);
@@ -521,6 +523,15 @@ bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
         }
     }
 
+    return GetStreamMuteInternal(streamType);
+}
+
+bool AudioPolicyServer::GetStreamMuteInternal(AudioStreamType streamType)
+{
+    if (streamType == STREAM_ALL) {
+        streamType = STREAM_MUSIC;
+        AUDIO_INFO_LOG("GetStreamMute of STREAM_ALL for streamType = %{public}d ", streamType);
+    }
     return mPolicyService.GetStreamMute(streamType);
 }
 
