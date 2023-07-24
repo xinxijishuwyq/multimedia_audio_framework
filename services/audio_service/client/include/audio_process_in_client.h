@@ -49,6 +49,7 @@ class ClientUnderrunCallBack {
 class AudioProcessInClient {
 public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
+    static bool CheckIfSupport(const AudioProcessConfig &config);
     static std::shared_ptr<AudioProcessInClient> Create(const AudioProcessConfig &config);
 
     virtual ~AudioProcessInClient() = default;
@@ -87,6 +88,8 @@ public:
     virtual int32_t SetVolume(float vol) = 0;
 
     virtual float GetVolume() = 0;
+
+    virtual uint32_t GetUnderflowCount() = 0;
 
     virtual int64_t GetFramesWritten() = 0;
 

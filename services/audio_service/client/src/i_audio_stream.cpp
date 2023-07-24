@@ -18,6 +18,7 @@
 
 #include "audio_log.h"
 #include "audio_stream.h"
+#include "fast_audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -130,6 +131,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
         (void)params;
         // todo: use params eStreamType uid to create fast stream
         AUDIO_INFO_LOG("Create fast stream");
+        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
     if (streamClass == PA_STREAM) {
         return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
