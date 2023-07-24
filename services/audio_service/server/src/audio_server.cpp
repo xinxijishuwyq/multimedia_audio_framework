@@ -675,8 +675,8 @@ void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParam
 
 void AudioServer::OnWakeupClose()
 {
-    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     AUDIO_INFO_LOG("OnWakeupClose Callback start");
+    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
         if (wakeupCallback_ == nullptr) {
