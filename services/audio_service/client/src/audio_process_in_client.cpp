@@ -79,6 +79,8 @@ public:
 
     float GetVolume() override;
 
+    uint32_t GetUnderflowCount() override;
+
     int64_t GetFramesWritten() override;
 
     int64_t GetFramesRead() override;
@@ -89,7 +91,6 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid);
-    static bool CheckIfSupport(const AudioProcessConfig &config);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
 
 private:
@@ -159,6 +160,7 @@ private:
     std::mutex loopThreadLock_;
     std::condition_variable threadStatusCV_;
 
+    std::atomic<uint32_t> underflowCount_ = 0;
     std::string cachePath_;
 #ifdef DUMP_CLIENT
     FILE *dcp_ = nullptr;
@@ -223,7 +225,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 {
     AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, isRemote %{public}d.",
         config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.isRemote);
-    if (config.audioMode == AUDIO_MODE_PLAYBACK && !AudioProcessInClientInner::CheckIfSupport(config)) {
+    if (config.audioMode == AUDIO_MODE_PLAYBACK && !AudioProcessInClient::CheckIfSupport(config)) {
         AUDIO_ERR_LOG("CheckIfSupport failed!");
         return nullptr;
     }
@@ -270,7 +272,12 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 {
     // note: Get the session id from server.
-    sessionID = 0; // 0 for debug
+    int32_t pid = processConfig_.appInfo.appUid;
+    if (pid < 0) {
+        AUDIO_ERR_LOG("GetSessionID failed:%{public}d", pid);
+        return ERR_OPERATION_FAILED;
+    }
+    sessionID = static_cast<uint32_t>(pid); // using pid as sessionID temporarily
     return SUCCESS;
 }
 
@@ -330,6 +337,11 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
 float AudioProcessInClientInner::GetVolume()
 {
     return volumeInFloat_;
+}
+
+uint32_t AudioProcessInClientInner::GetUnderflowCount()
+{
+    return underflowCount_.load();
 }
 
 int64_t AudioProcessInClientInner::GetFramesWritten()
@@ -551,7 +563,7 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
     return SUCCESS;
 }
 
-bool AudioProcessInClientInner::CheckIfSupport(const AudioProcessConfig &config)
+bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
     if (config.streamInfo.encoding != ENCODING_PCM || config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
         return false;
@@ -1180,6 +1192,7 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
     if (clientWriteCost > MAX_WRITE_COST_DURATION_NANO) {
         AUDIO_WARNING_LOG("Client write cost too long...");
+        underflowCount_++;
         // todo
         // handle write time out: send underrun msg to client, reset time model with latest server handle time.
     }

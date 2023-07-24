@@ -23,6 +23,7 @@
 #include "audio_info.h"
 
 #include "audio_process_in_client.h"
+#include "audio_stream_tracker.h"
 #include "i_audio_stream.h"
 
 namespace OHOS {
@@ -131,17 +132,18 @@ private:
     AudioMode eMode_;
     std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
     std::shared_ptr<FastAudioStreamCallback> spkProcClientCb_ = nullptr;
+    std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_;
+    AudioStreamParams streamInfo_;
+    AudioProcessConfig processconfig_;
     State state_;
     uint32_t sessionId_;
     std::string cachePath_ = "";
-    uint32_t rendererSampleRate_;
-    uint32_t underFlowCount_;
-    AudioEffectMode effectMode_;
+    uint32_t underflowCount_;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
-    AudioRendererRate renderRate_;
+    AudioRendererRate renderRate_ = RENDER_RATE_NORMAL;
     int32_t clientPid_ = 0;
     int32_t clientUid_ = 0;
 };
