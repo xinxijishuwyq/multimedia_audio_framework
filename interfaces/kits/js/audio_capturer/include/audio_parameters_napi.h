@@ -106,6 +106,11 @@ static const std::map<std::string, SourceType> sourceTypeMap = {
     {"SOURCE_TYPE_VOICE_COMMUNICATION", SOURCE_TYPE_VOICE_COMMUNICATION}
 };
 
+static const std::map<std::string, VolumeAdjustType> volumeAdjustTypeMap = {
+    {"VOLUME_UP", VOLUME_UP},
+    {"VOLUME_DOWN", VOLUME_DOWN},
+};
+
 class AudioParametersNapi {
 public:
     AudioParametersNapi();
@@ -144,6 +149,7 @@ private:
     static napi_value CreateDeviceRoleObject(napi_env env);
     static napi_value CreateDeviceTypeObject(napi_env env);
     static napi_value CreateSourceTypeObject(napi_env env);
+    static napi_value CreateVolumeAdjustTypeObject(napi_env env);
 
     static napi_ref sConstructor_;
     static napi_ref audioChannel_;
