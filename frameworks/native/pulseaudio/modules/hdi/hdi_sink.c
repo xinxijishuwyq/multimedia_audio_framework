@@ -246,10 +246,12 @@ static void ThreadFuncRendererTimer(void *userdata)
             pa_asyncmsgq_post(u->thread_mq.outq, PA_MSGOBJECT(u->core), PA_CORE_MESSAGE_UNLOAD_MODULE,
                 u->module, 0, NULL, NULL);
             pa_asyncmsgq_wait_for(u->thread_mq.inq, PA_MESSAGE_SHUTDOWN);
+            break;
         }
 
         if (ret == 0) {
             AUDIO_INFO_LOG("Thread (use timing) shutting down");
+            break;
         }
     }
 }

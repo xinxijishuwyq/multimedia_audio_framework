@@ -134,7 +134,7 @@ static bool LoadEffect(const Effect &effect, const std::vector<std::unique_ptr<A
     return true;
 }
 
-void CheckEffects(const std::vector<Effect> &effects, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList,
+void CheckEffects(const std::vector<Effect> &effects, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList,
     std::vector<Effect> &successEffectList)
 {
     for (Effect effect: effects) {
@@ -157,7 +157,7 @@ AudioEffectServer::~AudioEffectServer()
 {
 }
 
-bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
+bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> &libraries, const std::vector<Effect> &effects,
                                          std::vector<Effect> &successEffectList)
 {
     // load library
