@@ -33,7 +33,7 @@ public:
     explicit AudioEffectServer();
     ~AudioEffectServer();
 
-    bool LoadAudioEffects(const std::vector<Library> libraries, const std::vector<Effect> effects,
+    bool LoadAudioEffects(const std::vector<Library> &libraries, const std::vector<Effect> &effects,
                           std::vector<Effect> &successEffectList);
 
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &GetEffectEntries();
