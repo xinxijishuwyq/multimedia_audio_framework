@@ -45,7 +45,7 @@ public:
 
 class IAudioCapturerSource {
 public:
-    static IAudioCapturerSource *GetInstance(const char *devceClass, const char *deviceNetworkId,
+    static IAudioCapturerSource *GetInstance(const char *deviceClass, const char *deviceNetworkId,
            const SourceType sourceType = SourceType::SOURCE_TYPE_MIC);
 
     virtual int32_t Init(IAudioSourceAttr &attr) = 0;
