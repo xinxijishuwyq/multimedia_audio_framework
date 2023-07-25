@@ -40,33 +40,29 @@
 #include "audio_log.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
-PA_MODULE_DESCRIPTION("Loopback from source to sink");
+PA_MODULE_DESCRIPTION(_("Loopback from source to sink"));
 PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_LOAD_ONCE(false);
 PA_MODULE_USAGE(
         "source=<source to connect to> "
-        "sink=<sink to connect to> "
-        "adjust_time=<how often to readjust rates in s> "
-        "latency_msec=<latency in ms> "
-        "max_latency_msec=<maximum latency in ms> "
-        "fast_adjust_threshold_msec=<threshold for fast adjust in ms> "
-        "format=<sample format> "
-        "rate=<sample rate> "
-        "channels=<number of channels> "
-        "channel_map=<channel map> "
-        "sink_input_properties=<proplist> "
-        "source_output_properties=<proplist> "
-        "source_dont_move=<boolean> "
-        "sink_dont_move=<boolean> "
-        "remix=<remix channels?> ");
+        "sink=<sink to connect to> ");
 
 #define DEFAULT_LATENCY_MSEC 200
-
-#define MEMBLOCKQ_MAXLENGTH (1024*1024*32)
-
-#define MIN_DEVICE_LATENCY (2.5*PA_USEC_PER_MSEC)
-
-#define DEFAULT_ADJUST_TIME_USEC (10*PA_USEC_PER_SEC)
+#define MAX_LATENCY_MSEC 30000
+#define MEMBLOCKQ_MAXLENGTH (1024 * 1024 * 32)
+#define MIN_DEVICE_LATENCY (2.5 * PA_USEC_PER_MSEC)
+#define DEFAULT_ADJUST_TIME_USEC (10 * PA_USEC_PER_SEC)
+#define MAX_FAST_ADJUST_THRESHOLD 100
+#define MIN_SAMPLE_RATE 4000
+#define DEFAULT_SAMPLE_RATE 8000
+#define MULTIPLE_FACTOR 2
+#define TRIPLE_FACTOR 3
+#define ADJUST_TIME_FOR_CHANGE (333 * PA_USEC_PER_MSEC)
+#define TIME_HOUR_TO_SECOND_UNIT 3600
+#define MIN_VISIBLE_UNDERRUN_COUNTER 2
+#define SLEEP_ADJUST_TIME_MULTIPLE_TIMES 1.05
+#define LATENCY_OFFSET_ADJUST_TIMES 0.01
+#define LATENCY_INCREMENT_FIVE_MSEC (5 * PA_USEC_PER_MSEC)
 
 typedef struct loopback_msg loopback_msg;
 
@@ -87,7 +83,7 @@ struct userdata {
     pa_time_event *time_event;
 
     /* Variables used to calculate the average time between
-     * subsequent calls of adjust_rates() */
+     * subsequent calls of AdjustRates() */
     pa_usec_t adjust_time_stamp;
     pa_usec_t real_adjust_time;
     pa_usec_t real_adjust_time_sum;
@@ -119,6 +115,9 @@ struct userdata {
 
     bool fixed_alsa_source;
     bool source_sink_changed;
+
+    pa_sample_spec ss;
+    pa_channel_map map;
 
     /* Used for sink input and source output snapshots */
     struct {
@@ -163,19 +162,6 @@ PA_DEFINE_PRIVATE_CLASS(loopback_msg, pa_msgobject);
 static const char * const VALID_MODARGS[] = {
     "source",
     "sink",
-    "adjust_time",
-    "latency_msec",
-    "max_latency_msec",
-    "fast_adjust_threshold_msec",
-    "format",
-    "rate",
-    "channels",
-    "channel_map",
-    "sink_input_properties",
-    "source_output_properties",
-    "source_dont_move",
-    "sink_dont_move",
-    "remix",
     NULL,
 };
 
@@ -199,16 +185,16 @@ enum {
     LOOPBACK_MESSAGE_UNDERRUN,
 };
 
-static void enable_adjust_timer(struct userdata *u, bool enable);
+static void EnableAdjustTimer(struct userdata *u, bool enable);
 
 /* Called from main context */
-static void teardown(struct userdata *u)
+static void TearDown(struct userdata *u)
 {
     pa_assert(u);
     pa_assert_ctl_context();
 
     u->adjust_time = 0;
-    enable_adjust_timer(u, false);
+    EnableAdjustTimer(u, false);
 
     /* Handling the asyncmsgq between the source output and the sink input
      * requires some care. When the source output is unlinked, nothing needs
@@ -243,17 +229,17 @@ static void teardown(struct userdata *u)
  * - can create audible artifacts by changing the rate too quickly
  * - exhibits hunting with USB or Bluetooth sources
  */
-static uint32_t rate_controller(uint32_t base_rate, pa_usec_t adjust_time, int32_t latency_difference_usec)
+static uint32_t RateController(uint32_t baseRate, pa_usec_t adjustTime, int32_t latencyDifferenceUsec)
 {
-    uint32_t new_rate;
-    double min_cycles;
+    uint32_t newRate;
+    double minCycles;
 
     /* Calculate best rate to correct the current latency offset, limit at
      * slightly below 1% difference from base_rate */
-    min_cycles = (double)abs(latency_difference_usec) / adjust_time / 0.01 + 1;
-    new_rate = base_rate * (1.0 + (double)latency_difference_usec / min_cycles / adjust_time);
+    minCycles = (double)abs(latencyDifferenceUsec) / adjustTime / LATENCY_OFFSET_ADJUST_TIMES + 1;
+    newRate = baseRate * (1.0 + (double)latencyDifferenceUsec / minCycles / adjustTime);
 
-    return new_rate;
+    return newRate;
 }
 
 /* Called from main thread.
@@ -264,7 +250,7 @@ static uint32_t rate_controller(uint32_t base_rate, pa_usec_t adjust_time, int32
  * depends on the reported latency ranges. In cases were the lower bounds of
  * source and sink latency are not reported correctly (USB) the result will
  * be wrong. */
-static void update_minimum_latency(struct userdata *u, pa_sink *sink, bool print_msg)
+static void UpdateMinimumLatency(struct userdata *u, pa_sink *sink, bool printMsg)
 {
     if (u->underrun_latency_limit) {
         /* If we already detected a real latency limit because of underruns, use it */
@@ -309,37 +295,99 @@ static void update_minimum_latency(struct userdata *u, pa_sink *sink, bool print
         u->output_thread_info.minimum_latency = u->minimum_latency;
     }
 
-    if (print_msg) {
+    if (printMsg) {
         AUDIO_INFO_LOG("Minimum possible end to end latency: %0.2f ms", (double)u->minimum_latency / PA_USEC_PER_MSEC);
-        if (u->latency < u->minimum_latency)
+        if (u->latency < u->minimum_latency) {
             AUDIO_WARNING_LOG("Configured latency of %0.2f ms is smaller than minimum latency, using minimum instead",
                 (double)u->latency / PA_USEC_PER_MSEC);
+        }
     }
 }
 
-/* Called from main context */
-static void adjust_rates(struct userdata *u)
+static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *latencyDifference)
 {
     size_t buffer;
-    uint32_t old_rate, base_rate, new_rate, run_hours;
-    int32_t latency_difference;
-    pa_usec_t current_buffer_latency, snapshot_delay;
-    int64_t current_source_sink_latency, current_latency, latency_at_optimum_rate;
-    pa_usec_t final_latency, now, time_passed;
+    uint32_t oldRate;
+    pa_usec_t currentBufferLatency, snapshotDelay;
+    int64_t currentSourceSinkLatency, currentLatency, latencyAtOptimumRate;
+    pa_usec_t finalLatency, now, timePassed;
+
+    now = pa_rtclock_now();
+    timePassed = now - u->adjust_time_stamp;
+    if (!u->source_sink_changed && timePassed < u->adjust_time * SLEEP_ADJUST_TIME_MULTIPLE_TIMES) {
+        u->adjust_counter++;
+        u->real_adjust_time_sum += timePassed;
+        u->real_adjust_time = u->real_adjust_time_sum / u->adjust_counter;
+    }
+    u->adjust_time_stamp = now;
+
+    /* Rates and latencies */
+    oldRate = u->sink_input->sample_spec.rate;
+    *baseRate = u->source_output->sample_spec.rate;
+
+    buffer = u->latency_snapshot.loopback_memblockq_length;
+    if (u->latency_snapshot.recv_counter <= u->latency_snapshot.send_counter) {
+        buffer += (size_t) (u->latency_snapshot.send_counter - u->latency_snapshot.recv_counter);
+    } else {
+        buffer = PA_CLIP_SUB(buffer, (size_t) (u->latency_snapshot.recv_counter - u->latency_snapshot.send_counter));
+    }
+
+    currentBufferLatency = pa_bytes_to_usec(buffer, &u->sink_input->sample_spec);
+    snapshotDelay = u->latency_snapshot.source_timestamp - u->latency_snapshot.sink_timestamp;
+    currentSourceSinkLatency = u->latency_snapshot.sink_latency +
+        u->latency_snapshot.source_latency - snapshotDelay;
+
+    /* Current latency */
+    currentLatency = currentSourceSinkLatency + currentBufferLatency;
+
+    /* Latency at base rate */
+    latencyAtOptimumRate = currentSourceSinkLatency + currentBufferLatency * oldRate / (*baseRate);
+
+    finalLatency = PA_MAX(u->latency, u->minimum_latency);
+    *latencyDifference = (int32_t)(latencyAtOptimumRate - finalLatency);
+
+    AUDIO_DEBUG_LOG("Loopback overall latency is %0.2f ms + %0.2f ms + %0.2f ms = %0.2f ms",
+        (double) u->latency_snapshot.sink_latency / PA_USEC_PER_MSEC,
+        (double) currentBufferLatency / PA_USEC_PER_MSEC,
+        (double) u->latency_snapshot.source_latency / PA_USEC_PER_MSEC,
+        (double) currentLatency / PA_USEC_PER_MSEC);
+
+    AUDIO_DEBUG_LOG("Loopback latency at base rate is %0.2f ms", (double)latencyAtOptimumRate / PA_USEC_PER_MSEC);
+
+    /* Drop or insert samples if fast_adjust_threshold_msec was specified and the latency difference is too large. */
+    if (u->fast_adjust_threshold > 0 && abs((*latencyDifference)) > u->fast_adjust_threshold) {
+        AUDIO_DEBUG_LOG ("Latency difference larger than %" PRIu64 " msec, skipping or inserting samples.",
+            u->fast_adjust_threshold / PA_USEC_PER_MSEC);
+
+        pa_asyncmsgq_send(u->sink_input->sink->asyncmsgq, PA_MSGOBJECT(u->sink_input),
+            SINK_INPUT_MESSAGE_FAST_ADJUST, NULL, currentSourceSinkLatency, NULL);
+
+        /* Skip real adjust time calculation on next iteration. */
+        u->source_sink_changed = true;
+        return -1;
+    }
+    return 0;
+}
+
+/* Called from main context */
+static void AdjustRates(struct userdata *u)
+{
+    uint32_t baseRate, newRate, runHours;
+    int32_t latencyDifference;
 
     pa_assert(u);
     pa_assert_ctl_context();
 
     /* Runtime and counters since last change of source or sink
      * or source/sink latency */
-    run_hours = u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / 3600;
+    runHours = u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / TIME_HOUR_TO_SECOND_UNIT;
     u->iteration_counter += 1;
 
     /* If we are seeing underruns then the latency is too small */
-    if (u->underrun_counter > 2) {
+    if (u->underrun_counter > MIN_VISIBLE_UNDERRUN_COUNTER) {
         pa_usec_t target_latency;
 
-        target_latency = PA_MAX(u->latency, u->minimum_latency) + 5 * PA_USEC_PER_MSEC;
+        target_latency = PA_MAX(u->latency, u->minimum_latency) + LATENCY_INCREMENT_FIVE_MSEC;
 
         if (u->max_latency == 0 || target_latency < u->max_latency) {
             u->underrun_latency_limit =
@@ -354,12 +402,12 @@ static void adjust_rates(struct userdata *u)
             AUDIO_WARNING_LOG("Consider increasing the max_latency_msec");
         }
 
-        update_minimum_latency(u, u->sink_input->sink, false);
+        UpdateMinimumLatency(u, u->sink_input->sink, false);
         u->underrun_counter = 0;
     }
 
     /* Allow one underrun per hour */
-    if (u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / 3600 > run_hours) {
+    if (u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / TIME_HOUR_TO_SECOND_UNIT > runHours) {
         u->underrun_counter = PA_CLIP_SUB(u->underrun_counter, 1u);
         AUDIO_INFO_LOG("Underrun counter: %u", u->underrun_counter);
     }
@@ -368,73 +416,22 @@ static void adjust_rates(struct userdata *u)
      * not been suspended. If the time between two calls is more than 5% longer than the
      * configured adjust time, we assume that the system has been sleeping and skip the
      * calculation for this iteration. */
-    now = pa_rtclock_now();
-    time_passed = now - u->adjust_time_stamp;
-    if (!u->source_sink_changed && time_passed < u->adjust_time * 1.05) {
-        u->adjust_counter++;
-        u->real_adjust_time_sum += time_passed;
-        u->real_adjust_time = u->real_adjust_time_sum / u->adjust_counter;
-    }
-    u->adjust_time_stamp = now;
-
-    /* Rates and latencies */
-    old_rate = u->sink_input->sample_spec.rate;
-    base_rate = u->source_output->sample_spec.rate;
-
-    buffer = u->latency_snapshot.loopback_memblockq_length;
-    if (u->latency_snapshot.recv_counter <= u->latency_snapshot.send_counter) {
-        buffer += (size_t) (u->latency_snapshot.send_counter - u->latency_snapshot.recv_counter);
-    } else {
-        buffer = PA_CLIP_SUB(buffer, (size_t) (u->latency_snapshot.recv_counter - u->latency_snapshot.send_counter));
-    }
-
-    current_buffer_latency = pa_bytes_to_usec(buffer, &u->sink_input->sample_spec);
-    snapshot_delay = u->latency_snapshot.source_timestamp - u->latency_snapshot.sink_timestamp;
-    current_source_sink_latency = u->latency_snapshot.sink_latency +
-        u->latency_snapshot.source_latency - snapshot_delay;
-
-    /* Current latency */
-    current_latency = current_source_sink_latency + current_buffer_latency;
-
-    /* Latency at base rate */
-    latency_at_optimum_rate = current_source_sink_latency + current_buffer_latency * old_rate / base_rate;
-
-    final_latency = PA_MAX(u->latency, u->minimum_latency);
-    latency_difference = (int32_t)(latency_at_optimum_rate - final_latency);
-
-    AUDIO_DEBUG_LOG("Loopback overall latency is %0.2f ms + %0.2f ms + %0.2f ms = %0.2f ms",
-        (double) u->latency_snapshot.sink_latency / PA_USEC_PER_MSEC,
-        (double) current_buffer_latency / PA_USEC_PER_MSEC,
-        (double) u->latency_snapshot.source_latency / PA_USEC_PER_MSEC,
-        (double) current_latency / PA_USEC_PER_MSEC);
-
-    AUDIO_DEBUG_LOG("Loopback latency at base rate is %0.2f ms", (double)latency_at_optimum_rate / PA_USEC_PER_MSEC);
-
-    /* Drop or insert samples if fast_adjust_threshold_msec was specified and the latency difference is too large. */
-    if (u->fast_adjust_threshold > 0 && abs(latency_difference) > u->fast_adjust_threshold) {
-        AUDIO_DEBUG_LOG ("Latency difference larger than %" PRIu64 " msec, skipping or inserting samples.",
-            u->fast_adjust_threshold / PA_USEC_PER_MSEC);
-
-        pa_asyncmsgq_send(u->sink_input->sink->asyncmsgq, PA_MSGOBJECT(u->sink_input),
-            SINK_INPUT_MESSAGE_FAST_ADJUST, NULL, current_source_sink_latency, NULL);
-
-        /* Skip real adjust time calculation on next iteration. */
-        u->source_sink_changed = true;
+    if (CalculateAdjustTime(u, &baseRate, &latencyDifference) != 0) {
         return;
     }
 
     /* Calculate new rate */
-    new_rate = rate_controller(base_rate, u->real_adjust_time, latency_difference);
+    newRate = RateController(baseRate, u->real_adjust_time, latencyDifference);
 
     u->source_sink_changed = false;
 
     /* Set rate */
-    pa_sink_input_set_rate(u->sink_input, new_rate);
-    AUDIO_DEBUG_LOG("[%s] Updated sampling rate to %lu Hz.", u->sink_input->sink->name, (unsigned long) new_rate);
+    pa_sink_input_set_rate(u->sink_input, newRate);
+    AUDIO_DEBUG_LOG("[%s] Updated sampling rate to %lu Hz.", u->sink_input->sink->name, (unsigned long) newRate);
 }
 
 /* Called from main context */
-static void time_callback(pa_mainloop_api *a, pa_time_event *e, const struct timeval *t, void *userdata)
+static void TimeCallback(pa_mainloop_api *a, pa_time_event *e, const struct timeval *t, void *userdata)
 {
     struct userdata *u = userdata;
 
@@ -451,13 +448,13 @@ static void time_callback(pa_mainloop_api *a, pa_time_event *e, const struct tim
     pa_asyncmsgq_send(u->source_output->source->asyncmsgq,
         PA_MSGOBJECT(u->source_output), SOURCE_OUTPUT_MESSAGE_LATENCY_SNAPSHOT, NULL, 0, NULL);
 
-    adjust_rates(u);
+    AdjustRates(u);
 }
 
 /* Called from main context
  * When source or sink changes,
- * give it a third of a second to settle down, then call adjust_rates for the first time */
-static void enable_adjust_timer(struct userdata *u, bool enable)
+ * give it a third of a second to settle down, then call AdjustRates for the first time */
+static void EnableAdjustTimer(struct userdata *u, bool enable)
 {
     if (enable) {
         if (!u->adjust_time) {
@@ -467,7 +464,7 @@ static void enable_adjust_timer(struct userdata *u, bool enable)
             u->core->mainloop->time_free(u->time_event);
         }
 
-        u->time_event = pa_core_rttime_new(u->core, pa_rtclock_now() + 333 * PA_USEC_PER_MSEC, time_callback, u);
+        u->time_event = pa_core_rttime_new(u->core, pa_rtclock_now() + ADJUST_TIME_FOR_CHANGE, TimeCallback, u);
     } else {
         if (!u->time_event) {
             return;
@@ -479,18 +476,33 @@ static void enable_adjust_timer(struct userdata *u, bool enable)
 }
 
 /* Called from main context */
-static void update_adjust_timer(struct userdata *u)
+static void UpdateAdjustTimer(struct userdata *u)
 {
     if (u->sink_input->state == PA_SINK_INPUT_CORKED || u->source_output->state == PA_SOURCE_OUTPUT_CORKED) {
-        enable_adjust_timer(u, false);
+        EnableAdjustTimer(u, false);
     } else {
-        enable_adjust_timer(u, true);
+        EnableAdjustTimer(u, true);
+    }
+}
+
+static void UpdateFixedLatency(struct userdata *u, pa_source *source)
+{
+    if (u == NULL || source == NULL) {
+        return;
+    }
+    u->min_source_latency = pa_source_get_fixed_latency(source);
+    u->max_source_latency = u->min_source_latency;
+    const char *s;
+    if ((s = pa_proplist_gets(source->proplist, PA_PROP_DEVICE_API))) {
+        if (pa_streq(s, "alsa")) {
+            u->fixed_alsa_source = true;
+        }
     }
 }
 
 /* Called from main thread
  * Calculates minimum and maximum possible latency for source and sink */
-static void update_latency_boundaries(struct userdata *u, pa_source *source, pa_sink *sink)
+static void UpdateLatencyBoundaries(struct userdata *u, pa_source *source, pa_sink *sink)
 {
     if (source) {
         /* Source latencies */
@@ -498,13 +510,7 @@ static void update_latency_boundaries(struct userdata *u, pa_source *source, pa_
         if (source->flags & PA_SOURCE_DYNAMIC_LATENCY) {
             pa_source_get_latency_range(source, &u->min_source_latency, &u->max_source_latency);
         } else {
-            u->min_source_latency = pa_source_get_fixed_latency(source);
-            u->max_source_latency = u->min_source_latency;
-            const char *s;
-            if ((s = pa_proplist_gets(source->proplist, PA_PROP_DEVICE_API))) {
-                if (pa_streq(s, "alsa"))
-                    u->fixed_alsa_source = true;
-            }
+            UpdateFixedLatency(u, source);
         }
         /* Source offset */
         u->source_latency_offset = source->port_latency_offset;
@@ -536,69 +542,69 @@ static void update_latency_boundaries(struct userdata *u, pa_source *source, pa_
         }
     }
 
-    update_minimum_latency(u, sink, true);
+    UpdateMinimumLatency(u, sink, true);
 }
 
 /* Called from output context
  * Sets the memblockq to the configured latency corrected by latency_offset_usec */
-static void memblockq_adjust(struct userdata *u, int64_t latency_offset_usec, bool allow_push)
+static void MemblockqAdjust(struct userdata *u, int64_t latencyOffsetUsec, bool allowPush)
 {
-    size_t current_memblockq_length, requested_memblockq_length, buffer_correction;
-    int64_t requested_buffer_latency;
-    pa_usec_t final_latency, requested_sink_latency;
+    size_t currentMemblockqLength, requestedMemblockqLength, bufferCorrection;
+    int64_t requestedBufferLatency;
+    pa_usec_t finalLatency, requestedSinkLatency;
 
-    final_latency = PA_MAX(u->latency, u->output_thread_info.minimum_latency);
+    finalLatency = PA_MAX(u->latency, u->output_thread_info.minimum_latency);
 
     /* If source or sink have some large negative latency offset, we might want to
      * hold more than final_latency in the memblockq */
-    requested_buffer_latency = (int64_t)final_latency - latency_offset_usec;
+    requestedBufferLatency = (int64_t)finalLatency - latencyOffsetUsec;
 
     /* Keep at least one sink latency in the queue to make sure that the sink
      * never underruns initially */
-    requested_sink_latency = pa_sink_get_requested_latency_within_thread(u->sink_input->sink);
-    if (requested_buffer_latency < (int64_t)requested_sink_latency)
-        requested_buffer_latency = requested_sink_latency;
+    requestedSinkLatency = pa_sink_get_requested_latency_within_thread(u->sink_input->sink);
+    if (requestedBufferLatency < (int64_t)requestedSinkLatency)
+        requestedBufferLatency = requestedSinkLatency;
 
-    requested_memblockq_length = pa_usec_to_bytes(requested_buffer_latency, &u->sink_input->sample_spec);
-    current_memblockq_length = pa_memblockq_get_length(u->memblockq);
+    requestedMemblockqLength = pa_usec_to_bytes(requestedBufferLatency, &u->sink_input->sample_spec);
+    currentMemblockqLength = pa_memblockq_get_length(u->memblockq);
 
-    if (current_memblockq_length > requested_memblockq_length) {
+    if (currentMemblockqLength > requestedMemblockqLength) {
         /* Drop audio from queue */
-        buffer_correction = current_memblockq_length - requested_memblockq_length;
+        bufferCorrection = currentMemblockqLength - requestedMemblockqLength;
         AUDIO_INFO_LOG("Dropping %" PRIu64 " usec of audio from queue",
-            pa_bytes_to_usec(buffer_correction, &u->sink_input->sample_spec));
-        pa_memblockq_drop(u->memblockq, buffer_correction);
-    } else if (current_memblockq_length < requested_memblockq_length && allow_push) {
+            pa_bytes_to_usec(bufferCorrection, &u->sink_input->sample_spec));
+        pa_memblockq_drop(u->memblockq, bufferCorrection);
+    } else if (currentMemblockqLength < requestedMemblockqLength && allowPush) {
         /* Add silence to queue */
-        buffer_correction = requested_memblockq_length - current_memblockq_length;
+        bufferCorrection = requestedMemblockqLength - currentMemblockqLength;
         AUDIO_INFO_LOG("Adding %" PRIu64 " usec of silence to queue",
-            pa_bytes_to_usec(buffer_correction, &u->sink_input->sample_spec));
-        pa_memblockq_seek(u->memblockq, (int64_t)buffer_correction, PA_SEEK_RELATIVE, true);
+            pa_bytes_to_usec(bufferCorrection, &u->sink_input->sample_spec));
+        pa_memblockq_seek(u->memblockq, (int64_t)bufferCorrection, PA_SEEK_RELATIVE, true);
     }
 }
 
 /* Called from input thread context */
-static void source_output_push_cb(pa_source_output *o, const pa_memchunk *chunk)
+static void SourceOutputPushCb(pa_source_output *o, const pa_memchunk *chunk)
 {
     struct userdata *u;
-    pa_usec_t push_time;
-    int64_t current_source_latency;
+    pa_usec_t pushTime;
+    int64_t currentSourceLatency;
 
     pa_source_output_assert_ref(o);
     pa_source_output_assert_io_context(o);
     pa_assert_se(u = o->userdata);
 
     /* Send current source latency and timestamp with the message */
-    push_time = pa_rtclock_now();
-    current_source_latency = pa_source_get_latency_within_thread(u->source_output->source, true);
+    pushTime = pa_rtclock_now();
+    currentSourceLatency = pa_source_get_latency_within_thread(u->source_output->source, true);
 
     pa_asyncmsgq_post(u->asyncmsgq, PA_MSGOBJECT(u->sink_input), SINK_INPUT_MESSAGE_POST,
-        PA_INT_TO_PTR(current_source_latency), push_time, chunk, NULL);
+        PA_INT_TO_PTR(currentSourceLatency), pushTime, chunk, NULL);
     u->send_counter += (int64_t) chunk->length;
 }
 
 /* Called from input thread context */
-static void source_output_process_rewind_cb(pa_source_output *o, size_t nbytes)
+static void SourceOutputProcessRewindCb(pa_source_output *o, size_t nbytes)
 {
     struct userdata *u;
 
@@ -612,19 +618,18 @@ static void source_output_process_rewind_cb(pa_source_output *o, size_t nbytes)
 }
 
 /* Called from input thread context */
-static int source_output_process_msg_cb(pa_msgobject *obj, int code, void *data, int64_t offset, pa_memchunk *chunk)
+static int SourceOutputProcessMsgCb(pa_msgobject *obj, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
     struct userdata *u = PA_SOURCE_OUTPUT(obj)->userdata;
 
     if (code == SOURCE_OUTPUT_MESSAGE_LATENCY_SNAPSHOT) {
         size_t length;
-
         length = pa_memblockq_get_length(u->source_output->thread_info.delay_memblockq);
 
         u->latency_snapshot.send_counter = u->send_counter;
         /* Add content of delay memblockq to the source latency */
         u->latency_snapshot.source_latency = pa_source_get_latency_within_thread(u->source_output->source, true) +
-                                                pa_bytes_to_usec(length, &u->source_output->source->sample_spec);
+            pa_bytes_to_usec(length, &u->source_output->source->sample_spec);
         u->latency_snapshot.source_timestamp = pa_rtclock_now();
 
         return 0;
@@ -636,24 +641,24 @@ static int source_output_process_msg_cb(pa_msgobject *obj, int code, void *data,
  * Get current effective latency of the source. If the source is in use with
  * smaller latency than the configured latency, it will continue running with
  * the smaller value when the source output is switched to the source. */
-static void update_effective_source_latency(struct userdata *u, pa_source *source, pa_sink *sink)
+static void UpdateEffectiveSourceLatency(struct userdata *u, pa_source *source, pa_sink *sink)
 {
-    pa_usec_t effective_source_latency;
+    pa_usec_t effectiveSourceLatency;
 
-    effective_source_latency = u->configured_source_latency;
+    effectiveSourceLatency = u->configured_source_latency;
 
     if (source) {
-        effective_source_latency = pa_source_get_requested_latency(source);
-        if (effective_source_latency == 0 || effective_source_latency > u->configured_source_latency)
-            effective_source_latency = u->configured_source_latency;
+        effectiveSourceLatency = pa_source_get_requested_latency(source);
+        if (effectiveSourceLatency == 0 || effectiveSourceLatency > u->configured_source_latency)
+            effectiveSourceLatency = u->configured_source_latency;
     }
 
     /* If the sink is valid, send a message to the output thread, else set the variable directly */
     if (sink) {
         pa_asyncmsgq_send(sink->asyncmsgq, PA_MSGOBJECT(u->sink_input),
-            SINK_INPUT_MESSAGE_SET_EFFECTIVE_SOURCE_LATENCY, NULL, (int64_t)effective_source_latency, NULL);
+            SINK_INPUT_MESSAGE_SET_EFFECTIVE_SOURCE_LATENCY, NULL, (int64_t)effectiveSourceLatency, NULL);
     } else {
-        u->output_thread_info.effective_source_latency = effective_source_latency;
+        u->output_thread_info.effective_source_latency = effectiveSourceLatency;
     }
 }
 
@@ -662,29 +667,29 @@ static void update_effective_source_latency(struct userdata *u, pa_source *sourc
  * The choice of one third is rather arbitrary somewhere between the minimum
  * possible latency which would cause a lot of CPU load and half the configured
  * latency which would quickly lead to underruns */
-static void set_source_output_latency(struct userdata *u, pa_source *source)
+static void SetSourceOutputLatency(struct userdata *u, pa_source *source)
 {
-    pa_usec_t latency, requested_latency;
+    pa_usec_t latency, requestedLatency;
 
-    requested_latency = u->latency / 3;
+    requestedLatency = u->latency / TRIPLE_FACTOR;
 
     /* Normally we try to configure sink and source latency equally. If the
      * sink latency cannot match the requested source latency try to set the
      * source latency to a smaller value to avoid underruns */
-    if (u->min_sink_latency > requested_latency) {
+    if (u->min_sink_latency > requestedLatency) {
         latency = PA_MAX(u->latency, u->minimum_latency);
-        requested_latency = (latency - u->min_sink_latency) / 2;
+        requestedLatency = (latency - u->min_sink_latency) / MULTIPLE_FACTOR;
     }
 
-    latency = PA_CLAMP(requested_latency, u->min_source_latency, u->max_source_latency);
+    latency = PA_CLAMP(requestedLatency, u->min_source_latency, u->max_source_latency);
     u->configured_source_latency = pa_source_output_set_requested_latency(u->source_output, latency);
-    if (u->configured_source_latency != requested_latency)
+    if (u->configured_source_latency != requestedLatency)
         AUDIO_WARNING_LOG("Cannot set requested source latency of %0.2f ms, adjusting to %0.2f ms",
-            (double)requested_latency / PA_USEC_PER_MSEC, (double)u->configured_source_latency / PA_USEC_PER_MSEC);
+            (double)requestedLatency / PA_USEC_PER_MSEC, (double)u->configured_source_latency / PA_USEC_PER_MSEC);
 }
 
 /* Called from input thread context */
-static void source_output_attach_cb(pa_source_output *o)
+static void SourceOutputAttachCb(pa_source_output *o)
 {
     struct userdata *u;
 
@@ -699,7 +704,7 @@ static void source_output_attach_cb(pa_source_output *o)
 }
 
 /* Called from input thread context */
-static void source_output_detach_cb(pa_source_output *o)
+static void SourceOutputDetachCb(pa_source_output *o)
 {
     struct userdata *u;
 
@@ -714,7 +719,7 @@ static void source_output_detach_cb(pa_source_output *o)
 }
 
 /* Called from main thread */
-static void source_output_kill_cb(pa_source_output *o)
+static void SourceOutputKillCb(pa_source_output *o)
 {
     struct userdata *u;
 
@@ -722,28 +727,13 @@ static void source_output_kill_cb(pa_source_output *o)
     pa_assert_ctl_context();
     pa_assert_se(u = o->userdata);
 
-    teardown(u);
+    TearDown(u);
     pa_module_unload_request(u->module, true);
 }
 
 /* Called from main thread */
-static bool source_output_may_move_to_cb(pa_source_output *o, pa_source *dest)
-{
-    struct userdata *u;
-
-    pa_source_output_assert_ref(o);
-    pa_assert_ctl_context();
-    pa_assert_se(u = o->userdata);
-
-    if (!u->sink_input || !u->sink_input->sink)
-        return true;
-
-    return dest != u->sink_input->sink->monitor_source;
-}
-
-/* Called from main thread */
-static void source_output_suspend_cb(pa_source_output *o, pa_source_state_t old_state,
-    pa_suspend_cause_t old_suspend_cause)
+static void SourceOutputSuspendCb(pa_source_output *o, pa_source_state_t oldState,
+    pa_suspend_cause_t oldSuspendCause)
 {
     struct userdata *u;
     bool suspended;
@@ -753,7 +743,7 @@ static void source_output_suspend_cb(pa_source_output *o, pa_source_state_t old_
     pa_assert_se(u = o->userdata);
 
     /* State has not changed, nothing to do */
-    if (old_state == o->source->state) {
+    if (oldState == o->source->state) {
         return;
     }
 
@@ -770,16 +760,16 @@ static void source_output_suspend_cb(pa_source_output *o, pa_source_state_t old_
         }
     } else {
         /* Get effective source latency on unsuspend */
-        update_effective_source_latency(u, u->source_output->source, u->sink_input->sink);
+        UpdateEffectiveSourceLatency(u, u->source_output->source, u->sink_input->sink);
     }
 
     pa_sink_input_cork(u->sink_input, suspended);
 
-    update_adjust_timer(u);
+    UpdateAdjustTimer(u);
 }
 
 /* Called from input thread context */
-static void update_source_latency_range_cb(pa_source_output *i)
+static void UpdateSourceLatencyRangeCb(pa_source_output *i)
 {
     struct userdata *u;
 
@@ -793,7 +783,7 @@ static void update_source_latency_range_cb(pa_source_output *i)
 }
 
 /* Called from output thread context */
-static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk)
+static int SinkInputPopCb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk)
 {
     struct userdata *u;
 
@@ -805,8 +795,9 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
     /* It seems necessary to handle outstanding push messages here, though it is not clear
      * why. Removing this part leads to underruns when low latencies are configured. */
     u->output_thread_info.in_pop = true;
-    while (pa_asyncmsgq_process_one(u->asyncmsgq) > 0)
+    while (pa_asyncmsgq_process_one(u->asyncmsgq) > 0) {
         ;
+    }
     u->output_thread_info.in_pop = false;
 
     /* While pop has not been called, latency adjustments in SINK_INPUT_MESSAGE_POST are
@@ -829,14 +820,15 @@ static int sink_input_pop_cb(pa_sink_input *i, size_t nbytes, pa_memchunk *chunk
 
     /* Adjust the memblockq to ensure that there is
      * enough data in the queue to avoid underruns. */
-    if (!u->output_thread_info.push_called)
-        memblockq_adjust(u, 0, true);
+    if (!u->output_thread_info.push_called) {
+        MemblockqAdjust(u, 0, true);
+    }
 
     return 0;
 }
 
 /* Called from output thread context */
-static void sink_input_process_rewind_cb(pa_sink_input *i, size_t nbytes)
+static void SinkInputProcessRewindCb(pa_sink_input *i, size_t nbytes)
 {
     struct userdata *u;
 
@@ -847,18 +839,93 @@ static void sink_input_process_rewind_cb(pa_sink_input *i, size_t nbytes)
     pa_memblockq_rewind(u->memblockq, nbytes);
 }
 
+static void ProcessSinkInputMessagePost(struct userdata *u, void *data, int64_t offset, pa_memchunk *chunk)
+{
+    pa_memblockq_push_align(u->memblockq, chunk);
+
+    /* If push has not been called yet, latency adjustments in SinkInputPopCb()
+     * are enabled. Disable them on first push and correct the memblockq. If pop
+     * has not been called yet, wait until the pop_cb() requests the adjustment */
+    if (u->output_thread_info.pop_called && (!u->output_thread_info.push_called ||
+        u->output_thread_info.pop_adjust)) {
+        int64_t time_delta;
+
+        /* This is the source latency at the time push was called */
+        time_delta = PA_PTR_TO_INT(data);
+        /* Add the time between push and post */
+        time_delta += pa_rtclock_now() - (pa_usec_t) offset;
+        /* Add the sink latency */
+        time_delta += pa_sink_get_latency_within_thread(u->sink_input->sink, true);
+
+        /* The source latency report includes the audio in the chunk,
+         * but since we already pushed the chunk to the memblockq, we need
+         * to subtract the chunk size from the source latency so that it
+         * won't be counted towards both the memblockq latency and the
+         * source latency.
+         *
+         * Sometimes the alsa source reports way too low latency (might
+         * be a bug in the alsa source code). This seems to happen when
+         * there's an overrun. As an attempt to detect overruns, we
+         * check if the chunk size is larger than the configured source
+         * latency. If so, we assume that the source should have pushed
+         * a chunk whose size equals the configured latency, so we
+         * modify time_delta only by that amount, which makes
+         * MemblockqAdjust() drop more data than it would otherwise.
+         * This seems to work quite well, but it's possible that the
+         * next push also contains too much data, and in that case the
+         * resulting latency will be wrong. */
+        if (pa_bytes_to_usec(chunk->length,
+            &u->sink_input->sample_spec) > u->output_thread_info.effective_source_latency) {
+            time_delta -= (int64_t)u->output_thread_info.effective_source_latency;
+        } else {
+            time_delta -= (int64_t)pa_bytes_to_usec(chunk->length, &u->sink_input->sample_spec);
+        }
+
+        /* FIXME: We allow pushing silence here to fix up the latency. This
+            * might lead to a gap in the stream */
+        MemblockqAdjust(u, time_delta, true);
+
+        u->output_thread_info.pop_adjust = false;
+        u->output_thread_info.push_called = true;
+    }
+
+    /* If pop has not been called yet, make sure the latency does not grow too much.
+        * Don't push any silence here, because we already have new data in the queue */
+    if (!u->output_thread_info.pop_called) {
+        MemblockqAdjust(u, 0, false);
+    }
+
+    /* Is this the end of an underrun? Then let's start things
+     * right-away */
+    if (u->sink_input->sink->thread_info.state != PA_SINK_SUSPENDED &&
+        u->sink_input->thread_info.underrun_for > 0 &&
+        pa_memblockq_is_readable(u->memblockq)) {
+
+        pa_asyncmsgq_post(pa_thread_mq_get()->outq, PA_MSGOBJECT(u->msg), LOOPBACK_MESSAGE_UNDERRUN,
+            NULL, 0, NULL, NULL);
+        /* If called from within the pop callback skip the rewind */
+        if (!u->output_thread_info.in_pop) {
+            AUDIO_DEBUG_LOG("Requesting rewind due to end of underrun.");
+            pa_sink_input_request_rewind(u->sink_input,
+                (size_t) (u->sink_input->thread_info.underrun_for ==
+                (size_t) -1 ? 0 : u->sink_input->thread_info.underrun_for),
+                false, true, false);
+        }
+    }
+
+    u->output_thread_info.recv_counter += (int64_t) chunk->length;
+}
+
 /* Called from output thread context */
-static int sink_input_process_msg_cb(pa_msgobject *obj, int code, void *data, int64_t offset, pa_memchunk *chunk)
+static int SinkInputProcessMsgCb(pa_msgobject *obj, int code, void *data, int64_t offset, pa_memchunk *chunk)
 {
     struct userdata *u = PA_SINK_INPUT(obj)->userdata;
 
     pa_sink_input_assert_io_context(u->sink_input);
 
     switch (code) {
-
         case PA_SINK_INPUT_MESSAGE_GET_LATENCY: {
             pa_usec_t *r = data;
-
             *r = pa_bytes_to_usec(pa_memblockq_get_length(u->memblockq), &u->sink_input->sample_spec);
 
             /* Fall through, the default handler will add in the extra
@@ -867,129 +934,46 @@ static int sink_input_process_msg_cb(pa_msgobject *obj, int code, void *data, in
         }
 
         case SINK_INPUT_MESSAGE_POST:
-
-            pa_memblockq_push_align(u->memblockq, chunk);
-
-            /* If push has not been called yet, latency adjustments in sink_input_pop_cb()
-             * are enabled. Disable them on first push and correct the memblockq. If pop
-             * has not been called yet, wait until the pop_cb() requests the adjustment */
-            if (u->output_thread_info.pop_called && (!u->output_thread_info.push_called ||
-                u->output_thread_info.pop_adjust)) {
-                int64_t time_delta;
-
-                /* This is the source latency at the time push was called */
-                time_delta = PA_PTR_TO_INT(data);
-                /* Add the time between push and post */
-                time_delta += pa_rtclock_now() - (pa_usec_t) offset;
-                /* Add the sink latency */
-                time_delta += pa_sink_get_latency_within_thread(u->sink_input->sink, true);
-
-                /* The source latency report includes the audio in the chunk,
-                 * but since we already pushed the chunk to the memblockq, we need
-                 * to subtract the chunk size from the source latency so that it
-                 * won't be counted towards both the memblockq latency and the
-                 * source latency.
-                 *
-                 * Sometimes the alsa source reports way too low latency (might
-                 * be a bug in the alsa source code). This seems to happen when
-                 * there's an overrun. As an attempt to detect overruns, we
-                 * check if the chunk size is larger than the configured source
-                 * latency. If so, we assume that the source should have pushed
-                 * a chunk whose size equals the configured latency, so we
-                 * modify time_delta only by that amount, which makes
-                 * memblockq_adjust() drop more data than it would otherwise.
-                 * This seems to work quite well, but it's possible that the
-                 * next push also contains too much data, and in that case the
-                 * resulting latency will be wrong. */
-                if (pa_bytes_to_usec(chunk->length,
-                    &u->sink_input->sample_spec) > u->output_thread_info.effective_source_latency)
-                    time_delta -= (int64_t)u->output_thread_info.effective_source_latency;
-                else
-                    time_delta -= (int64_t)pa_bytes_to_usec(chunk->length, &u->sink_input->sample_spec);
-
-                /* FIXME: We allow pushing silence here to fix up the latency. This
-                 * might lead to a gap in the stream */
-                memblockq_adjust(u, time_delta, true);
-
-                u->output_thread_info.pop_adjust = false;
-                u->output_thread_info.push_called = true;
-            }
-
-            /* If pop has not been called yet, make sure the latency does not grow too much.
-             * Don't push any silence here, because we already have new data in the queue */
-            if (!u->output_thread_info.pop_called)
-                 memblockq_adjust(u, 0, false);
-
-            /* Is this the end of an underrun? Then let's start things
-             * right-away */
-            if (u->sink_input->sink->thread_info.state != PA_SINK_SUSPENDED &&
-                u->sink_input->thread_info.underrun_for > 0 &&
-                pa_memblockq_is_readable(u->memblockq)) {
-
-                pa_asyncmsgq_post(pa_thread_mq_get()->outq, PA_MSGOBJECT(u->msg), LOOPBACK_MESSAGE_UNDERRUN,
-                    NULL, 0, NULL, NULL);
-                /* If called from within the pop callback skip the rewind */
-                if (!u->output_thread_info.in_pop) {
-                    AUDIO_DEBUG_LOG("Requesting rewind due to end of underrun.");
-                    pa_sink_input_request_rewind(u->sink_input,
-                        (size_t) (u->sink_input->thread_info.underrun_for ==
-                        (size_t) -1 ? 0 : u->sink_input->thread_info.underrun_for),
-                        false, true, false);
-                }
-            }
-
-            u->output_thread_info.recv_counter += (int64_t) chunk->length;
-
+            ProcessSinkInputMessagePost(u, data, offset, chunk);
             return 0;
 
         case SINK_INPUT_MESSAGE_REWIND:
-
             /* Do not try to rewind if no data was pushed yet */
-            if (u->output_thread_info.push_called)
+            if (u->output_thread_info.push_called) {
                 pa_memblockq_seek(u->memblockq, -offset, PA_SEEK_RELATIVE, true);
-
+            }
             u->output_thread_info.recv_counter -= offset;
-
             return 0;
 
         case SINK_INPUT_MESSAGE_LATENCY_SNAPSHOT: {
             size_t length;
-
             length = pa_memblockq_get_length(u->sink_input->thread_info.render_memblockq);
 
             u->latency_snapshot.recv_counter = u->output_thread_info.recv_counter;
             u->latency_snapshot.loopback_memblockq_length = pa_memblockq_get_length(u->memblockq);
             /* Add content of render memblockq to sink latency */
             u->latency_snapshot.sink_latency = pa_sink_get_latency_within_thread(u->sink_input->sink, true) +
-                                               pa_bytes_to_usec(length, &u->sink_input->sink->sample_spec);
+                pa_bytes_to_usec(length, &u->sink_input->sink->sample_spec);
             u->latency_snapshot.sink_timestamp = pa_rtclock_now();
-
             return 0;
         }
 
         case SINK_INPUT_MESSAGE_SOURCE_CHANGED:
-
             u->output_thread_info.push_called = false;
-
             return 0;
 
         case SINK_INPUT_MESSAGE_SET_EFFECTIVE_SOURCE_LATENCY:
-
             u->output_thread_info.effective_source_latency = (pa_usec_t)offset;
-
             return 0;
 
         case SINK_INPUT_MESSAGE_UPDATE_MIN_LATENCY:
-
             u->output_thread_info.minimum_latency = (pa_usec_t)offset;
-
             return 0;
 
         case SINK_INPUT_MESSAGE_FAST_ADJUST:
-
-            memblockq_adjust(u, offset, true);
-
+            MemblockqAdjust(u, offset, true);
             return 0;
+
         default:
             break;
     }
@@ -1001,29 +985,30 @@ static int sink_input_process_msg_cb(pa_msgobject *obj, int code, void *data, in
  * The choice of one third is rather arbitrary somewhere between the minimum
  * possible latency which would cause a lot of CPU load and half the configured
  * latency which would quickly lead to underruns. */
-static void set_sink_input_latency(struct userdata *u, pa_sink *sink)
+static void SetSinkInputLatency(struct userdata *u, pa_sink *sink)
 {
-    pa_usec_t latency, requested_latency;
+    pa_usec_t latency, requestedLatency;
 
-    requested_latency = u->latency / 3;
+    requestedLatency = u->latency / TRIPLE_FACTOR;
 
     /* Normally we try to configure sink and source latency equally. If the
      * source latency cannot match the requested sink latency try to set the
      * sink latency to a smaller value to avoid underruns */
-    if (u->min_source_latency > requested_latency) {
+    if (u->min_source_latency > requestedLatency) {
         latency = PA_MAX(u->latency, u->minimum_latency);
-        requested_latency = (latency - u->min_source_latency) / 2;
+        requestedLatency = (latency - u->min_source_latency) / MULTIPLE_FACTOR;
     }
 
-    latency = PA_CLAMP(requested_latency, u->min_sink_latency, u->max_sink_latency);
+    latency = PA_CLAMP(requestedLatency, u->min_sink_latency, u->max_sink_latency);
     u->configured_sink_latency = pa_sink_input_set_requested_latency(u->sink_input, latency);
-    if (u->configured_sink_latency != requested_latency)
+    if (u->configured_sink_latency != requestedLatency) {
         AUDIO_WARNING_LOG("Cannot set requested sink latency of %0.2f ms, adjusting to %0.2f ms",
-        (double)requested_latency / PA_USEC_PER_MSEC, (double)u->configured_sink_latency / PA_USEC_PER_MSEC);
+            (double)requestedLatency / PA_USEC_PER_MSEC, (double)u->configured_sink_latency / PA_USEC_PER_MSEC);
+    }
 }
 
 /* Called from output thread context */
-static void sink_input_attach_cb(pa_sink_input *i)
+static void SinkInputAttachCb(pa_sink_input *i)
 {
     struct userdata *u;
 
@@ -1036,12 +1021,12 @@ static void sink_input_attach_cb(pa_sink_input *i)
             PA_RTPOLL_LATE,
             u->asyncmsgq);
 
-    pa_memblockq_set_prebuf(u->memblockq, pa_sink_input_get_max_request(i)*2);
+    pa_memblockq_set_prebuf(u->memblockq, pa_sink_input_get_max_request(i) * MULTIPLE_FACTOR);
     pa_memblockq_set_maxrewind(u->memblockq, pa_sink_input_get_max_rewind(i));
 }
 
 /* Called from output thread context */
-static void sink_input_detach_cb(pa_sink_input *i)
+static void SinkInputDetachCb(pa_sink_input *i)
 {
     struct userdata *u;
 
@@ -1056,7 +1041,7 @@ static void sink_input_detach_cb(pa_sink_input *i)
 }
 
 /* Called from output thread context */
-static void sink_input_update_max_rewind_cb(pa_sink_input *i, size_t nbytes)
+static void SinkInputUpdateMaxRewindCb(pa_sink_input *i, size_t nbytes)
 {
     struct userdata *u;
 
@@ -1068,7 +1053,7 @@ static void sink_input_update_max_rewind_cb(pa_sink_input *i, size_t nbytes)
 }
 
 /* Called from output thread context */
-static void sink_input_update_max_request_cb(pa_sink_input *i, size_t nbytes)
+static void SinkInputUpdateMaxRequestCb(pa_sink_input *i, size_t nbytes)
 {
     struct userdata *u;
 
@@ -1076,12 +1061,12 @@ static void sink_input_update_max_request_cb(pa_sink_input *i, size_t nbytes)
     pa_sink_input_assert_io_context(i);
     pa_assert_se(u = i->userdata);
 
-    pa_memblockq_set_prebuf(u->memblockq, nbytes * 2);
+    pa_memblockq_set_prebuf(u->memblockq, nbytes * MULTIPLE_FACTOR);
     AUDIO_INFO_LOG("Max request changed");
 }
 
 /* Called from main thread */
-static void sink_input_kill_cb(pa_sink_input *i)
+static void SinkInputKillCb(pa_sink_input *i)
 {
     struct userdata *u;
 
@@ -1089,39 +1074,25 @@ static void sink_input_kill_cb(pa_sink_input *i)
     pa_assert_ctl_context();
     pa_assert_se(u = i->userdata);
 
-    teardown(u);
+    TearDown(u);
     pa_module_unload_request(u->module, true);
 }
 
 /* Called from the output thread context */
-static void sink_input_state_change_cb(pa_sink_input *i, pa_sink_input_state_t state)
+static void SinkInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
     struct userdata *u;
 
     pa_sink_input_assert_ref(i);
     pa_assert_se(u = i->userdata);
 
-    if (state == PA_SINK_INPUT_UNLINKED)
+    if (state == PA_SINK_INPUT_UNLINKED) {
         pa_asyncmsgq_flush(u->asyncmsgq, false);
+    }
 }
 
 /* Called from main thread */
-static bool sink_input_may_move_to_cb(pa_sink_input *i, pa_sink *dest)
-{
-    struct userdata *u;
-
-    pa_sink_input_assert_ref(i);
-    pa_assert_ctl_context();
-    pa_assert_se(u = i->userdata);
-
-    if (!u->source_output || !u->source_output->source)
-        return true;
-
-    return dest != u->source_output->source->monitor_of;
-}
-
-/* Called from main thread */
-static void sink_input_suspend_cb(pa_sink_input *i, pa_sink_state_t old_state, pa_suspend_cause_t old_suspend_cause)
+static void SinkInputSuspendCb(pa_sink_input *i, pa_sink_state_t oldState, pa_suspend_cause_t oldSuspendCause)
 {
     struct userdata *u;
     bool suspended;
@@ -1131,7 +1102,7 @@ static void sink_input_suspend_cb(pa_sink_input *i, pa_sink_state_t old_state, p
     pa_assert_se(u = i->userdata);
 
     /* State has not changed, nothing to do */
-    if (old_state == i->sink->state) {
+    if (oldState == i->sink->state) {
         return;
     }
 
@@ -1145,16 +1116,16 @@ static void sink_input_suspend_cb(pa_sink_input *i, pa_sink_state_t old_state, p
         u->output_thread_info.first_pop_done = false;
     } else {
         /* Set effective source latency on unsuspend */
-        update_effective_source_latency(u, u->source_output->source, u->sink_input->sink);
+        UpdateEffectiveSourceLatency(u, u->source_output->source, u->sink_input->sink);
     }
 
     pa_source_output_cork(u->source_output, suspended);
 
-    update_adjust_timer(u);
+    UpdateAdjustTimer(u);
 }
 
 /* Called from output thread context */
-static void update_sink_latency_range_cb(pa_sink_input *i)
+static void UpdateSinkLatencyRangeCb(pa_sink_input *i)
 {
     struct userdata *u;
 
@@ -1168,11 +1139,11 @@ static void update_sink_latency_range_cb(pa_sink_input *i)
 }
 
 /* Called from main context */
-static int loopback_process_msg_cb(pa_msgobject *o, int code, void *userdata, int64_t offset, pa_memchunk *chunk)
+static int LoopbackProcessMsgCb(pa_msgobject *o, int code, void *userdata, int64_t offset, pa_memchunk *chunk)
 {
     struct loopback_msg *msg;
     struct userdata *u;
-    pa_usec_t current_latency;
+    pa_usec_t currentLatency;
 
     pa_assert(o);
     pa_assert_ctl_context();
@@ -1182,17 +1153,17 @@ static int loopback_process_msg_cb(pa_msgobject *o, int code, void *userdata, in
 
     switch (code) {
         case LOOPBACK_MESSAGE_SOURCE_LATENCY_RANGE_CHANGED:
-            update_effective_source_latency(u, u->source_output->source, u->sink_input->sink);
-            current_latency = pa_source_get_requested_latency(u->source_output->source);
-            if (current_latency > u->configured_source_latency) {
+            UpdateEffectiveSourceLatency(u, u->source_output->source, u->sink_input->sink);
+            currentLatency = pa_source_get_requested_latency(u->source_output->source);
+            if (currentLatency > u->configured_source_latency) {
                 /* The minimum latency has changed to a value larger than the configured latency, so
                  * the source latency has been increased. The case that the minimum latency changes
                  * back to a smaller value is not handled because this never happens with the current
                  * source implementations. */
                 AUDIO_WARNING_LOG("Source minimum latency increased to %0.2f ms",
-                    (double)current_latency / PA_USEC_PER_MSEC);
-                u->configured_source_latency = current_latency;
-                update_latency_boundaries(u, u->source_output->source, u->sink_input->sink);
+                    (double)currentLatency / PA_USEC_PER_MSEC);
+                u->configured_source_latency = currentLatency;
+                UpdateLatencyBoundaries(u, u->source_output->source, u->sink_input->sink);
                 /* We re-start counting when the latency has changed */
                 u->iteration_counter = 0;
                 u->underrun_counter = 0;
@@ -1200,16 +1171,16 @@ static int loopback_process_msg_cb(pa_msgobject *o, int code, void *userdata, in
             return 0;
 
         case LOOPBACK_MESSAGE_SINK_LATENCY_RANGE_CHANGED:
-            current_latency = pa_sink_get_requested_latency(u->sink_input->sink);
-            if (current_latency > u->configured_sink_latency) {
+            currentLatency = pa_sink_get_requested_latency(u->sink_input->sink);
+            if (currentLatency > u->configured_sink_latency) {
                 /* The minimum latency has changed to a value larger than the configured latency, so
                  * the sink latency has been increased. The case that the minimum latency changes back
                  * to a smaller value is not handled because this never happens with the current sink
                  * implementations. */
                 AUDIO_WARNING_LOG("Sink minimum latency increased to %0.2f ms",
-                    (double)current_latency / PA_USEC_PER_MSEC);
-                u->configured_sink_latency = current_latency;
-                update_latency_boundaries(u, u->source_output->source, u->sink_input->sink);
+                    (double)currentLatency / PA_USEC_PER_MSEC);
+                u->configured_sink_latency = currentLatency;
+                UpdateLatencyBoundaries(u, u->source_output->source, u->sink_input->sink);
                 /* We re-start counting when the latency has changed */
                 u->iteration_counter = 0;
                 u->underrun_counter = 0;
@@ -1227,24 +1198,26 @@ static int loopback_process_msg_cb(pa_msgobject *o, int code, void *userdata, in
     return 0;
 }
 
-static pa_hook_result_t sink_port_latency_offset_changed_cb(pa_core *core, pa_sink *sink, struct userdata *u)
+static pa_hook_result_t SinkPortLatencyOffsetChangedCb(pa_core *core, pa_sink *sink, struct userdata *u)
 {
-    if (sink != u->sink_input->sink)
+    if (sink != u->sink_input->sink) {
         return PA_HOOK_OK;
+    }
 
     u->sink_latency_offset = sink->port_latency_offset;
-    update_minimum_latency(u, sink, true);
+    UpdateMinimumLatency(u, sink, true);
 
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t source_port_latency_offset_changed_cb(pa_core *core, pa_source *source, struct userdata *u)
+static pa_hook_result_t SourcePortLatencyOffsetChangedCb(pa_core *core, pa_source *source, struct userdata *u)
 {
-    if (source != u->source_output->source)
+    if (source != u->source_output->source) {
         return PA_HOOK_OK;
+    }
 
     u->source_latency_offset = source->port_latency_offset;
-    update_minimum_latency(u, u->sink_input->sink, true);
+    UpdateMinimumLatency(u, u->sink_input->sink, true);
 
     return PA_HOOK_OK;
 }
@@ -1252,12 +1225,275 @@ static pa_hook_result_t source_port_latency_offset_changed_cb(pa_core *core, pa_
 int InitFailed(pa_module *m, pa_modargs *ma)
 {
     AUDIO_ERR_LOG("Init Loopback failed.");
-    if (ma)
+    if (ma) {
         pa_modargs_free(ma);
+    }
 
     pa__done(m);
 
     return -1;
+}
+
+static int InitSampleSpecAndChannelMap(pa_modargs *ma, struct userdata *u, pa_sink *sink, pa_source *source)
+{
+    if (source) {
+        u->ss = source->sample_spec;
+        u->map = source->channel_map;
+    } else if (sink) {
+        u->ss = sink->sample_spec;
+        u->map = sink->channel_map;
+    } else {
+        /* FIXME: Dummy stream format, needed because pa_sink_input_new()
+         * requires valid sample spec and channel map even when all the FIX_*
+         * stream flags are specified. pa_sink_input_new() should be changed
+         * to ignore the sample spec and channel map when the FIX_* flags are
+         * present. */
+        u->ss.format = PA_SAMPLE_U8;
+        u->ss.rate = DEFAULT_SAMPLE_RATE;
+        u->ss.channels = 1;
+        u->map.channels = 1;
+        u->map.map[0] = PA_CHANNEL_POSITION_MONO;
+    }
+
+    if (pa_modargs_get_sample_spec_and_channel_map(ma, &(u->ss), &(u->map), PA_CHANNEL_MAP_DEFAULT) < 0) {
+        AUDIO_ERR_LOG("Invalid sample format specification or channel map");
+        return -1;
+    }
+
+    if (u->ss.rate < MIN_SAMPLE_RATE || u->ss.rate > PA_RATE_MAX) {
+        AUDIO_ERR_LOG("Invalid rate specification, valid range is 4000 Hz to %i Hz", PA_RATE_MAX);
+        return -1;
+    }
+
+    return 0;
+}
+
+static void InitUserData(struct userdata *u)
+{
+    uint32_t latencyMsec;
+    uint32_t maxLatencyMsec;
+    uint32_t fastAdjustThreshold;
+    uint32_t adjustTimeSec;
+    latencyMsec = DEFAULT_LATENCY_MSEC;
+    fastAdjustThreshold = 0;
+    maxLatencyMsec = 0;
+
+    if (maxLatencyMsec > 0 && maxLatencyMsec < latencyMsec) {
+        AUDIO_WARNING_LOG("Configured maximum latency is smaller than latency, using latency instead");
+        maxLatencyMsec = latencyMsec;
+    }
+
+    u->latency = (pa_usec_t) latencyMsec * PA_USEC_PER_MSEC;
+    u->max_latency = (pa_usec_t) maxLatencyMsec * PA_USEC_PER_MSEC;
+    u->output_thread_info.pop_called = false;
+    u->output_thread_info.pop_adjust = false;
+    u->output_thread_info.push_called = false;
+    u->iteration_counter = 0;
+    u->underrun_counter = 0;
+    u->underrun_latency_limit = 0;
+    u->source_sink_changed = true;
+    u->real_adjust_time_sum = 0;
+    u->adjust_counter = 0;
+    u->fast_adjust_threshold = fastAdjustThreshold * PA_USEC_PER_MSEC;
+
+    adjustTimeSec = DEFAULT_ADJUST_TIME_USEC / PA_USEC_PER_SEC;
+    if (adjustTimeSec != DEFAULT_ADJUST_TIME_USEC / PA_USEC_PER_SEC) {
+        u->adjust_time = adjustTimeSec * PA_USEC_PER_SEC;
+    } else {
+        u->adjust_time = DEFAULT_ADJUST_TIME_USEC;
+    }
+
+    u->real_adjust_time = u->adjust_time;
+}
+
+static int CreateSinkInput(pa_module *m, pa_modargs *ma, struct userdata *u, pa_sink *sink)
+{
+    pa_sink_input_new_data sinkInputData;
+
+    pa_sink_input_new_data_init(&sinkInputData);
+    sinkInputData.driver = __FILE__;
+    sinkInputData.module = m;
+
+    if (sink) {
+        pa_sink_input_new_data_set_sink(&sinkInputData, sink, false, true);
+    }
+
+    if (pa_modargs_get_proplist(ma, "sink_input_properties", sinkInputData.proplist, PA_UPDATE_REPLACE) < 0) {
+        AUDIO_ERR_LOG("Failed to parse the sink_input_properties value.");
+        pa_sink_input_new_data_done(&sinkInputData);
+        return -1;
+    }
+
+    if (!pa_proplist_contains(sinkInputData.proplist, PA_PROP_MEDIA_ROLE)) {
+        pa_proplist_sets(sinkInputData.proplist, PA_PROP_MEDIA_ROLE, "abstract");
+    }
+
+    pa_sink_input_new_data_set_sample_spec(&sinkInputData, &(u->ss));
+    pa_sink_input_new_data_set_channel_map(&sinkInputData, &(u->map));
+    sinkInputData.flags = PA_SINK_INPUT_VARIABLE_RATE | PA_SINK_INPUT_START_CORKED | PA_SINK_INPUT_DONT_MOVE;
+
+    pa_sink_input_new(&u->sink_input, m->core, &sinkInputData);
+    pa_sink_input_new_data_done(&sinkInputData);
+
+    if (!u->sink_input) {
+        AUDIO_ERR_LOG("Create sink input failed");
+        return -1;
+    }
+    return 0;
+}
+
+static int ConfigSinkInput(struct userdata *u, pa_source *source)
+{
+    const char *n;
+    pa_memchunk silence;
+
+    u->sink_input->parent.process_msg = SinkInputProcessMsgCb;
+    u->sink_input->pop = SinkInputPopCb;
+    u->sink_input->process_rewind = SinkInputProcessRewindCb;
+    u->sink_input->kill = SinkInputKillCb;
+    u->sink_input->state_change = SinkInputStateChangeCb;
+    u->sink_input->attach = SinkInputAttachCb;
+    u->sink_input->detach = SinkInputDetachCb;
+    u->sink_input->update_max_rewind = SinkInputUpdateMaxRewindCb;
+    u->sink_input->update_max_request = SinkInputUpdateMaxRequestCb;
+    u->sink_input->suspend = SinkInputSuspendCb;
+    u->sink_input->update_sink_latency_range = UpdateSinkLatencyRangeCb;
+    u->sink_input->update_sink_fixed_latency = UpdateSinkLatencyRangeCb;
+    u->sink_input->userdata = u;
+
+    UpdateLatencyBoundaries(u, u->source_output->source, u->sink_input->sink);
+    SetSinkInputLatency(u, u->sink_input->sink);
+    SetSourceOutputLatency(u, u->source_output->source);
+
+    pa_sink_input_get_silence(u->sink_input, &silence);
+    u->memblockq = pa_memblockq_new(
+            "module-loopback memblockq",
+            0,                      /* idx */
+            MEMBLOCKQ_MAXLENGTH,    /* maxlength */
+            MEMBLOCKQ_MAXLENGTH,    /* tlength */
+            &(u->ss),                    /* sample_spec */
+            0,                      /* prebuf */
+            0,                      /* minreq */
+            0,                      /* maxrewind */
+            &silence);              /* silence frame */
+    pa_memblock_unref(silence.memblock);
+    /* Fill the memblockq with silence */
+    pa_memblockq_seek(u->memblockq, pa_usec_to_bytes(u->latency, &u->sink_input->sample_spec), PA_SEEK_RELATIVE, true);
+
+    u->asyncmsgq = pa_asyncmsgq_new(0);
+    if (!u->asyncmsgq) {
+        AUDIO_ERR_LOG("pa_asyncmsgq_new() failed.");
+        return -1;
+    }
+
+    if (!pa_proplist_contains(u->source_output->proplist, PA_PROP_MEDIA_NAME)) {
+        pa_proplist_setf(u->source_output->proplist, PA_PROP_MEDIA_NAME, "Loopback to %s",
+            pa_strnull(pa_proplist_gets(u->sink_input->sink->proplist, PA_PROP_DEVICE_DESCRIPTION)));
+    }
+
+    if (!pa_proplist_contains(u->source_output->proplist, PA_PROP_MEDIA_ICON_NAME) &&
+        (n = pa_proplist_gets(u->sink_input->sink->proplist, PA_PROP_DEVICE_ICON_NAME))) {
+        pa_proplist_sets(u->source_output->proplist, PA_PROP_MEDIA_ICON_NAME, n);
+    }
+
+    if (!pa_proplist_contains(u->sink_input->proplist, PA_PROP_MEDIA_NAME)) {
+        pa_proplist_setf(u->sink_input->proplist, PA_PROP_MEDIA_NAME, "Loopback from %s",
+            pa_strnull(pa_proplist_gets(u->source_output->source->proplist, PA_PROP_DEVICE_DESCRIPTION)));
+    }
+
+    if (source && !pa_proplist_contains(u->sink_input->proplist, PA_PROP_MEDIA_ICON_NAME) &&
+        (n = pa_proplist_gets(u->source_output->source->proplist, PA_PROP_DEVICE_ICON_NAME))) {
+        pa_proplist_sets(u->sink_input->proplist, PA_PROP_MEDIA_ICON_NAME, n);
+    }
+
+    return 0;
+}
+
+static int CreateSourceOutput(pa_module *m, pa_modargs *ma, struct userdata *u, pa_source *source)
+{
+    pa_source_output_new_data sourceOutputData;
+    pa_sample_spec ss = u->ss;
+    pa_channel_map map = u->map;
+
+    pa_source_output_new_data_init(&sourceOutputData);
+    sourceOutputData.driver = __FILE__;
+    sourceOutputData.module = m;
+    if (source) {
+        pa_source_output_new_data_set_source(&sourceOutputData, source, false, true);
+    }
+
+    if (pa_modargs_get_proplist(ma, "source_output_properties", sourceOutputData.proplist, PA_UPDATE_REPLACE) < 0) {
+        AUDIO_ERR_LOG("Failed to parse the source_output_properties value.");
+        pa_source_output_new_data_done(&sourceOutputData);
+        return -1;
+    }
+
+    if (!pa_proplist_contains(sourceOutputData.proplist, PA_PROP_MEDIA_ROLE))
+        pa_proplist_sets(sourceOutputData.proplist, PA_PROP_MEDIA_ROLE, "abstract");
+
+    pa_source_output_new_data_set_sample_spec(&sourceOutputData, &ss);
+    pa_source_output_new_data_set_channel_map(&sourceOutputData, &map);
+    sourceOutputData.flags = PA_SOURCE_OUTPUT_START_CORKED | PA_SOURCE_OUTPUT_DONT_MOVE;
+
+    AUDIO_INFO_LOG("sourceOutputData.driver:%{public}s, module:%{pulic}s, source_output addr:%{public}p",
+        sourceOutputData.driver, sourceOutputData.module->name, &u->source_output);
+
+    pa_source_output_new(&u->source_output, m->core, &sourceOutputData);
+    AUDIO_INFO_LOG("pa_source_output_new DONE");
+    pa_source_output_new_data_done(&sourceOutputData);
+
+    if (!u->source_output) {
+        AUDIO_ERR_LOG("Create source output failed");
+        return -1;
+    }
+    return 0;
+}
+
+static void ConfigSourceOutput(struct userdata *u)
+{
+    u->source_output->parent.process_msg = SourceOutputProcessMsgCb;
+    u->source_output->push = SourceOutputPushCb;
+    u->source_output->process_rewind = SourceOutputProcessRewindCb;
+    u->source_output->kill = SourceOutputKillCb;
+    u->source_output->attach = SourceOutputAttachCb;
+    u->source_output->detach = SourceOutputDetachCb;
+    u->source_output->suspend = SourceOutputSuspendCb;
+    u->source_output->update_source_latency_range = UpdateSourceLatencyRangeCb;
+    u->source_output->update_source_fixed_latency = UpdateSourceLatencyRangeCb;
+    u->source_output->userdata = u;
+
+    /* If format, rate or channels were originally unset, they are set now
+     * after the pa_source_output_new() call. */
+    u->ss = u->source_output->sample_spec;
+    u->map = u->source_output->channel_map;
+}
+
+static void ConfigLoopback(pa_module *m, struct userdata *u)
+{
+    /* Hooks to track changes of latency offsets */
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_PORT_LATENCY_OFFSET_CHANGED],
+        PA_HOOK_NORMAL, (pa_hook_cb_t) SinkPortLatencyOffsetChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_PORT_LATENCY_OFFSET_CHANGED],
+        PA_HOOK_NORMAL, (pa_hook_cb_t) SourcePortLatencyOffsetChangedCb, u);
+
+    /* Setup message handler for main thread */
+    u->msg = pa_msgobject_new(loopback_msg);
+    u->msg->parent.process_msg = LoopbackProcessMsgCb;
+    u->msg->userdata = u;
+
+    /* The output thread is not yet running, set effective_source_latency directly */
+    UpdateEffectiveSourceLatency(u, u->source_output->source, NULL);
+
+    pa_sink_input_put(u->sink_input);
+    pa_source_output_put(u->source_output);
+
+    if (u->source_output->source->state != PA_SOURCE_SUSPENDED) {
+        pa_sink_input_cork(u->sink_input, false);
+    }
+
+    if (u->sink_input->sink->state != PA_SINK_SUSPENDED) {
+        pa_source_output_cork(u->source_output, false);
+    }
 }
 
 int pa__init(pa_module *m)
@@ -1265,19 +1501,7 @@ int pa__init(pa_module *m)
     pa_modargs *ma = NULL;
     struct userdata *u;
     pa_sink *sink = NULL;
-    pa_sink_input_new_data sink_input_data;
     pa_source *source = NULL;
-    pa_source_output_new_data source_output_data;
-    uint32_t latency_msec;
-    uint32_t max_latency_msec;
-    uint32_t fast_adjust_threshold;
-    pa_sample_spec ss;
-    pa_channel_map map;
-    bool format_set = false;
-    bool rate_set = false;
-    bool channels_set = false;
-    pa_memchunk silence;
-    uint32_t adjust_time_sec;
     const char *n;
 
     pa_assert(m);
@@ -1299,262 +1523,25 @@ int pa__init(pa_module *m)
         return InitFailed(m, ma);
     }
 
-    if (source) {
-        ss = source->sample_spec;
-        map = source->channel_map;
-        format_set = true;
-        rate_set = true;
-        channels_set = true;
-    } else if (sink) {
-        ss = sink->sample_spec;
-        map = sink->channel_map;
-        format_set = true;
-        rate_set = true;
-        channels_set = true;
-    } else {
-        /* FIXME: Dummy stream format, needed because pa_sink_input_new()
-         * requires valid sample spec and channel map even when all the FIX_*
-         * stream flags are specified. pa_sink_input_new() should be changed
-         * to ignore the sample spec and channel map when the FIX_* flags are
-         * present. */
-        ss.format = PA_SAMPLE_U8;
-        ss.rate = 8000;
-        ss.channels = 1;
-        map.channels = 1;
-        map.map[0] = PA_CHANNEL_POSITION_MONO;
-    }
-
-    if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &map, PA_CHANNEL_MAP_DEFAULT) < 0) {
-        AUDIO_ERR_LOG("Invalid sample format specification or channel map");
-        return InitFailed(m, ma);
-    }
-
-    if (ss.rate < 4000 || ss.rate > PA_RATE_MAX) {
-        AUDIO_ERR_LOG("Invalid rate specification, valid range is 4000 Hz to %i Hz", PA_RATE_MAX);
-        return InitFailed(m, ma);
-    }
-
-    if (pa_modargs_get_value(ma, "format", NULL))
-        format_set = true;
-
-    if (pa_modargs_get_value(ma, "rate", NULL))
-        rate_set = true;
-
-    if (pa_modargs_get_value(ma, "channels", NULL) || pa_modargs_get_value(ma, "channel_map", NULL))
-        channels_set = true;
-
-    latency_msec = DEFAULT_LATENCY_MSEC;
-    if (pa_modargs_get_value_u32(ma, "latency_msec", &latency_msec) < 0 || latency_msec < 1 || latency_msec > 30000) {
-        AUDIO_ERR_LOG("Invalid latency specification");
-        return InitFailed(m, ma);
-    }
-
-    fast_adjust_threshold = 0;
-    if (pa_modargs_get_value_u32(ma, "fast_adjust_threshold_msec", &fast_adjust_threshold) < 0 ||
-        (fast_adjust_threshold != 0 && fast_adjust_threshold < 100)) {
-        AUDIO_ERR_LOG("Invalid fast adjust threshold specification");
-        return InitFailed(m, ma);
-    }
-
-    max_latency_msec = 0;
-    if (pa_modargs_get_value_u32(ma, "max_latency_msec", &max_latency_msec) < 0) {
-        AUDIO_ERR_LOG("Invalid maximum latency specification");
-        return InitFailed(m, ma);
-    }
-
-    if (max_latency_msec > 0 && max_latency_msec < latency_msec) {
-        AUDIO_WARNING_LOG("Configured maximum latency is smaller than latency, using latency instead");
-        max_latency_msec = latency_msec;
-    }
-
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;
     u->module = m;
-    u->latency = (pa_usec_t) latency_msec * PA_USEC_PER_MSEC;
-    u->max_latency = (pa_usec_t) max_latency_msec * PA_USEC_PER_MSEC;
-    u->output_thread_info.pop_called = false;
-    u->output_thread_info.pop_adjust = false;
-    u->output_thread_info.push_called = false;
-    u->iteration_counter = 0;
-    u->underrun_counter = 0;
-    u->underrun_latency_limit = 0;
-    u->source_sink_changed = true;
-    u->real_adjust_time_sum = 0;
-    u->adjust_counter = 0;
-    u->fast_adjust_threshold = fast_adjust_threshold * PA_USEC_PER_MSEC;
 
-    adjust_time_sec = DEFAULT_ADJUST_TIME_USEC / PA_USEC_PER_SEC;
-    if (pa_modargs_get_value_u32(ma, "adjust_time", &adjust_time_sec) < 0) {
-        AUDIO_ERR_LOG("Failed to parse adjust_time value");
+    if (InitSampleSpecAndChannelMap(ma, u, sink, source) != 0) {
+        return InitFailed(m, ma);
+    }
+    InitUserData(u);
+
+    if (CreateSourceOutput(m, ma, u, source) != 0) {
+        return InitFailed(m, ma);
+    }
+    ConfigSourceOutput(u);
+
+    if (CreateSinkInput(m, ma, u, sink) != 0 || ConfigSinkInput(u, source) != 0) {
         return InitFailed(m, ma);
     }
 
-    if (adjust_time_sec != DEFAULT_ADJUST_TIME_USEC / PA_USEC_PER_SEC)
-        u->adjust_time = adjust_time_sec * PA_USEC_PER_SEC;
-    else
-        u->adjust_time = DEFAULT_ADJUST_TIME_USEC;
-
-    u->real_adjust_time = u->adjust_time;
-
-    pa_source_output_new_data_init(&source_output_data);
-    source_output_data.driver = __FILE__;
-    source_output_data.module = m;
-    if (source)
-        pa_source_output_new_data_set_source(&source_output_data, source, false, true);
-
-    if (pa_modargs_get_proplist(ma, "source_output_properties", source_output_data.proplist, PA_UPDATE_REPLACE) < 0) {
-        AUDIO_ERR_LOG("Failed to parse the source_output_properties value.");
-        pa_source_output_new_data_done(&source_output_data);
-        return InitFailed(m, ma);
-    }
-
-    if (!pa_proplist_contains(source_output_data.proplist, PA_PROP_MEDIA_ROLE))
-        pa_proplist_sets(source_output_data.proplist, PA_PROP_MEDIA_ROLE, "abstract");
-
-    pa_source_output_new_data_set_sample_spec(&source_output_data, &ss);
-    pa_source_output_new_data_set_channel_map(&source_output_data, &map);
-    source_output_data.flags = PA_SOURCE_OUTPUT_START_CORKED | PA_SOURCE_OUTPUT_DONT_MOVE;
-
-    if (!format_set)
-        source_output_data.flags |= PA_SOURCE_OUTPUT_FIX_FORMAT;
-
-    if (!rate_set)
-        source_output_data.flags |= PA_SOURCE_OUTPUT_FIX_RATE;
-
-    if (!channels_set)
-        source_output_data.flags |= PA_SOURCE_OUTPUT_FIX_CHANNELS;
-
-    AUDIO_ERR_LOG("source_output_data.driver:%{public}s, module:%{pulic}s, source_output addr:%{public}p",
-        source_output_data.driver, source_output_data.module->name, &u->source_output);
-
-    pa_source_output_new(&u->source_output, m->core, &source_output_data);
-    AUDIO_INFO_LOG("pa_source_output_new DONE");
-    pa_source_output_new_data_done(&source_output_data);
-
-    if (!u->source_output)
-        return InitFailed(m, ma);
-
-    u->source_output->parent.process_msg = source_output_process_msg_cb;
-    u->source_output->push = source_output_push_cb;
-    u->source_output->process_rewind = source_output_process_rewind_cb;
-    u->source_output->kill = source_output_kill_cb;
-    u->source_output->attach = source_output_attach_cb;
-    u->source_output->detach = source_output_detach_cb;
-    u->source_output->suspend = source_output_suspend_cb;
-    u->source_output->update_source_latency_range = update_source_latency_range_cb;
-    u->source_output->update_source_fixed_latency = update_source_latency_range_cb;
-    u->source_output->userdata = u;
-
-    /* If format, rate or channels were originally unset, they are set now
-     * after the pa_source_output_new() call. */
-    ss = u->source_output->sample_spec;
-    map = u->source_output->channel_map;
-
-    pa_sink_input_new_data_init(&sink_input_data);
-    sink_input_data.driver = __FILE__;
-    sink_input_data.module = m;
-
-    if (sink)
-        pa_sink_input_new_data_set_sink(&sink_input_data, sink, false, true);
-
-    if (pa_modargs_get_proplist(ma, "sink_input_properties", sink_input_data.proplist, PA_UPDATE_REPLACE) < 0) {
-        AUDIO_ERR_LOG("Failed to parse the sink_input_properties value.");
-        pa_sink_input_new_data_done(&sink_input_data);
-        return InitFailed(m, ma);
-    }
-
-    if (!pa_proplist_contains(sink_input_data.proplist, PA_PROP_MEDIA_ROLE))
-        pa_proplist_sets(sink_input_data.proplist, PA_PROP_MEDIA_ROLE, "abstract");
-
-    pa_sink_input_new_data_set_sample_spec(&sink_input_data, &ss);
-    pa_sink_input_new_data_set_channel_map(&sink_input_data, &map);
-    sink_input_data.flags = PA_SINK_INPUT_VARIABLE_RATE | PA_SINK_INPUT_START_CORKED | PA_SINK_INPUT_DONT_MOVE;
-
-    pa_sink_input_new(&u->sink_input, m->core, &sink_input_data);
-    pa_sink_input_new_data_done(&sink_input_data);
-
-    if (!u->sink_input)
-        return InitFailed(m, ma);
-
-    u->sink_input->parent.process_msg = sink_input_process_msg_cb;
-    u->sink_input->pop = sink_input_pop_cb;
-    u->sink_input->process_rewind = sink_input_process_rewind_cb;
-    u->sink_input->kill = sink_input_kill_cb;
-    u->sink_input->state_change = sink_input_state_change_cb;
-    u->sink_input->attach = sink_input_attach_cb;
-    u->sink_input->detach = sink_input_detach_cb;
-    u->sink_input->update_max_rewind = sink_input_update_max_rewind_cb;
-    u->sink_input->update_max_request = sink_input_update_max_request_cb;
-    u->sink_input->suspend = sink_input_suspend_cb;
-    u->sink_input->update_sink_latency_range = update_sink_latency_range_cb;
-    u->sink_input->update_sink_fixed_latency = update_sink_latency_range_cb;
-    u->sink_input->userdata = u;
-
-    update_latency_boundaries(u, u->source_output->source, u->sink_input->sink);
-    set_sink_input_latency(u, u->sink_input->sink);
-    set_source_output_latency(u, u->source_output->source);
-
-    pa_sink_input_get_silence(u->sink_input, &silence);
-    u->memblockq = pa_memblockq_new(
-            "module-loopback memblockq",
-            0,                      /* idx */
-            MEMBLOCKQ_MAXLENGTH,    /* maxlength */
-            MEMBLOCKQ_MAXLENGTH,    /* tlength */
-            &ss,                    /* sample_spec */
-            0,                      /* prebuf */
-            0,                      /* minreq */
-            0,                      /* maxrewind */
-            &silence);              /* silence frame */
-    pa_memblock_unref(silence.memblock);
-    /* Fill the memblockq with silence */
-    pa_memblockq_seek(u->memblockq, pa_usec_to_bytes(u->latency, &u->sink_input->sample_spec), PA_SEEK_RELATIVE, true);
-
-    u->asyncmsgq = pa_asyncmsgq_new(0);
-    if (!u->asyncmsgq) {
-        AUDIO_ERR_LOG("pa_asyncmsgq_new() failed.");
-        return InitFailed(m, ma);
-    }
-
-    if (!pa_proplist_contains(u->source_output->proplist, PA_PROP_MEDIA_NAME))
-        pa_proplist_setf(u->source_output->proplist, PA_PROP_MEDIA_NAME, "Loopback to %s",
-                         pa_strnull(pa_proplist_gets(u->sink_input->sink->proplist, PA_PROP_DEVICE_DESCRIPTION)));
-
-    if (!pa_proplist_contains(u->source_output->proplist, PA_PROP_MEDIA_ICON_NAME)
-            && (n = pa_proplist_gets(u->sink_input->sink->proplist, PA_PROP_DEVICE_ICON_NAME)))
-        pa_proplist_sets(u->source_output->proplist, PA_PROP_MEDIA_ICON_NAME, n);
-
-    if (!pa_proplist_contains(u->sink_input->proplist, PA_PROP_MEDIA_NAME))
-        pa_proplist_setf(u->sink_input->proplist, PA_PROP_MEDIA_NAME, "Loopback from %s",
-                         pa_strnull(pa_proplist_gets(u->source_output->source->proplist, PA_PROP_DEVICE_DESCRIPTION)));
-
-    if (source && !pa_proplist_contains(u->sink_input->proplist, PA_PROP_MEDIA_ICON_NAME)
-            && (n = pa_proplist_gets(u->source_output->source->proplist, PA_PROP_DEVICE_ICON_NAME)))
-        pa_proplist_sets(u->sink_input->proplist, PA_PROP_MEDIA_ICON_NAME, n);
-
-    /* Hooks to track changes of latency offsets */
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_PORT_LATENCY_OFFSET_CHANGED],
-                           PA_HOOK_NORMAL, (pa_hook_cb_t) sink_port_latency_offset_changed_cb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_PORT_LATENCY_OFFSET_CHANGED],
-                           PA_HOOK_NORMAL, (pa_hook_cb_t) source_port_latency_offset_changed_cb, u);
-
-    /* Setup message handler for main thread */
-    u->msg = pa_msgobject_new(loopback_msg);
-    u->msg->parent.process_msg = loopback_process_msg_cb;
-    u->msg->userdata = u;
-
-    /* The output thread is not yet running, set effective_source_latency directly */
-    update_effective_source_latency(u, u->source_output->source, NULL);
-
-    pa_sink_input_put(u->sink_input);
-    pa_source_output_put(u->source_output);
-
-    if (u->source_output->source->state != PA_SOURCE_SUSPENDED) {
-        pa_sink_input_cork(u->sink_input, false);
-    }
-
-    if (u->sink_input->sink->state != PA_SINK_SUSPENDED) {
-        pa_source_output_cork(u->source_output, false);
-    }
+    ConfigLoopback(m, u);
 
     pa_modargs_free(ma);
     return 0;
@@ -1569,7 +1556,7 @@ void pa__done(pa_module*m)
         return;
     }
 
-    teardown(u);
+    TearDown(u);
 
     if (u->memblockq) {
         pa_memblockq_free(u->memblockq);
