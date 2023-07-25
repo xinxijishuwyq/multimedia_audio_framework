@@ -1021,9 +1021,10 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
+    int32_t maxUsageNum = 30;
     CaptureFilterOptions filterInfo;
     int32_t ss = data.ReadInt32();
-    if (ss < 0 || ss >= INT32_MAX) {
+    if (ss < 0 || ss >= maxUsageNum) {
         reply.WriteInt32(ERROR);
         return;
     }
