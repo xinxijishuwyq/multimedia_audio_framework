@@ -29,7 +29,6 @@ group("audio_service_packages") {
 ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }
@@ -97,7 +96,6 @@ config("audio_client_public_config") {
 ohos_shared_library("audio_client") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     integer_overflow = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
@@ -208,7 +206,6 @@ config("audio_service_config") {
 ohos_shared_library("audio_process_service") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }
@@ -252,7 +249,6 @@ ohos_shared_library("audio_process_service") {
 ohos_shared_library("audio_service") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }

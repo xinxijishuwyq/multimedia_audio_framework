@@ -54,7 +54,6 @@ config("hdi_config") {
 ohos_shared_library("module-hdi-sink") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }
@@ -93,7 +92,6 @@ ohos_shared_library("module-hdi-sink") {
 ohos_shared_library("module-hdi-source") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }

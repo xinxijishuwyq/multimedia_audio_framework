@@ -41,7 +41,6 @@ config("capturer_config") {
 ohos_shared_library("module-inner-capturer-sink") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }
@@ -71,7 +70,6 @@ ohos_shared_library("module-inner-capturer-sink") {
 ohos_shared_library("module-receiver-sink") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }

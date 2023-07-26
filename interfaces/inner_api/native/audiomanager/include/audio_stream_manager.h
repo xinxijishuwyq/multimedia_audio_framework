@@ -175,15 +175,6 @@ public:
      * @since 9
      */
     int32_t GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage);
-
-    /**
-     * @brief Is stream active.
-     *
-     * @param volumeType audio volume type.
-     * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
-     * @since 9
-     */
-    bool IsStreamActive(AudioVolumeType volumeType) const;
 };
 
 static const std::map<std::string, AudioEffectMode> effectModeMap = {

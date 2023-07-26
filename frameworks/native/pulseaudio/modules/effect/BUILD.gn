@@ -43,7 +43,6 @@ config("effect_config") {
 ohos_shared_library("module-effect-sink") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }

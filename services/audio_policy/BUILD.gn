@@ -86,7 +86,6 @@ config("audio_policy_public_config") {
 ohos_shared_library("audio_dump") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }
@@ -129,7 +128,6 @@ ohos_shared_library("audio_dump") {
 ohos_shared_library("audio_policy_service") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }
@@ -316,7 +314,6 @@ config("audio_policy_client_config") {
 ohos_shared_library("audio_policy_client") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }
