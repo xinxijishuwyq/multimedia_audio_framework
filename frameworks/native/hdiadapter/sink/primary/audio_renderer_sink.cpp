@@ -445,26 +445,17 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
     // Get qualified sound card and port
     int32_t index =
         SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Fail.");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG((index >= 0), ERR_NOT_STARTED, "Switch Adapter Fail.");
 
     adapterDesc_ = descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail.");
-        return ERR_NOT_STARTED;
-    }
-    if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("Load audio device failed.");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "Load Adapter Fail.");
+
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), ERR_NOT_STARTED, "Load audio device failed.");
 
     // Initialization port information, can fill through mode and other parameters
-    if (audioAdapter_->InitAllPorts(audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("InitAllPorts failed");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_->InitAllPorts(audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "InitAllPorts failed");
 
     if (CreateRender(audioPort_) != 0) {
         AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
