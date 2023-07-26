@@ -391,6 +391,7 @@ private:
 
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;
+    std::mutex amInterruptMutex_;
     std::mutex focusInfoChangeMutex_;
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;

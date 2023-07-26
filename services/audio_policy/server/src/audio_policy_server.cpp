@@ -709,8 +709,8 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
 {
-    std::lock_guard<std::mutex> lock(micStateChangeMutex_);
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::lock_guard<std::mutex> lock(micStateChangeMutex_);
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = mPolicyService.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {
@@ -923,7 +923,7 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
 int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* clientId */,
                                                             const sptr<IRemoteObject> &object)
 {
-    std::lock_guard<std::mutex> lock(interruptMutex_);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "SetAudioManagerInterruptCallback object is nullptr");
@@ -945,7 +945,7 @@ int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* cli
 
 int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* clientId */)
 {
-    std::lock_guard<std::mutex> lock(interruptMutex_);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     if (amInterruptCbsMap_.erase(clientPid) == 0) {
         AUDIO_ERR_LOG("UnsetAudioManagerInterruptCallback client %{public}d not present", clientPid);
@@ -958,13 +958,13 @@ int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* c
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("RequestAudioFocus in");
+    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (clientOnFocus_ == clientId) {
         AUDIO_INFO_LOG("client already has focus");
         NotifyFocusGranted(clientId, audioInterrupt);
         return SUCCESS;
     }
 
-    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (focussedAudioInterruptInfo_ != nullptr) {
         AUDIO_INFO_LOG("Existing stream: %{public}d, incoming stream: %{public}d",
             (focussedAudioInterruptInfo_->audioFocusType).streamType, audioInterrupt.audioFocusType.streamType);
@@ -996,8 +996,6 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
-
-    std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
         return;
@@ -1538,8 +1536,8 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::list<std::pair<AudioInterr
 int32_t AudioPolicyServer::RegisterFocusInfoChangeCallback(const int32_t /* clientId */,
     const sptr<IRemoteObject> &object)
 {
-    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
 
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
     if (callback != nullptr) {
@@ -1759,6 +1757,7 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
         argSets.insert(args[index]);
     }
 
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     if (argSets.count(arg1) != 0) {
         InterruptType type = INTERRUPT_TYPE_BEGIN;
         InterruptForceType forceType = INTERRUPT_SHARE;
@@ -1904,8 +1903,8 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 
 void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id)
 {
-    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     AUDIO_INFO_LOG("Register clients death recipient!!");
+    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL!!");
 
     pid_t uid = 0;
@@ -1942,8 +1941,8 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
 
 void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
 {
-    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
+    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     mPolicyService.RegisteredTrackerClientDied(pid);
     auto filter = [&pid](int val) {
         return pid == val;
