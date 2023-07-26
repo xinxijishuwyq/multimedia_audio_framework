@@ -37,7 +37,6 @@ config("audio_capturer_config") {
 ohos_shared_library("audio_capturer") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../cfi_blocklist.txt"
   }

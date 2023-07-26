@@ -39,7 +39,6 @@ config("audio_renderer_config") {
 ohos_shared_library("audio_renderer") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../cfi_blocklist.txt"
   }

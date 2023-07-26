@@ -18,7 +18,6 @@ import("../../../ressche_part.gni")
 ohos_static_library("audio_schedule") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../../cfi_blocklist.txt"
   }

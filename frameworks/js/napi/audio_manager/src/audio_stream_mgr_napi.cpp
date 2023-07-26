@@ -851,8 +851,8 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioStreamMgrAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->isActive = context->objectInfo->audioStreamMngr_->
-                        IsStreamActive(GetNativeAudioVolumeType(context->volType));
+                    context->isActive =
+                        context->objectInfo->audioMngr_->IsStreamActive(GetNativeAudioVolumeType(context->volType));
                     context->isTrue = context->isActive;
                     context->status = SUCCESS;
                 }

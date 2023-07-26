@@ -50,7 +50,6 @@ if (!audio_framework_feature_opensl_es) {
   ohos_shared_library("opensles") {
     sanitize = {
       cfi = true
-      cfi_cross_dso = true
       debug = false
       blocklist = "../../../cfi_blocklist.txt"
     }
