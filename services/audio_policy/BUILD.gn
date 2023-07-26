@@ -341,8 +341,6 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_volume_key_event_callback_stub.cpp",
   ]
 
-  deps = [ "../audio_service:audio_common" ]
-
   public_configs = [ ":audio_policy_client_config" ]
 
   include_dirs = [ "//third_party/bounds_checking_function/include" ]
