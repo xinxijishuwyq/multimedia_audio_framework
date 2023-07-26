@@ -61,7 +61,7 @@ ohos_shared_library("audio_common") {
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
   ]
 
   subsystem_name = "multimedia"
@@ -242,7 +242,7 @@ ohos_shared_library("audio_process_service") {
     "c_utils:utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
   ]
 
   subsystem_name = "multimedia"
