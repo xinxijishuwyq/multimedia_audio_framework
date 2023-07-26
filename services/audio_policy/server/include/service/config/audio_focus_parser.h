@@ -40,14 +40,18 @@ private:
     std::map<std::string, InterruptForceType> forceMap;
 
     void LoadDefaultConfig(std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
-    void ParseFocusMap(xmlNode *node, char *curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
+    void ParseFocusMap(xmlNode *node, const std::string &curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
     void ParseStreams(xmlNode *node, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
-    void ParseAllowedStreams(xmlNode *node, char *curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
-        AudioFocusEntry> &focusMap);
-    void ParseRejectedStreams(xmlNode *node, char *curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
-        AudioFocusEntry> &focusMap);
+    void AddAllowedFocusEntry(xmlNode *currNode, const std::string &curStream,
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
+    void ParseAllowedStreams(xmlNode *node, const std::string &curStream,
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
+    void AddRejectedFocusEntry(xmlNode *currNode, const std::string &curStream,
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
+    void ParseRejectedStreams(xmlNode *node, const std::string &curStream,
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
 };
 } // namespace AudioStandard
 } // namespace OHOS

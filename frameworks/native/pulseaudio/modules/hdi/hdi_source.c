@@ -228,6 +228,36 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
     return 0;
 }
 
+static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
+{
+    if (!(PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->IsCapturerStarted)) {
+        pa_rtpoll_set_timer_disabled(u->rtpoll);
+        AUDIO_DEBUG_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
+        return true;
+    }
+    pa_memchunk chunk;
+    pa_usec_t now;
+
+    now = pa_rtclock_now();
+    AUDIO_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timerElapsed: %{public}d", now, timerElapsed);
+
+    if (timerElapsed) {
+        chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
+        if (chunk.length > 0) {
+            int ret = GetCapturerFrameFromHdi(&chunk, u);
+            if (ret != 0) {
+                return false;
+            }
+
+            u->timestamp += pa_bytes_to_usec(chunk.length, &u->source->sample_spec);
+            AUDIO_DEBUG_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
+        }
+    }
+
+    pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
+    return true;
+}
+
 static void ThreadFuncCapturerTimer(void *userdata)
 {
     struct Userdata *u = userdata;
@@ -244,36 +274,13 @@ static void ThreadFuncCapturerTimer(void *userdata)
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
     while (true) {
-        int ret = 0;
-
-        if (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->IsCapturerStarted) {
-            pa_memchunk chunk;
-            pa_usec_t now;
-
-            now = pa_rtclock_now();
-            AUDIO_DEBUG_LOG("HDI Source: now: %{public}" PRIu64 " timerElapsed: %{public}d", now, timerElapsed);
-
-            if (timerElapsed) {
-                chunk.length = pa_usec_to_bytes(now - u->timestamp, &u->source->sample_spec);
-                if (chunk.length > 0) {
-                    ret = GetCapturerFrameFromHdi(&chunk, u);
-                    if (ret != 0) {
-                        break;
-                    }
-
-                    u->timestamp += pa_bytes_to_usec(chunk.length, &u->source->sample_spec);
-                    AUDIO_DEBUG_LOG("HDI Source: new u->timestamp : %{public}" PRIu64, u->timestamp);
-                }
-            }
-
-            pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
-        } else {
-            pa_rtpoll_set_timer_disabled(u->rtpoll);
-            AUDIO_DEBUG_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
+        bool result = PaRtpollSetTimerFunc(u, timerElapsed);
+        if (!result) {
+            break;
         }
-
         /* Hmm, nothing to do. Let's sleep */
-        if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
+        int ret = pa_rtpoll_run(u->rtpoll);
+        if (ret < 0) {
             /* If this was no regular exit from the loop we have to continue
             * processing messages until we received PA_MESSAGE_SHUTDOWN */
             AUDIO_ERR_LOG("HDI Source: pa_rtpoll_run ret:%{public}d failed", ret);
