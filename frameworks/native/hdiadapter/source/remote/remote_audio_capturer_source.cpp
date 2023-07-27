@@ -137,7 +137,7 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     struct AudioSampleAttributes param;
     param.type = AUDIO_IN_MEDIA;
     param.period = deepBufferCapturePeriodSize;
-    param.streamId = internalInputStreamId;
+    param.streamId = REMOTE_INPUT_STREAM_ID;
     param.isSignedData = true;
     param.stopThreshold = maxInt32;
     param.silenceThreshold = audioBufferSize;

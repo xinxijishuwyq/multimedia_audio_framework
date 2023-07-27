@@ -75,6 +75,7 @@ private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t INT_32_MAX = 0x7fffffff;
+    static constexpr uint32_t FAST_INPUT_STREAM_ID = 22; // 14 + 1 * 8
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -154,7 +155,7 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = 1;
+    attrs.streamId = FAST_INPUT_STREAM_ID;
     attrs.type = AUDIO_MMAP_NOIRQ; // enable mmap!
     attrs.period = 0;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;

@@ -61,6 +61,7 @@ private:
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
+    static constexpr uint32_t PRIMARY_INPUT_STREAM_ID = 14; // 14 + 0 * 8
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -213,7 +214,7 @@ void InitAttrsCapture(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = INTERNAL_INPUT_STREAM_ID;
+    attrs.streamId = PRIMARY_INPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
@@ -583,7 +584,7 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = INTERNAL_INPUT_STREAM_ID;
+    sink.ext.mix.streamId = PRIMARY_INPUT_STREAM_ID;
     sink.ext.device.desc = (char *)"";
 
     AudioRoute route = {
