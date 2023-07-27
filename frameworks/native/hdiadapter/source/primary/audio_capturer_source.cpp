@@ -57,11 +57,17 @@ public:
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
     AudioCapturerSourceInner();
     ~AudioCapturerSourceInner();
+
 private:
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
     static constexpr uint32_t PRIMARY_INPUT_STREAM_ID = 14; // 14 + 0 * 8
+
+    int32_t CreateCapture(struct AudioPort &capturePort);
+    int32_t InitAudioManager();
+    void InitAttrsCapture(struct AudioSampleAttributes &attrs);
+    void OpenDumpFile();
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -84,13 +90,8 @@ private:
 
     IAudioSourceCallback* callback_ = nullptr;
     std::mutex callbackMutex_;
-
-    int32_t CreateCapture(struct AudioPort &capturePort);
-    int32_t InitAudioManager();
-    void OpenDumpFile();
-
 #ifdef CAPTURE_DUMP
-    FILE *pfd;
+    FILE *pfd_;
 #endif
 };
 
@@ -107,7 +108,7 @@ AudioCapturerSourceInner::AudioCapturerSourceInner()
 {
     attr_ = {};
 #ifdef CAPTURE_DUMP
-    pfd = nullptr;
+    pfd_ = nullptr;
 #endif // CAPTURE_DUMP
 }
 
@@ -200,14 +201,14 @@ void AudioCapturerSourceInner::DeInit()
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
 #ifdef CAPTURE_DUMP
-    if (pfd) {
-        fclose(pfd);
-        pfd = nullptr;
+    if (pfd_) {
+        fclose(pfd_);
+        pfd_ = nullptr;
     }
 #endif // CAPTURE_DUMP
 }
 
-void InitAttrsCapture(struct AudioSampleAttributes &attrs)
+void AudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
@@ -351,8 +352,8 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
 void AudioCapturerSourceInner::OpenDumpFile()
 {
 #ifdef CAPTURE_DUMP
-    pfd = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd == nullptr) {
+    pfd_ = fopen(g_audioOutTestFilePath, "wb+");
+    if (pfd_ == nullptr) {
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
 #endif // CAPTURE_DUMP
@@ -375,8 +376,8 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     }
 
 #ifdef CAPTURE_DUMP
-    if (pfd) {
-        size_t writeResult = fwrite(frame, 1, replyBytes, pfd);
+    if (pfd_) {
+        size_t writeResult = fwrite(frame, 1, replyBytes, pfd_);
         if (writeResult != replyBytes) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
