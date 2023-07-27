@@ -283,7 +283,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         return ERROR;
     }
     state_ = PREPARED;
-    AUDIO_INFO_LOG("AudioStream:Set stream Info SUCCESS");
+    AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         (void)GetSessionID(sessionId_);
@@ -481,7 +481,6 @@ bool AudioStream::StopAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
@@ -602,7 +601,7 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
 
         writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (writeBufferPool_[i] == nullptr) {
-            AUDIO_INFO_LOG(
+            AUDIO_ERR_LOG(
                 "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
@@ -639,7 +638,7 @@ int32_t AudioStream::SetCaptureMode(AudioCaptureMode captureMode)
 
         readBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (readBufferPool_[i] == nullptr) {
-            AUDIO_INFO_LOG("AudioStream::SetCaptureMode readBufferPool_[i]==nullptr. Allocate memory failed.");
+            AUDIO_ERR_LOG("AudioStream::SetCaptureMode readBufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
 
@@ -702,7 +701,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             freeBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
-            AUDIO_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
+            AUDIO_ERR_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -715,7 +714,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             filledBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
-            AUDIO_INFO_LOG("AudioStream::GetBufferDesc filledBufferQ_.empty()");
+            AUDIO_ERR_LOG("AudioStream::GetBufferDesc filledBufferQ_.empty()");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -831,7 +830,6 @@ void AudioStream::WriteCbTheadLoop()
             }
         }
     }
-    AUDIO_INFO_LOG("WriteCb thread end");
 }
 
 void AudioStream::ReadCbThreadLoop()
@@ -875,7 +873,6 @@ void AudioStream::ReadCbThreadLoop()
         }
     }
 
-    AUDIO_INFO_LOG("ReadCb thread end");
 }
 
 int32_t AudioStream::SetLowPowerVolume(float volume)

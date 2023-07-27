@@ -1036,14 +1036,14 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
-    AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
 
     AudioVolumeGroupManagerNapi *volumeGroupManagerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeGroupManagerNapi));
 
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
-        AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi::On type mismatch for parameter 2");
+        AUDIO_ERR_LOG("On type mismatch for parameter 2");
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
@@ -1054,10 +1054,10 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
             int32_t ret = volumeGroupManagerNapi->audioGroupMngr_->SetRingerModeCallback(
                 volumeGroupManagerNapi->cachedClientId_, volumeGroupManagerNapi->ringerModecallbackNapi_);
             if (ret) {
-                AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: SetRingerModeCallback Failed");
+                AUDIO_ERR_LOG("SetRingerModeCallback Failed");
                 return undefinedResult;
             } else {
-                AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi:: SetRingerModeCallback Success");
+                AUDIO_INFO_LOG("SetRingerModeCallback Success");
             }
         }
 
@@ -1069,13 +1069,13 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
             volumeGroupManagerNapi->micStateChangeCallbackNapi_=
                 std::make_shared<AudioManagerMicStateChangeCallbackNapi>(env);
             if (!volumeGroupManagerNapi->micStateChangeCallbackNapi_) {
-                AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Memory Allocation Failed !!");
+                AUDIO_ERR_LOG("Memory Allocation Failed !!");
             }
 
             int32_t ret = volumeGroupManagerNapi->audioGroupMngr_->SetMicStateChangeCallback(
                 volumeGroupManagerNapi->micStateChangeCallbackNapi_);
             if (ret) {
-                AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi:: Registering Microphone Change Callback Failed");
+                AUDIO_ERR_LOG("Registering Microphone Change Callback Failed");
             }
         }
 
@@ -1084,9 +1084,9 @@ napi_value AudioVolumeGroupManagerNapi::On(napi_env env, napi_callback_info info
                 micStateChangeCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
 
-        AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi::On SetMicStateChangeCallback is successful");
+        AUDIO_DEBUG_LOG("On SetMicStateChangeCallback is successful");
     } else {
-        AUDIO_ERR_LOG("AudioVolumeGroupManagerNapi::No such callback supported");
+        AUDIO_ERR_LOG("No such callback supported");
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
     }
     return undefinedResult;
@@ -1110,7 +1110,7 @@ napi_value AudioVolumeGroupManagerNapi::IsVolumeUnadjustable(napi_env env, napi_
     bool isVolumeUnadjustable = audioVolumeGroupManagerNapi->audioGroupMngr_->IsVolumeUnadjustable();
     napi_get_boolean(env, isVolumeUnadjustable, &result);
 
-    AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi: IsVolumeUnadjustable is successful");
+    AUDIO_INFO_LOG("IsVolumeUnadjustable is successful");
     return result;
 }
 
@@ -1195,7 +1195,7 @@ napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_ca
         asyncContext.release();
     }
 
-    AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi: AdjustVolumeByStep is successful");
+    AUDIO_INFO_LOG("AdjustVolumeByStep is successful");
     return result;
 }
 
@@ -1286,7 +1286,7 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
         asyncContext.release();
     }
 
-    AUDIO_INFO_LOG("AudioManagerNapi: AdjustSystemVolumeByStep is successful");
+    AUDIO_INFO_LOG("AdjustSystemVolumeByStep is successful");
     return result;
 }
 
@@ -1378,13 +1378,13 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_c
         asyncContext.release();
     }
 
-    AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi: GetSystemVolumeInDb is successful");
+    AUDIO_INFO_LOG("GetSystemVolumeInDb is successful");
     return result;
 }
 
 napi_value AudioVolumeGroupManagerNapi::Init(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("AudioVolumeGroupManagerNapi::Init");
+    AUDIO_INFO_LOG("Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;

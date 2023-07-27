@@ -23,12 +23,12 @@ namespace AudioStandard {
 AudioManagerInterruptCallbackNapi::AudioManagerInterruptCallbackNapi(napi_env env)
     : env_(env)
 {
-    AUDIO_INFO_LOG("AudioManagerInterruptCallbackNapi: instance create");
+    AUDIO_INFO_LOG("instance create");
 }
 
 AudioManagerInterruptCallbackNapi::~AudioManagerInterruptCallbackNapi()
 {
-    AUDIO_INFO_LOG("AudioManagerInterruptCallbackNapi: instance destroy");
+    AUDIO_INFO_LOG("instance destroy");
 }
 
 void AudioManagerInterruptCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)

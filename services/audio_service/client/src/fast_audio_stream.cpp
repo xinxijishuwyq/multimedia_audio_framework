@@ -381,7 +381,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
     state_ = RUNNING;
 
-    AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_DEBUG_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
@@ -408,7 +408,7 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         return false;
     }
 
-    AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_DEBUG_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);

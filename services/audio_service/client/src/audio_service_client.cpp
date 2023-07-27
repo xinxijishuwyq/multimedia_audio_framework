@@ -279,7 +279,7 @@ void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
 
-    AUDIO_INFO_LOG("SetBufAttr %{public}s", success ? "success" : "faild");
+    AUDIO_DEBUG_LOG("SetBufAttr %{public}s", success ? "success" : "faild");
 
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
@@ -395,7 +395,7 @@ void AudioServiceClient::PAStreamMovedCb(pa_stream *stream, void *userdata)
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
     int res = pa_stream_is_suspended(stream);
-    AUDIO_INFO_LOG("AudioServiceClient::PAstream moved to index:[%{public}d] suspended:[%{public}d]",
+    AUDIO_DEBUG_LOG("PAstream moved to index:[%{public}d] suspended:[%{public}d]",
         deviceIndex, res);
 }
 
@@ -670,7 +670,6 @@ bool AudioServiceClient::getUsingPemissionFromPrivacy(const std::string &permiss
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::Initialize");
     int error = PA_ERR_INTERNAL;
     eAudioClientType = eClientType;
 
@@ -696,7 +695,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     string packageName = "";
     ss << "app-pid<" << getpid() << ">-uid<" << getuid() << ">";
     ss >> packageName;
-    AUDIO_INFO_LOG("AudioServiceClient:Initialize [%{public}s]", packageName.c_str());
+    AUDIO_DEBUG_LOG("AudioServiceClient:Initialize [%{public}s]", packageName.c_str());
     context = pa_context_new(api, packageName.c_str());
     if (context == nullptr) {
         ResetPAAudioClient();
@@ -833,7 +832,7 @@ const char* AudioServiceClient::GetDeviceNameForConnect()
 
 int32_t AudioServiceClient::ConnectStreamToPA()
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::ConnectStreamToPA");
+    AUDIO_DEBUG_LOG("Enter AudioServiceClient::ConnectStreamToPA");
     int error, result;
 
     if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
@@ -875,7 +874,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
             return AUDIO_CLIENT_INIT_ERR;
         }
     } else {
-        AUDIO_INFO_LOG("pa_stream_connect_record connect to:%{public}s", deviceName ? deviceName : "null");
+        AUDIO_DEBUG_LOG("pa_stream_connect_record connect to:%{public}s", deviceName ? deviceName : "null");
         result = pa_stream_connect_record(paStream, deviceName, nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
@@ -913,7 +912,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
 
 int32_t AudioServiceClient::InitializeAudioCache()
 {
-    AUDIO_INFO_LOG("Initializing internal audio cache");
+    AUDIO_DEBUG_LOG("Initializing internal audio cache");
 
     if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
@@ -985,7 +984,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
     }
 
-    AUDIO_INFO_LOG("Creating stream of channels %{public}d", audioParams.channels);
+    AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
     pa_channel_map map;
     if (audioParams.channels > CHANNEL_6) {
         pa_channel_map_init(&map);
@@ -1066,8 +1065,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     if (streamCb != nullptr) {
         streamCb->OnStateChange(state_);
     }
-
-    AUDIO_INFO_LOG("Created Stream");
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -1135,13 +1132,13 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
         ResetPAAudioClient();
         return AUDIO_CLIENT_START_STREAM_ERR;
     } else {
-        AUDIO_INFO_LOG("Stream Started Successfully");
         return AUDIO_CLIENT_SUCCESS;
     }
 }
 
 int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 {
+    AUDIO_INFO_LOG("Enter AudioServiceClient::PauseStream");
     lock_guard<mutex> lockdata(dataMutex);
     lock_guard<mutex> lockctrl(ctrlMutex);
     PAStreamCorkSuccessCb = PAStreamPauseSuccessCb;
@@ -1156,13 +1153,13 @@ int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
         AUDIO_ERR_LOG("Stream Pause Failed");
         return AUDIO_CLIENT_ERR;
     } else {
-        AUDIO_INFO_LOG("Stream Paused Successfully");
         return AUDIO_CLIENT_SUCCESS;
     }
 }
 
 int32_t AudioServiceClient::StopStream()
 {
+    AUDIO_INFO_LOG("Enter AudioServiceClient::StopStream");
     lock_guard<mutex> lockdata(dataMutex);
     lock_guard<mutex> lockctrl(ctrlMutex);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -1199,7 +1196,6 @@ int32_t AudioServiceClient::StopStream()
             AUDIO_ERR_LOG("Stream Stop Failed");
             return AUDIO_CLIENT_ERR;
         } else {
-            AUDIO_INFO_LOG("Stream Stopped Successfully");
             if (internalRdBufLen) {
                 (void)pa_stream_drop(paStream);
                 internalReadBuffer = nullptr;
@@ -1242,6 +1238,7 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
+    AUDIO_INFO_LOG("Enter AudioServiceClient::FlushStream");
     lock_guard<mutex> lock(dataMutex);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
@@ -1276,7 +1273,6 @@ int32_t AudioServiceClient::FlushStream()
         AUDIO_ERR_LOG("Stream Flush Failed");
         return AUDIO_CLIENT_ERR;
     } else {
-        AUDIO_INFO_LOG("Stream Flushed Successfully");
         acache.readIndex = 0;
         acache.writeIndex = 0;
         acache.isFull = false;
@@ -1286,6 +1282,7 @@ int32_t AudioServiceClient::FlushStream()
 
 int32_t AudioServiceClient::DrainStream()
 {
+    AUDIO_INFO_LOG("Enter AudioServiceClient::DrainStream");
     int32_t error;
 
     if (eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -1329,7 +1326,6 @@ int32_t AudioServiceClient::DrainStream()
         AUDIO_ERR_LOG("Stream Drain Failed");
         return AUDIO_CLIENT_ERR;
     } else {
-        AUDIO_INFO_LOG("Stream Drained Successfully");
         return AUDIO_CLIENT_SUCCESS;
     }
 }
@@ -1982,7 +1978,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         } else {
             latency = fwLatency;
         }
-        AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
+        AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
             PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         // Get audio read cache latency
@@ -1990,7 +1986,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 
         // Total latency will be sum of audio read cache latency + PA latency
         latency = paLatency + cacheLatency;
-        AUDIO_INFO_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
+        AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
     }
 
     return AUDIO_CLIENT_SUCCESS;
@@ -1998,13 +1994,13 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 
 void AudioServiceClient::RegisterAudioRendererCallbacks(const AudioRendererCallbacks &cb)
 {
-    AUDIO_INFO_LOG("Registering audio render callbacks");
+    AUDIO_DEBUG_LOG("Registering audio render callbacks");
     mAudioRendererCallbacks = (AudioRendererCallbacks *)&cb;
 }
 
 void AudioServiceClient::RegisterAudioCapturerCallbacks(const AudioCapturerCallbacks &cb)
 {
-    AUDIO_INFO_LOG("Registering audio record callbacks");
+    AUDIO_DEBUG_LOG("Registering audio record callbacks");
     mAudioCapturerCallbacks = (AudioCapturerCallbacks *)&cb;
 }
 
@@ -2079,7 +2075,7 @@ void AudioServiceClient::SetCapturerPeriodPositionCallback(int64_t periodPositio
     if ((mFrameSize != 0) && (mFramePeriodNumber != 0)) {
         mFramePeriodRead = (mTotalBytesRead / mFrameSize) % mFramePeriodNumber;
     } else {
-        AUDIO_INFO_LOG("AudioServiceClient::SetCapturerPeriodPositionCallback failed");
+        AUDIO_ERR_LOG("AudioServiceClient::SetCapturerPeriodPositionCallback failed");
         return;
     }
     SendSetCapturerPeriodReachedRequestEvent(callback);
@@ -2148,7 +2144,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     if ((volume - mVolumeFactor) > std::numeric_limits<float>::epsilon()) {
         mUnMute_ = true;
     }
-    AUDIO_INFO_LOG("mUnMute_ %{public}d", mUnMute_);
+    AUDIO_DEBUG_LOG("mUnMute_ %{public}d", mUnMute_);
     pa_threaded_mainloop_lock(mainLoop);
 
     mVolumeFactor = volume;

@@ -200,7 +200,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
 {
-    AUDIO_INFO_LOG("AudioRendererPrivate::InitAudioInterruptCallback in");
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::InitAudioInterruptCallback in");
     if (audioInterrupt_.mode != SHARE_MODE && audioInterrupt_.mode != INDEPENDENT_MODE) {
         AUDIO_ERR_LOG("InitAudioInterruptCallback::Invalid interrupt mode!");
         return ERR_INVALID_PARAM;
@@ -928,7 +928,7 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
 
     audioDeviceChangeCallback_->setAudioRendererObj(this);
     audioDeviceChangeCallback_->SaveCallback(callback);
-    AUDIO_INFO_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
     return SUCCESS;
 }
 

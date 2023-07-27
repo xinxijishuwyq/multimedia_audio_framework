@@ -250,13 +250,11 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
     if (callbackLoop_.joinable()) {
-        AUDIO_INFO_LOG("AudioProcess join work thread start");
         if (threadStatus_ == WAITTING) {
             threadStatusCV_.notify_all();
         }
         isCallbackLoopEnd_ = true;
         callbackLoop_.join();
-        AUDIO_INFO_LOG("AudioProcess join work thread end");
     }
     if (isInited_) {
         AudioProcessInClientInner::Release();
@@ -448,7 +446,7 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
     }
-    AUDIO_INFO_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
+    AUDIO_DEBUG_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
     bool isBufferInited = InitAudioBuffer();
     CHECK_AND_RETURN_RET_LOG(isBufferInited, isBufferInited, "%{public}s init audio buffer fail.", __func__);
     processConfig_ = config;
@@ -471,7 +469,7 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 
     int waitThreadStartTime = 5; // wait for thread start.
     while (threadStatus_.load() == INVALID) {
-        AUDIO_INFO_LOG("%{public}s wait %{public}d ms for %{public}s started...", __func__, waitThreadStartTime,
+        AUDIO_DEBUG_LOG("%{public}s wait %{public}d ms for %{public}s started...", __func__, waitThreadStartTime,
             config.audioMode == AUDIO_MODE_RECORD ? "RecordProcessCallbackFuc" : "ProcessCallbackFuc");
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION * waitThreadStartTime);
     }
@@ -501,7 +499,6 @@ int32_t AudioProcessInClientInner::SaveDataCallback(const std::shared_ptr<AudioD
         return ERR_INVALID_PARAM;
     }
     audioDataCallback_ = dataCallback;
-    AUDIO_INFO_LOG("%{public}s end.", __func__);
     return SUCCESS;
 }
 
@@ -515,7 +512,6 @@ int32_t AudioProcessInClientInner::SaveUnderrunCallback(const std::shared_ptr<Cl
         return ERR_INVALID_PARAM;
     }
     underrunCallback_ = underrunCallback;
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
     return SUCCESS;
 }
 
@@ -989,11 +985,11 @@ bool AudioProcessInClientInner::KeepLoopRunning()
 
     Trace trace("AudioProcessInClient::InWaitStatus");
     std::unique_lock<std::mutex> lock(loopThreadLock_);
-    AUDIO_INFO_LOG("Process status is %{public}s now, wait for %{public}s...",
+    AUDIO_DEBUG_LOG("Process status is %{public}s now, wait for %{public}s...",
         GetStatusInfo(streamStatus_->load()).c_str(), GetStatusInfo(targetStatus).c_str());
     threadStatus_ = WAITTING;
     threadStatusCV_.wait(lock);
-    AUDIO_INFO_LOG("Process wait end. Cur is %{public}s now, target is %{public}s...",
+    AUDIO_DEBUG_LOG("Process wait end. Cur is %{public}s now, target is %{public}s...",
         GetStatusInfo(streamStatus_->load()).c_str(), GetStatusInfo(targetStatus).c_str());
 
     return false;
@@ -1050,7 +1046,6 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             ClockTime::RelativeSleep(MAX_READ_COST_DURATION_NANO);
         }
     }
-    AUDIO_INFO_LOG("%{public}s end.", __func__);
 }
 
 int32_t AudioProcessInClientInner::RecordReSyncServicePos()
@@ -1202,7 +1197,7 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
 
 void AudioProcessInClientInner::ProcessCallbackFuc()
 {
-    AUDIO_INFO_LOG("AudioProcessInClient Callback loop start.");
+    AUDIO_INFO_LOG("Callback loop start.");
     AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
 
     uint64_t curWritePos = 0;
@@ -1252,7 +1247,6 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         }
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
-    AUDIO_INFO_LOG("AudioProcessInClient Callback loop end.");
 }
 } // namespace AudioStandard
 } // namespace OHOS

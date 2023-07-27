@@ -224,17 +224,17 @@ void AudioEndpointInner::Release()
     isInited_.store(false);
     workThreadCV_.notify_all();
     if (endpointWorkThread_.joinable()) {
-        AUDIO_INFO_LOG("AudioEndpoint join work thread start");
+        AUDIO_DEBUG_LOG("AudioEndpoint join work thread start");
         endpointWorkThread_.join();
-        AUDIO_INFO_LOG("AudioEndpoint join work thread end");
+        AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();
     if (updatePosTimeThread_.joinable()) {
-        AUDIO_INFO_LOG("AudioEndpoint join update thread start");
+        AUDIO_DEBUG_LOG("AudioEndpoint join update thread start");
         updatePosTimeThread_.join();
-        AUDIO_INFO_LOG("AudioEndpoint join update thread end");
+        AUDIO_DEBUG_LOG("AudioEndpoint join update thread end");
     }
 
     if (fastSink_ != nullptr) {
@@ -423,7 +423,7 @@ int32_t AudioEndpointInner::GetAdapterBufferInfo(const DeviceInfo &deviceInfo)
             __func__, ret, dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
         return ERR_ILLEGAL_STATE;
     }
-    AUDIO_INFO_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);
+    AUDIO_DEBUG_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);
     return SUCCESS;
 }
 
@@ -443,7 +443,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
     spanDuration_ = dstSpanSizeInframe_ * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
     int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
     serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // at least 1ms ahead.
-    AUDIO_INFO_LOG("%{public}s spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
+    AUDIO_DEBUG_LOG("%{public}s spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
         __func__, spanDuration_, serverAheadReadTime_);
 
     if (spanDuration_ <= 0 || spanDuration_ >= MAX_SPAN_DURATION_IN_NANO) {
@@ -464,7 +464,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
         __func__, ret, dstBufferFd_);
     InitAudiobuffer(true);
 
-    AUDIO_INFO_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);
+    AUDIO_DEBUG_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);
     return SUCCESS;
 }
 
@@ -529,7 +529,7 @@ void AudioEndpointInner::RecordReSyncPosition()
     int64_t writeTime = 0;
     CHECK_AND_RETURN_LOG(GetDeviceHandleInfo(curHdiWritePos, writeTime),
         "%{public}s get device handle info fail.", __func__);
-    AUDIO_INFO_LOG("%{public}s get capturer info, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64".",
+    AUDIO_DEBUG_LOG("%{public}s get capturer info, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64".",
         __func__, curHdiWritePos, writeTime);
     int64_t temp = ClockTime::GetCurNano() - writeTime;
     if (temp > spanDuration_) {
@@ -550,7 +550,6 @@ void AudioEndpointInner::RecordReSyncPosition()
     CHECK_AND_RETURN_LOG(nextReadSapn != nullptr, "GetSpanInfo failed.");
     nextReadSapn->offsetInFrame = nextDstReadPos;
     nextReadSapn->spanStatus = SpanStatus::SPAN_WRITE_DONE;
-    AUDIO_INFO_LOG("%{public}s end.", __func__);
 }
 
 void AudioEndpointInner::ReSyncPosition()
@@ -609,7 +608,7 @@ bool AudioEndpointInner::StartDevice()
     needReSyncPosition_ = true;
     endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
     workThreadCV_.notify_all();
-    AUDIO_INFO_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     return true;
 }
 
@@ -747,14 +746,14 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         workThreadCV_.wait(lock, [this] {
             return endpointStatus_ != STARTING;
         });
-        AUDIO_INFO_LOG("LinkProcessStream wait start end.");
+        AUDIO_DEBUG_LOG("LinkProcessStream wait start end.");
     }
 
     if (endpointStatus_ == RUNNING) {
         std::lock_guard<std::mutex> lock(listLock_);
         processList_.push_back(processStream);
         processBufferList_.push_back(processBuffer);
-        AUDIO_INFO_LOG("LinkProcessStream success.");
+        AUDIO_DEBUG_LOG("LinkProcessStream success.");
         return SUCCESS;
     }
 
@@ -772,7 +771,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
             processBufferList_.push_back(processBuffer);
         }
         if (!needEndpointRunning) {
-            AUDIO_INFO_LOG("LinkProcessStream success, process stream status is not running.");
+            AUDIO_DEBUG_LOG("LinkProcessStream success, process stream status is not running.");
             return SUCCESS;
         }
         // needEndpointRunning = true
@@ -783,7 +782,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
             // KeepWorkloopRunning will wait on IDEL
             StartDevice();
         }
-        AUDIO_INFO_LOG("LinkProcessStream success.");
+        AUDIO_DEBUG_LOG("LinkProcessStream success.");
         return SUCCESS;
     }
 
@@ -817,7 +816,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         endpointStatus_ = UNLINKED;
     }
 
-    AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
+    AUDIO_DEBUG_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
     return SUCCESS;
 }
 
@@ -1121,7 +1120,6 @@ void AudioEndpointInner::AsyncGetPosTime()
             timeInNano_ = handleTime;
         }
     }
-    AUDIO_INFO_LOG("AsyncGetPosTime thread end.");
 }
 
 std::string AudioEndpointInner::GetStatusStr(EndpointStatus status)
@@ -1179,7 +1177,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
         GetStatusStr(targetStatus).c_str());
     threadStatus_ = WAITTING;
     workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT));
-    AUDIO_INFO_LOG("Wait end. Cur is %{public}s now, target is %{public}s...", GetStatusStr(endpointStatus_).c_str(),
+    AUDIO_DEBUG_LOG("Wait end. Cur is %{public}s now, target is %{public}s...", GetStatusStr(endpointStatus_).c_str(),
         GetStatusStr(targetStatus).c_str());
 
     return false;
@@ -1305,7 +1303,6 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
-    AUDIO_INFO_LOG("Record endpoint work loop fuc end");
 }
 
 void AudioEndpointInner::EndpointWorkLoopFuc()
@@ -1358,7 +1355,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
-    AUDIO_INFO_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+    AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

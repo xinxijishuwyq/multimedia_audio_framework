@@ -1336,7 +1336,7 @@ napi_value AudioCapturerNapi::GetState(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
 
-    HiLog::Info(LABEL, "AudioCapturerNapi: GetState Complete, Current state: %{public}d", capturerState);
+    HiLog::Debug(LABEL, "AudioCapturerNapi: GetState Complete, Current state: %{public}d", capturerState);
     return jsResult;
 }
 

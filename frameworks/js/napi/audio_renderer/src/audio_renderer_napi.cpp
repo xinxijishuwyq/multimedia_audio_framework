@@ -90,7 +90,7 @@ void AudioRendererNapi::Destructor(napi_env env, void *nativeObject, void *final
         delete obj;
         obj = nullptr;
     }
-    AUDIO_INFO_LOG("AudioRendererNapi::Destructor is successful");
+    AUDIO_INFO_LOG("Destructor is successful");
 }
 
 napi_status AudioRendererNapi::AddNamedProperty(napi_env env, napi_value object,
@@ -579,7 +579,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
         CHECK_AND_RETURN_RET_LOG(rendererNapi->callbackNapi_ != nullptr, result, "No memory");
         int32_t ret = rendererNapi->audioRenderer_->SetRendererCallback(rendererNapi->callbackNapi_);
         if (ret) {
-            AUDIO_DEBUG_LOG("AudioRendererNapi::Construct SetRendererCallback failed");
+            AUDIO_DEBUG_LOG("Construct SetRendererCallback failed");
         }
     }
 
@@ -911,7 +911,7 @@ void AudioRendererNapi::StopAsyncCallbackComplete(napi_env env, napi_status stat
         delete asyncContext;
         asyncContext = nullptr;
     } else {
-            HiLog::Error(LABEL, "ERROR: AudioRendererAsyncContext* is Null!");
+        HiLog::Error(LABEL, "ERROR: AudioRendererAsyncContext* is Null!");
     }
 }
 
@@ -2335,7 +2335,7 @@ napi_value AudioRendererNapi::GetState(napi_env env, napi_callback_info info)
     status = napi_create_int32(env, rendererState, &jsResult);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, undefinedResult, "napi_create_int32 error");
 
-    AUDIO_INFO_LOG("AudioRendererNapi: GetState Complete, Current state: %{public}d", rendererState);
+    AUDIO_DEBUG_LOG("GetState Complete, Current state: %{public}d", rendererState);
     return jsResult;
 }
 
@@ -2981,7 +2981,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
         rendererNapi->rendererPolicyServiceDiedCallbackNapi_ =
             std::make_shared<AudioRendererPolicyServiceDiedCallbackNapi>(rendererNapi);
         if (!rendererNapi->rendererPolicyServiceDiedCallbackNapi_) {
-            AUDIO_ERR_LOG("AudioRendererNapi: Memory Allocation Failed !!");
+            AUDIO_ERR_LOG("Memory Allocation Failed !!");
             return;
         }
 
@@ -2989,7 +2989,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
             rendererNapi->audioRenderer_->RegisterAudioPolicyServerDiedCb(getpid(),
                 rendererNapi->rendererPolicyServiceDiedCallbackNapi_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioRendererNapi: Registering of AudioPolicyService Died Change Callback Failed");
+            AUDIO_ERR_LOG("Registering of AudioPolicyService Died Change Callback Failed");
             return;
         }
     }
@@ -2998,7 +2998,7 @@ void AudioRendererNapi::RegisterRendererDeviceChangeCallback(napi_env env, napi_
         std::static_pointer_cast<AudioRendererDeviceChangeCallbackNapi>(
             rendererNapi->rendererDeviceChangeCallbackNapi_);
     cb->AddCallbackReference(argv[PARAM1]);
-    AUDIO_INFO_LOG("AudioRendererNapi::RegisterRendererStateChangeCallback is successful");
+    AUDIO_INFO_LOG("RegisterRendererStateChangeCallback is successful");
 }
 
 void AudioRendererNapi::UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc,
@@ -3028,18 +3028,18 @@ void AudioRendererNapi::UnregisterRendererDeviceChangeCallback(napi_env env, siz
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {
         int32_t ret = rendererNapi->audioRenderer_->UnregisterAudioRendererEventListener(getpid());
         if (ret) {
-            AUDIO_ERR_LOG("AudioRendererNapi: Unregistering of Renderer devuce Change Callback Failed");
+            AUDIO_ERR_LOG("Unregistering of Renderer devuce Change Callback Failed");
             return;
         }
 
         ret = rendererNapi->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
         if (ret) {
-            AUDIO_ERR_LOG("AudioRendererNapi: UnregisterAudioPolicyServerDiedCb Failed");
+            AUDIO_ERR_LOG("UnregisterAudioPolicyServerDiedCb Failed");
             return;
         }
         rendererNapi->DestroyNAPICallbacks();
     }
-    AUDIO_INFO_LOG("AudioRendererNapi::UnegisterRendererDeviceChangeCallback is successful");
+    AUDIO_INFO_LOG("UnegisterRendererDeviceChangeCallback is successful");
 }
 
 void AudioRendererNapi::DestroyNAPICallbacks()

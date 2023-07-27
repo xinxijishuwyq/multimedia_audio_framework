@@ -28,12 +28,12 @@ namespace AudioStandard {
 AudioRendererPolicyServiceDiedCallbackNapi::AudioRendererPolicyServiceDiedCallbackNapi(AudioRendererNapi *rendererNapi)
     : rendererNapi_(rendererNapi)
 {
-    AUDIO_INFO_LOG("AudioRendererPolicyServiceDiedCallbackNapi: instance create");
+    AUDIO_INFO_LOG("instance create");
 }
 
 AudioRendererPolicyServiceDiedCallbackNapi::~AudioRendererPolicyServiceDiedCallbackNapi()
 {
-    AUDIO_INFO_LOG("AudioRendererPolicyServiceDiedCallbackNapi: instance destroy");
+    AUDIO_INFO_LOG("instance destroy");
 }
 
 void AudioRendererPolicyServiceDiedCallbackNapi::OnAudioPolicyServiceDied()

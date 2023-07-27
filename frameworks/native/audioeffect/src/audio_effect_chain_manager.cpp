@@ -450,8 +450,8 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 
     isInitialized_ = true;
     AUDIO_INFO_LOG("EffectToLibraryEntryMap size %{public}zu", EffectToLibraryEntryMap_.size());
-    AUDIO_INFO_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
-    AUDIO_INFO_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
+    AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
+    AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
 }
 
@@ -572,12 +572,11 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
 
 void AudioEffectChainManager::Dump()
 {
-    AUDIO_INFO_LOG("<-------- AudioEffectChainManager::Dump START -------->");
+    AUDIO_INFO_LOG("Dump START");
     for (auto item = SceneTypeToEffectChainMap_.begin(); item != SceneTypeToEffectChainMap_.end(); ++item) {
         AudioEffectChain *audioEffectChain = item->second;
         audioEffectChain->Dump();
     }
-    AUDIO_INFO_LOG("<-------- AudioEffectChainManager::Dump END -------->");
 }
 
 }

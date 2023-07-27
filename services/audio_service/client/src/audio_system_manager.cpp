@@ -489,7 +489,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
 int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback)
 {
-    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("SetDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -501,7 +501,7 @@ int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
 
 int32_t AudioSystemManager::UnsetDeviceChangeCallback(DeviceFlag flag)
 {
-    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, flag);
 }
@@ -873,7 +873,7 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_ptr<AudioManagerCallback> &callback)
 {
     int32_t clientId = GetCallingPid();
-    AUDIO_INFO_LOG("AudioSystemManager:: SetAudioManagerInterruptCallback client id: %{public}d", clientId);
+    AUDIO_INFO_LOG("SetAudioManagerInterruptCallback client id: %{public}d", clientId);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("AudioSystemManager::callback is null");
         return ERR_INVALID_PARAM;
@@ -912,7 +912,7 @@ int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_p
 int32_t AudioSystemManager::UnsetAudioManagerInterruptCallback()
 {
     int32_t clientId = GetCallingPid();
-    AUDIO_INFO_LOG("AudioSystemManager:: UnsetAudioManagerInterruptCallback client id: %{public}d", clientId);
+    AUDIO_INFO_LOG("UnsetAudioManagerInterruptCallback client id: %{public}d", clientId);
 
     int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
     if (audioInterruptCallback_ != nullptr) {
@@ -926,7 +926,7 @@ int32_t AudioSystemManager::UnsetAudioManagerInterruptCallback()
 int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterrupt)
 {
     int32_t clientId = GetCallingPid();
-    AUDIO_INFO_LOG("AudioSystemManager:: RequestAudioFocus client id: %{public}d", clientId);
+    AUDIO_INFO_LOG("RequestAudioFocus client id: %{public}d", clientId);
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.contentType >= CONTENT_TYPE_UNKNOWN
                              && audioInterrupt.contentType <= CONTENT_TYPE_ULTRASONIC, ERR_INVALID_PARAM,
                              "Invalid content type");
@@ -942,7 +942,7 @@ int32_t AudioSystemManager::RequestAudioFocus(const AudioInterrupt &audioInterru
 int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterrupt)
 {
     int32_t clientId = GetCallingPid();
-    AUDIO_INFO_LOG("AudioSystemManager:: AbandonAudioFocus client id: %{public}d", clientId);
+    AUDIO_INFO_LOG("AbandonAudioFocus client id: %{public}d", clientId);
     CHECK_AND_RETURN_RET_LOG(audioInterrupt.contentType >= CONTENT_TYPE_UNKNOWN
                              && audioInterrupt.contentType <= CONTENT_TYPE_ULTRASONIC, ERR_INVALID_PARAM,
                              "Invalid content type");
@@ -1026,7 +1026,7 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
 
 bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
 {
-    AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : foncusType");
+    AUDIO_INFO_LOG("RequestIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
     int32_t clientId = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
@@ -1035,12 +1035,12 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
     audioInterrupt.sessionID = clientId;
     int32_t result = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
 
-    AUDIO_INFO_LOG("AudioSystemManager: requestIndependentInterrupt : result -> %{public}d", result);
+    AUDIO_DEBUG_LOG("RequestIndependentInterrupt : result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
 }
 bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
 {
-    AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : foncusType");
+    AUDIO_INFO_LOG("AbandonIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
     int32_t clientId = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
@@ -1048,7 +1048,7 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;
     audioInterrupt.sessionID = clientId;
     int32_t result = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
-    AUDIO_INFO_LOG("AudioSystemManager: abandonIndependentInterrupt : result -> %{public}d", result);
+    AUDIO_DEBUG_LOG("AbandonIndependentInterrupt : result -> %{public}d", result);
     return (result == SUCCESS) ? true:false;
 }
 
@@ -1065,7 +1065,7 @@ uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
 int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, AudioStreamType audioStreamType)
 {
-    AUDIO_INFO_LOG("AudioSystemManager::UpdateStreamState::clientUid:%{public}d streamSetState:%{public}d",
+    AUDIO_INFO_LOG("UpdateStreamState::clientUid:%{public}d streamSetState:%{public}d",
         clientUid, streamSetState);
     int32_t result = 0;
     
@@ -1142,10 +1142,10 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP:
         case OHOS::AudioStandard::DEVICE_TYPE_MAX:
-            AUDIO_INFO_LOG("AudioSystemManager: GetPinValueFromType :don't supported the device type");
+            AUDIO_INFO_LOG("GetPinValueFromType :don't supported the device type");
             break;
         default:
-            AUDIO_INFO_LOG("AudioSystemManager: GetPinValueFromType : invalid input parameter");
+            AUDIO_INFO_LOG("GetPinValueFromType : invalid input parameter");
             break;
     }
     return pin;
@@ -1188,7 +1188,7 @@ DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
             type = DEVICE_TYPE_DEFAULT;
             break;
         default:
-            AUDIO_INFO_LOG("AudioSystemManager: GetTypeValueFromPin : invalid input parameter");
+            AUDIO_INFO_LOG("GetTypeValueFromPin : invalid input parameter");
             break;
     }
     return type;

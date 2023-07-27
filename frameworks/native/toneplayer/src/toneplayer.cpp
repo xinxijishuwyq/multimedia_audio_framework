@@ -453,7 +453,7 @@ bool TonePlayerPrivate::CheckToneContinuity()
     } else {
         retVal = true;
     }
-    AUDIO_INFO_LOG("CheckToneContinuity End loopCounter_: %{public}d, currSegment_: %{public}d currCount_: %{public}d",
+    AUDIO_DEBUG_LOG("CheckToneContinuity End loopCounter_: %{public}d, currSegment_: %{public}d currCount_: %{public}d",
         loopCounter_, currSegment_, currCount_);
     return retVal;
 }
@@ -637,7 +637,7 @@ bool TonePlayerPrivate::InitToneWaveInfo()
     } else {
         nextSegSample_ = (toneInfo_->segments[0].duration * samplingRate_) / C1000MS;
     }
-    AUDIO_INFO_LOG("Prepare wave, nextSegSample_: %{public}d", nextSegSample_);
+    AUDIO_DEBUG_LOG("Prepare wave, nextSegSample_: %{public}d", nextSegSample_);
     return true;
 }
 
