@@ -49,6 +49,7 @@ void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParce
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceRole);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceId);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelMasks);
+    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelIndexMasks);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding);
     data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format);

@@ -41,6 +41,7 @@ public:
     DeviceRole deviceRole_;
     int32_t deviceId_;
     int32_t channelMasks_;
+    int32_t channelIndexMasks_;
     std::string deviceName_;
     std::string macAddress_;
     int32_t interruptGroupId_;
@@ -60,7 +61,8 @@ public:
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
-    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask);
+    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask,
+        int32_t channelIndexMasks = 0);
 };
 
 class InterruptGroupInfo;

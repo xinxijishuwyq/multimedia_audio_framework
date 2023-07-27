@@ -300,7 +300,11 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
 {
-    return audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);
+    int32_t status = audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);
+    if (status > 0) {
+        streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
+    }
+    return status;
 }
 
 
@@ -1059,9 +1063,14 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
 int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
 {
     AUDIO_DEBUG_LOG("SetMicrophoneMute state[%{public}d]", isMute);
+    int32_t status;
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-    return gsp->SetMicrophoneMute(isMute);
+    status = gsp->SetMicrophoneMute(isMute);
+    if (status == SUCCESS) {
+        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMute);
+    }
+    return status;
 }
 
 bool AudioPolicyService::IsMicrophoneMute()
@@ -2526,6 +2535,7 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.deviceRole = desc->deviceRole_;
     deviceInfo.deviceId = desc->deviceId_;
     deviceInfo.channelMasks = desc->channelMasks_;
+    deviceInfo.channelIndexMasks = desc->channelIndexMasks_;
     deviceInfo.displayName = desc->displayName_;
 
     if (hasBTPermission) {

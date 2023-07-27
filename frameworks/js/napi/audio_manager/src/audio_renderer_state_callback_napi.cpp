@@ -122,6 +122,12 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
     napi_set_element(env, channelMasks, 0, value);
     napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
 
+    napi_value channelIndexMasks;
+    napi_create_array_with_length(env, 1, &channelIndexMasks);
+    napi_create_int32(env, deviceInfo.channelIndexMasks, &value);
+    napi_set_element(env, channelIndexMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelIndexMasks", channelIndexMasks);
+
     napi_set_element(env, jsDeviceDescriptorsObj, 0, valueParam);
     napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", jsDeviceDescriptorsObj);
 }

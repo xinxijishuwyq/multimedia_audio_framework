@@ -50,6 +50,7 @@ public:
     float GetLowPowerVolume(int32_t streamId);
     float GetSingleStreamVolume(int32_t streamId);
     bool GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo);
+    int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
 private:
     AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;

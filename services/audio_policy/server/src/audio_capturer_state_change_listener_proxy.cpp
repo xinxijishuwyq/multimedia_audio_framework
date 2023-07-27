@@ -41,11 +41,13 @@ void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParce
     data.WriteInt32(capturerChangeInfo->clientUID);
     data.WriteInt32(capturerChangeInfo->capturerInfo.sourceType);
     data.WriteInt32(capturerChangeInfo->capturerInfo.capturerFlags);
+    data.WriteBool(capturerChangeInfo->muted);
 
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceType);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceRole);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceId);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelMasks);
+    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelIndexMasks);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding);
     data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format);

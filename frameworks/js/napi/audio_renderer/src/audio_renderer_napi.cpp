@@ -436,6 +436,18 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, co
     napi_create_int32(env, deviceInfo.channelMasks, &value);
     napi_set_element(env, channelMasks, 0, value);
     napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
+
+    napi_value channelIndexMasks;
+    napi_create_array_with_length(env, 1, &channelIndexMasks);
+    napi_create_int32(env, deviceInfo.channelIndexMasks, &value);
+    napi_set_element(env, channelIndexMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelIndexMasks", channelIndexMasks);
+
+    napi_value encodingTypes;
+    napi_create_array_with_length(env, 1, &encodingTypes);
+    napi_create_int32(env, deviceInfo.audioStreamInfo.encoding, &value);
+    napi_set_element(env, encodingTypes, 0, value);
+    napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
 }
 
 napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
@@ -472,6 +484,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getUnderflowCount", GetUnderflowCount),
         DECLARE_NAPI_FUNCTION("getAudioEffectMode", GetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
+        DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
         DECLARE_NAPI_GETTER("state", GetState)
     };
 
@@ -3060,6 +3073,72 @@ void AudioRendererNapi::DestroyCallbacks()
     rendererDeviceChangeCallbackNapi_->RemoveAllCallbacks();
     audioRenderer_->DestroyAudioRendererStateCallback();
     DestroyNAPICallbacks();
+}
+
+void AudioRendererNapi::AsyncSetChannelBlendMode(napi_env env, void *data)
+{
+    auto context = static_cast<AudioRendererAsyncContext *>(data);
+    if (!CheckContextStatus(context)) {
+        return;
+    }
+    if (context->status == SUCCESS) {
+        ChannelBlendMode channelBlendMode = static_cast<ChannelBlendMode>(context->channelBlendMode);
+        context->objectInfo->audioRenderer_->SetChannelBlendMode(channelBlendMode);
+        context->status = SUCCESS;
+    }
+}
+
+napi_value AudioRendererNapi::SetChannelBlendMode(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    const int32_t refCount = 1;
+    napi_value result = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+
+    unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
+    THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INVALID_PARAM);
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
+    if (status != napi_ok || asyncContext->objectInfo == nullptr) {
+        return result;
+    }
+    for (size_t i = PARAM0; i < argc; i++) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[i], &valueType);
+
+        if (i == PARAM0 && valueType == napi_number) {
+            napi_get_value_int32(env, argv[PARAM0], &asyncContext->channelBlendMode);
+            if (!AudioCommonNapi::IsLegalInputArgumentChannelBlendMode(asyncContext->channelBlendMode)) {
+                asyncContext->status = asyncContext->status ==
+                    NAPI_ERR_INVALID_PARAM ? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED;
+            }
+        } else if (i == PARAM1) {
+            if (valueType == napi_function) {
+                napi_create_reference(env, argv[i], refCount, &asyncContext->callbackRef);
+            }
+            break;
+        } else {
+            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+        }
+    }
+
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "SetChannelBlendMode", NAPI_AUTO_LENGTH, &resource);
+    status = napi_create_async_work(env, nullptr, resource, AsyncSetChannelBlendMode,
+        VoidAsyncCallbackComplete, static_cast<void *>(asyncContext.get()), &asyncContext->work);
+    if (status != napi_ok) {
+        result = nullptr;
+    } else {
+        NAPI_CALL(env, napi_queue_async_work(env, asyncContext->work));
+        asyncContext.release();
+    }
+    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS

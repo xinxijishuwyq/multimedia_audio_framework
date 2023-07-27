@@ -89,6 +89,7 @@ public:
     AudioEffectMode GetAudioEffectMode() const override;
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
+    void SetChannelBlendMode(ChannelBlendMode blendMode) override;
 
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};

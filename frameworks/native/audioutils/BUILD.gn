@@ -26,7 +26,10 @@ ohos_shared_library("audio_utils") {
     "../../../interfaces/inner_api/native/audiocommon/include/",
   ]
 
-  sources = [ "./src/audio_utils.cpp" ]
+  sources = [
+    "./src/audio_channel_blend.cpp",
+    "./src/audio_utils.cpp",
+  ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",

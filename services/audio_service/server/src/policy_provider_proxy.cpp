@@ -46,6 +46,7 @@ int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &conf
     deviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
     deviceInfo.deviceId = reply.ReadInt32();
     deviceInfo.channelMasks = reply.ReadInt32();
+    deviceInfo.channelIndexMasks = reply.ReadInt32();
     deviceInfo.deviceName = reply.ReadString();
     deviceInfo.macAddress = reply.ReadString();
 

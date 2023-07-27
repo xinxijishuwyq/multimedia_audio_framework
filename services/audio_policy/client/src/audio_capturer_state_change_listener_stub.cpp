@@ -42,11 +42,13 @@ void AudioCapturerStateChangeListenerStub::ReadAudioCapturerChangeInfo(MessagePa
     capturerChangeInfo->clientUID = data.ReadInt32();
     capturerChangeInfo->capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
     capturerChangeInfo->capturerInfo.capturerFlags = data.ReadInt32();
+    capturerChangeInfo->muted = data.ReadBool();
 
     capturerChangeInfo->inputDeviceInfo.deviceType = static_cast<DeviceType>(data.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceRole = static_cast<DeviceRole>(data.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceId = data.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.channelMasks = data.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.channelIndexMasks = data.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate
         = static_cast<AudioSamplingRate>(data.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding

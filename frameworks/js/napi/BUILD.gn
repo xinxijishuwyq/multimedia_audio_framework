@@ -37,6 +37,8 @@ ohos_shared_library("audio") {
 
   sources = [
     "audio_capturer/src/audio_capturer_callback_napi.cpp",
+    "audio_capturer/src/audio_capturer_device_change_callback_napi.cpp",
+    "audio_capturer/src/audio_capturer_info_change_callback_napi.cpp",
     "audio_capturer/src/audio_capturer_napi.cpp",
     "audio_capturer/src/audio_parameters_napi.cpp",
     "audio_capturer/src/capturer_period_position_callback_napi.cpp",

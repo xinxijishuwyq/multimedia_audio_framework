@@ -769,6 +769,15 @@ public:
      * @since 10
      */
     virtual void DestroyAudioRendererStateCallback() = 0;
+
+    /**
+     * @brief Sets channel blend mode for audio stream.
+     *
+     * @param Channel blend mode
+     * @since 11
+     */
+    virtual void SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
+
     virtual ~AudioRenderer();
 private:
     static std::mutex createRendererMutex_;
