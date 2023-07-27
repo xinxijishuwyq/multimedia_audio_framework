@@ -206,7 +206,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return AUDIO_OK;
         }
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS): {
-            AUDIO_INFO_LOG("CREATE_AUDIOPROCESS AudioManagerStub");
+            AUDIO_DEBUG_LOG("CREATE_AUDIOPROCESS AudioManagerStub");
             AudioProcessConfig config;
             ProcessConfig::ReadConfigFromParcel(config, data);
             sptr<IRemoteObject> process = CreateAudioProcess(config);

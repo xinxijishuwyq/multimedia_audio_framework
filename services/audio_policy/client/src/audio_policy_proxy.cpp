@@ -222,17 +222,17 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     spToneInfo->segmentCnt = reply.ReadUint32();
     spToneInfo->repeatCnt = reply.ReadUint32();
     spToneInfo->repeatSegment = reply.ReadUint32();
-    AUDIO_INFO_LOG("segmentCnt: %{public}d, repeatCnt: %{public}d, repeatSegment: %{public}d",
+    AUDIO_DEBUG_LOG("segmentCnt: %{public}d, repeatCnt: %{public}d, repeatSegment: %{public}d",
         spToneInfo->segmentCnt, spToneInfo->repeatCnt, spToneInfo->repeatSegment);
     for (uint32_t i = 0; i<spToneInfo->segmentCnt; i++) {
         spToneInfo->segments[i].duration = reply.ReadUint32();
         spToneInfo->segments[i].loopCnt = reply.ReadUint16();
         spToneInfo->segments[i].loopIndx = reply.ReadUint16();
-        AUDIO_INFO_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, seg[%{public}d].loopIndex: %{public}d",
+        AUDIO_DEBUG_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, seg[%{public}d].loopIndex: %{public}d",
             i, spToneInfo->segments[i].duration, i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
         for (uint32_t j = 0; j < TONEINFO_MAX_WAVES+1; j++) {
             spToneInfo->segments[i].waveFreq[j] = reply.ReadUint16();
-            AUDIO_INFO_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
+            AUDIO_DEBUG_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
         }
     }
     AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
@@ -1389,7 +1389,6 @@ bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissio
 
 int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
-    AUDIO_ERR_LOG("ReconfigureAudioChannel proxy %{public}d, %{public}d", count, deviceType);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1418,7 +1417,6 @@ int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clien
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener");
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
         return ERROR;
@@ -1446,7 +1444,6 @@ int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t cli
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::UnregisterAudioRendererEventListener");
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("UnregisterAudioRendererEventListener WriteInterfaceToken failed");
         return ERROR;
@@ -1599,8 +1596,6 @@ int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clien
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterAudioCapturerEventListener");
-
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioCapturerEventListener:: WriteInterfaceToken failed");
         return ERROR;
@@ -1628,8 +1623,6 @@ int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t cli
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::UnregisterAudioCapturerEventListener");
-
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy:: WriteInterfaceToken failed");
         return ERROR;
@@ -1653,7 +1646,6 @@ int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterTracker");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterTracker WriteInterfaceToken failed");
@@ -1684,8 +1676,6 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-
-    AUDIO_INFO_LOG("AudioPolicyProxy::UpdateTracker");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("UpdateTracker: WriteInterfaceToken failed");

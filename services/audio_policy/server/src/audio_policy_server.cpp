@@ -972,7 +972,6 @@ int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const Audio
         AbandonAudioFocus(clientOnFocus_, *focussedAudioInterruptInfo_);
     }
 
-    AUDIO_INFO_LOG("Grant audio focus");
     NotifyFocusGranted(clientId, audioInterrupt);
 
     return SUCCESS;
@@ -1030,7 +1029,7 @@ int32_t AudioPolicyServer::NotifyFocusAbandoned(const int32_t clientId, const Au
     std::shared_ptr<AudioInterruptCallback> interruptCb = nullptr;
     interruptCb = amInterruptCbsMap_[clientId];
     if (!interruptCb) {
-        AUDIO_INFO_LOG("Notify failed, callback not present");
+        AUDIO_ERR_LOG("Notify failed, callback not present");
         return ERR_INVALID_PARAM;
     }
 
@@ -1172,7 +1171,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     AUDIO_INFO_LOG("ActivateAudioInterrupt::[audioInterrupt] streamType: %{public}d, sessionID: %{public}u, "\
         "isPlay: %{public}d, sourceType: %{public}d", streamType, audioInterrupt.sessionID,
         (audioInterrupt.audioFocusType).isPlay, (audioInterrupt.audioFocusType).sourceType);
-    AUDIO_INFO_LOG("ActivateAudioInterrupt::streamUsage: %{public}d, contentType: %{public}d, audioScene: %{public}d",
+    AUDIO_DEBUG_LOG("ActivateAudioInterrupt::streamUsage: %{public}d, contentType: %{public}d, audioScene: %{public}d",
         audioInterrupt.streamUsage, audioInterrupt.contentType, GetAudioScene());
 
     if (!mPolicyService.IsAudioInterruptEnabled()) {

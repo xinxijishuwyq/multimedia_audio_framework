@@ -259,7 +259,7 @@ void AudioStreamMgrNapi::GetCurrentCapturerChangeInfosCallbackComplete(napi_env 
 
 napi_value AudioStreamMgrNapi::Init(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("AudioStreamMgrNapi::Init");
+    AUDIO_INFO_LOG("Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
@@ -316,7 +316,7 @@ napi_value AudioStreamMgrNapi::CreateStreamManagerWrapper(napi_env env)
 
 napi_value AudioStreamMgrNapi::Construct(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioStreamMgrNapi::Construct");
+    AUDIO_INFO_LOG("Construct");
     napi_status status;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -364,7 +364,7 @@ void AudioStreamMgrNapi::RegisterRendererStateChangeCallback(napi_env env, napi_
     std::static_pointer_cast<AudioRendererStateCallbackNapi>(streamMgrNapi->rendererStateChangeCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
 
-    AUDIO_INFO_LOG("AudioStreamMgrNapi::OnRendererStateChangeCallback is successful");
+    AUDIO_INFO_LOG("OnRendererStateChangeCallback is successful");
 }
 
 void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_value* args,
@@ -373,7 +373,7 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
     if (!streamMgrNapi->capturerStateChangeCallbackNapi_) {
         streamMgrNapi->capturerStateChangeCallbackNapi_ = std::make_shared<AudioCapturerStateCallbackNapi>(env);
         if (!streamMgrNapi->capturerStateChangeCallbackNapi_) {
-            AUDIO_ERR_LOG("AudioStreamMgrNapi: Memory Allocation Failed !!");
+            AUDIO_ERR_LOG("Memory Allocation Failed !!");
             return;
         }
 
@@ -381,7 +381,7 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
             streamMgrNapi->audioStreamMngr_->RegisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_,
             streamMgrNapi->capturerStateChangeCallbackNapi_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioStreamMgrNapi: Registering of Capturer State Change Callback Failed");
+            AUDIO_ERR_LOG("Registering of Capturer State Change Callback Failed");
             return;
         }
     }
@@ -390,7 +390,7 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
     std::static_pointer_cast<AudioCapturerStateCallbackNapi>(streamMgrNapi->capturerStateChangeCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
 
-    AUDIO_INFO_LOG("AudioStreamMgrNapi::OnCapturerStateChangeCallback is successful");
+    AUDIO_INFO_LOG("OnCapturerStateChangeCallback is successful");
 }
 
 void AudioStreamMgrNapi::RegisterCallback(napi_env env, napi_value jsThis,
@@ -445,11 +445,11 @@ napi_value AudioStreamMgrNapi::On(napi_env env, napi_callback_info info)
 
 void AudioStreamMgrNapi::UnregisterCallback(napi_env env, napi_value jsThis, const std::string& cbName)
 {
-    AUDIO_INFO_LOG("AudioStreamMgrNapi::UnregisterCallback");
+    AUDIO_INFO_LOG("UnregisterCallback");
     AudioStreamMgrNapi *streamMgrNapi = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&streamMgrNapi));
     if ((status != napi_ok) || (streamMgrNapi == nullptr) || (streamMgrNapi->audioStreamMngr_ == nullptr)) {
-        AUDIO_ERR_LOG("AudioStreamMgrNapi::Failed to retrieve stream mgr napi instance.");
+        AUDIO_ERR_LOG("Failed to retrieve stream mgr napi instance.");
         return;
     }
 
@@ -457,28 +457,28 @@ void AudioStreamMgrNapi::UnregisterCallback(napi_env env, napi_value jsThis, con
         int32_t ret = streamMgrNapi->audioStreamMngr_->
             UnregisterAudioRendererEventListener(streamMgrNapi->cachedClientId_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioStreamMgrNapi:UnRegistering of Renderer State Change Callback Failed");
+            AUDIO_ERR_LOG("UnRegistering of Renderer State Change Callback Failed");
             return;
         }
         if (streamMgrNapi->rendererStateChangeCallbackNapi_ != nullptr) {
             streamMgrNapi->rendererStateChangeCallbackNapi_.reset();
             streamMgrNapi->rendererStateChangeCallbackNapi_ = nullptr;
         }
-        AUDIO_INFO_LOG("AudioStreamMgrNapi:UnRegistering of renderer State Change Callback successful");
+        AUDIO_INFO_LOG("UnRegistering of renderer State Change Callback successful");
     } else if (!cbName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
         int32_t ret = streamMgrNapi->audioStreamMngr_->
             UnregisterAudioCapturerEventListener(streamMgrNapi->cachedClientId_);
         if (ret) {
-            AUDIO_ERR_LOG("AudioStreamMgrNapi:UnRegistering of capturer State Change Callback Failed");
+            AUDIO_ERR_LOG("UnRegistering of capturer State Change Callback Failed");
             return;
         }
         if (streamMgrNapi->capturerStateChangeCallbackNapi_ != nullptr) {
             streamMgrNapi->capturerStateChangeCallbackNapi_.reset();
             streamMgrNapi->capturerStateChangeCallbackNapi_ = nullptr;
         }
-        AUDIO_INFO_LOG("AudioStreamMgrNapi:UnRegistering of capturer State Change Callback successful");
+        AUDIO_INFO_LOG("UnRegistering of capturer State Change Callback successful");
     } else {
-        AUDIO_ERR_LOG("AudioStreamMgrNapi::No such callback supported");
+        AUDIO_ERR_LOG("No such callback supported");
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
     }
 }

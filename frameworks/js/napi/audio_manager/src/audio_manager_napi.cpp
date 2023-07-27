@@ -521,7 +521,7 @@ template<typename T> napi_value AudioManagerNapi::CreatePropertyBase(napi_env en
 
 napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("AudioManagerNapi::Init");
+    AUDIO_INFO_LOG("Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
@@ -771,7 +771,7 @@ static void GetIntValueAsyncCallbackComplete(napi_env env, napi_status status, v
 
 napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioManagerNapi: RequestIndependentInterrupt");
+    AUDIO_INFO_LOG("RequestIndependentInterrupt");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -836,7 +836,7 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
 
 napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioManagerNapi: AbandonIndependentInterrupt");
+    AUDIO_INFO_LOG("AbandonIndependentInterrupt");
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
@@ -2287,7 +2287,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
-    AUDIO_INFO_LOG("AudioManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
 
     AudioManagerNapi *managerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
@@ -2427,7 +2427,7 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
-    AUDIO_INFO_LOG("AudioManagerNapi::Off callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("Off callbackName: %{public}s", callbackName.c_str());
 
     AudioManagerNapi *managerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
@@ -2436,13 +2436,13 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
     if (!callbackName.compare(INTERRUPT_CALLBACK_NAME) && argCount > ARGS_ONE) {
         napi_valuetype paramArg1 = napi_undefined;
         if (napi_typeof(env, args[PARAM1], &paramArg1) != napi_ok || paramArg1 != napi_object) {
-            AUDIO_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 2");
+            AUDIO_ERR_LOG("Off type mismatch for parameter 2");
             AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }
         if ((argCount == ARGS_THREE) &&
             (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function)) {
-            AUDIO_ERR_LOG("AudioManagerNapi::Off type mismatch for parameter 3");
+            AUDIO_ERR_LOG("Off type mismatch for parameter 3");
             AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }
@@ -2457,22 +2457,22 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
             }
             callbackCount = cb->GetInterruptCallbackListSize();
         }
-        AUDIO_INFO_LOG("AudioManagerNapi::Remove Callback Reference success");
+        AUDIO_INFO_LOG("Remove Callback Reference success");
         if (callbackCount == 0) {
             AudioInterrupt audioInterrupt;
             status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
             int32_t ret = managerNapi->audioMngr_->AbandonAudioFocus(audioInterrupt);
             if (ret) {
-                AUDIO_ERR_LOG("AudioManagerNapi::Off AbandonAudioFocus Failed");
+                AUDIO_ERR_LOG("Off AbandonAudioFocus Failed");
             }
             ret = managerNapi->audioMngr_->UnsetAudioManagerInterruptCallback();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
-                "AudioManagerNapi::Off UnsetAudioManagerInterruptCallback Failed");
+                "Off UnsetAudioManagerInterruptCallback Failed");
             if (managerNapi->interruptCallbackNapi_ != nullptr) {
                 managerNapi->interruptCallbackNapi_.reset();
                 managerNapi->interruptCallbackNapi_ = nullptr;
             }
-            AUDIO_INFO_LOG("AudioManagerNapi::Off Abandon Focus and UnSetAudioInterruptCallback success");
+            AUDIO_INFO_LOG("Off Abandon Focus and UnSetAudioInterruptCallback success");
         }
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterDeviceChangeCallback(env, args[PARAM1], managerNapi);

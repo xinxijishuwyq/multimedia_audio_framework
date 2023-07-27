@@ -78,7 +78,7 @@ void AudioRoutingManagerNapi::Destructor(napi_env env, void *nativeObject, void 
 
 napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("AudioRoutingManagerNapi::Init");
+    AUDIO_INFO_LOG("Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
@@ -138,7 +138,7 @@ napi_value AudioRoutingManagerNapi::CreateRoutingManagerWrapper(napi_env env)
 
 napi_value AudioRoutingManagerNapi::Construct(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioRoutingManagerNapi::Construct");
+    AUDIO_INFO_LOG("Construct");
     napi_status status;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -1123,7 +1123,7 @@ void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis, 
 
 napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("audioRoutingManagerNapi: On inter");
+    AUDIO_INFO_LOG("On inter");
 
     const size_t requireArgc = PARAM2;
     const size_t maxArgc = PARAM3;
@@ -1142,7 +1142,7 @@ napi_value AudioRoutingManagerNapi::On(napi_env env, napi_callback_info info)
     napi_typeof(env, args[0], &eventType);
     THROW_ERROR_ASSERT(env, eventType == napi_string, NAPI_ERR_INPUT_INVALID);
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
-    AUDIO_INFO_LOG("AaudioRoutingManagerNapi: On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
 
     if (argc == requireArgc) {
         napi_valuetype handler = napi_undefined;

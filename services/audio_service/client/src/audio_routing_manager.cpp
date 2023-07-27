@@ -62,7 +62,7 @@ int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererI
 int32_t AudioRoutingManager::SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferOutputDeviceChangeCallback>& callback)
 {
-    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -74,7 +74,7 @@ int32_t AudioRoutingManager::SetPreferOutputDeviceChangeCallback(AudioRendererIn
 
 int32_t AudioRoutingManager::UnsetPreferOutputDeviceChangeCallback()
 {
-    AUDIO_INFO_LOG("Entered AudioSystemManager::%{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().UnsetPreferOutputDeviceChangeCallback(clientId);
 }

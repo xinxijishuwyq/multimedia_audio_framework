@@ -25,12 +25,12 @@ namespace AudioStandard {
 AudioRendererCallbackNapi::AudioRendererCallbackNapi(napi_env env)
     : env_(env)
 {
-    AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: instance create");
+    AUDIO_DEBUG_LOG("instance create");
 }
 
 AudioRendererCallbackNapi::~AudioRendererCallbackNapi()
 {
-    AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: instance destroy");
+    AUDIO_DEBUG_LOG("instance destroy");
 }
 
 void AudioRendererCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
@@ -40,7 +40,7 @@ void AudioRendererCallbackNapi::SaveCallbackReference(const std::string &callbac
     const int32_t refCount = 1;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-                         "AudioRendererCallbackNapi: creating reference for callback fail");
+                         "creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
@@ -48,7 +48,7 @@ void AudioRendererCallbackNapi::SaveCallbackReference(const std::string &callbac
     } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
         stateChangeCallback_ = cb;
     } else {
-        AUDIO_ERR_LOG("AudioRendererCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
@@ -84,8 +84,8 @@ static void NativeInterruptEventToJsObj(const napi_env& env, napi_value& jsObj,
 void AudioRendererCallbackNapi::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: OnInterrupt is called");
-    AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: hintType: %{public}d", interruptEvent.hintType);
+    AUDIO_DEBUG_LOG("OnInterrupt is called");
+    AUDIO_DEBUG_LOG("hintType: %{public}d", interruptEvent.hintType);
     CHECK_AND_RETURN_LOG(interruptCallback_ != nullptr, "Cannot find the reference of interrupt callback");
 
     std::unique_ptr<AudioRendererJsCallback> cb = std::make_unique<AudioRendererJsCallback>();
@@ -106,11 +106,11 @@ void AudioRendererCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererCallbackNapi: OnJsCallBackInterrupt: No memory");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: No memory");
         return;
     }
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererCallbackNapi: OnJsCallBackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
         delete work;
         return;
     }
@@ -122,7 +122,7 @@ void AudioRendererCallbackNapi::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s cancelled", request.c_str());
 
@@ -157,8 +157,8 @@ void AudioRendererCallbackNapi::OnStateChange(const RendererState state,
     const StateChangeCmdType __attribute__((unused)) cmdType)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: OnStateChange is called");
-    AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: state: %{public}d", state);
+    AUDIO_DEBUG_LOG("OnStateChange is called");
+    AUDIO_DEBUG_LOG("state: %{public}d", state);
     CHECK_AND_RETURN_LOG(stateChangeCallback_ != nullptr, "Cannot find the reference of stateChange callback");
 
     std::unique_ptr<AudioRendererJsCallback> cb = std::make_unique<AudioRendererJsCallback>();
@@ -179,11 +179,11 @@ void AudioRendererCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioRen
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererCallbackNapi: OnJsCallbackStateChange: No memory");
+        AUDIO_ERR_LOG("OnJsCallbackStateChange: No memory");
         return;
     }
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererCallbackNapi: OnJsCallbackStateChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallbackStateChange: jsCb.get() is null");
         delete work;
         return;
     }
@@ -195,7 +195,7 @@ void AudioRendererCallbackNapi::OnJsCallbackStateChange(std::unique_ptr<AudioRen
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        AUDIO_DEBUG_LOG("AudioRendererCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("JsCallBack %{public}s, uv_queue_work start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s cancelled", request.c_str());
 

@@ -30,12 +30,12 @@ RendererDataRequestCallbackNapi::RendererDataRequestCallbackNapi(napi_env env, A
     : env_(env),
       rendererNapi_(rendererNapi)
 {
-    AUDIO_INFO_LOG("RendererDataRequestCallbackNapi: instance create");
+    AUDIO_INFO_LOG("instance create");
 }
 
 RendererDataRequestCallbackNapi::~RendererDataRequestCallbackNapi()
 {
-    AUDIO_INFO_LOG("RendererDataRequestCallbackNapi: instance destroy");
+    AUDIO_INFO_LOG("instance destroy");
 }
 
 void RendererDataRequestCallbackNapi::SaveCallbackReference(const std::string &callbackName, napi_value args)
@@ -45,20 +45,20 @@ void RendererDataRequestCallbackNapi::SaveCallbackReference(const std::string &c
     const int32_t refCount = 1;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-                         "RendererDataRequestCallbackNapi: creating reference for callback fail");
+                         "creating reference for callback fail");
 
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == RENDERER_DATA_REQUEST_CALLBACK_NAME) {
         rendererDataRequestCallback_ = cb;
     } else {
-        AUDIO_ERR_LOG("RendererDataRequestCallbackNapi: Unknown callback type: %{public}s", callbackName.c_str());
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
 }
 
 void RendererDataRequestCallbackNapi::OnWriteData(size_t length)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("RendererDataRequestCallbackNapi: onDataRequest enqueue added");
+    AUDIO_DEBUG_LOG("onDataRequest enqueue added");
     CHECK_AND_RETURN_LOG(rendererDataRequestCallback_ != nullptr, "Cannot find the reference of dataRequest callback");
     CHECK_AND_RETURN_LOG(rendererNapi_ != nullptr, "Cannot find the reference to audio renderer napi");
     std::unique_ptr<RendererDataRequestJsCallback> cb = std::make_unique<RendererDataRequestJsCallback>();
@@ -120,11 +120,11 @@ void RendererDataRequestCallbackNapi::OnJsRendererDataRequestCallback(
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
-        AUDIO_ERR_LOG("RendererDataRequestCallbackNapi: OnJsRendererPeriodPositionCallback: No memory");
+        AUDIO_ERR_LOG("OnJsRendererPeriodPositionCallback: No memory");
         return;
     }
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("RendererDataRequestCallbackNapi: OnJsRendererPeriodPositionCallback: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsRendererPeriodPositionCallback: jsCb.get() is null");
         delete work;
         return;
     }
@@ -136,7 +136,7 @@ void RendererDataRequestCallbackNapi::OnJsRendererDataRequestCallback(
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        AUDIO_DEBUG_LOG("RendererDataRequestCallbackNapi: JsCallBack %{public}s, uv_queue_work start",
+        AUDIO_DEBUG_LOG("JsCallBack %{public}s, uv_queue_work start",
             request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());

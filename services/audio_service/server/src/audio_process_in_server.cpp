@@ -274,7 +274,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe, ui
     // we need to clear data buffer to avoid dirty data.
     memset_s(processBuffer_->GetDataBase(), processBuffer_->GetDataSize(), 0, processBuffer_->GetDataSize());
     int32_t ret = InitBufferStatus();
-    AUDIO_INFO_LOG("clear data buffer, ret:%{public}d", ret);
+    AUDIO_DEBUG_LOG("clear data buffer, ret:%{public}d", ret);
 
     streamStatus_ = processBuffer_->GetStreamStatus();
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");

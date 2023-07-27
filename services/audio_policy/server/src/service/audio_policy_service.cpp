@@ -383,7 +383,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
             targetSinkInputs.push_back(sinkInput);
         }
     }
-    AUDIO_INFO_LOG("NotifyRemoteRenderState move [%{public}zu] of all [%{public}zu]sink-inputs to local.",
+    AUDIO_DEBUG_LOG("NotifyRemoteRenderState move [%{public}zu] of all [%{public}zu]sink-inputs to local.",
         targetSinkInputs.size(), sinkInputs.size());
     sptr<AudioDeviceDescriptor> localDevice = new(std::nothrow) AudioDeviceDescriptor();
     if (localDevice == nullptr) {
@@ -405,7 +405,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     desc.push_back(localDevice);
     UpdateTrackerDeviceChange(desc);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
-    AUDIO_INFO_LOG("NotifyRemoteRenderState success");
+    AUDIO_DEBUG_LOG("NotifyRemoteRenderState success");
 }
 
 bool AudioPolicyService::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const
@@ -510,7 +510,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
                                             MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
-    AUDIO_INFO_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
+    AUDIO_DEBUG_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
     return ret;
 }
 
@@ -712,7 +712,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         ret = MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
     }
 
-    AUDIO_INFO_LOG("SelectInputDevice result[%{public}d]", ret);
+    AUDIO_DEBUG_LOG("SelectInputDevice result[%{public}d]", ret);
     return ret;
 }
 
@@ -931,7 +931,7 @@ bool AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions opt
         AUDIO_ERR_LOG("SetWakeUpAudioCapturer failed!");
         return false;
     }
-    AUDIO_INFO_LOG("SetWakeUpAudioCapturer Active Success!");
+    AUDIO_DEBUG_LOG("SetWakeUpAudioCapturer Active Success!");
     return true;
 }
 
@@ -1003,7 +1003,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     for (const auto& device : connectedDevices_) {
@@ -1444,13 +1443,13 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     }
 
     auto priorityDev = FetchHighPriorityDevice();
-    AUDIO_INFO_LOG("Current active device: %{public}d. Priority device: %{public}d", currentActiveDevice_, priorityDev);
+    AUDIO_DEBUG_LOG("Current active device: %{public}d. Priority device: %{public}d", currentActiveDevice_, priorityDev);
 
     int32_t result = ActivateNewDevice(priorityDev, true);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
 
     currentActiveDevice_ = priorityDev;
-    AUDIO_INFO_LOG("Current active device updates: %{public}d", currentActiveDevice_);
+    AUDIO_DEBUG_LOG("Current active device updates: %{public}d", currentActiveDevice_);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
 
     result = gsp->SetAudioScene(audioScene, priorityDev);
@@ -2374,7 +2373,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
 // Parser callbacks
 void AudioPolicyService::OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmlData)
 {
-    AUDIO_INFO_LOG("AudioPolicyService::%{public}s, device class num [%{public}zu]", __func__, xmlData.size());
+    AUDIO_INFO_LOG("%{public}s, device class num [%{public}zu]", __func__, xmlData.size());
     if (xmlData.empty()) {
         AUDIO_ERR_LOG("failed to parse xml file. Received data is empty");
         return;
@@ -2385,7 +2384,7 @@ void AudioPolicyService::OnXmlParsingCompleted(const std::unordered_map<ClassTyp
 
 void AudioPolicyService::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)
 {
-    AUDIO_INFO_LOG("AudioPolicyService::%{public}s, group data num [%{public}zu]", __func__, volumeGroupData.size());
+    AUDIO_INFO_LOG("%{public}s, group data num [%{public}zu]", __func__, volumeGroupData.size());
     if (volumeGroupData.empty()) {
         AUDIO_ERR_LOG("failed to parse xml file. Received data is empty");
         return;
@@ -2408,7 +2407,6 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
 int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
@@ -2416,7 +2414,7 @@ int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, cons
         callback->hasBTPermission_ = hasBTPermission;
         deviceChangeCbsMap_[{clientId, flag}] = callback;
     }
-    AUDIO_INFO_LOG("SetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
+    AUDIO_DEBUG_LOG("SetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
     return SUCCESS;
 }
 
@@ -2449,14 +2447,13 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, De
         }
     }
 
-    AUDIO_INFO_LOG("UnsetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
+    AUDIO_DEBUG_LOG("UnsetDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu", deviceChangeCbsMap_.size());
     return SUCCESS;
 }
 
 int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (callback != nullptr) {
@@ -3193,7 +3190,7 @@ void AudioPolicyService::RegiestPolicy()
         return;
     }
     int32_t ret = gsp->RegiestPolicyProvider(object);
-    AUDIO_INFO_LOG("RegiestPolicy result:%{public}d", ret);
+    AUDIO_DEBUG_LOG("RegiestPolicy result:%{public}d", ret);
 }
 
 int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
@@ -3297,7 +3294,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
         delete parameterChangeCbStub;
         return;
     }
-    AUDIO_INFO_LOG("SetParameterCallback done");
+    AUDIO_DEBUG_LOG("SetParameterCallback done");
     gsp->SetParameterCallback(object);
 }
 

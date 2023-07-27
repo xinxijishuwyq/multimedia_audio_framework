@@ -300,7 +300,7 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
         return transactionId;
     }
 
-    AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
+    AUDIO_DEBUG_LOG("Transaction Id: %{public}" PRIu64, transactionId);
     return transactionId;
 }
 
@@ -484,7 +484,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_INFO_LOG("AudioServer::SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
         AUDIO_ERR_LOG("NotifyDeviceInfo refused for %{public}d", callingUid);
@@ -518,7 +518,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         AUDIO_ERR_LOG("AudioServer:: audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
         return;
     }
-    AUDIO_INFO_LOG("AudioServer::SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
+    AUDIO_INFO_LOG("SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
 
     // Set balance for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
@@ -590,7 +590,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     // client pid uid check.
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    AUDIO_INFO_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
+    AUDIO_DEBUG_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
 
     AudioProcessConfig resetConfig(config);
     if (callerUid == MEDIA_SERVICE_UID) {

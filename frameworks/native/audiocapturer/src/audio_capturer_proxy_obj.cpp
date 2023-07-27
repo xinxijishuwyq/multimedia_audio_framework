@@ -28,12 +28,12 @@ void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
 
 void AudioCapturerProxyObj::PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    AUDIO_INFO_LOG("AudioCapturerProxyObj::PausedStreamImpl");
+    AUDIO_INFO_LOG("PausedStreamImpl");
 }
 
 void AudioCapturerProxyObj::ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal)
 {
-    AUDIO_INFO_LOG("AudioCapturerProxyObj::ResumeStreamImpl");
+    AUDIO_INFO_LOG("ResumeStreamImpl");
 }
 
 void AudioCapturerProxyObj::SetLowPowerVolumeImpl(float volume)
