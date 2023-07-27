@@ -114,10 +114,18 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     bool isSupportInnerCapturer = IsSinkInputSupportInnerCapturer(si, u);
     bool innerCapturerFlag = u->isInnerCapturer && receiverSink != NULL && isSupportInnerCapturer && sceneType != NULL;
 
-    bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
+    if (pa_safe_streq(clientUid, "1003")) {
+        if (innerCapturerFlag) {
+            return MoveSinkInputIntoSink(si, receiverSink); // playback capturer
+        } else {
+            return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
+        }
+    }
+
+    bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
-    if (pa_safe_streq(clientUid, "1003") || pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
+    if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
         if (innerCapturerFlag) {
             return MoveSinkInputIntoSink(si, receiverSink); // playback capturer
         } else {
