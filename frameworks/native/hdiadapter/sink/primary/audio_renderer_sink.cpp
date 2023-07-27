@@ -45,7 +45,7 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t PARAM_VALUE_LENTH = 10;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
@@ -308,7 +308,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    attrs.streamId = PRIMARY_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -695,7 +695,7 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    source.ext.mix.streamId = PRIMARY_OUTPUT_STREAM_ID;
     source.ext.device.desc = (char *)"";
 
     sink.portId = static_cast<int32_t>(audioPort_.portId);

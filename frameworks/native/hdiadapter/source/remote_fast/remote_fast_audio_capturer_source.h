@@ -75,8 +75,7 @@ private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t DEEP_BUFFER_CAPTURER_PERIOD_SIZE = 3840;
     static constexpr uint32_t INT_32_MAX = 0x7fffffff;
-    static constexpr uint32_t INTERNAL_OUTPUT_STREAM_ID = 2;
-    static constexpr uint32_t INTERNAL_INPUT_STREAM_ID = 1;
+    static constexpr uint32_t REMOTE_FAST_INPUT_STREAM_ID = 38; // 14 + 3 * 8
     static constexpr int32_t EVENT_DES_SIZE = 60;
     static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
     static constexpr int64_t CAPTURE_FIRST_FRIME_WAIT_NANO = 20000000; // 20ms

@@ -42,7 +42,7 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t REMOTE_FAST_OUTPUT_STREAM_ID = 37; // 13 + 3 * 8
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int32_t INVALID_FD = -1;
 }
@@ -469,7 +469,7 @@ void RemoteFastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &a
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
-    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    attrs.streamId = REMOTE_FAST_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_MMAP_NOIRQ;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;

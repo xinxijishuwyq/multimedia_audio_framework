@@ -51,7 +51,7 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
-const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t FAST_OUTPUT_STREAM_ID = 21; // 13 + 1 * 8
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int INVALID_FD = -1;
 }
@@ -196,7 +196,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    attrs.streamId = FAST_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_MMAP_NOIRQ; // enable mmap!
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;

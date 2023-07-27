@@ -46,7 +46,7 @@ const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
-const uint32_t INTERNAL_OUTPUT_STREAM_ID = 0;
+const uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
@@ -303,7 +303,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
-    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    attrs.streamId = REMOTE_OUTPUT_STREAM_ID;
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -671,7 +671,7 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    source.ext.mix.streamId = REMOTE_OUTPUT_STREAM_ID;
 
     sink.portId = audioPort_.portId;
     sink.role = AUDIO_PORT_SINK_ROLE;

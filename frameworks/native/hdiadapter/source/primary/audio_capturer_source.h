@@ -33,7 +33,6 @@ namespace AudioStandard {
 #define AUDIO_BUFF_SIZE (16 * 1024)
 #define PCM_8_BIT 8
 #define PCM_16_BIT 16
-#define INTERNAL_INPUT_STREAM_ID 1
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:

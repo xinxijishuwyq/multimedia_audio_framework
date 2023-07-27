@@ -137,7 +137,7 @@ int32_t RemoteAudioCapturerSource::CreateCapture(struct AudioPort &capturePort)
     struct AudioSampleAttributes param;
     param.type = AUDIO_IN_MEDIA;
     param.period = deepBufferCapturePeriodSize;
-    param.streamId = internalInputStreamId;
+    param.streamId = REMOTE_INPUT_STREAM_ID;
     param.isSignedData = true;
     param.stopThreshold = maxInt32;
     param.silenceThreshold = audioBufferSize;
@@ -415,7 +415,7 @@ int32_t RemoteAudioCapturerSource::SetInputRoute(DeviceType inputDevice)
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = internalInputStreamId;
+    sink.ext.mix.streamId = REMOTE_INPUT_STREAM_ID;
 
     AudioRoute route = {
         .sourcesNum = 1,

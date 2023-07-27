@@ -286,7 +286,7 @@ void RemoteFastAudioCapturerSource::InitAttrs(struct AudioSampleAttributes &attr
     attrs.startThreshold = DEEP_BUFFER_CAPTURER_PERIOD_SIZE / (attrs.frameSize);
     attrs.stopThreshold = INT_32_MAX;
     attrs.silenceThreshold = attr_.bufferSize;
-    attrs.streamId = INTERNAL_OUTPUT_STREAM_ID;
+    attrs.streamId = REMOTE_FAST_INPUT_STREAM_ID;
 }
 
 AudioFormat RemoteFastAudioCapturerSource::ConverToHdiFormat(AudioSampleFormat format)
@@ -488,7 +488,7 @@ int32_t RemoteFastAudioCapturerSource::SetInputRoute(DeviceType inputDevice)
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = INTERNAL_INPUT_STREAM_ID;
+    sink.ext.mix.streamId = REMOTE_FAST_INPUT_STREAM_ID;
 
     AudioRoute route = {
         .sourcesNum = 1,
