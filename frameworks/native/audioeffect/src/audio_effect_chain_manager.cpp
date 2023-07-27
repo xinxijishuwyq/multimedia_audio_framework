@@ -72,7 +72,7 @@ int32_t EffectChainManagerGetFrameLen()
 bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     std::string sceneTypeString = "";
     if (sceneType) {
         sceneTypeString = sceneType;
@@ -458,11 +458,11 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 int32_t AudioEffectChainManager::CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
 {
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
-    CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
-    
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+
     AudioEffectChain *audioEffectChain;
     if (SceneTypeToEffectChainMap_.count(sceneType)) {
-        audioEffectChain = SceneTypeToEffectChainMap_[sceneType];
+        return SUCCESS;
     } else {
         audioEffectChain = new AudioEffectChain(sceneType);
         SceneTypeToEffectChainMap_[sceneType] = audioEffectChain;
@@ -525,13 +525,9 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
 
 bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
 {
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, false, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
     CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
-    if (!isInitialized_) {
-        AUDIO_INFO_LOG("AudioEffectChainManager has not been initialized");
-        return false;
-    }
 
 #ifndef DEVICE_FLAG
     if (deviceType_ != DEVICE_TYPE_SPEAKER) {
@@ -566,7 +562,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
 
     auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneType];
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen);
-    
+
     return SUCCESS;
 }
 

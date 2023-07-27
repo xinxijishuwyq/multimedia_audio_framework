@@ -90,7 +90,6 @@ static bool IsSinkInputSupportInnerCapturer(pa_sink_input *si, struct userdata *
 
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {
-    pa_sink *effectSink;
     pa_assert(c);
     pa_assert(u);
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
@@ -114,10 +113,18 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     bool isSupportInnerCapturer = IsSinkInputSupportInnerCapturer(si, u);
     bool innerCapturerFlag = u->isInnerCapturer && receiverSink != NULL && isSupportInnerCapturer && sceneType != NULL;
 
-    bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
+    if (pa_safe_streq(clientUid, "1003")) {
+        if (innerCapturerFlag) {
+            return MoveSinkInputIntoSink(si, receiverSink); // playback capturer
+        } else {
+            return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
+        }
+    }
+
+    bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
-    if (pa_safe_streq(clientUid, "1003") || pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
+    if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
         if (innerCapturerFlag) {
             return MoveSinkInputIntoSink(si, receiverSink); // playback capturer
         } else {
@@ -126,7 +133,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     }
 
     const char *sinkName = innerCapturerFlag ? pa_sprintf_malloc("%s_CAP", sceneType) : sceneType;
-    effectSink = pa_namereg_get(c, sinkName, PA_NAMEREG_SINK);
+    pa_sink *effectSink = pa_namereg_get(c, sinkName, PA_NAMEREG_SINK);
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
         if (innerCapturerFlag) {
