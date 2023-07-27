@@ -415,7 +415,7 @@ int32_t RemoteAudioCapturerSource::SetInputRoute(DeviceType inputDevice)
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
-    sink.ext.mix.streamId = internalInputStreamId;
+    sink.ext.mix.streamId = REMOTE_INPUT_STREAM_ID;
 
     AudioRoute route = {
         .sourcesNum = 1,
