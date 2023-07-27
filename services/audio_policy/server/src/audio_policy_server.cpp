@@ -244,10 +244,35 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     }
 }
 
+void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
+{
+    MMI::InputManager *im = MMI::InputManager::GetInstance();
+    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+
+    std::shared_ptr<OHOS::MMI::KeyOption> keyOptionMute = std::make_shared<OHOS::MMI::KeyOption>();
+    CHECK_AND_RETURN_LOG(keyOptionMute != nullptr, "keyOptionMute: Invalid key option");
+    std::set<int32_t> preKeys;
+    keyOptionMute->SetPreKeys(preKeys);
+    keyOptionMute->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_MUTE);
+    keyOptionMute->SetFinalKeyDown(true);
+    keyOptionMute->SetFinalKeyDownDuration(VOLUME_MUTE_KEY_DURATION);
+    int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
+        [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
+            AUDIO_INFO_LOG("Receive volume key event: mute");
+            std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+            bool isMuted = GetStreamMute(AudioStreamType::STREAM_ALL);
+            SetStreamMuteInternal(AudioStreamType::STREAM_ALL, !isMuted, true);
+        });
+    if (muteKeySubId < 0) {
+        AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
+    }
+}
+
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    RegisterVolumeKeyMuteEvents();
 }
 
 AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType streamType)
