@@ -17,6 +17,7 @@ import("../../../../config.gni")
 ohos_shared_library("audio_renderer_sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -50,6 +51,7 @@ ohos_shared_library("audio_renderer_sink") {
 ohos_shared_library("fast_audio_renderer_sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -83,6 +85,7 @@ ohos_shared_library("fast_audio_renderer_sink") {
 ohos_shared_library("bluetooth_renderer_sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -123,6 +126,7 @@ ohos_shared_library("bluetooth_renderer_sink") {
 ohos_shared_library("remote_audio_renderer_sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -161,6 +165,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 ohos_shared_library("remote_fast_audio_renderer_sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -204,6 +209,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
 ohos_shared_library("audio_renderer_file_sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -230,6 +236,7 @@ ohos_shared_library("audio_renderer_file_sink") {
 ohos_shared_library("renderer_sink_adapter") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
