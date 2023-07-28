@@ -31,6 +31,16 @@ public:
 
     virtual int32_t OnProcessRelease(IAudioProcessStream *process) = 0;
 };
+class AudioProcessInServer;
+class ProcessDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    ProcessDeathRecipient(AudioProcessInServer *processInServer);
+    virtual ~ProcessDeathRecipient() = default;
+    // overridde for DeathRecipient
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
+private:
+    AudioProcessInServer *processInServer_;
+};
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
 public:
@@ -52,6 +62,8 @@ public:
     int32_t RequestHandleInfo() override;
 
     int32_t Release() override;
+
+    int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBuffer> GetStreamBuffer() override;
