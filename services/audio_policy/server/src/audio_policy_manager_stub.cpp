@@ -650,22 +650,20 @@ void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::VerifyClientMicrophonePermissionInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t appTokenId = data.ReadUint32();
     uint32_t appUid = data.ReadInt32();
-    bool privacyFlag = data.ReadBool();
-    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state);
+    bool ret = CheckRecordingCreate(appTokenId, appUid);
     reply.WriteBool(ret);
 }
 
-void AudioPolicyManagerStub::getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    std::string permissionName = data.ReadString();
     uint32_t appTokenId = data.ReadUint32();
+    int32_t appUid = data.ReadInt32();
     AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
+    bool ret = CheckRecordingStateChange(appTokenId, appUid, state);
     reply.WriteBool(ret);
 }
 
@@ -1038,10 +1036,8 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
     }
     uint32_t appTokenId = data.ReadUint32();
     uint32_t appUid = data.ReadInt32();
-    bool privacyFlag = data.ReadBool();
-    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
 
-    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo, appTokenId, appUid, privacyFlag, state);
+    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo, appTokenId, appUid);
     reply.WriteInt32(ret);
 }
 
@@ -1205,7 +1201,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION):
-            VerifyClientMicrophonePermissionInternal(data, reply);
+            CheckRecordingCreateInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE):
@@ -1300,7 +1296,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
              break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY):
-             getUsingPemissionFromPrivacyInternal(data, reply);
+             CheckRecordingStateChangeInternal(data, reply);
              break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):

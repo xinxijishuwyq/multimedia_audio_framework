@@ -919,26 +919,24 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-    AudioPermissionState state)
+bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("VerifyClientMicrophonePermission: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("CheckRecordingCreate: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state);
+    return gsp->CheckRecordingCreate(appTokenId, appUid);
 }
 
-bool AudioPolicyManager::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-    AudioPermissionState state)
+bool AudioPolicyManager::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("CheckRecordingStateChange: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
+    return gsp->CheckRecordingStateChange(appTokenId, appUid, state);
 }
 
 int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
@@ -1163,16 +1161,15 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
 }
 
 int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
+    uint32_t appTokenId, int32_t appUid)
 {
-    AUDIO_DEBUG_LOG("SetPlaybackCapturerFilterInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetPlaybackCapturerFilterInfos: audio policy manager proxy is NULL.");
         return ERROR;
     }
 
-    return gsp->SetPlaybackCapturerFilterInfos(filterOptions, appTokenId, appUid, privacyFlag, state);
+    return gsp->SetPlaybackCapturerFilterInfos(filterOptions, appTokenId, appUid);
 }
 } // namespace AudioStandard
 } // namespace OHOS
