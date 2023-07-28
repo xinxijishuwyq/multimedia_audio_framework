@@ -82,6 +82,12 @@ bool AudioAdapterManager::ConnectServiceAdapter()
 
 void AudioAdapterManager::InitKVStore()
 {
+    if (audioPolicyKvStore_ != nullptr) {
+        AUDIO_ERR_LOG("InitKVStore: kv store is not nullptr.");
+        return;
+    }
+
+    AUDIO_INFO_LOG("AudioAdapterManager::%{public}s in", __func__);
     bool isFirstBoot = false;
     InitAudioPolicyKvStore(isFirstBoot);
     InitVolumeMap(isFirstBoot);
@@ -155,8 +161,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
-        bool isFirstBoot = false;
-        InitAudioPolicyKvStore(isFirstBoot);
+        InitKVStore();
     }
 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
@@ -458,8 +463,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
-        bool isFirstBoot = false;
-        InitAudioPolicyKvStore(isFirstBoot);
+        InitKVStore();
     }
 
     WriteRingerModeToKvStore(ringerMode);
@@ -801,7 +805,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     appId.appId = "audio_policy_manager";
 
     options.securityLevel = S1;
-    options.createIfMissing = true;
+    options.createIfMissing = false;
     options.encrypt = false;
     options.autoSync = false;
     options.kvStoreType = KvStoreType::SINGLE_VERSION;
@@ -818,11 +822,11 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
 
         do {
             status = manager.GetSingleKvStore(options, appId, storeId, audioPolicyKvStore_);
-            if (status == Status::STORE_NOT_FOUND) {
-                AUDIO_ERR_LOG("InitAudioPolicyKvStore: STORE_NOT_FOUND!");
+            if (status == Status::INVALID_ARGUMENT) {
+                AUDIO_ERR_LOG("InitAudioPolicyKvStore: INVALID_ARGUMENT!");
             }
 
-            if ((status == Status::SUCCESS) || (status == Status::STORE_NOT_FOUND)) {
+            if ((status == Status::SUCCESS) || (status == Status::INVALID_ARGUMENT)) {
                 break;
             } else {
                 AUDIO_ERR_LOG("InitAudioPolicyKvStore: Kvstore Connect failed! Retrying.");
@@ -833,7 +837,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     }
 
     if (audioPolicyKvStore_ == nullptr) {
-        if (status == Status::STORE_NOT_FOUND) {
+        if (status == Status::INVALID_ARGUMENT) {
             AUDIO_INFO_LOG("First Boot: Create AudioPolicyKvStore");
             options.createIfMissing = true;
             // [create and] open and initialize kvstore instance.
@@ -856,13 +860,17 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
 
 void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
-    if (isFirstBoot == true) {
+    if (audioPolicyKvStore_ == nullptr) {
+        AUDIO_ERR_LOG("InitVolumeMap: kvstore is null!");
+        return;
+    }
+    if (isFirstBoot) {
+        AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
         for (auto &deviceType: deviceList_) {
             for (auto &streamType: streamTypeList_) {
                 WriteVolumeToKvStore(deviceType, streamType, volumeLevelMap_[streamType]);
             }
         }
-        AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
     } else {
         LoadVolumeMap();
     }
@@ -871,14 +879,14 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
     if (audioPolicyKvStore_ == nullptr) {
-        AUDIO_ERR_LOG("InitRingerMode kvstore is null!");
+        AUDIO_ERR_LOG("InitRingerMode: kvstore is null!");
         return;
     }
 
-    if (isFirstBoot == true) {
+    if (isFirstBoot) {
+        AUDIO_INFO_LOG("InitRingerMode Wrote default ringer mode to KvStore");
         ringerMode_ = RINGER_MODE_NORMAL;
         WriteRingerModeToKvStore(RINGER_MODE_NORMAL);
-        AUDIO_INFO_LOG("InitRingerMode Wrote default ringer mode to KvStore");
     } else {
         LoadRingerMode();
     }
@@ -993,13 +1001,17 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
 
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
-    if (isFirstBoot == true) {
+    if (audioPolicyKvStore_ == nullptr) {
+        AUDIO_ERR_LOG("InitMuteStatusMap: kvstore is null!");
+        return;
+    }
+    if (isFirstBoot) {
+        AUDIO_INFO_LOG("InitMuteStatusMap: Wrote default mute status to KvStore");
         for (auto &deviceType: deviceList_) {
             for (auto &streamType: streamTypeList_) {
                 WriteMuteStatusToKvStore(deviceType, streamType, 0);
             }
         }
-        AUDIO_INFO_LOG("InitMuteStatusMap: Wrote default mute status to KvStore");
     } else {
         LoadMuteStatusMap();
     }
