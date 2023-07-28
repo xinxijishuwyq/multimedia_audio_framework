@@ -22,6 +22,7 @@ ohos_fuzztest("AudioServerFuzzTest") {
   include_dirs = [
     "../../../frameworks/native/hdiadapter/sink/common",
     "../../../services/audio_service/server/include",
+    "../../../services/audio_policy/client/include",
   ]
 
   cflags = [
@@ -35,7 +36,10 @@ ohos_fuzztest("AudioServerFuzzTest") {
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
 
-  deps = [ "../../../services/audio_service:audio_service" ]
+  deps = [
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service",
+  ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",

@@ -189,6 +189,9 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
 
 void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     sptr<AudioVolumeKeyEventCallbackStub> listener =
         new(std::nothrow) AudioVolumeKeyEventCallbackStub();
     VolumeEvent volumeEvent = {};
@@ -196,7 +199,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     volumeEvent.volume = *reinterpret_cast<const int32_t *>(rawData);
     volumeEvent.updateUi = *reinterpret_cast<const bool *>(rawData);
     volumeEvent.volumeGroupId = *reinterpret_cast<const int32_t *>(rawData);
-    std::string id(reinterpret_cast<const char*>(rawData), size);
+    std::string id(reinterpret_cast<const char*>(rawData), size - 1);
     volumeEvent.networkId = id;
 
     MessageParcel data;
