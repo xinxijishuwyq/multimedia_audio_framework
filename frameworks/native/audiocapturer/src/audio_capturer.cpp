@@ -187,7 +187,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     }
 
     if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appUid)) {
-        AUDIO_ERR_LOG("MICROPHONE permission denied");
+        AUDIO_ERR_LOG("recording create check failed");
         return ERR_PERMISSION_DENIED;
     }
 
@@ -341,7 +341,8 @@ bool AudioCapturerPrivate::Start() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Start");
     if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appUid, AUDIO_PERMISSION_START)) {
-        AUDIO_ERR_LOG("Start monitor permission failed");
+        AUDIO_ERR_LOG("recording start check failed");
+        return false;
     }
 
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_INVALID ||

@@ -57,6 +57,12 @@ constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
 constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
+constexpr uid_t UID_ROOT = 0;
+constexpr uid_t UID_MSDP_SA = 6699;
+constexpr uid_t UID_INTELLIGENT_VOICE_SA = 1042;
+constexpr uid_t UID_CAAS_SA = 5527;
+constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
+constexpr uid_t UID_MEDIA_SA = 1013;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -74,17 +80,17 @@ map<InterruptHint, AudioFocuState> AudioPolicyServer::CreateStateMap()
     return stateMap;
 }
 
-const std::list<int> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
+const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
     UID_ROOT,
     UID_MSDP_SA,
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA
-}
+};
 
-const std::list<int> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
+const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
     UID_MEDIA_SA
-}
+};
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
@@ -1598,7 +1604,7 @@ int32_t AudioPolicyServer::UnregisterFocusInfoChangeCallback(const int32_t /* cl
     return SUCCESS;
 }
 
-bool CheckRootCalling(uid_t callingUid, int32_t appUid)
+bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
 {
     if (callingUid == UID_ROOT) {
         return true;
@@ -1624,7 +1630,6 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid
     }
 
     Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
-
     if (!VerifyPermission(MICROPHONE_PERMISSION, targetTokenId, true)) {
         return false;
     }
@@ -1641,9 +1646,8 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
 
     if (!isRecording) {
-        uid_t callingUid = IPCSkeleton::GetCallingUid();
-
         // root user case for auto test
+        uid_t callingUid = IPCSkeleton::GetCallingUid();
         if (callingUid == UID_ROOT) {
             return true;
         }
@@ -1700,7 +1704,8 @@ bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint32_t 
     return PrivacyKit::IsAllowedUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
 }
 
-Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId, uint32_t appTokenId)
+Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
+    uint32_t appTokenId)
 {
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appTokenId : callingTokenId;

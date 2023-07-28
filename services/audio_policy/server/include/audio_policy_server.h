@@ -330,8 +330,8 @@ private:
     static constexpr int32_t DEFAULT_APP_PID = -1;
 
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
-    static const std::list<int> RECORD_ALLOW_BACKGROUND_LIST;
-    static const std::list<int> RECORD_PASS_APPINFO_LIST;
+    static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
+    static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
     // for audio interrupt
@@ -358,12 +358,12 @@ private:
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
     // Permission and privacy
-    bool VerifyPermission(const std::string &permission, uint32_t tokenId, bool isRecording = false);
+    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool CheckAppBackgroundPermission(uid_t callingUid, uint32_t targetTokenId);
     Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
         uint32_t appTokenId);
     bool CheckRootCalling(uid_t callingUid, int32_t appUid);
-    void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
+    void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 
     // common
     void GetPolicyData(PolicyData &policyData);

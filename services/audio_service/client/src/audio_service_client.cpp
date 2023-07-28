@@ -646,9 +646,9 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid, bool privacyFlag)
+bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
 {
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appUid, privacyFlag);
+    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appUid);
 }
 
 bool AudioServiceClient::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
