@@ -18,6 +18,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 ohos_shared_library("pulse_audio_service_adapter") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../cfi_blocklist.txt"
   }

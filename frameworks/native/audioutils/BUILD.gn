@@ -17,6 +17,7 @@ import("../../../config.gni")
 ohos_shared_library("audio_utils") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../cfi_blocklist.txt"
   }

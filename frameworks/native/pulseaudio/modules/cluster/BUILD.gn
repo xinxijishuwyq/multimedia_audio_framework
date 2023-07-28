@@ -43,6 +43,7 @@ config("cluster_config") {
 ohos_shared_library("module-cluster-sink") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../../cfi_blocklist.txt"
   }
