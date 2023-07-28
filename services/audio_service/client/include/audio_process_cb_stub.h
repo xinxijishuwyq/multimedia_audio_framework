@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_PROCESS_PROXY_H
-#define AUDIO_PROCESS_PROXY_H
+#ifndef AUDIO_PROCESS_CB_STUB_H
+#define AUDIO_PROCESS_CB_STUB_H
 
 #include "message_parcel.h"
 
@@ -22,30 +22,20 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioProcessProxy : public IRemoteProxy<IAudioProcess> {
+class ProcessCbStub : public IRemoteStub<IProcessCb> {
 public:
-    explicit AudioProcessProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioProcessProxy();
-
-    // override for AudioProcess
-    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
-
-    int32_t Start() override;
-
-    int32_t Pause(bool isFlush) override;
-
-    int32_t Resume() override;
-
-    int32_t Stop() override;
-
-    int32_t RequestHandleInfo() override;
-
-    int32_t Release() override;
-
-    int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
+    virtual ~ProcessCbStub() = default;
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
 private:
-    static inline BrokerDelegator<AudioProcessProxy> delegator_;
+    static bool CheckInterfaceToken(MessageParcel &data);
+
+    int32_t HandleOnEndpointChange(MessageParcel &data, MessageParcel &reply);
+
+    using HandlerFunc = int32_t(ProcessCbStub::*)(MessageParcel &data, MessageParcel &reply);
+    static inline HandlerFunc funcList_[IProcessCbMsg::PROCESS_CB_MAX_MSG] = {
+        &ProcessCbStub::HandleOnEndpointChange
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_PROCESS_PROXY_H
+#endif // AUDIO_PROCESS_CB_STUB_H

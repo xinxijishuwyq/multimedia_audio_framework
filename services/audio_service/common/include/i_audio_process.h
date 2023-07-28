@@ -48,9 +48,25 @@ public:
     virtual ~AudioProcess() = default;
 };
 
+class IProcessCb : public IRemoteBroker {
+public:
+    virtual ~IProcessCb() = default;
+
+    virtual int32_t OnEndpointChange(int32_t status) = 0;
+
+    // IPC code.
+    enum IProcessCbMsg : uint32_t {
+        ON_ENDPOINT_CHANGE = 0,
+        PROCESS_CB_MAX_MSG
+    };
+    DECLARE_INTERFACE_DESCRIPTOR(u"IProcessCb");
+};
+
 class IAudioProcess : public AudioProcess, public IRemoteBroker {
 public:
     virtual ~IAudioProcess() = default;
+
+    virtual int32_t RegisterProcessCb(sptr<IRemoteObject> object) = 0;
 
     // IPC code.
     enum IAudioProcessMsg : uint32_t {
@@ -61,6 +77,7 @@ public:
         ON_STOP,
         ON_REQUEST_HANDLE_INFO,
         ON_RELEASE,
+        ON_REGISTER_PROCESS_CB,
         PROCESS_MAX_MSG
     };
 

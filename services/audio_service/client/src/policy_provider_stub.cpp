@@ -21,9 +21,9 @@ namespace OHOS {
 namespace AudioStandard {
 bool PolicyProviderStub::CheckInterfaceToken(MessageParcel &data)
 {
-    static auto locaDescriptor = IPolicyProviderIpc::GetDescriptor();
+    static auto localDescriptor = IPolicyProviderIpc::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
-    if (remoteDescriptor != remoteDescriptor) {
+    if (remoteDescriptor != localDescriptor) {
         AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
         return false;
     }

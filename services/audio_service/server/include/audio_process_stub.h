@@ -22,6 +22,17 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class ProcessCbProxy : public IRemoteProxy<IProcessCb> {
+public:
+    explicit ProcessCbProxy(const sptr<IRemoteObject> &impl);
+    virtual ~ProcessCbProxy();
+
+    int32_t OnEndpointChange(int32_t status) override;
+
+private:
+    static inline BrokerDelegator<ProcessCbProxy> delegator_;
+};
+
 class AudioProcessStub : public IRemoteStub<IAudioProcess> {
 public:
     virtual ~AudioProcessStub() = default;
@@ -36,6 +47,7 @@ private:
     int32_t HandleStop(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRequestHandleInfo(MessageParcel &data, MessageParcel &reply);
     int32_t HandleRelease(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleRegisterProcessCb(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int32_t(AudioProcessStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc funcList_[IAudioProcessMsg::PROCESS_MAX_MSG] = {
@@ -45,7 +57,8 @@ private:
         &AudioProcessStub::HandleResume,
         &AudioProcessStub::HandleStop,
         &AudioProcessStub::HandleRequestHandleInfo,
-        &AudioProcessStub::HandleRelease
+        &AudioProcessStub::HandleRelease,
+        &AudioProcessStub::HandleRegisterProcessCb
     };
 };
 } // namespace AudioStandard

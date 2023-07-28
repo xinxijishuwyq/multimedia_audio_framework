@@ -13,12 +13,43 @@
  * limitations under the License.
  */
 
+#include "audio_process_cb_stub.h"
 #include "audio_process_proxy.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
+bool ProcessCbStub::CheckInterfaceToken(MessageParcel &data)
+{
+    static auto localDescriptor = IProcessCb::GetDescriptor();
+    auto remoteDescriptor = data.ReadInterfaceToken();
+    if (remoteDescriptor != localDescriptor) {
+        AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
+        return false;
+    }
+    return true;
+}
+
+int ProcessCbStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    if (!CheckInterfaceToken(data)) {
+        return AUDIO_ERR;
+    }
+    if (code >= IProcessCbMsg::PROCESS_CB_MAX_MSG) {
+        AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+    return (this->*funcList_[code])(data, reply);
+}
+
+int32_t ProcessCbStub::HandleOnEndpointChange(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t status = data.ReadInt32();
+    reply.WriteInt32(OnEndpointChange(status));
+    return AUDIO_OK;
+}
+
 AudioProcessProxy::AudioProcessProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IAudioProcess>(impl)
 {
     AUDIO_INFO_LOG("AudioProcessProxy()");
@@ -125,6 +156,27 @@ int32_t AudioProcessProxy::Release()
 
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_RELEASE, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Release failed, error: %{public}d", ret);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioProcessProxy::RegisterProcessCb(sptr<IRemoteObject> object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterProcessCb object is null");
+        return ERR_NULL_OBJECT;
+    }
+
+    data.WriteRemoteObject(object);
+
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_REGISTER_PROCESS_CB, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "RegisterProcessCb failed, error: %{public}d", ret);
 
     return reply.ReadInt32();
 }

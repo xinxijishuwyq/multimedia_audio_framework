@@ -33,16 +33,20 @@
 #include "securec.h"
 
 #include "audio_manager_base.h"
+#include "audio_process_cb_stub.h"
 #include "audio_server_death_recipient.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioProcessInClientInner : public AudioProcessInClient {
+class AudioProcessInClientInner : public AudioProcessInClient, public ProcessCbStub {
 public:
     explicit AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy);
     ~AudioProcessInClientInner();
+
+    // ProcessCbStub
+    int32_t OnEndpointChange(int32_t status) override;
 
     int32_t SaveDataCallback(const std::shared_ptr<AudioDataCallback> &dataCallback) override;
 
@@ -267,6 +271,12 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
 #endif
 }
 
+int32_t AudioProcessInClientInner::OnEndpointChange(int32_t status)
+{
+    AUDIO_INFO_LOG("OnEndpointChange:%{public}d", status);
+    return SUCCESS;
+}
+
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 {
     // note: Get the session id from server.
@@ -289,6 +299,11 @@ bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, i
         pos = audioBuffer_->GetCurReadFrame();
     }
 
+    if (pos > UINT32_MAX) {
+        framePos = pos % UINT32_MAX;
+    } else {
+        framePos = static_cast<uint32_t>(pos);
+    }
     int64_t time = handleTimeModel_.GetTimeOfPos(pos);
     int64_t deltaTime = 20000000; // note: 20ms
     time += deltaTime;
@@ -371,6 +386,9 @@ void AudioProcessInClientInner::SetApplicationCachePath(const std::string &cache
 bool AudioProcessInClientInner::InitAudioBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, false, "Init failed with null ipcProxy.");
+
+    CHECK_AND_RETURN_RET_LOG(processProxy_->RegisterProcessCb(this->AsObject()) == SUCCESS, false,
+        "RegisterProcessCb failed.");
     int32_t ret = processProxy_->ResolveBuffer(audioBuffer_);
     if (ret != SUCCESS || audioBuffer_ == nullptr) {
         AUDIO_ERR_LOG("Init failed to call ResolveBuffer");
