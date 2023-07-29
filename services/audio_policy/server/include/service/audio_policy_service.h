@@ -26,6 +26,7 @@
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
+#include "ipc_skeleton.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -284,6 +285,8 @@ public:
 
     void UnloadLoopback();
 
+    void UpdateOutputDeviceSelectedByCalling(DeviceType deviceType);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -501,6 +504,9 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     AudioEffectManager& audioEffectManager_;
+
+    std::mutex outputDeviceSelectedByCallingMutex_;
+    std::unordered_map<decltype(IPCSkeleton::GetCallingUid()), DeviceType> outputDeviceSelectedByCalling_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

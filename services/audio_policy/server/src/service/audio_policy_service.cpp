@@ -462,6 +462,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
+    if (networkId == LOCAL_NETWORK_ID) {
+        UpdateOutputDeviceSelectedByCalling(deviceType);
+    }
     // switch between local devices
     if (!isCurrentRemoteRenderer && networkId == LOCAL_NETWORK_ID && currentActiveDevice_ != deviceType) {
         if (deviceType == DeviceType::DEVICE_TYPE_DEFAULT) {
@@ -505,9 +508,8 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
     }
 
-    int32_t ret = SUCCESS;
-    ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
-                                            MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
+    auto ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
+                                                 MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
     UpdateTrackerDeviceChange(audioDeviceDescriptors);
     OnPreferOutputDeviceUpdated(currentActiveDevice_, networkId);
     AUDIO_DEBUG_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
@@ -1442,7 +1444,35 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         SetEarpieceState();
     }
 
-    auto priorityDev = FetchHighPriorityDevice();
+    DeviceType priorityDev = FetchHighPriorityDevice();
+
+    if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        auto uid = IPCSkeleton::GetCallingUid();
+        DeviceType device = DEVICE_TYPE_NONE;
+        {
+            std::lock_guard<std::mutex> lock(outputDeviceSelectedByCallingMutex_);
+            if (outputDeviceSelectedByCalling_.count(uid)) {
+                device = outputDeviceSelectedByCalling_.at(uid);
+            }
+        }
+
+        auto isConnected = [&device] (const sptr<AudioDeviceDescriptor> &desc) {
+            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "lambda isConnected: Invalid device descriptor");
+            if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+                return false;
+            } else {
+                return desc->deviceType_ == device;
+            }
+        };
+
+        if (device != DEVICE_TYPE_NONE) {
+            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isConnected);
+            if (itr != connectedDevices_.end()) {
+                priorityDev = device;
+            }
+        }
+    }
+
     AUDIO_DEBUG_LOG("Current active device: %{public}d. Priority device: %{public}d", currentActiveDevice_, priorityDev);
 
     int32_t result = ActivateNewDevice(priorityDev, true);
@@ -3475,6 +3505,20 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const CaptureFilterOp
     }
 
     return gsp->SetSupportStreamUsage(targetUsages);
+}
+
+void AudioPolicyService::UpdateOutputDeviceSelectedByCalling(DeviceType deviceType)
+{
+    if ((deviceType == DEVICE_TYPE_DEFAULT) || (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
+        return;
+    }
+    auto uid = IPCSkeleton::GetCallingUid();
+    std::lock_guard<std::mutex> lock(outputDeviceSelectedByCallingMutex_);
+    if (deviceType == DEVICE_TYPE_NONE) {
+        outputDeviceSelectedByCalling_.erase(uid);
+        return;
+    }
+    outputDeviceSelectedByCalling_[uid] = deviceType;
 }
 
 } // namespace AudioStandard
