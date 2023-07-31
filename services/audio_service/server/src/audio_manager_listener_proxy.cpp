@@ -74,7 +74,7 @@ void AudioManagerListenerProxy::OnWakeupClose()
         AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
         return;
     }
-   
+
     int error = Remote()->SendRequest(ON_WAKEUP_CLOSE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("ON_WAKEUP_CLOSE failed, error: %{public}d", error);
