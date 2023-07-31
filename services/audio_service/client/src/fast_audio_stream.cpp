@@ -123,7 +123,7 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 
 bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
 {
-    AUDIO_INFO_LOG("VerifyClientPermission in");
+    AUDIO_INFO_LOG("CheckRecordingCreate in");
     // note: add support later
     return true;
 }

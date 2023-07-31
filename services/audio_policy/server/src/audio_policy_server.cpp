@@ -1626,6 +1626,7 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
 
     if (CheckRootCalling(callingUid, appUid)) {
+        AUDIO_INFO_LOG("root user recording");
         return true;
     }
 
@@ -1699,6 +1700,7 @@ void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionSta
 bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint32_t targetTokenId)
 {
     if (std::count(RECORD_ALLOW_BACKGROUND_LIST.begin(), RECORD_ALLOW_BACKGROUND_LIST.end(), callingUid) > 0) {
+        AUDIO_INFO_LOG("internal sa user directly recording");
         return true;
     }
     return PrivacyKit::IsAllowedUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
