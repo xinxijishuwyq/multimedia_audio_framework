@@ -72,7 +72,7 @@ void PlayerTest(char *argv[])
     // 2. set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
     OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
-    OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_latencyMode);
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
@@ -122,15 +122,16 @@ int main(int argc, char *argv[])
         return 0;
     }
     printf("argc=%d ", argc);
-    printf("argv[1]=%s ", argv[AudioTestConstants::FIRST_ARG_IDX]);
-    printf("argv[2]=%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
-    printf("argv[3]=%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
+    printf("file path =%s ", argv[AudioTestConstants::FIRST_ARG_IDX]);
+    printf("sample rate =%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
+    printf("channel count =%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
+    printf("latency mode =%s \n", argv[AudioTestConstants::FOUR_ARG_IDX]);
 
+    g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
     g_samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
     g_channelCount = atoi(argv[AudioTestConstants::THIRD_ARG_IDX]);
     g_latencyMode = atoi(argv[AudioTestConstants::FOUR_ARG_IDX]);
 
-    g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
     printf("filePATH: %s \n", g_filePath.c_str());
 
     g_file = fopen(g_filePath.c_str(), "rb");

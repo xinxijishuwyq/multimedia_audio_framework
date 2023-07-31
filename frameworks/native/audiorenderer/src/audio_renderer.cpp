@@ -66,6 +66,9 @@ AudioRendererPrivate::~AudioRendererPrivate()
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
     }
+
+    // Unregister the renderer event callaback in policy server
+    (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
 #ifdef DUMP_CLIENT_PCM
     if (dcp_) {
         fclose(dcp_);
@@ -273,6 +276,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         if (IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
             AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
             streamClass = IAudioStream::FAST_STREAM;
+            isFastRenderer_ = true;
         } else {
             AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
             streamClass = IAudioStream::PA_STREAM;
@@ -303,6 +307,14 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
+    SetSelfRendererStateCallback();
+    InitDumpInfo();
+
+    return InitAudioInterruptCallback();
+}
+
+void AudioRendererPrivate::InitDumpInfo()
+{
 #ifdef DUMP_CLIENT_PCM
     uint32_t streamId = 0;
     GetAudioStreamId(streamId);
@@ -318,10 +330,6 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
 #endif
-
-    SetSelfRendererStateCallback();
-
-    return InitAudioInterruptCallback();
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
@@ -566,8 +574,6 @@ bool AudioRendererPrivate::Release() const
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
-
-    (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
 
     return audioStream_->ReleaseAudioStream();
 }

@@ -122,6 +122,7 @@ private:
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
     void SetSelfRendererStateCallback();
+    void InitDumpInfo();
 
     std::shared_ptr<IAudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
