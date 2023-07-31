@@ -155,11 +155,11 @@ public:
     virtual int32_t SetParameterCallback(const sptr<IRemoteObject>& object) = 0;
 
     /**
-     * Set wakeupclose callback
+     * Set wakeupSource callback
      *
      * @return Returns the setting result
      */
-    virtual int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) = 0;
+    virtual int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) = 0;
 
     /**
      * Set audio mono state for accessibility

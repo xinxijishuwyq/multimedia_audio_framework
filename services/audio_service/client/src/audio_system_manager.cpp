@@ -1193,5 +1193,17 @@ DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
     }
     return type;
 }
+
+int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
+{
+    audioCapturerSourceCallback_ = callback;
+    return SUCCESS;
+}
+
+int32_t AudioSystemManager::SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback)
+{
+    audioWakeUpSourceCloseCallback_ = callback;
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

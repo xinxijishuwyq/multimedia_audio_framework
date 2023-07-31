@@ -274,6 +274,10 @@ public:
 
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
+        void OnCapturerState(bool isActive) override
+        {
+        }
+
         void OnWakeupClose() override
         {
             std::unique_lock<std::mutex> uck(lock);
@@ -318,7 +322,7 @@ protected:
 
     void RegisterParamCallback();
 
-    void RegisterWakeupCloseCallback();
+    void RegisterWakeupSourceCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

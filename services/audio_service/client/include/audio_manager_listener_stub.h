@@ -33,11 +33,12 @@ public:
     MessageParcel& reply, MessageOption& option) override;
     void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
+    void OnCapturerState(bool isActive) override;
     void OnWakeupClose() override;
 
     // AudioManagerListenerStub
     void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
-    void SetWakeupCloseCallback(const std::weak_ptr<WakeUpSourceCallback>& callback);
+    void SetWakeupSourceCallback(const std::weak_ptr<WakeUpSourceCallback>& callback);
 private:
     std::weak_ptr<AudioParameterCallback> callback_;
     std::weak_ptr<WakeUpSourceCallback> wakeUpCallback_;

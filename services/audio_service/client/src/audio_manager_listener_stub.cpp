@@ -50,6 +50,12 @@ int AudioManagerListenerStub::OnRemoteRequest(
             OnWakeupClose();
             return AUDIO_OK;
         }
+        case ON_CAPTURER_STATE: {
+            AUDIO_DEBUG_LOG("ON_CAPTURER_STATE AudioManagerStub");
+            bool isActive = data.ReadBool();
+            OnCapturerState(isActive);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -62,7 +68,7 @@ void AudioManagerListenerStub::SetParameterCallback(const std::weak_ptr<AudioPar
     callback_ = callback;
 }
 
-void AudioManagerListenerStub::SetWakeupCloseCallback(const std::weak_ptr<WakeUpSourceCallback>& callback)
+void AudioManagerListenerStub::SetWakeupSourceCallback(const std::weak_ptr<WakeUpSourceCallback>& callback)
 {
     wakeUpCallback_ = callback;
 }
@@ -78,13 +84,23 @@ void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkI
     }
 }
 
+void AudioManagerListenerStub::OnCapturerState(bool isActive)
+{
+    std::shared_ptr<WakeUpSourceCallback> cb = wakeUpCallback_.lock();
+    if (cb != nullptr) {
+        cb->OnCapturerState(isActive);
+    } else {
+        AUDIO_ERR_LOG("AudioManagerListenerStub: OnWakeupClose error");
+    }
+}
+
 void AudioManagerListenerStub::OnWakeupClose()
 {
     std::shared_ptr<WakeUpSourceCallback> cb = wakeUpCallback_.lock();
     if (cb != nullptr) {
         cb->OnWakeupClose();
     } else {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: OnWakeupClose error");
+        AUDIO_ERR_LOG("AudioManagerListenerStub: OnWakeupClose error");
     }
 }
 
