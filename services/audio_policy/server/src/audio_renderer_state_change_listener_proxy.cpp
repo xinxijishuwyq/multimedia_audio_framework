@@ -78,6 +78,10 @@ void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
     size_t size = audioRendererChangeInfos.size();
     data.WriteInt32(size);
     for (const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
+        if (!rendererChangeInfo) {
+            AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
+            continue;
+        }
         WriteRendererChangeInfo(data, rendererChangeInfo);
     }
 
