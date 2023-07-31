@@ -75,6 +75,10 @@ void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
     size_t size = audioCapturerChangeInfos.size();
     data.WriteInt32(size);
     for (const unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
+        if (!capturerChangeInfo) {
+            AUDIO_ERR_LOG("Capturer change info null, something wrong!!");
+            continue;
+        }
         WriteCapturerChangeInfo(data, capturerChangeInfo);
     }
 
