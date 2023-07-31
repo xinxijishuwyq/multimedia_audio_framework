@@ -85,7 +85,7 @@ public:
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 
-    int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) override;
+    int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
 
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
 

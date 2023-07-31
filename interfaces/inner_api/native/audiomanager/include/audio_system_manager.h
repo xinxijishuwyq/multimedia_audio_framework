@@ -248,9 +248,22 @@ public:
         const std::string& condition, const std::string& value) = 0;
 };
 
-class WakeUpSourceCallback {
+class AudioCapturerSourceCallback {
+public:
+    virtual ~AudioCapturerSourceCallback() = default;
+    virtual void OnCapturerState(bool isActive) = 0;
+};
+
+class WakeUpSourceCloseCallback {
+public:
+    virtual ~WakeUpSourceCloseCallback() = default;
+    virtual void OnWakeupClose() = 0;
+};
+
+class WakeUpSourceCallback : public AudioCapturerSourceCallback, public WakeUpSourceCloseCallback {
 public:
     virtual ~WakeUpSourceCallback() = default;
+    virtual void OnCapturerState(bool isActive) = 0;
     virtual void OnWakeupClose() = 0;
 };
 
@@ -934,6 +947,10 @@ public:
      */
     void RequestThreadPriority(uint32_t tid);
 
+    int32_t SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback);
+
+    int32_t SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback);
+
     static void AudioServerDied(pid_t pid);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
@@ -957,6 +974,9 @@ private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
     std::mutex ringerModeCallbackMutex_;
+
+    std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
+    std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

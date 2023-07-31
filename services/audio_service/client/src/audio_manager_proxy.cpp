@@ -412,7 +412,7 @@ int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &obje
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
+int32_t AudioManagerProxy::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
 {
     MessageParcel data;
     MessageParcel reply;

@@ -712,11 +712,11 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     return SUCCESS;
 }
 
-int32_t AudioServer::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
+int32_t AudioServer::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_) {
-        AUDIO_ERR_LOG("SetWakeupCloseCallback refused for %{public}d", callingUid);
+        AUDIO_ERR_LOG("SetWakeupSourceCallback refused for %{public}d", callingUid);
         return false;
     }
 

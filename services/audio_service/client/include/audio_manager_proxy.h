@@ -44,7 +44,7 @@ public:
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
-    int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) override;
+    int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;

@@ -3328,7 +3328,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
-void AudioPolicyService::SetWakeupCloseCallback(const std::shared_ptr<WakeUpSourceCallback>& callback)
+void AudioPolicyService::SetWakeUpSourceCallback(const std::shared_ptr<WakeUpSourceCallback>& callback)
 {
     AUDIO_INFO_LOG("Enter SetWakeupCloseCallback");
     auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
@@ -3336,7 +3336,7 @@ void AudioPolicyService::SetWakeupCloseCallback(const std::shared_ptr<WakeUpSour
         AUDIO_ERR_LOG("wakeupCloseCbStub is null");
         return;
     }
-    wakeupCloseCbStub->SetWakeupCloseCallback(callback);
+    wakeupCloseCbStub->SetWakeupSourceCallback(callback);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetWakeupCloseCallback gsp null");
@@ -3348,7 +3348,7 @@ void AudioPolicyService::SetWakeupCloseCallback(const std::shared_ptr<WakeUpSour
         delete wakeupCloseCbStub;
         return;
     }
-    gsp->SetWakeupCloseCallback(object);
+    gsp->SetWakeupSourceCallback(object);
 }
 
 int32_t AudioPolicyService::GetMaxRendererInstances()
