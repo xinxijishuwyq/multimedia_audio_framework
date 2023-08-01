@@ -55,6 +55,7 @@ public:
 
     uint64_t GetTransactionId() override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -513,6 +514,11 @@ uint64_t FastAudioCapturerSourceInner::GetTransactionId()
 void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
 {
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
+}
+
+void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
 int32_t FastAudioCapturerSourceInner::Stop(void)

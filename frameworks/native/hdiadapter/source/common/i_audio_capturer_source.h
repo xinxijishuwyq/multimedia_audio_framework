@@ -41,6 +41,7 @@ typedef struct {
 class IAudioSourceCallback {
 public:
     virtual void OnWakeupClose() = 0;
+    virtual void OnCapturerState(bool isActive) = 0;
 };
 
 class IAudioCapturerSource {
@@ -68,6 +69,8 @@ public:
     virtual uint64_t GetTransactionId() = 0;
 
     virtual void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) = 0;
+    virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) = 0;
+
     virtual ~IAudioCapturerSource() = default;
 };
 

@@ -55,6 +55,8 @@ public:
     uint64_t GetTransactionId() override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
+
     AudioCapturerSourceInner();
     ~AudioCapturerSourceInner();
 
@@ -88,8 +90,11 @@ private:
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
-    IAudioSourceCallback* callback_ = nullptr;
-    std::mutex callbackMutex_;
+    IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
+    std::mutex wakeupClosecallbackMutex_;
+
+    IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
+    std::mutex audioCapturerSourceCallbackMutex_;
 #ifdef CAPTURE_DUMP
     FILE *pfd_;
 #endif
@@ -186,8 +191,8 @@ void AudioCapturerSourceInner::DeInit()
 
     IAudioSourceCallback* callback = nullptr;
     {
-        std::lock_guard<std::mutex> lck(callbackMutex_);
-        callback = callback_;
+        std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
+        callback = wakeupCloseCallback_;
     }
     if (callback != nullptr) {
         callback->OnWakeupClose();
@@ -413,6 +418,15 @@ int32_t AudioCapturerSourceInner::Start(void)
 
     int32_t ret;
     if (!started_) {
+        IAudioSourceCallback* callback = nullptr;
+        {
+            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+            callback = audioCapturerSourceCallback_;
+        }
+        if (callback != nullptr) {
+            callback->OnCapturerState(true);
+        }
+
         ret = audioCapture_->Start(audioCapture_);
         if (ret < 0) {
             return ERR_NOT_STARTED;
@@ -659,6 +673,15 @@ int32_t AudioCapturerSourceInner::Stop(void)
 
     int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
+        IAudioSourceCallback* callback = nullptr;
+        {
+            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+            callback = audioCapturerSourceCallback_;
+        }
+        if (callback != nullptr) {
+            callback->OnCapturerState(false);
+        }
+
         ret = audioCapture_->Stop(audioCapture_);
         if (ret < 0) {
             AUDIO_ERR_LOG("Stop capture Failed");
@@ -721,8 +744,15 @@ int32_t AudioCapturerSourceInner::Flush(void)
 void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
 {
     AUDIO_INFO_LOG("Register WakeupClose Callback");
-    std::lock_guard<std::mutex> lck(callbackMutex_);
-    callback_ = callback;
+    std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
+    wakeupCloseCallback_ = callback;
+}
+
+void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
+    std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+    audioCapturerSourceCallback_ = callback;
 }
 
 } // namespace AudioStandard
