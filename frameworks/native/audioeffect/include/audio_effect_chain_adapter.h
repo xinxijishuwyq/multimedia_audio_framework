@@ -36,6 +36,7 @@ int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerGetFrameLen(void);
 bool EffectChainManagerExist(const char *sceneType, const char *effectMode);
+void IgnoreEffectChangeProcess(bool ignored);
 
 #ifdef __cplusplus
 }
