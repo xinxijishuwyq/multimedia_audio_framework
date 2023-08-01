@@ -187,11 +187,9 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid) override;
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state = AUDIO_PERMISSION_START) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -257,7 +255,7 @@ public:
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
     int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &options,
-        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) override;
+        uint32_t appTokenId, int32_t appUid) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -336,6 +334,8 @@ private:
     static constexpr int32_t DEFAULT_APP_PID = -1;
 
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
+    static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
+    static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
     // for audio interrupt
@@ -361,12 +361,18 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
+    // Permission and privacy
+    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
+    bool CheckAppBackgroundPermission(uid_t callingUid, uint32_t targetTokenId);
+    Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
+        uint32_t appTokenId);
+    bool CheckRootCalling(uid_t callingUid, int32_t appUid);
+    void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
+
     // common
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
-    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0, int32_t appUid = INVALID_UID,
-        bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START);
 
     // externel function call
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);

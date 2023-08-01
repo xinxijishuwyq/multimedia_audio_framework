@@ -75,7 +75,7 @@ private:
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void VerifyClientMicrophonePermissionInternal(MessageParcel &data, MessageParcel &reply);
+    void CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
@@ -92,7 +92,7 @@ private:
     void GetVolumeGroupInfoInternal(MessageParcel& data, MessageParcel& reply);
     void GetNetworkIdByGroupIdInternal(MessageParcel& data, MessageParcel& reply);
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
-    void getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply);
+    void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);

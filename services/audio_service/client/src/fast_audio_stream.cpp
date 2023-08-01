@@ -121,18 +121,16 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
-bool FastAudioStream::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-    AudioPermissionState state)
+bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
 {
-    AUDIO_INFO_LOG("VerifyClientPermission in");
+    AUDIO_INFO_LOG("CheckRecordingCreate in");
     // note: add support later
     return true;
 }
 
-bool FastAudioStream::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-    AudioPermissionState state)
+bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
 {
-    AUDIO_INFO_LOG("getUsingPemissionFromPrivacy in");
+    AUDIO_INFO_LOG("CheckRecordingStateChange in");
     // note: add support later
     return true;
 }

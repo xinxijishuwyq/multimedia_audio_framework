@@ -1332,55 +1332,50 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-    AudioPermissionState state)
+bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
 {
-    AUDIO_DEBUG_LOG("VerifyClientMicrophonePermission: [tid : %{public}d]", appTokenId);
+    AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("VerifyClientMicrophonePermission: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("CheckRecordingCreate: WriteInterfaceToken failed");
         return false;
     }
 
     data.WriteUint32(appTokenId);
     data.WriteInt32(appUid);
-    data.WriteBool(privacyFlag);
-    data.WriteInt32(state);
 
     int result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION), data, reply, option);
     if (result != ERR_NONE) {
-        AUDIO_ERR_LOG("VerifyClientMicrophonePermission failed, result: %{public}d", result);
+        AUDIO_ERR_LOG("CheckRecordingCreate failed, result: %{public}d", result);
         return false;
     }
 
     return reply.ReadBool();
 }
 
-bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-    AudioPermissionState state)
+bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
 {
-    AUDIO_DEBUG_LOG("Proxy [permission : %{public}s] | [tid : %{public}d]", permissionName.c_str(), appTokenId);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("CheckRecordingStateChange: WriteInterfaceToken failed");
         return false;
     }
 
-    data.WriteString(permissionName);
     data.WriteUint32(appTokenId);
+    data.WriteInt32(appUid);
     data.WriteInt32(state);
 
     int result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY), data, reply, option);
     if (result != ERR_NONE) {
-        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy failed, result: %{public}d", result);
+        AUDIO_ERR_LOG("CheckRecordingStateChange failed, result: %{public}d", result);
         return false;
     }
 
@@ -2135,7 +2130,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
 }
 
 int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
+    uint32_t appTokenId, int32_t appUid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2152,8 +2147,6 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOpti
     }
     data.WriteUint32(appTokenId);
     data.WriteInt32(appUid);
-    data.WriteBool(privacyFlag);
-    data.WriteInt32(state);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);

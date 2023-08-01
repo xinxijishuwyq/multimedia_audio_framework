@@ -646,26 +646,14 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-    AudioPermissionState state)
+bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
 {
-    // for capturer check for MICROPHONE PERMISSION
-    if (!AudioPolicyManager::GetInstance().VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state)) {
-        AUDIO_ERR_LOG("Client doesn't have MICROPHONE permission");
-        return false;
-    }
-
-    return true;
+    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appUid);
 }
 
-bool AudioServiceClient::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-    AudioPermissionState state)
+bool AudioServiceClient::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
 {
-    if (!AudioPolicyManager::GetInstance().getUsingPemissionFromPrivacy(permissionName, appTokenId, state)) {
-        AUDIO_ERR_LOG("Failed to obtain privacy framework permission");
-        return false;
-    }
-    return true;
+    return AudioPolicyManager::GetInstance().CheckRecordingStateChange(appTokenId, appUid, state);
 }
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)

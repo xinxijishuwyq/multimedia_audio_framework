@@ -55,10 +55,8 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;

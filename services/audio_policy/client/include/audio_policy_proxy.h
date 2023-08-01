@@ -127,11 +127,9 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid) override;
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -202,7 +200,7 @@ public:
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
     int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) override;
+        uint32_t appTokenId, int32_t appUid) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);

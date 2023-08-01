@@ -500,11 +500,9 @@ public:
      *
      * @return Returns whether the authentication was success or not
      */
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid) override;
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state) override;
     int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
     float GetStreamLowPowerVolume();
     float GetSingleStreamVol();

@@ -150,11 +150,9 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state);
+    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid);
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state);
+    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state);
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
@@ -232,7 +230,7 @@ public:
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
     int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state);
+        uint32_t appTokenId, int32_t appUid);
 
 private:
     AudioPolicyManager()
