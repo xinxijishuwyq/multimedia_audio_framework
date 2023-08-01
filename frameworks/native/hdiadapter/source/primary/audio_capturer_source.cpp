@@ -160,8 +160,8 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
 
 AudioCapturerSource *AudioCapturerSource::GetMicInstance()
 {
-    static AudioCapturerSourceInner audioCapturer_;
-    return &audioCapturer_;
+    static AudioCapturerSourceInner audioCapturer;
+    return &audioCapturer;
 }
 
 AudioCapturerSource *AudioCapturerSource::GetWakeupInstance()

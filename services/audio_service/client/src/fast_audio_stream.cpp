@@ -283,6 +283,7 @@ int32_t FastAudioStream::GetBufferDesc(BufferDesc &bufDesc)
     AUDIO_INFO_LOG("GetBufferDesc in.");
     if (!spkProcessClient_) {
         AUDIO_ERR_LOG("spkClient is null.");
+        return ERR_INVALID_OPERATION;
     }
     int32_t ret = spkProcessClient_->GetBufferDesc(bufDesc);
     if (ret != SUCCESS || bufDesc.buffer == nullptr || bufDesc.bufLength ==0) {
@@ -304,6 +305,7 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
     AUDIO_INFO_LOG("Enqueue in");
     if (!spkProcessClient_) {
         AUDIO_ERR_LOG("spkClient is null.");
+        return ERR_INVALID_OPERATION;
     }
     int32_t ret = spkProcessClient_->Enqueue(bufDesc);
     if (ret != SUCCESS) {

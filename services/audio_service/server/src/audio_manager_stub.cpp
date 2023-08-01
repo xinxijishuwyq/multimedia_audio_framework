@@ -306,7 +306,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE): {
             vector<int32_t> usage;
             size_t cnt = static_cast<size_t>(data.ReadInt32());
-            CHECK_AND_RETURN_RET_LOG(cnt >= 0 && cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
+            CHECK_AND_RETURN_RET_LOG(cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
                 "Set support stream usage failed, please check");
             for (size_t i = 0; i < cnt; i++) {
                 int32_t tmp_usage = data.ReadInt32();
@@ -318,6 +318,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             }
             int32_t ret = SetSupportStreamUsage(usage);
             reply.WriteInt32(ret);
+            return AUDIO_OK;
         }
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER): {
             AUDIO_DEBUG_LOG("REGISET_POLICY_PROVIDER AudioManagerStub");

@@ -228,8 +228,9 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
         spToneInfo->segments[i].duration = reply.ReadUint32();
         spToneInfo->segments[i].loopCnt = reply.ReadUint16();
         spToneInfo->segments[i].loopIndx = reply.ReadUint16();
-        AUDIO_DEBUG_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, seg[%{public}d].loopIndex: %{public}d",
-            i, spToneInfo->segments[i].duration, i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
+        AUDIO_DEBUG_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, \
+            seg[%{public}d].loopIndex: %{public}d", i, spToneInfo->segments[i].duration,
+            i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
         for (uint32_t j = 0; j < TONEINFO_MAX_WAVES+1; j++) {
             spToneInfo->segments[i].waveFreq[j] = reply.ReadUint16();
             AUDIO_DEBUG_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
@@ -1640,7 +1641,6 @@ int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterTracker WriteInterfaceToken failed");

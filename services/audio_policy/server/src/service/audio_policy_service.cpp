@@ -1005,7 +1005,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFl
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
-
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
     for (const auto& device : connectedDevices_) {
         if (device == nullptr) {
@@ -1473,7 +1472,8 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         }
     }
 
-    AUDIO_DEBUG_LOG("Current active device: %{public}d. Priority device: %{public}d", currentActiveDevice_, priorityDev);
+    AUDIO_DEBUG_LOG("Current active device: %{public}d. Priority device: %{public}d",
+        currentActiveDevice_, priorityDev);
 
     int32_t result = ActivateNewDevice(priorityDev, true);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
@@ -2437,7 +2437,6 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
 int32_t AudioPolicyService::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
-
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
@@ -2484,7 +2483,6 @@ int32_t AudioPolicyService::UnsetDeviceChangeCallback(const int32_t clientId, De
 int32_t AudioPolicyService::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object, bool hasBTPermission)
 {
-
     sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (callback != nullptr) {
         callback->hasBTPermission_ = hasBTPermission;
