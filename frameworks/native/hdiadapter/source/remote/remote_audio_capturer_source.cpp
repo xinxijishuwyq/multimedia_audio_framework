@@ -103,6 +103,11 @@ void RemoteAudioCapturerSource::RegisterWakeupCloseCallback(IAudioSourceCallback
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
+void RemoteAudioCapturerSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+}
+
 int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, int32_t size, const std::string &adapterNameCase,
     struct AudioPort &capturePort)
 {

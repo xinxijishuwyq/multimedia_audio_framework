@@ -446,6 +446,11 @@ void RemoteFastAudioCapturerSource::RegisterWakeupCloseCallback(IAudioSourceCall
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
+void RemoteFastAudioCapturerSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+}
+
 int32_t RemoteFastAudioCapturerSource::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;

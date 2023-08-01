@@ -81,6 +81,8 @@ public:
     // IAudioSourceCallback
     void OnWakeupClose() override;
 
+    void OnCapturerState(bool isActive) override;
+
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
@@ -99,6 +101,7 @@ private:
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
+    void RegisterAudioCapturerSourceCallback();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

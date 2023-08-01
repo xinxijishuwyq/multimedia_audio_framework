@@ -107,6 +107,8 @@ void AudioServer::OnStart()
     }
     AUDIO_INFO_LOG("Created paDaemonThread\n");
 #endif
+
+    RegisterAudioCapturerSourceCallback();
 }
 
 void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -689,6 +691,22 @@ void AudioServer::OnWakeupClose()
     callback->OnWakeupClose();
 }
 
+void AudioServer::OnCapturerState(bool isActive)
+{
+    AUDIO_INFO_LOG("OnCapturerState Callback start");
+    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
+        if (wakeupCallback_ == nullptr) {
+            AUDIO_ERR_LOG("OnCapturerState callback is nullptr.");
+            return;
+        } else {
+            callback = wakeupCallback_;
+        }
+    }
+    callback->OnCapturerState(isActive);
+}
+
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -737,11 +755,6 @@ int32_t AudioServer::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
         wakeupCallback_ = wakeupCallback;
     }
 
-    IAudioCapturerSource* audioCapturerSourceInstance =
-        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
-    if (audioCapturerSourceInstance != nullptr) {
-        audioCapturerSourceInstance->RegisterWakeupCloseCallback(this);
-    }
     AUDIO_INFO_LOG("SetWakeupCloseCallback done");
 
     return SUCCESS;
@@ -834,5 +847,19 @@ int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
     return SUCCESS;
 }
 
+void AudioServer::RegisterAudioCapturerSourceCallback()
+{
+    IAudioCapturerSource* audioCapturerSourceWakeupInstance =
+        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
+    if (audioCapturerSourceWakeupInstance != nullptr) {
+        audioCapturerSourceWakeupInstance->RegisterWakeupCloseCallback(this);
+    }
+
+    IAudioCapturerSource* audioCapturerSourceInstance =
+        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
+    if (audioCapturerSourceInstance != nullptr) {
+        audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(this);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
