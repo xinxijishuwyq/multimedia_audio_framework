@@ -56,6 +56,7 @@ public:
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
+    void IgnoreEffect(bool ignored);
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -65,6 +66,7 @@ private:
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
+    bool isEffectIgnored;
 };
 
 class AudioEffectChainManager {
@@ -84,6 +86,7 @@ public:
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
+    void IgnoreEffectChain(bool ignored);
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
