@@ -481,7 +481,6 @@ bool AudioStream::StopAudioStream()
         return false;
     }
 
-
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
@@ -872,7 +871,6 @@ void AudioStream::ReadCbThreadLoop()
             }
         }
     }
-
 }
 
 int32_t AudioStream::SetLowPowerVolume(float volume)

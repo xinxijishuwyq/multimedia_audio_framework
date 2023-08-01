@@ -388,7 +388,6 @@ static void AdjustRates(struct userdata *u)
         pa_usec_t target_latency;
 
         target_latency = PA_MAX(u->latency, u->minimum_latency) + LATENCY_INCREMENT_FIVE_MSEC;
-
         if (u->max_latency == 0 || target_latency < u->max_latency) {
             u->underrun_latency_limit =
                 PA_CLIP_SUB((int64_t)target_latency, u->sink_latency_offset + u->source_latency_offset);
@@ -567,7 +566,6 @@ static void MemblockqAdjust(struct userdata *u, int64_t latencyOffsetUsec, bool 
 
     requestedMemblockqLength = pa_usec_to_bytes(requestedBufferLatency, &u->sink_input->sample_spec);
     currentMemblockqLength = pa_memblockq_get_length(u->memblockq);
-
     if (currentMemblockqLength > requestedMemblockqLength) {
         /* Drop audio from queue */
         bufferCorrection = currentMemblockqLength - requestedMemblockqLength;
@@ -900,7 +898,6 @@ static void ProcessSinkInputMessagePost(struct userdata *u, void *data, int64_t 
     if (u->sink_input->sink->thread_info.state != PA_SINK_SUSPENDED &&
         u->sink_input->thread_info.underrun_for > 0 &&
         pa_memblockq_is_readable(u->memblockq)) {
-
         pa_asyncmsgq_post(pa_thread_mq_get()->outq, PA_MSGOBJECT(u->msg), LOOPBACK_MESSAGE_UNDERRUN,
             NULL, 0, NULL, NULL);
         /* If called from within the pop callback skip the rewind */
@@ -1278,7 +1275,7 @@ static void InitUserData(struct userdata *u)
     fastAdjustThreshold = 0;
     maxLatencyMsec = 0;
 
-    if (maxLatencyMsec > 0 && maxLatencyMsec < latencyMsec) {
+    if (maxLatencyMsec < latencyMsec) {
         AUDIO_WARNING_LOG("Configured maximum latency is smaller than latency, using latency instead");
         maxLatencyMsec = latencyMsec;
     }

@@ -148,7 +148,7 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
     return PA_HOOK_OK;
 }
 
-static bool IsSourceOutputForInnerCapturer(pa_source_output *so, struct userdata *u)
+static bool IsSourceOutputForInnerCapturer(pa_source_output *so, const struct userdata *u)
 {
     if (so == NULL || u == NULL) {
         return false;
