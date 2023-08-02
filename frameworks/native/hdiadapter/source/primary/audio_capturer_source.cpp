@@ -673,15 +673,6 @@ int32_t AudioCapturerSourceInner::Stop(void)
 
     int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
-        IAudioSourceCallback* callback = nullptr;
-        {
-            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-            callback = audioCapturerSourceCallback_;
-        }
-        if (callback != nullptr) {
-            callback->OnCapturerState(false);
-        }
-
         ret = audioCapture_->Stop(audioCapture_);
         if (ret < 0) {
             AUDIO_ERR_LOG("Stop capture Failed");
@@ -689,6 +680,15 @@ int32_t AudioCapturerSourceInner::Stop(void)
         }
     }
     started_ = false;
+
+    IAudioSourceCallback* callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
+        callback = audioCapturerSourceCallback_;
+    }
+    if (callback != nullptr) {
+        callback->OnCapturerState(false);
+    }
 
     return SUCCESS;
 }
