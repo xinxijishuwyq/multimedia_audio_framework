@@ -478,7 +478,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_016, TestSize.Level0)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_017, TestSize.Level0)
 {
     AudioCapturerOptions capturerOptions;
-    string cachePath = "/data/storage/el2/base/haps/entry/files";
+    string cachePath = "/data/storage/el2/base/temp";
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
@@ -499,7 +499,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_018, TestSize.Level0)
 {
     AudioCapturerOptions capturerOptions;
     AppInfo appInfo = {};
-    string cachePath = "/data/storage/el2/base/haps/entry/files";
+    string cachePath = "/data/storage/el2/base/temp";
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
