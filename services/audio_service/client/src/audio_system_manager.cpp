@@ -27,6 +27,7 @@
 #include "audio_policy_manager.h"
 #include "audio_volume_key_event_callback_stub.h"
 #include "audio_utils.h"
+#include "audio_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1194,16 +1195,45 @@ DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
     return type;
 }
 
+int32_t AudioSystemManager::RegisterWakeupSourceCallback()
+{
+    AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
+    remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>(this);
+
+    auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    if (wakeupCloseCbStub == nullptr) {
+        AUDIO_ERR_LOG("wakeupCloseCbStub is null");
+        return ERROR;
+    }
+    wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);
+
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("GetAudioParameter::Audio service unavailable.");
+        return ERROR;
+    }
+
+    sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetWakeupCloseCallback listenerStub object is nullptr");
+        delete wakeupCloseCbStub;
+        return ERROR;
+    }
+    return gasp->SetWakeupSourceCallback(object);
+}
+
 int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
 {
     audioCapturerSourceCallback_ = callback;
-    return SUCCESS;
+    return isRemoteWakeUpCallbackRegistered.exchange(true) ? SUCCESS :
+        RegisterWakeupSourceCallback();
 }
 
 int32_t AudioSystemManager::SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback)
 {
     audioWakeUpSourceCloseCallback_ = callback;
-    return SUCCESS;
+    return isRemoteWakeUpCallbackRegistered.exchange(true) ? SUCCESS :
+        RegisterWakeupSourceCallback();
 }
 } // namespace AudioStandard
 } // namespace OHOS
