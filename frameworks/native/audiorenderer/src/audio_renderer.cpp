@@ -259,8 +259,13 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         rendererInfo_.streamUsage);
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST) {
-        AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
-        streamClass = IAudioStream::FAST_STREAM;
+        if(IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
+            AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
+            streamClass = IAudioStream::FAST_STREAM;
+        } else {
+            AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
+            streamClass = IAudioStream::PA_STREAM;
+        }
     }
     // check AudioStreamParams for fast stream
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
