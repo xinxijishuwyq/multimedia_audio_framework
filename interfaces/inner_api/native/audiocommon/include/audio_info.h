@@ -822,6 +822,20 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 
+// Supported audio parameters for fast audio stream
+const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
+    SAMPLE_RATE_48000,
+};
+
+const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+};
+
+const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE
+};
 struct BufferDesc {
     uint8_t* buffer;
     size_t bufLength;
