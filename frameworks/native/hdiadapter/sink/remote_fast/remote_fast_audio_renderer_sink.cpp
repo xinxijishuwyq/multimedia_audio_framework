@@ -194,7 +194,7 @@ void RemoteFastAudioRendererSinkInner::DeInit()
 
 int32_t RemoteFastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
 {
-    AUDIO_INFO_LOG("RemoteAudioRendererSink: Init start.");
+    AUDIO_INFO_LOG("Init start.");
     attr_ = attr;
 
     int32_t ret = InitAudioManager();
@@ -210,7 +210,7 @@ int32_t RemoteFastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
         AUDIO_ERR_LOG("Get adapters Fail, ret: %{public}d.", ret);
         return ERR_INVALID_HANDLE;
     }
-    AUDIO_INFO_LOG("Get [%{publid}d]adapters", size);
+    AUDIO_DEBUG_LOG("Get [%{publid}d]adapters", size);
     int32_t targetIdx = GetTargetAdapterPort(descs, size, attr_.deviceNetworkId);
     CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), ERR_INVALID_INDEX, "can not find target adapter.");
 
@@ -233,14 +233,14 @@ int32_t RemoteFastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
         return ERR_NOT_STARTED;
     }
 
-    AUDIO_INFO_LOG("RemoteAudioRendererSink: Init end.");
+    AUDIO_DEBUG_LOG("RemoteAudioRendererSink: Init end.");
     rendererInited_.store(true);
     return SUCCESS;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::InitAudioManager()
 {
-    AUDIO_INFO_LOG("RemoteFastAudioRendererSinkInner: Initialize audio proxy manager");
+    AUDIO_INFO_LOG("Initialize audio proxy manager");
 #ifdef __aarch64__
     char resolvedPath[100] = "/system/lib64/libdaudio_client.z.so";
 #else
@@ -253,17 +253,17 @@ int32_t RemoteFastAudioRendererSinkInner::InitAudioManager()
         AUDIO_ERR_LOG("Open so Fail");
         return ERR_INVALID_HANDLE;
     }
-    AUDIO_INFO_LOG("dlopen successful");
+    AUDIO_DEBUG_LOG("dlopen successful");
 
     GetAudioManagerFuncs = reinterpret_cast<struct AudioManager *(*)()>(dlsym(handle, "GetAudioManagerFuncs"));
     if (GetAudioManagerFuncs == nullptr) {
         AUDIO_ERR_LOG("dlsym GetAudioManagerFuncs fail.");
         return ERR_INVALID_HANDLE;
     }
-    AUDIO_INFO_LOG("dlsym GetAudioManagerFuncs done");
+    AUDIO_DEBUG_LOG("dlsym GetAudioManagerFuncs done");
     audioManager_ = GetAudioManagerFuncs();
     CHECK_AND_RETURN_RET_LOG((audioManager_ != nullptr), ERR_INVALID_HANDLE, "Init daudio manager fail!");
-    AUDIO_INFO_LOG("Get daudio manager ok");
+    AUDIO_DEBUG_LOG("Get daudio manager ok");
     return SUCCESS;
 }
 
@@ -275,7 +275,7 @@ int32_t RemoteFastAudioRendererSinkInner::GetTargetAdapterPort(struct AudioAdapt
 
 void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_INFO_LOG("RemoteFastAudioRendererSink: register params callback");
+    AUDIO_INFO_LOG("register params callback");
     callback_ = callback;
     if (paramCallbackRegistered_.load()) {
         return;
@@ -286,12 +286,12 @@ void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallb
 void RemoteFastAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-    AUDIO_INFO_LOG("RemoteFastAudioRendererSink SetAudioParameter not support.");
+    AUDIO_INFO_LOG("SetAudioParameter not support.");
 }
 
 std::string RemoteFastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
 {
-    AUDIO_INFO_LOG("RemoteFastAudioRendererSink GetAudioParameter not support.");
+    AUDIO_INFO_LOG("GetAudioParameter not support.");
     return "";
 }
 
@@ -315,7 +315,7 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
     param.format = ConverToHdiFormat(attr_.format);
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_INFO_LOG("RemoteFastAudioRendererSink Create render format: %{public}d", param.format);
+    AUDIO_INFO_LOG("Create render format: %{public}d", param.format);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -330,7 +330,7 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
     }
     isRenderCreated_.store(true);
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
+    AUDIO_DEBUG_LOG("CreateRender cost[%{public}" PRId64 "]ms", cost);
     return SUCCESS;
 }
 
@@ -502,7 +502,7 @@ int32_t RemoteFastAudioRendererSinkInner::Start(void)
     if (!started_.load()) {
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Start failed!");
+            AUDIO_ERR_LOG("Start failed!");
             return ERR_NOT_STARTED;
         }
         started_.store(true);
@@ -537,7 +537,7 @@ int32_t RemoteFastAudioRendererSinkInner::SetVolume(float left, float right)
 
     int32_t ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
     if (ret) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Set volume failed!");
+        AUDIO_ERR_LOG("Set volume failed!");
     }
     return ret;
 }
@@ -552,18 +552,18 @@ int32_t RemoteFastAudioRendererSinkInner::GetVolume(float &left, float &right)
 int32_t RemoteFastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink: GetLatency failed audio render null");
+        AUDIO_ERR_LOG("GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!latency) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink: GetLatency failed latency null");
+        AUDIO_ERR_LOG("GetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
     uint32_t hdiLatency = 0;
     if (audioRender_->GetLatency(audioRender_, &hdiLatency) != 0) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink: GetLatency failed.");
+        AUDIO_ERR_LOG("GetLatency failed.");
         return ERR_OPERATION_FAILED;
     }
 
@@ -574,41 +574,41 @@ int32_t RemoteFastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 int32_t RemoteFastAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
     (void)transactionId;
-    AUDIO_ERR_LOG("RemoteFastAudioRendererSink: GetTransactionId not supported");
+    AUDIO_ERR_LOG("GetTransactionId not supported");
     return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::SetVoiceVolume(float volume)
 {
     (void)volume;
-    AUDIO_ERR_LOG("RemoteFastAudioRendererSink: SetVoiceVolume not supported");
+    AUDIO_ERR_LOG("SetVoiceVolume not supported");
     return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::SetOutputRoute(DeviceType deviceType)
 {
     (void)deviceType;
-    AUDIO_ERR_LOG("RemoteFastAudioRendererSink: SetOutputRoute not supported");
+    AUDIO_ERR_LOG("SetOutputRoute not supported");
     return ERR_NOT_SUPPORTED;
 }
 
 void RemoteFastAudioRendererSinkInner::SetAudioMonoState(bool audioMono)
 {
     (void)audioMono;
-    AUDIO_ERR_LOG("RemoteFastAudioRendererSink: SetAudioMonoState not supported");
+    AUDIO_ERR_LOG("SetAudioMonoState not supported");
     return;
 }
 
 void RemoteFastAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
 {
     (void)audioBalance;
-    AUDIO_ERR_LOG("RemoteFastAudioRendererSink: SetAudioBalanceValue not supported");
+    AUDIO_ERR_LOG("SetAudioBalanceValue not supported");
     return;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    AUDIO_INFO_LOG("RemoteFastAudioRendererSink: SetAudioScene not supported");
+    AUDIO_INFO_LOG("SetAudioScene not supported");
     return SUCCESS;
 }
 
@@ -616,19 +616,19 @@ int32_t RemoteFastAudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Stop failed audioRender_ null");
+        AUDIO_ERR_LOG("Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (started_.load()) {
         int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
-            AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Stop failed!");
+            AUDIO_ERR_LOG("Stop failed!");
             return ERR_OPERATION_FAILED;
         }
         started_.store(false);
     }
-    AUDIO_INFO_LOG("Stop ok.");
+    AUDIO_DEBUG_LOG("Stop ok.");
     return SUCCESS;
 }
 
@@ -636,19 +636,19 @@ int32_t RemoteFastAudioRendererSinkInner::Pause(void)
 {
     AUDIO_INFO_LOG("Pause.");
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Pause failed audioRender_ null");
+        AUDIO_ERR_LOG("Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_.load()) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Pause invalid state!");
+        AUDIO_ERR_LOG("Pause invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
     if (!paused_.load()) {
         int32_t ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
-            AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Pause failed!");
+            AUDIO_ERR_LOG("Pause failed!");
             return ERR_OPERATION_FAILED;
         }
         paused_.store(true);
@@ -660,19 +660,19 @@ int32_t RemoteFastAudioRendererSinkInner::Resume(void)
 {
     AUDIO_INFO_LOG("Pause.");
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Resume failed audioRender_ null");
+        AUDIO_ERR_LOG("Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_.load()) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Resume invalid state!");
+        AUDIO_ERR_LOG("Resume invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
     if (paused_.load()) {
         int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
-            AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Resume failed!");
+            AUDIO_ERR_LOG("Resume failed!");
             return ERR_OPERATION_FAILED;
         }
         paused_.store(false);
@@ -690,7 +690,7 @@ int32_t RemoteFastAudioRendererSinkInner::Reset(void)
 
     int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
     if (ret) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Reset failed, ret %{public}d.", ret);
+        AUDIO_ERR_LOG("Reset failed, ret %{public}d.", ret);
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
@@ -706,7 +706,7 @@ int32_t RemoteFastAudioRendererSinkInner::Flush(void)
 
     int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
     if (ret) {
-        AUDIO_ERR_LOG("RemoteFastAudioRendererSink::Flush failed, ret %{public}d.", ret);
+        AUDIO_ERR_LOG("Flush failed, ret %{public}d.", ret);
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;

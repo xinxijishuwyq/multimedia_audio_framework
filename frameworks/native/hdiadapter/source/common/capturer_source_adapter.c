@@ -54,8 +54,7 @@ static int32_t CapturerSourceInitInner(void *wapper, const SourceAttr *attr)
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
         struct CapturerSourceAdapter **sourceAdapter)
 {
-    AUDIO_INFO_LOG("%{public}s: %{public}d", __func__, sourceType);
-    AUDIO_INFO_LOG("%{public}s: %{public}s", __func__, device);
+    AUDIO_INFO_LOG("%{public}s: sourceType: %{public}d  device: %{public}s ", __func__, sourceType, device);
     if ((device == NULL) || (deviceNetworkId == NULL) || (sourceAdapter == NULL)) {
         AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
         return ERROR;
