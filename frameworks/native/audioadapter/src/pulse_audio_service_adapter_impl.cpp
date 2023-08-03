@@ -40,7 +40,7 @@ PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
 unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(unique_ptr<AudioServiceAdapterCallback> cb)
 {
     if (!cb) {
-        AUDIO_ERR_LOG("AudioServiceAdapter::CreateAudioAdapter cb is nullptr!");
+        AUDIO_ERR_LOG("CreateAudioAdapter cb is nullptr!");
         return nullptr;
     }
     return make_unique<PulseAudioServiceAdapterImpl>(cb);
@@ -576,7 +576,7 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 
     lock_guard<mutex> lock(lock_);
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] GetAllSinkInputs mContext is nullptr");
+        AUDIO_ERR_LOG("GetAllSinkInputs mContext is nullptr");
         return userData->sinkInputList;
     }
 

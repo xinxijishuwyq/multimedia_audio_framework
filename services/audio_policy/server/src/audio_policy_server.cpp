@@ -1443,7 +1443,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     // If it was not in the audioFocusInfoList_, no need to take any action on other sessions, just return.
     if (!isInterruptActive) {
-        AUDIO_INFO_LOG("DeactivateAudioInterrupt: the stream (sessionID %{public}d) is not active now, return success",
+        AUDIO_DEBUG_LOG("DeactivateAudioInterrupt: the stream (sessionID %{public}d) is not active now, return success",
             audioInterrupt.sessionID);
         return SUCCESS;
     }

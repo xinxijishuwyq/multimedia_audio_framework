@@ -262,7 +262,7 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size
 
 int32_t AudioCapturerSourceInner::InitAudioManager()
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner: Initialize audio proxy manager");
+    AUDIO_INFO_LOG("Initialize audio proxy manager");
 
     audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
@@ -345,7 +345,7 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     if (openMic_) {
         ret = SetInputRoute(DEVICE_TYPE_MIC);
         if (ret < 0) {
-            AUDIO_ERR_LOG("AudioCapturerSourceInner:update route FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("update route FAILED: %{public}d", ret);
         }
     }
     capturerInited_ = true;
@@ -441,7 +441,7 @@ int32_t AudioCapturerSourceInner::SetVolume(float left, float right)
 {
     float volume;
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner::SetVolume failed audioCapture_ null");
+        AUDIO_ERR_LOG("SetVolume failed audioCapture_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -474,19 +474,19 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
 {
     int32_t ret;
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner::SetMute failed audioCapture_ handle is null!");
+        AUDIO_ERR_LOG("SetMute failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
     ret = audioCapture_->SetMute(audioCapture_, isMute);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner::SetMute failed from hdi");
+        AUDIO_ERR_LOG("SetMute failed from hdi");
     }
 
     if (audioAdapter_ != nullptr) {
         ret = audioAdapter_->SetMicMute(audioAdapter_, isMute);
         if (ret != 0) {
-            AUDIO_ERR_LOG("AudioCapturerSourceInner::SetMicMute failed from hdi");
+            AUDIO_ERR_LOG("SetMicMute failed from hdi");
         }
     }
 
@@ -499,14 +499,14 @@ int32_t AudioCapturerSourceInner::GetMute(bool &isMute)
 {
     int32_t ret;
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner::GetMute failed audioCapture_ handle is null!");
+        AUDIO_ERR_LOG("GetMute failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
     bool isHdiMute = false;
     ret = audioCapture_->GetMute(audioCapture_, &isHdiMute);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner::GetMute failed from hdi");
+        AUDIO_ERR_LOG("GetMute failed from hdi");
     }
 
     isMute = AudioCapturerSource::micMuteState_;
@@ -534,7 +534,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_MEDIA;
             break;
     }
-    AUDIO_DEBUG_LOG("AudioCapturerSourceInner: Audio category returned is: %{public}d", audioCategory);
+    AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
 
     return audioCategory;
 }
@@ -583,12 +583,12 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
 
     int32_t ret = SetInputPortPin(inputDevice, source);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner: SetOutputRoute FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("SetOutputRoute FAILED: %{public}d", ret);
         return ret;
     }
 
     inputPortPin = source.ext.device.type;
-    AUDIO_INFO_LOG("AudioCapturerSourceInner: Input PIN is: 0x%{public}X", inputPortPin);
+    AUDIO_INFO_LOG("Input PIN is: 0x%{public}X", inputPortPin);
     source.portId = static_cast<int32_t>(audioPort.portId);
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
@@ -610,13 +610,13 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
     };
 
     if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner: AudioAdapter object is null.");
+        AUDIO_ERR_LOG("AudioAdapter object is null.");
         return ERR_OPERATION_FAILED;
     }
 
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner: UpdateAudioRoute failed");
+        AUDIO_ERR_LOG("UpdateAudioRoute failed");
         return ERR_OPERATION_FAILED;
     }
 
@@ -625,19 +625,19 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
 
 int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner::SetAudioScene scene: %{public}d, device: %{public}d",
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSourceInner::SetAudioScene failed audioCapture_ handle is null!");
+        AUDIO_ERR_LOG("SetAudioScene failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
     if (openMic_) {
         AudioPortPin audioSceneInPort = PIN_IN_MIC;
         int32_t ret = SetInputRoute(activeDevice, audioSceneInPort);
         if (ret < 0) {
-            AUDIO_ERR_LOG("AudioCapturerSourceInner: Update route FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
@@ -646,17 +646,17 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
 
         ret = audioCapture_->SelectScene(audioCapture_, &scene);
         if (ret < 0) {
-            AUDIO_ERR_LOG("AudioCapturerSourceInner: Select scene FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
         }
     }
-    AUDIO_INFO_LOG("AudioCapturerSourceInner::Select audio scene SUCCESS: %{public}d", audioScene);
+    AUDIO_DEBUG_LOG("Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }
 
 uint64_t AudioCapturerSourceInner::GetTransactionId()
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner::GetTransactionId in");
+    AUDIO_INFO_LOG("GetTransactionId in");
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 

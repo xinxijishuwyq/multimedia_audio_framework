@@ -30,7 +30,7 @@ namespace AudioStandard {
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
 {
     if (devceClass == nullptr || deviceNetworkId == nullptr) {
-        AUDIO_ERR_LOG("IAudioRendererSink::GetInstance null class or networkid");
+        AUDIO_ERR_LOG("GetInstance null class or networkid");
         return nullptr;
     }
     AUDIO_DEBUG_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
@@ -54,7 +54,7 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     }
 
     if (iAudioRendererSink == nullptr) {
-        AUDIO_ERR_LOG("IAudioRendererSink::GetInstance failed with device[%{public}s]:[%{private}s]", devceClass,
+        AUDIO_ERR_LOG("GetInstance failed with device[%{public}s]:[%{private}s]", devceClass,
             deviceNetworkId);
     }
     return iAudioRendererSink;

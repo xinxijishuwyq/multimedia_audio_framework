@@ -86,29 +86,29 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
 AudioStreamCollector::AudioStreamCollector() : mDispatcherService
     (AudioStreamEventDispatcher::GetAudioStreamEventDispatcher())
 {
-    AUDIO_INFO_LOG("AudioStreamCollector::AudioStreamCollector()");
+    AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
 AudioStreamCollector::~AudioStreamCollector()
 {
-    AUDIO_INFO_LOG("AudioStreamCollector::~AudioStreamCollector()");
+    AUDIO_INFO_LOG("~AudioStreamCollector()");
 }
 
 int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
     bool hasBTPermission, bool hasSystemPermission)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioRendererEventListener client id %{public}d done", clientPid);
+    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id %{public}d done", clientPid);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "AudioStreamCollector:set renderer state change event listener object is nullptr");
+        "set renderer state change event listener object is nullptr");
 
     sptr<IStandardRendererStateChangeListener> listener = iface_cast<IStandardRendererStateChangeListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
-        "AudioStreamCollector: renderer listener obj cast failed");
+        "renderer listener obj cast failed");
 
     std::shared_ptr<AudioRendererStateChangeCallback> callback =
          std::make_shared<AudioRendererStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: failed to  create cb obj");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "failed to  create cb obj");
 
     mDispatcherService.addRendererListener(clientPid, callback);
     return SUCCESS;
@@ -116,7 +116,7 @@ int32_t AudioStreamCollector::RegisterAudioRendererEventListener(int32_t clientP
 
 int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector::UnregisterAudioRendererEventListener()");
+    AUDIO_INFO_LOG("UnregisterAudioRendererEventListener()");
     mDispatcherService.removeRendererListener(clientPid);
     return SUCCESS;
 }
@@ -124,18 +124,18 @@ int32_t AudioStreamCollector::UnregisterAudioRendererEventListener(int32_t clien
 int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
     bool hasBTPermission, bool hasSystemPermission)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: RegisterAudioCapturerEventListener for client id %{public}d done", clientPid);
+    AUDIO_INFO_LOG("RegisterAudioCapturerEventListener for client id %{public}d done", clientPid);
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "AudioStreamCollector:set capturer event listener object is nullptr");
+        "set capturer event listener object is nullptr");
 
     sptr<IStandardCapturerStateChangeListener> listener = iface_cast<IStandardCapturerStateChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioStreamCollector: capturer obj cast failed");
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "capturer obj cast failed");
 
     std::shared_ptr<AudioCapturerStateChangeCallback> callback =
         std::make_shared<AudioCapturerStateChangeListenerCallback>(listener, hasBTPermission, hasSystemPermission);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "AudioStreamCollector: failed to create capturer cb obj");
+        "failed to create capturer cb obj");
 
     mDispatcherService.addCapturerListener(clientPid, callback);
     return SUCCESS;
@@ -143,14 +143,14 @@ int32_t AudioStreamCollector::RegisterAudioCapturerEventListener(int32_t clientP
 
 int32_t AudioStreamCollector::UnregisterAudioCapturerEventListener(int32_t clientPid)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: UnregisterAudioCapturerEventListener client id %{public}d done", clientPid);
+    AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener client id %{public}d done", clientPid);
     mDispatcherService.removeCapturerListener(clientPid);
     return SUCCESS;
 }
 
 int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: AddRendererStream playback client id %{public}d session %{public}d",
+    AUDIO_INFO_LOG("AddRendererStream playback client id %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     rendererStatequeue_.insert({{streamChangeInfo.audioRendererChangeInfo.clientUID,
@@ -159,7 +159,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
 
     unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
     if (!rendererChangeInfo) {
-        AUDIO_ERR_LOG("AudioStreamCollector::AddRendererStream Memory Allocation Failed");
+        AUDIO_ERR_LOG("AddRendererStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
@@ -171,7 +171,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
-    AUDIO_DEBUG_LOG("AudioStreamCollector: audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
+    AUDIO_DEBUG_LOG("audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK, audioRendererChangeInfos_);
@@ -180,7 +180,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
 
 int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: AddCapturerStream recording client id %{public}d session %{public}d",
+    AUDIO_INFO_LOG("AddCapturerStream recording client id %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
     capturerStatequeue_.insert({{streamChangeInfo.audioCapturerChangeInfo.clientUID,
@@ -189,7 +189,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
 
     unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
     if (!capturerChangeInfo) {
-        AUDIO_ERR_LOG("AudioStreamCollector::AddCapturerStream Memory Allocation Failed");
+        AUDIO_ERR_LOG("AddCapturerStream Memory Allocation Failed");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
@@ -200,7 +200,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
     audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
 
-    AUDIO_DEBUG_LOG("AudioStreamCollector: audioCapturerChangeInfos_: Added for client %{public}d session %{public}d",
+    AUDIO_DEBUG_LOG("audioCapturerChangeInfos_: Added for client %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
     mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD, audioCapturerChangeInfos_);
@@ -210,7 +210,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
 int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: RegisterTracker mode %{public}d", mode);
+    AUDIO_INFO_LOG("RegisterTracker mode %{public}d", mode);
 
     int32_t clientId;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -236,7 +236,7 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
 
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: UpdateRendererStream client %{public}d state %{public}d session %{public}d",
+    AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
         streamChangeInfo.audioRendererChangeInfo.sessionId);
 
@@ -260,12 +260,12 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             audioRendererChangeInfo.sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
             rendererStatequeue_[make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId)] =
                 streamChangeInfo.audioRendererChangeInfo.rendererState;
-            AUDIO_DEBUG_LOG("AudioStreamCollector: UpdateRendererStream: update client %{public}d session %{public}d",
+            AUDIO_DEBUG_LOG("UpdateRendererStream: update client %{public}d session %{public}d",
                 audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId);
 
             unique_ptr<AudioRendererChangeInfo> RendererChangeInfo = make_unique<AudioRendererChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(RendererChangeInfo != nullptr,
-                ERR_MEMORY_ALLOC_FAILED, "AudioStreamCollector::RendererChangeInfo Memory Allocation Failed");
+                ERR_MEMORY_ALLOC_FAILED, "RendererChangeInfo Memory Allocation Failed");
             RendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
             RendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
             RendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
@@ -280,7 +280,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
 
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
-                AUDIO_DEBUG_LOG("AudioStreamCollector: Session removed for client %{public}d session %{public}d",
+                AUDIO_DEBUG_LOG("Session removed for client %{public}d session %{public}d",
                     streamChangeInfo.audioRendererChangeInfo.clientUID,
                     streamChangeInfo.audioRendererChangeInfo.sessionId);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
@@ -297,7 +297,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
 
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector: UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
+    AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.capturerState,
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
@@ -310,7 +310,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             return SUCCESS;
         }
     } else {
-        AUDIO_INFO_LOG("AudioStreamCollector: UpdateCapturerStream client %{public}d not found in capturerStatequeue_",
+        AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d not found in capturerStatequeue_",
             streamChangeInfo.audioCapturerChangeInfo.clientUID);
     }
 
@@ -322,13 +322,13 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             capturerStatequeue_[make_pair(audioCapturerChangeInfo.clientUID, audioCapturerChangeInfo.sessionId)] =
                 streamChangeInfo.audioCapturerChangeInfo.capturerState;
 
-            AUDIO_DEBUG_LOG("AudioStreamCollector: Session is updated for client %{public}d session %{public}d",
+            AUDIO_DEBUG_LOG("Session is updated for client %{public}d session %{public}d",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID,
                 streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
             unique_ptr<AudioCapturerChangeInfo> CapturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
             CHECK_AND_RETURN_RET_LOG(CapturerChangeInfo != nullptr,
-                ERR_MEMORY_ALLOC_FAILED, "AudioStreamCollector::CapturerChangeInfo Memory Allocation Failed");
+                ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
             CapturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
             CapturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
             CapturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
@@ -351,7 +351,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
         return SUCCESS;
         }
     }
-    AUDIO_INFO_LOG("AudioStreamCollector:UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d",
+    AUDIO_DEBUG_LOG("UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID);
     return SUCCESS;
 }
@@ -430,7 +430,7 @@ int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         rendererChangeInfos.push_back(make_unique<AudioRendererChangeInfo>(*changeInfo));
     }
-    AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentRendererChangeInfos returned");
+    AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos returned");
 
     return SUCCESS;
 }
@@ -438,11 +438,11 @@ int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
 int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
-    AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentCapturerChangeInfos");
+    AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioCapturerChangeInfos_) {
         capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(*changeInfo));
-        AUDIO_DEBUG_LOG("AudioStreamCollector::GetCurrentCapturerChangeInfos returned");
+        AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos returned");
     }
 
     return SUCCESS;
@@ -472,7 +472,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
-            AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
+            AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
         }
     }
 
@@ -493,14 +493,14 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         vector<std::unique_ptr<AudioCapturerChangeInfo>>::iterator temp = audioCapturerBegin;
         audioCapturerBegin = audioCapturerChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
-            AUDIO_DEBUG_LOG("AudioStreamCollector::TrackerClientDied:client %{public}d cleared", sessionID);
+            AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
         }
     }
 }
 
 void AudioStreamCollector::RegisteredStreamListenerClientDied(int32_t uid)
 {
-    AUDIO_INFO_LOG("AudioStreamCollector::StreamListenerClientDied:client %{public}d", uid);
+    AUDIO_INFO_LOG("StreamListenerClientDied:client %{public}d", uid);
     mDispatcherService.removeRendererListener(uid);
     mDispatcherService.removeCapturerListener(uid);
 }
@@ -522,10 +522,10 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid &&
             GetAndCompareStreamType(streamSetStateEventInternal.audioStreamType, changeInfo->rendererInfo)) {
-            AUDIO_INFO_LOG("AudioStreamCollector:UpdateStreamState Found matching uid and type");
+            AUDIO_INFO_LOG("UpdateStreamState Found matching uid and type");
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
-                AUDIO_ERR_LOG("AudioStreamCollector:UpdateStreamState callback failed sId:%{public}d",
+                AUDIO_ERR_LOG("UpdateStreamState callback failed sId:%{public}d",
                     changeInfo->sessionId);
                 continue;
             }
@@ -544,10 +544,10 @@ int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume streamId invalid.");
+        ERR_INVALID_PARAM, "SetLowPowerVolume streamId invalid.");
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        ERR_INVALID_PARAM, "AudioStreamCollector:SetLowPowerVolume callback failed");
+        ERR_INVALID_PARAM, "SetLowPowerVolume callback failed");
     callback->SetLowPowerVolumeImpl(volume);
     return SUCCESS;
 }
@@ -557,11 +557,11 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ret, "AudioStreamCollector:GetLowPowerVolume streamId invalid.");
+        ret, "GetLowPowerVolume streamId invalid.");
     float volume;
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        ret, "AudioStreamCollector:GetLowPowerVolume callback failed");
+        ret, "GetLowPowerVolume callback failed");
     callback->GetLowPowerVolumeImpl(volume);
     return volume;
 }
@@ -571,11 +571,11 @@ float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ret, "AudioStreamCollector:GetSingleStreamVolume streamId invalid.");
+        ret, "GetSingleStreamVolume streamId invalid.");
     float volume;
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        ret, "AudioStreamCollector:GetSingleStreamVolume callback failed");
+        ret, "GetSingleStreamVolume callback failed");
     callback->GetSingleStreamVolumeImpl(volume);
     return volume;
 }

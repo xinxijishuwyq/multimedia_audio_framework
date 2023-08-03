@@ -203,7 +203,7 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported channel number: %{public}d", attr_.channel);
+        AUDIO_ERR_LOG("AdjustStereoToMono: Unsupported channel number: %{public}d", attr_.channel);
         return;
     }
 
@@ -228,7 +228,7 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("AudioRendererSink::AdjustStereoToMono: Unsupported audio format: %{public}d", attr_.format);
+            AUDIO_ERR_LOG("AdjustStereoToMono: Unsupported audio format: %{public}d", attr_.format);
             break;
         }
     }
@@ -238,7 +238,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported channel number: %{public}d", attr_.channel);
+        AUDIO_ERR_LOG("AdjustAudioBalance: Unsupported channel number: %{public}d", attr_.channel);
         return;
     }
 
@@ -263,7 +263,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("AudioRendererSink::AdjustAudioBalance: Unsupported audio format: %{public}d", attr_.format);
+            AUDIO_ERR_LOG("AdjustAudioBalance: Unsupported audio format: %{public}d", attr_.format);
             break;
         }
     }
@@ -276,7 +276,7 @@ bool AudioRendererSinkInner::IsInited()
 
 void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
 {
-    AUDIO_ERR_LOG("AudioRendererSink RegisterParameterCallback not supported.");
+    AUDIO_ERR_LOG("RegisterParameterCallback not supported.");
 }
 
 void AudioRendererSinkInner::DeInit()
@@ -345,7 +345,7 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
 
 int32_t AudioRendererSinkInner::InitAudioManager()
 {
-    AUDIO_INFO_LOG("AudioRendererSink: Initialize audio proxy manager");
+    AUDIO_INFO_LOG("Initialize audio proxy manager");
 
     audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
@@ -407,7 +407,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     param.format = ConverToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_INFO_LOG("AudioRendererSink Create render format: %{public}d", param.format);
+    AUDIO_DEBUG_LOG("Create render format: %{public}d", param.format);
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
@@ -464,7 +464,7 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
     if (openSpeaker_) {
         ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
         if (ret < 0) {
-            AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
     }
     rendererInited_ = true;
@@ -527,7 +527,7 @@ int32_t AudioRendererSinkInner::Start(void)
     }
 
     if (mKeepRunningLock != nullptr) {
-        AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock lock");
+        AUDIO_DEBUG_LOG("AudioRendererSink call KeepRunningLock lock");
         mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
@@ -540,7 +540,7 @@ int32_t AudioRendererSinkInner::Start(void)
             started_ = true;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Start failed!");
+            AUDIO_ERR_LOG("Start failed!");
             return ERR_NOT_STARTED;
         }
     }
@@ -554,7 +554,7 @@ int32_t AudioRendererSinkInner::SetVolume(float left, float right)
     float volume;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::SetVolume failed audioRender_ null");
+        AUDIO_ERR_LOG("SetVolume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -570,7 +570,7 @@ int32_t AudioRendererSinkInner::SetVolume(float left, float right)
 
     ret = audioRender_->SetVolume(audioRender_, volume);
     if (ret) {
-        AUDIO_ERR_LOG("AudioRendererSink::Set volume failed!");
+        AUDIO_ERR_LOG("Set volume failed!");
     }
 
     return ret;
@@ -596,12 +596,12 @@ int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
 int32_t AudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed audio render null");
+        AUDIO_ERR_LOG("GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!latency) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetLatency failed latency null");
+        AUDIO_ERR_LOG("GetLatency failed latency null");
         return ERR_INVALID_PARAM;
     }
 
@@ -634,7 +634,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_MEDIA;
             break;
     }
-    AUDIO_DEBUG_LOG("AudioRendererSink: Audio category returned is: %{public}d", audioCategory);
+    AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
 
     return audioCategory;
 }
@@ -685,12 +685,12 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
 
     int32_t ret = SetOutputPortPin(outputDevice, sink);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioRendererSink: SetOutputRoute FAILED: %{public}d", ret);
+        AUDIO_ERR_LOG("SetOutputRoute FAILED: %{public}d", ret);
         return ret;
     }
 
     outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("AudioRendererSink: Output PIN is: 0x%{public}X", outputPortPin);
+    AUDIO_INFO_LOG("Output PIN is: 0x%{public}X", outputPortPin);
     source.portId = 0;
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_MIX_TYPE;
@@ -729,22 +729,22 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
 
 int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::SetAudioScene scene: %{public}d, device: %{public}d",
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::SetAudioScene failed audio render handle is null!");
+        AUDIO_ERR_LOG("SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;
     }
     if (openSpeaker_) {
         AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
         int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
         if (ret < 0) {
-            AUDIO_ERR_LOG("AudioRendererSink: Update route FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
 
-        AUDIO_INFO_LOG("AudioRendererSink::OUTPUT port is %{public}d", audioSceneOutPort);
+        AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
         scene.desc.pins = audioSceneOutPort;
@@ -752,26 +752,24 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
 
         ret = audioRender_->SelectScene(audioRender_, &scene);
         if (ret < 0) {
-            AUDIO_ERR_LOG("AudioRendererSink: Select scene FAILED: %{public}d", ret);
+            AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
         }
     }
-
-    AUDIO_INFO_LOG("AudioRendererSink::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }
 
 int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    AUDIO_INFO_LOG("AudioRendererSink::GetTransactionId in");
+    AUDIO_INFO_LOG("GetTransactionId in");
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetTransactionId failed audio render null");
+        AUDIO_ERR_LOG("GetTransactionId failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!transactionId) {
-        AUDIO_ERR_LOG("AudioRendererSink: GetTransactionId failed transactionId null");
+        AUDIO_ERR_LOG("GetTransactionId failed transactionId null");
         return ERR_INVALID_PARAM;
     }
 
@@ -793,7 +791,7 @@ int32_t AudioRendererSinkInner::Stop(void)
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::Stop failed audioRender_ null");
+        AUDIO_ERR_LOG("Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
@@ -803,7 +801,7 @@ int32_t AudioRendererSinkInner::Stop(void)
             started_ = false;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Stop failed!");
+            AUDIO_ERR_LOG("Stop failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -816,12 +814,12 @@ int32_t AudioRendererSinkInner::Pause(void)
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::Pause failed audioRender_ null");
+        AUDIO_ERR_LOG("Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        AUDIO_ERR_LOG("AudioRendererSink::Pause invalid state!");
+        AUDIO_ERR_LOG("Pause invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -831,7 +829,7 @@ int32_t AudioRendererSinkInner::Pause(void)
             paused_ = true;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Pause failed!");
+            AUDIO_ERR_LOG("Pause failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -844,12 +842,12 @@ int32_t AudioRendererSinkInner::Resume(void)
     int32_t ret;
 
     if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererSink::Resume failed audioRender_ null");
+        AUDIO_ERR_LOG("Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
     if (!started_) {
-        AUDIO_ERR_LOG("AudioRendererSink::Resume invalid state!");
+        AUDIO_ERR_LOG("Resume invalid state!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -859,7 +857,7 @@ int32_t AudioRendererSinkInner::Resume(void)
             paused_ = false;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Resume failed!");
+            AUDIO_ERR_LOG("Resume failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -876,7 +874,7 @@ int32_t AudioRendererSinkInner::Reset(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Reset failed!");
+            AUDIO_ERR_LOG("Reset failed!");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -893,7 +891,7 @@ int32_t AudioRendererSinkInner::Flush(void)
         if (!ret) {
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("AudioRendererSink::Flush failed!");
+            AUDIO_ERR_LOG("Flush failed!");
             return ERR_OPERATION_FAILED;
         }
     }
