@@ -333,7 +333,7 @@ private:
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
-    bool CheckAppBackgroundPermission(uid_t callingUid, uint32_t targetTokenId);
+    bool CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId, uint32_t targetTokenId);
     Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
         uint32_t appTokenId);
     bool CheckRootCalling(uid_t callingUid, int32_t appUid);

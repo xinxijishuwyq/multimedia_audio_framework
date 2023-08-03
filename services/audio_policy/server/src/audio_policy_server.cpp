@@ -29,6 +29,7 @@
 #include "accesstoken_kit.h"
 #include "permission_state_change_info.h"
 #include "token_setproc.h"
+#include "tokenid_kit.h"
 
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -47,6 +48,7 @@
 #include "parameters.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
+using OHOS::Security::AccessToken::TokenIdKit;
 using namespace std;
 
 namespace OHOS {
@@ -1620,6 +1622,7 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
 
     if (CheckRootCalling(callingUid, appUid)) {
         AUDIO_INFO_LOG("root user recording");
@@ -1631,7 +1634,8 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid
         return false;
     }
 
-    if (!CheckAppBackgroundPermission(callingUid, targetTokenId)) {
+    uint64_t targetFullTokenId = callingFullTokenId;
+    if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
         return false;
     }
 
@@ -1665,11 +1669,13 @@ bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, int32_t a
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
     Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
+    uint64_t targetFullTokenId = callingFullTokenId;
 
     // start recording need to check app state
     if (state == AUDIO_PERMISSION_START && !CheckRootCalling(callingUid, appUid)) {
-        if (!CheckAppBackgroundPermission(callingUid, targetTokenId)) {
+        if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
             return false;
         }
     }
@@ -1693,8 +1699,13 @@ void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionSta
     }
 }
 
-bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint32_t targetTokenId)
+bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId,
+    uint32_t targetTokenId)
 {
+    if (TokenIdKit::IsSystemAppByFullTokenID(targetFullTokenId)) {
+        AUDIO_INFO_LOG("system app recording");
+        return true;
+    }
     if (std::count(RECORD_ALLOW_BACKGROUND_LIST.begin(), RECORD_ALLOW_BACKGROUND_LIST.end(), callingUid) > 0) {
         AUDIO_INFO_LOG("internal sa user directly recording");
         return true;
