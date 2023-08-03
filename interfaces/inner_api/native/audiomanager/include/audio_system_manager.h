@@ -953,6 +953,30 @@ public:
 
     static void AudioServerDied(pid_t pid);
 private:
+    class WakeUpCallbackImpl : public WakeUpSourceCallback {
+    public:
+        WakeUpCallbackImpl(AudioSystemManager *audioSystemManager)
+            :audioSystemManager_(audioSystemManager)
+        {
+        }
+        void OnCapturerState(bool isActive) override
+        {
+            auto callback = audioSystemManager_ -> audioCapturerSourceCallback_;
+            if (callback != nullptr) {
+                callback -> OnCapturerState(isActive);
+            }
+        }
+        void OnWakeupClose() override
+        {
+            auto callback = audioSystemManager_ -> audioWakeUpSourceCloseCallback_;
+            if (callback != nullptr) {
+                callback -> OnWakeupClose();
+            }
+        }
+    private:
+        AudioSystemManager *audioSystemManager_;
+    };
+
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
@@ -964,6 +988,8 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     uint32_t GetCallingPid();
     std::string GetSelfBundleName();
+
+    int32_t RegisterWakeupSourceCallback();
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;
@@ -977,6 +1003,9 @@ private:
 
     std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
+
+    std::atomic_bool isRemoteWakeUpCallbackRegistered = false;
+    std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

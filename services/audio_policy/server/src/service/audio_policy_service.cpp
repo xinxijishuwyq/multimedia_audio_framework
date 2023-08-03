@@ -3326,29 +3326,6 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
-void AudioPolicyService::SetWakeUpSourceCallback(const std::shared_ptr<WakeUpSourceCallback>& callback)
-{
-    AUDIO_INFO_LOG("Enter SetWakeupCloseCallback");
-    auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
-    if (wakeupCloseCbStub == nullptr) {
-        AUDIO_ERR_LOG("wakeupCloseCbStub is null");
-        return;
-    }
-    wakeupCloseCbStub->SetWakeupSourceCallback(callback);
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetWakeupCloseCallback gsp null");
-        return;
-    }
-    sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("SetWakeupCloseCallback listenerStub object is nullptr");
-        delete wakeupCloseCbStub;
-        return;
-    }
-    gsp->SetWakeupSourceCallback(object);
-}
-
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
     // init max renderer instances before kvstore start by local prop for bootanimation

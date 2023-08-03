@@ -160,7 +160,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
             ConnectServiceAdapter();
             RegisterParamCallback();
-            RegisterWakeupSourceCallback();
             LoadEffectLibrary();
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
@@ -652,9 +651,6 @@ bool AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions opti
 bool AudioPolicyServer::CloseWakeUpAudioCapturer()
 {
     auto res = mPolicyService.CloseWakeUpAudioCapturer();
-    if (remoteWakeUpCallback_ != nullptr) {
-        remoteWakeUpCallback_->WaitClose();
-    }
     return res;
 }
 
@@ -2239,13 +2235,6 @@ void AudioPolicyServer::RegisterParamCallback()
     mPolicyService.SetParameterCallback(remoteParameterCallback_);
     // regiest policy provider in audio server
     mPolicyService.RegiestPolicy();
-}
-
-void AudioPolicyServer::RegisterWakeupSourceCallback()
-{
-    AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
-    remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>();
-    mPolicyService.SetWakeUpSourceCallback(remoteWakeUpCallback_);
 }
 
 void AudioPolicyServer::RegisterBluetoothListener()

@@ -244,8 +244,6 @@ public:
 
     bool SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol);
 
-    void SetWakeUpSourceCallback(const std::shared_ptr<WakeUpSourceCallback>& callback);
-
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid);
 #endif
