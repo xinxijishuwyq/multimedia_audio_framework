@@ -28,19 +28,26 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-class FastAudioStreamCallback : public AudioDataCallback {
+class FastAudioStreamRenderCallback : public AudioDataCallback {
 public:
-    FastAudioStreamCallback(const std::shared_ptr<AudioProcessInClient> &procClient,
-        const std::shared_ptr<AudioRendererWriteCallback> &callback)
-        : procClient_(procClient), renderCallback_(callback) {};
-    virtual ~FastAudioStreamCallback() = default;
+    FastAudioStreamRenderCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
+        : renderCallback_(callback) {};
+    virtual ~FastAudioStreamRenderCallback() = default;
 
     void OnHandleData(size_t length) override;
-
 private:
-    std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
     std::shared_ptr<AudioRendererWriteCallback> renderCallback_ = nullptr;
+};
+
+class FastAudioStreamCaptureCallback : public AudioDataCallback {
+public:
+    FastAudioStreamCaptureCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
+        : captureCallback_(callback) {};
+    virtual ~FastAudioStreamCaptureCallback() = default;
+
+    void OnHandleData(size_t length) override;
+private:
+    std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
 
 class FastAudioStream : public IAudioStream {
@@ -128,8 +135,9 @@ public:
 private:
     AudioStreamType eStreamType_;
     AudioMode eMode_;
-    std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
-    std::shared_ptr<FastAudioStreamCallback> spkProcClientCb_ = nullptr;
+    std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
+    std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;
+    std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_;

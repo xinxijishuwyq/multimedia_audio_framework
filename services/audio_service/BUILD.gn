@@ -413,6 +413,7 @@ ohos_executable("audio_faststream_playback_test") {
 
   deps = [
     ":audio_client",
+    "../../frameworks/native/audiocapturer:audio_capturer",
     "../../frameworks/native/audiorenderer:audio_renderer",
   ]
 

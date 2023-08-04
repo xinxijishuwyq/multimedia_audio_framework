@@ -167,8 +167,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
 {
     if (streamClass == FAST_STREAM) {
         (void)params;
-        // todo: use params eStreamType uid to create fast stream
-        AUDIO_INFO_LOG("Create fast stream");
+        AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
     if (streamClass == PA_STREAM) {
@@ -182,8 +181,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 {
     if (streamClass == FAST_STREAM) {
         (void)params;
-        // todo: use params eStreamType uid to create fast stream
-        AUDIO_INFO_LOG("Create fast stream");
+        AUDIO_INFO_LOG("Create fast record stream");
+        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
     }
     if (streamClass == PA_STREAM) {
         return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
