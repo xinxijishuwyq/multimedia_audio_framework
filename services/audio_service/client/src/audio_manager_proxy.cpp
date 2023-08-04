@@ -419,12 +419,12 @@ int32_t AudioManagerProxy::SetWakeupSourceCallback(const sptr<IRemoteObject>& ob
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioManagerProxy: SetWakeupCloseCallback object is null");
+        AUDIO_ERR_LOG("SetWakeupCloseCallback object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return false;
+        return -1;
     }
 
     (void)data.WriteRemoteObject(object);

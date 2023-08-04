@@ -303,22 +303,22 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFl
     return gsp->GetDevices(deviceFlag);
 }
 
-bool AudioPolicyManager::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+int32_t AudioPolicyManager::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetWakeUpAudioCapturer: audio policy manager proxy is NULL.");
-        return false;
+        return -1;
     }
     return gsp->SetWakeUpAudioCapturer(options);
 }
 
-bool AudioPolicyManager::CloseWakeUpAudioCapturer()
+int32_t AudioPolicyManager::CloseWakeUpAudioCapturer()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: audio policy manager proxy is NULL.");
-        return false;
+        return -1;
     }
     return gsp->CloseWakeUpAudioCapturer();
 }

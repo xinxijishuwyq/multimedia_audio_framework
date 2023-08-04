@@ -60,9 +60,9 @@ public:
 
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
-    virtual bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) = 0;
+    virtual int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) = 0;
 
-    virtual bool CloseWakeUpAudioCapturer() = 0;
+    virtual int32_t CloseWakeUpAudioCapturer() = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 

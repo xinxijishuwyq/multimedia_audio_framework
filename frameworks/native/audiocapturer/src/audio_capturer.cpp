@@ -68,8 +68,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         return nullptr;
     }
     if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        if (AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions) != SUCCESS) {
-            AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error!");
+        int32_t res = AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions);
+        if (res != SUCCESS) {
+            AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error! ErrorCode: %{public}d", res);
             return nullptr;
         }
     }
@@ -434,11 +435,9 @@ bool AudioCapturerPrivate::Release()
     this->GetCapturerInfo(currertCapturer);
     SourceType sourceType = currertCapturer.sourceType;
     if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        bool ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
+        int32_t ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("can not destory wakeup config");
-        } else {
-            AUDIO_INFO_LOG("start destory wakeup config");
+            AUDIO_ERR_LOG("CloseWakeUpAudioCapturer Error! ErrorCode: %{public}d", ret);
         }
     }
     return audioStream_->ReleaseAudioStream();

@@ -643,13 +643,23 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
     return deviceDescs;
 }
 
-bool AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
+    bool hasManageIntellgentPermission = VerifyPermission(MANAGE_INTELLTGENT_VOICE_PERMISSION);
+    if (!hasManageIntellgentPermission) {
+        AUDIO_ERR_LOG("SetWakeUpAudioCapturer: No permission");
+        return ERR_PERMISSION_DENIED;
+    }
     return mPolicyService.SetWakeUpAudioCapturer(options);
 }
 
-bool AudioPolicyServer::CloseWakeUpAudioCapturer()
+int32_t AudioPolicyServer::CloseWakeUpAudioCapturer()
 {
+    bool hasManageIntellgentPermission = VerifyPermission(MANAGE_INTELLTGENT_VOICE_PERMISSION);
+    if (!hasManageIntellgentPermission) {
+        AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: No permission");
+        return ERR_PERMISSION_DENIED;
+    }
     auto res = mPolicyService.CloseWakeUpAudioCapturer();
     return res;
 }
@@ -1856,7 +1866,7 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
     AudioServiceDump dumpObj;
 
     if (dumpObj.Initialize() != AUDIO_DUMP_SUCCESS) {
-        AUDIO_ERR_LOG("AudioPolicyServer:: Audio Service Dump Not initialised\n");
+        AUDIO_ERR_LOG("Audio Service Dump Not initialised\n");
         return AUDIO_DUMP_INIT_ERR;
     }
 
@@ -2128,7 +2138,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
     if (sscanf_s(condition.c_str(), "%[^;];AUDIO_STREAM_TYPE=%d;VOLUME_LEVEL=%d;IS_UPDATEUI=%d;VOLUME_GROUP_ID=%d;",
         eventDes, EVENT_DES_SIZE, &(volumeEvent.volumeType), &(volumeEvent.volume), &(volumeEvent.updateUi),
         &(volumeEvent.volumeGroupId)) < PARAMS_VOLUME_NUM) {
-        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        AUDIO_ERR_LOG("[VolumeOnChange]: Failed parse condition");
         return;
     }
 
@@ -2155,7 +2165,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
 
     if (sscanf_s(condition.c_str(), "%[^;];EVENT_TYPE=%d;FORCE_TYPE=%d;HINT_TYPE=%d;", eventDes,
         EVENT_DES_SIZE, &type, &forceType, &hint) < PARAMS_INTERRUPT_NUM) {
-        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        AUDIO_ERR_LOG("[InterruptOnChange]: Failed parse condition");
         return;
     }
 
@@ -2174,7 +2184,7 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
     char contentDes[RENDER_STATE_CONTENT_DES_SIZE];
     if (sscanf_s(condition.c_str(), "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes,
         RENDER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
-        AUDIO_ERR_LOG("[AudioPolicyServer]: Failed parse condition");
+        AUDIO_ERR_LOG("[StateOnChange]: Failed parse condition");
         return;
     }
     if (!strcmp(eventDes, "ERR_EVENT")) {

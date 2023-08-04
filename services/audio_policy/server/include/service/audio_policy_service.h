@@ -98,9 +98,9 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
-    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
+    int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    bool CloseWakeUpAudioCapturer();
+    int32_t CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
