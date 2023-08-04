@@ -335,7 +335,7 @@ napi_value TonePlayerNapi::Construct(napi_env env, napi_callback_info info)
     if (abilityContext != nullptr) {
         cacheDir = abilityContext->GetCacheDir();
     } else {
-        cacheDir = "/data/storage/el2/base/haps/entry/files";
+        cacheDir = "/data/storage/el2/base/temp";
     }
     tonePlayerNapi->tonePlayer_ = TonePlayer::Create(cacheDir, rendererInfo);
 

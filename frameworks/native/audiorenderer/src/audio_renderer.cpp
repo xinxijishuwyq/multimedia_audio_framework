@@ -313,7 +313,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     GetAudioStreamId(streamId);
     std::stringstream strStream;
     std::string dumpPatch;
-    strStream << "/data/storage/el2/base/haps/entry/files/";
+    strStream << "/data/storage/el2/base/temp/";
     strStream << "dump_pid" << appInfo_.appPid << "_stream" << streamId << ".pcm";
     strStream >> dumpPatch;
     AUDIO_INFO_LOG("Client dump using path: %{public}s", dumpPatch.c_str());

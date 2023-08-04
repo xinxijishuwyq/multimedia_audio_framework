@@ -211,7 +211,7 @@ napi_value AudioCapturerNapi::Construct(napi_env env, napi_callback_info info)
     if (abilityContext != nullptr) {
         cacheDir = abilityContext->GetCacheDir();
     } else {
-        cacheDir = "/data/storage/el2/base/haps/entry/files";
+        cacheDir = "/data/storage/el2/base/temp";
     }
     capturerNapi->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
 
