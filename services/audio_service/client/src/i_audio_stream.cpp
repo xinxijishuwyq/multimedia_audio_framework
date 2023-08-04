@@ -136,25 +136,22 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         AudioSamplingRate samplingRate = static_cast<AudioSamplingRate>(params.samplingRate);
         auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
-
         if (rateItem == AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end()) {
             return false;
         }
 
-        // check audio channel 
+        // check audio channel
         AudioChannel channels = static_cast<AudioChannel>(params.channels);
         auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
-
         if (channelItem == AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end()) {
             return false;
         }
 
-        // check audio sample format 
+        // check audio sample format
         AudioSampleFormat format = static_cast<AudioSampleFormat>(params.format);
         auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
-
         if (formatItem == AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end()) {
             return false;
         }
