@@ -186,7 +186,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appUid)) {
+    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid)) {
         AUDIO_ERR_LOG("recording create check failed");
         return ERR_PERMISSION_DENIED;
     }
@@ -340,7 +340,8 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 bool AudioCapturerPrivate::Start() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Start");
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appUid, AUDIO_PERMISSION_START)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_START)) {
         AUDIO_ERR_LOG("recording start check failed");
         return false;
     }
@@ -377,7 +378,8 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 bool AudioCapturerPrivate::Pause() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Pause");
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Pause monitor permission failed");
     }
 
@@ -393,7 +395,8 @@ bool AudioCapturerPrivate::Pause() const
 bool AudioCapturerPrivate::Stop() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Stop");
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Stop monitor permission failed");
     }
 
@@ -421,7 +424,8 @@ bool AudioCapturerPrivate::Release()
         return false;
     }
 
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Release monitor permission failed");
     }
 

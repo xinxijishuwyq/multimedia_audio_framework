@@ -1333,7 +1333,7 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
     AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
     MessageParcel data;
@@ -1346,6 +1346,7 @@ bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
     }
 
     data.WriteUint32(appTokenId);
+    data.WriteUint64(appFullTokenId);
     data.WriteInt32(appUid);
 
     int result = Remote()->SendRequest(
@@ -1358,7 +1359,8 @@ bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
     return reply.ReadBool();
 }
 
-bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
+bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    AudioPermissionState state)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1370,6 +1372,7 @@ bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, int32_t ap
     }
 
     data.WriteUint32(appTokenId);
+    data.WriteUint64(appFullTokenId);
     data.WriteInt32(appUid);
     data.WriteInt32(state);
 

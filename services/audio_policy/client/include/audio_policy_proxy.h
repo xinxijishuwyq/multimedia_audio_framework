@@ -127,9 +127,10 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
 
-    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;
 
-    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+        AudioPermissionState state) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 

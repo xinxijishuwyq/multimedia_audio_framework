@@ -1618,7 +1618,7 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
     return false;
 }
 
-bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
@@ -1634,7 +1634,7 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid
         return false;
     }
 
-    uint64_t targetFullTokenId = callingFullTokenId;
+    uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
     if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
         return false;
     }
@@ -1665,13 +1665,14 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     return true;
 }
 
-bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
+bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    AudioPermissionState state)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
     Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
-    uint64_t targetFullTokenId = callingFullTokenId;
+    uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
 
     // start recording need to check app state
     if (state == AUDIO_PERMISSION_START && !CheckRootCalling(callingUid, appUid)) {
@@ -1718,6 +1719,13 @@ Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t c
 {
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appTokenId : callingTokenId;
+}
+
+uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId,
+    uint64_t appFullTokenId)
+{
+    return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
+        appFullTokenId : callingFullTokenId;
 }
 
 int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)

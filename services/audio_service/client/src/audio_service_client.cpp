@@ -646,14 +646,15 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
+bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appUid);
+    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
 }
 
-bool AudioServiceClient::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
+bool AudioServiceClient::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    AudioPermissionState state)
 {
-    return AudioPolicyManager::GetInstance().CheckRecordingStateChange(appTokenId, appUid, state);
+    return AudioPolicyManager::GetInstance().CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
 }
 
 int32_t AudioServiceClient::Initialize(ASClientType eClientType)

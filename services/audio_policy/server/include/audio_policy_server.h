@@ -187,9 +187,10 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;
 
-    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+        AudioPermissionState state) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -336,6 +337,7 @@ private:
     bool CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId, uint32_t targetTokenId);
     Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
         uint32_t appTokenId);
+    uint64_t GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId, uint64_t appFullTokenId);
     bool CheckRootCalling(uid_t callingUid, int32_t appUid);
     void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 
