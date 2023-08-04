@@ -912,7 +912,7 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
     UpdateEffectDefaultSink(deviceType);
 }
 
-bool AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     auto sourceType = options.capturerInfo.sourceType;
@@ -927,17 +927,17 @@ bool AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions opt
     }
 
     auto devType = GetDeviceType(moduleInfo.name);
-    int32_t result = ERROR;
+    int32_t result = -1;
     result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
     if (result != SUCCESS) {
         AUDIO_ERR_LOG("SetWakeUpAudioCapturer failed!");
-        return false;
+        return -1;
     }
     AUDIO_DEBUG_LOG("SetWakeUpAudioCapturer Active Success!");
-    return true;
+    return SUCCESS;
 }
 
-bool AudioPolicyService::CloseWakeUpAudioCapturer()
+int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     AudioIOHandle ioHandle;
@@ -946,14 +946,14 @@ bool AudioPolicyService::CloseWakeUpAudioCapturer()
         auto ioHandleIter = IOHandles_.find(PRIMARY_WAKEUP);
         if (ioHandleIter == IOHandles_.end()) {
             AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed");
-            return false;
+            return -1;
         } else {
             ioHandle = ioHandleIter->second;
             IOHandles_.erase(ioHandleIter);
         }
     }
     audioPolicyManager_.CloseAudioPort(ioHandle);
-    return true;
+    return SUCCESS;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)

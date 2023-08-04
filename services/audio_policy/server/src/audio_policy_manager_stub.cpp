@@ -293,23 +293,15 @@ void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data,
     capturerOptions.streamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
     capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
     capturerOptions.capturerInfo.capturerFlags = data.ReadInt32();
-    bool result = SetWakeUpAudioCapturer(capturerOptions);
-    if (result) {
-        reply.WriteInt32(AUDIO_OK);
-    } else {
-        reply.WriteInt32(AUDIO_ERR);
-    }
+    int32_t result = SetWakeUpAudioCapturer(capturerOptions);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("CloseWakeUpAudioCapturerInternal AudioManagerStub");
-    bool result = CloseWakeUpAudioCapturer();
-    if (result) {
-        reply.WriteInt32(AUDIO_OK);
-    } else {
-        reply.WriteInt32(AUDIO_ERR);
-    }
+    int32_t result = CloseWakeUpAudioCapturer();
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
