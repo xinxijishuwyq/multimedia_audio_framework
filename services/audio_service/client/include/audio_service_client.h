@@ -565,7 +565,6 @@ private:
 
     float mVolumeFactor;
     float mPowerVolumeFactor;
-    bool mUnMute_;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
 
