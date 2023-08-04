@@ -15,11 +15,16 @@
 
 #include "audio_renderer_sink.h"
 
+#include <atomic>
 #include <cstring>
 #include <cinttypes>
+#include <condition_variable>
 #include <dlfcn.h>
 #include <string>
 #include <unistd.h>
+#include <mutex>
+
+#include "securec.h"
 
 #include "power_mgr_client.h"
 #include "running_lock.h"
@@ -49,6 +54,7 @@ const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t PARAM_VALUE_LENTH = 10;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
+const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 120;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
@@ -105,6 +111,13 @@ private:
 
     std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
 
+    // for device switch
+    std::atomic<bool> inSwitch_ = false;
+    std::atomic<int32_t> renderEmptyFrameCount_ = 0;
+    std::mutex switchMutex_;
+    std::condition_variable switchCV_;
+
+private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
@@ -504,7 +517,21 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         }
     }
 #endif // DUMPFILE
-    Trace trace("Sink::RenderFrame:" + std::to_string(len));
+    if (inSwitch_) {
+        Trace traceInSwitch("AudioRendererSinkInner::RenderFrame::inSwitch");
+        writeLen = len;
+        return SUCCESS;
+    }
+    if (renderEmptyFrameCount_ > 0) {
+        Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
+        CHECK_AND_BREAK_LOG(memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
+            static_cast<size_t>(len)) == EOK, "call memset_s failed");
+        renderEmptyFrameCount_--;
+        if (renderEmptyFrameCount_ == 0) {
+            switchCV_.notify_all();
+        }
+    }
+    Trace trace("AudioRendererSinkInner::RenderFrame");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret != 0) {
@@ -585,6 +612,7 @@ int32_t AudioRendererSinkInner::GetVolume(float &left, float &right)
 
 int32_t AudioRendererSinkInner::SetVoiceVolume(float volume)
 {
+    Trace trace("AudioRendererSinkInner::SetVoiceVolume");
     if (audioAdapter_ == nullptr) {
         AUDIO_ERR_LOG("SetVoiceVolume failed, audioAdapter_ is null");
         return ERR_INVALID_HANDLE;
@@ -711,18 +739,25 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
         .sinksLen = 1,
     };
 
-    if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("SetOutputRoute failed, audioAdapter_ is null.");
-        return ERR_INVALID_HANDLE;
-    }
+    renderEmptyFrameCount_ = 5; // preRender 5 frames
+    std::unique_lock<std::mutex> lock(switchMutex_);
+    switchCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_RENDER_EMPTY), [this] {
+        if (renderEmptyFrameCount_ == 0) {
+            AUDIO_INFO_LOG("Wait for preRender end.");
+            return true;
+        }
+        AUDIO_DEBUG_LOG("Current renderEmptyFrameCount_ is %{public}d", renderEmptyFrameCount_.load());
+        return false;
+    });
     int64_t stamp = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetOutputRoute failed with null adapter");
+    inSwitch_.store(true);
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
+    inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("UpdateAudioRoute cost[%{public}" PRId64 "]ms", stamp);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("UpdateAudioRoute failed");
-        return ERR_OPERATION_FAILED;
-    }
+    renderEmptyFrameCount_ = 5; // render 5 empty frame
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
     return SUCCESS;
 }

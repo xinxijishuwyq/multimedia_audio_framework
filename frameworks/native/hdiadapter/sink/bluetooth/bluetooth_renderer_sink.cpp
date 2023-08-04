@@ -461,6 +461,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
 #endif // BT_DUMPFILE
 
+    Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
         AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
@@ -482,6 +483,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
 int32_t BluetoothRendererSinkInner::Start(void)
 {
+    Trace trace("BluetoothRendererSinkInner::Start");
     AUDIO_INFO_LOG("Start.");
 
     if (mKeepRunningLock == nullptr) {
@@ -588,6 +590,7 @@ int32_t BluetoothRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t BluetoothRendererSinkInner::Stop(void)
 {
+    Trace trace("BluetoothRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop in");
     if (mKeepRunningLock != nullptr) {
         AUDIO_INFO_LOG("BluetoothRendererSink call KeepRunningLock UnLock");

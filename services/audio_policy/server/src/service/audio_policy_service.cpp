@@ -242,6 +242,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
 
 void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
 {
+    Trace trace("AudioPolicyService::SetVoiceCallVolume" + std::to_string(volumeLevel));
     // set voice volume by the interface from hdi.
     if (volumeLevel == 0) {
         AUDIO_ERR_LOG("SetVoiceVolume: volume of voice_call cannot be set to 0");
@@ -260,6 +261,7 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
 
 void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
 {
+    Trace trace("AudioPolicyService::SetVolumeForSwitchDevice:" + std::to_string(deviceType));
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
 
@@ -899,6 +901,7 @@ AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourc
 
 void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std::string networkId)
 {
+    Trace trace("AudioPolicyService::OnPreferOutputDeviceUpdated:" + std::to_string(deviceType));
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     for (auto it = preferOutputDeviceCbsMap_.begin(); it != preferOutputDeviceCbsMap_.end(); ++it) {
@@ -1163,6 +1166,7 @@ static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
 
 int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType)
 {
+    Trace trace("AudioPolicyService::SelectNewDevice:" + std::to_string(deviceType));
     int32_t result = SUCCESS;
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
@@ -1175,7 +1179,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "Invalid port name %{public}s", portName.c_str());
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
-        int32_t muteDuration = 500000; // us
+        int32_t muteDuration = 200000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
     }
@@ -1327,7 +1331,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
 
 void AudioPolicyService::KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType)
 {
-    Trace trace("AudioPolicyService::KeepPortMute:" + portName);
+    Trace trace("AudioPolicyService::KeepPortMute:" + portName + " for " + std::to_string(muteDuration) + "us");
     AUDIO_INFO_LOG("KeepPortMute %{public}d us for device type[%{public}d]", muteDuration, deviceType);
     audioPolicyManager_.SetSinkMute(portName, true);
     usleep(muteDuration);
@@ -2175,6 +2179,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
+    Trace trace("AudioPolicyService::OnPreferOutputDeviceUpdated:" + std::to_string(deviceType));
     if (effectActiveDevice_ == deviceType) {
         return;
     }
