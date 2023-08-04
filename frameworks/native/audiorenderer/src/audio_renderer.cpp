@@ -31,8 +31,13 @@ namespace AudioStandard {
 
 static const int32_t MAX_VOLUME_LEVEL = 15;
 static const int32_t CONST_FACTOR = 100;
-static const std::vector<StreamUsage> NEED_VERFITY_PERMISSION_STREAMS = {STREAM_USAGE_SYSTEM, STREAM_USAGE_DTMF,
-    STREAM_USAGE_ENFORCED_TONE, STREAM_USAGE_ULTRASONIC, STREAM_USAGE_VOICE_MODEM_COMMUNICATION};
+static const std::vector<StreamUsage> NEED_VERFITY_PERMISSION_STREAMS = {
+    STREAM_USAGE_SYSTEM,
+    STREAM_USAGE_DTMF,
+    STREAM_USAGE_ENFORCED_TONE,
+    STREAM_USAGE_ULTRASONIC,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+};
 
 static float VolumeToDb(int32_t volumeLevel)
 {
@@ -42,10 +47,10 @@ static float VolumeToDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
-static bool isNeedVerfityPermission(const StreamUsage stream)
+static bool isNeedVerfityPermission(const StreamUsage streamUsage)
 {
     for (const auto& item : NEED_VERFITY_PERMISSION_STREAMS) {
-        if (stream == item) {
+        if (streamUsage == item) {
             return true;
         }
     }
