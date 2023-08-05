@@ -335,6 +335,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
 
 bool AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 {
+    Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
