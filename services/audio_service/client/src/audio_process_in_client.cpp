@@ -227,8 +227,8 @@ void AudioProcessInClientInner::AudioServerDied(pid_t pid)
 
 std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioProcessConfig &config)
 {
-    AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, isRemote %{public}d.",
-        config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.isRemote);
+    AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, streamType %{public}d.",
+        config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.streamType);
     if (config.audioMode == AUDIO_MODE_PLAYBACK && !AudioProcessInClient::CheckIfSupport(config)) {
         AUDIO_ERR_LOG("CheckIfSupport failed!");
         return nullptr;

@@ -366,7 +366,7 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    config.isRemote = isRemote;
+    config.streamType = STREAM_MUSIC;
 
     if (!g_loopTest) {
         wav_hdr wavHeader;
@@ -463,7 +463,7 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    config.isRemote = isRemote;
+    (void)isRemote;
 
     micProcessClient_ = AudioProcessInClient::Create(config);
     CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, ERR_INVALID_HANDLE,

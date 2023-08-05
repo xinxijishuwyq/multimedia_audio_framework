@@ -3236,22 +3236,13 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 
     if (config.audioMode == AUDIO_MODE_RECORD) {
         deviceInfo.deviceId = 1;
-        if (config.isRemote) {
-            deviceInfo.networkId = "remote_mmap_dmic";
-        } else {
-            deviceInfo.networkId = LOCAL_NETWORK_ID;
-        }
+        deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceRole = INPUT_DEVICE;
         deviceInfo.deviceType = DEVICE_TYPE_MIC;
     } else {
         deviceInfo.deviceId = 6; // 6 for test
-        if (config.isRemote) {
-            deviceInfo.networkId = REMOTE_NETWORK_ID;
-            deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
-        } else {
-            deviceInfo.networkId = LOCAL_NETWORK_ID;
-            deviceInfo.deviceType = currentActiveDevice_;
-        }
+        deviceInfo.networkId = LOCAL_NETWORK_ID;
+        deviceInfo.deviceType = currentActiveDevice_;
         deviceInfo.deviceRole = OUTPUT_DEVICE;
     }
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml

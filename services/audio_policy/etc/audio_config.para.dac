@@ -13,5 +13,6 @@
 
 persist.multimedia.audio.mediavolume = audio:audio:660
 persist.multimedia.audio.maxrendererinstances = audio:audio:660
+persist.multimedia.audio.mmap.enable = audio:audio:660
 const.multimedia.audio.fixedvolume = audio:audio:660
 const.multimedia.audio.volumestep = audio:audio:660
