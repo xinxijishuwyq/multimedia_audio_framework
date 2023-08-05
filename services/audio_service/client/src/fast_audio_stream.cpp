@@ -86,7 +86,7 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     config.streamInfo.encoding = static_cast<AudioEncodingType>(info.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(info.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
-    config.isRemote = false; // note:
+    config.streamType = eStreamType_;
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize playback");
         config.rendererInfo.contentType = rendererInfo_.contentType;

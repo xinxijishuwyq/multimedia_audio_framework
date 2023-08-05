@@ -997,7 +997,7 @@ struct AudioProcessConfig {
 
     AudioCapturerInfo capturerInfo;
 
-    bool isRemote;
+    AudioStreamType streamType;
 };
 
 struct AudioStreamData {

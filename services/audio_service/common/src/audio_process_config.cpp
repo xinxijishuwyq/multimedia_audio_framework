@@ -47,8 +47,8 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.capturerInfo.sourceType);
     parcel.WriteInt32(config.capturerInfo.capturerFlags);
 
-    // isRemote
-    parcel.WriteBool(config.isRemote);
+    // streamType
+    parcel.WriteInt32(config.streamType);
 
     return SUCCESS;
 }
@@ -78,8 +78,8 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
     config.capturerInfo.capturerFlags = parcel.ReadInt32();
 
-    // isRemote
-    config.isRemote = parcel.ReadBool();
+    // streamType
+    config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
 
     return SUCCESS;
 }
@@ -105,7 +105,7 @@ std::string ProcessConfig::DumpProcessConfig(const AudioProcessConfig &config)
             config.capturerInfo.capturerFlags << ") ";
     }
 
-    temp << "isRemote<" << (config.isRemote ? "true" : "false") << ">";
+    temp << "streamType<" << config.streamType << ">";
 
     return temp.str();
 }
