@@ -88,7 +88,7 @@ private:
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort;
 
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
     IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
     std::mutex wakeupClosecallbackMutex_;
@@ -397,23 +397,23 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 int32_t AudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
-    if (mKeepRunningLock == nullptr) {
+    if (keepRunningLock_ == nullptr) {
         switch (attr_.sourceType) {
             case SOURCE_TYPE_WAKEUP:
-                mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
+                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
                 break;
             case SOURCE_TYPE_MIC:
             default:
-                mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
+                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         }
     }
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock lock");
-        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, start can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
     }
 
     int32_t ret;
@@ -664,11 +664,11 @@ int32_t AudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
 
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock UnLock");
-        mKeepRunningLock->UnLock();
+        keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, stop can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, stop can not work well!");
     }
 
     int32_t ret;

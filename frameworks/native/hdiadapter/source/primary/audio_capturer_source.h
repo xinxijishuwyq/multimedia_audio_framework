@@ -42,8 +42,8 @@ public:
     static bool micMuteState_;
 
 protected:
-    AudioCapturerSource() = default;;
-    ~AudioCapturerSource() = default;;
+    AudioCapturerSource() = default;
+    ~AudioCapturerSource() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

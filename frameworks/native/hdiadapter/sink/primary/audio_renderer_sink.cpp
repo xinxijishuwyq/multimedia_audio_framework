@@ -109,7 +109,7 @@ private:
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
 
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
     // for device switch
     std::atomic<bool> inSwitch_ = false;
@@ -548,16 +548,16 @@ int32_t AudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
     Trace trace("Sink::Start");
-    if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+    if (keepRunningLock_ == nullptr) {
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_DEBUG_LOG("AudioRendererSink call KeepRunningLock lock");
-        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
 
     int32_t ret;
@@ -816,11 +816,11 @@ int32_t AudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
 
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock UnLock");
-        mKeepRunningLock->UnLock();
+        keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
 
     int32_t ret;

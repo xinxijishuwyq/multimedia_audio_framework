@@ -114,7 +114,7 @@ private:
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
 
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -486,16 +486,16 @@ int32_t BluetoothRendererSinkInner::Start(void)
     Trace trace("BluetoothRendererSinkInner::Start");
     AUDIO_INFO_LOG("Start.");
 
-    if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
+    if (keepRunningLock_ == nullptr) {
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_DEBUG_LOG("AudioRendBluetoothRendererSinkererSink call KeepRunningLock lock");
-        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
 
     int32_t ret;
@@ -592,11 +592,11 @@ int32_t BluetoothRendererSinkInner::Stop(void)
 {
     Trace trace("BluetoothRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop in");
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("BluetoothRendererSink call KeepRunningLock UnLock");
-        mKeepRunningLock->UnLock();
+        keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
     int32_t ret;
 
