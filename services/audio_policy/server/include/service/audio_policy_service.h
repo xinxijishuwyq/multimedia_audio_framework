@@ -320,7 +320,7 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType);
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType, int wakeupNo);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
@@ -507,6 +507,10 @@ private:
     std::unordered_map<decltype(IPCSkeleton::GetCallingUid()), DeviceType> outputDeviceSelectedByCalling_;
 
     bool isMicrophoneMute_ = false;
+
+    static constexpr int WAKEUP_LIMIT = 2;
+    int wakeupCount_ = 0;
+    std::mutex wakeupCountMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -36,9 +36,10 @@ namespace AudioStandard {
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:
-    static AudioCapturerSource *GetInstance(const SourceType sourceType = SourceType::SOURCE_TYPE_MIC);
+    static AudioCapturerSource *GetInstance(const SourceType sourceType = SourceType::SOURCE_TYPE_MIC,
+        const char *sourceName = "Built_in_wakeup");
     static AudioCapturerSource *GetMicInstance(void);
-    static AudioCapturerSource *GetWakeupInstance(void);
+    static AudioCapturerSource *GetWakeupInstance(bool isMirror = false);
     static bool micMuteState_;
 
 protected:

@@ -52,7 +52,7 @@ static int32_t CapturerSourceInitInner(void *wapper, const SourceAttr *attr)
 }
 
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
-        struct CapturerSourceAdapter **sourceAdapter)
+        const char *sourceName, struct CapturerSourceAdapter **sourceAdapter)
 {
     AUDIO_INFO_LOG("%{public}s: sourceType: %{public}d  device: %{public}s ", __func__, sourceType, device);
     if ((device == NULL) || (deviceNetworkId == NULL) || (sourceAdapter == NULL)) {
@@ -66,7 +66,7 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const
         return ERROR;
     }
 
-    if (FillinSourceWapper(device, deviceNetworkId, sourceType, &adapter->wapper) != SUCCESS) {
+    if (FillinSourceWapper(device, deviceNetworkId, sourceType, sourceName, &adapter->wapper) != SUCCESS) {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         free(adapter);
         return ERROR;

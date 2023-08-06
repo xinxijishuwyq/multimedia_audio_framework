@@ -29,7 +29,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass, const char *deviceNetworkId,
-    const SourceType sourceType)
+    const SourceType sourceType, const char *sourceName)
 {
     AUDIO_DEBUG_LOG("%{public}s Source:GetInstance deviceNetworkId:[%{public}s] sourceType:[%{public}d]",
         deviceClass, deviceNetworkId, sourceType);
@@ -39,7 +39,7 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     const char *deviceClassRemote = "remote";
 
     if (!strcmp(deviceClass, deviceClassPrimary)) {
-        return AudioCapturerSource::GetInstance(sourceType);
+        return AudioCapturerSource::GetInstance(sourceType, sourceName);
     }
     if (!strcmp(deviceClass, deviceClassA2DP)) {
         static AudioCapturerFileSource audioCapturer;
@@ -66,7 +66,7 @@ extern "C" {
 using namespace OHOS::AudioStandard;
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
-    const SourceType sourceType, void **wapper)
+    const SourceType sourceType, const char *sourceName, void **wapper)
 {
     IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass, deviceNetworkId, sourceType);
 

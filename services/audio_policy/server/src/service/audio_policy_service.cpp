@@ -884,12 +884,16 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 }
 
 // private method
-AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourceType)
+AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourceType, int wakeupNo)
 {
     AudioModuleInfo audioModuleInfo = {};
     audioModuleInfo.lib = "libmodule-hdi-source.z.so";
     audioModuleInfo.format = "s16le";
-    audioModuleInfo.name = "Built_in_wakeup";
+    static string_view wakeupNames[] = {
+        "Built_in_wakeup",
+        "Built_in_wakeup_mirror"
+    };
+    audioModuleInfo.name = wakeupNames[wakeupNo];
     audioModuleInfo.networkId = "LocalDevice";
 
     audioModuleInfo.adapterName = "primary";
@@ -927,8 +931,23 @@ void AudioPolicyService::OnPreferOutputDeviceUpdated(DeviceType deviceType, std:
 int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    int wakeupNo = 0;
+    {
+        std::lock_guard<std::mutex> lock(wakeupCountMutex_);
+        if (wakeupCount_ < 0) {
+            AUDIO_ERR_LOG("wakeupCount_ = %{public}d", wakeupCount_);
+            wakeupCount_ = 0;
+        }
+        if (wakeupCount_ >= WAKEUP_LIMIT) {
+            return -1;
+        }
+        wakeupNo = wakeupCount_;
+        wakeupCount_++;
+    }
+
     auto sourceType = options.capturerInfo.sourceType;
-    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(sourceType);
+    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(sourceType, wakeupNo);
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
@@ -952,19 +971,29 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    AudioIOHandle ioHandle;
+
     {
-        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-        auto ioHandleIter = IOHandles_.find(PRIMARY_WAKEUP);
-        if (ioHandleIter == IOHandles_.end()) {
-            AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed");
-            return -1;
-        } else {
-            ioHandle = ioHandleIter->second;
-            IOHandles_.erase(ioHandleIter);
+        std::lock_guard<std::mutex> lock(wakeupCountMutex_);
+        wakeupCount_--;
+        if (wakeupCount_ > 0) {
+            return SUCCESS;
+        }
+        for (auto key : {PRIMARY_WAKEUP, PRIMARY_WAKEUP_MIRROR}) {
+            AudioIOHandle ioHandle;
+            {
+                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+                auto ioHandleIter = IOHandles_.find(key);
+                if (ioHandleIter == IOHandles_.end()) {
+                    AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed");
+                    continue;
+                } else {
+                    ioHandle = ioHandleIter->second;
+                    IOHandles_.erase(ioHandleIter);
+                }
+            }
+            audioPolicyManager_.CloseAudioPort(ioHandle);
         }
     }
-    audioPolicyManager_.CloseAudioPort(ioHandle);
     return SUCCESS;
 }
 

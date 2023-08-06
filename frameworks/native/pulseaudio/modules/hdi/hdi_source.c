@@ -463,7 +463,9 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
         pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
-        u->attrs.sourceType, &u->sourceAdapter);
+        u->attrs.sourceType,
+        pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME),
+        &u->sourceAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
