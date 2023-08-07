@@ -645,17 +645,19 @@ void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &
 void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t appTokenId = data.ReadUint32();
+    uint64_t appFullTokenId = data.ReadUint64();
     uint32_t appUid = data.ReadInt32();
-    bool ret = CheckRecordingCreate(appTokenId, appUid);
+    bool ret = CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
     reply.WriteBool(ret);
 }
 
 void AudioPolicyManagerStub::CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t appTokenId = data.ReadUint32();
+    uint64_t appFullTokenId = data.ReadUint64();
     int32_t appUid = data.ReadInt32();
     AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = CheckRecordingStateChange(appTokenId, appUid, state);
+    bool ret = CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
     reply.WriteBool(ret);
 }
 

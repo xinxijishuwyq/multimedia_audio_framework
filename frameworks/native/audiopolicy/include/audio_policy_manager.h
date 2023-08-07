@@ -150,9 +150,10 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
-    bool CheckRecordingCreate(uint32_t appTokenId, int32_t appUid);
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid);
 
-    bool CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state);
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+        AudioPermissionState state);
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 

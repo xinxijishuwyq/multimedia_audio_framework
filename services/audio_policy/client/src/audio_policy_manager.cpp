@@ -919,24 +919,25 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
+bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("CheckRecordingCreate: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->CheckRecordingCreate(appTokenId, appUid);
+    return gsp->CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
 }
 
-bool AudioPolicyManager::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
+bool AudioPolicyManager::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    AudioPermissionState state)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("CheckRecordingStateChange: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->CheckRecordingStateChange(appTokenId, appUid, state);
+    return gsp->CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
 }
 
 int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)

@@ -123,14 +123,15 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
-bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, int32_t appUid)
+bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
     AUDIO_INFO_LOG("CheckRecordingCreate in");
     // note: add support later
     return true;
 }
 
-bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, int32_t appUid, AudioPermissionState state)
+bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    AudioPermissionState state)
 {
     AUDIO_INFO_LOG("CheckRecordingStateChange in");
     // note: add support later

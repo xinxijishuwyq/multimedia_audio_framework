@@ -751,6 +751,7 @@ struct AppInfo {
     int32_t appUid { INVALID_UID };
     uint32_t appTokenId { 0 };
     int32_t appPid { 0 };
+    uint64_t appFullTokenId { 0 };
 };
 
 // Supported audio parameters for both renderer and capturer
