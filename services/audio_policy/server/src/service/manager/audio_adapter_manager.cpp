@@ -414,12 +414,14 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+    AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d", deviceType);
+    // Current device must be updated even if kvStore is nullptr.
+    currentActiveDevice_ = deviceType;
+
     if (audioPolicyKvStore_ == nullptr) {
         AUDIO_ERR_LOG("SetVolumeForSwitchDevice audioPolicyKvStore_ is null!");
         return;
     }
-    AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status from KVStore for new device");
-    currentActiveDevice_ = deviceType;
     LoadVolumeMap();
     LoadMuteStatusMap();
 

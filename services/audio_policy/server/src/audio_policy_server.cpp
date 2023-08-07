@@ -1500,7 +1500,8 @@ AudioStreamType AudioPolicyServer::GetStreamInFocus()
 {
     AudioStreamType streamInFocus = STREAM_DEFAULT;
     for (auto iter = audioFocusInfoList_.begin(); iter != audioFocusInfoList_.end(); ++iter) {
-        if (iter->second != ACTIVE) {
+        if (iter->second != ACTIVE || (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
+            // if the steam is not active or the active stream is an audio capturer stream, skip it.
             continue;
         }
         AudioInterrupt audioInterrupt = iter->first;

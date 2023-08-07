@@ -468,7 +468,6 @@ AudioServiceClient::AudioServiceClient()
 
     mVolumeFactor = 1.0f;
     mPowerVolumeFactor = 1.0f;
-    mUnMute_ = false;
     mStreamType = STREAM_MUSIC;
     mAudioSystemMgr = nullptr;
 
@@ -2130,10 +2129,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
 
-    if ((volume - mVolumeFactor) > std::numeric_limits<float>::epsilon()) {
-        mUnMute_ = true;
-    }
-    AUDIO_DEBUG_LOG("mUnMute_ %{public}d", mUnMute_);
     pa_threaded_mainloop_lock(mainLoop);
 
     mVolumeFactor = volume;
@@ -2240,19 +2235,6 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         systemVolumeLevel, deviceType);
     float vol = systemVolumeDb * client.mVolumeFactor * client.mPowerVolumeFactor;
 
-    AudioRingerMode ringerMode = client.mAudioSystemMgr->GetRingerMode();
-    if ((client.mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
-        vol = MIN_STREAM_VOLUME_LEVEL;
-    }
-
-    if (client.mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(client.mStreamType))) {
-        if (client.mUnMute_) {
-            client.mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(client.mStreamType),
-                false);
-        } else {
-            vol = MIN_STREAM_VOLUME_LEVEL;
-        }
-    }
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, client.volumeChannels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, nullptr, nullptr));
@@ -2481,22 +2463,7 @@ float AudioServiceClient::GetSingleStreamVol()
     DeviceType deviceType = mAudioSystemMgr->GetActiveOutputDevice();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(mStreamType,
         systemVolumeLevel, deviceType);
-    float vol = systemVolumeDb * mVolumeFactor * mPowerVolumeFactor;
-
-    AudioRingerMode ringerMode = mAudioSystemMgr->GetRingerMode();
-    if ((mStreamType == STREAM_RING) && (ringerMode != RINGER_MODE_NORMAL)) {
-        vol = MIN_STREAM_VOLUME_LEVEL;
-    }
-
-    if (mAudioSystemMgr->IsStreamMute(static_cast<AudioVolumeType>(mStreamType))) {
-        if (mUnMute_) {
-            mAudioSystemMgr->SetMute(static_cast<AudioVolumeType>(mStreamType), false);
-        } else {
-            vol = MIN_STREAM_VOLUME_LEVEL;
-        }
-    }
-
-    return vol;
+    return systemVolumeDb * mVolumeFactor * mPowerVolumeFactor;
 }
 
 // OnRenderMarkReach by eventHandler
