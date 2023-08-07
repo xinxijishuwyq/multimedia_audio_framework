@@ -505,6 +505,8 @@ private:
 
     std::mutex outputDeviceSelectedByCallingMutex_;
     std::unordered_map<decltype(IPCSkeleton::GetCallingUid()), DeviceType> outputDeviceSelectedByCalling_;
+
+    bool isMicrophoneMute_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1064,15 +1064,17 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
     AUDIO_DEBUG_LOG("SetMicrophoneMute state[%{public}d]", isMute);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-    return gsp->SetMicrophoneMute(isMute);
+    int32_t ret = gsp->SetMicrophoneMute(isMute);
+    if (ret == SUCCESS) {
+        isMicrophoneMute_ = isMute;
+    }
+    return ret;
 }
 
 bool AudioPolicyService::IsMicrophoneMute()
 {
     AUDIO_DEBUG_LOG("Enter IsMicrophoneMute");
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
-    return gsp->IsMicrophoneMute();
+    return isMicrophoneMute_;
 }
 
 int32_t AudioPolicyService::SetSystemSoundUri(const std::string &key, const std::string &uri)
