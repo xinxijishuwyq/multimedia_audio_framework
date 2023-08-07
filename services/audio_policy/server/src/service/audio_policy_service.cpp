@@ -266,7 +266,9 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
 
     // The volume of voice_call needs to be adjusted separately
-    SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
+        SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    }
 }
 
 
@@ -295,9 +297,16 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
     return streamCollector_.GetSingleStreamVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute) const
+int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    return audioPolicyManager_.SetStreamMute(streamType, mute);
+    int32_t result = audioPolicyManager_.SetStreamMute(streamType, mute);
+
+    Volume vol = {false, 1.0f, 0};
+    vol.isMute = mute;
+    vol.volumeInt = GetSystemVolumeLevel(streamType);
+    vol.volumeFloat = GetSystemVolumeInDb(streamType, vol.volumeInt, currentActiveDevice_);
+    SetSharedVolume(streamType, currentActiveDevice_, vol);
+    return result;
 }
 
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
@@ -3435,7 +3444,8 @@ void AudioPolicyService::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolum
     return audioPolicyManager_.GetStreamVolumeInfoMap(streamVolumeInfoMap);
 }
 
-float AudioPolicyService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
+float AudioPolicyService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel,
+    DeviceType deviceType) const
 {
     return audioPolicyManager_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
