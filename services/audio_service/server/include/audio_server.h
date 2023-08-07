@@ -93,6 +93,8 @@ public:
 
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
+    int32_t SetCaptureSilentState(bool state) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

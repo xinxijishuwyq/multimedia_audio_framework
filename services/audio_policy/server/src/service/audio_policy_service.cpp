@@ -3499,20 +3499,27 @@ void AudioPolicyService::RegisterDataObserver()
     RegisterNameMonitorHelper();
 }
 
-int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &options)
+int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
-    LoadLoopback();
+    if (!config.silentCapture) {
+        LoadLoopback();
+    }
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetPlaybackCapturerFilterInfos error for g_adProxy null");
         return ERR_OPERATION_FAILED;
     }
 
+    if (gsp->SetCaptureSilentState(config.silentCapture)) {
+        AUDIO_ERR_LOG("SetPlaybackCapturerFilterInfos, SetCaptureSilentState failed");
+        return ERR_OPERATION_FAILED;
+    }
+
     std::vector<int32_t> targetUsages;
     AUDIO_INFO_LOG("SetPlaybackCapturerFilterInfos");
-    for (size_t i = 0; i < options.usages.size(); i++) {
-        if (count(targetUsages.begin(), targetUsages.end(), options.usages[i]) == 0) {
-            targetUsages.emplace_back(options.usages[i]); // deduplicate
+    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
+        if (count(targetUsages.begin(), targetUsages.end(), config.filterOptions.usages[i]) == 0) {
+            targetUsages.emplace_back(config.filterOptions.usages[i]); // deduplicate
         }
     }
 

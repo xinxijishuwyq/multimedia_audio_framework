@@ -862,5 +862,18 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(this);
     }
 }
+
+int32_t AudioServer::SetCaptureSilentState(bool state)
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return ERR_OPERATION_FAILED;
+    }
+
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    playbackCapturerMgr->SetCaptureSilentState(state);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

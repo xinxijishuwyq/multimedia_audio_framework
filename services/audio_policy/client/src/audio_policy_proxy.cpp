@@ -2132,8 +2132,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     return 0;
 }
 
-int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-    uint32_t appTokenId, int32_t appUid)
+int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2143,13 +2142,13 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOpti
         AUDIO_ERR_LOG(" SetPlaybackCapturerFilterInfos WriteInterfaceToken failed");
         return ERROR;
     }
-    size_t ss = filterOptions.usages.size();
-    data.WriteInt32(ss);
+    data.WriteInt32(static_cast<int32_t>(config.silentCapture));
+    size_t ss = config.filterOptions.usages.size();
+    data.WriteUint32(ss);
     for (size_t i = 0; i < ss; i++) {
-        data.WriteInt32(filterOptions.usages[i]);
+        data.WriteInt32(static_cast<int32_t>(config.filterOptions.usages[i]));
     }
     data.WriteUint32(appTokenId);
-    data.WriteInt32(appUid);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);

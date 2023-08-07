@@ -331,6 +331,16 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             reply.WriteInt32(result);
             return AUDIO_OK;
         }
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE): {
+            bool state = false;
+            int32_t flag = data.ReadInt32();
+            if (flag == 1) {
+                state = true;
+            }
+            int32_t ret = SetCaptureSilentState(state);
+            reply.WriteInt32(ret);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

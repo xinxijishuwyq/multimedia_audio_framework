@@ -102,7 +102,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->cachePath_ = cachePath;
     }
 
-    if (capturer->InitPlaybackCapturer(sourceType, capturerOptions.playbackCaptureConfig.filterOptions) != SUCCESS) {
+    if (capturer->InitPlaybackCapturer(sourceType, capturerOptions.playbackCaptureConfig) != SUCCESS) {
         return nullptr;
     }
 
@@ -150,13 +150,12 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     }
 }
 
-int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const CaptureFilterOptions &filterOptions)
+int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const AudioPlaybackCaptureConfig &config)
 {
     if (type != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return SUCCESS;
     }
-    return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(
-        filterOptions, appInfo_.appTokenId, appInfo_.appUid);
+    return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(config, appInfo_.appTokenId);
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const

@@ -83,6 +83,25 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     std::string value(reinterpret_cast<const char*>(rawData), size - 1);
     AudioServerPtr->OnAudioParameterChange(netWorkId, key, condition, value);
 }
+
+void AudioServerCaptureSilentlyFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    MessageParcel reply;
+    MessageOption option;
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
+        data, reply, option);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -91,5 +110,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
     OHOS::AudioStandard::AudioServerFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest(data, size);
     return 0;
 }

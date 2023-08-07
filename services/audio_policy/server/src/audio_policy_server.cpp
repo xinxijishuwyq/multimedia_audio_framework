@@ -2332,10 +2332,10 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
     return ret;
 }
 
-int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &options,
-    uint32_t appTokenId, int32_t appUid)
+int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
+    uint32_t appTokenId)
 {
-    for (auto &usg : options.usages) {
+    for (auto &usg : config.filterOptions.usages) {
         if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
             continue;
         }
@@ -2345,7 +2345,7 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const CaptureFilterOpt
             return ERR_PERMISSION_DENIED;
         }
     }
-    return mPolicyService.SetPlaybackCapturerFilterInfos(options);
+    return mPolicyService.SetPlaybackCapturerFilterInfos(config);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -57,6 +57,7 @@ public:
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
+    int32_t SetCaptureSilentState(bool state) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

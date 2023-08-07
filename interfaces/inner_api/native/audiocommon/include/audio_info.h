@@ -739,6 +739,7 @@ struct CaptureFilterOptions {
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
+    bool silentCapture {false};
 };
 
 struct AudioCapturerOptions {
