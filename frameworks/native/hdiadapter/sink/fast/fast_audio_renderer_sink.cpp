@@ -129,7 +129,7 @@ private:
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
 
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
 #ifdef DEBUG_DIRECT_USE_HDI
     char *bufferAddresss_ = nullptr;
@@ -630,27 +630,27 @@ int32_t FastAudioRendererSinkInner::Start(void)
 
 void FastAudioRendererSinkInner::KeepRunningLock()
 {
-    if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
+    if (keepRunningLock_ == nullptr) {
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock lock");
         int32_t timeOut = -1; // -1 for lasting.
-        mKeepRunningLock->Lock(timeOut);
+        keepRunningLock_->Lock(timeOut);
     } else {
-        AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
+        AUDIO_ERR_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
     }
 }
 
 void FastAudioRendererSinkInner::KeepRunningUnlock()
 {
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock UnLock");
-        mKeepRunningLock->UnLock();
+        keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("Fast: mKeepRunningLock is null, playback can not work well!");
+        AUDIO_ERR_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
     }
 }
 
