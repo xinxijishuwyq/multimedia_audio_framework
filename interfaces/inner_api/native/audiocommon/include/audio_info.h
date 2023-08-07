@@ -43,7 +43,7 @@ constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
-const std::string MANAGE_INTELLTGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLTGENT_VOICE";
+const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
