@@ -982,7 +982,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArray(napi_env env, napi_callback_in
     } else {
         napi_get_undefined(env, &result);
     }
-    
+
     napi_value resource = nullptr;
     napi_create_string_utf8(env, "getEffectInfoArray", NAPI_AUTO_LENGTH, &resource);
     status = napi_create_async_work(env, nullptr, resource, AsyncGetEffectInfoArray,

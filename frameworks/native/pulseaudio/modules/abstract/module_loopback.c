@@ -270,7 +270,7 @@ static void UpdateMinimumLatency(struct userdata *u, pa_sink *sink, bool printMs
              * Make sure there is enough data available that the sink can keep on playing until new
              * data is pushed. */
             u->minimum_latency += u->min_source_latency;
-        }            
+        }
 
         /* Multiply by 1.1 as a safety margin for delays that are proportional to the buffer sizes */
         u->minimum_latency *= 1.1;

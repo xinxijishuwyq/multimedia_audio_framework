@@ -533,7 +533,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChain(std::string sceneType, std:
     if (audioEffectChain->IsEmptyEffectHandles()) {
         AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
     }
-    
+
     return SUCCESS;
 }
 
