@@ -671,7 +671,7 @@ struct AudioParameters {
 
 struct AudioStreamInfo {
     AudioSamplingRate samplingRate;
-    AudioEncodingType encoding;
+    AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
     AudioSampleFormat format;
     AudioChannel channels;
 };

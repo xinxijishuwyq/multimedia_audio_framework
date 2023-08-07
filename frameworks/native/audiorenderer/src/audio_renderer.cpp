@@ -264,18 +264,13 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");
-    AudioStreamParams audioStreamParams;
-
-    audioStreamParams.format = params.sampleFormat;
-    audioStreamParams.samplingRate = params.sampleRate;
-    audioStreamParams.channels = params.channelCount;
-    audioStreamParams.encoding = params.encodingType;
+    AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType,
         rendererInfo_.streamUsage);
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST) {
-        if(IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
+        if (IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
             AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
             streamClass = IAudioStream::FAST_STREAM;
         } else {
