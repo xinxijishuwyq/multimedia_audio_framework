@@ -26,6 +26,36 @@
 
 namespace OHOS {
 namespace AudioStandard {
+std::map<int32_t, std::string> g_OptStrMap = {
+    {INIT_LOCAL_SPK, "call local spk init process"},
+    {INIT_REMOTE_SPK, "call remote spk init process"},
+    {START_SPK, "call start spk process"},
+    {STOP_SPK, "call stop spk process"},
+    {RELEASE_SPK, "release spk process"},
+
+    {INIT_LOCAL_MIC, "call local mic init process"},
+    {INIT_REMOTE_MIC, "call remote mic init process"},
+    {START_MIC, "call start mic process"},
+    {STOP_MIC, "call stop mic process"},
+    {RELEASE_MIC, "release mic process"},
+
+    {EXIT_DEMO, "exit interactive run test"},
+};
+
+enum AudioOptCode : int32_t {
+    INIT_LOCAL_SPK = 0,
+    INIT_REMOTE_SPK = 1,
+    START_SPK = 2,
+    STOP_SPK = 3,
+    RELEASE_SPK = 4,
+    INIT_LOCAL_MIC = 5,
+    INIT_REMOTE_MIC = 6,
+    START_MIC = 7,
+    STOP_MIC = 8,
+    RELEASE_MIC = 9,
+    EXIT_DEMO = 10,
+};
+
 class PlaybackTest : public AudioRendererWriteCallback,
     public AudioCapturerReadCallback,
     public std::enable_shared_from_this<PlaybackTest> {
@@ -38,8 +68,8 @@ public:
     int32_t StopCapture();
     void OnWriteData(size_t length) override;
     void OnReadData(size_t length) override;
-    bool OpenSpkFile(const std::string spkFilePath);
-    bool OpenMicFile(const std::string spkFilePath);
+    bool OpenSpkFile(const std::string &spkFilePath);
+    bool OpenMicFile(const std::string &micFilePath);
     void CloseSpkFile();
     void CloseMicFile();
 
@@ -80,7 +110,7 @@ void PlaybackTest::OnWriteData(size_t length)
     audioRenderer_->Enqueue(bufDesc);
 }
 
-bool PlaybackTest::OpenSpkFile(const std::string spkFilePath)
+bool PlaybackTest::OpenSpkFile(const std::string &spkFilePath)
 {
     if (spkWavFile_ != nullptr) {
         AUDIO_ERR_LOG("Spk file has been opened, spkFilePath %{public}s", spkFilePath.c_str());
@@ -186,9 +216,9 @@ void PlaybackTest::OnReadData(size_t length)
     audioCapturer_->Enqueue(bufDesc);
 }
 
-bool PlaybackTest::OpenMicFile(const std::string micFilePath)
+bool PlaybackTest::OpenMicFile(const std::string &micFilePath)
 {
-    if (micFilePath != nullptr) {
+    if (micWavFile_ != nullptr) {
         AUDIO_ERR_LOG("Mic file has been opened, micFilePath %{public}s.", micFilePath.c_str());
         return true;
     }
@@ -268,7 +298,7 @@ int32_t PlaybackTest::StopCapture()
     return 0;
 }
 
-bool SetSysPara(const std::string key, int32_t &value)
+bool SetSysPara(const std::string &key, int32_t &value)
 {
     auto res = SetParameter(key.c_str(), std::to_string(value).c_str());
     if (res < 0) {
@@ -278,11 +308,7 @@ bool SetSysPara(const std::string key, int32_t &value)
     AUDIO_INFO_LOG("SetSysPara success.");
     return true;
 }
-}
-}
 
-using namespace OHOS::AudioStandard;
-using namespace std;
 int32_t GetUserInput()
 {
     int32_t res = -1; // result
@@ -317,36 +343,6 @@ void PrintUsage()
     cout << "  10: exit demo." << endl;
     cout << " Please input your choice: " << endl;
 }
-
-std::map<int32_t, std::string> g_OptStrMap = {
-    {INIT_LOCAL_SPK, "call local spk init process"},
-    {INIT_REMOTE_SPK, "call remote spk init process"},
-    {START_SPK, "call start spk process"},
-    {STOP_SPK, "call stop spk process"},
-    {RELEASE_SPK, "release spk process"},
-
-    {INIT_LOCAL_MIC, "call local mic init process"},
-    {INIT_REMOTE_MIC, "call remote mic init process"},
-    {START_MIC, "call start mic process"},
-    {STOP_MIC, "call stop mic process"},
-    {RELEASE_MIC, "release mic process"},
-
-    {EXIT_DEMO, "exit interactive run test"},
-};
-
-enum AudioOptCode : int32_t {
-    INIT_LOCAL_SPK = 0,
-    INIT_REMOTE_SPK = 1,
-    START_SPK = 2,
-    STOP_SPK = 3,
-    RELEASE_SPK = 4,
-    INIT_LOCAL_MIC = 5,
-    INIT_REMOTE_MIC = 6,
-    START_MIC = 7,
-    STOP_MIC = 8,
-    RELEASE_MIC = 9,
-    EXIT_DEMO = 10,
-};
 
 int32_t InitPlayback(std:share_ptr<PlaybackTest> playTest, bool isRemote) {
     if (playTest == nullptr) {
@@ -474,13 +470,18 @@ void Loop(std::shared_ptr<PlaybackTest> playTest)
         }
     }
 }
+}
+}
 
+using namespace OHOS::AudioStandard;
+using namespace std;
 int main(int argc, char* argv[])
 {
     cout << "oh fast audio stream test." << endl;
     std::shared_ptr<PlaybackTest> playTest = std::make_shared<PlaybackTest>();
     int32_t val = 1;
-    SetSysPara("persist.multimedia.audio.mmap.enable", val);
+    std::string key = "persist.multimedia.audio.mmap.enable";
+    SetSysPara(key, val);
 
     Loop(playTest);
     playTest->CloseSpkFile();
