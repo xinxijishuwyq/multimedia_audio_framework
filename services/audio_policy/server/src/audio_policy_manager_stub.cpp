@@ -304,11 +304,11 @@ void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &dat
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
     AudioRendererInfo rendererInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferOutputDeviceDescriptors(rendererInfo);
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
     reply.WriteInt32(size);
@@ -347,7 +347,7 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
     reply.WriteInt32(static_cast<int>(deviceType));
 }
 
-void AudioPolicyManagerStub::SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -355,14 +355,14 @@ void AudioPolicyManagerStub::SetPreferOutputDeviceChangeCallbackInternal(Message
         AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
         return;
     }
-    int32_t result = SetPreferOutputDeviceChangeCallback(clientId, object);
+    int32_t result = SetPreferredOutputDeviceChangeCallback(clientId, object);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetPreferOutputDeviceChangeCallback(clientId);
+    int32_t result = UnsetPreferredOutputDeviceChangeCallback(clientId);
     reply.WriteInt32(result);
 }
 
@@ -1294,15 +1294,15 @@ int AudioPolicyManagerStub::OnRemoteRequest(
              break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):
-            GetPreferOutputDeviceDescriptorsInternal(data, reply);
+            GetPreferredOutputDeviceDescriptorsInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
-            SetPreferOutputDeviceChangeCallbackInternal(data, reply);
+            SetPreferredOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
-            UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
+            UnsetPreferredOutputDeviceChangeCallbackInternal(data, reply);
             break;
 
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST):

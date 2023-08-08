@@ -49,34 +49,34 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
     return groupManager->SetMicStateChangeCallback(callback);
 }
 
-int32_t AudioRoutingManager::GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
+int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    desc = AudioPolicyManager::GetInstance().GetPreferOutputDeviceDescriptors(rendererInfo);
+    desc = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
 
     return SUCCESS;
 }
 
-int32_t AudioRoutingManager::SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
-    const std::shared_ptr<AudioPreferOutputDeviceChangeCallback>& callback)
+int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     if (callback == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: callback is nullptr");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
-    return AudioPolicyManager::GetInstance().SetPreferOutputDeviceChangeCallback(clientId, callback);
+    return AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, callback);
 }
 
-int32_t AudioRoutingManager::UnsetPreferOutputDeviceChangeCallback()
+int32_t AudioRoutingManager::UnsetPreferredOutputDeviceChangeCallback()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
-    return AudioPolicyManager::GetInstance().UnsetPreferOutputDeviceChangeCallback(clientId);
+    return AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(clientId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

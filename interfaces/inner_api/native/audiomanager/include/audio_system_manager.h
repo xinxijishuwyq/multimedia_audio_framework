@@ -267,7 +267,7 @@ public:
     virtual void OnWakeupClose() = 0;
 };
 
-class AudioPreferOutputDeviceChangeCallback;
+class AudioPreferredOutputDeviceChangeCallback;
 
 class AudioFocusInfoChangeCallback {
 public:

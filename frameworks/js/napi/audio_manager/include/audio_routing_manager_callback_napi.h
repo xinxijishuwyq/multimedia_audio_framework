@@ -24,18 +24,18 @@
 #include <algorithm>
 
 namespace {
+    const std::string PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME = "preferredOutputDeviceChangeForRendererInfo";
     const std::string PREFER_OUTPUT_DEVICE_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfo";
-    const std::string PREFER_OUTPUT_DEVICE_FILTER_CALLBACK_NAME = "preferOutputDeviceChangeByFilter";
 }
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPreferOutputDeviceChangeCallbackNapi : public AudioPreferOutputDeviceChangeCallback {
+class AudioPreferredOutputDeviceChangeCallbackNapi : public AudioPreferredOutputDeviceChangeCallback {
 public:
-    explicit AudioPreferOutputDeviceChangeCallbackNapi(napi_env env);
-    virtual ~AudioPreferOutputDeviceChangeCallbackNapi();
+    explicit AudioPreferredOutputDeviceChangeCallbackNapi(napi_env env);
+    virtual ~AudioPreferredOutputDeviceChangeCallbackNapi();
     void SaveCallbackReference(AudioStreamType streamType, napi_value callback);
-    void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void RemoveCallbackReference(napi_env env, napi_value args);
     void RemoveAllCallbacks();
 
@@ -50,8 +50,8 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    std::shared_ptr<AutoRef> preferOutputDeviceCallback_ = nullptr;
-    std::list<std::pair<std::shared_ptr<AutoRef>, AudioStreamType>> preferOutputDeviceCbList_;
+    std::shared_ptr<AutoRef> preferredOutputDeviceCallback_ = nullptr;
+    std::list<std::pair<std::shared_ptr<AutoRef>, AudioStreamType>> preferredOutputDeviceCbList_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

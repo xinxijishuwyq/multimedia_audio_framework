@@ -49,7 +49,7 @@ void AudioRoutingManagerListenerProxy::OnMicStateUpdated(const MicStateChangeEve
 }
 
 
-void AudioRoutingManagerListenerProxy::OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioRoutingManagerListenerProxy::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -67,7 +67,7 @@ void AudioRoutingManagerListenerProxy::OnPreferOutputDeviceUpdated(const std::ve
     }
     int error = Remote()->SendRequest(ON_ACTIVE_OUTPUT_DEVICE_UPDATED, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnPreferOutputDeviceUpdated failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("OnPreferredOutputDeviceUpdated failed, error: %{public}d", error);
     }
 }
 

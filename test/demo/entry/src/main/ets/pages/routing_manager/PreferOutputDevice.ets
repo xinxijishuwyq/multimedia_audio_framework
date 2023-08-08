@@ -19,7 +19,7 @@ import fs from '@ohos.file.fs';
 
 @Entry
 @Component
-struct PreferOutputDevice {
+struct PreferredOutputDevice {
   @State returnMsg: string = 'Hello World'
   @State onReturnMsg: string = 'on 未监听'
   @State offReturnMsg: string = 'off 未监听'
@@ -83,38 +83,38 @@ struct PreferOutputDevice {
     }
   }
 
-  getPreferOutputDeviceForRendererInfoCallback() {
-    this.audioRoutingManager.getPreferOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo, (err, data) => {
+  getPreferredOutputDeviceForRendererInfoCallback() {
+    this.audioRoutingManager.getPreferredOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo, (err, data) => {
       if (err) {
-        this.returnMsg = `getPreferOutputDeviceForRendererInfo callback Fail:${JSON.stringify(err)}`
+        this.returnMsg = `getPreferredOutputDeviceForRendererInfo callback Fail:${JSON.stringify(err)}`
       } else {
-        this.returnMsg = `getPreferOutputDeviceForRendererInfo callback Success:${JSON.stringify(data)} \n`
+        this.returnMsg = `getPreferredOutputDeviceForRendererInfo callback Success:${JSON.stringify(data)} \n`
         this.returnMsg += `优先设备为：${JSON.stringify(this.getDeviceList(data))}`
       }
     })
   }
 
-  getPreferOutputDeviceForRendererInfoPromise() {
-    this.audioRoutingManager.getPreferOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo)
+  getPreferredOutputDeviceForRendererInfoPromise() {
+    this.audioRoutingManager.getPreferredOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo)
       .then(data => {
-        this.returnMsg = `getPreferOutputDeviceForRendererInfo promise Success:${JSON.stringify(data)} \n`
+        this.returnMsg = `getPreferredOutputDeviceForRendererInfo promise Success:${JSON.stringify(data)} \n`
         this.returnMsg += `优先设备为：${JSON.stringify(this.getDeviceList(data))}`
       }).catch(err => {
-      this.returnMsg = `getPreferOutputDeviceForRendererInfo promise Fail:${JSON.stringify(err)}`
+      this.returnMsg = `getPreferredOutputDeviceForRendererInfo promise Fail:${JSON.stringify(err)}`
     })
   }
 
-  onPreferOutputDeviceChangeForRendererInfo() {
+  onPreferredOutputDeviceChangeForRendererInfo() {
     this.onReturnMsg = "on 监听中..."
-    this.audioRoutingManager.on('preferOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
+    this.audioRoutingManager.on('preferredOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
       this.onReturnMsg = `on 收到回调：\n`
       this.onReturnMsg = `${JSON.stringify(audioDeviceDescriptors)}`
     })
   }
 
-  offPreferOutputDeviceChangeForRendererInfo() {
+  offPreferredOutputDeviceChangeForRendererInfo() {
     this.offReturnMsg = "off 监听中..."
-    this.audioRoutingManager.off('preferOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
+    this.audioRoutingManager.off('preferredOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
       this.offReturnMsg = `off 收到回调：\n`
       this.offReturnMsg = `${JSON.stringify(audioDeviceDescriptors)}`
     })
@@ -248,36 +248,36 @@ struct PreferOutputDevice {
 
           Row() {
             Button() {
-              Text("getPreferOutputDeviceForRendererInfo callback")
+              Text("getPreferredOutputDeviceForRendererInfo callback")
                 .fontSize(18)
                 .fontColor(Color.White)
                 .align(Alignment.Center)
                 .lineHeight(30)
             }.width('100%').height(60)
-            .onClick(() => this.getPreferOutputDeviceForRendererInfoCallback())
+            .onClick(() => this.getPreferredOutputDeviceForRendererInfoCallback())
 
           }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Row() {
             Button() {
-              Text("getPreferOutputDeviceForRendererInfo promise")
+              Text("getPreferredOutputDeviceForRendererInfo promise")
                 .fontSize(18)
                 .fontColor(Color.White)
                 .align(Alignment.Center)
                 .lineHeight(30)
             }.width('100%').height(60)
-            .onClick(() => this.getPreferOutputDeviceForRendererInfoPromise())
+            .onClick(() => this.getPreferredOutputDeviceForRendererInfoPromise())
 
           }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Row() {
             Button() {
-              Text("on('preferOutputDeviceChangeForRendererInfo')")
+              Text("on('preferredOutputDeviceChangeForRendererInfo')")
                 .fontSize(16)
                 .fontColor(Color.White)
                 .align(Alignment.Center)
                 .lineHeight(30)
-            }.width('100%').height(60).onClick(() => this.onPreferOutputDeviceChangeForRendererInfo())
+            }.width('100%').height(60).onClick(() => this.onPreferredOutputDeviceChangeForRendererInfo())
           }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Text(this.onReturnMsg).fontSize(20).lineHeight(30)
@@ -285,7 +285,7 @@ struct PreferOutputDevice {
           Row() {
             Button() {
               Text("off").fontSize(16).fontColor(Color.White)
-            }.width('100%').height(60).onClick(() => this.offPreferOutputDeviceChangeForRendererInfo())
+            }.width('100%').height(60).onClick(() => this.offPreferredOutputDeviceChangeForRendererInfo())
 
           }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 

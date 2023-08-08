@@ -33,10 +33,10 @@ public:
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) {};
 };
 
-class AudioPreferOutputDeviceChangeCallbackTest : public AudioPreferOutputDeviceChangeCallback {
+class AudioPreferredOutputDeviceChangeCallbackTest : public AudioPreferredOutputDeviceChangeCallback {
 public:
-    virtual ~AudioPreferOutputDeviceChangeCallbackTest() = default;
-    virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    virtual ~AudioPreferredOutputDeviceChangeCallbackTest() = default;
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioRoutingManagerUnitTest : public testing::Test {

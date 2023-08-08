@@ -47,20 +47,20 @@ private:
     static napi_value SetCommunicationDevice(napi_env env, napi_callback_info info);
     static napi_value IsCommunicationDeviceActive(napi_env env, napi_callback_info info);
     static napi_value GetActiveOutputDeviceDescriptors(napi_env env, napi_callback_info info);
+    static napi_value GetPreferredOutputDeviceForRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetPreferOutputDeviceForRendererInfo(napi_env env, napi_callback_info info);
-    static napi_value GetPreferOutputDeviceByFilter(napi_env env, napi_callback_info info);
 
-    static void CheckPreferOutputDeviceForRendererInfo(napi_env env,
+    static void CheckPreferredOutputDeviceForRendererInfo(napi_env env,
         std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, size_t argc, napi_value* argv);
     static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value* args, const std::string& cbName,
         AudioRoutingManagerNapi* routingMgrNapi);
-    static void RegisterPreferOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
+    static void RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
         const std::string& cbName, AudioRoutingManagerNapi* routingMgrNapi);
     static void RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value* args,
         const std::string& cbName);
     static void UnregisterDeviceChangeCallback(napi_env env, napi_value callback,
         AudioRoutingManagerNapi* routingMgrNapi);
-    static void UnegisterPreferOutputDeviceChangeCallback(napi_env env, napi_value callback,
+    static void UnegisterPreferredOutputDeviceChangeCallback(napi_env env, napi_value callback,
         AudioRoutingManagerNapi* routingMgrNapi);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, const std::string& callbackName,
         napi_value callback);
@@ -73,7 +73,7 @@ private:
     AudioRoutingManager *audioRoutingMngr_;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
-    std::shared_ptr<AudioPreferOutputDeviceChangeCallback> preferOutputDeviceCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> preferredOutputDeviceCallbackNapi_ = nullptr;
 
     napi_env env_;
 };

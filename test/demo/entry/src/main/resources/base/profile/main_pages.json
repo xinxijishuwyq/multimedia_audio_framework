@@ -22,7 +22,7 @@
     "pages/routing_manager/BasicDevice",
     "pages/routing_manager/CommunicationDevice",
     "pages/routing_manager/OutputDeviceByFilter",
-    "pages/routing_manager/PreferOutputDevice",
+    "pages/routing_manager/PreferredOutputDevice",
 
     "pages/AudioStreamManager",
     "pages/stream_manager/CapturerStream",

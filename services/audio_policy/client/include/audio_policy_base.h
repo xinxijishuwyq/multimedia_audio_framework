@@ -174,13 +174,13 @@ public:
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
 
-    virtual int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    virtual int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
         const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) = 0;
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
