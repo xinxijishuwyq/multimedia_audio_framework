@@ -27,7 +27,7 @@ public:
     explicit DataShareObserverCallBack();
     ~DataShareObserverCallBack() override {};
     void OnChange() override;
-    
+
 private:
     AudioPolicyService& audioPolicyService_;
 };

@@ -39,8 +39,8 @@ private:
 
 class OHAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
 public:
-    OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer, void* userData)
-        : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
+        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 

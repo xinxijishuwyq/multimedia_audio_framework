@@ -22,4 +22,3 @@ fun:*AudioToneParser*
 fun:*XMLParser*
 src:*services/audio_service/server/src/audio_effect_server.cpp
 src:*frameworks/native/audioeffect/src/audio_effect_chain_manager.cpp
-src:*services/audio_policy/client/src/audio_policy_manager.cpp
