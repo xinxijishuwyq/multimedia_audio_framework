@@ -34,7 +34,8 @@ AudioPreferredOutputDeviceChangeCallbackNapi::~AudioPreferredOutputDeviceChangeC
     AUDIO_DEBUG_LOG("AudioPreferredOutputDeviceChangeCallbackNapi: instance destroy");
 }
 
-void AudioPreferredOutputDeviceChangeCallbackNapi::SaveCallbackReference(AudioStreamType streamType, napi_value callback)
+void AudioPreferredOutputDeviceChangeCallbackNapi::SaveCallbackReference(AudioStreamType streamType,
+    napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
@@ -148,8 +149,10 @@ void AudioPreferredOutputDeviceChangeCallbackNapi::OnPreferredOutputDeviceUpdate
     const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_LOG(preferredOutputDeviceCbList_.size() > 0, "Cannot find the reference of prefer device callback");
-    AUDIO_DEBUG_LOG("OnPreferredOutputDeviceUpdated: Cb list size [%{public}zu]", preferredOutputDeviceCbList_.size());
+    CHECK_AND_RETURN_LOG(preferredOutputDeviceCbList_.size() > 0,
+        "Cannot find the reference of prefer device callback");
+    AUDIO_DEBUG_LOG("OnPreferredOutputDeviceUpdated: Cb list size [%{public}zu]",
+        preferredOutputDeviceCbList_.size());
 
     for (auto it = preferredOutputDeviceCbList_.begin(); it != preferredOutputDeviceCbList_.end(); it++) {
         std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> cb =

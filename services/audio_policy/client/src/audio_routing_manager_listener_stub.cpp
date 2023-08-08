@@ -84,9 +84,9 @@ void AudioRoutingManagerListenerStub::SetMicStateChangeCallback(
     micStateChangeCallback_ = cb;
 }
 
-void AudioRoutingManagerListenerStub::OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioRoutingManagerListenerStub::OnPreferredOutputDeviceUpdated(
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnPreferredOutputDeviceUpdated start");
     std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> activeOutputDeviceChangeCallback =
         activeOutputDeviceChangeCallback_.lock();
 

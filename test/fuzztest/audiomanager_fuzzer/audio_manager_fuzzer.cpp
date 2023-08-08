@@ -91,7 +91,8 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     shared_ptr<AudioPreferredOutputDeviceChangeCallbackFuzz> preferredOutputCallbackFuzz =
         std::make_shared<AudioPreferredOutputDeviceChangeCallbackFuzz>();
     AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
-    AudioRoutingManager::GetInstance()->SetPreferredOutputDeviceChangeCallback(rendererInfo, preferredOutputCallbackFuzz);
+    AudioRoutingManager::GetInstance()->SetPreferredOutputDeviceChangeCallback(rendererInfo,
+        preferredOutputCallbackFuzz);
     AudioRoutingManager::GetInstance()->UnsetPreferredOutputDeviceChangeCallback();
 }
 
