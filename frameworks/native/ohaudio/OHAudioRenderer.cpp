@@ -340,7 +340,7 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
         AUDIO_ERR_LOG("stream event callback is nullptr");
     }
 
-    if (callbacks.OH_AudioRenderer_OnInterrptEvent != nullptr) {
+    if (callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
         std::shared_ptr<AudioRendererCallback> callback =
             std::make_shared<OHAudioRendererCallback>(callbacks, (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(callback);
@@ -384,10 +384,10 @@ void OHAudioRendererDeviceChangeCallback::OnStateChange(const DeviceInfo &device
 void OHAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterrptEvent != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr, "pointer to the fuction is nullptr");
     OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
     OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
-    callbacks_.OH_AudioRenderer_OnInterrptEvent(ohAudioRenderer_, userData_, type, hint);
+    callbacks_.OH_AudioRenderer_OnInterruptEvent(ohAudioRenderer_, userData_, type, hint);
 }
 
 void OHServiceDiedCallback::OnAudioPolicyServiceDied()

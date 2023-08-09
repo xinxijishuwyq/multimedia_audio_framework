@@ -35,8 +35,8 @@
  * @version 1.0
  */
 
-#ifndef ST_NATIVE_AUDIOSTREAM_BASE_H
-#define ST_NATIVE_AUDIOSTREAM_BASE_H
+#ifndef NATIVE_AUDIOSTREAM_BASE_H
+#define NATIVE_AUDIOSTREAM_BASE_H
 
 #include <stdint.h>
 
@@ -479,7 +479,7 @@ typedef struct OH_AudioRenderer_Callbacks_Struct {
      *
      * @since 10
      */
-    int32_t (*OH_AudioRenderer_OnInterrptEvent)(
+    int32_t (*OH_AudioRenderer_OnInterruptEvent)(
             OH_AudioRenderer* renderer,
             void* userData,
             OH_AudioInterrupt_ForceType type,
@@ -532,8 +532,8 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
      *
      * @since 10
      */
-    int32_t (*OH_AudioCapturer_OnInterrptEvent)(
-            OH_AudioCapturer* renderer,
+    int32_t (*OH_AudioCapturer_OnInterruptEvent)(
+            OH_AudioCapturer* capturer,
             void* userData,
             OH_AudioInterrupt_ForceType type,
             OH_AudioInterrupt_Hint hint);
@@ -553,4 +553,4 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
 }
 #endif
 
-#endif // ST_NATIVE_AUDIOSTREAM_BASE_H
+#endif // NATIVE_AUDIOSTREAM_BASE_H
