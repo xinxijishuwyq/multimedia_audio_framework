@@ -42,6 +42,8 @@ class IAudioSourceCallback {
 public:
     virtual void OnWakeupClose() = 0;
     virtual void OnCapturerState(bool isActive) = 0;
+    virtual void OnAudioSourceParamChange(std::string netWorkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) = 0;
 };
 
 class IAudioCapturerSource {
@@ -69,6 +71,7 @@ public:
 
     virtual void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) = 0;
     virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) = 0;
+    virtual void RegisterParameterCallback(IAudioSourceCallback* callback) = 0;
 
     virtual ~IAudioCapturerSource() = default;
 };

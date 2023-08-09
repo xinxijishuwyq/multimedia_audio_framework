@@ -312,6 +312,8 @@ private:
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 1;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t DEFAULT_APP_PID = -1;
+    static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
+    static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
 
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;

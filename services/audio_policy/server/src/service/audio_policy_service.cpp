@@ -787,12 +787,9 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         }
     }
 
-    int32_t ret = SUCCESS;
-    if (LOCAL_NETWORK_ID == networkId) {
-        ret = MoveToLocalInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
-    } else {
-        ret = MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
-    }
+    int32_t ret = LOCAL_NETWORK_ID == networkId ?
+        MoveToLocalInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]) :
+        MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
 
     OnPreferredInputDeviceUpdated(activeInputDevice_, LOCAL_NETWORK_ID);
     AUDIO_DEBUG_LOG("SelectInputDevice result[%{public}d]", ret);
