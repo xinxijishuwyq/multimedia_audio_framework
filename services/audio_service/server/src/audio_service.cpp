@@ -66,7 +66,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     if (isFind) {
         AUDIO_INFO_LOG("OnProcessRelease find and release process result %{public}d", ret);
     } else {
-        AUDIO_WARNING_LOG("OnProcessRelease can not find target process");
+        AUDIO_INFO_LOG("OnProcessRelease can not find target process, maybe already released.");
     }
 
     if (needRelease) {

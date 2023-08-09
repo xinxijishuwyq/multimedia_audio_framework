@@ -34,12 +34,13 @@ public:
 class AudioProcessInServer;
 class ProcessDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
-    ProcessDeathRecipient(AudioProcessInServer *processInServer);
+    ProcessDeathRecipient(AudioProcessInServer *processInServer, ProcessReleaseCallback *processHolder);
     virtual ~ProcessDeathRecipient() = default;
     // overridde for DeathRecipient
     void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
 private:
-    AudioProcessInServer *processInServer_;
+    ProcessReleaseCallback *processHolder_ = nullptr;
+    AudioProcessInServer *processInServer_ = nullptr;
 };
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {

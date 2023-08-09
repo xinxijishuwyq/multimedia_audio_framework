@@ -25,6 +25,8 @@
 #include <map>
 #include <securec.h>
 
+#include <sys/time.h>
+
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -56,6 +58,9 @@ namespace {
         START_LOOP_TEST = 10,
         END_LOOP_TEST = 11,
 
+        START_SIGNAL_TEST = 12,
+        END_SIGNAL_TEST = 13,
+
         INIT_LOCAL_MIC_PROCESS = 20,
         INIT_REMOTE_MIC_PROCESS = 21,
         START_MIC_PROCESS = 22,
@@ -75,10 +80,17 @@ namespace {
         INTERACTIVE_RUN_MIC_TEST = 3,
         AUTO_RUN_MIC_TEST = 4,
         INTERACTIVE_RUN_LOOP = 5,
-        EXIT_PROC_TEST = 6,
+        RENDER_SIGNAL_TEST = 6,
+        EXIT_PROC_TEST = 7,
+    };
+    enum TestMode : int32_t {
+        RENDER_FILE = 0,
+        RENDER_MIC_LOOP_DATA = 1,
+        RENDER_SIGNAL_DATA = 2,
     };
     static constexpr size_t CACHE_BUFFER_SIZE = 960;
-    bool g_loopTest = false;
+    TestMode g_testMode = RENDER_FILE;
+    bool g_renderSignal = false;
     int64_t g_stampTime = 0;
 }
 
@@ -102,6 +114,9 @@ string CallStopSpk();
 string SetSpkVolume();
 string CallReleaseSpk();
 
+string StartSignalTest();
+string EndSignalTest();
+
 string ConfigMicTest(bool isRemote);
 string CallStartMic();
 string CallPauseMic();
@@ -117,6 +132,7 @@ std::map<int32_t, std::string> g_audioProcessTestType = {
     {INTERACTIVE_RUN_MIC_TEST, "Interactive run mic process test"},
     {AUTO_RUN_MIC_TEST, "Auto run mic process test"},
     {INTERACTIVE_RUN_LOOP, "Roundtrip latency test"},
+    {RENDER_SIGNAL_TEST, "Render signal latency test"},
     {EXIT_PROC_TEST, "Exit audio process test"},
 };
 
@@ -132,6 +148,9 @@ std::map<int32_t, std::string> g_interactiveOptStrMap = {
 
     {START_LOOP_TEST, "start loop"},
     {END_LOOP_TEST, "end loop"},
+
+    {START_SIGNAL_TEST, "start signal test"},
+    {END_SIGNAL_TEST, "end signal test"},
 
     {INIT_LOCAL_MIC_PROCESS, "call local mic init process"},
     {INIT_REMOTE_MIC_PROCESS, "call remote mic init process"},
@@ -152,6 +171,9 @@ std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
     {STOP_SPK_PROCESS, CallStopSpk},
     {CHANGE_SPK_PROCESS_VOL, SetSpkVolume},
     {RELEASE_SPK_PROCESS, CallReleaseSpk},
+
+    {START_SIGNAL_TEST, StartSignalTest},
+    {END_SIGNAL_TEST, EndSignalTest},
 
     {START_MIC_PROCESS, CallStartMic},
     {PAUSE_MIC_PROCESS, CallPauseMic},
@@ -192,7 +214,7 @@ private:
     int32_t CaptureToFile(const BufferDesc &bufDesc);
     int32_t RenderFromFile(const BufferDesc &bufDesc);
 
-    void HandleWriteData(const BufferDesc &bufDesc)
+    void HandleWriteLoopData(const BufferDesc &bufDesc)
     {
         loopCount_++;
         int32_t periodCount = loopCount_ % 400; // 400 * 0.005 = 2s
@@ -217,6 +239,29 @@ private:
         }
     };
 
+    void GetCurTime()
+    {
+        struct timeval tv;
+        struct timezone tz;
+        struct tm *t;
+
+        gettimeofday(&tv, &tz);
+        t = localtime(&tv.tv_sec);
+        AUDIO_INFO_LOG("ClockTime::GetCurNano is %{public}" PRId64" Low-latency write first data start at"
+            ":%{public}04d-%{public}02d-%{public}02d %{public}02d:%{public}02d:%{public}02d.%{public}03" PRId64" ",
+            ClockTime::GetCurNano(), 1900 + t->tm_year, 1 + t->tm_mon, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec,
+            static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND));
+    }
+
+    void HandleWriteSignalData(const BufferDesc &bufDesc)
+    {
+        if (g_renderSignal) {
+            InitSignalBuffer(bufDesc);
+            GetCurTime();
+            g_renderSignal = false;
+        }
+    }
+
 private:
     std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
     int32_t loopCount_ = -1; // for loop
@@ -230,6 +275,7 @@ public:
     ~AudioProcessTest() = default;
 
     int32_t InitSpk(int32_t loopCount, bool isRemote);
+    bool IsInited();
     bool StartSpk();
     bool PauseSpk();
     bool ResumeSpk();
@@ -251,6 +297,7 @@ private:
     std::shared_ptr<AudioProcessTestCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<AudioProcessTestCallback> micProcClientCb_ = nullptr;
     int32_t loopCount_ = -1; // for loop
+    bool isInited_ = false;
 };
 
 int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
@@ -311,11 +358,13 @@ void AudioProcessTestCallback::OnHandleData(size_t length)
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s capture to file fail, ret %{public}d.",
             __func__, ret);
     } else {
-        if (!g_loopTest) {
+        if (g_testMode == TestMode::RENDER_FILE) {
             ret = RenderFromFile(bufDesc);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "%{public}s render from file fail, ret %{public}d.", __func__, ret);
-        } else {
-            HandleWriteData(bufDesc);
+        } else if (g_testMode == TestMode::RENDER_MIC_LOOP_DATA) {
+            HandleWriteLoopData(bufDesc);
+        } else if (g_testMode == TestMode::RENDER_SIGNAL_DATA) {
+            HandleWriteSignalData(bufDesc);
         }
     }
     ret = procClient_->Enqueue(bufDesc);
@@ -359,7 +408,7 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
 
     config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
     config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    config.rendererInfo.rendererFlags = 4; // 4 for test
+    config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
 
     config.streamInfo.channels = STEREO;
     config.streamInfo.encoding = ENCODING_PCM;
@@ -368,7 +417,7 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
 
     config.streamType = STREAM_MUSIC;
 
-    if (!g_loopTest) {
+    if (g_testMode == TestMode::RENDER_FILE) {
         wav_hdr wavHeader;
         size_t headerSize = sizeof(wav_hdr);
         size_t bytesRead = fread(&wavHeader, 1, headerSize, g_spkWavFile);
@@ -392,7 +441,13 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
     spkProcClientCb_ = std::make_shared<AudioProcessTestCallback>(spkProcessClient_, loopCount_, config.audioMode);
     int32_t ret = spkProcessClient_->SaveDataCallback(spkProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
+    isInited_ = true;
     return SUCCESS;
+}
+
+bool AudioProcessTest::IsInited()
+{
+    return isInited_;
 }
 
 bool AudioProcessTest::StartSpk()
@@ -456,7 +511,7 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
 
     config.audioMode = AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    config.capturerInfo.capturerFlags = 7; // 7 for test
+    config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
 
     config.streamInfo.channels = STEREO;
     config.streamInfo.encoding = ENCODING_PCM;
@@ -897,6 +952,30 @@ string EndLoopTest()
     return "EndLooptest";
 }
 
+string StartSignalTest()
+{
+    if (g_audioProcessTest == nullptr) {
+        return "StartSignalTest failed";
+    }
+
+    if (!g_audioProcessTest->IsInited()) {
+        if (g_audioProcessTest->InitSpk(0, false) != SUCCESS) {
+            return "init spk failed";
+        }
+        uint32_t tempSleep = 10000; // wait for 10ms
+        usleep(tempSleep);
+        CallStartSpk();
+    }
+    g_renderSignal = true;
+    return "call signal";
+}
+
+string EndSignalTest()
+{
+    return CallReleaseSpk();
+}
+
+
 void InitCachebuffer()
 {
     g_byteBuffer = std::make_unique<uint8_t []>(CACHE_BUFFER_SIZE);
@@ -907,7 +986,7 @@ void InitCachebuffer()
 
 void InteractiveRun()
 {
-    if (g_loopTest) {
+    if (g_testMode == TestMode::RENDER_MIC_LOOP_DATA) {
         InitCachebuffer();
     }
     cout << "Interactive run process test enter." << endl;
@@ -972,8 +1051,6 @@ using namespace OHOS::AudioStandard;
 int main()
 {
     AUDIO_INFO_LOG("AudioProcessClientTest test enter.");
-    int32_t val = 1;
-    SetSysPara("persist.multimedia.audio.mmap.enable", val);
 
     PrintUsage();
     g_audioProcessTest = make_shared<AudioProcessTest>();
@@ -982,6 +1059,7 @@ int main()
     while (isProcTestRun) {
         PrintProcTestUsage();
         AudioProcessTestType procTestType = INVALID_PROC_TEST;
+        g_testMode = TestMode::RENDER_FILE;
         int32_t res = GetUserInput();
         if (g_audioProcessTestType.count(res)) {
             procTestType = static_cast<AudioProcessTestType>(res);
@@ -992,7 +1070,11 @@ int main()
                 InteractiveRun();
                 break;
             case INTERACTIVE_RUN_LOOP:
-                g_loopTest = true;
+                g_testMode = TestMode::RENDER_MIC_LOOP_DATA;
+                InteractiveRun();
+                break;
+            case RENDER_SIGNAL_TEST:
+                g_testMode = TestMode::RENDER_SIGNAL_DATA;
                 InteractiveRun();
                 break;
             case AUTO_RUN_SPK_TEST:
