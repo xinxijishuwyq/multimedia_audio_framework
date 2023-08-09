@@ -47,8 +47,7 @@ public:
 class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *deviceClass, const char *deviceNetworkId,
-           const SourceType sourceType = SourceType::SOURCE_TYPE_MIC);
-
+           const SourceType sourceType = SourceType::SOURCE_TYPE_MIC, const char *sourceName = "Built_in_wakeup");
     virtual int32_t Init(IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;

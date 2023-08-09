@@ -53,7 +53,7 @@ struct CapturerSourceAdapter {
 };
 
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
-    struct CapturerSourceAdapter **sourceAdapter);
+    const char *sourceName, struct CapturerSourceAdapter **sourceAdapter);
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
 const char *GetDeviceClass(int32_t deviceClass);
 #ifdef __cplusplus

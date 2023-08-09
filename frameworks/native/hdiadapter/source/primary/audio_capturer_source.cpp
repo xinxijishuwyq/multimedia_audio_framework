@@ -24,6 +24,7 @@
 #include "audio_utils.h"
 #include "audio_capturer_source.h"
 #include "v1_0/iaudio_manager.h"
+#include "securec.h"
 
 using namespace std;
 
@@ -130,6 +131,126 @@ public:
     ~AudioCapturerSourceWakeup() = default;
 
 private:
+    static inline void MemcpysAndCheck(void *dest, size_t destMax, const void *src, size_t count)
+    {
+        if (memcpy_s(dest, destMax, src, count)) {
+            AUDIO_ERR_LOG("memcpy_s error");
+        }
+    }
+    class WakeupBuffer {
+    public:
+        explicit WakeupBuffer(size_t sizeMax = BUFFER_SIZE_MAX)
+            : sizeMax_(sizeMax),
+              buffer_(std::make_unique<char[]>(sizeMax))
+        {
+        }
+
+        ~WakeupBuffer() = default;
+
+        int32_t Poll(char *frame, uint64_t requestBytes, uint64_t &replyBytes, uint64_t &noStart)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+
+            if (noStart < headNum_) {
+                noStart = headNum_;
+            }
+
+            if (noStart >= (headNum_ + size_)) {
+                if (requestBytes > sizeMax_) {
+                    requestBytes = sizeMax_;
+                }
+
+                int32_t res = audioCapturerSource_.CaptureFrame(frame, requestBytes, replyBytes);
+                Offer(frame, replyBytes);
+
+                return res;
+            }
+
+            if (requestBytes > size_) { // size_!=0
+                replyBytes = size_;
+            } else {
+                replyBytes = requestBytes;
+            }
+
+            uint64_t tail = (head_ + size_) % sizeMax_;
+
+            if (tail > head_) {
+                MemcpysAndCheck(frame, replyBytes, buffer_.get() + head_, replyBytes);
+                headNum_ += replyBytes;
+                size_ -= replyBytes;
+                head_ = (head_ + replyBytes) % sizeMax_;
+            } else {
+                uint64_t copySize = min((sizeMax_ - head_), replyBytes);
+                if (copySize != 0) {
+                    MemcpysAndCheck(frame, replyBytes, buffer_.get() + head_, copySize);
+                    headNum_ += copySize;
+                    size_ -= copySize;
+                    head_ = (head_ + copySize) % sizeMax_;
+                }
+
+                uint64_t remainCopySize = replyBytes - copySize;
+                if (remainCopySize != 0) {
+                    MemcpysAndCheck(frame + copySize, remainCopySize, buffer_.get(), remainCopySize);
+                    headNum_ += remainCopySize;
+                    size_ -= remainCopySize;
+                    head_ = (head_ + remainCopySize) % sizeMax_;
+                }
+            }
+
+            return SUCCESS;
+        }
+    private:
+        static constexpr size_t BUFFER_SIZE_MAX = 32000; // 2 seconds
+
+        const size_t sizeMax_;
+        size_t size_ = 0;
+
+        std::unique_ptr<char[]> buffer_;
+        std::mutex mutex_;
+
+        uint64_t head_ = 0;
+
+        uint64_t headNum_ = 0;
+
+        void Offer(const char *frame, const uint64_t bufferBytes)
+        {
+            if ((size_ + bufferBytes) > sizeMax_) { // head_ need shift
+                u_int64_t shift = (size_ + bufferBytes) - sizeMax_; // 1 to sizeMax_
+                headNum_ += shift;
+                if (size_ > shift) {
+                    size_ -= shift;
+                    head_ = ((head_ + shift) % sizeMax_);
+                } else {
+                    size_ = 0;
+                    head_ = 0;
+                }
+            }
+
+            uint64_t tail = (head_ + size_) % sizeMax_;
+            if (tail < head_) {
+                MemcpysAndCheck((buffer_.get() + tail), bufferBytes, frame, bufferBytes);
+            } else {
+                uint64_t copySize = min(sizeMax_ - tail, bufferBytes);
+                MemcpysAndCheck((buffer_.get() + tail), sizeMax_ - tail, frame, sizeMax_ - tail);
+
+                if (copySize < bufferBytes) {
+                    MemcpysAndCheck((buffer_.get()), bufferBytes - copySize, frame, bufferBytes - copySize);
+                }
+            }
+            size_ += bufferBytes;
+        }
+    };
+
+    uint64_t noStart_ = 0;
+    std::atomic<bool> isInited = false;
+    static inline int initCount = 0;
+
+    std::atomic<bool> isStarted = false;
+    static inline int startCount = 0;
+
+    static inline std::unique_ptr<WakeupBuffer> wakeupBuffer_;
+    static inline std::mutex wakeupMutex_;
+
     static inline AudioCapturerSourceInner audioCapturerSource_;
 };
 
@@ -155,13 +276,17 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     AUDIO_ERR_LOG("~AudioCapturerSourceInner");
 }
 
-AudioCapturerSource *AudioCapturerSource::GetInstance(const SourceType sourceType)
+AudioCapturerSource *AudioCapturerSource::GetInstance(const SourceType sourceType, const char *sourceName)
 {
     switch (sourceType) {
         case SourceType::SOURCE_TYPE_MIC:
             return GetMicInstance();
         case SourceType::SOURCE_TYPE_WAKEUP:
-            return GetWakeupInstance();
+            if (!strcmp(sourceName, "Built_in_wakeup_mirror")) {
+                return GetWakeupInstance(true);
+            } else {
+                return GetWakeupInstance(false);
+            }
         default:
             AUDIO_ERR_LOG("sourceType error %{public}d", sourceType);
             return GetMicInstance();
@@ -202,8 +327,12 @@ AudioCapturerSource *AudioCapturerSource::GetMicInstance()
     return &audioCapturer;
 }
 
-AudioCapturerSource *AudioCapturerSource::GetWakeupInstance()
+AudioCapturerSource *AudioCapturerSource::GetWakeupInstance(bool isMirror)
 {
+    if (isMirror) {
+        static AudioCapturerSourceWakeup audioCapturerMirror;
+        return &audioCapturerMirror;
+    }
     static AudioCapturerSourceWakeup audioCapturer;
     return &audioCapturer;
 }
@@ -790,27 +919,76 @@ void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceC
 
 int32_t AudioCapturerSourceWakeup::Init(IAudioSourceAttr &attr)
 {
-    return audioCapturerSource_.Init(attr);
+    std::lock_guard<std::mutex> lock(wakeupMutex_);
+    int32_t res = SUCCESS;
+    if (isInited) {
+        return res;
+    }
+    noStart_ = 0;
+    if (initCount == 0) {
+        if (wakeupBuffer_ == nullptr) {
+            wakeupBuffer_ = std::make_unique<WakeupBuffer>();
+        }
+        res = audioCapturerSource_.Init(attr);
+    }
+    if (res == SUCCESS) {
+        isInited = true;
+        initCount++;
+    }
+    return res;
 }
 
 bool AudioCapturerSourceWakeup::IsInited(void)
 {
-    return audioCapturerSource_.IsInited();
+    return isInited;
 }
 
 void AudioCapturerSourceWakeup::DeInit(void)
 {
-    audioCapturerSource_.DeInit();
+    std::lock_guard<std::mutex> lock(wakeupMutex_);
+    if (!isInited) {
+        return;
+    }
+    isInited = false;
+    initCount--;
+    if (initCount == 0) {
+        wakeupBuffer_.reset();
+        audioCapturerSource_.DeInit();
+    }
 }
 
 int32_t AudioCapturerSourceWakeup::Start(void)
 {
-    return audioCapturerSource_.Start();
+    std::lock_guard<std::mutex> lock(wakeupMutex_);
+    int32_t res = SUCCESS;
+    if (isStarted) {
+        return res;
+    }
+    if (startCount == 0) {
+        res = audioCapturerSource_.Start();
+    }
+    if (res == SUCCESS) {
+        isStarted = true;
+        startCount++;
+    }
+    return res;
 }
 
 int32_t AudioCapturerSourceWakeup::Stop(void)
 {
-    return audioCapturerSource_.Stop();
+    std::lock_guard<std::mutex> lock(wakeupMutex_);
+    int32_t res = SUCCESS;
+    if (!isStarted) {
+        return res;
+    }
+    if (startCount == 1) {
+        res = audioCapturerSource_.Stop();
+    }
+    if (res == SUCCESS) {
+        isStarted = false;
+        startCount--;
+    }
+    return res;
 }
 
 int32_t AudioCapturerSourceWakeup::Flush(void)
@@ -835,7 +1013,9 @@ int32_t AudioCapturerSourceWakeup::Resume(void)
 
 int32_t AudioCapturerSourceWakeup::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    return audioCapturerSource_.CaptureFrame(frame, requestBytes, replyBytes);
+    int32_t res = wakeupBuffer_->Poll(frame, requestBytes, replyBytes, noStart_);
+    noStart_ += replyBytes;
+    return res;
 }
 
 int32_t AudioCapturerSourceWakeup::SetVolume(float left, float right)

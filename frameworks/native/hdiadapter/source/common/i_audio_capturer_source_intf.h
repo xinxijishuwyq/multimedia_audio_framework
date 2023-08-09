@@ -36,7 +36,7 @@ typedef struct {
 } IAudioSourceAttr;
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
-    const int32_t sourceType, void **wapper);
+    const int32_t sourceType, const char *sourceName, void **wapper);
 int32_t IAudioCapturerSourceInit(void *wapper, IAudioSourceAttr *attr);
 void IAudioCapturerSourceDeInit(void *wapper);
 int32_t IAudioCapturerSourceStart(void *wapper);
