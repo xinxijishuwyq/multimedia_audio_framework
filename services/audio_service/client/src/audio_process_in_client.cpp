@@ -860,11 +860,15 @@ int32_t AudioProcessInClientInner::Release()
     Trace traceWithLog("AudioProcessInClient::Release", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    // need any check?
+    // not lock as status is already released
+    if (streamStatus_->load() == StreamStatus::STREAM_RELEASED) {
+        return SUCCESS;
+    }
     Stop();
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
-    if (streamStatus_->load() != StreamStatus::STREAM_STOPPED) {
-        AUDIO_ERR_LOG("Process is not stopped");
+    if (streamStatus_->load() != StreamStatus::STREAM_STOPPED ||
+        streamStatus_->load() != StreamStatus::STREAM_IDEL) {
+        AUDIO_ERR_LOG("Process status error:%{public}s", GetStatusInfo(streamStatus_->load()).c_str());
         return ERR_ILLEGAL_STATE;
     }
 
