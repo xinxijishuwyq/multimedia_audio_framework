@@ -153,22 +153,25 @@ int32_t AudioProcessInServer::Release()
     return SUCCESS;
 }
 
-ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServer)
+ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServer,
+    ProcessReleaseCallback *processHolder)
 {
     processInServer_ = processInServer;
+    processHolder_ = processHolder;
 }
 
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
-    AUDIO_INFO_LOG("OnRemoteDied, call release");
-    processInServer_->Release();
+    CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
+    int32_t ret = processHolder_->OnProcessRelease(processInServer_);
+    AUDIO_INFO_LOG("OnRemoteDied, call release ret: %{public}d", ret);
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
 {
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
-    bool result = object->AddDeathRecipient(new ProcessDeathRecipient(this));
+    bool result = object->AddDeathRecipient(new ProcessDeathRecipient(this, releaseCallback_));
     if (!result) {
         AUDIO_ERR_LOG("AddDeathRecipient failed.");
         return ERR_OPERATION_FAILED;
