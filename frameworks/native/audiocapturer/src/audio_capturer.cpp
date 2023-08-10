@@ -198,6 +198,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetInnerCapturerState(true);
     }
 
+    if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        audioStream_->SetWakeupCapturerState(true);
+    }
+
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
     if (ret) {
         AUDIO_ERR_LOG("AudioCapturerPrivate::SetParams SetAudioStreamInfo Failed");
@@ -430,15 +434,6 @@ bool AudioCapturerPrivate::Release()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
-    AudioCapturerInfo currertCapturer;
-    this->GetCapturerInfo(currertCapturer);
-    SourceType sourceType = currertCapturer.sourceType;
-    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        int32_t ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("CloseWakeUpAudioCapturer Error! ErrorCode: %{public}d", ret);
-        }
-    }
     return audioStream_->ReleaseAudioStream();
 }
 

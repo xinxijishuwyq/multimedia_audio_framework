@@ -516,6 +516,8 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
     void GetStreamSwitchInfo(SwitchInfo& info);
 
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -555,6 +557,7 @@ private:
     bool isContextConnected;
     bool isStreamConnected;
     bool isInnerCapturerStream;
+    bool isWakeupCapturerStream_ = false;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 

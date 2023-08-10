@@ -968,6 +968,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream).c_str());
+        pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(isWakeupCapturerStream_).c_str());
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
@@ -2931,6 +2932,12 @@ void AudioServiceClient::SetStreamUsage(StreamUsage usage)
 {
     AUDIO_DEBUG_LOG("SetStreamUsage: %{public}d", usage);
     mStreamUsage = usage;
+}
+
+void AudioServiceClient::SetWakeupCapturerState(bool isWakeupCapturer)
+{
+    AUDIO_DEBUG_LOG("SetWakeupCapturerState: %{public}d", isWakeupCapturer);
+    isWakeupCapturerStream_ = isWakeupCapturer;
 }
 
 } // namespace AudioStandard

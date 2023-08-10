@@ -101,6 +101,7 @@ public:
     int64_t GetFramesRead() override;
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
 
     // Common APIs

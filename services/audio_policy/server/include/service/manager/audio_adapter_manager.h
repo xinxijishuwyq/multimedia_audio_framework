@@ -293,6 +293,16 @@ public:
             audioAdapterManager_->sessionCallback_->OnPlaybackCapturerStop();
         }
     }
+
+    void OnWakeupCapturerStop()
+    {
+        AUDIO_INFO_LOG("PolicyCallbackImpl OnWakeupCapturerStop");
+        if (audioAdapterManager_->sessionCallback_ == nullptr) {
+            AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
+        } else {
+            audioAdapterManager_->sessionCallback_->OnWakeupCapturerStop();
+        }
+    }
 private:
     std::shared_ptr<AudioAdapterManager> audioAdapterManager_;
 };
