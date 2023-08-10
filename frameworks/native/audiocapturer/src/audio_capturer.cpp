@@ -166,11 +166,7 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     AUDIO_INFO_LOG("AudioCapturer::SetParams");
-    AudioStreamParams audioStreamParams;
-    audioStreamParams.format = params.audioSampleFormat;
-    audioStreamParams.samplingRate = params.samplingRate;
-    audioStreamParams.channels = params.audioChannel;
-    audioStreamParams.encoding = params.audioEncoding;
+    AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST) {

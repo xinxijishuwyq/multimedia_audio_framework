@@ -261,7 +261,7 @@ int32_t AudioContainerClientBase::StopStreamGa(const int32_t &trackId)
 
 int32_t AudioContainerClientBase::FlushStreamGa(const int32_t &trackId)
 {
-    lock_guard<mutex> lock(dataMutex);
+    lock_guard<mutex> lock(dataMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -336,7 +336,7 @@ int32_t AudioContainerClientBase::SaveWriteCallbackGa(const std::weak_ptr<AudioR
     const int32_t &trackId)
 {
     AUDIO_ERR_LOG("AudioContainerClientBase: SaveWriteCallbackGa");
-    lock_guard<mutex> lock(dataMutex);
+    lock_guard<mutex> lock(dataMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -430,7 +430,7 @@ void AudioContainerClientBase::HandleRenderPositionCallbacksGa(size_t bytesWritt
 
 size_t AudioContainerClientBase::WriteStreamInCbGa(const StreamBuffer &stream, int32_t &pError, const int32_t &trackId)
 {
-    lock_guard<mutex> lock(dataMutex);
+    lock_guard<mutex> lock(dataMutex_);
 
     const uint8_t *buffer = stream.buffer;
     size_t length = stream.bufferLen;
@@ -441,7 +441,7 @@ size_t AudioContainerClientBase::WriteStreamInCbGa(const StreamBuffer &stream, i
 
 size_t AudioContainerClientBase::WriteStreamGa(const StreamBuffer &stream, int32_t &pError, const int32_t &trackId)
 {
-    lock_guard<mutex> lock(dataMutex);
+    lock_guard<mutex> lock(dataMutex_);
     int error = 0;
     const uint8_t *inputBuffer = stream.buffer;
     size_t inputLength = stream.bufferLen;
@@ -507,7 +507,7 @@ void AudioContainerClientBase::HandleCapturePositionCallbacksGa(size_t bytesRead
 
 int32_t AudioContainerClientBase::ReadStreamGa(StreamBuffer &stream, bool isBlocking, const int32_t &trackId)
 {
-    lock_guard<mutex> lock(dataMutex);
+    lock_guard<mutex> lock(dataMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

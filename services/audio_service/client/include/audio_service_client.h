@@ -532,8 +532,8 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
-    std::mutex dataMutex;
-    std::condition_variable dataCv;
+    std::mutex dataMutex_;
+    std::condition_variable dataCv_;
     std::mutex ctrlMutex;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;

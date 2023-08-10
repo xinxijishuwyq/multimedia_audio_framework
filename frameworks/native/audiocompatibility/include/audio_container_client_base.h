@@ -386,7 +386,7 @@ public:
 
     AudioCaptureMode GetAudioCaptureMode() override;
 
-    std::mutex dataMutex;
+    std::mutex dataMutex_;
     std::mutex ctrlMutex;
 
     int32_t audioTrackId = 0;
