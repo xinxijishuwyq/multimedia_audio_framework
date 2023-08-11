@@ -95,9 +95,9 @@ private:
     void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
-    void GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
-    void SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void SetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);

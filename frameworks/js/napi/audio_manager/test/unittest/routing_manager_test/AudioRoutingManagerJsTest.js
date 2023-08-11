@@ -44,12 +44,12 @@ describe("AudioRoutingManagerJsTest", function () {
   }
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest001
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest001
    * @tc.desc:Get prefer output device - promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest001", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest001", 0, async function (done) {
     let rendererInfo = {
       content : audio.ContentType.CONTENT_TYPE_MUSIC,
       usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
@@ -57,149 +57,149 @@ describe("AudioRoutingManagerJsTest", function () {
     
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      let data = await routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo);
-      console.info(`${TAG} getPreferOutputDeviceForRendererInfo SUCCESS`+JSON.stringify(data));
+      let data = await routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo SUCCESS`+JSON.stringify(data));
       expect(true).assertTrue();
       done();
     } catch(e) {
-      console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
       expect().assertFail();
       done();
     }
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest002
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest002
    * @tc.desc:Get prefer output device no parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest002", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest002", 0, async function (done) {
       let routingManager = audio.getAudioManager().getRoutingManager();
       try {
-        let data = await routingManager.getPreferOutputDeviceForRendererInfo();
-        console.error(`${TAG} getPreferOutputDeviceForRendererInfo parameter check ERROR: ${JSON.stringify(data)}`);
+        let data = await routingManager.getPreferredOutputDeviceForRendererInfo();
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: ${JSON.stringify(data)}`);
         expect().assertFail();
       } catch(e) {
         if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo check no parameter PASS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check no parameter PASS`);
         expect(true).assertTrue();
       }
       done();
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest004
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest004
    * @tc.desc:Get prefer output device check number parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest004", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest004", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      let data = await routingManager.getPreferOutputDeviceForRendererInfo(numberParameter);
-      console.error(`${TAG} getPreferOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
+      let data = await routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter);
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
       if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-        console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
       }
-      console.info(`${TAG} getPreferOutputDeviceForRendererInfo check number parameter PASS`);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter PASS`);
       expect(true).assertTrue();
     }
     done();
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest004
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest004
    * @tc.desc:Get prefer output device check string parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest004", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest004", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      let data = await routingManager.getPreferOutputDeviceForRendererInfo(stringParameter);
-      console.error(`${TAG} getPreferOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
+      let data = await routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter);
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
       if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-        console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
       }
-      console.info(`${TAG} getPreferOutputDeviceForRendererInfo check string parameter PASS`);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter PASS`);
       expect(true).assertTrue();
     }
     done();
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest005
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest005
    * @tc.desc:Get prefer output device - callback
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest005", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest005", 0, async function (done) {
     let rendererInfo = {
       content : audio.ContentType.CONTENT_TYPE_MUSIC,
       usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
       rendererFlags : 0 }
     
     let routingManager = audio.getAudioManager().getRoutingManager();
-      routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (e, data)=>{
+      routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (e, data)=>{
         if (e) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect(false).assertTrue();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo SUCCESS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo SUCCESS`);
         expect(true).assertTrue();
         done();
       });
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest006
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest006
    * @tc.desc:Get prefer output device check number parameter- callback
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest006", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest006", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
-      routingManager.getPreferOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
+      routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
         if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo check number parameter PASS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter PASS`);
         expect(true).assertTrue();
         done();
       });
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest007
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest007
    * @tc.desc:Get prefer output device check string parameter- callback
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest007", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest007", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
-      routingManager.getPreferOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
+      routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
         if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo check string parameter PASS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter PASS`);
         expect(true).assertTrue();
         done();
       });
@@ -211,7 +211,7 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("on_preferOutputDeviceForRendererInfoTest001", 0, async function (done) {
+  it("on_preferredOutputDeviceForRendererInfoTest001", 0, async function (done) {
     let rendererInfo = {
       content : audio.ContentType.CONTENT_TYPE_MUSIC,
       usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
@@ -219,7 +219,7 @@ describe("AudioRoutingManagerJsTest", function () {
     
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.on('preferOutputDeviceChangeForRendererInfo', rendererInfo, (data)=>{});
+      routingManager.on('preferredOutputDeviceChangeForRendererInfo', rendererInfo, (data)=>{});
       expect(true).assertTrue();
       done();
     } catch (e) {
@@ -235,10 +235,10 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("on_preferOutputDeviceForRendererInfoTest002", 0, async function (done) {
+  it("on_preferredOutputDeviceForRendererInfoTest002", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.on('preferOutputDeviceChangeForRendererInfo', stringParameter, (data)=>{});
+      routingManager.on('preferredOutputDeviceChangeForRendererInfo', stringParameter, (data)=>{});
       console.error(`${TAG} on_referOutputDeviceForRendererInfo with string patameter ERROR: ${e.message}`);
       expect().assertFail();
       done();
@@ -260,10 +260,10 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("on_preferOutputDeviceForRendererInfoTest003", 0, async function (done) {
+  it("on_preferredOutputDeviceForRendererInfoTest003", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.on('preferOutputDeviceChangeForRendererInfo', numberParameter, (data)=>{});
+      routingManager.on('preferredOutputDeviceChangeForRendererInfo', numberParameter, (data)=>{});
       console.error(`${TAG} on_referOutputDeviceForRendererInfo with number patameter ERROR: ${e.message}`);
       expect().assertFail();
       done();
@@ -285,10 +285,10 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("off_preferOutputDeviceForRendererInfoTest001", 0, async function (done) {
+  it("off_preferredOutputDeviceForRendererInfoTest001", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.off('preferOutputDeviceChangeForRendererInfo', (data)=>{});
+      routingManager.off('preferredOutputDeviceChangeForRendererInfo', (data)=>{});
       console.info(`${TAG} off_referOutputDeviceForRendererInfo SUCCESS`);
       expect(true).assertTrue();
       done();
@@ -406,10 +406,10 @@ describe("AudioRoutingManagerJsTest", function () {
           done();
           return;
         }
-        routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
-          console.info(`${TAG} getPreferOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
+        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
+          console.info(`${TAG} getPreferredOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
-            console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${err.message}`);
+            console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
             done();
             return;
@@ -498,10 +498,10 @@ describe("AudioRoutingManagerJsTest", function () {
           done();
           return;
         }
-        routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
-          console.info(`${TAG} getPreferOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
+        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
+          console.info(`${TAG} getPreferredOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
-            console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${err.message}`);
+            console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
             done();
             return;

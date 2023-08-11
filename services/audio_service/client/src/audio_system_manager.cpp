@@ -668,7 +668,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFl
 std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDeviceDescriptors()
 {
     AudioRendererInfo rendererInfo;
-    return AudioPolicyManager::GetInstance().GetPreferOutputDeviceDescriptors(rendererInfo);
+    return AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
 }
 
 

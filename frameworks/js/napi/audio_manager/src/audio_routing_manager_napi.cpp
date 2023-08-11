@@ -96,6 +96,7 @@ napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setCommunicationDevice", SetCommunicationDevice),
         DECLARE_NAPI_FUNCTION("isCommunicationDeviceActive", IsCommunicationDeviceActive),
         DECLARE_NAPI_FUNCTION("getActiveOutputDeviceDescriptors", GetActiveOutputDeviceDescriptors),
+        DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfo", GetPreferredOutputDeviceForRendererInfo),
         DECLARE_NAPI_FUNCTION("getPreferOutputDeviceForRendererInfo", GetPreferOutputDeviceForRendererInfo),
     };
 
@@ -678,7 +679,7 @@ napi_value AudioRoutingManagerNapi::GetActiveOutputDeviceDescriptors(napi_env en
     return result;
 }
 
-static void GetPreferOutputDeviceForRendererInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data)
+static void GetPreferredOutputDeviceForRendererInfoAsyncCallbackComplete(napi_env env, napi_status status, void *data)
 {
     auto asyncContext = static_cast<AudioRoutingManagerAsyncContext*>(data);
     napi_value result[ARGS_TWO] = {0};
@@ -696,7 +697,7 @@ static void GetPreferOutputDeviceForRendererInfoAsyncCallbackComplete(napi_env e
     CommonCallbackRoutine(env, asyncContext, result[PARAM1]);
 }
 
-void AudioRoutingManagerNapi::CheckPreferOutputDeviceForRendererInfo(napi_env env,
+void AudioRoutingManagerNapi::CheckPreferredOutputDeviceForRendererInfo(napi_env env,
     std::unique_ptr<AudioRoutingManagerAsyncContext>& asyncContext, size_t argc, napi_value* argv)
 {
     const int32_t refCount = 1;
@@ -722,6 +723,12 @@ void AudioRoutingManagerNapi::CheckPreferOutputDeviceForRendererInfo(napi_env en
 
 napi_value AudioRoutingManagerNapi::GetPreferOutputDeviceForRendererInfo(napi_env env, napi_callback_info info)
 {
+    // for api compatibility, leave some time for applications to adapt to new one
+    return GetPreferredOutputDeviceForRendererInfo(env, info);
+}
+
+napi_value AudioRoutingManagerNapi::GetPreferredOutputDeviceForRendererInfo(napi_env env, napi_callback_info info)
+{
     napi_status status;
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
@@ -734,7 +741,7 @@ napi_value AudioRoutingManagerNapi::GetPreferOutputDeviceForRendererInfo(napi_en
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
-        CheckPreferOutputDeviceForRendererInfo(env, asyncContext, argc, argv);
+        CheckPreferredOutputDeviceForRendererInfo(env, asyncContext, argc, argv);
         if (asyncContext->callbackRef == nullptr) {
             napi_create_promise(env, &asyncContext->deferred, &result);
         } else {
@@ -742,17 +749,17 @@ napi_value AudioRoutingManagerNapi::GetPreferOutputDeviceForRendererInfo(napi_en
         }
 
         napi_value resource = nullptr;
-        napi_create_string_utf8(env, "GetPreferOutputDeviceForRendererInfo", NAPI_AUTO_LENGTH, &resource);
+        napi_create_string_utf8(env, "GetPreferredOutputDeviceForRendererInfo", NAPI_AUTO_LENGTH, &resource);
 
         status = napi_create_async_work(
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRoutingManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioRoutingMngr_->GetPreferOutputDeviceForRendererInfo(
+                    context->status = context->objectInfo->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
                         context->rendererInfo, context->outDeviceDescriptors);
                 }
-            }, GetPreferOutputDeviceForRendererInfoAsyncCallbackComplete,
+            }, GetPreferredOutputDeviceForRendererInfoAsyncCallbackComplete,
             static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
             result = nullptr;
@@ -1062,7 +1069,7 @@ void AudioRoutingManagerNapi::RegisterDeviceChangeCallback(napi_env env, size_t 
     cb->SaveRoutingManagerDeviceChangeCbRef(deviceFlag, args[PARAM2]);
 }
 
-void AudioRoutingManagerNapi::RegisterPreferOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
+void AudioRoutingManagerNapi::RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
     const std::string& cbName, AudioRoutingManagerNapi* routingMgrNapi)
 {
     napi_valuetype valueType = napi_undefined;
@@ -1076,16 +1083,16 @@ void AudioRoutingManagerNapi::RegisterPreferOutputDeviceChangeCallback(napi_env 
     AudioStreamType streamType = AudioSystemManager::GetStreamType(rendererInfo.contentType,
         rendererInfo.streamUsage);
     
-    if (!routingMgrNapi->preferOutputDeviceCallbackNapi_) {
-        routingMgrNapi->preferOutputDeviceCallbackNapi_ =
-            std::make_shared<AudioPreferOutputDeviceChangeCallbackNapi>(env);
-        if (!routingMgrNapi->preferOutputDeviceCallbackNapi_) {
-            AUDIO_ERR_LOG("RegisterPreferOutputDeviceChangeCallback: Memory Allocation Failed !!");
+    if (!routingMgrNapi->preferredOutputDeviceCallbackNapi_) {
+        routingMgrNapi->preferredOutputDeviceCallbackNapi_ =
+            std::make_shared<AudioPreferredOutputDeviceChangeCallbackNapi>(env);
+        if (!routingMgrNapi->preferredOutputDeviceCallbackNapi_) {
+            AUDIO_ERR_LOG("RegisterPreferredOutputDeviceChangeCallback: Memory Allocation Failed !!");
             return;
         }
 
-        int32_t ret = routingMgrNapi->audioRoutingMngr_->SetPreferOutputDeviceChangeCallback(
-            rendererInfo, routingMgrNapi->preferOutputDeviceCallbackNapi_);
+        int32_t ret = routingMgrNapi->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
+            rendererInfo, routingMgrNapi->preferredOutputDeviceCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG("Registering Active Output DeviceChange Callback Failed %{public}d", ret);
             AudioCommonNapi::throwError(env, ret);
@@ -1093,9 +1100,9 @@ void AudioRoutingManagerNapi::RegisterPreferOutputDeviceChangeCallback(napi_env 
         }
     }
 
-    std::shared_ptr<AudioPreferOutputDeviceChangeCallbackNapi> cb =
-        std::static_pointer_cast<AudioPreferOutputDeviceChangeCallbackNapi>(
-        routingMgrNapi->preferOutputDeviceCallbackNapi_);
+    std::shared_ptr<AudioPreferredOutputDeviceChangeCallbackNapi> cb =
+        std::static_pointer_cast<AudioPreferredOutputDeviceChangeCallbackNapi>(
+        routingMgrNapi->preferredOutputDeviceCallbackNapi_);
     cb->SaveCallbackReference(streamType, args[PARAM2]);
 }
 
@@ -1113,8 +1120,9 @@ void AudioRoutingManagerNapi::RegisterCallback(napi_env env, napi_value jsThis, 
 
     if (!cbName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         RegisterDeviceChangeCallback(env, argc, args, cbName, routingMgrNapi);
-    } else if (!cbName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME)) {
-        RegisterPreferOutputDeviceChangeCallback(env, argc, args, cbName, routingMgrNapi);
+    } else if (!cbName.compare(PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME) ||
+        !cbName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME)) {
+        RegisterPreferredOutputDeviceChangeCallback(env, argc, args, cbName, routingMgrNapi);
     } else {
         AUDIO_ERR_LOG("AudioRoutingMgrNapi::No such supported");
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
@@ -1178,25 +1186,25 @@ void AudioRoutingManagerNapi::UnregisterDeviceChangeCallback(napi_env env, napi_
     }
 }
 
-void AudioRoutingManagerNapi::UnegisterPreferOutputDeviceChangeCallback(napi_env env, napi_value callback,
+void AudioRoutingManagerNapi::UnegisterPreferredOutputDeviceChangeCallback(napi_env env, napi_value callback,
     AudioRoutingManagerNapi* routingMgrNapi)
 {
-    if (routingMgrNapi->preferOutputDeviceCallbackNapi_ != nullptr) {
-        std::shared_ptr<AudioPreferOutputDeviceChangeCallbackNapi> cb =
-            std::static_pointer_cast<AudioPreferOutputDeviceChangeCallbackNapi>(
-            routingMgrNapi->preferOutputDeviceCallbackNapi_);
+    if (routingMgrNapi->preferredOutputDeviceCallbackNapi_ != nullptr) {
+        std::shared_ptr<AudioPreferredOutputDeviceChangeCallbackNapi> cb =
+            std::static_pointer_cast<AudioPreferredOutputDeviceChangeCallbackNapi>(
+            routingMgrNapi->preferredOutputDeviceCallbackNapi_);
         if (callback == nullptr) {
-            int32_t ret = routingMgrNapi->audioRoutingMngr_->UnsetPreferOutputDeviceChangeCallback();
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetPreferOutputDeviceChangeCallback Failed");
+            int32_t ret = routingMgrNapi->audioRoutingMngr_->UnsetPreferredOutputDeviceChangeCallback();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetPreferredOutputDeviceChangeCallback Failed");
 
-            routingMgrNapi->preferOutputDeviceCallbackNapi_.reset();
-            routingMgrNapi->preferOutputDeviceCallbackNapi_ = nullptr;
+            routingMgrNapi->preferredOutputDeviceCallbackNapi_.reset();
+            routingMgrNapi->preferredOutputDeviceCallbackNapi_ = nullptr;
             cb->RemoveAllCallbacks();
             return;
         }
         cb->RemoveCallbackReference(env, callback);
     } else {
-        AUDIO_ERR_LOG("UnegisterPreferOutputDeviceChangeCallback: preferOutputDeviceCallbackNapi_ is null");
+        AUDIO_ERR_LOG("UnegisterPreferredOutputDeviceChangeCallback: preferredOutputDeviceCallbackNapi_ is null");
     }
 }
 
@@ -1212,8 +1220,9 @@ napi_value AudioRoutingManagerNapi::UnregisterCallback(napi_env env, napi_value 
 
     if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterDeviceChangeCallback(env, callback, routingMgrNapi);
-    } else if (!callbackName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME)) {
-        UnegisterPreferOutputDeviceChangeCallback(env, callback, routingMgrNapi);
+    } else if (!callbackName.compare(PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME) ||
+        !callbackName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME)) {
+        UnegisterPreferredOutputDeviceChangeCallback(env, callback, routingMgrNapi);
     } else {
         AUDIO_ERR_LOG("off no such supported");
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);

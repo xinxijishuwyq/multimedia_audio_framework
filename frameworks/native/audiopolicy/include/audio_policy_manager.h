@@ -191,12 +191,12 @@ public:
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
 
-    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-        const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback);
+    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
 
-    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
+    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 

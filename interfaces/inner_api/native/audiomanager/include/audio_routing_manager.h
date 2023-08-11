@@ -27,15 +27,15 @@ namespace AudioStandard {
 
 class AudioDeviceDescriptor;
 class AudioRendererFilter;
-class AudioPreferOutputDeviceChangeCallback {
+class AudioPreferredOutputDeviceChangeCallback {
 public:
-    virtual ~AudioPreferOutputDeviceChangeCallback() = default;
+    virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
     /**
      * Called when the prefer output device changes
      *
      * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
      */
-    virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
 };
 
 class AudioRoutingManager {
@@ -45,13 +45,11 @@ public:
 
     static AudioRoutingManager *GetInstance();
     int32_t SetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
-    int32_t GetPreferOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
+    int32_t GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
         std::vector<sptr<AudioDeviceDescriptor>> &desc);
-    int32_t GetPreferOutputDeviceByFilter(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<DeviceType> &deviceTypes);
-    int32_t SetPreferOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
-        const std::shared_ptr<AudioPreferOutputDeviceChangeCallback>& callback);
-    int32_t UnsetPreferOutputDeviceChangeCallback();
+    int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
+    int32_t UnsetPreferredOutputDeviceChangeCallback();
 private:
     uint32_t GetCallingPid();
 };

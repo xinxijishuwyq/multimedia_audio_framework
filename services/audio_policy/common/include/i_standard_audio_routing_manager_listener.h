@@ -27,7 +27,7 @@ class IStandardAudioRoutingManagerListener : public IRemoteBroker {
 public:
     virtual ~IStandardAudioRoutingManagerListener() = default;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
-    virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

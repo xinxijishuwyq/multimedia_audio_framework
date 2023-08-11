@@ -322,16 +322,16 @@ int32_t AudioPolicyManager::CloseWakeUpAudioCapturer()
     }
     return gsp->CloseWakeUpAudioCapturer();
 }
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferOutputDeviceDescriptors(
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("GetPreferOutputDeviceDescriptors: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("GetPreferredOutputDeviceDescriptors: audio policy manager proxy is NULL.");
         std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetPreferOutputDeviceDescriptors(rendererInfo);
+    return gsp->GetPreferredOutputDeviceDescriptors(rendererInfo);
 }
 
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
@@ -534,38 +534,38 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
     return gsp->UnsetDeviceChangeCallback(clientId, flag);
 }
 
-int32_t AudioPolicyManager::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-    const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback)
+int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: audio policy manager proxy is NULL.");
         return -1;
     }
     if (callback == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: callback is nullptr");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     }
 
     auto activeOutputDeviceChangeCbStub = new(std::nothrow) AudioRoutingManagerListenerStub();
     if (activeOutputDeviceChangeCbStub == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: object null");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: object null");
         return ERROR;
     }
 
-    activeOutputDeviceChangeCbStub->SetPreferOutputDeviceChangeCallback(callback);
+    activeOutputDeviceChangeCbStub->SetPreferredOutputDeviceChangeCallback(callback);
 
     sptr<IRemoteObject> object = activeOutputDeviceChangeCbStub->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback: activeOutputDeviceChangeCbStub->AsObject is nullptr..");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: activeOutputDeviceChangeCbStub->AsObject is nullptr..");
         delete activeOutputDeviceChangeCbStub;
         return ERROR;
     }
 
-    return gsp->SetPreferOutputDeviceChangeCallback(clientId, object);
+    return gsp->SetPreferredOutputDeviceChangeCallback(clientId, object);
 }
 
-int32_t AudioPolicyManager::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
+int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -573,7 +573,7 @@ int32_t AudioPolicyManager::UnsetPreferOutputDeviceChangeCallback(const int32_t 
         AUDIO_ERR_LOG("UnsetDeviceChangeCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetPreferOutputDeviceChangeCallback(clientId);
+    return gsp->UnsetPreferredOutputDeviceChangeCallback(clientId);
 }
 
 int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,

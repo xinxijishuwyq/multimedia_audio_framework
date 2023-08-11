@@ -575,7 +575,7 @@ int32_t AudioPolicyProxy::CloseWakeUpAudioCapturer()
     }
     return reply.ReadInt32();
 }
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDeviceDescriptors(
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
     MessageParcel data;
@@ -912,7 +912,7 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId, Devi
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+int32_t AudioPolicyProxy::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -920,7 +920,7 @@ int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clie
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback object is null");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -933,14 +933,14 @@ int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clie
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback failed, error: %{public}d", error);
         return error;
     }
 
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
+int32_t AudioPolicyProxy::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
     MessageParcel data;
     MessageParcel reply;

@@ -54,7 +54,7 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
             for (int32_t i = 0; i < size; i++) {
                 deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(data));
             }
-            OnPreferOutputDeviceUpdated(deviceInfo);
+            OnPreferredOutputDeviceUpdated(deviceInfo);
 
             return AUDIO_OK;
         }
@@ -84,22 +84,22 @@ void AudioRoutingManagerListenerStub::SetMicStateChangeCallback(
     micStateChangeCallback_ = cb;
 }
 
-void AudioRoutingManagerListenerStub::OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+void AudioRoutingManagerListenerStub::OnPreferredOutputDeviceUpdated(
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnPreferOutputDeviceUpdated start");
-    std::shared_ptr<AudioPreferOutputDeviceChangeCallback> activeOutputDeviceChangeCallback =
+    std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> activeOutputDeviceChangeCallback =
         activeOutputDeviceChangeCallback_.lock();
 
     if (activeOutputDeviceChangeCallback == nullptr) {
-        AUDIO_ERR_LOG("OnPreferOutputDeviceUpdated: activeOutputDeviceChangeCallback_ is nullptr");
+        AUDIO_ERR_LOG("OnPreferredOutputDeviceUpdated: activeOutputDeviceChangeCallback_ is nullptr");
         return;
     }
 
-    activeOutputDeviceChangeCallback->OnPreferOutputDeviceUpdated(desc);
+    activeOutputDeviceChangeCallback->OnPreferredOutputDeviceUpdated(desc);
 }
 
-void AudioRoutingManagerListenerStub::SetPreferOutputDeviceChangeCallback(
-    const std::weak_ptr<AudioPreferOutputDeviceChangeCallback> &cb)
+void AudioRoutingManagerListenerStub::SetPreferredOutputDeviceChangeCallback(
+    const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
     activeOutputDeviceChangeCallback_ = cb;
 }

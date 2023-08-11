@@ -666,11 +666,11 @@ int32_t AudioPolicyServer::CloseWakeUpAudioCapturer()
     return res;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferOutputDeviceDescriptors(
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
-        mPolicyService.GetPreferOutputDeviceDescriptors(rendererInfo);
+        mPolicyService.GetPreferredOutputDeviceDescriptors(rendererInfo);
     bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
     if (!hasBTPermission) {
         mPolicyService.UpdateDescWhenNoBTPermission(deviceDescs);
@@ -921,19 +921,19 @@ int32_t AudioPolicyServer::UnsetDeviceChangeCallback(const int32_t /* clientId *
     return mPolicyService.UnsetDeviceChangeCallback(clientPid, flag);
 }
 
-int32_t AudioPolicyServer::SetPreferOutputDeviceChangeCallback(const int32_t /* clientId */,
+int32_t AudioPolicyServer::SetPreferredOutputDeviceChangeCallback(const int32_t /* clientId */,
     const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
-    return mPolicyService.SetPreferOutputDeviceChangeCallback(clientPid, object, hasBTPermission);
+    return mPolicyService.SetPreferredOutputDeviceChangeCallback(clientPid, object, hasBTPermission);
 }
 
-int32_t AudioPolicyServer::UnsetPreferOutputDeviceChangeCallback(const int32_t /* clientId */)
+int32_t AudioPolicyServer::UnsetPreferredOutputDeviceChangeCallback(const int32_t /* clientId */)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return mPolicyService.UnsetPreferOutputDeviceChangeCallback(clientPid);
+    return mPolicyService.UnsetPreferredOutputDeviceChangeCallback(clientPid);
 }
 
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
