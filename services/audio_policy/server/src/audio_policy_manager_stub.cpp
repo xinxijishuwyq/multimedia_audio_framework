@@ -1013,10 +1013,14 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t maxUsageNum = 30;
-    CaptureFilterOptions filterInfo;
-    int32_t ss = data.ReadInt32();
-    if (ss < 0 || ss >= maxUsageNum) {
+    uint32_t maxUsageNum = 30;
+    AudioPlaybackCaptureConfig config;
+    int32_t flag = data.ReadInt32();
+    if (flag == 1) {
+        config.silentCapture = true;
+    }
+    uint32_t ss = data.ReadUint32();
+    if (ss >= maxUsageNum) {
         reply.WriteInt32(ERROR);
         return;
     }
@@ -1026,12 +1030,11 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
             AUDIO_SUPPORTED_STREAM_USAGES.end()) {
             continue;
         }
-        filterInfo.usages.push_back(static_cast<StreamUsage>(tmp_usage));
+        config.filterOptions.usages.push_back(static_cast<StreamUsage>(tmp_usage));
     }
     uint32_t appTokenId = data.ReadUint32();
-    uint32_t appUid = data.ReadInt32();
 
-    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo, appTokenId, appUid);
+    int32_t ret = SetPlaybackCapturerFilterInfos(config, appTokenId);
     reply.WriteInt32(ret);
 }
 

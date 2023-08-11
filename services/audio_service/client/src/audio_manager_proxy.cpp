@@ -685,5 +685,27 @@ int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("SetCaptureSilentState: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(state));
+    error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %{public}d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

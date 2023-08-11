@@ -50,6 +50,17 @@ bool IsPrivacySupportInnerCapturer(int32_t privacyType)
     return playbackCapturerMgr->IsPrivacySupportInnerCapturer(privacyType);
 }
 
+bool IsCaptureSilently()
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    if (playbackCapturerMgr == nullptr) {
+        AUDIO_ERR_LOG("IsCaptureSilently return false for null manager.");
+        return false;
+    }
+
+    return playbackCapturerMgr->IsCaptureSilently();
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -88,5 +99,14 @@ bool PlaybackCapturerManager::IsPrivacySupportInnerCapturer(int32_t privacyType)
     return privacyType == PRIVACY_TYPE_PUBLIC;
 }
 
+void PlaybackCapturerManager::SetCaptureSilentState(bool state)
+{
+    isCaptureSilently_ = state;
+}
+
+bool PlaybackCapturerManager::IsCaptureSilently()
+{
+    return isCaptureSilently_;
+}
 } // namespace OHOS
 } // namespace AudioStandard

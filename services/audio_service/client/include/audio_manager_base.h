@@ -233,9 +233,18 @@ public:
      *
      * @param usage value of StreamUsage which support inner capturer.
      *
-     * @return result of setting. 0 if success, error number else;
+     * @return result of setting. 0 if success, error number else.
     */
     virtual int32_t SetSupportStreamUsage(std::vector<int32_t> usage) = 0;
+
+    /**
+     * Mark if playback capture silently.
+     *
+     * @param state identify the capture state
+     *
+     * @return result of setting. 0 if success, error number else.
+    */
+    virtual int32_t SetCaptureSilentState(bool state) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");

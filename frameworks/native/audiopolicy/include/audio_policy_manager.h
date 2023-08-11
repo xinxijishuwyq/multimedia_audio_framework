@@ -230,8 +230,7 @@ public:
     
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
-    int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-        uint32_t appTokenId, int32_t appUid);
+    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
 
 private:
     AudioPolicyManager()

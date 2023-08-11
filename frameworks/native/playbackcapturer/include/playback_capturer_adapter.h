@@ -25,6 +25,7 @@ extern "C" {
 
 bool IsStreamSupportInnerCapturer(int32_t streamUsage);
 bool IsPrivacySupportInnerCapturer(int32_t privacyTpe);
+bool IsCaptureSilently();
 
 #ifdef __cplusplus
 }

@@ -614,6 +614,22 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_022, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_023
+* @tc.desc  : Test Create interface with parameter: silentCapture in AudioPlaybackCaptureConfig.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_023, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    AudioCapturerUnitTest::InitializePlaybackCapturerOptions(capturerOptions);
+    capturerOptions.playbackCaptureConfig.silentCapture = true;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
+}
+
+/**
 * @tc.name  : Test SetParams API via legal input
 * @tc.number: Audio_Capturer_SetParams_001
 * @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.

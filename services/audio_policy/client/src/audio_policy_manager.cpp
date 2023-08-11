@@ -1161,8 +1161,8 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
     return error;
 }
 
-int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-    uint32_t appTokenId, int32_t appUid)
+int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
+    uint32_t appTokenId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -1170,7 +1170,7 @@ int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const CaptureFilterOp
         return ERROR;
     }
 
-    return gsp->SetPlaybackCapturerFilterInfos(filterOptions, appTokenId, appUid);
+    return gsp->SetPlaybackCapturerFilterInfos(config, appTokenId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

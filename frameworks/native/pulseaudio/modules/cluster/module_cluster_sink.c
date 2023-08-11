@@ -88,15 +88,56 @@ static bool IsSinkInputSupportInnerCapturer(pa_sink_input *si, struct userdata *
     return privacySupport && usageSupport;
 }
 
+static pa_hook_result_t SinkInputMoveForCapturerWithoutEffect(pa_core *c, pa_sink_input *si)
+{
+    pa_assert(c);
+
+    bool isCaptureSilently = IsCaptureSilently();
+    pa_sink *receiverSink = pa_namereg_get(c, "Receiver", PA_NAMEREG_SINK);
+    pa_sink *captureSink = pa_namereg_get(c, "InnerCapturer", PA_NAMEREG_SINK);
+
+    if (isCaptureSilently && captureSink != NULL) {
+        return MoveSinkInputIntoSink(si, captureSink);
+    }
+    if (receiverSink != NULL) {
+        return MoveSinkInputIntoSink(si, receiverSink);
+    }
+    return MoveSinkInputIntoSink(si, c->default_sink);
+}
+
+static pa_hook_result_t SinkInputMoveForCapturerWithEffect(pa_core *c, pa_sink_input *si, const char *sceneType)
+{
+    pa_assert(c);
+
+    bool isCaptureSilently = IsCaptureSilently();
+    pa_sink *captureSink = pa_namereg_get(c, "InnerCapturer", PA_NAMEREG_SINK);
+    const char *sinkName = pa_sprintf_malloc("%s_CAP", sceneType);
+    pa_sink *effectSink = pa_namereg_get(c, sinkName, PA_NAMEREG_SINK);
+
+    if (isCaptureSilently && captureSink != NULL) {
+        return MoveSinkInputIntoSink(si, captureSink);
+    }
+    if (effectSink != NULL) {
+        return MoveSinkInputIntoSink(si, effectSink);
+    }
+    return MoveSinkInputIntoSink(si, c->default_sink);
+}
+
+static pa_hook_result_t SinkInputMoveWithoutEffect(pa_core *c, pa_sink_input *si, bool isInnerCapture)
+{
+    if (isInnerCapture) {
+        return SinkInputMoveForCapturerWithoutEffect(c, si); // playback capturer
+    } else {
+        return MoveSinkInputIntoSink(si, c->default_sink);  // if bypass move to hdi sink
+    }
+}
+
 static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si, struct userdata *u)
 {
     pa_assert(c);
     pa_assert(u);
     const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
-    if (pa_safe_streq(si->sink->name, "InnerCapturer")) {
-        return PA_HOOK_OK;
-    }
 
     const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
     if (pa_safe_streq(deviceString, "remote")) {
@@ -108,41 +149,30 @@ static pa_hook_result_t SinkInputProplistChangedCb(pa_core *c, pa_sink_input *si
         return PA_HOOK_OK;
     }
 
-    const char *receiverSinkName = "Receiver";
-    pa_sink *receiverSink = pa_namereg_get(c, receiverSinkName, PA_NAMEREG_SINK);
     bool isSupportInnerCapturer = IsSinkInputSupportInnerCapturer(si, u);
-    bool innerCapturerFlag = u->isInnerCapturer && receiverSink != NULL && isSupportInnerCapturer && sceneType != NULL;
+    bool innerCapturerFlag = u->isInnerCapturer && isSupportInnerCapturer && sceneType != NULL;
 
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
     if (pa_safe_streq(clientUid, "1003")) {
-        if (innerCapturerFlag) {
-            return MoveSinkInputIntoSink(si, receiverSink); // playback capturer
-        } else {
-            return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
-        }
+        return SinkInputMoveWithoutEffect(c, si, innerCapturerFlag);
     }
 
     bool existFlag = EffectChainManagerExist(sceneType, sceneMode);
     // if EFFECT_NONE mode or effect chain does not exist
     if (pa_safe_streq(sceneMode, "EFFECT_NONE") || !existFlag) {
-        if (innerCapturerFlag) {
-            return MoveSinkInputIntoSink(si, receiverSink); // playback capturer
-        } else {
-            return MoveSinkInputIntoSink(si, c->default_sink); //if bypass move to hdi sink
-        }
+        return SinkInputMoveWithoutEffect(c, si, innerCapturerFlag);
     }
 
-    const char *sinkName = innerCapturerFlag ? pa_sprintf_malloc("%s_CAP", sceneType) : sceneType;
-    pa_sink *effectSink = pa_namereg_get(c, sinkName, PA_NAMEREG_SINK);
+    pa_sink *effectSink = pa_namereg_get(c, sceneType, PA_NAMEREG_SINK);
     if (!effectSink) { // if sink does not exist
         AUDIO_ERR_LOG("Effect sink [%{public}s] sink not found.", sceneType);
-        if (innerCapturerFlag) {
-            MoveSinkInputIntoSink(si, receiverSink);
-        } else {
-            MoveSinkInputIntoSink(si, c->default_sink); // classify sinkinput to default sink
-        }
+        return SinkInputMoveWithoutEffect(c, si, innerCapturerFlag);
     } else {
-        MoveSinkInputIntoSink(si, effectSink); // classify sinkinput to effect sink
+        if (innerCapturerFlag) {
+            SinkInputMoveForCapturerWithEffect(c, si, sceneType);
+        } else {
+            MoveSinkInputIntoSink(si, effectSink); // classify sinkinput to effect sink
+        }
     }
 
     return PA_HOOK_OK;
@@ -175,13 +205,12 @@ static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output 
     pa_assert(u);
     pa_assert(so);
 
-    if (IsSourceOutputForInnerCapturer(so, u)) {
-        u->isInnerCapturer = true;
-        IgnoreEffectChangeProcess(true);
+    if (!IsSourceOutputForInnerCapturer(so, u)) {
+        return PA_HOOK_OK;
     }
 
     if (so->state != PA_SOURCE_OUTPUT_RUNNING) {
-        return PA_HOOK_OK;
+        u->isInnerCapturer = false;
     }
 
     PA_IDXSET_FOREACH(si, c->sink_inputs, idx) {
@@ -194,14 +223,15 @@ static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output 
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so, struct userdata *u)
+static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, struct userdata *u)
 {
     pa_assert(c);
     pa_assert(u);
     pa_assert(so);
 
     if (IsSourceOutputForInnerCapturer(so, u)) {
-        u->isInnerCapturer = false;
+        u->isInnerCapturer = true;
+        IgnoreEffectChangeProcess(true);
     }
     return PA_HOOK_OK;
 }
@@ -264,10 +294,10 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)ClientProplistChangedCb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_STATE_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SourceOutputStateChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_UNLINK], PA_HOOK_LATE,
-        (pa_hook_cb_t)SourceOutputUnlinkCb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_STATE_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkStateChangedCb, u);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_PUT], PA_HOOK_LATE,
+        (pa_hook_cb_t)SourceOutputPutCb, u);
 
     pa_modargs_free(ma);
 

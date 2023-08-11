@@ -37,8 +37,11 @@ public:
     void SetSupportStreamUsage(std::vector<int32_t> usage);
     bool IsStreamSupportInnerCapturer(int32_t streamUsage);
     bool IsPrivacySupportInnerCapturer(int32_t privacyType);
+    void SetCaptureSilentState(bool state);
+    bool IsCaptureSilently();
 private:
     std::unordered_set<int32_t> supportStreamUsageSet_;
+    bool isCaptureSilently_;
 };
 
 }  // namespace AudioStandard
