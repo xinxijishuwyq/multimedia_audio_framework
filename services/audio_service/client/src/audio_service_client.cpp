@@ -806,15 +806,16 @@ const std::string AudioServiceClient::GetStreamName(AudioStreamType audioType)
     return streamName;
 }
 
-const char* AudioServiceClient::GetDeviceNameForConnect()
+const string AudioServiceClient::GetDeviceNameForConnect()
 {
-    const char* deviceName = nullptr;
+    string deviceName;
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        std::string selectDevice =  AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_, clientPid_,
+        const std::string selectDevice =  AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_,
+            clientPid_,
             mStreamType);
-        deviceName = (selectDevice.empty() ? nullptr : selectDevice.c_str());
+        deviceName = (selectDevice.empty() ? "" : selectDevice);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        deviceName = isInnerCapturerStream ? INNER_CAPTURER_SOURCE.c_str() : nullptr;
+        deviceName = isInnerCapturerStream ? INNER_CAPTURER_SOURCE : "";
     }
     return deviceName;
 }
@@ -829,7 +830,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    const char *deviceName = GetDeviceNameForConnect();
+    const string deviceName = GetDeviceNameForConnect();
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -848,7 +849,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     bufferAttr.minreq = bufferAttr.prebuf;
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
+        result = pa_stream_connect_playback(paStream, deviceName.c_str(), &bufferAttr,
             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
             PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
@@ -863,8 +864,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
             return AUDIO_CLIENT_INIT_ERR;
         }
     } else {
-        AUDIO_DEBUG_LOG("pa_stream_connect_record connect to:%{public}s", deviceName ? deviceName : "null");
-        result = pa_stream_connect_record(paStream, deviceName, nullptr,
+        AUDIO_DEBUG_LOG("pa_stream_connect_record connect to:%{public}s",
+            deviceName.empty() ? "empty" : deviceName.c_str());
+        result = pa_stream_connect_record(paStream, deviceName.c_str(), nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
                                           | PA_STREAM_START_CORKED
