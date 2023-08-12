@@ -52,6 +52,14 @@ const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
+constexpr int32_t WAKEUP_LIMIT = 2;
+constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
+constexpr std::string_view PRIMARY_WAKEUP_MIRROR = "Built_in_wakeup_mirror";
+constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
+    PRIMARY_WAKEUP,
+    PRIMARY_WAKEUP_MIRROR
+};
+
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;

@@ -955,7 +955,7 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     }
 
     auto isWakeup = pa_proplist_gets(i->proplist, "stream.isWakeupCapturer");
-    if (isWakeup && "1"sv == isWakeup) {
+    if (isWakeup && !strcmp("1", isWakeup)) {
         g_wakeupCapturerSourceOutputIndexs.insert(i->index);
     }
 }

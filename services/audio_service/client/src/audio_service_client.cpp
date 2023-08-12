@@ -26,6 +26,7 @@
 #include "system_ability_definition.h"
 #include "unistd.h"
 #include "audio_errors.h"
+#include "audio_info.h"
 
 using namespace std;
 
@@ -458,7 +459,7 @@ AudioServiceClient::AudioServiceClient()
     isMainLoopStarted = false;
     isContextConnected = false;
     isStreamConnected = false;
-    isInnerCapturerStream = false;
+    isInnerCapturerStream_ = false;
 
     sinkDevices.clear();
     sourceDevices.clear();
@@ -814,8 +815,29 @@ const string AudioServiceClient::GetDeviceNameForConnect()
             clientPid_,
             mStreamType);
         deviceName = (selectDevice.empty() ? "" : selectDevice);
-    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        deviceName = isInnerCapturerStream ? INNER_CAPTURER_SOURCE : "";
+        return deviceName;
+    }
+
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
+        if (isInnerCapturerStream_) {
+            return INNER_CAPTURER_SOURCE;
+        }
+
+        if (isWakeupCapturerStream_) {
+            int32_t no = AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer({});
+            if (no < 0) {
+                AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error! ErrorCode: %{public}d", no);
+                return "";
+            }
+
+            if (no < WAKEUP_LIMIT) {
+                deviceName = WAKEUP_NAMES[no];
+                return deviceName;
+            } else {
+                AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error! no>=WAKEUP_LIMIT no=: %{public}d", no);
+                return "";
+            }
+        }
     }
     return deviceName;
 }
@@ -830,7 +852,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     uint64_t latency_in_msec = AudioSystemManager::GetInstance()->GetAudioLatencyFromXml();
     sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
-    const string deviceName = GetDeviceNameForConnect();
+
+    const string deviceNameS = GetDeviceNameForConnect();
+    const char* deviceName = deviceNameS.empty() ? nullptr : deviceNameS.c_str();
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -849,7 +873,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     bufferAttr.minreq = bufferAttr.prebuf;
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        result = pa_stream_connect_playback(paStream, deviceName.c_str(), &bufferAttr,
+        result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
             PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
@@ -865,8 +889,8 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         }
     } else {
         AUDIO_DEBUG_LOG("pa_stream_connect_record connect to:%{public}s",
-            deviceName.empty() ? "empty" : deviceName.c_str());
-        result = pa_stream_connect_record(paStream, deviceName.c_str(), nullptr,
+            deviceName ? deviceName : "nullptr");
+        result = pa_stream_connect_record(paStream, deviceName, nullptr,
                                           (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING
                                           | PA_STREAM_ADJUST_LATENCY
                                           | PA_STREAM_START_CORKED
@@ -969,7 +993,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream).c_str());
+        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream_).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(isWakeupCapturerStream_).c_str());
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
@@ -2921,7 +2945,7 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
 void AudioServiceClient::SetStreamInnerCapturerState(bool isInnerCapturer)
 {
     AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", isInnerCapturer);
-    isInnerCapturerStream = isInnerCapturer;
+    isInnerCapturerStream_ = isInnerCapturer;
 }
 
 void AudioServiceClient::SetStreamPrivacyType(AudioPrivacyType privacyType)

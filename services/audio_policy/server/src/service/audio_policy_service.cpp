@@ -885,16 +885,13 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 }
 
 // private method
-AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourceType, int wakeupNo)
+AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeupNo)
 {
     AudioModuleInfo audioModuleInfo = {};
     audioModuleInfo.lib = "libmodule-hdi-source.z.so";
     audioModuleInfo.format = "s16le";
-    static string_view wakeupNames[] = {
-        "Built_in_wakeup",
-        "Built_in_wakeup_mirror"
-    };
-    audioModuleInfo.name = wakeupNames[wakeupNo];
+
+    audioModuleInfo.name = WAKEUP_NAMES[wakeupNo];
     audioModuleInfo.networkId = "LocalDevice";
 
     audioModuleInfo.adapterName = "primary";
@@ -906,10 +903,7 @@ AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t sourc
     audioModuleInfo.bufferSize = "1280";
     audioModuleInfo.OpenMicSpeaker = "1";
 
-    std::stringstream sourceType_;
-    sourceType_ << static_cast<int32_t>(sourceType);
-    audioModuleInfo.sourceType = sourceType_.str();
-
+    audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_WAKEUP);
     return audioModuleInfo;
 }
 
@@ -950,11 +944,11 @@ void AudioPolicyService::OnPreferredDeviceUpdated(DeviceType activeOutputDevice,
     OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
 }
 
-int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudioCapturerOptions options)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    int wakeupNo = 0;
+    int32_t wakeupNo = 0;
     {
         std::lock_guard<std::mutex> lock(wakeupCountMutex_);
         if (wakeupCount_ < 0) {
@@ -968,8 +962,7 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
         wakeupCount_++;
     }
 
-    auto sourceType = options.capturerInfo.sourceType;
-    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(sourceType, wakeupNo);
+    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(wakeupNo);
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
@@ -979,15 +972,8 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
         IOHandles_[moduleInfo.name] = ioHandle;
     }
 
-    auto devType = GetDeviceType(moduleInfo.name);
-    int32_t result = -1;
-    result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
-    if (result != SUCCESS) {
-        AUDIO_ERR_LOG("SetWakeUpAudioCapturer failed!");
-        return -1;
-    }
     AUDIO_DEBUG_LOG("SetWakeUpAudioCapturer Active Success!");
-    return SUCCESS;
+    return wakeupNo;
 }
 
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
@@ -1000,11 +986,11 @@ int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
         if (wakeupCount_ > 0) {
             return SUCCESS;
         }
-        for (auto key : {PRIMARY_WAKEUP, PRIMARY_WAKEUP_MIRROR}) {
+        for (auto key : WAKEUP_NAMES) {
             AudioIOHandle ioHandle;
             {
                 std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-                auto ioHandleIter = IOHandles_.find(key);
+                auto ioHandleIter = IOHandles_.find(std::string(key));
                 if (ioHandleIter == IOHandles_.end()) {
                     AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed");
                     continue;
@@ -2885,9 +2871,6 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
             break;
         case InternalDeviceType::DEVICE_TYPE_MIC:
             ioHandle = IOHandles_[PRIMARY_MIC];
-            break;
-        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
-            ioHandle = IOHandles_[PRIMARY_WAKEUP];
             break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
             ioHandle = IOHandles_[FILE_SINK];

@@ -556,7 +556,7 @@ private:
     bool isMainLoopStarted;
     bool isContextConnected;
     bool isStreamConnected;
-    bool isInnerCapturerStream;
+    bool isInnerCapturerStream_;
     bool isWakeupCapturerStream_ = false;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;

@@ -67,13 +67,6 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_ULTRASONIC) {
         return nullptr;
     }
-    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        int32_t res = AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions);
-        if (res != SUCCESS) {
-            AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error! ErrorCode: %{public}d", res);
-            return nullptr;
-        }
-    }
 
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
 
