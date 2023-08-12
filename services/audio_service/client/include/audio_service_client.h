@@ -536,7 +536,7 @@ private:
 
     std::mutex dataMutex_;
     std::condition_variable dataCv_;
-    std::mutex ctrlMutex;
+    std::mutex ctrlMutex_;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;
     std::mutex rendererMarkReachedMutex_;
@@ -545,10 +545,10 @@ private:
     std::mutex writeCallbackMutex_;
     std::mutex stoppingMutex_;
     bool runnerReleased_ = false;
-    AudioCache acache;
-    const void *internalReadBuffer;
-    size_t internalRdBufLen;
-    size_t internalRdBufIndex;
+    AudioCache acache_;
+    const void *internalReadBuffer_;
+    size_t internalRdBufLen_;
+    size_t internalRdBufIndex_;
     size_t setBufferSize;
     int32_t streamCmdStatus;
     int32_t streamDrainStatus;

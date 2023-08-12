@@ -387,13 +387,13 @@ public:
     AudioCaptureMode GetAudioCaptureMode() override;
 
     std::mutex dataMutex_;
-    std::mutex ctrlMutex;
+    std::mutex ctrlMutex_;
 
     int32_t audioTrackId = 0;
 
-    const void *internalReadBuffer;
-    size_t internalRdBufLen;
-    size_t internalRdBufIndex;
+    const void *internalReadBuffer_;
+    size_t internalRdBufLen_;
+    size_t internalRdBufIndex_;
 
     float mVolumeFactor;
     AudioStreamType mStreamType;

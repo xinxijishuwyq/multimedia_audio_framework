@@ -58,21 +58,21 @@ void AudioContainerClientBase::InitializeClientGa()
     mRenderPeriodPositionCb = nullptr;
     mAudioRendererCallbacks = nullptr;
     mAudioCapturerCallbacks = nullptr;
-    internalReadBuffer = nullptr;
+    internalReadBuffer_ = nullptr;
 
-    internalRdBufIndex = 0;
-    internalRdBufLen = 0;
+    internalRdBufIndex_ = 0;
+    internalRdBufLen_ = 0;
 }
 
 void AudioContainerClientBase::ResetPAAudioClientGa()
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(ctrlMutex_);
     mAudioRendererCallbacks = nullptr;
     mAudioCapturerCallbacks = nullptr;
-    internalReadBuffer = nullptr;
+    internalReadBuffer_ = nullptr;
 
-    internalRdBufIndex = 0;
-    internalRdBufLen = 0;
+    internalRdBufIndex_ = 0;
+    internalRdBufLen_ = 0;
 }
 
 AudioContainerClientBase::AudioContainerClientBase(const sptr<IRemoteObject> &impl)
@@ -201,7 +201,7 @@ int32_t AudioContainerClientBase::CreateStreamGa(AudioStreamParams audioParams, 
 
 int32_t AudioContainerClientBase::StartStreamGa(const int32_t &trackId)
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(ctrlMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -221,7 +221,7 @@ int32_t AudioContainerClientBase::StartStreamGa(const int32_t &trackId)
 
 int32_t AudioContainerClientBase::PauseStreamGa(const int32_t &trackId)
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(ctrlMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -241,7 +241,7 @@ int32_t AudioContainerClientBase::PauseStreamGa(const int32_t &trackId)
 
 int32_t AudioContainerClientBase::StopStreamGa(const int32_t &trackId)
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(ctrlMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -457,20 +457,20 @@ size_t AudioContainerClientBase::WriteStreamGa(const StreamBuffer &stream, int32
 
 int32_t AudioContainerClientBase::UpdateReadBufferGa(uint8_t *buffer, size_t &length, size_t &readSize)
 {
-    size_t l = (internalRdBufLen < length) ? internalRdBufLen : length;
-    if (memcpy_s(buffer, length, static_cast<const uint8_t*>(internalReadBuffer) + internalRdBufIndex, l)) {
+    size_t l = (internalRdBufLen_ < length) ? internalRdBufLen_ : length;
+    if (memcpy_s(buffer, length, static_cast<const uint8_t*>(internalReadBuffer_) + internalRdBufIndex_, l)) {
         return AUDIO_CLIENT_READ_STREAM_ERR;
     }
 
     length -= l;
-    internalRdBufIndex += l;
-    internalRdBufLen -= l;
+    internalRdBufIndex_ += l;
+    internalRdBufLen_ -= l;
     readSize += l;
 
-    if (!internalRdBufLen) {
-        internalReadBuffer = nullptr;
-        internalRdBufLen = 0;
-        internalRdBufIndex = 0;
+    if (!internalRdBufLen_) {
+        internalReadBuffer_ = nullptr;
+        internalRdBufLen_ = 0;
+        internalRdBufIndex_ = 0;
     }
 
     return AUDIO_CLIENT_SUCCESS;
@@ -653,7 +653,7 @@ uint32_t AudioContainerClientBase::GetStreamVolumeGa(uint32_t sessionID)
 
 int32_t AudioContainerClientBase::SetStreamVolumeGa(float volume, const int32_t &trackId)
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(ctrlMutex_);
     if ((volume < MIN_STREAM_VOLUME_LEVEL) || (volume > MAX_STREAM_VOLUME_LEVEL)) {
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
