@@ -334,6 +334,18 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputD
     return gsp->GetPreferredOutputDeviceDescriptors(rendererInfo);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetPreferredInputDeviceDescriptors: audio policy manager proxy is NULL.");
+        std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+        return deviceInfo;
+    }
+    return gsp->GetPreferredInputDeviceDescriptors(captureInfo);
+}
+
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -565,6 +577,33 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const int32_t
     return gsp->SetPreferredOutputDeviceChangeCallback(clientId, object);
 }
 
+int32_t AudioPolicyManager::SetPreferredInputDeviceChangeCallback(
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("AudioPreferredInputDeviceChangeCallback: audio policy manager proxy is NULL.");
+        return -1;
+    }
+
+    auto activeInputDeviceChangeCbStub = new(std::nothrow) AudioRoutingManagerListenerStub();
+    if (activeInputDeviceChangeCbStub == nullptr) {
+        AUDIO_ERR_LOG("AudioPreferredInputDeviceChangeCallback: object null");
+        return ERROR;
+    }
+
+    activeInputDeviceChangeCbStub->SetPreferredInputDeviceChangeCallback(callback);
+
+    sptr<IRemoteObject> object = activeInputDeviceChangeCbStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPreferredInputDeviceChangeCallback: activeInputDeviceChangeCbStub->AsObject is nullptr.");
+        delete activeInputDeviceChangeCbStub;
+        return ERROR;
+    }
+
+    return gsp->SetPreferredInputDeviceChangeCallback(object);
+}
+
 int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -574,6 +613,16 @@ int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(const int32
         return -1;
     }
     return gsp->UnsetPreferredOutputDeviceChangeCallback(clientId);
+}
+
+int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->UnsetPreferredInputDeviceChangeCallback();
 }
 
 int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,

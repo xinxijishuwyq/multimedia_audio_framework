@@ -679,6 +679,19 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDe
     return deviceDescs;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs =
+        mPolicyService.GetPreferredInputDeviceDescriptors(captureInfo);
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+    if (!hasBTPermission) {
+        mPolicyService.UpdateDescWhenNoBTPermission(deviceDescs);
+    }
+
+    return deviceDescs;
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return mPolicyService.IsStreamActive(streamType);
@@ -930,10 +943,24 @@ int32_t AudioPolicyServer::SetPreferredOutputDeviceChangeCallback(const int32_t 
     return mPolicyService.SetPreferredOutputDeviceChangeCallback(clientPid, object, hasBTPermission);
 }
 
+int32_t AudioPolicyServer::SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+    return mPolicyService.SetPreferredInputDeviceChangeCallback(clientPid, object, hasBTPermission);
+}
+
 int32_t AudioPolicyServer::UnsetPreferredOutputDeviceChangeCallback(const int32_t /* clientId */)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return mPolicyService.UnsetPreferredOutputDeviceChangeCallback(clientPid);
+}
+
+int32_t AudioPolicyServer::UnsetPreferredInputDeviceChangeCallback()
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return mPolicyService.UnsetPreferredInputDeviceChangeCallback(clientPid);
 }
 
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)

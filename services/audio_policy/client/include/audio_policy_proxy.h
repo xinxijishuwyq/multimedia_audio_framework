@@ -174,6 +174,13 @@ public:
 
     int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) override;
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo) override;
+
+    int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetPreferredInputDeviceChangeCallback() override;
+
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
     int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;

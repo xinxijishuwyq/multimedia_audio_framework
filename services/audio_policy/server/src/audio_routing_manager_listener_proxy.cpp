@@ -71,6 +71,28 @@ void AudioRoutingManagerListenerProxy::OnPreferredOutputDeviceUpdated(
     }
 }
 
+void AudioRoutingManagerListenerProxy::OnPreferredInputDeviceUpdated(
+    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("OnPreferredInputDeviceUpdated: WriteInterfaceToken failed");
+        return;
+    }
+
+    size_t size = desc.size();
+    data.WriteInt32(static_cast<int32_t>(size));
+    for (size_t i = 0; i < size; i++) {
+        desc[i]->Marshalling(data);
+    }
+    int error = Remote()->SendRequest(ON_ACTIVE_INPUT_DEVICE_UPDATED, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnPreferredInputDeviceUpdated failed, error: %{public}d", error);
+    }
+}
+
 AudioRoutingManagerListenerCallback::AudioRoutingManagerListenerCallback(
     const sptr<IStandardAudioRoutingManagerListener> &listener) : listener_(listener)
 {

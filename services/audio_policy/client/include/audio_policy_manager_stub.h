@@ -98,6 +98,9 @@ private:
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void SetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void SetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);

@@ -32,11 +32,14 @@ public:
     void SetMicStateChangeCallback(const std::weak_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void SetPreferredOutputDeviceChangeCallback(
         const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+    void SetPreferredInputDeviceChangeCallback(const std::weak_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
 private:
     std::weak_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallback_;
     std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> activeOutputDeviceChangeCallback_;
+    std::weak_ptr<AudioPreferredInputDeviceChangeCallback> activeInputDeviceChangeCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

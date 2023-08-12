@@ -26,6 +26,7 @@
 namespace {
     const std::string PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME = "preferredOutputDeviceChangeForRendererInfo";
     const std::string PREFER_OUTPUT_DEVICE_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfo";
+    const std::string PREFERRED_INPUT_DEVICE_CALLBACK_NAME  = "preferredInputDeviceChangeForCapturerInfo";
 }
 
 namespace OHOS {
@@ -52,6 +53,30 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> preferredOutputDeviceCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, AudioStreamType>> preferredOutputDeviceCbList_;
+};
+
+class AudioPreferredInputDeviceChangeCallbackNapi : public AudioPreferredInputDeviceChangeCallback {
+public:
+    explicit AudioPreferredInputDeviceChangeCallbackNapi(napi_env env);
+    virtual ~AudioPreferredInputDeviceChangeCallbackNapi();
+    void SaveCallbackReference(SourceType sourceType, napi_value callback);
+    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void RemoveCallbackReference(napi_env env, napi_value args);
+    void RemoveAllCallbacks();
+
+private:
+    struct AudioActiveInputDeviceChangeJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        std::vector<sptr<AudioDeviceDescriptor>> desc;
+    };
+
+    void OnJsCallbackActiveInputDeviceChange(std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb);
+
+    std::mutex preferredInputListMutex_;
+    napi_env env_ = nullptr;
+    std::shared_ptr<AutoRef> preferredInputDeviceCallback_ = nullptr;
+    std::list<std::pair<std::shared_ptr<AutoRef>, SourceType>> preferredInputDeviceCbList_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

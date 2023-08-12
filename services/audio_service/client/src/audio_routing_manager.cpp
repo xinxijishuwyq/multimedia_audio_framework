@@ -59,6 +59,16 @@ int32_t AudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(AudioRender
     return SUCCESS;
 }
 
+int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
+    std::vector<sptr<AudioDeviceDescriptor>> &desc)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    desc = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
+
+    return SUCCESS;
+}
+
 int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback)
 {
@@ -72,11 +82,30 @@ int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendere
     return AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, callback);
 }
 
+int32_t AudioRoutingManager::SetPreferredInputDeviceChangeCallback(AudioCapturerInfo captureInfo,
+    const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    return AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(callback);
+}
+
 int32_t AudioRoutingManager::UnsetPreferredOutputDeviceChangeCallback()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(clientId);
 }
+
+int32_t AudioRoutingManager::UnsetPreferredInputDeviceChangeCallback()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    return AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
