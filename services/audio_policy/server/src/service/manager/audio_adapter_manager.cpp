@@ -387,6 +387,13 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
     }
 
     switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET: {
+            if (name == USB_SPEAKER) {
+                return audioServiceAdapter_->SetDefaultSink(name);
+            } else {
+                return audioServiceAdapter_->SetDefaultSource(name);
+            }
+        }
         case InternalDeviceType::DEVICE_TYPE_EARPIECE:
         case InternalDeviceType::DEVICE_TYPE_SPEAKER:
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:

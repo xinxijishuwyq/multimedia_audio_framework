@@ -192,6 +192,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_HEADSET = 22,
     /**
+     * Indicates a usb-arm device.
+     */
+    DEVICE_TYPE_USB_ARM_HEADSET = 23,
+    /**
      * Indicates a debug sink device
      */
     DEVICE_TYPE_FILE_SINK = 50,

@@ -213,6 +213,10 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             HiviewDFX::XCollie::GetInstance().CancelTimer(id);
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
+        if (key == "need_change_usb_device") {
+            parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "need_change_usb_device");
+        }
     }
 
     if (AudioServer::audioParameters.count(key)) {
@@ -276,7 +280,12 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
         return ERR_INVALID_PARAM;
     }
     if (deviceRole == INPUT_DEVICE) {
-        AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+        AudioCapturerSource *audioCapturerSourceInstance;
+        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        } else {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        }
         if (audioCapturerSourceInstance) {
             transactionId = audioCapturerSourceInstance->GetTransactionId();
         }
@@ -288,6 +297,8 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     IAudioRendererSink *iRendererInstance = nullptr;
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         iRendererInstance = IAudioRendererSink::GetInstance("a2dp", "");
+    } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        iRendererInstance = IAudioRendererSink::GetInstance("usb", "");
     } else {
         iRendererInstance = IAudioRendererSink::GetInstance("primary", "");
     }
@@ -441,8 +452,15 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
         return ERR_NOT_SUPPORTED;
     }
     AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType: %{public}d, flag: %{public}d", type, flag);
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    AudioCapturerSource *audioCapturerSourceInstance;
+    IAudioRendererSink *audioRendererSinkInstance;
+    if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+    } else {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    }
 
     if (audioCapturerSourceInstance == nullptr || audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute null instance!");

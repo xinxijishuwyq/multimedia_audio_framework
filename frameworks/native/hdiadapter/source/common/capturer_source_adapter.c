@@ -32,8 +32,10 @@ const int32_t CLASS_TYPE_PRIMARY = 0;
 const int32_t CLASS_TYPE_A2DP = 1;
 const int32_t CLASS_TYPE_FILE = 2;
 const int32_t CLASS_TYPE_REMOTE = 3;
+const int32_t CLASS_TYPE_USB = 4;
 
 const char *g_deviceClassPrimary = "primary";
+const char *g_deviceClassUsb = "usb";
 const char *g_deviceClassA2DP = "a2dp";
 const char *g_deviceClassFile = "file_io";
 const char *g_deviceClassRemote = "remote";
@@ -75,6 +77,9 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const
     if (!strcmp(device, g_deviceClassPrimary)) {
         adapter->deviceClass = CLASS_TYPE_PRIMARY;
     }
+    if (!strcmp(device, g_deviceClassUsb)) {
+        adapter->deviceClass = CLASS_TYPE_USB;
+    }
     if (!strcmp(device, g_deviceClassA2DP)) {
         adapter->deviceClass = CLASS_TYPE_A2DP;
     }
@@ -115,6 +120,8 @@ const char *GetDeviceClass(int32_t deviceClass)
 {
     if (deviceClass == CLASS_TYPE_PRIMARY) {
         return g_deviceClassPrimary;
+    } else if (deviceClass == CLASS_TYPE_USB) {
+        return g_deviceClassUsb;
     } else if (deviceClass == CLASS_TYPE_A2DP) {
         return g_deviceClassA2DP;
     } else if (deviceClass == CLASS_TYPE_FILE) {
