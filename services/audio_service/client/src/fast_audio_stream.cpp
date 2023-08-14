@@ -581,6 +581,11 @@ void FastAudioStream::SetInnerCapturerState(bool isInnerCapturer)
     AUDIO_ERR_LOG("SetInnerCapturerState is not supported");
 }
 
+void FastAudioStream::SetWakeupCapturerState(bool isWakeupCapturer)
+{
+    AUDIO_ERR_LOG("SetWakeupCapturerState is not supported");
+}
+
 void FastAudioStream::SetPrivacyType(AudioPrivacyType privacyType)
 {
     AUDIO_ERR_LOG("SetPrivacyType is not supported");

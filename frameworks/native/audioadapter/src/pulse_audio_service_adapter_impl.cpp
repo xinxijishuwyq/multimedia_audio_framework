@@ -24,6 +24,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "hisysevent.h"
+#include <set>
 
 using namespace std;
 
@@ -33,6 +34,8 @@ static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 int32_t g_playbackCapturerSourceOutputIndex = -1;
+
+std::set<uint32_t> g_wakeupCapturerSourceOutputIndexs;
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
@@ -906,13 +909,13 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoCorkStatusCb(pa_context *c,
 void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol,
     void *userdata)
 {
-    AUDIO_INFO_LOG("[PaGetSourceOutputCb] in eol[%{public}d]", eol);
+    AUDIO_INFO_LOG("in eol[%{public}d]", eol);
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
     if (eol < 0) {
         delete userData;
-        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Failed to get source output information: %{public}s",
+        AUDIO_ERR_LOG("Failed to get source output information: %{public}s",
             pa_strerror(pa_context_errno(c)));
         return;
     }
@@ -924,13 +927,13 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     }
 
     if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Invalid proplist for source output (%{public}d).", i->index);
+        AUDIO_ERR_LOG("Invalid proplist for source output (%{public}d).", i->index);
         return;
     }
 
     const char *streamSession = pa_proplist_gets(i->proplist, "stream.sessionID");
     if (streamSession == nullptr) {
-        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Invalid stream parameter:sessionID.");
+        AUDIO_ERR_LOG("Invalid stream parameter:sessionID.");
         return;
     }
 
@@ -938,17 +941,22 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     uint32_t sessionID;
     sessionStr << streamSession;
     sessionStr >> sessionID;
-    AUDIO_INFO_LOG("[PaGetSourceOutputCb] sessionID %{public}u", sessionID);
+    AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
     sourceIndexSessionIDMap[i->index] = sessionID;
 
     const char *captureFlag = pa_proplist_gets(i->proplist, "stream.isInnerCapturer");
     if (captureFlag == nullptr) {
-        AUDIO_ERR_LOG("[PaGetSourceOutputCb] Invalid stream parameter:isInnerCapturer.");
-        return;
+        AUDIO_ERR_LOG("Invalid stream parameter:isInnerCapturer.");
+    } else {
+        int32_t flag = atoi(captureFlag);
+        if (flag == 1) {
+            g_playbackCapturerSourceOutputIndex = i->index;
+        }
     }
-    int32_t flag = atoi(captureFlag);
-    if (flag == 1) {
-        g_playbackCapturerSourceOutputIndex = i->index;
+
+    auto isWakeup = pa_proplist_gets(i->proplist, "stream.isWakeupCapturer");
+    if (isWakeup && !strcmp("1", isWakeup)) {
+        g_wakeupCapturerSourceOutputIndexs.insert(i->index);
     }
 }
 
@@ -1075,6 +1083,17 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         if (idx == g_playbackCapturerSourceOutputIndex) {
             g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
             g_playbackCapturerSourceOutputIndex = -1;
+        }
+
+        auto it = g_wakeupCapturerSourceOutputIndexs.find(idx);
+        if (it != g_wakeupCapturerSourceOutputIndexs.end()) {
+            g_wakeupCapturerSourceOutputIndexs.erase(it);
+
+            pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
+                []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
+                    g_audioServiceAdapterCallback->OnWakeupCapturerStop();
+                },
+                nullptr);
         }
     }
 }

@@ -40,6 +40,8 @@ public:
 
     virtual void OnPlaybackCapturerStop() = 0;
 
+    virtual void OnWakeupCapturerStop() = 0;
+
     virtual ~AudioServiceAdapterCallback() {}
 };
 

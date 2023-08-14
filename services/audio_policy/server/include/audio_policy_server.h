@@ -189,6 +189,8 @@ public:
 
     void OnPlaybackCapturerStop() override;
 
+    void OnWakeupCapturerStop() override;
+
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;

@@ -50,7 +50,7 @@ AudioServiceDump::~AudioServiceDump()
 
 void AudioServiceDump::ResetPAAudioDump()
 {
-    lock_guard<mutex> lock(ctrlMutex);
+    lock_guard<mutex> lock(ctrlMutex_);
     if (mainLoop && (isMainLoopStarted == true)) {
         pa_threaded_mainloop_stop(mainLoop);
     }

@@ -328,7 +328,7 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType, int wakeupNo);
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
@@ -522,7 +522,6 @@ private:
 
     bool isMicrophoneMute_ = false;
 
-    static constexpr int WAKEUP_LIMIT = 2;
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
 };

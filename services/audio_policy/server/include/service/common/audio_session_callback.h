@@ -28,6 +28,8 @@ public:
     virtual void OnSessionRemoved(const uint32_t sessionID) = 0;
 
     virtual void OnPlaybackCapturerStop() = 0;
+
+    virtual void OnWakeupCapturerStop() = 0;
 };
 } // namespce AudioStandard
 } // namespace OHOS

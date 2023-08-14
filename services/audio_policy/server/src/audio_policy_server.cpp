@@ -1523,6 +1523,11 @@ void AudioPolicyServer::OnPlaybackCapturerStop()
     mPolicyService.UnloadLoopback();
 }
 
+void AudioPolicyServer::OnWakeupCapturerStop()
+{
+    mPolicyService.CloseWakeUpAudioCapturer();
+}
+
 AudioStreamType AudioPolicyServer::GetStreamInFocus()
 {
     AudioStreamType streamInFocus = STREAM_DEFAULT;

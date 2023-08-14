@@ -187,6 +187,9 @@ public:
     virtual IAudioStream::StreamClass GetStreamClass() = 0;
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
     virtual void GetSwitchInfo(SwitchInfo& info) = 0;
+
+    //for wakeup capturer
+    virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

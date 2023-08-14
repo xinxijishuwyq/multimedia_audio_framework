@@ -71,6 +71,18 @@ public:
     bool isChannelChange_ = false;
     int32_t InitPlaybackCapturer(int32_t type, const AudioPlaybackCaptureConfig &config);
 
+    static inline AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params)
+    {
+        AudioStreamParams audioStreamParams;
+
+        audioStreamParams.format = params.audioSampleFormat;
+        audioStreamParams.samplingRate = params.samplingRate;
+        audioStreamParams.channels = params.audioChannel;
+        audioStreamParams.encoding = params.audioEncoding;
+
+        return audioStreamParams;
+    }
+
 private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;

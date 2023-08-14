@@ -516,6 +516,8 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
     void GetStreamSwitchInfo(SwitchInfo& info);
 
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -532,9 +534,9 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
-    std::mutex dataMutex;
-    std::condition_variable dataCv;
-    std::mutex ctrlMutex;
+    std::mutex dataMutex_;
+    std::condition_variable dataCv_;
+    std::mutex ctrlMutex_;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;
     std::mutex rendererMarkReachedMutex_;
@@ -543,10 +545,10 @@ private:
     std::mutex writeCallbackMutex_;
     std::mutex stoppingMutex_;
     bool runnerReleased_ = false;
-    AudioCache acache;
-    const void *internalReadBuffer;
-    size_t internalRdBufLen;
-    size_t internalRdBufIndex;
+    AudioCache acache_;
+    const void *internalReadBuffer_;
+    size_t internalRdBufLen_;
+    size_t internalRdBufIndex_;
     size_t setBufferSize;
     int32_t streamCmdStatus;
     int32_t streamDrainStatus;
@@ -554,7 +556,8 @@ private:
     bool isMainLoopStarted;
     bool isContextConnected;
     bool isStreamConnected;
-    bool isInnerCapturerStream;
+    bool isInnerCapturerStream_;
+    bool isWakeupCapturerStream_ = false;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
@@ -628,7 +631,7 @@ private:
 
     uint32_t underFlowCount;
     int32_t ConnectStreamToPA();
-    const char* GetDeviceNameForConnect();
+    const std::string GetDeviceNameForConnect();
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();
