@@ -68,7 +68,10 @@ using namespace OHOS::AudioStandard;
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
     const SourceType sourceType, const char *sourceName, void **wapper)
 {
-    IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass, deviceNetworkId, sourceType);
+    IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass,
+        deviceNetworkId,
+        sourceType,
+        sourceName);
 
     if (iSource != nullptr) {
         *wapper = static_cast<void *>(iSource);
