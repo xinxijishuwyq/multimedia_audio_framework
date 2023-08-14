@@ -94,7 +94,11 @@ public:
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
+    void SetStreamTrackerState(bool trackerRegisteredState) override;
+    void GetSwitchInfo(SwitchInfo& info) override;
+
 private:
+    void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
@@ -123,6 +127,8 @@ private:
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
+
+    bool streamTrackerRegistered_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

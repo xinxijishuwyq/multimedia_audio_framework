@@ -30,6 +30,7 @@ namespace AudioTestConstants {
     constexpr int32_t FIRST_ARG_IDX = 1;
     constexpr int32_t SECOND_ARG_IDX = 2;
     constexpr int32_t THIRD_ARG_IDX = 3;
+    constexpr int32_t FOUR_ARG_IDX = 4;
     constexpr int32_t WAIT_INTERVAL = 1000;
 }
 
@@ -38,6 +39,7 @@ FILE* g_file = nullptr;
 bool g_readEnd = false;
 int32_t g_samplingRate = 48000;
 int32_t g_channelCount = 2;
+int32_t g_latencyMode = 0;
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
@@ -70,6 +72,7 @@ void PlayerTest(char *argv[])
     // 2. set params and callbacks
     OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
     OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_latencyMode);
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
@@ -93,11 +96,11 @@ void PlayerTest(char *argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(AudioTestConstants::WAIT_INTERVAL));
         int64_t frames;
         OH_AudioRenderer_GetFramesWritten(audioRenderer, &frames);
-        printf("Wait for the audio to finish playing.(..%d s) frames:%lld\n", ++timer, frames);
+        printf("Wait for the audio to finish playing.(..%d s) frames:%ld\n", ++timer, frames);
         int64_t framePosition;
         int64_t timestamp;
         OH_AudioRenderer_GetTimestamp(audioRenderer, CLOCK_MONOTONIC, &framePosition, &timestamp);
-        printf("framePosition %lld timestamp:%lld\n", framePosition, timestamp);
+        printf("framePosition %ld timestamp:%ld\n", framePosition, timestamp);
     }
     // 5. stop and release client
     ret = OH_AudioRenderer_Stop(audioRenderer);
@@ -114,18 +117,21 @@ int main(int argc, char *argv[])
 {
     printf("start \n");
     if ((argv == nullptr) || (argc < AudioTestConstants::THIRD_ARG_IDX)) {
-        printf("input parms wrong. input format: filePath samplingRate channelCount \n");
-        printf("input demo: ./oh_audio_renderer_test ./oh_test_audio.pcm 48000 2 \n");
+        printf("input parms wrong. input format: filePath samplingRate channelCount latencyMode\n");
+        printf("input demo: ./oh_audio_renderer_test ./oh_test_audio.pcm 48000 2 1 \n");
         return 0;
     }
     printf("argc=%d ", argc);
-    printf("argv[1]=%s ", argv[AudioTestConstants::FIRST_ARG_IDX]);
-    printf("argv[2]=%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
-    printf("argv[3]=%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
+    printf("file path =%s ", argv[AudioTestConstants::FIRST_ARG_IDX]);
+    printf("sample rate =%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
+    printf("channel count =%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
+    printf("latency mode =%s \n", argv[AudioTestConstants::FOUR_ARG_IDX]);
 
+    g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
     g_samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
     g_channelCount = atoi(argv[AudioTestConstants::THIRD_ARG_IDX]);
-    g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
+    g_latencyMode = atoi(argv[AudioTestConstants::FOUR_ARG_IDX]);
+
     printf("filePATH: %s \n", g_filePath.c_str());
 
     g_file = fopen(g_filePath.c_str(), "rb");

@@ -1721,6 +1721,7 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.networkId = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.interruptGroupId = reply.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.volumeGroupId = reply.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice = reply.ReadBool();
 }
 
 void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
@@ -1748,6 +1749,7 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->inputDeviceInfo.networkId = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.interruptGroupId = reply.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.volumeGroupId = reply.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice = reply.ReadBool();
 }
 
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(

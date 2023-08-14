@@ -353,6 +353,10 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
             std::make_shared<OHServiceDiedCallback>(callbacks, (OH_AudioRenderer*)this, userData);
         int32_t clientPid = getpid();
         audioRenderer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+
+        std::shared_ptr<AudioRendererErrorCallback> errorCallback =
+            std::make_shared<OHAudioRendererErrorCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+        audioRenderer_->SetAudioRendererErrorCallback(errorCallback);
     } else {
         AUDIO_ERR_LOG("audio error callback is nullptr");
     }
@@ -395,6 +399,28 @@ void OHServiceDiedCallback::OnAudioPolicyServiceDied()
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnError != nullptr, "pointer to the fuction is nullptr");
     OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+    callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+}
+
+OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors errorCode) const
+{
+    switch (errorCode) {
+        case ERROR_ILLEGAL_STATE:
+            return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+        case ERROR_INVALID_PARAM:
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
+        case ERROR_SYSTEM:
+            return AUDIOSTREAM_ERROR_SYSTEM;
+        default:
+            return AUDIOSTREAM_ERROR_SYSTEM;
+    }
+}
+
+void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr && callbacks_.OH_AudioRenderer_OnError != nullptr,
+        "renderer client or error callback funtion is nullptr");
+    OH_AudioStream_Result error = GetErrorResult(errorCode);
     callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
 }
 }  // namespace AudioStandard

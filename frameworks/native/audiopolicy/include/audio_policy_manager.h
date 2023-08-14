@@ -252,6 +252,7 @@ private:
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
+    bool rendererStateChangeRegistered = false;
 };
 } // namespce AudioStandard
 } // namespace OHOS

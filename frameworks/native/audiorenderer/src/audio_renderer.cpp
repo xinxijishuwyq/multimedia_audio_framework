@@ -66,6 +66,9 @@ AudioRendererPrivate::~AudioRendererPrivate()
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
     }
+
+    // Unregister the renderer event callaback in policy server
+    (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
 #ifdef DUMP_CLIENT_PCM
     if (dcp_) {
         fclose(dcp_);
@@ -273,6 +276,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         if (IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
             AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
             streamClass = IAudioStream::FAST_STREAM;
+            isFastRenderer_ = true;
         } else {
             AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
             streamClass = IAudioStream::PA_STREAM;
@@ -283,7 +287,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
             appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream faied.");
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
     }
@@ -303,6 +307,14 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
+    SetSelfRendererStateCallback();
+    InitDumpInfo();
+
+    return InitAudioInterruptCallback();
+}
+
+void AudioRendererPrivate::InitDumpInfo()
+{
 #ifdef DUMP_CLIENT_PCM
     uint32_t streamId = 0;
     GetAudioStreamId(streamId);
@@ -318,8 +330,6 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
 #endif
-
-    return InitAudioInterruptCallback();
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
@@ -441,6 +451,11 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
+    if (isSwitching_) {
+        AUDIO_ERR_LOG("AudioRenderer::Start failed. Switching state: %{public}d", isSwitching_);
+        return false;
+    }
+
     AUDIO_INFO_LOG("AudioRenderer::Start::interruptMode: %{public}d, streamType: %{public}d, sessionID: %{public}d",
         audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);
 
@@ -497,6 +512,11 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     AUDIO_INFO_LOG("AudioRenderer::Pause");
+    if (isSwitching_) {
+        AUDIO_ERR_LOG("AudioRenderer::Pause failed. Switching state: %{public}d", isSwitching_);
+        return false;
+    }
+
     if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -525,6 +545,10 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Stop() const
 {
     AUDIO_INFO_LOG("AudioRenderer::Stop");
+    if (isSwitching_) {
+        AUDIO_ERR_LOG("AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
+        return false;
+    }
     if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -913,6 +937,12 @@ uint32_t AudioRendererPrivate::GetUnderflowCount() const
     return audioStream_->GetUnderflowCount();
 }
 
+
+void AudioRendererPrivate::SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback)
+{
+    audioRendererErrorCallback_ = errorCallback;
+}
+
 int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback)
 {
@@ -1008,6 +1038,112 @@ void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPriv
     renderer = rendererObj;
 }
 
+void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
+{
+    if (!audioStream) {
+        AUDIO_ERR_LOG("stream is nullptr");
+        return;
+    }
+    audioStream->SetStreamTrackerState(info.streamTrackerRegistered);
+    audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
+    audioStream->SetApplicationCachePath(info.cachePath);
+    audioStream->SetRenderMode(info.renderMode);
+    audioStream->SetRendererInfo(info.rendererInfo);
+    audioStream->SetCapturerInfo(info.capturerInfo);
+    audioStream->SetClientID(info.clientPid, info.clientUid);
+    audioStream->SetAudioEffectMode(info.effectMode);
+    audioStream->SetPrivacyType(info.privacyType);
+    audioStream->SetVolume(info.volume);
+
+    // set callback
+    if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
+        audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
+    }
+
+    if ((info.capturePositionCb != nullptr) && (info.frameMarkPosition > 0)) {
+        audioStream->SetCapturerPositionCallback(info.frameMarkPosition, info.capturePositionCb);
+    }
+
+    if ((info.renderPeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
+        audioStream->SetRendererPeriodPositionCallback(info.framePeriodNumber, info.renderPeriodPositionCb);
+    }
+
+    if ((info.capturePeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
+        audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
+    }
+
+    audioStream->SetStreamCallback(info.audioStreamCallback);
+    audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
+}
+
+bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass)
+{
+    bool switchResult = false;
+    if (audioStream_) {
+        Trace trace("SwitchToTargetStream");
+        isSwitching_ = true;
+        RendererState previousState = GetStatus();
+        if (previousState == RENDERER_RUNNING) {
+            // stop old stream
+            switchResult = audioStream_->StopAudioStream();
+            CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
+        }
+        // switch new stream
+        IAudioStream::SwitchInfo info;
+        audioStream_->GetSwitchInfo(info);
+        std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
+            info.eStreamType, appInfo_.appPid);
+        CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
+        AUDIO_INFO_LOG("Get new stream success!");
+
+        // set new stream info
+        SetSwitchInfo(info, newAudioStream);
+
+        // release old stream and restart audio stream
+        switchResult = audioStream_->ReleaseAudioStream();
+        CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
+
+        if (previousState == RENDERER_RUNNING) {
+            // restart audio stream
+            switchResult = newAudioStream->StartAudioStream();
+            CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
+        }
+        audioStream_ = newAudioStream;
+        isSwitching_ = false;
+        switchResult= true;
+    }
+    return switchResult;
+}
+
+void AudioRendererPrivate::SwitchStream(bool isLowLatencyDevice)
+{
+    // switch stream for fast renderer only
+    if (audioStream_ != nullptr && isFastRenderer_ && !isSwitching_) {
+        bool needSwitch = false;
+        IAudioStream::StreamClass currentClass = audioStream_->GetStreamClass();
+        IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
+        if (currentClass == IAudioStream::FAST_STREAM && !isLowLatencyDevice) {
+            needSwitch = true;
+            rendererInfo_.rendererFlags = 0; // Normal renderer type
+        }
+        if (currentClass == IAudioStream::PA_STREAM && isLowLatencyDevice) {
+            // Jumping from normal stream to low latency stream is not supported yet.
+            needSwitch = false;
+            rendererInfo_.rendererFlags = STREAM_FLAG_FAST;
+            targetClass = IAudioStream::FAST_STREAM;
+        }
+        if (needSwitch) {
+            if (!SwitchToTargetStream(targetClass) && !audioRendererErrorCallback_) {
+                audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
+            }
+        } else {
+            AUDIO_ERR_LOG("need not SwitchStream!");
+        }
+    } else {
+        AUDIO_INFO_LOG("Do not SwitchStream , is low latency renderer: %{public}d!", isFastRenderer_);
+    }
+}
+
 bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
 {
     bool deviceUpdated = false;
@@ -1032,13 +1168,17 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
     const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
-    if (cb == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
-        return;
-    }
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
     DeviceInfo deviceInfo = {};
     if (renderer->IsDeviceChanged(deviceInfo)) {
+        if (deviceInfo.deviceType != DEVICE_TYPE_NONE && deviceInfo.deviceType != DEVICE_TYPE_INVALID) {
+            // switch audio channel
+            renderer->SwitchStream(deviceInfo.isLowLatencyDevice);
+        }
+        if (cb == nullptr) {
+            AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
+            return;
+        }
         cb->OnStateChange(deviceInfo);
     }
 }
@@ -1056,6 +1196,30 @@ int64_t AudioRendererPrivate::GetFramesWritten() const
 int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) const
 {
     return audioStream_->SetAudioEffectMode(effectMode);
+}
+
+void AudioRendererPrivate::SetSelfRendererStateCallback()
+{
+    if (GetCurrentOutputDevices(currentDeviceInfo) != SUCCESS) {
+        AUDIO_ERR_LOG("get current device info failed");
+    }
+
+    int32_t clientPid = getpid();
+    if (!audioDeviceChangeCallback_) {
+        audioDeviceChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
+        if (!audioDeviceChangeCallback_) {
+            AUDIO_ERR_LOG("AudioRendererPrivate: Memory Allocation Failed !!");
+        }
+    }
+
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid,
+        audioDeviceChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener failed");
+    }
+
+    audioDeviceChangeCallback_->setAudioRendererObj(this);
+    AUDIO_INFO_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

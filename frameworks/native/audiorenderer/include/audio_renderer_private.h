@@ -89,6 +89,7 @@ public:
     AudioEffectMode GetAudioEffectMode() const override;
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
+    void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -107,10 +108,22 @@ public:
     std::string cachePath_;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
+
     ~AudioRendererPrivate();
+
+    friend class AudioRendererStateChangeCallbackImpl;
+
+protected:
+    // Method for switching between normal and low latency paths
+    void SwitchStream(bool isLowLatencyDevice);
 
 private:
     int32_t InitAudioInterruptCallback();
+    void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
+    void SetSelfRendererStateCallback();
+    void InitDumpInfo();
+
     std::shared_ptr<IAudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -123,7 +136,10 @@ private:
     FILE *dcp_ = nullptr;
 #endif
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
+    std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
     DeviceInfo currentDeviceInfo = {};
+    bool isFastRenderer_ = false;
+    bool isSwitching_ = false;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

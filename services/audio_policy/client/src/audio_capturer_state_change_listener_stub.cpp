@@ -59,6 +59,7 @@ void AudioCapturerStateChangeListenerStub::ReadAudioCapturerChangeInfo(MessagePa
     capturerChangeInfo->inputDeviceInfo.networkId = data.ReadString();
     capturerChangeInfo->inputDeviceInfo.interruptGroupId = data.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.volumeGroupId = data.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice = data.ReadBool();
 
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, sessionid = %{public}d", capturerChangeInfo->sessionId);
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeListenerStub, capturerState = %{public}d",

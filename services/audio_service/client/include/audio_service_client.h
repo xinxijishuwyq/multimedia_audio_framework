@@ -513,6 +513,9 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
+    IAudioStream::StreamClass GetStreamClass() override;
+    void GetStreamSwitchInfo(SwitchInfo& info);
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -618,6 +621,8 @@ private:
     std::map<uint32_t, SinkInputInfo*> sinkInputs;
     std::map<uint32_t, SourceOutputInfo*> sourceOutputs;
     std::map<uint32_t, ClientInfo*> clientInfo;
+
+    IAudioStream::StreamClass streamClass_;
 
     ASClientType eAudioClientType;
 

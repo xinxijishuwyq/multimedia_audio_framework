@@ -1640,6 +1640,35 @@ void AudioServiceClient::SetClientID(int32_t clientPid, int32_t clientUid)
     clientUid_ = clientUid;
 }
 
+IAudioStream::StreamClass AudioServiceClient::GetStreamClass()
+{
+    return streamClass_;
+}
+
+void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
+{
+    info.cachePath = cachePath_;
+    info.rendererSampleRate = rendererSampleRate;
+    info.underFlowCount = underFlowCount;
+    info.effectMode = effectMode;
+    info.renderMode = renderMode_;
+    info.captureMode = captureMode_;
+    info.renderRate = renderRate;
+    info.clientPid = clientPid_;
+    info.clientUid = clientUid_;
+    info.volume = mVolumeFactor;
+
+    info.frameMarkPosition = mFrameMarkPosition;
+    info.renderPositionCb = mRenderPositionCb;
+    info.capturePositionCb = mCapturePositionCb;
+
+    info.framePeriodNumber = mFramePeriodNumber;
+    info.renderPeriodPositionCb = mRenderPeriodPositionCb;
+    info.capturePeriodPositionCb = mCapturePeriodPositionCb;
+
+    info.rendererWriteCallback = writeCallback_;
+}
+
 void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
 {
     mTotalBytesRead += bytesRead;

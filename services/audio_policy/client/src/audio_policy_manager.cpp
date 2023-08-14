@@ -805,10 +805,12 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
     }
 
     std::unique_lock<std::mutex> lock(stateChangelistenerStubMutex_);
-    rendererStateChangelistenerStub_ = new(std::nothrow) AudioRendererStateChangeListenerStub();
-    if (rendererStateChangelistenerStub_ == nullptr) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: object null");
-        return ERROR;
+    if (!rendererStateChangelistenerStub_ && !rendererStateChangeRegistered) {
+        rendererStateChangelistenerStub_ = new(std::nothrow) AudioRendererStateChangeListenerStub();
+        if (rendererStateChangelistenerStub_ == nullptr) {
+            AUDIO_ERR_LOG("RegisterAudioRendererEventListener: object null");
+            return ERROR;
+        }
     }
 
     rendererStateChangelistenerStub_->SetCallback(callback);
@@ -820,7 +822,11 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
     }
     lock.unlock();
 
-    return gsp->RegisterAudioRendererEventListener(clientPid, object);
+    if (!rendererStateChangeRegistered) {
+        gsp->RegisterAudioRendererEventListener(clientPid, object);
+        rendererStateChangeRegistered = true;
+    }
+    return SUCCESS;
 }
 
 int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
@@ -831,7 +837,13 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t c
         AUDIO_ERR_LOG("UnregisterAudioRendererEventListener: audio policy manager proxy is NULL.");
         return ERROR;
     }
-    return gsp->UnregisterAudioRendererEventListener(clientPid);
+
+    int32_t ret = ERROR;
+    ret = gsp->UnregisterAudioRendererEventListener(clientPid);
+    if (ret == SUCCESS) {
+        rendererStateChangeRegistered = false;
+    }
+    return ret;
 }
 
 int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t clientPid,

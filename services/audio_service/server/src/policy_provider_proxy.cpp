@@ -59,6 +59,7 @@ int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &conf
     deviceInfo.displayName = reply.ReadString();
     deviceInfo.interruptGroupId = reply.ReadInt32();
     deviceInfo.volumeGroupId = reply.ReadInt32();
+    deviceInfo.isLowLatencyDevice = reply.ReadBool();
 
     return SUCCESS;
 }
