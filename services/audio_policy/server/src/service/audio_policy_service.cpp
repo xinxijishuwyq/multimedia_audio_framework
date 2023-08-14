@@ -2004,7 +2004,8 @@ bool AudioPolicyService::CreateDataShareHelperInstance()
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
 
     lock_guard<mutex> lock(g_dataShareHelperMutex);
-    g_dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject, SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    g_dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject, SETTINGS_DATA_BASE_URI,
+        SETTINGS_DATA_EXT_URI);
     CHECK_AND_RETURN_RET_LOG(g_dataShareHelper != nullptr, false, "CreateDataShareHelperInstance create fail.");
     return true;
 }
