@@ -182,6 +182,13 @@ public:
 
     virtual int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) = 0;
 
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo) = 0;
+
+    virtual int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetPreferredInputDeviceChangeCallback() = 0;
+
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
     virtual int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) = 0;

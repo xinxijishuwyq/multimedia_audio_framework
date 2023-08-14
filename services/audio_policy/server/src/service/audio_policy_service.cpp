@@ -725,6 +725,7 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         ret = MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
     }
 
+    OnPreferredInputDeviceUpdated(activeInputDevice_, LOCAL_NETWORK_ID);
     AUDIO_DEBUG_LOG("SelectInputDevice result[%{public}d]", ret);
     return ret;
 }
@@ -928,6 +929,27 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(DeviceType deviceType, s
     UpdateEffectDefaultSink(deviceType);
 }
 
+void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
+    for (auto it = preferredInputDeviceCbsMap_.begin(); it != preferredInputDeviceCbsMap_.end(); ++it) {
+        AudioCapturerInfo captureInfo;
+        auto deviceDescs = GetPreferredInputDeviceDescriptors(captureInfo);
+        if (!(it->second->hasBTPermission_)) {
+            UpdateDescWhenNoBTPermission(deviceDescs);
+        }
+        it->second->OnPreferredInputDeviceUpdated(deviceDescs);
+    }
+}
+
+void AudioPolicyService::OnPreferredDeviceUpdated(DeviceType activeOutputDevice, DeviceType activeInputDevice)
+{
+    OnPreferredOutputDeviceUpdated(activeOutputDevice, LOCAL_NETWORK_ID);
+    OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
+}
+
 int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
@@ -1062,6 +1084,33 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputD
         bool filterRemoteOutput = ((device->networkId_ != networkId)
             && (device->deviceRole_ == DeviceRole::OUTPUT_DEVICE));
         if (isCurrentRemoteRenderer && filterRemoteOutput) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
+        }
+    }
+
+    return deviceList;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo, std::string networkId)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    for (const auto& device : connectedDevices_) {
+        if (device == nullptr) {
+            continue;
+        }
+        bool filterLocalInput = ((activeInputDevice_ == device->deviceType_)
+            && (device->networkId_ == LOCAL_NETWORK_ID)
+            && (device->deviceRole_ == DeviceRole::INPUT_DEVICE));
+        if (!remoteCapturerSwitch_ && filterLocalInput && networkId == LOCAL_NETWORK_ID) {
+            sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+            deviceList.push_back(devDesc);
+        }
+
+        bool filterRemoteInput = ((device->networkId_ != networkId)
+            && (device->deviceRole_ == DeviceRole::INPUT_DEVICE));
+        if (remoteCapturerSwitch_ && filterRemoteInput) {
             sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
             deviceList.push_back(devDesc);
         }
@@ -1241,6 +1290,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
         OnPreferredOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
     } else {
         activeInputDevice_ = deviceType;
+        OnPreferredInputDeviceUpdated(activeInputDevice_, LOCAL_NETWORK_ID);
     }
     return SUCCESS;
 }
@@ -1446,7 +1496,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     }
 
     currentActiveDevice_ = deviceType;
-    OnPreferredOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
+    OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
     return result;
 }
 
@@ -1515,7 +1565,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
             }
         }
     }
-
     AUDIO_DEBUG_LOG("Current active device: %{public}d. Priority device: %{public}d",
         currentActiveDevice_, priorityDev);
 
@@ -1524,7 +1573,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
     currentActiveDevice_ = priorityDev;
     AUDIO_DEBUG_LOG("Current active device updates: %{public}d", currentActiveDevice_);
-    OnPreferredOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
+    OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
 
     result = gsp->SetAudioScene(audioScene, priorityDev);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
@@ -1874,7 +1923,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
     }
 
-    OnPreferredOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
+    OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     UpdateTrackerDeviceChange(deviceChangeDescriptor);
 }
@@ -2175,7 +2224,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
         activeInputDevice_ = DEVICE_TYPE_MIC;
         SetVolumeForSwitchDevice(currentActiveDevice_);
-        OnPreferredOutputDeviceUpdated(currentActiveDevice_, LOCAL_NETWORK_ID);
+        OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
         OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
         audioEffectManager_.SetMasterSinkAvailable();
         if (audioEffectManager_.CanLoadEffectSinks()) {
@@ -2537,11 +2586,38 @@ int32_t AudioPolicyService::SetPreferredOutputDeviceChangeCallback(const int32_t
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SetPreferredInputDeviceChangeCallback(const int32_t clientId,
+    const sptr<IRemoteObject> &object, bool hasBTPermission)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    sptr<IStandardAudioRoutingManagerListener> callback = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    if (callback != nullptr) {
+        callback->hasBTPermission_ = hasBTPermission;
+        std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
+        preferredInputDeviceCbsMap_[clientId] = callback;
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     if (preferredOutputDeviceCbsMap_.erase(clientId) == 0) {
+        AUDIO_ERR_LOG("client not present in %{public}s", __func__);
+        return ERR_INVALID_OPERATION;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnsetPreferredInputDeviceChangeCallback(const int32_t clientId)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
+    if (preferredInputDeviceCbsMap_.erase(clientId) == 0) {
         AUDIO_ERR_LOG("client not present in %{public}s", __func__);
         return ERR_INVALID_OPERATION;
     }

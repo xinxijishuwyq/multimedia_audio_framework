@@ -28,6 +28,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioRoutingManagerListenerProxy);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
 
 private:
     static inline BrokerDelegator<AudioRoutingManagerListenerProxy> delegator_;

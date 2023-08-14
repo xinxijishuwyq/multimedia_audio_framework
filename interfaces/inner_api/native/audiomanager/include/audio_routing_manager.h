@@ -38,6 +38,17 @@ public:
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
 };
 
+class AudioPreferredInputDeviceChangeCallback {
+    public:
+    virtual ~AudioPreferredInputDeviceChangeCallback() = default;
+    /**
+     * Called when the prefer input device changes
+     *
+     * @param vector<sptr<AudioDeviceDescriptor>> deviceDescriptor.
+     */
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
+};
+
 class AudioRoutingManager {
 public:
     AudioRoutingManager() = default;
@@ -50,6 +61,11 @@ public:
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
     int32_t UnsetPreferredOutputDeviceChangeCallback();
+    int32_t GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc);
+    int32_t SetPreferredInputDeviceChangeCallback(AudioCapturerInfo captureInfo,
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
+    int32_t UnsetPreferredInputDeviceChangeCallback();
 private:
     uint32_t GetCallingPid();
 };

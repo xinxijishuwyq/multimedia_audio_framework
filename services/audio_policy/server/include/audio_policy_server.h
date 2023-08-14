@@ -154,7 +154,11 @@ public:
     
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
+    int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) override;
+
+    int32_t UnsetPreferredInputDeviceChangeCallback() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
 
@@ -234,6 +238,9 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
