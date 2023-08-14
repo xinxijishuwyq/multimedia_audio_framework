@@ -615,6 +615,7 @@ AudioServiceClient::~AudioServiceClient()
     lock_guard<mutex> lockdata(dataMutex);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
     ResetPAAudioClient();
+    StopTimer();
 }
 
 void AudioServiceClient::SetEnv()
