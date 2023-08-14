@@ -231,10 +231,10 @@ private:
                 MemcpysAndCheck((buffer_.get() + tail), bufferBytes, frame, bufferBytes);
             } else {
                 uint64_t copySize = min(sizeMax_ - tail, bufferBytes);
-                MemcpysAndCheck((buffer_.get() + tail), sizeMax_ - tail, frame, sizeMax_ - tail);
+                MemcpysAndCheck((buffer_.get() + tail), sizeMax_ - tail, frame, copySize);
 
                 if (copySize < bufferBytes) {
-                    MemcpysAndCheck((buffer_.get()), bufferBytes - copySize, frame, bufferBytes - copySize);
+                    MemcpysAndCheck((buffer_.get()), bufferBytes - copySize, frame + copySize, bufferBytes - copySize);
                 }
             }
             size_ += bufferBytes;

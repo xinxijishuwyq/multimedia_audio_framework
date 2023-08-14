@@ -37,8 +37,8 @@ void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 AudioServiceDump::AudioServiceDump() : mainLoop(nullptr),
                                        api(nullptr),
                                        context(nullptr),
-                                       isMainLoopStarted(false),
-                                       isContextConnected(false)
+                                       isMainLoopStarted_(false),
+                                       isContextConnected_(false)
 {
     AUDIO_DEBUG_LOG("AudioServiceDump ctor");
 }
@@ -51,13 +51,13 @@ AudioServiceDump::~AudioServiceDump()
 void AudioServiceDump::ResetPAAudioDump()
 {
     lock_guard<mutex> lock(ctrlMutex_);
-    if (mainLoop && (isMainLoopStarted == true)) {
+    if (mainLoop && (isMainLoopStarted_ == true)) {
         pa_threaded_mainloop_stop(mainLoop);
     }
 
     if (context) {
         pa_context_set_state_callback(context, nullptr, nullptr);
-        if (isContextConnected == true) {
+        if (isContextConnected_ == true) {
             AUDIO_INFO_LOG("[AudioServiceDump] disconnect context!");
             pa_context_disconnect(context);
         }
@@ -68,8 +68,8 @@ void AudioServiceDump::ResetPAAudioDump()
         pa_threaded_mainloop_free(mainLoop);
     }
 
-    isMainLoopStarted  = false;
-    isContextConnected = false;
+    isMainLoopStarted_  = false;
+    isContextConnected_ = false;
     mainLoop = nullptr;
     context  = nullptr;
     api      = nullptr;
@@ -104,7 +104,7 @@ int32_t AudioServiceDump::Initialize()
         return AUDIO_DUMP_INIT_ERR;
     }
 
-    isContextConnected = true;
+    isContextConnected_ = true;
     pa_threaded_mainloop_lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
@@ -114,7 +114,7 @@ int32_t AudioServiceDump::Initialize()
         return AUDIO_DUMP_INIT_ERR;
     }
 
-    isMainLoopStarted = true;
+    isMainLoopStarted_ = true;
     while (true) {
         pa_context_state_t state = pa_context_get_state(context);
         if (state == PA_CONTEXT_READY) {

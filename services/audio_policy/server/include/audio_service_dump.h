@@ -108,8 +108,8 @@ private:
     pa_context *context;
     std::mutex ctrlMutex_;
 
-    bool isMainLoopStarted;
-    bool isContextConnected;
+    bool isMainLoopStarted_;
+    bool isContextConnected_;
     AudioData audioData_ = {};
 
     int32_t ConnectStreamToPA();
