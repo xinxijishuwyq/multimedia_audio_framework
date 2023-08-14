@@ -86,7 +86,7 @@ public:
     int32_t SetOutputRoute(DeviceType outputDevice) override;
 
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
-    AudioRendererSinkInner();
+    explicit AudioRendererSinkInner(const std::string halName = "primary");
     ~AudioRendererSinkInner();
 private:
     IAudioSinkAttr attr_;
@@ -102,6 +102,7 @@ private:
     struct IAudioManager *audioManager_;
     struct IAudioAdapter *audioAdapter_;
     struct IAudioRender *audioRender_;
+    std::string halName_;
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort_ = {};
     bool audioMonoState_ = false;
@@ -129,10 +130,10 @@ private:
 #endif // DUMPFILE
 };
 
-AudioRendererSinkInner::AudioRendererSinkInner()
+AudioRendererSinkInner::AudioRendererSinkInner(const std::string halName)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioRender_(nullptr)
+      audioRender_(nullptr), halName_(halName)
 {
     attr_ = {};
 #ifdef DUMPFILE
@@ -145,10 +146,13 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
     AUDIO_ERR_LOG("~AudioRendererSinkInner");
 }
 
-AudioRendererSink *AudioRendererSink::GetInstance()
+AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
 {
+    if (halName == "usb") {
+        static AudioRendererSinkInner audioRendererUsb(halName);
+        return &audioRendererUsb;
+    }
     static AudioRendererSinkInner audioRenderer;
-
     return &audioRenderer;
 }
 
@@ -424,6 +428,9 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
+    if (halName_ == "usb") {
+        deviceDesc.pins = PIN_OUT_USB_HEADSET;
+    }
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
@@ -475,7 +482,11 @@ int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
         return ERR_NOT_STARTED;
     }
     if (openSpeaker_) {
-        ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
+        if (halName_ == "usb") {
+            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+        } else {
+            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
+        }
         if (ret < 0) {
             AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
@@ -684,6 +695,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_HEADSET;
             sink.ext.device.desc = (char *)"pin_out_headset";
             break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            sink.ext.device.type = PIN_OUT_USB_HEADSET;
+            sink.ext.device.desc = (char *)"pin_out_usb_headset";
+            break;
         case DEVICE_TYPE_USB_HEADSET:
             sink.ext.device.type = PIN_OUT_USB_EXT;
             sink.ext.device.desc = (char *)"pin_out_usb_ext";
@@ -774,6 +789,9 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
     }
     if (openSpeaker_) {
         AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
+        if (halName_ == "usb") {
+            audioSceneOutPort = PIN_OUT_USB_HEADSET;
+        }
         int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
         if (ret < 0) {
             AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);

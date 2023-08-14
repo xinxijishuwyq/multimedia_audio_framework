@@ -104,6 +104,7 @@ private:
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
+    int32_t SetIORoute(DeviceType type, DeviceFlag flag);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

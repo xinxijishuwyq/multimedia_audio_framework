@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioRendererSink : public IAudioRendererSink {
 public:
-    static AudioRendererSink *GetInstance(void);
+    static AudioRendererSink *GetInstance(std::string halName);
 
     AudioRendererSink() = default;
     ~AudioRendererSink() = default;
