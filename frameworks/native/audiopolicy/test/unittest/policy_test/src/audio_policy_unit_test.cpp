@@ -452,6 +452,23 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001
     EXPECT_EQ(true, deviceInfo.size() >= 0);
 }
 
+
+/**
+* @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_001 via legal state
+* @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_001
+* @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Returns success.
+*/
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+    AudioCapturerInfo capturerInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = audioPolicyProxy->GetPreferredInputDeviceDescriptors(capturerInfo);
+    EXPECT_EQ(true, deviceInfo.size() >= 0);
+}
+
 /**
 * @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_001 via legal state
 * @tc.number: Audio_Policy_SetMicStateChangeCallback_001

@@ -88,12 +88,22 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     rendererInfo.streamUsage = *reinterpret_cast<const StreamUsage *>(data);
     rendererInfo.rendererFlags = *reinterpret_cast<const int32_t *>(data);
     std::vector<sptr<AudioDeviceDescriptor>> desc;
+
     shared_ptr<AudioPreferredOutputDeviceChangeCallbackFuzz> preferredOutputCallbackFuzz =
         std::make_shared<AudioPreferredOutputDeviceChangeCallbackFuzz>();
     AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
     AudioRoutingManager::GetInstance()->SetPreferredOutputDeviceChangeCallback(rendererInfo,
         preferredOutputCallbackFuzz);
     AudioRoutingManager::GetInstance()->UnsetPreferredOutputDeviceChangeCallback();
+
+    AudioCapturerInfo capturerInfo = {};
+    capturerInfo.sourceType = *reinterpret_cast<const SourceType *>(data);
+    capturerInfo.capturerFlags = *reinterpret_cast<const int32_t *>(data);
+    shared_ptr<AudioPreferredInputDeviceChangeCallbackFuzz> preferredInputCallbackFuzz =
+        std::make_shared<AudioPreferredInputDeviceChangeCallbackFuzz>();
+    AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
+    AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(capturerInfo, preferredInputCallbackFuzz);
+    AudioRoutingManager::GetInstance()->UnsetPreferredInputDeviceChangeCallback();
 }
 
 void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)

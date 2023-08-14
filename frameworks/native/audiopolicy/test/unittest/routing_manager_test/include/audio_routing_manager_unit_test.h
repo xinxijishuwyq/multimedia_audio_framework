@@ -39,6 +39,12 @@ public:
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
 };
 
+class AudioPreferredInputDeviceChangeCallbackTest : public AudioPreferredInputDeviceChangeCallback {
+public:
+    virtual ~AudioPreferredInputDeviceChangeCallbackTest() = default;
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+};
+
 class AudioRoutingManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
