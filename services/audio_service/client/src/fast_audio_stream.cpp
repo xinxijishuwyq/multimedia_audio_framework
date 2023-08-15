@@ -386,7 +386,12 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Start failed, process is null.");
-    int32_t ret = processClient_->Start();
+    int32_t ret = ERROR;
+    if (state_ == PAUSED) {
+        ret = processClient_->Resume();
+    } else {
+        ret = processClient_->Start();
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
     state_ = RUNNING;
 
