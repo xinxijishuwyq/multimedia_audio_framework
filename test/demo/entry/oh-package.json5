@@ -12,17 +12,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 {
-  "apiType": 'stageMode',
-  "buildOption": {
-  },
-  "targets": [
-    {
-      "name": "default",
-      "runtimeOS": 'HarmonyOS'
-    },
-    {
-      "name": "ohosTest",
-    }
-  ]
+  "license": "ISC",
+  "devDependencies": {},
+  "name": "entry",
+  "description": "example description",
+  "repository": {},
+  "version": "1.0.0",
+  "dependencies": {}
 }

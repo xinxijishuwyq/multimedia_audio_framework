@@ -18,13 +18,13 @@
       {
         "name": "default",
         "material": {
-          "certpath": "C:\\Users\\lly\\.ohos\\config\\openharmony\\auto_ohos_default_AudioSample_com.sample.rocketer.system.cer",
-          "storePassword": "0000001BE136E8FB1AE6B22286C7829A25D4EF4977B823651EBF3F6C9FA0DF3A5C8DF9FC724EF7823DF4BD",
+          "certpath": "C:\\Users\\Curry\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.cer",
+          "storePassword": "0000001B02700B43D2D28914FE6D4F7E54A3690261E36FDCB9A8FCEEA38AFA4794AD5D2BCD4700CC903D30",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BF01D8301B4C5FFEC48DCDEC40DD5CCBC309F3F7E793415E8AE8C5F4A6476776E409BE0D3B0DD7B",
-          "profile": "C:\\Users\\lly\\.ohos\\config\\openharmony\\auto_ohos_default_AudioSample_com.sample.rocketer.system.p7b",
+          "keyPassword": "0000001B42BCEAE75605EBA7F73B0AFE4B84CA5812768539C1612D45306784A7F8377F9C54A0DC7FCA6EED",
+          "profile": "C:\\Users\\Curry\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\lly\\.ohos\\config\\openharmony\\auto_ohos_default_AudioSample_com.sample.rocketer.system.p12"
+          "storeFile": "C:\\Users\\Curry\\.ohos\\config\\openharmony\\auto_ohos_default_demo_com.sample.rocketer.system.p12"
         }
       }
     ],

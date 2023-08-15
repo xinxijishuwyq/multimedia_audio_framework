@@ -72,22 +72,6 @@ struct BasicDevice {
       }
       _this.audioDeviceDescriptors = value
       _this.returnMsg = `getDevices callback Success 返回值:${JSON.stringify(value)}`
-      if (_this.selectedDeviceFlag == 2) {
-        _this.InputDeviceDescriptors = value;
-        _this.selectInputDeviceList = _this.getDeviceList(value)
-        if (_this.selectInputDeviceList.length > 0) {
-          _this.tag = 2
-        }
-        _this.returnMsg = `getDevices selectInputDeviceList 返回值:${JSON.stringify(_this.selectInputDeviceList)}`
-      }
-      if (_this.selectedDeviceFlag == 1) {
-        _this.OutputDeviceDescriptors = value;
-        _this.selectOutputDeviceList = _this.getDeviceList(value)
-        if (_this.selectOutputDeviceList.length > 0) {
-          _this.tag = 1
-        }
-        _this.returnMsg = `getDevices selectOutputDeviceList 返回值:${JSON.stringify(_this.selectOutputDeviceList)}`
-      }
     })
   }
 
@@ -101,23 +85,6 @@ struct BasicDevice {
       .then(value => {
         _this.audioDeviceDescriptors = value;
         _this.returnMsg = `getDevices promise Success 返回值:${JSON.stringify(value)}`
-        if (_this.selectedDeviceFlag == 2) {
-          _this.InputDeviceDescriptors = value;
-          _this.selectInputDeviceList = _this.getDeviceList(value)
-          if (_this.selectInputDeviceList.length > 0) {
-            _this.tag = 2
-          }
-
-          _this.returnMsg = `getDevices selectInputDeviceList 返回值:${JSON.stringify(_this.selectInputDeviceList)}`
-        }
-        if (_this.selectedDeviceFlag == 1) {
-          _this.OutputDeviceDescriptors = value;
-          _this.selectOutputDeviceList = _this.getDeviceList(value)
-          if (_this.selectOutputDeviceList.length > 0) {
-            _this.tag = 1
-          }
-          _this.returnMsg = `getDevices selectOutputDeviceList 返回值:${JSON.stringify(_this.selectOutputDeviceList)}`
-        }
       }).catch(err => {
       _this.returnMsg = `getDevices promise Failed err:${JSON.stringify(err)}`
     })
