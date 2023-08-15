@@ -635,13 +635,13 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &reply, MessageParcel &reply)
 {
     AudioStreamType streamInFocus = GetStreamInFocus();
     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
 }
 
-void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply, MessageParcel &reply)
 {
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
