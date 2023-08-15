@@ -65,7 +65,6 @@ struct BasicDevice {
       return
     }
     let _this = this;
-    console.info('zyk this.selectedDeviceFlag', this.selectedDeviceFlag)
     this.audioRoutingManager.getDevices(this.selectedDeviceFlag, (err, value) => {
       if (err) {
         _this.returnMsg = `getDevices callback Failed err:${JSON.stringify(err)}`
