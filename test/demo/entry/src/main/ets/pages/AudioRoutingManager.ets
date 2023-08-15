@@ -59,7 +59,7 @@ struct AudioRoutingManager {
             Text("首选输出设备").fontSize(22).fontColor(Color.White)
           }.height(80).width('90%')
           .onClick(() => {
-            router.push({ url: 'pages/routing_manager/PreferredOutputDevice' })
+            router.push({ url: 'pages/routing_manager/PreferOutputDevice' })
           })
 
         }.margin({ bottom: 10, top: 10 })
