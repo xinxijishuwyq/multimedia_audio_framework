@@ -55,17 +55,17 @@ struct AudioManager {
         })
 
         Button() {
-          Text("音频路由管理 AudioManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
-        }.width('90%').height(90).margin({bottom:10,top:10})
-        .onClick(() => {
-          router.push({ url: 'pages/routing_manager/AudioManagerAudioRouterManager' })
-        })
-
-        Button() {
           Text("音频路由管理 AudioRoutingManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
         }.width('90%').height(90).margin({bottom:10,top:10})
         .onClick(() => {
           router.push({ url: 'pages/AudioRoutingManager' })
+        })
+
+        Button() {
+          Text("音频路由管理 AudioManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
+        }.width('90%').height(90).margin({bottom:10,top:10})
+        .onClick(() => {
+          router.push({ url: 'pages/audio_manager/BasicDevice' })
         })
 
         Button() {
