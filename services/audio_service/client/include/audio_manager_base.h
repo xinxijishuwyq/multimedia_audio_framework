@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -254,6 +254,70 @@ class AudioManagerStub : public IRemoteStub<IStandardAudioService> {
 public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
+
+private:
+    int HandleGetMaxVolume(MessageParcel &data, MessageParcel &reply) {return 0;}
+    int HandleGetMinVolume(MessageParcel &data, MessageParcel &reply) {return 0;}
+    int HandleGetDevices(MessageParcel &data, MessageParcel &reply) {return 0;}
+    int HandleGetAudioParameter(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioParameter(MessageParcel &data, MessageParcel &reply);
+    int HandleSetMicrophoneMute(MessageParcel &data, MessageParcel &reply);
+    int HandleIsMicrophoneMute(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
+    int HandleRetrieveCookie(MessageParcel &data, MessageParcel &reply);
+    int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
+    int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);
+    int HandleGetRemoteAudioParameter(MessageParcel &data, MessageParcel &reply);
+    int HandleSetRemoteAudioParameter(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyDeviceInfo(MessageParcel &data, MessageParcel &reply);
+    int HandleCheckRemoteDeviceState(MessageParcel &data, MessageParcel &reply);
+    int HandleSetVoiceVolume(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioMonoState(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAudioBalanceValue(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateAudioProcess(MessageParcel &data, MessageParcel &reply);
+    int HandleLoadAudioEffectLibraries(MessageParcel &data, MessageParcel &reply);
+    int HandleRequestThreadPriority(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
+    int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
+    int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
+    int HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply);
+    int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
+    int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
+    int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
+
+    using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
+    static inline HandlerFunc handlers[] = {
+        &AudioManagerStub::HandleGetMaxVolume,
+        &AudioManagerStub::HandleGetMinVolume,
+        &AudioManagerStub::HandleGetDevices,
+        &AudioManagerStub::HandleGetAudioParameter,
+        &AudioManagerStub::HandleSetAudioParameter,
+        &AudioManagerStub::HandleSetMicrophoneMute,
+        &AudioManagerStub::HandleIsMicrophoneMute,
+        &AudioManagerStub::HandleSetAudioScene,
+        &AudioManagerStub::HandleUpdateActiveDeviceRoute,
+        &AudioManagerStub::HandleRetrieveCookie,
+        &AudioManagerStub::HandleGetTransactionId,
+        &AudioManagerStub::HandleSetParameterCallback,
+        &AudioManagerStub::HandleGetRemoteAudioParameter,
+        &AudioManagerStub::HandleSetRemoteAudioParameter,
+        &AudioManagerStub::HandleNotifyDeviceInfo,
+        &AudioManagerStub::HandleCheckRemoteDeviceState,
+        &AudioManagerStub::HandleSetVoiceVolume,
+        &AudioManagerStub::HandleSetAudioMonoState,
+        &AudioManagerStub::HandleSetAudioBalanceValue,
+        &AudioManagerStub::HandleCreateAudioProcess,
+        &AudioManagerStub::HandleLoadAudioEffectLibraries,
+        &AudioManagerStub::HandleRequestThreadPriority,
+        &AudioManagerStub::HandleCreateAudioEffectChainManager,
+        &AudioManagerStub::HandleSetOutputDeviceSink,
+        &AudioManagerStub::HandleCreatePlaybackCapturerManager,
+        &AudioManagerStub::HandleSetSupportStreamUsage,
+        &AudioManagerStub::HandleRegiestPolicyProvider,
+        &AudioManagerStub::HandleSetWakeupSourceCallback,
+        &AudioManagerStub::HandleSetCaptureSilentState,
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS
