@@ -256,6 +256,9 @@ public:
         MessageOption &option) override;
 
 private:
+    int HandleGetMaxVolume(MessageParcel &data, MessageParcel &reply) {return 0;}
+    int HandleGetMinVolume(MessageParcel &data, MessageParcel &reply) {return 0;}
+    int HandleGetDevices(MessageParcel &data, MessageParcel &reply) {return 0;}
     int HandleGetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetMicrophoneMute(MessageParcel &data, MessageParcel &reply);
@@ -285,6 +288,9 @@ private:
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
+        &AudioManagerStub::HandleGetMaxVolume,
+        &AudioManagerStub::HandleGetMinVolume,
+        &AudioManagerStub::HandleGetDevices,
         &AudioManagerStub::HandleGetAudioParameter,
         &AudioManagerStub::HandleSetAudioParameter,
         &AudioManagerStub::HandleSetMicrophoneMute,
