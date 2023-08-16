@@ -332,6 +332,11 @@ static void ParseAudioDeviceDescriptor(napi_env env, napi_value root,
         napi_get_value_int32(env, tempValue, &intValue);
         selectedAudioDevice->volumeGroupId_ = intValue;
     }
+
+    if (napi_get_named_property(env, root, "address", &tempValue) == napi_ok) {
+        napi_get_value_string_utf8(env, tempValue, buffer, SIZE, &res);
+        selectedAudioDevice->macAddress_ = std::string(buffer);
+    }
 }
 
 static void ParseAudioDeviceDescriptorVector(napi_env env, napi_value root,

@@ -49,6 +49,11 @@ public:
     static void UnregisterBluetoothA2dpListener();
     static void ConnectBluetoothA2dpSink();
     static void DisconnectBluetoothA2dpSink();
+    static int32_t SetActiveA2dpDevice(const std::string& macAddress);
+    static void UpdateDeviceListWhenConnecting(const BluetoothRemoteDevice& device);
+    static void UpdateDeviceListWhenDisconnecting(const BluetoothRemoteDevice& device);
+    static void UpdateDeviceListForConfiguration(const BluetoothRemoteDevice& device);
+
     static void SetConnectionState(int state)
     {
         connectionState_ = state;
@@ -80,6 +85,7 @@ private:
     static int connectionState_;
     static bool bluetoothSinkLoaded_;
     static BluetoothRemoteDevice bluetoothRemoteDevice_;
+    static std::vector<BluetoothRemoteDevice> connectedA2dpDevices_;
 };
 
 // Audio bluetooth sco feature support
