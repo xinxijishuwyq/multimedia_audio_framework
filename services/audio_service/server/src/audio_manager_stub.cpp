@@ -389,7 +389,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
         return -1;
         }
 
-    if (code < static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX)) {
+    if (code <= static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX)) {
         return (this->*handlers[code])(data, reply);
     }
     AUDIO_ERR_LOG("default case, need check AudioManagerStub");

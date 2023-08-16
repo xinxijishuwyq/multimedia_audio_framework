@@ -1076,7 +1076,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         AUDIO_ERR_LOG("OnRemoteRequest: ReadInterfaceToken failed");
         return -1;
     }
-    if (code < static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
+    if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
         (this->*handlers[code])(data, reply);
         return AUDIO_OK;
     }
