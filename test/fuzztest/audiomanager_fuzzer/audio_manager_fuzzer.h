@@ -43,6 +43,13 @@ public:
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
 };
 
+class AudioPreferredInputDeviceChangeCallbackFuzz : public AudioPreferredInputDeviceChangeCallback {
+public:
+    explicit AudioPreferredInputDeviceChangeCallbackFuzz() = default;
+    virtual ~AudioPreferredInputDeviceChangeCallbackFuzz() = default;
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+};
+
 class AudioFocusInfoChangeCallbackFuzz : public AudioFocusInfoChangeCallback {
 public:
     explicit AudioFocusInfoChangeCallbackFuzz() = default;

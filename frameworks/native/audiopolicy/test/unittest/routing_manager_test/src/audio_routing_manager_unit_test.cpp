@@ -75,5 +75,38 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredOutputDeviceC
     EXPECT_EQ(SUCCESS, ret);
 }
 
+
+/**
+* @tc.name  : Test Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001 via legal state
+* @tc.number: Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001
+* @tc.desc  : Test getPreferredInputDeviceForCapturerInfo interface. Returns success.
+*/
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerInfo capturerInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    ret = AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001 via legal state
+* @tc.number: Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001
+* @tc.desc  : Test PreferredInputDeviceChangeCallback interface. Returns success.
+*/
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerInfo capturerInfo;
+    std::shared_ptr<AudioPreferredInputDeviceChangeCallbackTest> callback =
+        std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+    ret = AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioRoutingManager::GetInstance()->UnsetPreferredInputDeviceChangeCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
