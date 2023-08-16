@@ -29,7 +29,6 @@ group("audio_service_packages") {
 ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
   }
