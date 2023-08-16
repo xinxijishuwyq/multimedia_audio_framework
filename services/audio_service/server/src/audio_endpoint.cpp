@@ -357,7 +357,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
         return ConfigInputPoint(deviceInfo);
     }
 
-    fastSink_ = deviceInfo.networkId == REMOTE_NETWORK_ID ?
+    fastSink_ = deviceInfo.networkId != LOCAL_NETWORK_ID ?
         RemoteFastAudioRendererSink::GetInstance(deviceInfo.networkId) : FastAudioRendererSink::GetInstance();
     IAudioSinkAttr attr = {};
     attr.adapterName = "primary";

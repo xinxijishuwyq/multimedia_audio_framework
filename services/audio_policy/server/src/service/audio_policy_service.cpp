@@ -499,6 +499,11 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
 
+    if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
+        AUDIO_INFO_LOG("SelectOutputDevice for fast stream");
+        return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
+    }
+
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
@@ -555,6 +560,19 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return ret;
 }
 
+int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    // note: check if stream is already running
+    // if is running, call moveProcessToEndpoint.
+
+    // otherwises, keep router info in the map
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    routerMap_[audioRendererFilter->uid] = std::pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
+    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    return SUCCESS;
+}
 
 int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
     sptr<AudioDeviceDescriptor> deviceDescriptor)
@@ -2310,6 +2328,19 @@ void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
     }
 }
 
+void AudioPolicyService::RemoveDeviceInFastRouterMap(std::string networkId)
+{
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>>::iterator it;
+    for (it = fastRouterMap_.begin();it != fastRouterMap_.end();) {
+        if (it->second.first == networkId) {
+            fastRouterMap_.erase(it++);
+        } else {
+            it++;
+        }
+    }
+}
+
 void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
 {
     for (const auto& deviceInfo : connectedDevices_) {
@@ -2461,6 +2492,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             IOHandles_.erase(moduleName);
         }
         RemoveDeviceInRouterMap(moduleName);
+        RemoveDeviceInFastRouterMap(networkId);
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
@@ -3703,6 +3735,11 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
     deviceInfo.audioStreamInfo = targetStreamInfo;
     deviceInfo.deviceName = "mmap_device";
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    if (fastRouterMap_.count(config.appInfo.appUid) && fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
+        deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
+        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", deviceInfo.networkId.c_str());
+    }
     return SUCCESS;
 }
 
