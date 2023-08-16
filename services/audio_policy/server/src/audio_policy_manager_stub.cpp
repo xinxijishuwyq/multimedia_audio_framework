@@ -178,7 +178,7 @@ void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, Messa
     reply.WriteBool(result);
 }
 
-void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &/*data*/, MessageParcel &reply)
 {
     AudioScene audioScene = GetAudioScene();
     reply.WriteInt32(static_cast<int>(audioScene));
@@ -635,13 +635,13 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &/*data*/, MessageParcel &reply)
 {
     AudioStreamType streamInFocus = GetStreamInFocus();
     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
 }
 
-void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &/*data*/, MessageParcel &reply)
 {
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
@@ -1080,8 +1080,8 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         (this->*handlers[code])(data, reply);
         return AUDIO_OK;
     }
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 } // namespace audio_policy
 } // namespace OHOS
