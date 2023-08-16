@@ -66,6 +66,11 @@ void AudioCapturerFileSource::RegisterWakeupCloseCallback(IAudioSourceCallback* 
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
+void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+}
+
 int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     return SUCCESS;

@@ -26,6 +26,7 @@
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
+#include "ipc_skeleton.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -77,7 +78,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute) const;
+    int32_t SetStreamMute(AudioStreamType streamType, bool mute);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
@@ -97,9 +98,9 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
-    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
+    int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    bool CloseWakeUpAudioCapturer();
+    int32_t CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
@@ -188,10 +189,15 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
 
-    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
+    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
 
-    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
+    int32_t SetPreferredInputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
+        bool hasBTPermission);
+
+    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
+
+    int32_t UnsetPreferredInputDeviceChangeCallback(const int32_t clientId);
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
@@ -243,8 +249,6 @@ public:
 
     bool SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol);
 
-    void SetWakeupCloseCallback(const std::shared_ptr<WakeUpSourceCallback>& callback);
-
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid);
 #endif
@@ -255,7 +259,10 @@ public:
 
     void SubscribeAccessibilityConfigObserver();
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo,
+        std::string networkId = LOCAL_NETWORK_ID);
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
     void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
@@ -272,7 +279,7 @@ public:
 
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
-    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) const;
 
     std::string GetLocalDevicesType();
 
@@ -280,9 +287,11 @@ public:
 
     void UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDescriptor>> &desc);
 
-    int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &options);
+    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config);
 
     void UnloadLoopback();
+
+    void UpdateOutputDeviceSelectedByCalling(DeviceType deviceType);
 
 private:
     AudioPolicyService()
@@ -319,7 +328,7 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t sourceType);
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
 
     AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
 
@@ -387,7 +396,11 @@ private:
 
     void AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType);
 
-    void OnPreferOutputDeviceUpdated(DeviceType devType, std::string networkId);
+    void OnPreferredOutputDeviceUpdated(DeviceType devType, std::string networkId);
+
+    void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
+
+    void OnPreferredDeviceUpdated(DeviceType activeOutputDevice, DeviceType activeInputDevice);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
@@ -452,6 +465,7 @@ private:
     std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
+    std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
@@ -468,7 +482,8 @@ private:
     std::string activeBTDevice_;
 
     std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferOutputDeviceCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
+    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
@@ -501,6 +516,14 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     AudioEffectManager& audioEffectManager_;
+
+    std::mutex outputDeviceSelectedByCallingMutex_;
+    std::unordered_map<decltype(IPCSkeleton::GetCallingUid()), DeviceType> outputDeviceSelectedByCalling_;
+
+    bool isMicrophoneMute_ = false;
+
+    int wakeupCount_ = 0;
+    std::mutex wakeupCountMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

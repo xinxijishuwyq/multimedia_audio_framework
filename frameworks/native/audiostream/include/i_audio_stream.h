@@ -43,8 +43,50 @@ public:
         FAST_STREAM,
     };
 
+    struct SwitchInfo {
+        AudioStreamParams params;
+        AudioStreamType eStreamType;
+        int32_t appUid;
+        AudioRendererInfo rendererInfo;
+        AudioCapturerInfo capturerInfo;
+        State state;
+        uint32_t sessionId;
+        std::string cachePath = "";
+        uint32_t rendererSampleRate;
+        uint32_t underFlowCount;
+        AudioEffectMode effectMode;
+        AudioRenderMode renderMode;
+        AudioCaptureMode captureMode;
+        AudioRendererRate renderRate;
+        int32_t clientPid = 0;
+        int32_t clientUid = 0;
+        std::shared_ptr<AudioClientTracker> proxyObj;
+        AudioPrivacyType privacyType;
+        float volume;
+
+        bool streamTrackerRegistered = false;
+
+        uint64_t frameMarkPosition = 0;
+        uint64_t framePeriodNumber = 0;
+
+        uint64_t totalBytesWritten = 0;
+        uint64_t framePeriodWritten = 0;
+        std::shared_ptr<RendererPositionCallback> renderPositionCb;
+        std::shared_ptr<RendererPeriodPositionCallback> renderPeriodPositionCb;
+
+        uint64_t totalBytesRead = 0;
+        uint64_t framePeriodRead = 0;
+        std::shared_ptr<CapturerPositionCallback> capturePositionCb;
+        std::shared_ptr<CapturerPeriodPositionCallback> capturePeriodPositionCb;
+
+        // callback info
+        std::shared_ptr<AudioStreamCallback> audioStreamCallback;
+        std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback;
+    };
+
     virtual ~IAudioStream() = default;
 
+    static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
     static std::shared_ptr<IAudioStream> GetRecordStream(StreamClass streamClass, AudioStreamParams params,
@@ -60,9 +102,8 @@ public:
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) = 0;
     virtual int32_t GetAudioStreamInfo(AudioStreamParams &info) = 0;
-    virtual bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) = 0;
-    virtual bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) = 0;
+    virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) = 0;
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual State GetState() = 0;
@@ -143,6 +184,13 @@ public:
     virtual int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) = 0;
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
     virtual void SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
+
+    virtual IAudioStream::StreamClass GetStreamClass() = 0;
+    virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
+    virtual void GetSwitchInfo(SwitchInfo& info) = 0;
+
+    //for wakeup capturer
+    virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -36,11 +36,18 @@ public:
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 };
 
-class AudioPreferOutputDeviceChangeCallbackFuzz : public AudioPreferOutputDeviceChangeCallback {
+class AudioPreferredOutputDeviceChangeCallbackFuzz : public AudioPreferredOutputDeviceChangeCallback {
 public:
-    explicit AudioPreferOutputDeviceChangeCallbackFuzz() = default;
-    virtual ~AudioPreferOutputDeviceChangeCallbackFuzz() = default;
-    virtual void OnPreferOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+    explicit AudioPreferredOutputDeviceChangeCallbackFuzz() = default;
+    virtual ~AudioPreferredOutputDeviceChangeCallbackFuzz() = default;
+    virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
+};
+
+class AudioPreferredInputDeviceChangeCallbackFuzz : public AudioPreferredInputDeviceChangeCallback {
+public:
+    explicit AudioPreferredInputDeviceChangeCallbackFuzz() = default;
+    virtual ~AudioPreferredInputDeviceChangeCallbackFuzz() = default;
+    virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) {};
 };
 
 class AudioFocusInfoChangeCallbackFuzz : public AudioFocusInfoChangeCallback {

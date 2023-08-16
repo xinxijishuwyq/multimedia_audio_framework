@@ -94,7 +94,8 @@ public:
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
-
+    void SetStreamTrackerState(bool trackerRegisteredState) override;
+    void GetSwitchInfo(SwitchInfo& info) override;
     void SetChannelBlendMode(ChannelBlendMode blendMode) override;
 
 private:
@@ -103,6 +104,8 @@ private:
         BIN_TEST_MODE = 1,   //for bin file test
         JS_TEST_MODE,        //for js app test
     };
+
+    void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
@@ -134,6 +137,8 @@ private:
     AudioStreamParams streamParams_;
     AudioBlend audioBlend_;
     FILE *pfd_;
+
+    bool streamTrackerRegistered_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

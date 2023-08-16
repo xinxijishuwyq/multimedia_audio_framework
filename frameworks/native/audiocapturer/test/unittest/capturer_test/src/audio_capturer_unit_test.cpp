@@ -478,7 +478,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_016, TestSize.Level0)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_017, TestSize.Level0)
 {
     AudioCapturerOptions capturerOptions;
-    string cachePath = "/data/storage/el2/base/haps/entry/files";
+    string cachePath = "/data/storage/el2/base/temp";
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
@@ -499,7 +499,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_018, TestSize.Level0)
 {
     AudioCapturerOptions capturerOptions;
     AppInfo appInfo = {};
-    string cachePath = "/data/storage/el2/base/haps/entry/files";
+    string cachePath = "/data/storage/el2/base/temp";
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
@@ -607,6 +607,22 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_022, TestSize.Level0)
     capturerOptions.streamInfo.channels = AudioChannel::STEREO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test Create API via legal input.
+* @tc.number: Audio_Capturer_Create_023
+* @tc.desc  : Test Create interface with parameter: silentCapture in AudioPlaybackCaptureConfig.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_023, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    AudioCapturerUnitTest::InitializePlaybackCapturerOptions(capturerOptions);
+    capturerOptions.playbackCaptureConfig.silentCapture = true;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);

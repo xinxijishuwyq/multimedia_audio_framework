@@ -63,6 +63,26 @@ void AudioManagerListenerProxy::OnAudioParameterChange(const std::string network
     }
 }
 
+void AudioManagerListenerProxy::OnCapturerState(bool isActive)
+{
+    AUDIO_DEBUG_LOG("AudioManagerListenerProxy: OnCapturerState at listener proxy");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteBool(isActive);
+
+    int error = Remote()->SendRequest(ON_CAPTURER_STATE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ON_CAPTURER_STATE failed, error: %{public}d", error);
+    }
+}
+
 void AudioManagerListenerProxy::OnWakeupClose()
 {
     AUDIO_DEBUG_LOG("AudioManagerListenerProxy: OnWakeupClose at listener proxy");
@@ -74,7 +94,7 @@ void AudioManagerListenerProxy::OnWakeupClose()
         AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
         return;
     }
-   
+
     int error = Remote()->SendRequest(ON_WAKEUP_CLOSE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("ON_WAKEUP_CLOSE failed, error: %{public}d", error);
@@ -97,6 +117,13 @@ void AudioManagerListenerCallback::OnAudioParameterChange(const std::string netw
 {
     if (listener_ != nullptr) {
         listener_->OnAudioParameterChange(networkId, key, condition, value);
+    }
+}
+
+void AudioManagerListenerCallback::OnCapturerState(bool isActive)
+{
+    if (listener_ != nullptr) {
+        listener_->OnCapturerState(isActive);
     }
 }
 

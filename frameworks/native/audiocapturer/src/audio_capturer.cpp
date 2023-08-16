@@ -67,12 +67,6 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_ULTRASONIC) {
         return nullptr;
     }
-    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        if (AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer(capturerOptions) != SUCCESS) {
-            AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error!");
-            return nullptr;
-        }
-    }
 
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
 
@@ -101,7 +95,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->cachePath_ = cachePath;
     }
 
-    if (capturer->InitPlaybackCapturer(sourceType, capturerOptions.playbackCaptureConfig.filterOptions) != SUCCESS) {
+    if (capturer->InitPlaybackCapturer(sourceType, capturerOptions.playbackCaptureConfig) != SUCCESS) {
         return nullptr;
     }
 
@@ -149,13 +143,12 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     }
 }
 
-int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const CaptureFilterOptions &filterOptions)
+int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const AudioPlaybackCaptureConfig &config)
 {
     if (type != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return SUCCESS;
     }
-    return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(
-        filterOptions, appInfo_.appTokenId, appInfo_.appUid, false, AUDIO_PERMISSION_START);
+    return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(config, appInfo_.appTokenId);
 }
 
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
@@ -166,11 +159,7 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     AUDIO_INFO_LOG("AudioCapturer::SetParams");
-    AudioStreamParams audioStreamParams;
-    audioStreamParams.format = params.audioSampleFormat;
-    audioStreamParams.samplingRate = params.samplingRate;
-    audioStreamParams.channels = params.audioChannel;
-    audioStreamParams.encoding = params.audioEncoding;
+    AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST) {
@@ -185,11 +174,12 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         audioStream_->SetApplicationCachePath(cachePath_);
     }
-    if (!audioStream_->VerifyClientMicrophonePermission(appInfo_.appTokenId, appInfo_.appUid,
-        true, AUDIO_PERMISSION_START)) {
-        AUDIO_ERR_LOG("MICROPHONE permission denied for %{public}d", appInfo_.appTokenId);
+
+    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid)) {
+        AUDIO_ERR_LOG("recording create check failed");
         return ERR_PERMISSION_DENIED;
     }
+
     const AudioCapturer *capturer = this;
     capturerProxyObj_->SaveCapturerObj(capturer);
 
@@ -199,6 +189,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         audioStream_->SetInnerCapturerState(true);
+    }
+
+    if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        audioStream_->SetWakeupCapturerState(true);
     }
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
@@ -339,9 +333,10 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 bool AudioCapturerPrivate::Start() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Start");
-    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
-        AUDIO_PERMISSION_START)) {
-        AUDIO_ERR_LOG("Start monitor permission failed");
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_START)) {
+        AUDIO_ERR_LOG("recording start check failed");
+        return false;
     }
 
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_INVALID ||
@@ -376,8 +371,8 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 bool AudioCapturerPrivate::Pause() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Pause");
-    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
-        AUDIO_PERMISSION_STOP)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Pause monitor permission failed");
     }
 
@@ -393,8 +388,8 @@ bool AudioCapturerPrivate::Pause() const
 bool AudioCapturerPrivate::Stop() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Stop");
-    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
-        AUDIO_PERMISSION_STOP)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Stop monitor permission failed");
     }
 
@@ -422,8 +417,8 @@ bool AudioCapturerPrivate::Release()
         return false;
     }
 
-    if (!audioStream_->getUsingPemissionFromPrivacy(MICROPHONE_PERMISSION, appInfo_.appTokenId,
-        AUDIO_PERMISSION_STOP)) {
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
         AUDIO_ERR_LOG("Release monitor permission failed");
     }
 
@@ -432,17 +427,6 @@ bool AudioCapturerPrivate::Release()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
-    AudioCapturerInfo currertCapturer;
-    this->GetCapturerInfo(currertCapturer);
-    SourceType sourceType = currertCapturer.sourceType;
-    if (sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
-        bool ret = AudioPolicyManager::GetInstance().CloseWakeUpAudioCapturer();
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("can not destory wakeup config");
-        } else {
-            AUDIO_INFO_LOG("start destory wakeup config");
-        }
-    }
     return audioStream_->ReleaseAudioStream();
 }
 

@@ -412,19 +412,19 @@ int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &obje
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
+int32_t AudioManagerProxy::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioManagerProxy: SetWakeupCloseCallback object is null");
+        AUDIO_ERR_LOG("SetWakeupCloseCallback object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return false;
+        return -1;
     }
 
     (void)data.WriteRemoteObject(object);
@@ -682,6 +682,28 @@ int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
         return error;
     }
 
+    return reply.ReadInt32();
+}
+
+int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("SetCaptureSilentState: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(state));
+    error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %{public}d", error);
+        return error;
+    }
     return reply.ReadInt32();
 }
 

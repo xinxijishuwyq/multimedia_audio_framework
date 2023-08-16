@@ -28,19 +28,28 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-class FastAudioStreamCallback : public AudioDataCallback {
+class FastAudioStreamRenderCallback : public AudioDataCallback {
 public:
-    FastAudioStreamCallback(const std::shared_ptr<AudioProcessInClient> &procClient,
-        const std::shared_ptr<AudioRendererWriteCallback> &callback)
-        : procClient_(procClient), renderCallback_(callback) {};
-    virtual ~FastAudioStreamCallback() = default;
+    FastAudioStreamRenderCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
+        : rendererWriteCallback_(callback) {};
+    virtual ~FastAudioStreamRenderCallback() = default;
 
     void OnHandleData(size_t length) override;
+    std::shared_ptr<AudioRendererWriteCallback> GetRendererWriteCallback() const;
 
 private:
-    std::shared_ptr<AudioProcessInClient> procClient_ = nullptr;
-    std::shared_ptr<AudioRendererWriteCallback> renderCallback_ = nullptr;
+    std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback_ = nullptr;
+};
+
+class FastAudioStreamCaptureCallback : public AudioDataCallback {
+public:
+    FastAudioStreamCaptureCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
+        : captureCallback_(callback) {};
+    virtual ~FastAudioStreamCaptureCallback() = default;
+
+    void OnHandleData(size_t length) override;
+private:
+    std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
 
 class FastAudioStream : public IAudioStream {
@@ -55,9 +64,8 @@ public:
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     State GetState() override;
@@ -93,6 +101,7 @@ public:
     int64_t GetFramesRead() override;
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
 
     // Common APIs
@@ -128,11 +137,17 @@ public:
     void SetApplicationCachePath(const std::string cachePath) override;
     void SetChannelBlendMode(ChannelBlendMode blendMode) override;
 
+    void SetStreamTrackerState(bool trackerRegisteredState) override;
+    void GetSwitchInfo(IAudioStream::SwitchInfo& info) override;
+
+    IAudioStream::StreamClass GetStreamClass() override;
+
 private:
     AudioStreamType eStreamType_;
     AudioMode eMode_;
-    std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
-    std::shared_ptr<FastAudioStreamCallback> spkProcClientCb_ = nullptr;
+    std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
+    std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;
+    std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_;
@@ -147,6 +162,7 @@ private:
     AudioRendererRate renderRate_ = RENDER_RATE_NORMAL;
     int32_t clientPid_ = 0;
     int32_t clientUid_ = 0;
+    bool streamTrackerRegistered_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

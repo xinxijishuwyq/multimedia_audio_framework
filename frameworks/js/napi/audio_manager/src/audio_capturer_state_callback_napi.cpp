@@ -53,7 +53,7 @@ void AudioCapturerStateCallbackNapi::SaveCallbackReference(napi_value args)
 void AudioCapturerStateCallbackNapi::OnCapturerStateChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    AUDIO_INFO_LOG("AudioCapturerStateCallbackNapi: OnCapturerStateChange is called");
+    AUDIO_INFO_LOG("OnCapturerStateChange is called");
 
     std::lock_guard<std::mutex> lock(mutex_);
     std::unique_ptr<AudioCapturerStateJsCallback> cb = std::make_unique<AudioCapturerStateJsCallback>();

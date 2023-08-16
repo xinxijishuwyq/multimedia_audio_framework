@@ -260,10 +260,9 @@ int32_t AudioContainerStreamBase::GetAudioStreamInfo(AudioStreamParams &audioStr
 }
 
 bool AudioContainerStreamBase::VerifyClientPermission(const std::string &permissionName, uint32_t appTokenId,
-    int32_t appUid, bool privacyFlag, AudioPermissionState state)
+    int32_t appUid, AudioPermissionState state)
 {
-    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId, appUid,
-        privacyFlag, state)) {
+    if (!AudioPolicyManager::GetInstance().VerifyClientPermission(permissionName, appTokenId, appUid, state)) {
             AUDIO_ERR_LOG("AudioContainerStreamBase: Client doesn't have MICROPHONE permission");
             return false;
         }

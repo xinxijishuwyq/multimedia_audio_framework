@@ -46,6 +46,7 @@ public:
     int32_t SetInputRoute(DeviceType deviceType) override;
     uint64_t GetTransactionId() override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
 private:
     bool capturerInited_ = false;
     FILE *filePtr = nullptr;

@@ -39,8 +39,8 @@ private:
 
 class OHAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
 public:
-    OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer, void* userData)
-        : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
+        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 
@@ -78,6 +78,23 @@ public:
     }
 
     void OnAudioPolicyServiceDied() override;
+
+private:
+    OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer* ohAudioRenderer_;
+    void* userData_;
+};
+
+class OHAudioRendererErrorCallback : public AudioRendererErrorCallback {
+public:
+    OHAudioRendererErrorCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
+        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
+
+    void OnError(AudioErrors errorCode) override;
+
+    OH_AudioStream_Result GetErrorResult(AudioErrors errorCode) const;
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;

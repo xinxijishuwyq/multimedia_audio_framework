@@ -42,6 +42,10 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 
 static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 {
+    if (currNode == nullptr) {
+        AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_EFFECT_CONFIG_FILE);
+        return FILE_PARSE_ERROR;
+    }
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_effects_conf"))) {
         AUDIO_ERR_LOG("Missing tag - audio_effects_conf: %{public}s", AUDIO_EFFECT_CONFIG_FILE);
         xmlFreeDoc(doc);

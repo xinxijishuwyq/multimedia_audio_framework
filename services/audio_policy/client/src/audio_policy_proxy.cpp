@@ -222,17 +222,18 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
     spToneInfo->segmentCnt = reply.ReadUint32();
     spToneInfo->repeatCnt = reply.ReadUint32();
     spToneInfo->repeatSegment = reply.ReadUint32();
-    AUDIO_INFO_LOG("segmentCnt: %{public}d, repeatCnt: %{public}d, repeatSegment: %{public}d",
+    AUDIO_DEBUG_LOG("segmentCnt: %{public}d, repeatCnt: %{public}d, repeatSegment: %{public}d",
         spToneInfo->segmentCnt, spToneInfo->repeatCnt, spToneInfo->repeatSegment);
     for (uint32_t i = 0; i<spToneInfo->segmentCnt; i++) {
         spToneInfo->segments[i].duration = reply.ReadUint32();
         spToneInfo->segments[i].loopCnt = reply.ReadUint16();
         spToneInfo->segments[i].loopIndx = reply.ReadUint16();
-        AUDIO_INFO_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, seg[%{public}d].loopIndex: %{public}d",
-            i, spToneInfo->segments[i].duration, i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
+        AUDIO_DEBUG_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, \
+            seg[%{public}d].loopIndex: %{public}d", i, spToneInfo->segments[i].duration,
+            i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
         for (uint32_t j = 0; j < TONEINFO_MAX_WAVES+1; j++) {
             spToneInfo->segments[i].waveFreq[j] = reply.ReadUint16();
-            AUDIO_INFO_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
+            AUDIO_DEBUG_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
         }
     }
     AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
@@ -530,7 +531,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     return deviceInfo;
 }
 
-bool AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
+int32_t AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -538,7 +539,7 @@ bool AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions optio
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return false;
+        return -1;
     }
     data.WriteInt32(static_cast<int32_t>(options.streamInfo.samplingRate));
     data.WriteInt32(static_cast<int32_t>(options.streamInfo.encoding));
@@ -551,12 +552,12 @@ bool AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions optio
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("CreateWakeUpAudioCapturer failed, error: %d", error);
-        return false;
+        return -1;
     }
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::CloseWakeUpAudioCapturer()
+int32_t AudioPolicyProxy::CloseWakeUpAudioCapturer()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -564,17 +565,17 @@ bool AudioPolicyProxy::CloseWakeUpAudioCapturer()
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return false;
+        return -1;
     }
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::CLOSE_WAKEUP_AUDIOCAPTURER), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("CloseWakeUpAudioCapturer failed, error: %d", error);
-        return false;
+        return -1;
     }
     return reply.ReadInt32();
 }
-std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDeviceDescriptors(
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
     MessageParcel data;
@@ -592,6 +593,34 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferOutputDevice
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("Get out devices failed, error: %d", error);
+        return deviceInfo;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
+    return deviceInfo;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDeviceDescriptors(
+    AudioCapturerInfo &captureInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetPreferredInputDeviceDescriptors: WriteInterfaceToken failed");
+        return deviceInfo;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get preferred input devices failed, error: %d", error);
         return deviceInfo;
     }
 
@@ -911,7 +940,7 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId, Devi
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+int32_t AudioPolicyProxy::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -919,7 +948,7 @@ int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clie
     MessageOption option;
 
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback object is null");
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback object is null");
         return ERR_NULL_OBJECT;
     }
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -932,14 +961,40 @@ int32_t AudioPolicyProxy::SetPreferOutputDeviceChangeCallback(const int32_t clie
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetPreferOutputDeviceChangeCallback failed, error: %{public}d", error);
+        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback failed, error: %{public}d", error);
         return error;
     }
 
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetPreferOutputDeviceChangeCallback(const int32_t clientId)
+int32_t AudioPolicyProxy::SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_INPUT_DEVICE_CHANGE_CALLBACK), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -955,6 +1010,27 @@ int32_t AudioPolicyProxy::UnsetPreferOutputDeviceChangeCallback(const int32_t cl
         data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("unset active output device change callback failed, error: %{public}d", error);
+        return error;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetPreferredInputDeviceChangeCallback()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_INPUT_DEVICE_CHANGE_CALLBACK),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("unset active input device change callback failed, error: %{public}d", error);
         return error;
     }
 
@@ -1332,55 +1408,53 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-    AudioPermissionState state)
+bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
-    AUDIO_DEBUG_LOG("VerifyClientMicrophonePermission: [tid : %{public}d]", appTokenId);
+    AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("VerifyClientMicrophonePermission: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("CheckRecordingCreate: WriteInterfaceToken failed");
         return false;
     }
 
     data.WriteUint32(appTokenId);
+    data.WriteUint64(appFullTokenId);
     data.WriteInt32(appUid);
-    data.WriteBool(privacyFlag);
-    data.WriteInt32(state);
 
     int result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION), data, reply, option);
     if (result != ERR_NONE) {
-        AUDIO_ERR_LOG("VerifyClientMicrophonePermission failed, result: %{public}d", result);
+        AUDIO_ERR_LOG("CheckRecordingCreate failed, result: %{public}d", result);
         return false;
     }
 
     return reply.ReadBool();
 }
 
-bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    AUDIO_DEBUG_LOG("Proxy [permission : %{public}s] | [tid : %{public}d]", permissionName.c_str(), appTokenId);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("CheckRecordingStateChange: WriteInterfaceToken failed");
         return false;
     }
 
-    data.WriteString(permissionName);
     data.WriteUint32(appTokenId);
+    data.WriteUint64(appFullTokenId);
+    data.WriteInt32(appUid);
     data.WriteInt32(state);
 
     int result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY), data, reply, option);
     if (result != ERR_NONE) {
-        AUDIO_ERR_LOG("getUsingPemissionFromPrivacy failed, result: %{public}d", result);
+        AUDIO_ERR_LOG("CheckRecordingStateChange failed, result: %{public}d", result);
         return false;
     }
 
@@ -1389,7 +1463,6 @@ bool AudioPolicyProxy::getUsingPemissionFromPrivacy(const std::string &permissio
 
 int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
-    AUDIO_ERR_LOG("ReconfigureAudioChannel proxy %{public}d, %{public}d", count, deviceType);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1418,7 +1491,6 @@ int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clien
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener");
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
         return ERROR;
@@ -1446,7 +1518,6 @@ int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t cli
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::UnregisterAudioRendererEventListener");
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("UnregisterAudioRendererEventListener WriteInterfaceToken failed");
         return ERROR;
@@ -1599,8 +1670,6 @@ int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clien
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterAudioCapturerEventListener");
-
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioCapturerEventListener:: WriteInterfaceToken failed");
         return ERROR;
@@ -1628,8 +1697,6 @@ int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t cli
     MessageParcel reply;
     MessageOption option;
 
-    AUDIO_INFO_LOG("AudioPolicyProxy::UnregisterAudioCapturerEventListener");
-
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy:: WriteInterfaceToken failed");
         return ERROR;
@@ -1652,8 +1719,6 @@ int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-
-    AUDIO_INFO_LOG("AudioPolicyProxy::RegisterTracker");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterTracker WriteInterfaceToken failed");
@@ -1684,8 +1749,6 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-
-    AUDIO_INFO_LOG("AudioPolicyProxy::UpdateTracker");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("UpdateTracker: WriteInterfaceToken failed");
@@ -1734,6 +1797,7 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.networkId = reply.ReadString();
     rendererChangeInfo->outputDeviceInfo.interruptGroupId = reply.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.volumeGroupId = reply.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice = reply.ReadBool();
 }
 
 void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
@@ -1763,6 +1827,7 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->inputDeviceInfo.networkId = reply.ReadString();
     capturerChangeInfo->inputDeviceInfo.interruptGroupId = reply.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.volumeGroupId = reply.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice = reply.ReadBool();
 }
 
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
@@ -2147,8 +2212,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     return 0;
 }
 
-int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-    uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state)
+int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2158,15 +2222,13 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const CaptureFilterOpti
         AUDIO_ERR_LOG(" SetPlaybackCapturerFilterInfos WriteInterfaceToken failed");
         return ERROR;
     }
-    size_t ss = filterOptions.usages.size();
-    data.WriteInt32(ss);
+    data.WriteInt32(static_cast<int32_t>(config.silentCapture));
+    size_t ss = config.filterOptions.usages.size();
+    data.WriteUint32(ss);
     for (size_t i = 0; i < ss; i++) {
-        data.WriteInt32(filterOptions.usages[i]);
+        data.WriteInt32(static_cast<int32_t>(config.filterOptions.usages[i]));
     }
     data.WriteUint32(appTokenId);
-    data.WriteInt32(appUid);
-    data.WriteBool(privacyFlag);
-    data.WriteInt32(state);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);

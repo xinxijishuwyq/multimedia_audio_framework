@@ -74,7 +74,7 @@ void AudioVolumeManagerNapi::Destructor(napi_env env, void *nativeObject, void *
 
 napi_value AudioVolumeManagerNapi::Construct(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioVolumeManagerNapi::Construct");
+    AUDIO_INFO_LOG("Construct");
     napi_status status;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -124,7 +124,7 @@ napi_value AudioVolumeManagerNapi::CreateVolumeManagerWrapper(napi_env env)
 
 napi_value AudioVolumeManagerNapi::Init(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("AudioVolumeManagerNapi::Init");
+    AUDIO_INFO_LOG("Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
@@ -411,7 +411,7 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
         return undefinedResult;
     }
     std::string callbackName = AudioCommonNapi::GetStringArgument(env, args[0]);
-    AUDIO_INFO_LOG("AudioVolumeManagerNapi::On callbackName: %{public}s", callbackName.c_str());
+    AUDIO_INFO_LOG("On callbackName: %{public}s", callbackName.c_str());
 
     AudioVolumeManagerNapi *volumeManagerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&volumeManagerNapi));
@@ -422,7 +422,7 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
 
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
-        AUDIO_ERR_LOG("AudioVolumeManagerNapi::On type mismatch for parameter 2");
+        AUDIO_ERR_LOG("On type mismatch for parameter 2");
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
@@ -433,16 +433,16 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
             int32_t ret = volumeManagerNapi->audioSystemMngr_->RegisterVolumeKeyEventCallback(
                 volumeManagerNapi->cachedClientId_, volumeManagerNapi->volumeKeyEventCallbackNapi_);
             if (ret) {
-                AUDIO_ERR_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Failed");
+                AUDIO_ERR_LOG("RegisterVolumeKeyEventCallback Failed");
             } else {
-                AUDIO_DEBUG_LOG("AudioVolumeManagerNapi:: RegisterVolumeKeyEventCallback Success");
+                AUDIO_DEBUG_LOG("RegisterVolumeKeyEventCallback Success");
             }
         }
         std::shared_ptr<AudioVolumeKeyEventNapi> cb =
             std::static_pointer_cast<AudioVolumeKeyEventNapi>(volumeManagerNapi->volumeKeyEventCallbackNapi_);
         cb->SaveCallbackReference(callbackName, args[PARAM1]);
     } else {
-        AUDIO_ERR_LOG("AudioVolumeManagerNapi::No such callback supported");
+        AUDIO_ERR_LOG("No such callback supported");
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
     }
     return undefinedResult;

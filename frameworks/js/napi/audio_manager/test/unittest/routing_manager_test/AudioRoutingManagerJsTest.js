@@ -44,12 +44,12 @@ describe("AudioRoutingManagerJsTest", function () {
   }
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest001
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest001
    * @tc.desc:Get prefer output device - promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest001", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest001", 0, async function (done) {
     let rendererInfo = {
       content : audio.ContentType.CONTENT_TYPE_MUSIC,
       usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
@@ -57,149 +57,149 @@ describe("AudioRoutingManagerJsTest", function () {
     
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      let data = await routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo);
-      console.info(`${TAG} getPreferOutputDeviceForRendererInfo SUCCESS`+JSON.stringify(data));
+      let data = await routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo SUCCESS`+JSON.stringify(data));
       expect(true).assertTrue();
       done();
     } catch(e) {
-      console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
       expect().assertFail();
       done();
     }
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest002
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest002
    * @tc.desc:Get prefer output device no parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest002", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest002", 0, async function (done) {
       let routingManager = audio.getAudioManager().getRoutingManager();
       try {
-        let data = await routingManager.getPreferOutputDeviceForRendererInfo();
-        console.error(`${TAG} getPreferOutputDeviceForRendererInfo parameter check ERROR: ${JSON.stringify(data)}`);
+        let data = await routingManager.getPreferredOutputDeviceForRendererInfo();
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: ${JSON.stringify(data)}`);
         expect().assertFail();
       } catch(e) {
         if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo check no parameter PASS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check no parameter PASS`);
         expect(true).assertTrue();
       }
       done();
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest004
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest004
    * @tc.desc:Get prefer output device check number parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest004", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest004", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      let data = await routingManager.getPreferOutputDeviceForRendererInfo(numberParameter);
-      console.error(`${TAG} getPreferOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
+      let data = await routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter);
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
       if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-        console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
       }
-      console.info(`${TAG} getPreferOutputDeviceForRendererInfo check number parameter PASS`);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter PASS`);
       expect(true).assertTrue();
     }
     done();
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest004
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest004
    * @tc.desc:Get prefer output device check string parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest004", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest004", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      let data = await routingManager.getPreferOutputDeviceForRendererInfo(stringParameter);
-      console.error(`${TAG} getPreferOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
+      let data = await routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter);
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
       if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-        console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
       }
-      console.info(`${TAG} getPreferOutputDeviceForRendererInfo check string parameter PASS`);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter PASS`);
       expect(true).assertTrue();
     }
     done();
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest005
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest005
    * @tc.desc:Get prefer output device - callback
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest005", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest005", 0, async function (done) {
     let rendererInfo = {
       content : audio.ContentType.CONTENT_TYPE_MUSIC,
       usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
       rendererFlags : 0 }
     
     let routingManager = audio.getAudioManager().getRoutingManager();
-      routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (e, data)=>{
+      routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (e, data)=>{
         if (e) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect(false).assertTrue();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo SUCCESS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo SUCCESS`);
         expect(true).assertTrue();
         done();
       });
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest006
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest006
    * @tc.desc:Get prefer output device check number parameter- callback
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest006", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest006", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
-      routingManager.getPreferOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
+      routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
         if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo check number parameter PASS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter PASS`);
         expect(true).assertTrue();
         done();
       });
   })
 
   /*
-   * @tc.name:getPreferOutputDeviceForRendererInfoTest007
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest007
    * @tc.desc:Get prefer output device check string parameter- callback
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferOutputDeviceForRendererInfoTest007", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest007", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
-      routingManager.getPreferOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
+      routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
         if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${e.message}`);
+          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
         }
-        console.info(`${TAG} getPreferOutputDeviceForRendererInfo check string parameter PASS`);
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter PASS`);
         expect(true).assertTrue();
         done();
       });
@@ -211,7 +211,7 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("on_preferOutputDeviceForRendererInfoTest001", 0, async function (done) {
+  it("on_preferredOutputDeviceForRendererInfoTest001", 0, async function (done) {
     let rendererInfo = {
       content : audio.ContentType.CONTENT_TYPE_MUSIC,
       usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
@@ -219,7 +219,7 @@ describe("AudioRoutingManagerJsTest", function () {
     
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.on('preferOutputDeviceChangeForRendererInfo', rendererInfo, (data)=>{});
+      routingManager.on('preferredOutputDeviceChangeForRendererInfo', rendererInfo, (data)=>{});
       expect(true).assertTrue();
       done();
     } catch (e) {
@@ -235,10 +235,10 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("on_preferOutputDeviceForRendererInfoTest002", 0, async function (done) {
+  it("on_preferredOutputDeviceForRendererInfoTest002", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.on('preferOutputDeviceChangeForRendererInfo', stringParameter, (data)=>{});
+      routingManager.on('preferredOutputDeviceChangeForRendererInfo', stringParameter, (data)=>{});
       console.error(`${TAG} on_referOutputDeviceForRendererInfo with string patameter ERROR: ${e.message}`);
       expect().assertFail();
       done();
@@ -260,10 +260,10 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("on_preferOutputDeviceForRendererInfoTest003", 0, async function (done) {
+  it("on_preferredOutputDeviceForRendererInfoTest003", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.on('preferOutputDeviceChangeForRendererInfo', numberParameter, (data)=>{});
+      routingManager.on('preferredOutputDeviceChangeForRendererInfo', numberParameter, (data)=>{});
       console.error(`${TAG} on_referOutputDeviceForRendererInfo with number patameter ERROR: ${e.message}`);
       expect().assertFail();
       done();
@@ -285,10 +285,10 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("off_preferOutputDeviceForRendererInfoTest001", 0, async function (done) {
+  it("off_preferredOutputDeviceForRendererInfoTest001", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.off('preferOutputDeviceChangeForRendererInfo', (data)=>{});
+      routingManager.off('preferredOutputDeviceChangeForRendererInfo', (data)=>{});
       console.info(`${TAG} off_referOutputDeviceForRendererInfo SUCCESS`);
       expect(true).assertTrue();
       done();
@@ -406,10 +406,10 @@ describe("AudioRoutingManagerJsTest", function () {
           done();
           return;
         }
-        routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
-          console.info(`${TAG} getPreferOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
+        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
+          console.info(`${TAG} getPreferredOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
-            console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${err.message}`);
+            console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
             done();
             return;
@@ -498,10 +498,10 @@ describe("AudioRoutingManagerJsTest", function () {
           done();
           return;
         }
-        routingManager.getPreferOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
-          console.info(`${TAG} getPreferOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
+        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
+          console.info(`${TAG} getPreferredOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
-            console.error(`${TAG} getPreferOutputDeviceForRendererInfo ERROR: ${err.message}`);
+            console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
             done();
             return;
@@ -543,4 +543,260 @@ describe("AudioRoutingManagerJsTest", function () {
       });
     });
   });
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest001
+   * @tc.desc:Get preferred input device - promise
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest001", 0, async function (done) {
+    let capturerInfo = {
+      content : audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+      capturerFlags : 0 }
+
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      let data = await routingManager.getPreferredInputDeviceForCapturerInfo(capturerInfo);
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfo SUCCESS`+JSON.stringify(data));
+      expect(true).assertTrue();
+      done();
+    } catch(e) {
+      console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest002
+   * @tc.desc:Get preferred input device no parameter- promise
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest002", 0, async function (done) {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      try {
+        let data = await routingManager.getPreferredInputDeviceForCapturerInfo();
+        console.error(`${TAG} getPreferredInputDeviceForCapturerInfo parameter check ERROR: ${JSON.stringify(data)}`);
+        expect().assertFail();
+      } catch(e) {
+        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+          console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+          expect().assertFail();
+          done();
+        }
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check no parameter PASS`);
+        expect(true).assertTrue();
+      }
+      done();
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest003
+   * @tc.desc:Get preferred input device check number parameter- promise
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest003", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      let data = await routingManager.getPreferredInputDeviceForCapturerInfo(numberParameter);
+      console.error(`${TAG} getPreferredInputDeviceForCapturerInfo parameter check ERROR: `+JSON.stringify(data));
+      expect().assertFail();
+    } catch(e) {
+      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+        console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check number parameter PASS`);
+      expect(true).assertTrue();
+    }
+    done();
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest004
+   * @tc.desc:Get preferred input device check string parameter- promise
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest004", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      let data = await routingManager.getPreferredInputDeviceForCapturerInfo(stringParameter);
+      console.error(`${TAG} getPreferredInputDeviceForCapturerInfo parameter check ERROR: `+JSON.stringify(data));
+      expect().assertFail();
+    } catch(e) {
+      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+        console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check string parameter PASS`);
+      expect(true).assertTrue();
+    }
+    done();
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest005
+   * @tc.desc:Get preferred input device - callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest005", 0, async function (done) {
+    let capturerInfo = {
+      content : audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+      capturerFlags : 0 }
+
+    let routingManager = audio.getAudioManager().getRoutingManager();
+      routingManager.getPreferredInputDeviceForCapturerInfo(capturerInfo, (e, data)=>{
+        if (e) {
+          console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+          expect(false).assertTrue();
+          done();
+        }
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo SUCCESS`);
+        expect(true).assertTrue();
+        done();
+      });
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest006
+   * @tc.desc:Get preferred input device check number parameter- callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest006", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+      routingManager.getPreferredInputDeviceForCapturerInfo(numberParameter, (e, data)=>{
+        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+          console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+          expect().assertFail();
+          done();
+        }
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check number parameter PASS`);
+        expect(true).assertTrue();
+        done();
+      });
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoTest007
+   * @tc.desc:Get preferred input device check string parameter- callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoTest007", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+      routingManager.getPreferredInputDeviceForCapturerInfo(stringParameter, (e, data)=>{
+        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+          console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
+          expect().assertFail();
+          done();
+        }
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check string parameter PASS`);
+        expect(true).assertTrue();
+        done();
+      });
+  })
+
+  /*
+   * @tc.name:on_preferredInputDeviceChangeForCapturerInfoTest001
+   * @tc.desc:On preferred input device - callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("on_preferredInputDeviceChangeForCapturerInfoTest001", 0, async function (done) {
+    let capturerInfo = {
+      content : audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+      capturerFlags : 0 }
+
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      routingManager.on('preferredInputDeviceChangeForCapturerInfo', capturerInfo, (data)=>{});
+      expect(true).assertTrue();
+      done();
+    } catch (e) {
+        console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo ERROR: ${e.message}`);
+        expect().assertFail();
+        done();
+    }
+  })
+
+  /*
+   * @tc.name:on_preferredInputDeviceChangeForCapturerInfoTest002
+   * @tc.desc:On preferred input device check string parameter- callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("on_preferredInputDeviceChangeForCapturerInfoTest002", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      routingManager.on('preferredInputDeviceChangeForCapturerInfo', stringParameter, (data)=>{});
+      console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo with string patameter ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    } catch (e) {
+      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+        console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo check string parameter ERROR: ${e.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`${TAG} on_preferredInputDeviceChangeForCapturerInfo PASS: ${e.message}`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:on_preferredInputDeviceChangeForCapturerInfoTest003
+   * @tc.desc:On preferred input device check number parameter- callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("on_preferredInputDeviceChangeForCapturerInfoTest003", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      routingManager.on('preferredInputDeviceChangeForCapturerInfo', numberParameter, (data)=>{});
+      console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo with number patameter ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    } catch (e) {
+      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+        console.error(`${TAG} on_preferredInputDeviceChangeForCapturerInfo check number parameter ERROR: ${e.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`${TAG} on_preferredInputDeviceChangeForCapturerInfo PASS: ${e.message}`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:off_preferredInputDeviceChangeForCapturerInfoTest001
+   * @tc.desc:Off preferred input device - callback
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("off_preferredInputDeviceChangeForCapturerInfoTest001", 0, async function (done) {
+    let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
+      routingManager.off('preferredInputDeviceChangeForCapturerInfo', (data)=>{});
+      console.info(`${TAG} off_preferredInputDeviceChangeForCapturerInfo SUCCESS`);
+      expect(true).assertTrue();
+      done();
+    } catch (e) {
+        console.error(`${TAG} off_preferredInputDeviceChangeForCapturerInfo ERROR: ${e.message}`);
+        expect().assertFail();
+        done();
+    }
+  })
 })

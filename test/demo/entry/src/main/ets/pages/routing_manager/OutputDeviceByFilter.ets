@@ -169,7 +169,7 @@ struct OutputDeviceByFilter {
       if (this.outputDeviceList.length > 0) {
         this.deviceTag = 1
       }
-      this.returnMsg = `getOutputAudioDevices SUccess2: ${JSON.stringify(this.outputDeviceList)}`
+      // this.returnMsg = `getOutputAudioDevices SUccess2: ${JSON.stringify(this.outputDeviceList)}`
     } catch (err) {
       this.returnMsg = `getOutputAudioDevices Error: ${JSON.stringify(err)}`
     }

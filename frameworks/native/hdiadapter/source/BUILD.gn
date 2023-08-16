@@ -17,6 +17,7 @@ import("../../../../config.gni")
 ohos_shared_library("audio_capturer_source") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -35,6 +36,7 @@ ohos_shared_library("audio_capturer_source") {
   deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
+    "c_utils:utils",
     "drivers_interface_audio:audio_idl_headers",
     "drivers_interface_audio:libaudio_proxy_1.0",
     "hilog:libhilog",
@@ -48,6 +50,7 @@ ohos_shared_library("audio_capturer_source") {
 ohos_shared_library("fast_audio_capturer_source") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -79,6 +82,7 @@ ohos_shared_library("fast_audio_capturer_source") {
 ohos_shared_library("remote_audio_capturer_source") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -108,6 +112,7 @@ ohos_shared_library("remote_audio_capturer_source") {
 ohos_shared_library("remote_fast_audio_capturer_source") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -144,6 +149,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 ohos_shared_library("audio_capturer_file_source") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }
@@ -172,6 +178,7 @@ ohos_shared_library("audio_capturer_file_source") {
 ohos_shared_library("capturer_source_adapter") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     debug = false
     blocklist = "../../../../cfi_blocklist.txt"
   }

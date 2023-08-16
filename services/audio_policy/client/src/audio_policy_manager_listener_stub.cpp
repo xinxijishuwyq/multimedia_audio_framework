@@ -92,20 +92,15 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         case ON_DEVICE_CHANGED: {
-            AUDIO_INFO_LOG("Device change callback received");
             DeviceChangeAction deviceChangeAction = {};
-
             ReadAudioDeviceChangeData(data, deviceChangeAction);
             OnDeviceChange(deviceChangeAction);
-
             return AUDIO_OK;
         }
         case ON_FOCUS_INFO_CHANGED: {
-            AUDIO_INFO_LOG("Focus info change callback received");
             std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
             ReadAudioFocusInfoChangeData(data, focusInfoList);
             OnAudioFocusInfoChange(focusInfoList);
-
             return AUDIO_OK;
         }
         default: {

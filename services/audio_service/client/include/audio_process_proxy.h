@@ -41,6 +41,8 @@ public:
     int32_t RequestHandleInfo() override;
 
     int32_t Release() override;
+
+    int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };

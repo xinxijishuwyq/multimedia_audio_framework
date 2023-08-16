@@ -41,13 +41,13 @@ typedef struct {
 class IAudioSourceCallback {
 public:
     virtual void OnWakeupClose() = 0;
+    virtual void OnCapturerState(bool isActive) = 0;
 };
 
 class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *deviceClass, const char *deviceNetworkId,
-           const SourceType sourceType = SourceType::SOURCE_TYPE_MIC);
-
+           const SourceType sourceType = SourceType::SOURCE_TYPE_MIC, const char *sourceName = "Built_in_wakeup");
     virtual int32_t Init(IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
@@ -68,6 +68,8 @@ public:
     virtual uint64_t GetTransactionId() = 0;
 
     virtual void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) = 0;
+    virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) = 0;
+
     virtual ~IAudioCapturerSource() = default;
 };
 

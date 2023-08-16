@@ -43,6 +43,7 @@ constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
+const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
@@ -50,6 +51,14 @@ const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
+
+constexpr int32_t WAKEUP_LIMIT = 2;
+constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
+constexpr std::string_view PRIMARY_WAKEUP_MIRROR = "Built_in_wakeup_mirror";
+constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
+    PRIMARY_WAKEUP,
+    PRIMARY_WAKEUP_MIRROR
+};
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -689,7 +698,7 @@ struct AudioParameters {
 
 struct AudioStreamInfo {
     AudioSamplingRate samplingRate;
-    AudioEncodingType encoding;
+    AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
     AudioSampleFormat format;
     AudioChannel channels;
 };
@@ -757,6 +766,7 @@ struct CaptureFilterOptions {
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
+    bool silentCapture {false};
 };
 
 struct AudioCapturerOptions {
@@ -769,6 +779,7 @@ struct AppInfo {
     int32_t appUid { INVALID_UID };
     uint32_t appTokenId { 0 };
     int32_t appPid { 0 };
+    uint64_t appFullTokenId { 0 };
 };
 
 // Supported audio parameters for both renderer and capturer
@@ -841,6 +852,20 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 
+// Supported audio parameters for fast audio stream
+const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
+    SAMPLE_RATE_48000,
+};
+
+const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+};
+
+const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE
+};
 struct BufferDesc {
     uint8_t* buffer;
     size_t bufLength;
@@ -1001,7 +1026,7 @@ struct AudioProcessConfig {
 
     AudioCapturerInfo capturerInfo;
 
-    bool isRemote;
+    AudioStreamType streamType;
 };
 
 struct AudioStreamData {
@@ -1030,6 +1055,7 @@ struct DeviceInfo {
     std::string displayName;
     int32_t interruptGroupId;
     int32_t volumeGroupId;
+    bool isLowLatencyDevice;
 };
 
 enum StreamSetState {

@@ -49,6 +49,7 @@ public:
     int32_t SetInputRoute(DeviceType deviceType) override;
     uint64_t GetTransactionId() override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
 
 private:
     explicit RemoteAudioCapturerSource(std::string deviceNetworkId);
@@ -60,9 +61,9 @@ private:
 private:
     static std::map<std::string, RemoteAudioCapturerSource *> allRemoteSources;
 
+    static constexpr uint32_t REMOTE_INPUT_STREAM_ID = 30; // 14 + 2 * 8
     const uint32_t maxInt32 = 0x7fffffff;
     const uint32_t audioBufferSize = 16 * 1024;
-    const uint32_t internalInputStreamId = 1;
     const uint32_t deepBufferCapturePeriodSize = 4096;
 
     IAudioSourceAttr attr_;

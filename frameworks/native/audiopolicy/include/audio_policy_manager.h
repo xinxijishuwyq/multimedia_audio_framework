@@ -78,9 +78,9 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
-    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
+    int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    bool CloseWakeUpAudioCapturer();
+    int32_t CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
@@ -150,10 +150,9 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state);
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid);
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state);
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
@@ -192,12 +191,19 @@ public:
 
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo);
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(AudioRendererInfo &rendererInfo);
 
-    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
-        const std::shared_ptr<AudioPreferOutputDeviceChangeCallback> &callback);
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo);
 
-    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId);
+    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+
+    int32_t SetPreferredInputDeviceChangeCallback(
+        const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
+
+    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId);
+
+    int32_t UnsetPreferredInputDeviceChangeCallback();
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 
@@ -231,8 +237,7 @@ public:
     
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
-    int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state);
+    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
 
     static void RecoverAudioCapturerEventListener();
 
@@ -257,6 +262,7 @@ private:
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::unordered_map<int32_t, AudioCapturerStateChangeListenerStub*> capturerStateChangeCBMap_;
+    bool rendererStateChangeRegistered = false;
 };
 } // namespce AudioStandard
 } // namespace OHOS

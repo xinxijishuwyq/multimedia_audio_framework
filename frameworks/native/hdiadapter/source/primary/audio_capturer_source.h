@@ -33,18 +33,18 @@ namespace AudioStandard {
 #define AUDIO_BUFF_SIZE (16 * 1024)
 #define PCM_8_BIT 8
 #define PCM_16_BIT 16
-#define INTERNAL_INPUT_STREAM_ID 1
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:
-    static AudioCapturerSource *GetInstance(const SourceType sourceType = SourceType::SOURCE_TYPE_MIC);
+    static AudioCapturerSource *GetInstance(const SourceType sourceType = SourceType::SOURCE_TYPE_MIC,
+        const char *sourceName = "Built_in_wakeup");
     static AudioCapturerSource *GetMicInstance(void);
-    static AudioCapturerSource *GetWakeupInstance(void);
+    static AudioCapturerSource *GetWakeupInstance(bool isMirror = false);
     static bool micMuteState_;
 
 protected:
-    AudioCapturerSource() = default;;
-    ~AudioCapturerSource() = default;;
+    AudioCapturerSource() = default;
+    ~AudioCapturerSource() = default;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

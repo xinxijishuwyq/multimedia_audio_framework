@@ -35,35 +35,42 @@ struct AudioManager {
 
         Button() {
           Text("音量管理     AudioVolumeManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
-        }.width('90%').height(100).margin({bottom:10,top:10})
+        }.width('90%').height(90).margin({bottom:10,top:10})
         .onClick(() => {
           router.push({ url: 'pages/AudioVolumeManager' })
         })
 
         Button() {
           Text("音量组管理 AudioVolumeGroupManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
-        }.width('90%').height(100).margin({bottom:10,top:10})
+        }.width('90%').height(90).margin({bottom:10,top:10})
         .onClick(() => {
           router.push({ url: 'pages/AudioVolumeGroupManager' })
         })
 
         Button() {
           Text("音频流管理 AudioStreamManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
-        }.width('90%').height(100).margin({bottom:10,top:10})
+        }.width('90%').height(90).margin({bottom:10,top:10})
         .onClick(() => {
           router.push({ url: 'pages/AudioStreamManager' })
         })
 
         Button() {
           Text("音频路由管理 AudioRoutingManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
-        }.width('90%').height(100).margin({bottom:10,top:10})
+        }.width('90%').height(90).margin({bottom:10,top:10})
         .onClick(() => {
           router.push({ url: 'pages/AudioRoutingManager' })
         })
 
         Button() {
+          Text("音频路由管理 AudioManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
+        }.width('90%').height(90).margin({bottom:10,top:10})
+        .onClick(() => {
+          router.push({ url: 'pages/audio_manager/BasicDevice' })
+        })
+
+        Button() {
           Text("设置-音频场景/参数 AudioManager").fontSize(24).fontColor(Color.White).align(Alignment.Center).lineHeight(40)
-        }.width('90%').height(100).margin({bottom:10,top:10})
+        }.width('90%').height(90).margin({bottom:10,top:10})
         .onClick(() => {
           router.push({ url: 'pages/audio_manager/Settings' })
         })

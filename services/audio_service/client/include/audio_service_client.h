@@ -500,10 +500,9 @@ public:
      *
      * @return Returns whether the authentication was success or not
      */
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     int32_t SetStreamLowPowerVolume(float powerVolumeFactor);
     float GetStreamLowPowerVolume();
@@ -513,6 +512,11 @@ public:
     virtual void OnTimeOut() override;
 
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
+
+    IAudioStream::StreamClass GetStreamClass() override;
+    void GetStreamSwitchInfo(SwitchInfo& info);
+
+    void SetWakeupCapturerState(bool isWakeupCapturer) override;
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -530,9 +534,9 @@ private:
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
 
-    std::mutex dataMutex;
-    std::condition_variable dataCv;
-    std::mutex ctrlMutex;
+    std::mutex dataMutex_;
+    std::condition_variable dataCv_;
+    std::mutex ctrlMutex_;
     std::mutex capturerMarkReachedMutex_;
     std::mutex capturerPeriodReachedMutex_;
     std::mutex rendererMarkReachedMutex_;
@@ -541,18 +545,19 @@ private:
     std::mutex writeCallbackMutex_;
     std::mutex stoppingMutex_;
     bool runnerReleased_ = false;
-    AudioCache acache;
-    const void *internalReadBuffer;
-    size_t internalRdBufLen;
-    size_t internalRdBufIndex;
-    size_t setBufferSize;
-    int32_t streamCmdStatus;
-    int32_t streamDrainStatus;
-    int32_t streamFlushStatus;
-    bool isMainLoopStarted;
-    bool isContextConnected;
-    bool isStreamConnected;
-    bool isInnerCapturerStream;
+    AudioCache acache_;
+    const void *internalReadBuffer_;
+    size_t internalRdBufLen_;
+    size_t internalRdBufIndex_;
+    size_t setBufferSize_;
+    int32_t streamCmdStatus_;
+    int32_t streamDrainStatus_;
+    int32_t streamFlushStatus_;
+    bool isMainLoopStarted_;
+    bool isContextConnected_;
+    bool isStreamConnected_;
+    bool isInnerCapturerStream_;
+    bool isWakeupCapturerStream_ = false;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
@@ -567,7 +572,6 @@ private:
 
     float mVolumeFactor;
     float mPowerVolumeFactor;
-    bool mUnMute_;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
 
@@ -621,11 +625,13 @@ private:
     std::map<uint32_t, SourceOutputInfo*> sourceOutputs;
     std::map<uint32_t, ClientInfo*> clientInfo;
 
+    IAudioStream::StreamClass streamClass_;
+
     ASClientType eAudioClientType;
 
     uint32_t underFlowCount;
     int32_t ConnectStreamToPA();
-    const char* GetDeviceNameForConnect();
+    const std::string GetDeviceNameForConnect();
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

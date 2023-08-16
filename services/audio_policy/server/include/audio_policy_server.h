@@ -106,9 +106,9 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
-    bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) override;
+    int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) override;
 
-    bool CloseWakeUpAudioCapturer() override;
+    int32_t CloseWakeUpAudioCapturer() override;
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
 
@@ -152,9 +152,13 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
     
-    int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
+    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
-    int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) override;
+    int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) override;
+
+    int32_t UnsetPreferredInputDeviceChangeCallback() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
 
@@ -185,13 +189,14 @@ public:
 
     void OnPlaybackCapturerStop() override;
 
+    void OnWakeupCapturerStop() override;
+
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;
 
-    bool getUsingPemissionFromPrivacy(const std::string &permissionName, uint32_t appTokenId,
-        AudioPermissionState state = AUDIO_PERMISSION_START) override;
+    bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+        AudioPermissionState state) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
 
@@ -233,8 +238,11 @@ public:
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
-    std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
+
+    std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 
@@ -256,8 +264,8 @@ public:
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
-    int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &options,
-        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) override;
+    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
+        uint32_t appTokenId) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -272,31 +280,7 @@ public:
         void StateOnChange(const std::string networkId, const std::string& condition, const std::string& value);
     };
 
-    class WakeUpCallbackImpl : public WakeUpSourceCallback {
-    public:
-        void OnWakeupClose() override
-        {
-            std::unique_lock<std::mutex> uck(lock);
-            isClosed_ = true;
-            uck.unlock();
-            this->cv.notify_one();
-        }
-
-        void WaitClose()
-        {
-            std::unique_lock<std::mutex> uck(lock);
-            this->cv.wait(uck, [this] {return isClosed_;});
-            isClosed_ = false;
-        }
-
-    private:
-        std::mutex lock;
-        std::condition_variable cv;
-        bool isClosed_ = false;
-    };
-
     std::shared_ptr<RemoteParameterCallback> remoteParameterCallback_;
-    std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
 
     class PerStateChangeCbCustomizeCallback : public Security::AccessToken::PermStateChangeCallbackCustomize {
     public:
@@ -318,8 +302,6 @@ protected:
 
     void RegisterParamCallback();
 
-    void RegisterWakeupCloseCallback();
-
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
@@ -327,10 +309,13 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
+    static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 1;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t DEFAULT_APP_PID = -1;
 
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
+    static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
+    static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
     // for audio interrupt
@@ -356,16 +341,24 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType);
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
+    // Permission and privacy
+    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
+    bool CheckAppBackgroundPermission(uid_t callingUid, uint64_t targetFullTokenId, uint32_t targetTokenId);
+    Security::AccessToken::AccessTokenID GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
+        uint32_t appTokenId);
+    uint64_t GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId, uint64_t appFullTokenId);
+    bool CheckRootCalling(uid_t callingUid, int32_t appUid);
+    void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
+
     // common
     void GetPolicyData(PolicyData &policyData);
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
-    bool VerifyClientPermission(const std::string &permission, uint32_t appTokenId = 0, int32_t appUid = INVALID_UID,
-        bool privacyFlag = false, AudioPermissionState state = AUDIO_PERMISSION_START);
 
     // externel function call
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
     void RegisterVolumeKeyEvents(const int32_t keyType);
+    void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
     void InitKVStore();
     void ConnectServiceAdapter();

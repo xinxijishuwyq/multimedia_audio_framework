@@ -60,9 +60,9 @@ public:
 
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
-    virtual bool SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) = 0;
+    virtual int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) = 0;
 
-    virtual bool CloseWakeUpAudioCapturer() = 0;
+    virtual int32_t CloseWakeUpAudioCapturer() = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
@@ -127,10 +127,9 @@ public:
 
     virtual int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) = 0;
 
-    virtual bool VerifyClientMicrophonePermission(uint32_t appTokenId, int32_t appUid, bool privacyFlag,
-        AudioPermissionState state) = 0;
+    virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) = 0;
 
-    virtual bool getUsingPemissionFromPrivacy(const std::string &permission, uint32_t appTokenId,
+    virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) = 0;
 
     virtual int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) = 0;
@@ -175,13 +174,20 @@ public:
 
     virtual bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) = 0;
 
-    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferOutputDeviceDescriptors(
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) = 0;
 
-    virtual int32_t SetPreferOutputDeviceChangeCallback(const int32_t clientId,
+    virtual int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
         const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnsetPreferOutputDeviceChangeCallback(const int32_t clientId) = 0;
+    virtual int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) = 0;
+
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
+        AudioCapturerInfo &captureInfo) = 0;
+
+    virtual int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetPreferredInputDeviceChangeCallback() = 0;
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
 
@@ -209,8 +215,7 @@ public:
 
     virtual int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) = 0;
 
-    virtual int32_t SetPlaybackCapturerFilterInfos(const CaptureFilterOptions &filterOptions,
-        uint32_t appTokenId, int32_t appUid, bool privacyFlag, AudioPermissionState state) = 0;
+    virtual int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

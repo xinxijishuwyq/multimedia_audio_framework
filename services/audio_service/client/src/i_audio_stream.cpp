@@ -124,13 +124,47 @@ const std::string IAudioStream::GetEffectSceneName(AudioStreamType audioType)
     return sceneName;
 }
 
+bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params)
+{
+    // 0 for normal stream
+    if (streamFlags == 0) {
+        return true;
+    }
+    // 1 for fast stream
+    if (streamFlags == STREAM_FLAG_FAST) {
+        // check audio sample rate
+        AudioSamplingRate samplingRate = static_cast<AudioSamplingRate>(params.samplingRate);
+        auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
+            AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
+        if (rateItem == AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end()) {
+            return false;
+        }
+
+        // check audio channel
+        AudioChannel channels = static_cast<AudioChannel>(params.channels);
+        auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
+            AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
+        if (channelItem == AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end()) {
+            return false;
+        }
+
+        // check audio sample format
+        AudioSampleFormat format = static_cast<AudioSampleFormat>(params.format);
+        auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
+            AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
+        if (formatItem == AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
     AudioStreamType eStreamType, int32_t appUid)
 {
     if (streamClass == FAST_STREAM) {
         (void)params;
-        // todo: use params eStreamType uid to create fast stream
-        AUDIO_INFO_LOG("Create fast stream");
+        AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
     if (streamClass == PA_STREAM) {
@@ -144,8 +178,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 {
     if (streamClass == FAST_STREAM) {
         (void)params;
-        // todo: use params eStreamType uid to create fast stream
-        AUDIO_INFO_LOG("Create fast stream");
+        AUDIO_INFO_LOG("Create fast record stream");
+        return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
     }
     if (streamClass == PA_STREAM) {
         return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);

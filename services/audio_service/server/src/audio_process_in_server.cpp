@@ -153,6 +153,33 @@ int32_t AudioProcessInServer::Release()
     return SUCCESS;
 }
 
+ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServer,
+    ProcessReleaseCallback *processHolder)
+{
+    processInServer_ = processInServer;
+    processHolder_ = processHolder;
+}
+
+void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
+    int32_t ret = processHolder_->OnProcessRelease(processInServer_);
+    AUDIO_INFO_LOG("OnRemoteDied, call release ret: %{public}d", ret);
+}
+
+int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
+{
+    sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
+    CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
+    bool result = object->AddDeathRecipient(new ProcessDeathRecipient(this, releaseCallback_));
+    if (!result) {
+        AUDIO_ERR_LOG("AddDeathRecipient failed.");
+        return ERR_OPERATION_FAILED;
+    }
+
+    return SUCCESS;
+}
+
 int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
 {
     return SUCCESS;
@@ -190,8 +217,7 @@ AudioStreamInfo AudioProcessInServer::GetStreamInfo()
 
 AudioStreamType AudioProcessInServer::GetAudioStreamType()
 {
-    // todo
-    return STREAM_MUSIC;
+    return processConfig_.streamType;
 }
 
 inline uint32_t PcmFormatToBits(AudioSampleFormat format)
@@ -274,7 +300,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe, ui
     // we need to clear data buffer to avoid dirty data.
     memset_s(processBuffer_->GetDataBase(), processBuffer_->GetDataSize(), 0, processBuffer_->GetDataSize());
     int32_t ret = InitBufferStatus();
-    AUDIO_INFO_LOG("clear data buffer, ret:%{public}d", ret);
+    AUDIO_DEBUG_LOG("clear data buffer, ret:%{public}d", ret);
 
     streamStatus_ = processBuffer_->GetStreamStatus();
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");

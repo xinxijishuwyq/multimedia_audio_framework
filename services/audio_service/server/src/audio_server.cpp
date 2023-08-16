@@ -107,6 +107,8 @@ void AudioServer::OnStart()
     }
     AUDIO_INFO_LOG("Created paDaemonThread\n");
 #endif
+
+    RegisterAudioCapturerSourceCallback();
 }
 
 void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -300,7 +302,7 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
         return transactionId;
     }
 
-    AUDIO_INFO_LOG("Transaction Id: %{public}" PRIu64, transactionId);
+    AUDIO_DEBUG_LOG("Transaction Id: %{public}" PRIu64, transactionId);
     return transactionId;
 }
 
@@ -333,6 +335,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
 
 bool AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 {
+    Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
@@ -484,7 +487,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_INFO_LOG("AudioServer::SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("SetAudioMonoState: audioMono = %{public}s", audioMono? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
         AUDIO_ERR_LOG("NotifyDeviceInfo refused for %{public}d", callingUid);
@@ -518,7 +521,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         AUDIO_ERR_LOG("AudioServer:: audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
         return;
     }
-    AUDIO_INFO_LOG("AudioServer::SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
+    AUDIO_INFO_LOG("SetAudioBalanceValue: audioBalance = %{public}f", audioBalance);
 
     // Set balance for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
@@ -590,7 +593,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     // client pid uid check.
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    AUDIO_INFO_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
+    AUDIO_DEBUG_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
 
     AudioProcessConfig resetConfig(config);
     if (callerUid == MEDIA_SERVICE_UID) {
@@ -689,6 +692,22 @@ void AudioServer::OnWakeupClose()
     callback->OnWakeupClose();
 }
 
+void AudioServer::OnCapturerState(bool isActive)
+{
+    AUDIO_INFO_LOG("OnCapturerState Callback start");
+    std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
+        if (wakeupCallback_ == nullptr) {
+            AUDIO_ERR_LOG("OnCapturerState callback is nullptr.");
+            return;
+        } else {
+            callback = wakeupCallback_;
+        }
+    }
+    callback->OnCapturerState(isActive);
+}
+
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -712,11 +731,11 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     return SUCCESS;
 }
 
-int32_t AudioServer::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
+int32_t AudioServer::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_) {
-        AUDIO_ERR_LOG("SetWakeupCloseCallback refused for %{public}d", callingUid);
+    if (callingUid != INTELL_VOICE_SERVICR_UID) {
+        AUDIO_ERR_LOG("SetWakeupSourceCallback refused for %{public}d", callingUid);
         return false;
     }
 
@@ -737,11 +756,6 @@ int32_t AudioServer::SetWakeupCloseCallback(const sptr<IRemoteObject>& object)
         wakeupCallback_ = wakeupCallback;
     }
 
-    IAudioCapturerSource* audioCapturerSourceInstance =
-        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
-    if (audioCapturerSourceInstance != nullptr) {
-        audioCapturerSourceInstance->RegisterWakeupCloseCallback(this);
-    }
     AUDIO_INFO_LOG("SetWakeupCloseCallback done");
 
     return SUCCESS;
@@ -831,6 +845,33 @@ int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
     }
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
     playbackCapturerMgr->SetSupportStreamUsage(usage);
+    return SUCCESS;
+}
+
+void AudioServer::RegisterAudioCapturerSourceCallback()
+{
+    IAudioCapturerSource* audioCapturerSourceWakeupInstance =
+        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_WAKEUP);
+    if (audioCapturerSourceWakeupInstance != nullptr) {
+        audioCapturerSourceWakeupInstance->RegisterWakeupCloseCallback(this);
+    }
+
+    IAudioCapturerSource* audioCapturerSourceInstance =
+        IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
+    if (audioCapturerSourceInstance != nullptr) {
+        audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(this);
+    }
+}
+
+int32_t AudioServer::SetCaptureSilentState(bool state)
+{
+    int32_t audio_policy_server_id = 1041;
+    if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
+        return ERR_OPERATION_FAILED;
+    }
+
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    playbackCapturerMgr->SetCaptureSilentState(state);
     return SUCCESS;
 }
 

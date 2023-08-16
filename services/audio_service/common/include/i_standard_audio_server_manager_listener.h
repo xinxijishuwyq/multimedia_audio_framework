@@ -28,11 +28,13 @@ public:
     virtual ~IStandardAudioServerManagerListener() = default;
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) = 0;
+    virtual void OnCapturerState(bool isActive) = 0;
     virtual void OnWakeupClose() = 0;
 
     enum AudioServerManagerListenerMsg {
         ON_ERROR = 0,
         ON_PARAMETER_CHANGED,
+        ON_CAPTURER_STATE,
         ON_WAKEUP_CLOSE
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioServerManagerListener");

@@ -239,11 +239,22 @@ int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
     return SUCCESS;
 }
 
+void AudioStream::RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj)
+{
+    if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
+        (void)GetSessionID(sessionId_);
+        AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
+        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
+        streamTrackerRegistered_ = true;
+    }
+}
+
 int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
+        " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
+        eStreamType_, info.encoding);
 
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");
@@ -287,12 +298,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
     streamParams_ = info;
-
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        (void)GetSessionID(sessionId_);
-        AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
-    }
+    RegisterTracker(proxyObj);
     return SUCCESS;
 }
 
@@ -514,8 +520,6 @@ bool AudioStream::StopAudioStream()
         return false;
     }
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
-
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
@@ -641,7 +645,7 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
 
         writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (writeBufferPool_[i] == nullptr) {
-            AUDIO_INFO_LOG(
+            AUDIO_ERR_LOG(
                 "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
@@ -678,7 +682,7 @@ int32_t AudioStream::SetCaptureMode(AudioCaptureMode captureMode)
 
         readBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (readBufferPool_[i] == nullptr) {
-            AUDIO_INFO_LOG("AudioStream::SetCaptureMode readBufferPool_[i]==nullptr. Allocate memory failed.");
+            AUDIO_ERR_LOG("AudioStream::SetCaptureMode readBufferPool_[i]==nullptr. Allocate memory failed.");
             return ERR_OPERATION_FAILED;
         }
 
@@ -741,7 +745,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             freeBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
-            AUDIO_INFO_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
+            AUDIO_ERR_LOG("AudioStream::GetBufferDesc freeBufferQ_.empty()");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -754,7 +758,7 @@ int32_t AudioStream::GetBufferDesc(BufferDesc &bufDesc)
             filledBufferQ_.pop();
         } else {
             bufDesc.buffer = nullptr;
-            AUDIO_INFO_LOG("AudioStream::GetBufferDesc filledBufferQ_.empty()");
+            AUDIO_ERR_LOG("AudioStream::GetBufferDesc filledBufferQ_.empty()");
             return ERR_OPERATION_FAILED;
         }
     }
@@ -879,7 +883,6 @@ void AudioStream::WriteCbTheadLoop()
             }
         }
     }
-    AUDIO_INFO_LOG("WriteCb thread end");
 }
 
 void AudioStream::ReadCbThreadLoop()
@@ -922,8 +925,6 @@ void AudioStream::ReadCbThreadLoop()
             }
         }
     }
-
-    AUDIO_INFO_LOG("ReadCb thread end");
 }
 
 int32_t AudioStream::SetLowPowerVolume(float volume)
@@ -983,5 +984,24 @@ void AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     audioBlend_.SetParams(blendMode, streamParams_.format, streamParams_.channels);
 }
+void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
+{
+    streamTrackerRegistered_ = trackerRegisteredState;
+}
+
+void AudioStream::GetSwitchInfo(SwitchInfo& info)
+{
+    GetAudioStreamParams(info.params);
+
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.renderMode = renderMode_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+    info.streamTrackerRegistered = streamTrackerRegistered_;
+    GetStreamSwitchInfo(info);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

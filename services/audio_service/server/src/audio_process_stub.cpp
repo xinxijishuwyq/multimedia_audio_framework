@@ -15,14 +15,40 @@
 
 #include "audio_process_stub.h"
 #include "audio_log.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
+ProcessCbProxy::ProcessCbProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IProcessCb>(impl)
+{
+    AUDIO_INFO_LOG("ProcessCbProxy()");
+}
+
+ProcessCbProxy::~ProcessCbProxy()
+{
+    AUDIO_INFO_LOG("~ProcessCbProxy()");
+}
+
+int32_t ProcessCbProxy::OnEndpointChange(int32_t status)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERR_OPERATION_FAILED,
+        "Write descriptor failed!");
+
+    data.WriteInt32(status);
+    int ret = Remote()->SendRequest(IProcessCbMsg::ON_ENDPOINT_CHANGE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "OnEndpointChange failed, error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
 bool AudioProcessStub::CheckInterfaceToken(MessageParcel &data)
 {
-    static auto locaDescriptor = IAudioProcess::GetDescriptor();
+    static auto localDescriptor = IAudioProcess::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
-    if (remoteDescriptor != remoteDescriptor) {
+    if (remoteDescriptor != localDescriptor) {
         AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
         return false;
     }
@@ -96,6 +122,17 @@ int32_t AudioProcessStub::HandleRelease(MessageParcel &data, MessageParcel &repl
 {
     (void)data;
     reply.WriteInt32(Release());
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleRegisterProcessCb(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioProcessStub: HandleRegisterProcessCb obj is null");
+        return AUDIO_INVALID_PARAM;
+    }
+    reply.WriteInt32(RegisterProcessCb(object));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

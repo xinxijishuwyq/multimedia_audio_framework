@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -144,7 +144,7 @@ void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, Mess
 }
 #endif
 
-void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::GetRingerModeInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioRingerMode rMode = GetRingerMode();
     reply.WriteInt32(static_cast<int>(rMode));
@@ -178,7 +178,7 @@ void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, Messa
     reply.WriteBool(result);
 }
 
-void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::GetAudioSceneInternal(MessageParcel & /* data */, MessageParcel &reply)
 {
     AudioScene audioScene = GetAudioScene();
     reply.WriteInt32(static_cast<int>(audioScene));
@@ -293,34 +293,38 @@ void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data,
     capturerOptions.streamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
     capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
     capturerOptions.capturerInfo.capturerFlags = data.ReadInt32();
-    bool result = SetWakeUpAudioCapturer(capturerOptions);
-    if (result) {
-        reply.WriteInt32(AUDIO_OK);
-    } else {
-        reply.WriteInt32(AUDIO_ERR);
-    }
+    int32_t result = SetWakeUpAudioCapturer(capturerOptions);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("CloseWakeUpAudioCapturerInternal AudioManagerStub");
-    bool result = CloseWakeUpAudioCapturer();
-    if (result) {
-        reply.WriteInt32(AUDIO_OK);
-    } else {
-        reply.WriteInt32(AUDIO_ERR);
-    }
+    int32_t result = CloseWakeUpAudioCapturer();
+    reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetPreferOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
     AudioRendererInfo rendererInfo;
-    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferOutputDeviceDescriptors(rendererInfo);
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
+void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioCapturerInfo captureInfo;
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
+    size_t size = static_cast<int32_t>(devices.size());
+    AUDIO_DEBUG_LOG("GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS size= %{public}zu", size);
+    reply.WriteInt32(size);
+    for (size_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
     }
 }
@@ -355,22 +359,39 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
     reply.WriteInt32(static_cast<int>(deviceType));
 }
 
-void AudioPolicyManagerStub::SetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyManagerStub: SetRingerModeCallback obj is null");
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: object is null");
         return;
     }
-    int32_t result = SetPreferOutputDeviceChangeCallback(clientId, object);
+    int32_t result = SetPreferredOutputDeviceChangeCallback(clientId, object);
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::UnsetPreferOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("object is null");
+        return;
+    }
+    int32_t result = SetPreferredInputDeviceChangeCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t clientId = data.ReadInt32();
-    int32_t result = UnsetPreferOutputDeviceChangeCallback(clientId);
+    int32_t result = UnsetPreferredOutputDeviceChangeCallback(clientId);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = UnsetPreferredInputDeviceChangeCallback();
     reply.WriteInt32(result);
 }
 
@@ -614,13 +635,13 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel & /* data */, MessageParcel &reply)
 {
     AudioStreamType streamInFocus = GetStreamInFocus();
     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
 }
 
-void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &reply)
+void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* data */, MessageParcel &reply)
 {
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
@@ -650,22 +671,22 @@ void AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal(MessageParcel &
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::VerifyClientMicrophonePermissionInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t appTokenId = data.ReadUint32();
+    uint64_t appFullTokenId = data.ReadUint64();
     uint32_t appUid = data.ReadInt32();
-    bool privacyFlag = data.ReadBool();
-    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = VerifyClientMicrophonePermission(appTokenId, appUid, privacyFlag, state);
+    bool ret = CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
     reply.WriteBool(ret);
 }
 
-void AudioPolicyManagerStub::getUsingPemissionFromPrivacyInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    std::string permissionName = data.ReadString();
     uint32_t appTokenId = data.ReadUint32();
+    uint64_t appFullTokenId = data.ReadUint64();
+    int32_t appUid = data.ReadInt32();
     AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
-    bool ret = getUsingPemissionFromPrivacy(permissionName, appTokenId, state);
+    bool ret = CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
     reply.WriteBool(ret);
 }
 
@@ -809,6 +830,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         reply.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
+        reply.WriteBool(rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice);
     }
 
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
@@ -855,6 +877,7 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         reply.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
+        reply.WriteBool(capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice);
     }
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }
@@ -1024,10 +1047,14 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t maxUsageNum = 30;
-    CaptureFilterOptions filterInfo;
-    int32_t ss = data.ReadInt32();
-    if (ss < 0 || ss >= maxUsageNum) {
+    uint32_t maxUsageNum = 30;
+    AudioPlaybackCaptureConfig config;
+    int32_t flag = data.ReadInt32();
+    if (flag == 1) {
+        config.silentCapture = true;
+    }
+    uint32_t ss = data.ReadUint32();
+    if (ss >= maxUsageNum) {
         reply.WriteInt32(ERROR);
         return;
     }
@@ -1037,14 +1064,11 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
             AUDIO_SUPPORTED_STREAM_USAGES.end()) {
             continue;
         }
-        filterInfo.usages.push_back(static_cast<StreamUsage>(tmp_usage));
+        config.filterOptions.usages.push_back(static_cast<StreamUsage>(tmp_usage));
     }
     uint32_t appTokenId = data.ReadUint32();
-    uint32_t appUid = data.ReadInt32();
-    bool privacyFlag = data.ReadBool();
-    AudioPermissionState state = static_cast<AudioPermissionState>(data.ReadInt32());
 
-    int32_t ret = SetPlaybackCapturerFilterInfos(filterInfo, appTokenId, appUid, privacyFlag, state);
+    int32_t ret = SetPlaybackCapturerFilterInfos(config, appTokenId);
     reply.WriteInt32(ret);
 }
 
@@ -1055,330 +1079,12 @@ int AudioPolicyManagerStub::OnRemoteRequest(
         AUDIO_ERR_LOG("OnRemoteRequest: ReadInterfaceToken failed");
         return -1;
     }
-    switch (code) {
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUMELEVEL):
-            GetMaxVolumeLevelInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUMELEVEL):
-            GetMinVolumeLevelInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL):
-            SetSystemVolumeLevelInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE):
-            SetRingerModeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RINGER_MODE):
-            GetRingerModeInternal(reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SCENE):
-            SetAudioSceneInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_SCENE):
-            GetAudioSceneInternal(reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE):
-            SetMicrophoneMuteInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_AUDIO_CONFIG):
-            SetMicrophoneMuteAudioConfigInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_MICROPHONE_MUTE):
-            IsMicrophoneMuteInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL):
-            GetSystemVolumeLevelInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_STREAM_MUTE):
-            SetStreamMuteInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE):
-            GetStreamMuteInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
-            IsStreamActiveInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
-            SetDeviceActiveInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_DEVICE_ACTIVE):
-            IsDeviceActiveInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE):
-            GetActiveOutputDeviceInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_INPUT_DEVICE):
-            GetActiveInputDeviceInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGERMODE_CALLBACK):
-            SetRingerModeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_RINGERMODE_CALLBACK):
-            UnsetRingerModeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MIC_STATE_CHANGE_CALLBACK):
-            SetMicStateChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CHANGE_CALLBACK):
-            SetDeviceChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_DEVICE_CHANGE_CALLBACK):
-            UnsetDeviceChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK):
-            SetInterruptCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
-            UnsetInterruptCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT):
-            ActivateInterruptInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT):
-            DeactivateInterruptInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INTERRUPT_CALLBACK):
-            SetAudioManagerInterruptCbInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_INTERRUPT_CALLBACK):
-            UnsetAudioManagerInterruptCbInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS):
-            RequestAudioFocusInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS):
-            AbandonAudioFocusInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOLUME_KEY_EVENT_CALLBACK):
-            SetVolumeKeyEventCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_VOLUME_KEY_EVENT_CALLBACK):
-            UnsetVolumeKeyEventCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS):
-            GetStreamInFocusInternal(reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_INFO_IN_FOCUS):
-            GetSessionInfoInFocusInternal(reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES):
-            GetDevicesInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER):
-            SetWakeUpAudioCapturerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CLOSE_WAKEUP_AUDIOCAPTURER):
-            CloseWakeUpAudioCapturerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION):
-            VerifyClientMicrophonePermissionInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE):
-            SelectOutputDeviceInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELECTED_DEVICE_INFO):
-            GetSelectedDeviceInfoInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_INPUT_DEVICE):
-            SelectInputDeviceInternal(data, reply);
-            break;
-#ifdef FEATURE_DTMF_TONE
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_TONEINFO):
-            GetToneInfoInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_TONES):
-            GetSupportedTonesInternal(data, reply);
-            break;
-#endif
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::RECONFIGURE_CHANNEL):
-            ReconfigureAudioChannelInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_LATENCY):
-            GetAudioLatencyFromXmlInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINK_LATENCY):
-            GetSinkLatencyFromXmlInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_PLAYBACK_EVENT):
-            RegisterAudioRendererEventListenerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_PLAYBACK_EVENT):
-            UnregisterAudioRendererEventListenerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_RECORDING_EVENT):
-            RegisterAudioCapturerEventListenerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_RECORDING_EVENT):
-            UnregisterAudioCapturerEventListenerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
-            RegisterTrackerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_TRACKER):
-            UpdateTrackerInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RENDERER_CHANGE_INFOS):
-            GetRendererChangeInfosInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_CAPTURER_CHANGE_INFOS):
-            GetCapturerChangeInfosInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_STREAM_STATE):
-            UpdateStreamStateInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME):
-            SetLowPowerVolumeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME):
-            GetLowPowerVolumeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINGLE_STREAM_VOLUME):
-            GetSingleStreamVolumeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_GROUP_INFO):
-            GetVolumeGroupInfoInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_NETWORKID_BY_GROUP_ID):
-            GetNetworkIdByGroupIdInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED):
-             IsAudioRendererLowLatencySupportedInternal(data, reply);
-             break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_USING_PEMISSION_FROM_PRIVACY):
-             getUsingPemissionFromPrivacyInternal(data, reply);
-             break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS):
-            GetPreferOutputDeviceDescriptorsInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
-            SetPreferOutputDeviceChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_ACTIVE_OUTPUT_DEVICE_CHANGE_CALLBACK):
-            UnsetPreferOutputDeviceChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST):
-            GetAudioFocusInfoListInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_FOCUS_INFO_CHANGE_CALLBACK):
-            RegisterFocusInfoChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_FOCUS_INFO_CHANGE_CALLBACK):
-            UnregisterFocusInfoChangeCallbackInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_SOUND_URI):
-            SetSystemSoundUriInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_SOUND_URI):
-            GetSystemSoundUriInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUME_STREAM):
-            GetMinStreamVolumeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_STREAM):
-            GetMaxStreamVolumeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_RENDERER_INSTANCES):
-            GetMaxRendererInstancesInternal(data, reply);
-            break;
-        
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE):
-            QueryEffectSceneModeInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_VOLUME_UNADJUSTABLE):
-            IsVolumeUnadjustableInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_VOLUME_BY_STEP):
-            AdjustVolumeByStepInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADJUST_SYSTEM_VOLUME_BY_STEP):
-            AdjustSystemVolumeByStepInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUME_IN_DB):
-            GetSystemVolumeInDbInternal(data, reply);
-            break;
-
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO):
-            SetPlaybackCapturerFilterInfosInternal(data, reply);
-            break;
-
-        default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    if (code <= static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX)) {
+        (this->*handlers[code])(data, reply);
+        return AUDIO_OK;
     }
-    return AUDIO_OK;
+    AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 } // namespace audio_policy
 } // namespace OHOS

@@ -66,7 +66,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     if (isFind) {
         AUDIO_INFO_LOG("OnProcessRelease find and release process result %{public}d", ret);
     } else {
-        AUDIO_WARNING_LOG("OnProcessRelease can not find target process");
+        AUDIO_INFO_LOG("OnProcessRelease can not find target process, maybe already released.");
     }
 
     if (needRelease) {
@@ -178,20 +178,12 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 
     if (config.audioMode == AUDIO_MODE_RECORD) {
         deviceInfo.deviceId = 1;
-        if (config.isRemote) {
-            deviceInfo.networkId = "remote_mmap_dmic";
-        } else {
-            deviceInfo.networkId = LOCAL_NETWORK_ID;
-        }
+        deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceRole = INPUT_DEVICE;
         deviceInfo.deviceType = DEVICE_TYPE_MIC;
     } else {
         deviceInfo.deviceId = 6; // 6 for test
-        if (config.isRemote) {
-            deviceInfo.networkId = REMOTE_NETWORK_ID;
-        } else {
-            deviceInfo.networkId = LOCAL_NETWORK_ID;
-        }
+        deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceRole = OUTPUT_DEVICE;
         deviceInfo.deviceType = DEVICE_TYPE_SPEAKER;
     }

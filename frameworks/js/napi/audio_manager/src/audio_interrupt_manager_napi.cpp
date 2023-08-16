@@ -64,7 +64,7 @@ void AudioInterruptManagerNapi::Destructor(napi_env env, void *nativeObject, voi
 
 napi_value AudioInterruptManagerNapi::Construct(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("AudioInterruptManagerNapi::Construct");
+    AUDIO_INFO_LOG("Construct");
     napi_status status;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -113,7 +113,7 @@ napi_value AudioInterruptManagerNapi::CreateInterruptManagerWrapper(napi_env env
 
 napi_value AudioInterruptManagerNapi::Init(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("AudioInterruptManagerNapi::Init");
+    AUDIO_INFO_LOG("Init");
     napi_status status;
     napi_value constructor;
     napi_value result = nullptr;

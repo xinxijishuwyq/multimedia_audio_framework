@@ -55,6 +55,7 @@ public:
 
     uint64_t GetTransactionId() override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -75,6 +76,7 @@ private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t INT_32_MAX = 0x7fffffff;
+    static constexpr uint32_t FAST_INPUT_STREAM_ID = 22; // 14 + 1 * 8
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -96,7 +98,7 @@ private:
     int bufferFd_ = INVALID_FD;
     uint32_t eachReadFrameSize_ = 0;
 
-    std::shared_ptr<PowerMgr::RunningLock> mKeepRunningLock;
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 private:
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
     int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size,
@@ -154,7 +156,7 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
     attrs.channelCount = AUDIO_CHANNELCOUNT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
-    attrs.streamId = 1;
+    attrs.streamId = FAST_INPUT_STREAM_ID;
     attrs.type = AUDIO_MMAP_NOIRQ; // enable mmap!
     attrs.period = 0;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
@@ -440,15 +442,15 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 int32_t FastAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
-    if (mKeepRunningLock == nullptr) {
-        mKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
+    if (keepRunningLock_ == nullptr) {
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("FastAudioCapturerSourceInner call KeepRunningLock lock");
-        mKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, start can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
     }
 
     if (!started_) {
@@ -514,15 +516,20 @@ void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallb
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
+void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+}
+
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
 
-    if (mKeepRunningLock != nullptr) {
+    if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("FastAudioCapturerSourceInner call KeepRunningLock UnLock");
-        mKeepRunningLock->UnLock();
+        keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("mKeepRunningLock is null, stop can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock_ is null, stop can not work well!");
     }
 
     if (started_ && audioCapture_ != nullptr) {

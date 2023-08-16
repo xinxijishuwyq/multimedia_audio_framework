@@ -81,15 +81,19 @@ public:
     // IAudioSourceCallback
     void OnWakeupClose() override;
 
+    void OnCapturerState(bool isActive) override;
+
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 
-    int32_t SetWakeupCloseCallback(const sptr<IRemoteObject>& object) override;
+    int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
 
     void RequestThreadPriority(uint32_t tid, std::string bundleName) override;
 
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
+
+    int32_t SetCaptureSilentState(bool state) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -99,6 +103,7 @@ private:
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
+    void RegisterAudioCapturerSourceCallback();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
