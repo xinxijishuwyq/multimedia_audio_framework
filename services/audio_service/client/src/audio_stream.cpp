@@ -425,14 +425,7 @@ size_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         isFirstWrite_ = false;
     }
 
-    audioBlend_.Process(buffer, bufferSize);
-
-    if (pfd_ != nullptr) {
-        size_t writeResult = fwrite((void*)buffer, 1, bufferSize, pfd_);
-        if (writeResult != bufferSize) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
+    ProcessDataByAudioBlend(buffer, bufferSize);
 
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
@@ -864,13 +857,7 @@ void AudioStream::WriteCbTheadLoop()
                 break;
             }
 
-            audioBlend_.Process(stream.buffer, stream.bufferLen);
-            if (pfd_ != nullptr) {
-                size_t writeResult = fwrite((void*)stream.buffer, 1, stream.bufferLen, pfd_);
-                if (writeResult != stream.bufferLen) {
-                    AUDIO_ERR_LOG("Failed to write the file.");
-                }
-            }
+            ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
 
             bytesWritten = WriteStreamInCb(stream, writeError);
             if (writeError != 0) {
@@ -984,6 +971,7 @@ void AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     audioBlend_.SetParams(blendMode, streamParams_.format, streamParams_.channels);
 }
+
 void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
 {
     streamTrackerRegistered_ = trackerRegisteredState;
@@ -1003,5 +991,15 @@ void AudioStream::GetSwitchInfo(SwitchInfo& info)
     GetStreamSwitchInfo(info);
 }
 
+void AudioStream::ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize)
+{
+    audioBlend_.Process(buffer, bufferSize);
+    if (pfd_ != nullptr) {
+        size_t writeResult = fwrite((void*)buffer, 1, bufferSize, pfd_);
+        if (writeResult != bufferSize) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

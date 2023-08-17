@@ -100,6 +100,7 @@ public:
 
 private:
     void OpenDumpFile();
+    void ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize);
     enum {
         BIN_TEST_MODE = 1,   //for bin file test
         JS_TEST_MODE,        //for js app test

@@ -346,7 +346,6 @@ napi_value AudioParametersNapi::CreateChannelBlendModeObject(napi_env env)
     std::string propName;
 
     status = napi_create_object(env, &result);
-
     if (status != napi_ok) {
         HiLog::Error(LABEL, "CreateChannelBlendModeObject failed!");
         napi_get_undefined(env, &result);

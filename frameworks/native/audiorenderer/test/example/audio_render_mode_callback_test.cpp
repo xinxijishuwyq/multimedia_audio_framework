@@ -32,6 +32,7 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
     constexpr int32_t ARGS_COUNT_THREE = 3;
+    constexpr int32_t PARAM2 = 2;
 }
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback,
     public enable_shared_from_this<AudioRenderModeCallbackTest> {
@@ -199,7 +200,7 @@ int main(int argc, char *argv[])
     auto testObj = std::make_shared<AudioRenderModeCallbackTest>();
 
     if (argc == ARGS_COUNT_THREE) {
-        testObj->SetBlendMode(atoi(argv[2]));
+        testObj->SetBlendMode(atoi(argv[PARAM2]));
     }
 
     testObj->wavFile_ = fopen(path, "rb");
