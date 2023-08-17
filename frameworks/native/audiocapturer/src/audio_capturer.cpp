@@ -699,12 +699,12 @@ int32_t AudioCapturerPrivate::SetAudioCapturerDeviceChangeCallback(
     const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "Callback is null");
-    CHECK_AND_RETURN_RET_LOG(audioStateChangeCallback_ != nullptr, ERROR, "audioStateChangeCallback_ is null");
 
     if (RegisterAudioCapturerEventListener() != SUCCESS) {
         return ERROR;
     }
 
+    CHECK_AND_RETURN_RET_LOG(audioStateChangeCallback_ != nullptr, ERROR, "audioStateChangeCallback_ is null");
     audioStateChangeCallback_->SaveDeviceChangeCallback(callback);
     return SUCCESS;
 }
@@ -779,12 +779,12 @@ int32_t AudioCapturerPrivate::SetAudioCapturerInfoChangeCallback(
     const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Callback is null");
-    CHECK_AND_RETURN_RET_LOG(audioStateChangeCallback_ != nullptr, ERROR, "audioStateChangeCallback_ is null");
 
     if (RegisterAudioCapturerEventListener() != SUCCESS) {
         return ERROR;
     }
 
+    CHECK_AND_RETURN_RET_LOG(audioStateChangeCallback_ != nullptr, ERROR, "audioStateChangeCallback_ is null");
     audioStateChangeCallback_->SaveCapturerInfoChangeCallback(callback);
     return SUCCESS;
 }
