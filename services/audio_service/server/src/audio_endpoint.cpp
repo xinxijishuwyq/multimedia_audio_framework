@@ -1008,7 +1008,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 {
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
-    int64_t tempDelay = 12000000; // 12ms
+    int64_t tempDelay = 4000000; // 4ms
     wakeUpTime = nextHdiWriteTime + tempDelay;
 
     int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);
