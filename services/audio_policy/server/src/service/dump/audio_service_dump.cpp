@@ -41,11 +41,28 @@ AudioServiceDump::AudioServiceDump() : mainLoop(nullptr),
                                        isContextConnected_(false)
 {
     AUDIO_DEBUG_LOG("AudioServiceDump ctor");
+    InitDumpFuncMap();
 }
 
 AudioServiceDump::~AudioServiceDump()
 {
     ResetPAAudioDump();
+}
+
+void AudioServiceDump::InitDumpFuncMap()
+{
+    dumpFuncMap[u"-h"] = &AudioServiceDump::HelpInfoDump;
+    dumpFuncMap[u"-p"] = &AudioServiceDump::PlaybackStreamDump;
+    dumpFuncMap[u"-rs"] = &AudioServiceDump::RecordStreamDump;
+    dumpFuncMap[u"-m"] = &AudioServiceDump::HDFModulesDump;
+    dumpFuncMap[u"-d"] = &AudioServiceDump::DevicesInfoDump;
+    dumpFuncMap[u"-c"] = &AudioServiceDump::CallStatusDump;
+    dumpFuncMap[u"-rm"] = &AudioServiceDump::RingerModeDump;
+    dumpFuncMap[u"-v"] = &AudioServiceDump::StreamVolumesDump;
+    dumpFuncMap[u"-a"] = &AudioServiceDump::AudioFocusInfoDump;
+    dumpFuncMap[u"-g"] = &AudioServiceDump::GroupInfoDump;
+    dumpFuncMap[u"-e"] = &AudioServiceDump::EffectManagerInfoDump;
+    dumpFuncMap[u"-vi"] = &AudioServiceDump::StreamVolumeInfosDump;
 }
 
 void AudioServiceDump::ResetPAAudioDump()
@@ -395,24 +412,24 @@ void AudioServiceDump::PlaybackStreamDump(std::string &dumpString)
 {
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
 
-    dumpString += "Audio Data Dump:\n\n";
     dumpString += "Playback Streams\n";
 
-    AppendFormat(dumpString, "%d  Playback stream (s) available:\n\n", audioData_.streamData.sinkInputs.size());
+    AppendFormat(dumpString, "- %d Playback stream (s) available:\n", audioData_.streamData.sinkInputs.size());
 
     for (auto it = audioData_.streamData.sinkInputs.begin(); it != audioData_.streamData.sinkInputs.end(); it++) {
         InputOutputInfo sinkInputInfo = *it;
 
-        AppendFormat(dumpString, "Stream Id: %s\n", (sinkInputInfo.sessionId).c_str());
-        AppendFormat(dumpString, "Application Name: %s\n", ((sinkInputInfo.applicationName).c_str()));
-        AppendFormat(dumpString, "Process Id: %s\n", (sinkInputInfo.processId).c_str());
-        AppendFormat(dumpString, "User Id: %u\n", sinkInputInfo.userId);
+        AppendFormat(dumpString, "  Stream %d\n", it - audioData_.streamData.sinkInputs.begin() + 1);
+        AppendFormat(dumpString, "  - Stream Id: %s\n", (sinkInputInfo.sessionId).c_str());
+        AppendFormat(dumpString, "  - Application Name: %s\n", ((sinkInputInfo.applicationName).c_str()));
+        AppendFormat(dumpString, "  - Process Id: %s\n", (sinkInputInfo.processId).c_str());
+        AppendFormat(dumpString, "  - User Id: %u\n", sinkInputInfo.userId);
 
         char *inputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sinkInputInfo.sampleSpec));
-        AppendFormat(dumpString, "Stream Configuration: %s\n", inputSampleSpec);
-        dumpString += "Status:";
+        AppendFormat(dumpString, "  - Stream Configuration: %s\n", inputSampleSpec);
+        dumpString += "  - Status:";
         dumpString += (sinkInputInfo.corked) ? "STOPPED/PAUSED" : "RUNNING";
-        AppendFormat(dumpString, "\nStream Start Time: %s\n", (sinkInputInfo.sessionStartTime).c_str());
+        AppendFormat(dumpString, "\n  - Stream Start Time: %s\n", (sinkInputInfo.sessionStartTime).c_str());
         dumpString += "\n";
     }
 }
@@ -421,20 +438,21 @@ void AudioServiceDump::RecordStreamDump(std::string &dumpString)
 {
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
     dumpString += "Record Streams \n";
-    AppendFormat(dumpString, "%d  Record stream (s) available:\n\n", audioData_.streamData.sourceOutputs.size());
+    AppendFormat(dumpString, "- %d Record stream (s) available:\n", audioData_.streamData.sourceOutputs.size());
 
     for (auto it = audioData_.streamData.sourceOutputs.begin(); it != audioData_.streamData.sourceOutputs.end(); it++) {
         InputOutputInfo sourceOutputInfo = *it;
-        AppendFormat(dumpString, "Stream Id: %s\n", (sourceOutputInfo.sessionId).c_str());
-        AppendFormat(dumpString, "Application Name: %s\n", (sourceOutputInfo.applicationName).c_str());
-        AppendFormat(dumpString, "Process Id: %s\n", sourceOutputInfo.processId.c_str());
-        AppendFormat(dumpString, "User Id: %d\n", sourceOutputInfo.userId);
+        AppendFormat(dumpString, "  Stream %d\n", it - audioData_.streamData.sourceOutputs.begin() + 1);
+        AppendFormat(dumpString, "  - Stream Id: %s\n", (sourceOutputInfo.sessionId).c_str());
+        AppendFormat(dumpString, "  - Application Name: %s\n", (sourceOutputInfo.applicationName).c_str());
+        AppendFormat(dumpString, "  - Process Id: %s\n", sourceOutputInfo.processId.c_str());
+        AppendFormat(dumpString, "  - User Id: %d\n", sourceOutputInfo.userId);
 
         char *outputSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceOutputInfo.sampleSpec));
-        AppendFormat(dumpString, "Stream Configuration: %s\n", outputSampleSpec);
-        dumpString += "Status:";
+        AppendFormat(dumpString, "  - Stream Configuration: %s\n", outputSampleSpec);
+        dumpString += "  - Status:";
         dumpString += (sourceOutputInfo.corked) ? "STOPPED/PAUSED" : "RUNNING";
-        AppendFormat(dumpString, "\nStream Start Time: %s\n", (sourceOutputInfo.sessionStartTime).c_str());
+        AppendFormat(dumpString, "\n  - Stream Start Time: %s\n", (sourceOutputInfo.sessionStartTime).c_str());
         dumpString += "\n";
     }
 }
@@ -444,24 +462,26 @@ void AudioServiceDump::HDFModulesDump(std::string &dumpString)
     char s[PA_SAMPLE_SPEC_SNPRINT_MAX];
 
     dumpString += "\nHDF Input Modules\n";
-    AppendFormat(dumpString, "%d  HDF Input Modules (s) available:\n\n", audioData_.streamData.sourceDevices.size());
+    AppendFormat(dumpString, "- %d HDF Input Modules (s) available:\n", audioData_.streamData.sourceDevices.size());
 
     for (auto it = audioData_.streamData.sourceDevices.begin(); it != audioData_.streamData.sourceDevices.end(); it++) {
         SinkSourceInfo sourceInfo = *it;
 
-        AppendFormat(dumpString, "Module Name: %s\n", (sourceInfo.name).c_str());
+        AppendFormat(dumpString, "  Module %d\n", it - audioData_.streamData.sourceDevices.begin() + 1);
+        AppendFormat(dumpString, "  - Module Name: %s\n", (sourceInfo.name).c_str());
         char *hdfOutSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sourceInfo.sampleSpec));
-        AppendFormat(dumpString, "Module Configuration: %s\n\n", hdfOutSampleSpec);
+        AppendFormat(dumpString, "  - Module Configuration: %s\n\n", hdfOutSampleSpec);
     }
 
     dumpString += "HDF Output Modules\n";
-    AppendFormat(dumpString, "%d  HDF Output Modules (s) available:\n\n", audioData_.streamData.sinkDevices.size());
+    AppendFormat(dumpString, "- %d HDF Output Modules (s) available:\n", audioData_.streamData.sinkDevices.size());
 
     for (auto it = audioData_.streamData.sinkDevices.begin(); it != audioData_.streamData.sinkDevices.end(); it++) {
         SinkSourceInfo sinkInfo = *it;
-        AppendFormat(dumpString, "Module Name: %s\n", (sinkInfo.name).c_str());
+        AppendFormat(dumpString, "  Module %d\n", it - audioData_.streamData.sinkDevices.begin() + 1);
+        AppendFormat(dumpString, "  - Module Name: %s\n", (sinkInfo.name).c_str());
         char *hdfInSampleSpec = pa_sample_spec_snprint(s, sizeof(s), &(sinkInfo.sampleSpec));
-        AppendFormat(dumpString, "Module Configuration: %s\n\n", hdfInSampleSpec);
+        AppendFormat(dumpString, "  - Module Configuration: %s\n\n", hdfInSampleSpec);
     }
 }
 
@@ -508,12 +528,13 @@ void AudioServiceDump::RingerModeDump(std::string &dumpString)
 
 void AudioServiceDump::StreamVolumesDump (string &dumpString)
 {
-    dumpString += "\nStream: Volumes\n";
+    dumpString += "\nStream Volumes\n";
+    AppendFormat(dumpString, "   [StreamName]: [Volume]\n");
     for (auto it = audioData_.policyData.streamVolumes.cbegin(); it != audioData_.policyData.streamVolumes.cend();
         ++it) {
-        AppendFormat(dumpString, "%s: %d\n", GetStreamName(it->first).c_str(), it->second);
+        AppendFormat(dumpString, " - %s: %d\n", GetStreamName(it->first).c_str(), it->second);
     }
-
+    dumpString += "\n";
     return;
 }
 
@@ -524,17 +545,19 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = audioData_.policyData.audioFocusInfoList;
 
+    AppendFormat(dumpString, "- %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if ((iter->first).sessionID == invalidSessionID) {
             continue;
         }
-        AppendFormat(dumpString, "Session Id: %d\n", (iter->first).sessionID);
-        AppendFormat(dumpString, "AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
-        AppendFormat(dumpString, "Stream Name: %s\n",
+        AppendFormat(dumpString, "  - Session Id: %d\n", (iter->first).sessionID);
+        AppendFormat(dumpString, "  - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
+        AppendFormat(dumpString, "  - Stream Name: %s\n",
             GetStreamName((iter->first).audioFocusType.streamType).c_str());
-        AppendFormat(dumpString, "Source Name: %s\n",
+        AppendFormat(dumpString, "  - Source Name: %s\n",
             GetSourceName((iter->first).audioFocusType.sourceType).c_str());
-        AppendFormat(dumpString, "AudioFocus State: %d\n", iter->second);
+        AppendFormat(dumpString, "  - AudioFocus State: %d\n", iter->second);
+        dumpString += "\n";
     }
 
 	return;
@@ -543,34 +566,37 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
 void AudioServiceDump::GroupInfoDump(std::string& dumpString)
 {
     dumpString += "\nGroupInfo:\n";
-    AppendFormat(dumpString, "%d  Group Infos (s) available :\n\n", audioData_.policyData.groupInfos.size());
+    AppendFormat(dumpString, "- %d Group Infos (s) available :\n", audioData_.policyData.groupInfos.size());
 
     for (auto it = audioData_.policyData.groupInfos.begin(); it != audioData_.policyData.groupInfos.end(); it++) {
         GroupInfo groupInfo = *it;
-        AppendFormat(dumpString, "ConnectType(0 for Local, 1 for Remote): %d\n", groupInfo.type);
-        AppendFormat(dumpString, "Name: %s\n", groupInfo.groupName.c_str());
-        AppendFormat(dumpString, "Id: %d\n", groupInfo.groupId);
+        AppendFormat(dumpString, "  Group Infos %d\n", it - audioData_.policyData.groupInfos.begin() + 1);
+        AppendFormat(dumpString, "  - ConnectType(0 for Local, 1 for Remote): %d\n", groupInfo.type);
+        AppendFormat(dumpString, "  - Name: %s\n", groupInfo.groupName.c_str());
+        AppendFormat(dumpString, "  - Id: %d\n", groupInfo.groupId);
     }
 }
 
 void AudioServiceDump::DevicesInfoDump(string& dumpString)
 {
     dumpString += "\nInput Devices:\n";
-    AppendFormat(dumpString, "%d  Input Devices (s) available :\n\n", audioData_.policyData.inputDevices.size());
+    AppendFormat(dumpString, "- %d Input Devices (s) available :\n", audioData_.policyData.inputDevices.size());
 
     for (auto it = audioData_.policyData.inputDevices.begin(); it != audioData_.policyData.inputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
-        AppendFormat(dumpString, "device type:%s ", GetDeviceTypeName(devicesInfo.deviceType).c_str());
-        AppendFormat(dumpString, "connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
+        AppendFormat(dumpString, "  device %d\n", it - audioData_.policyData.inputDevices.begin() + 1);
+        AppendFormat(dumpString, "  - device type:%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+        AppendFormat(dumpString, "  - connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
     }
 
     dumpString += "\nOutput Devices:\n";
-    AppendFormat(dumpString, "%d  Output Devices (s) available :\n\n", audioData_.policyData.outputDevices.size());
+    AppendFormat(dumpString, "- %d Output Devices (s) available :\n", audioData_.policyData.outputDevices.size());
 
     for (auto it = audioData_.policyData.outputDevices.begin(); it != audioData_.policyData.outputDevices.end(); it++) {
         DevicesInfo devicesInfo = *it;
-        AppendFormat(dumpString, "device type:%s ", GetDeviceTypeName(devicesInfo.deviceType).c_str());
-        AppendFormat(dumpString, "connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
+        AppendFormat(dumpString, "  device %d\n", it - audioData_.policyData.outputDevices.begin() + 1);
+        AppendFormat(dumpString, "  - device type:%s\n", GetDeviceTypeName(devicesInfo.deviceType).c_str());
+        AppendFormat(dumpString, "  - connect type:%s\n", GetConnectTypeName(devicesInfo.conneceType).c_str());
     }
 
     AppendFormat(dumpString, "\nHighest priority output device: %s",
@@ -582,72 +608,94 @@ void AudioServiceDump::DevicesInfoDump(string& dumpString)
 static void EffectManagerInfoDumpPart(string& dumpString, const AudioData &audioData_)
 {
     int32_t count;
-   // xml -- Preprocess
+    // xml -- Preprocess
+    AppendFormat(dumpString, "- %d preProcess (s) available :\n",
+        audioData_.policyData.oriEffectConfig.preProcess.size());
     for (Preprocess x : audioData_.policyData.oriEffectConfig.preProcess) {
-        AppendFormat(dumpString, "preProcess stream = %s \n", x.stream.c_str());
+        AppendFormat(dumpString, "  preProcess stream = %s \n", x.stream.c_str());
         count = 0;
         for (string modeName : x.mode) {
             count++;
-            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
+            AppendFormat(dumpString, "  - modeName%d = %s \n", count, modeName.c_str());
             for (Device deviceInfo : x.device[count - 1]) {
-                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
-                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
+                AppendFormat(dumpString, "    - device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "    - device chain = %s \n", deviceInfo.chain.c_str());
             }
         }
+        dumpString += "\n";
     }
 
     // xml -- Postprocess
+    AppendFormat(dumpString, "- %d postProcess (s) available :\n",
+        audioData_.policyData.oriEffectConfig.preProcess.size());
     for (Postprocess x : audioData_.policyData.oriEffectConfig.postProcess) {
-        AppendFormat(dumpString, "postprocess stream = %s \n", x.stream.c_str());
+        AppendFormat(dumpString, "  postprocess stream = %s \n", x.stream.c_str());
         count = 0;
         for (string modeName : x.mode) {
             count++;
-            AppendFormat(dumpString, "  modeName%d = %s \n", count, modeName.c_str());
+            AppendFormat(dumpString, "  - modeName%d = %s \n", count, modeName.c_str());
             for (Device deviceInfo : x.device[count - 1]) {
-                AppendFormat(dumpString, "      device type = %s \n", deviceInfo.type.c_str());
-                AppendFormat(dumpString, "      device chain = %s \n", deviceInfo.chain.c_str());
+                AppendFormat(dumpString, "    - device type = %s \n", deviceInfo.type.c_str());
+                AppendFormat(dumpString, "    - device chain = %s \n", deviceInfo.chain.c_str());
             }
         }
+        dumpString += "\n";
     }
 }
 
 void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
 {
     int count = 0;
-    dumpString += "\n Effect Manager INFO: \n";
-    AppendFormat(dumpString, "XML version:%f \n", audioData_.policyData.oriEffectConfig.version);
+    dumpString += "\nEffect Manager INFO\n";
+    AppendFormat(dumpString, "  XML version:%f \n", audioData_.policyData.oriEffectConfig.version);
     // xml -- Library
+    AppendFormat(dumpString, "- %d library (s) available :\n", audioData_.policyData.oriEffectConfig.libraries.size());
     for (Library x : audioData_.policyData.oriEffectConfig.libraries) {
         count++;
-        AppendFormat(dumpString, "library%d name = %s \n", count, x.name.c_str());
-        AppendFormat(dumpString, "library%d path = %s \n", count, x.path.c_str());
+        AppendFormat(dumpString, "  library%d\n", count);
+        AppendFormat(dumpString, "  - library name = %s \n", x.name.c_str());
+        AppendFormat(dumpString, "  - library path = %s \n", x.path.c_str());
+        dumpString += "\n";
     }
     // xml -- effect
     count = 0;
+    AppendFormat(dumpString, "- %d effect (s) available :\n", audioData_.policyData.oriEffectConfig.effects.size());
     for (Effect x : audioData_.policyData.oriEffectConfig.effects) {
         count++;
-        AppendFormat(dumpString, "effect%d name = %s \n", count, x.name.c_str());
-        AppendFormat(dumpString, "effect%d libraryName = %s \n", count, x.libraryName.c_str());
+        AppendFormat(dumpString, "  effect%d\n", count);
+        AppendFormat(dumpString, "  - effect name = %s \n", x.name.c_str());
+        AppendFormat(dumpString, "  - effect libraryName = %s \n", x.libraryName.c_str());
+        dumpString += "\n";
     }
 
     // xml -- effectChain
+    count = 0;
+    AppendFormat(dumpString, "- %d effectChain (s) available :\n",
+        audioData_.policyData.oriEffectConfig.effectChains.size());
     for (EffectChain x : audioData_.policyData.oriEffectConfig.effectChains) {
-        AppendFormat(dumpString, "effectChain name = %s \n", x.name.c_str());
-        count = 0;
+        count++;
+        AppendFormat(dumpString, "  effectChain%d\n", count);
+        AppendFormat(dumpString, "  - effectChain name = %s \n", x.name.c_str());
+        int countEffect = 0;
         for (string effectUnit : x.apply) {
-            count++;
-            AppendFormat(dumpString, "  effectUnit%d = %s \n", count, effectUnit.c_str());
+            countEffect++;
+            AppendFormat(dumpString, "    - effectUnit%d = %s \n", countEffect, effectUnit.c_str());
         }
+        dumpString += "\n";
     }
 
     EffectManagerInfoDumpPart(dumpString, audioData_);
 
     // successful lib
     count = 0;
+    AppendFormat(dumpString, "- %d available Effect (s) available :\n",
+        audioData_.policyData.availableEffects.size());
     for (Effect x : audioData_.policyData.availableEffects) {
         count++;
-        AppendFormat(dumpString, "available Effect%d name = %s \n", count, x.name.c_str());
-        AppendFormat(dumpString, "available Effect%d libraryName = %s \n", count, x.libraryName.c_str());
+        AppendFormat(dumpString, "  available Effect%d\n", count);
+        AppendFormat(dumpString, "  - available Effect%d name = %s \n", count, x.name.c_str());
+        AppendFormat(dumpString, "  - available Effect%d libraryName = %s \n", count, x.libraryName.c_str());
+        dumpString += "\n";
     }
 }
 
@@ -666,7 +714,50 @@ void AudioServiceDump::DataDump(string &dumpString)
     StreamVolumeInfosDump(dumpString);
 }
 
-void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
+void AudioServiceDump::ArgDataDump(std::string &dumpString, std::queue<std::u16string>& argQue)
+{
+    dumpString += "Audio Data Dump:\n\n";
+    if (argQue.empty()) {
+        DataDump(dumpString);
+        return;
+    }
+    while (!argQue.empty()) {
+        std::u16string para = argQue.front();
+        if (para == u"-h") {
+            dumpString.clear();
+            (this->*dumpFuncMap[para])(dumpString);
+            return;
+        } else if (dumpFuncMap.count(para) == 0) {
+            dumpString.clear();
+            AppendFormat(dumpString, "Please input correct param:\n");
+            HelpInfoDump(dumpString);
+            return;
+        } else {
+            (this->*dumpFuncMap[para])(dumpString);
+        }
+        argQue.pop();
+    }
+}
+
+void AudioServiceDump::HelpInfoDump(string &dumpString)
+{
+    AppendFormat(dumpString, "usage:\n");
+    AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio\n");
+    AppendFormat(dumpString, "  -p\t\t\t|dump playback streams\n");
+    AppendFormat(dumpString, "  -rs\t\t\t|dump record Streams\n");
+    AppendFormat(dumpString, "  -m\t\t\t|dump hdf input modules\n");
+    AppendFormat(dumpString, "  -d\t\t\t|dump input devices & output devices\n");
+    AppendFormat(dumpString, "  -c\t\t\t|dump audio scene(call status)\n");
+    AppendFormat(dumpString, "  -rm\t\t\t|dump ringer mode\n");
+    AppendFormat(dumpString, "  -v\t\t\t|dump stream volumes\n");
+    AppendFormat(dumpString, "  -a\t\t\t|dump audio in focus info\n");
+    AppendFormat(dumpString, "  -g\t\t\t|dump group info\n");
+    AppendFormat(dumpString, "  -e\t\t\t|dump effect manager info\n");
+    AppendFormat(dumpString, "  -vi\t\t\t|dump volume config of streams\n");
+}
+
+void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString,
+    std::queue<std::u16string>& argQue)
 {
     if (mainLoop == nullptr || context == nullptr) {
         AUDIO_ERR_LOG("Audio Service Not running");
@@ -707,7 +798,7 @@ void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString)
     pa_threaded_mainloop_unlock(mainLoop);
 
     audioData_.policyData = policyData;
-    DataDump(dumpString);
+    ArgDataDump(dumpString, argQue);
 
     return;
 }
@@ -923,13 +1014,16 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
 
 void AudioServiceDump::DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos)
 {
-    AppendFormat(dumpString, "    volume points:\n");
     for (auto iter = deviceVolumeInfos.cbegin(); iter != deviceVolumeInfos.cend(); ++iter) {
-        AppendFormat(dumpString, "      device:%s \n", GetDeviceVolumeTypeName(iter->first).c_str());
+        AppendFormat(dumpString, "    %s : {", GetDeviceVolumeTypeName(iter->first).c_str());
         auto volumePoints = iter->second->volumePoints;
         for (auto volPoint = volumePoints.cbegin(); volPoint != volumePoints.cend(); ++volPoint) {
-            AppendFormat(dumpString, "        [%d, %d]\n", volPoint->index, volPoint->dbValue);
+            AppendFormat(dumpString, "[%d, %d]", volPoint->index, volPoint->dbValue);
+            if (volPoint + 1 != volumePoints.cend()) {
+                dumpString += ", ";
+            }
         }
+        dumpString += "}\n";
     }
     AppendFormat(dumpString, "\n");
 }

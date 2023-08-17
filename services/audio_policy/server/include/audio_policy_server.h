@@ -330,6 +330,7 @@ private:
     int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     void OnAudioFocusInfoChange();
     void UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType);
+    void ProcessInterrupt(const InterruptHint& hint);
 
     // for audio volume and mute status
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
