@@ -114,7 +114,7 @@ private:
     std::mutex lock_;
     bool isValid_ = true;
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
-    DeviceInfo currentDeviceInfo = {};
+    DeviceInfo currentDeviceInfo_ = {};
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
@@ -165,7 +165,7 @@ public:
 private:
     std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist_;
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
-    AudioCapturerPrivate *capturer;
+    AudioCapturerPrivate *capturer_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

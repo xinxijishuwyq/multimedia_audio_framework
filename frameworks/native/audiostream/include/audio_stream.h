@@ -99,13 +99,13 @@ public:
     void SetChannelBlendMode(ChannelBlendMode blendMode) override;
 
 private:
-    void OpenDumpFile();
-    void ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize);
     enum {
         BIN_TEST_MODE = 1,   //for bin file test
         JS_TEST_MODE,        //for js app test
     };
 
+    void OpenDumpFile();
+    void ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize);
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     AudioStreamType eStreamType_;
     AudioMode eMode_;

@@ -731,9 +731,9 @@ bool AudioCapturerPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
         return deviceUpdated;
     }
 
-    if (currentDeviceInfo.deviceType != deviceInfo.deviceType) {
-        currentDeviceInfo = deviceInfo;
-        newDeviceInfo = currentDeviceInfo;
+    if (currentDeviceInfo_.deviceType != deviceInfo.deviceType) {
+        currentDeviceInfo_ = deviceInfo;
+        newDeviceInfo = currentDeviceInfo_;
         deviceUpdated = true;
     }
     return deviceUpdated;
@@ -868,7 +868,7 @@ int32_t AudioCapturerStateChangeCallbackImpl::DeviceChangeCallbackArraySize()
 
 void AudioCapturerStateChangeCallbackImpl::setAudioCapturerObj(AudioCapturerPrivate *capturerObj)
 {
-    capturer = capturerObj;
+    capturer_ = capturerObj;
 }
 
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
@@ -877,7 +877,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
     uint32_t sessionId = static_cast<uint32_t>(-1);
     bool found = false;
     AudioCapturerChangeInfo capturerChangeInfo;
-    int32_t ret = capturer->GetAudioStreamId(sessionId);
+    int32_t ret = capturer_->GetAudioStreamId(sessionId);
     if (ret) {
         AUDIO_ERR_LOG("Get sessionId failed");
         return;
@@ -903,7 +903,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
     const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     DeviceInfo deviceInfo = {};
-    if (!capturer->IsDeviceChanged(deviceInfo)) {
+    if (!capturer_->IsDeviceChanged(deviceInfo)) {
         AUDIO_INFO_LOG("Device not change, no need callback.");
         return;
     }
