@@ -219,6 +219,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_HEADSET = 22,
     /**
+     * Indicates a usb-arm device.
+     */
+    DEVICE_TYPE_USB_ARM_HEADSET = 23,
+    /**
      * Indicates a debug sink device
      */
     DEVICE_TYPE_FILE_SINK = 50,
@@ -1094,19 +1098,24 @@ struct AudioStreamChangeInfo {
 };
 
 enum AudioPin {
-    AUDIO_PIN_NONE = 0,
-    AUDIO_PIN_OUT_SPEAKER = 1,
-    AUDIO_PIN_OUT_HEADSET = 2,
-    AUDIO_PIN_OUT_LINEOUT = 4,
-    AUDIO_PIN_OUT_HDMI = 8,
-    AUDIO_PIN_OUT_USB = 16,
-    AUDIO_PIN_OUT_USB_EXT = 32,
-    AUDIO_PIN_OUT_DAUDIO_DEFAULT = 64,
-    AUDIO_PIN_IN_MIC = 134217729,
-    AUDIO_PIN_IN_HS_MIC = 134217730,
-    AUDIO_PIN_IN_LINEIN = 134217732,
-    AUDIO_PIN_IN_USB_EXT = 134217736,
-    AUDIO_PIN_IN_DAUDIO_DEFAULT = 134217744,
+    AUDIO_PIN_NONE = 0, // Invalid pin
+    AUDIO_PIN_OUT_SPEAKER = 1 << 0, // Speaker output pin
+    AUDIO_PIN_OUT_HEADSET = 1 << 1, // Wired headset pin for output
+    AUDIO_PIN_OUT_LINEOUT = 1 << 2, // Line-out pin
+    AUDIO_PIN_OUT_HDMI = 1 << 3, // HDMI output pin
+    AUDIO_PIN_OUT_USB = 1 << 4, // USB output pin
+    AUDIO_PIN_OUT_USB_EXT = 1 << 5, // Extended USB output pin
+    AUDIO_PIN_OUT_BLUETOOTH_SCO = 1 << 6, // Bluetooth SCO output pin
+    AUDIO_PIN_OUT_DAUDIO_DEFAULT = 1 << 7, // Daudio default output pin
+    AUDIO_PIN_OUT_HEADPHONE = 1 << 8, // Wired headphone output pin
+    AUDIO_PIN_OUT_USB_HEADSET = 1 << 9,  // Arm usb output pin
+    AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
+    AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
+    AUDIO_PIN_IN_LINEIN = 1 << 27 | 1 << 2, // Line-in pin
+    AUDIO_PIN_IN_USB_EXT = 1 << 27 | 1 << 3, // Extended USB input pin
+    AUDIO_PIN_IN_BLUETOOTH_SCO_HEADSET = 1 << 27 | 1 << 4, // Bluetooth SCO headset input pin
+    AUDIO_PIN_IN_DAUDIO_DEFAULT = 1 << 27 | 1 << 5, // Daudio default input pin
+    AUDIO_PIN_IN_USB_HEADSET = 1 << 27 | 1 << 6,  // Arm usb input pin
 };
 
 enum AudioParamKey {
@@ -1117,6 +1126,7 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
+    USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PARAM_KEY_LOWPOWER = 1000,
 };
 

@@ -164,6 +164,8 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
+    int32_t handleSpecialDeviceType(DeviceType &devType, bool &isConnected);
+
     void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
 
     void OnDeviceConfigurationChanged(DeviceType deviceType,
@@ -308,7 +310,9 @@ private:
 
     ~AudioPolicyService();
 
-    std::string GetPortName(InternalDeviceType deviceType);
+    std::string GetSinkPortName(InternalDeviceType deviceType);
+
+    std::string GetSourcePortName(InternalDeviceType deviceType);
 
     int32_t RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
         sptr<AudioDeviceDescriptor> deviceDescriptor);
@@ -330,7 +334,9 @@ private:
 
     AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
 
-    AudioIOHandle GetAudioIOHandle(InternalDeviceType deviceType);
+    AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
+
+    AudioIOHandle GetSourceIOHandle(InternalDeviceType deviceType);
 
     int32_t OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
         sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
@@ -354,7 +360,15 @@ private:
 
     int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
 
+    int32_t HandleActiveDevice(DeviceType deviceType);
+
     int32_t HandleA2dpDevice(DeviceType deviceType);
+
+    int32_t LoadA2dpModule(DeviceType deviceType);
+
+    int32_t LoadUsbModule(DeviceType deviceType);
+
+    int32_t HandleUsbDevice(DeviceType deviceType);
 
     int32_t HandleFileDevice(DeviceType deviceType);
 
@@ -524,6 +538,7 @@ private:
 
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
+    std::mutex deviceClassInfoMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

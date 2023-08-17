@@ -58,7 +58,7 @@ public:
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
 
-    AudioCapturerSourceInner();
+    explicit AudioCapturerSourceInner(const std::string halName = "primary");
     ~AudioCapturerSourceInner();
 
 private:
@@ -86,6 +86,7 @@ private:
     struct IAudioManager *audioManager_;
     struct IAudioAdapter *audioAdapter_;
     struct IAudioCapture *audioCapture_;
+    std::string halName_;
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort;
 
@@ -260,10 +261,10 @@ const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosource.pcm
 bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
-AudioCapturerSourceInner::AudioCapturerSourceInner()
+AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string halName)
     : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
       rightVolume_(MAX_VOLUME_LEVEL), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioCapture_(nullptr)
+      audioCapture_(nullptr), halName_(halName)
 {
     attr_ = {};
 #ifdef CAPTURE_DUMP
@@ -276,8 +277,14 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     AUDIO_ERR_LOG("~AudioCapturerSourceInner");
 }
 
-AudioCapturerSource *AudioCapturerSource::GetInstance(const SourceType sourceType, const char *sourceName)
+AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string halName,
+    const SourceType sourceType, const char *sourceName)
 {
+    if (halName == "usb") {
+        static AudioCapturerSourceInner audioCapturerUsb(halName);
+        return &audioCapturerUsb;
+    }
+
     switch (sourceType) {
         case SourceType::SOURCE_TYPE_MIC:
             return GetMicInstance();
@@ -452,6 +459,9 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     deviceDesc.pins = PIN_IN_MIC;
+    if (halName_ == "usb") {
+        deviceDesc.pins = PIN_IN_USB_HEADSET;
+    }
     deviceDesc.desc = (char *)"";
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
@@ -505,7 +515,11 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
         return ERR_NOT_STARTED;
     }
     if (openMic_) {
-        ret = SetInputRoute(DEVICE_TYPE_MIC);
+        if (halName_ == "usb") {
+            ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+        } else {
+            ret = SetInputRoute(DEVICE_TYPE_MIC);
+        }
         if (ret < 0) {
             AUDIO_ERR_LOG("update route FAILED: %{public}d", ret);
         }
@@ -716,6 +730,10 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
             source.ext.device.type = PIN_IN_HS_MIC;
             source.ext.device.desc = (char *)"pin_in_hs_mic";
             break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            source.ext.device.type = PIN_IN_USB_HEADSET;
+            source.ext.device.desc = (char *)"pin_in_usb_headset";
+            break;
         case DEVICE_TYPE_USB_HEADSET:
             source.ext.device.type = PIN_IN_USB_EXT;
             source.ext.device.desc = (char *)"pin_in_usb_ext";
@@ -797,6 +815,9 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
     }
     if (openMic_) {
         AudioPortPin audioSceneInPort = PIN_IN_MIC;
+        if (halName_ == "usb") {
+            audioSceneInPort = PIN_IN_USB_HEADSET;
+        }
         int32_t ret = SetInputRoute(activeDevice, audioSceneInPort);
         if (ret < 0) {
             AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);

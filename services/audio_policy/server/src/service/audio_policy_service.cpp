@@ -580,7 +580,7 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
 
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
-    std::string sinkName = GetPortName(currentActiveDevice_);
+    std::string sinkName = GetSinkPortName(currentActiveDevice_);
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
         if (audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName) != SUCCESS) {
             AUDIO_ERR_LOG("move [%{public}d] to local failed", sinkInputIds[i].streamId);
@@ -753,7 +753,7 @@ int32_t AudioPolicyService::MoveToLocalInputDevice(std::vector<uint32_t> sourceO
 
     // start move.
     uint32_t sourceId = -1; // invalid source id, use source name instead.
-    std::string sourceName = GetPortName(activeInputDevice_);
+    std::string sourceName = GetSourcePortName(activeInputDevice_);
     for (size_t i = 0; i < sourceOutputIds.size(); i++) {
         if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputIds[i], sourceId, sourceName) != SUCCESS) {
             AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sourceOutputIds[i]);
@@ -818,7 +818,7 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return audioPolicyManager_.IsStreamActive(streamType);
 }
 
-std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
+std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
@@ -833,14 +833,32 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             portName = PRIMARY_SPEAKER;
             break;
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-            portName = PRIMARY_MIC;
-            break;
-        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
-            portName = PRIMARY_WAKEUP;
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            portName = USB_SPEAKER;
             break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
             portName = FILE_SINK;
+            break;
+        default:
+            portName = PORT_NONE;
+            break;
+    }
+
+    return portName;
+}
+
+std::string AudioPolicyService::GetSourcePortName(InternalDeviceType deviceType)
+{
+    std::string portName = PORT_NONE;
+    switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_MIC:
+            portName = PRIMARY_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            portName = USB_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+            portName = PRIMARY_WAKEUP;
             break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
             portName = FILE_SOURCE;
@@ -850,7 +868,6 @@ std::string AudioPolicyService::GetPortName(InternalDeviceType deviceType)
             break;
     }
 
-    AUDIO_INFO_LOG("port name is %{public}s", portName.c_str());
     return portName;
 }
 
@@ -1191,7 +1208,8 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
     switch (deviceType) {
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADSET: {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET: {
             ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::ALL_DEVICES_FLAG);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
             break;
@@ -1251,12 +1269,17 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
     int32_t result = SUCCESS;
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
-        std::string activePort = GetPortName(currentActiveDevice_);
+        std::string activePort = GetSinkPortName(currentActiveDevice_);
         AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
     }
 
-    std::string portName = GetPortName(deviceType);
+    std::string portName;
+    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
+        portName = GetSinkPortName(deviceType);
+    } else {
+        portName = GetSourcePortName(deviceType);
+    }
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "Invalid port name %{public}s", portName.c_str());
 
     if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
@@ -1287,39 +1310,116 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, DeviceType de
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
+{
+    std::list<AudioModuleInfo> moduleInfoList;
+    {
+        std::lock_guard<std::mutex> deviceInfoLock(deviceClassInfoMutex_);
+        auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
+        if (primaryModulesPos == deviceClassInfo_.end()) {
+            AUDIO_ERR_LOG("A2dp module is not exist in the configuration file");
+            return ERR_OPERATION_FAILED;
+        }
+        moduleInfoList = primaryModulesPos->second;
+    }     
+    for (auto &moduleInfo : moduleInfoList) {
+        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+            AUDIO_INFO_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
+            AudioStreamInfo audioStreamInfo = {};
+            GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);
+            uint32_t bufferSize = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format) *
+                audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+            AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
+                audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
+            moduleInfo.channels = to_string(audioStreamInfo.channels);
+            moduleInfo.rate = to_string(audioStreamInfo.samplingRate);
+            moduleInfo.format = ConvertToHDIAudioFormat(audioStreamInfo.format);
+            moduleInfo.bufferSize = to_string(bufferSize);
+
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+                "OpenAudioPort failed %{public}d", ioHandle);
+            IOHandles_[moduleInfo.name] = ioHandle;
+        }
+    }
+
+    std::string activePort = GetSinkPortName(currentActiveDevice_);
+    AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_);
+    audioPolicyManager_.SuspendAudioDevice(activePort, true);
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::LoadUsbModule(DeviceType deviceType)
+{
+    std::list<AudioModuleInfo> moduleInfoList;
+    {
+        std::lock_guard<std::mutex> deviceInfoLock(deviceClassInfoMutex_);
+        auto usbModulesPos = deviceClassInfo_.find(ClassType::TYPE_USB);
+        if (usbModulesPos == deviceClassInfo_.end()) {
+            AUDIO_ERR_LOG("Usb module is not exist in the configuration file");
+            return ERR_OPERATION_FAILED;
+        }
+        moduleInfoList = usbModulesPos->second;
+    } 
+    for (auto &moduleInfo : moduleInfoList) {
+        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+        if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
+            AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
+            moduleInfo.sinkLatency = sinkLatencyInMsec_ != 0 ? to_string(sinkLatencyInMsec_) : "";
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+                "OpenAudioPort failed %{public}d", ioHandle);
+            IOHandles_[moduleInfo.name] = ioHandle;
+        }
+    }
+    std::string activePort = GetSinkPortName(currentActiveDevice_);
+    AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_);
+    audioPolicyManager_.SuspendAudioDevice(activePort, true);
+    
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
+{
+    if (isUpdateRouteSupported_) {
+        UpdateActiveDeviceRoute(deviceType);
+    }
+    SetVolumeForSwitchDevice(deviceType);
+
+    std::string sinkPortName = GetSinkPortName(deviceType);
+    std::string sourcePortName = GetSourcePortName(deviceType);
+    if (sinkPortName == PORT_NONE && sourcePortName == PORT_NONE) {
+        AUDIO_ERR_LOG("HandleActiveDevice failed for sinkPortName and sourcePortName are none");
+        return ERR_OPERATION_FAILED;
+    }
+    if (sinkPortName != PORT_NONE) {
+        AudioIOHandle ioHandle = GetSinkIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sinkPortName, true);
+        audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
+    }
+    if (sourcePortName != PORT_NONE) {
+        AudioIOHandle ioHandle = GetSourceIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sourcePortName, true);
+        audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
+    }
+    UpdateInputDeviceInfo(deviceType);
+
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::HandleA2dpDevice");
-    std::string activePort = GetPortName(currentActiveDevice_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        auto primaryModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
-        if (primaryModulesPos != deviceClassInfo_.end()) {
-            auto moduleInfoList = primaryModulesPos->second;
-            for (auto &moduleInfo : moduleInfoList) {
-                if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
-                    AUDIO_INFO_LOG("Load a2dp module [%{public}s]", moduleInfo.name.c_str());
-                    AudioStreamInfo audioStreamInfo = {};
-                    GetActiveDeviceStreamInfo(deviceType, audioStreamInfo);
-                    uint32_t bufferSize = (audioStreamInfo.samplingRate * GetSampleFormatValue(audioStreamInfo.format) *
-                        audioStreamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
-                    AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
-                        audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
-                    moduleInfo.channels = to_string(audioStreamInfo.channels);
-                    moduleInfo.rate = to_string(audioStreamInfo.samplingRate);
-                    moduleInfo.format = ConvertToHDIAudioFormat(audioStreamInfo.format);
-                    moduleInfo.bufferSize = to_string(bufferSize);
-
-                    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-                        "OpenAudioPort failed %{public}d", ioHandle);
-                    IOHandles_[moduleInfo.name] = ioHandle;
-                }
-
-                AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_);
-                audioPolicyManager_.SuspendAudioDevice(activePort, true);
-            }
+        int32_t ret = LoadA2dpModule(deviceType);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("load A2dp module failed");
+            return ERR_OPERATION_FAILED;
         }
     } else if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        std::string activePort = GetSinkPortName(currentActiveDevice_);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
         int32_t muteDuration =  1000000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, PRIMARY_SPEAKER, deviceType);
@@ -1328,35 +1428,52 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
         usleep(beforSwitchDelay);
     }
 
-    if (isUpdateRouteSupported_) {
-        UpdateActiveDeviceRoute(deviceType);
+    return HandleActiveDevice(deviceType);
+}
+
+int32_t AudioPolicyService::HandleUsbDevice(DeviceType deviceType)
+{
+    Trace trace("AudioPolicyService::HandleUsbDevice");
+
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        int32_t ret = LoadUsbModule(deviceType);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG ("load Usb module failed");
+            return ERR_OPERATION_FAILED;
+        }
+    } else if (currentActiveDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        std::string activePort = GetSinkPortName(currentActiveDevice_);
+        audioPolicyManager_.SuspendAudioDevice(activePort, true);
+        int32_t muteDuration =  1000000; // us
+        std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, activePort, deviceType);
+        switchThread.detach();
+        int32_t beforSwitchDelay = 300000;
+        usleep(beforSwitchDelay);
     }
-    SetVolumeForSwitchDevice(deviceType);
 
-    AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
-    std::string portName = GetPortName(deviceType);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
-
-    int32_t result = audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
-    audioPolicyManager_.SuspendAudioDevice(portName, false);
-
-    UpdateInputDeviceInfo(deviceType);
-
-    return SUCCESS;
+    return HandleActiveDevice(deviceType);
 }
 
 int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
 {
     AUDIO_INFO_LOG("HandleFileDevice");
-    AudioIOHandle ioHandle = GetAudioIOHandle(deviceType);
-    std::string portName = GetPortName(deviceType);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
 
-    int32_t result = audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "SetDeviceActive failed %{public}d", result);
-    audioPolicyManager_.SuspendAudioDevice(portName, false);
-
+    std::string sinkPortName = GetSinkPortName(deviceType);
+    std::string sourcePortName = GetSourcePortName(deviceType);
+    if (sinkPortName == PORT_NONE && sourcePortName == PORT_NONE) {
+        AUDIO_ERR_LOG("HandleFileDevice failed for sinkPortName and sourcePortName are none");
+        return ERR_OPERATION_FAILED;
+    }
+    if (sinkPortName != PORT_NONE) {
+        AudioIOHandle ioHandle = GetSinkIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sinkPortName, true);
+        audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
+    }
+    if (sourcePortName != PORT_NONE) {
+        AudioIOHandle ioHandle = GetSourceIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sourcePortName, true);
+        audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
+    }
     if (isUpdateRouteSupported_) {
         UpdateActiveDeviceRoute(deviceType);
     }
@@ -1379,12 +1496,17 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
         return result;
     }
 
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || currentActiveDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        result = HandleUsbDevice(deviceType);
+        return result;
+    }
+
     if (deviceType == DEVICE_TYPE_FILE_SINK || currentActiveDevice_ == DEVICE_TYPE_FILE_SINK) {
         result = HandleFileDevice(deviceType);
         return result;
     }
 
-    std::string portName = GetPortName(deviceType);
+    std::string portName = GetSinkPortName(deviceType);
     CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
     bool isVolumeSwitched = false;
     if (isUpdateRouteSupported_ && !isSceneActivation) {
@@ -1769,10 +1891,10 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
         isPnpDeviceConnected = isConnected;
         return;
     }
-    AudioStreamInfo streamInfo = {};
     if (g_adProxy == nullptr) {
         GetAudioServerProxy();
     }
+    AudioStreamInfo streamInfo = {};
     OnDeviceStatusUpdated(devType, isConnected, "", "", streamInfo);
 }
 
@@ -1842,7 +1964,16 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
             IOHandles_.erase(BLUETOOTH_SPEAKER);
         }
     }
-
+    if (devType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (IOHandles_.find(USB_SPEAKER) != IOHandles_.end()) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_[USB_SPEAKER]);
+            IOHandles_.erase(USB_SPEAKER);
+        }
+        if (IOHandles_.find(USB_MIC) != IOHandles_.end()) {
+            audioPolicyManager_.CloseAudioPort(IOHandles_[USB_MIC]);
+            IOHandles_.erase(USB_MIC);
+        }
+    }
     return result;
 }
 
@@ -1852,7 +1983,8 @@ DeviceType AudioPolicyService::FindConnectedHeadset()
     for (const auto& devDesc: connectedDevices_) {
         if ((devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET)) {
             retType = devDesc->deviceType_;
             break;
         }
@@ -1860,27 +1992,53 @@ DeviceType AudioPolicyService::FindConnectedHeadset()
     return retType;
 }
 
-void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo)
+int32_t AudioPolicyService::handleSpecialDeviceType(DeviceType &devType, bool &isConnected)
 {
-    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
+    // usb device needs to be distinguished form arm or hifi
+    if (devType == DEVICE_TYPE_USB_HEADSET) {
+        if (isConnected) {
+            if (g_adProxy == nullptr) {
+                return ERROR;
+            }
+            const std::string value = g_adProxy->GetAudioParameter("need_change_usb_device");
+            AUDIO_INFO_LOG("get value %{public}s  from hal when usb device connect", value.c_str());
+            if (value == "false") {
+                devType = DEVICE_TYPE_USB_ARM_HEADSET;
+            }
+        } else {
+            DeviceType connectedHeadsetType = FindConnectedHeadset();
+            if (connectedHeadsetType == DEVICE_TYPE_USB_ARM_HEADSET) {
+                devType = DEVICE_TYPE_USB_ARM_HEADSET;
+            }
+        }
+    }
 
     // Special logic for extern cable, need refactor
     if (devType == DEVICE_TYPE_EXTERN_CABLE) {
         if (!isConnected) {
             AUDIO_INFO_LOG("Extern cable disconnected, do nothing");
-            return;
+            return ERROR;
         }
         DeviceType connectedHeadsetType = FindConnectedHeadset();
         if (connectedHeadsetType == DEVICE_TYPE_NONE) {
             AUDIO_INFO_LOG("Extern cable connect without headset connected before, do nothing");
-            return;
+            return ERROR;
         }
         devType = connectedHeadsetType;
-        isConnected = false;
+        isConnected = false;  
     }
 
+    return SUCCESS;
+}
+
+void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
+    const std::string& deviceName, const AudioStreamInfo& streamInfo)
+{
+    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
+
     int32_t result = ERROR;
+    result = handleSpecialDeviceType(devType, isConnected);
+    CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, deviceDesc);
 
@@ -1969,7 +2127,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
 
                     // First unload the existing bt sink
                     AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
-                    std::string currentActivePort = GetPortName(currentActiveDevice_);
+                    std::string currentActivePort = GetSinkPortName(currentActiveDevice_);
                     AudioIOHandle activateDeviceIOHandle = IOHandles_[BLUETOOTH_SPEAKER];
                     audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
                     audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
@@ -1979,7 +2137,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
                     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
                     CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
                     IOHandles_[moduleInfo.name] = ioHandle;
-                    std::string portName = GetPortName(deviceType);
+                    std::string portName = GetSinkPortName(deviceType);
                     audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, portName, true);
                     audioPolicyManager_.SuspendAudioDevice(portName, false);
 
@@ -2272,11 +2430,12 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
             const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
             CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-            std::string sinkName = GetPortName(deviceType);
+            std::string sinkName = GetSinkPortName(deviceType);
             bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
             CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
             int res = audioPolicyManager_.UpdateSwapDeviceStatus();
@@ -2862,7 +3021,7 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
 }
 
 // private methods
-AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType)
+AudioIOHandle AudioPolicyService::GetSinkIOHandle(InternalDeviceType deviceType)
 {
     AudioIOHandle ioHandle;
     switch (deviceType) {
@@ -2874,14 +3033,31 @@ AudioIOHandle AudioPolicyService::GetAudioIOHandle(InternalDeviceType deviceType
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
             ioHandle = IOHandles_[PRIMARY_SPEAKER];
             break;
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            ioHandle = IOHandles_[USB_SPEAKER];
+            break;
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
             ioHandle = IOHandles_[BLUETOOTH_SPEAKER];
             break;
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-            ioHandle = IOHandles_[PRIMARY_MIC];
-            break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
             ioHandle = IOHandles_[FILE_SINK];
+            break;
+        default:
+            ioHandle = IOHandles_[PRIMARY_SPEAKER];
+            break;
+    }
+    return ioHandle;
+}
+
+AudioIOHandle AudioPolicyService::GetSourceIOHandle(InternalDeviceType deviceType)
+{
+    AudioIOHandle ioHandle;
+    switch (deviceType) {
+        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            ioHandle = IOHandles_[USB_MIC];
+            break;
+        case InternalDeviceType::DEVICE_TYPE_MIC:
+            ioHandle = IOHandles_[PRIMARY_MIC];
             break;
         case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
             ioHandle = IOHandles_[FILE_SOURCE];
@@ -3171,6 +3347,7 @@ bool AudioPolicyService::IsInputDevice(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             return true;
         default:
             return false;
@@ -3187,6 +3364,7 @@ bool AudioPolicyService::IsOutputDevice(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             return true;
         default:
             return false;
@@ -3202,6 +3380,7 @@ DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
@@ -3281,6 +3460,7 @@ void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
         case DEVICE_TYPE_BLUETOOTH_SCO:
             activeInputDevice_ = deviceType;
             break;
@@ -3315,6 +3495,9 @@ DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
             break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_HEADSET:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_HEADSET:
+            return DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
         case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
             return DeviceType::DEVICE_TYPE_MIC;

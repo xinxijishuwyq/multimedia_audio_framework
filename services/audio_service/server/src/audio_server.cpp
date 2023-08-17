@@ -213,6 +213,10 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             HiviewDFX::XCollie::GetInstance().CancelTimer(id);
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
+        if (key == "need_change_usb_device") {
+            parmKey = AudioParamKey::USB_DEVICE;
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "need_change_usb_device");
+        }
     }
 
     if (AudioServer::audioParameters.count(key)) {
@@ -276,7 +280,12 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
         return ERR_INVALID_PARAM;
     }
     if (deviceRole == INPUT_DEVICE) {
-        AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+        AudioCapturerSource *audioCapturerSourceInstance;
+        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        } else {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        }
         if (audioCapturerSourceInstance) {
             transactionId = audioCapturerSourceInstance->GetTransactionId();
         }
@@ -288,6 +297,8 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     IAudioRendererSink *iRendererInstance = nullptr;
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         iRendererInstance = IAudioRendererSink::GetInstance("a2dp", "");
+    } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+        iRendererInstance = IAudioRendererSink::GetInstance("usb", "");
     } else {
         iRendererInstance = IAudioRendererSink::GetInstance("primary", "");
     }
@@ -433,6 +444,52 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     return SUCCESS;
 }
 
+int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
+{
+    AUDIO_INFO_LOG("SetIORoute deviceType: %{public}d, flag: %{public}d", type, flag);
+    AudioCapturerSource *audioCapturerSourceInstance;
+    IAudioRendererSink *audioRendererSinkInstance;
+    if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+    } else {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    }
+    if (audioCapturerSourceInstance == nullptr || audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("SetIORoute failed for null instance!");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
+        if (audioScene_ != AUDIO_SCENE_DEFAULT) {
+            audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+        } else {
+            audioCapturerSourceInstance->SetInputRoute(type);
+        }
+    } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
+        if (audioScene_ != AUDIO_SCENE_DEFAULT) {
+            audioRendererSinkInstance->SetAudioScene(audioScene_, type);
+        } else {
+            audioRendererSinkInstance->SetOutputRoute(type);
+        }
+        PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+    } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
+        if (audioScene_ != AUDIO_SCENE_DEFAULT) {
+            SetAudioScene(audioScene_, type);
+        } else {
+            audioCapturerSourceInstance->SetInputRoute(type);
+            audioRendererSinkInstance->SetOutputRoute(type);
+        }
+        PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+    } else {
+        AUDIO_ERR_LOG("SetIORoute invalid device flag");
+        return ERR_INVALID_PARAM;
+    }
+
+     return SUCCESS;
+}
+
 int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -440,49 +497,8 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
-    AUDIO_INFO_LOG("UpdateActiveDeviceRoute deviceType: %{public}d, flag: %{public}d", type, flag);
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-
-    if (audioCapturerSourceInstance == nullptr || audioRendererSinkInstance == nullptr) {
-        AUDIO_ERR_LOG("UpdateActiveDeviceRoute null instance!");
-        return ERR_INVALID_PARAM;
-    }
-
-    switch (flag) {
-        case DeviceFlag::INPUT_DEVICES_FLAG: {
-            if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-                audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
-            } else {
-                audioCapturerSourceInstance->SetInputRoute(type);
-            }
-            break;
-        }
-        case DeviceFlag::OUTPUT_DEVICES_FLAG: {
-            if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-                audioRendererSinkInstance->SetAudioScene(audioScene_, type);
-            } else {
-                audioRendererSinkInstance->SetOutputRoute(type);
-            }
-            break;
-        }
-        case DeviceFlag::ALL_DEVICES_FLAG: {
-            if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-                SetAudioScene(audioScene_, type);
-            } else {
-                audioCapturerSourceInstance->SetInputRoute(type);
-                audioRendererSinkInstance->SetOutputRoute(type);
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    if (flag == ALL_DEVICES_FLAG || flag == OUTPUT_DEVICES_FLAG) {
-        PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-    }
-
-    return SUCCESS;
+    
+    return SetIORoute(type, flag);
 }
 
 void AudioServer::SetAudioMonoState(bool audioMono)

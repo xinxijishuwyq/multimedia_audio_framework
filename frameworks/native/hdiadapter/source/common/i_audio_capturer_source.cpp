@@ -34,12 +34,16 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     AUDIO_DEBUG_LOG("%{public}s Source:GetInstance deviceNetworkId:[%{public}s] sourceType:[%{public}d]",
         deviceClass, deviceNetworkId, sourceType);
     const char *deviceClassPrimary = "primary";
+    const char *deviceClassUsb = "usb";
     const char *deviceClassA2DP = "a2dp";
     const char *deviceClassFile = "file_io";
     const char *deviceClassRemote = "remote";
 
     if (!strcmp(deviceClass, deviceClassPrimary)) {
-        return AudioCapturerSource::GetInstance(sourceType, sourceName);
+        return AudioCapturerSource::GetInstance("primary", sourceType, sourceName);
+    }
+    if (!strcmp(deviceClass, deviceClassUsb)) {
+        return AudioCapturerSource::GetInstance("usb", sourceType, sourceName);
     }
     if (!strcmp(deviceClass, deviceClassA2DP)) {
         static AudioCapturerFileSource audioCapturer;
