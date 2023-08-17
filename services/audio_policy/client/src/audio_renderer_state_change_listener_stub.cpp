@@ -50,6 +50,7 @@ void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessagePa
     rendererChangeInfo->outputDeviceInfo.deviceRole = static_cast<DeviceRole>(data.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.deviceId = data.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.channelMasks = data.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.channelIndexMasks = data.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate
         = static_cast<AudioSamplingRate>(data.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding

@@ -274,5 +274,22 @@ bool AudioCommonNapi::IsLegalInputArgumentDeviceType(int32_t deviceType)
     }
     return result;
 }
+
+bool AudioCommonNapi::IsLegalInputArgumentChannelBlendMode(int32_t blendMode)
+{
+    bool result = false;
+    switch (blendMode) {
+        case ChannelBlendMode::MODE_DEFAULT:
+        case ChannelBlendMode::MODE_BLEND_LR:
+        case ChannelBlendMode::MODE_ALL_LEFT:
+        case ChannelBlendMode::MODE_ALL_RIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

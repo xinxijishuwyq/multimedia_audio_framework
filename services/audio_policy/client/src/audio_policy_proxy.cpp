@@ -1784,6 +1784,7 @@ void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
     rendererChangeInfo->outputDeviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.deviceId = reply.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.channelMasks = reply.ReadInt32();
+    rendererChangeInfo->outputDeviceInfo.channelIndexMasks = reply.ReadInt32();
     rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate
         = static_cast<AudioSamplingRate>(reply.ReadInt32());
     rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding
@@ -1807,11 +1808,13 @@ void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
     capturerChangeInfo->clientUID = reply.ReadInt32();
     capturerChangeInfo->capturerInfo.sourceType = static_cast<SourceType>(reply.ReadInt32());
     capturerChangeInfo->capturerInfo.capturerFlags = reply.ReadInt32();
+    capturerChangeInfo->muted = reply.ReadBool();
 
     capturerChangeInfo->inputDeviceInfo.deviceType = static_cast<DeviceType>(reply.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.deviceId = reply.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.channelMasks = reply.ReadInt32();
+    capturerChangeInfo->inputDeviceInfo.channelIndexMasks = reply.ReadInt32();
     capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate
         = static_cast<AudioSamplingRate>(reply.ReadInt32());
     capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding

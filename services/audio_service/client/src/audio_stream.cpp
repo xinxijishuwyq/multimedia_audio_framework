@@ -20,7 +20,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-
+#include "parameters.h"
 #include "audio_stream.h"
 
 using namespace std;
@@ -76,6 +76,8 @@ AudioStream::~AudioStream()
         state_ = RELEASED;
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo, capturerInfo);
     }
+
+    pfd_ = nullptr;
 }
 
 void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -295,6 +297,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     }
     state_ = PREPARED;
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
+    streamParams_ = info;
     RegisterTracker(proxyObj);
     return SUCCESS;
 }
@@ -336,7 +339,28 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
+
+    OpenDumpFile();
     return true;
+}
+
+void AudioStream::OpenDumpFile()
+{
+    int32_t dumpMode = system::GetIntParameter("persist.multimedia.audiostream.blenddatadump", 0);
+    switch (dumpMode) {
+        case BIN_TEST_MODE:
+            pfd_ = fopen("/data/local/tmp/audiostream_dump.pcm", "wb+");
+            break;
+        case JS_TEST_MODE:
+            pfd_ = fopen("/data/storage/el2/base/haps/entry/files/audiostream_dump.pcm", "wb+");
+            break;
+        default:
+            break;
+    }
+
+    if (dumpMode != 0 && pfd_ == nullptr) {
+        AUDIO_ERR_LOG("Error opening pcm test file!");
+    }
 }
 
 int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
@@ -368,7 +392,7 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
     return readLen;
 }
 
-size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
+size_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioStream::Write");
     if (renderMode_ == RENDER_MODE_CALLBACK) {
@@ -376,8 +400,8 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
         return ERR_INCORRECT_MODE;
     }
 
-    if ((buffer == nullptr) || (buffer_size <= 0)) {
-        AUDIO_ERR_LOG("Invalid buffer size:%{public}zu", buffer_size);
+    if ((buffer == nullptr) || (bufferSize <= 0)) {
+        AUDIO_ERR_LOG("Invalid buffer size:%{public}zu", bufferSize);
         return ERR_INVALID_PARAM;
     }
 
@@ -391,7 +415,7 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
     int32_t writeError;
     StreamBuffer stream;
     stream.buffer = buffer;
-    stream.bufferLen = buffer_size;
+    stream.bufferLen = bufferSize;
 
     if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
@@ -400,6 +424,8 @@ size_t AudioStream::Write(uint8_t *buffer, size_t buffer_size)
         }
         isFirstWrite_ = false;
     }
+
+    ProcessDataByAudioBlend(buffer, bufferSize);
 
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
@@ -491,6 +517,12 @@ bool AudioStream::StopAudioStream()
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
+
+    if (pfd_ != nullptr) {
+        fclose(pfd_);
+        pfd_ = nullptr;
+    }
+
     return true;
 }
 
@@ -824,6 +856,9 @@ void AudioStream::WriteCbTheadLoop()
                 AUDIO_ERR_LOG("WriteCb stream.buffer is nullptr return");
                 break;
             }
+
+            ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
+
             bytesWritten = WriteStreamInCb(stream, writeError);
             if (writeError != 0) {
                 AUDIO_ERR_LOG("WriteStreamInCb fail, writeError:%{public}d", writeError);
@@ -932,6 +967,11 @@ int64_t AudioStream::GetFramesRead()
     return GetStreamFramesRead();
 }
 
+void AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
+{
+    audioBlend_.SetParams(blendMode, streamParams_.format, streamParams_.channels);
+}
+
 void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
 {
     streamTrackerRegistered_ = trackerRegisteredState;
@@ -951,5 +991,15 @@ void AudioStream::GetSwitchInfo(SwitchInfo& info)
     GetStreamSwitchInfo(info);
 }
 
+void AudioStream::ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize)
+{
+    audioBlend_.Process(buffer, bufferSize);
+    if (pfd_ != nullptr) {
+        size_t writeResult = fwrite((void*)buffer, 1, bufferSize, pfd_);
+        if (writeResult != bufferSize) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -819,6 +819,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceRole);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceId);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelMasks);
+        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelIndexMasks);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding);
         reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format);
@@ -859,11 +860,13 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
         reply.WriteInt32(capturerChangeInfo->clientUID);
         reply.WriteInt32(capturerChangeInfo->capturerInfo.sourceType);
         reply.WriteInt32(capturerChangeInfo->capturerInfo.capturerFlags);
+        reply.WriteBool(capturerChangeInfo->muted);
 
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceType);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceRole);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceId);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelMasks);
+        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelIndexMasks);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding);
         reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format);

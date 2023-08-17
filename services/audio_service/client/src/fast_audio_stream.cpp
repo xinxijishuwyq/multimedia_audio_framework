@@ -645,5 +645,10 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
     CHECK_AND_RETURN_LOG(captureCallback_!= nullptr, "OnHandleData failed: captureCallback_ is null.");
     captureCallback_->OnReadData(length);
 }
+
+void FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
+{
+    AUDIO_ERR_LOG("SetChannelBlendMode is not supported");
+}
 } // namespace AudioStandard
 } // namespace OHOS

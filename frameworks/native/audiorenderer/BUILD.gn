@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../../audio_ohcore.gni")
 import("../../../config.gni")
 
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 pulseaudio_dir = "//third_party/pulseaudio"
 
 config("audio_renderer_config") {
@@ -204,6 +205,38 @@ ohos_executable("interrupt_multi_renderer_test") {
   deps = [ ":audio_renderer" ]
 
   external_deps = [ "hilog:libhilog" ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_blendmode_test") {
+  install_enable = false
+
+  sources = [ "test/example/audio_blendmode_test.cpp" ]
+
+  configs = [ ":audio_renderer_config" ]
+
+  include_dirs = [
+    "$pulseaudio_build_path/include",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_dir/src",
+    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "../../../../utils/system/safwk/native/include",
+    "../../../../commonlibrary/c_utils/base/include",
+    "//third_party/bounds_checking_function/include",
+  ]
+
+  deps = [
+    ":audio_renderer",
+    "../../../services/audio_service:audio_client",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

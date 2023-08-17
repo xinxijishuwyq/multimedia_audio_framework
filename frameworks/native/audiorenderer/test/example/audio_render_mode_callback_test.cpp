@@ -31,6 +31,8 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
+    constexpr int32_t ARGS_COUNT_THREE = 3;
+    constexpr int32_t PARAM2 = 2;
 }
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback,
     public enable_shared_from_this<AudioRenderModeCallbackTest> {
@@ -94,6 +96,11 @@ public:
             return false;
         }
 
+        if (blendMode_ != 0) {
+            AUDIO_INFO_LOG("RenderCallbackTest: set blendmode to %{public}d", blendMode_);
+            audioRenderer_->SetChannelBlendMode((ChannelBlendMode)blendMode_);
+        }
+
         audioRenderer_->GetBufferSize(reqBufLen_);
 
         return true;
@@ -139,6 +146,11 @@ public:
         }
     }
 
+    void SetBlendMode(int32_t blendMode)
+    {
+        blendMode_ = blendMode;
+    }
+
     FILE *wavFile_ = nullptr;
 private:
     void EnqueueBuffer()
@@ -173,6 +185,7 @@ private:
     bool isEnqueue_ = true;
     BufferDesc bufDesc_ {};
     size_t reqBufLen_;
+    int32_t blendMode_ = 0;
 };
 
 int main(int argc, char *argv[])
@@ -185,6 +198,10 @@ int main(int argc, char *argv[])
     }
     AUDIO_INFO_LOG("RenderCallbackTest: path = %{public}s", path);
     auto testObj = std::make_shared<AudioRenderModeCallbackTest>();
+
+    if (argc == ARGS_COUNT_THREE) {
+        testObj->SetBlendMode(atoi(argv[PARAM2]));
+    }
 
     testObj->wavFile_ = fopen(path, "rb");
     if (testObj->wavFile_ == nullptr) {

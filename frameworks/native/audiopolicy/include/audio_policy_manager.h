@@ -239,6 +239,8 @@ public:
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
 
+    static void RecoverAudioCapturerEventListener();
+
 private:
     AudioPolicyManager()
     {
@@ -259,6 +261,7 @@ private:
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
     sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
+    static std::unordered_map<int32_t, AudioCapturerStateChangeListenerStub*> capturerStateChangeCBMap_;
     bool rendererStateChangeRegistered = false;
 };
 } // namespce AudioStandard

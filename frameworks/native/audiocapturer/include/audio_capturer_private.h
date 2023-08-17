@@ -24,6 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
+class AudioCapturerStateChangeCallbackImpl;
 
 class AudioCapturerPrivate : public AudioCapturer {
 public:
@@ -60,7 +61,19 @@ public:
     void SetApplicationCachePath(const std::string cachePath) override;
     void SetValid(bool valid) override;
     int64_t GetFramesRead() const override;
-
+    int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const override;
+    int32_t GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const override;
+    int32_t SetAudioCapturerDeviceChangeCallback(
+        const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) override;
+    int32_t RemoveAudioCapturerDeviceChangeCallback(
+        const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) override;
+    int32_t SetAudioCapturerInfoChangeCallback(
+        const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback) override;
+    int32_t RemoveAudioCapturerInfoChangeCallback(
+        const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback) override;
+    int32_t RegisterAudioCapturerEventListener() override;
+    int32_t UnregisterAudioCapturerEventListener() override;
+    bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
     AudioStreamType audioStreamType_;
@@ -100,6 +113,8 @@ private:
     };
     std::mutex lock_;
     bool isValid_ = true;
+    std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
+    DeviceInfo currentDeviceInfo_ = {};
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
@@ -127,6 +142,30 @@ public:
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
 private:
     std::weak_ptr<AudioCapturerCallback> callback_;
+};
+
+class AudioCapturerStateChangeCallbackImpl : public AudioCapturerStateChangeCallback {
+public:
+    AudioCapturerStateChangeCallbackImpl();
+    virtual ~AudioCapturerStateChangeCallbackImpl();
+
+    void OnCapturerStateChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+    void SaveDeviceChangeCallback(const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback);
+    void RemoveDeviceChangeCallback(const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback);
+    int32_t DeviceChangeCallbackArraySize();
+    void SaveCapturerInfoChangeCallback(const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback);
+    void RemoveCapturerInfoChangeCallback(const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback);
+    int32_t GetCapturerInfoChangeCallbackArraySize();
+    void setAudioCapturerObj(AudioCapturerPrivate *capturerObj);
+    void NotifyAudioCapturerDeviceChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    void NotifyAudioCapturerInfoChange(
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+private:
+    std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist_;
+    std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
+    AudioCapturerPrivate *capturer_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

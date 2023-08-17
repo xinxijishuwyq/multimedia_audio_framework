@@ -195,6 +195,8 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
+
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
     capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
@@ -332,6 +334,8 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             CapturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
             CapturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
             CapturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+            CapturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
+
             CapturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
             CapturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
             CapturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
@@ -578,6 +582,25 @@ float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
         ret, "GetSingleStreamVolume callback failed");
     callback->GetSingleStreamVolumeImpl(volume);
     return volume;
+}
+
+int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool capturerInfoUpdated = false;
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        if ((*it)->clientUID == uid || uid == 0) {
+            (*it)->muted = muteStatus;
+            capturerInfoUpdated = true;
+        }
+    }
+
+    if (capturerInfoUpdated) {
+        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
+            audioCapturerChangeInfos_);
+    }
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

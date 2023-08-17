@@ -141,6 +141,18 @@ static void NativeDeviceDescToJsObj(const napi_env& env, napi_value& jsObj,
         napi_set_element(env, channelMasks, 0, value);
         napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
 
+        napi_value channelIndexMasks;
+        napi_create_array_with_length(env, 1, &channelIndexMasks);
+        napi_create_int32(env, desc[i]->channelIndexMasks_, &value);
+        napi_set_element(env, channelIndexMasks, 0, value);
+        napi_set_named_property(env, valueParam, "channelIndexMasks", channelIndexMasks);
+
+        napi_value encodingTypes;
+        napi_create_array_with_length(env, 1, &encodingTypes);
+        napi_create_int32(env, desc[i]->audioStreamInfo_.encoding, &value);
+        napi_set_element(env, encodingTypes, 0, value);
+        napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
+
         napi_set_element(env, jsObj, i, valueParam);
     }
 }

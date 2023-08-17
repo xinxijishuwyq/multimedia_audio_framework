@@ -339,6 +339,39 @@ napi_value AudioParametersNapi::CreateVolumeAdjustTypeObject(napi_env env)
     return result;
 }
 
+napi_value AudioParametersNapi::CreateChannelBlendModeObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+
+    status = napi_create_object(env, &result);
+    if (status != napi_ok) {
+        HiLog::Error(LABEL, "CreateChannelBlendModeObject failed!");
+        napi_get_undefined(env, &result);
+        return result;
+    }
+
+    for (auto &iter: channelBlendModeMap) {
+        propName = iter.first;
+        status = AddNamedProperty(env, result, propName, iter.second);
+        if (status != napi_ok) {
+            HiLog::Error(LABEL, "Failed to add named prop! in CreateChannelBlendModeObject");
+            break;
+        }
+        propName.clear();
+    }
+
+    if (status == napi_ok) {
+        status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &sourceType_);
+        if (status == napi_ok) {
+            return result;
+        }
+    }
+
+    return result;
+}
+
 napi_value AudioParametersNapi::Init(napi_env env, napi_value exports)
 {
     HiLog::Info(LABEL, "AudioParametersNapi::Init()");
@@ -367,7 +400,8 @@ napi_value AudioParametersNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateDeviceRoleObject(env)),
         DECLARE_NAPI_PROPERTY("DeviceType", CreateDeviceTypeObject(env)),
         DECLARE_NAPI_PROPERTY("SourceType", CreateSourceTypeObject(env)),
-        DECLARE_NAPI_PROPERTY("VolumeAdjustType", CreateVolumeAdjustTypeObject(env))
+        DECLARE_NAPI_PROPERTY("VolumeAdjustType", CreateVolumeAdjustTypeObject(env)),
+        DECLARE_NAPI_PROPERTY("ChannelBlendMode", CreateChannelBlendModeObject(env))
     };
 
     status = napi_define_class(env, AUDIO_PARAMETERS_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,

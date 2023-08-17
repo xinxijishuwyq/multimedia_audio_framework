@@ -28,7 +28,10 @@ using namespace std;
 
 static sptr<IAudioPolicy> g_apProxy = nullptr;
 mutex g_apProxyMutex;
+constexpr int64_t SLEEP_TIME = 1;
+constexpr int32_t RETRY_TIMES = 3;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
+std::unordered_map<int32_t, AudioCapturerStateChangeListenerStub*> AudioPolicyManager::capturerStateChangeCBMap_;
 
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
@@ -72,9 +75,38 @@ inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
     return gsp;
 }
 
+void AudioPolicyManager::RecoverAudioCapturerEventListener()
+{
+    if (capturerStateChangeCBMap_.size() == 0) {
+        return;
+    }
+
+    int32_t retry = RETRY_TIMES;
+    sptr<IAudioPolicy> gsp = nullptr;
+    while (retry--) {
+        // Sleep and wait for 1 second;
+        sleep(SLEEP_TIME);
+        gsp = GetAudioPolicyManagerProxy();
+        if (gsp != nullptr) {
+            AUDIO_INFO_LOG("Reconnect audio policy service success!");
+            break;
+        }
+    }
+
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("Reconnect audio policy service fail!");
+        return;
+    }
+
+    for (auto it = capturerStateChangeCBMap_.begin(); it != capturerStateChangeCBMap_.end(); ++it) {
+        sptr<IRemoteObject> object = it->second->AsObject();
+        gsp->RegisterAudioCapturerEventListener(it->first, object);
+    }
+}
+
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
-    lock_guard<mutex> lock(g_apProxyMutex);
+    g_apProxyMutex.lock();
     AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> cb;
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
@@ -85,6 +117,8 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
         }
     }
     g_apProxy = nullptr;
+    g_apProxyMutex.unlock();
+    RecoverAudioCapturerEventListener();
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -924,6 +958,8 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         AUDIO_ERR_LOG("RegisterAudioCapturerEventListener: CapturerStateChangeListener IPC object creation failed");
         return ERROR;
     }
+
+    capturerStateChangeCBMap_[clientPid] = capturerStateChangelistenerStub_;
     lock.unlock();
 
     return gsp->RegisterAudioCapturerEventListener(clientPid, object);

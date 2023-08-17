@@ -156,8 +156,27 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
     napi_set_element(env, channelMasks, 0, value);
     napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
 
+    napi_value channelIndexMasks;
+    napi_create_array_with_length(env, 1, &channelIndexMasks);
+    napi_create_int32(env, deviceInfo.channelIndexMasks, &value);
+    napi_set_element(env, channelIndexMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelIndexMasks", channelIndexMasks);
+
+    napi_value encodingTypes;
+    napi_create_array_with_length(env, 1, &encodingTypes);
+    napi_create_int32(env, deviceInfo.audioStreamInfo.encoding, &value);
+    napi_set_element(env, encodingTypes, 0, value);
+    napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
+
     napi_set_element(env, jsDeviceDescriptorsObj, 0, valueParam);
     napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", jsDeviceDescriptorsObj);
+}
+
+static void SetValueBoolean(const napi_env& env, const std::string& fieldStr, const bool boolValue, napi_value& result)
+{
+    napi_value value = nullptr;
+    napi_get_boolean(env, boolValue, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
 void AudioStreamMgrNapi::GetCurrentRendererChangeInfosCallbackComplete(napi_env env, napi_status status, void *data)
@@ -231,6 +250,7 @@ void AudioStreamMgrNapi::GetCurrentCapturerChangeInfosCallbackComplete(napi_env 
         SetValueInt32(env, "streamId", changeInfo->sessionId, jsChangeInfoObj);
         SetValueInt32(env, "capturerState", static_cast<int32_t>(changeInfo->capturerState), jsChangeInfoObj);
         SetValueInt32(env, "clientUid", changeInfo->clientUID, jsChangeInfoObj);
+        SetValueBoolean(env, "muted", changeInfo->muted, jsChangeInfoObj);
 
         napi_create_object(env, &jsCapInfoObj);
         SetValueInt32(env, "source", static_cast<int32_t>(changeInfo->capturerInfo.sourceType), jsCapInfoObj);

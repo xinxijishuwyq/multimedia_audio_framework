@@ -30,6 +30,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     deviceId_ = 0;
     audioStreamInfo_ = {};
     channelMasks_ = 0;
+    channelIndexMasks_ = 0;
     deviceName_ = "";
     macAddress_ = "";
     displayName_ = "";
@@ -40,6 +41,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) :
     deviceId_ = 0;
     audioStreamInfo_ = {};
     channelMasks_ = 0;
+    channelIndexMasks_ = 0;
     deviceName_ = "";
     macAddress_ = "";
 
@@ -65,6 +67,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     audioStreamInfo_.format = deviceDescriptor.audioStreamInfo_.format;
     audioStreamInfo_.samplingRate = deviceDescriptor.audioStreamInfo_.samplingRate;
     channelMasks_ = deviceDescriptor.channelMasks_;
+    channelIndexMasks_ = deviceDescriptor.channelIndexMasks_;
     volumeGroupId_ = deviceDescriptor.volumeGroupId_;
     interruptGroupId_ = deviceDescriptor.interruptGroupId_;
     networkId_ = deviceDescriptor.networkId_;
@@ -87,6 +90,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &
     audioStreamInfo_.format = deviceDescriptor->audioStreamInfo_.format;
     audioStreamInfo_.samplingRate = deviceDescriptor->audioStreamInfo_.samplingRate;
     channelMasks_ = deviceDescriptor->channelMasks_;
+    channelIndexMasks_ = deviceDescriptor->channelIndexMasks_;
     volumeGroupId_ = deviceDescriptor->volumeGroupId_;
     interruptGroupId_ = deviceDescriptor->interruptGroupId_;
     networkId_ = deviceDescriptor->networkId_;
@@ -107,6 +111,7 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
     parcel.WriteInt32(audioStreamInfo_.format);
     parcel.WriteInt32(audioStreamInfo_.samplingRate);
     parcel.WriteInt32(channelMasks_);
+    parcel.WriteInt32(channelIndexMasks_);
 
     parcel.WriteString(deviceName_);
     parcel.WriteString(macAddress_);
@@ -134,6 +139,7 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
     audioDeviceDescriptor->audioStreamInfo_.format = static_cast<AudioSampleFormat>(in.ReadInt32());
     audioDeviceDescriptor->audioStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(in.ReadInt32());
     audioDeviceDescriptor->channelMasks_ = in.ReadInt32();
+    audioDeviceDescriptor->channelIndexMasks_ = in.ReadInt32();
 
     audioDeviceDescriptor->deviceName_ = in.ReadString();
     audioDeviceDescriptor->macAddress_ = in.ReadString();
@@ -152,13 +158,15 @@ void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string ma
     macAddress_ = macAddress;
 }
 
-void AudioDeviceDescriptor::SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask)
+void AudioDeviceDescriptor::SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask,
+    int32_t channelIndexMasks)
 {
     audioStreamInfo_.channels = audioStreamInfo.channels;
     audioStreamInfo_.encoding = audioStreamInfo.encoding;
     audioStreamInfo_.format = audioStreamInfo.format;
     audioStreamInfo_.samplingRate = audioStreamInfo.samplingRate;
     channelMasks_ = channelMask;
+    channelIndexMasks_ = channelIndexMasks;
 }
 
 AudioRendererFilter::AudioRendererFilter()

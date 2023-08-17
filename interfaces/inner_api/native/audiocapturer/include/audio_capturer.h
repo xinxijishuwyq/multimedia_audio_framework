@@ -104,6 +104,32 @@ public:
     virtual void OnReadData(size_t length) = 0;
 };
 
+class AudioCapturerDeviceChangeCallback {
+public:
+    virtual ~AudioCapturerDeviceChangeCallback() = default;
+
+    /**
+     * Called when capturer device is updated.
+     *
+     * @param state Indicates updated device of the capturer.
+     * since 11
+     */
+    virtual void OnStateChange(const DeviceInfo &deviceInfo) = 0;
+};
+
+class AudioCapturerInfoChangeCallback {
+public:
+    virtual ~AudioCapturerInfoChangeCallback() = default;
+
+    /**
+     * Called when capturer info is updated.
+     *
+     * @param state Indicates info of the capturer.
+     * since 11
+     */
+    virtual void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -518,6 +544,80 @@ public:
      * @since 10
      */
     virtual int64_t GetFramesRead() const = 0;
+
+    /**
+     * @brief Sets the audio device change callback.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t SetAudioCapturerDeviceChangeCallback(
+        const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) = 0;
+
+    /**
+     * @brief Unsets the audio device change callback.
+     *
+     * @return Returns {@link SUCCESS} if callback remove is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t RemoveAudioCapturerDeviceChangeCallback(
+        const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback) = 0;
+
+    /**
+     * @brief Sets the audio capturer info change callback.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t SetAudioCapturerInfoChangeCallback(
+        const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback) = 0;
+
+    /**
+     * @brief Removes the audio capturer info change callback.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t RemoveAudioCapturerInfoChangeCallback(
+        const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback) = 0;
+
+    /**
+     * @brief Register the audio capturer event change callback.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t RegisterAudioCapturerEventListener() = 0;
+
+    /**
+     * @brief Unregister the audio capturer event change callback.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    virtual int32_t UnregisterAudioCapturerEventListener() = 0;
+
+    /**
+     * @brief Gets current input devices.
+     *
+     * @return Returns current input device info.
+     * @since 11
+     */
+    virtual int32_t GetCurrentInputDevices(DeviceInfo &deviceInfo) const = 0;
+
+    /**
+     * @brief Gets the current audio capturer change info.
+     *
+     * @return Returns the audio capturer change info.
+     * @since 11
+     */
+    virtual int32_t GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const = 0;
 
     virtual ~AudioCapturer();
 

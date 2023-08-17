@@ -89,6 +89,7 @@ public:
     AudioEffectMode GetAudioEffectMode() const override;
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
+    void SetChannelBlendMode(ChannelBlendMode blendMode) override;
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
@@ -137,7 +138,7 @@ private:
 #endif
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
-    DeviceInfo currentDeviceInfo = {};
+    DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
 };
@@ -185,7 +186,7 @@ public:
     void setAudioRendererObj(AudioRendererPrivate *rendererObj);
 private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
-    AudioRendererPrivate *renderer;
+    AudioRendererPrivate *renderer_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

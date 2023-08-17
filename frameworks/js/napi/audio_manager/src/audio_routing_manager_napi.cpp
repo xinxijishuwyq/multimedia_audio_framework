@@ -387,6 +387,50 @@ static void SetValueString(const napi_env& env, const std::string& fieldStr, con
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const AudioDeviceDescriptor &deviceInfo)
+{
+    SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole_), valueParam);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType_), valueParam);
+    SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.deviceId_), valueParam);
+    SetValueString(env, "name", deviceInfo.deviceName_, valueParam);
+    SetValueString(env, "address", deviceInfo.macAddress_, valueParam);
+    SetValueString(env, "networkId", deviceInfo.networkId_, valueParam);
+    SetValueString(env, "displayName", deviceInfo.displayName_, valueParam);
+    SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(deviceInfo.interruptGroupId_), valueParam);
+    SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(deviceInfo.volumeGroupId_), valueParam);
+
+    napi_value value = nullptr;
+    napi_value sampleRates;
+    napi_create_array_with_length(env, 1, &sampleRates);
+    napi_create_int32(env, deviceInfo.audioStreamInfo_.samplingRate, &value);
+    napi_set_element(env, sampleRates, 0, value);
+    napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
+
+    napi_value channelCounts;
+    napi_create_array_with_length(env, 1, &channelCounts);
+    napi_create_int32(env, deviceInfo.audioStreamInfo_.channels, &value);
+    napi_set_element(env, channelCounts, 0, value);
+    napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
+
+    napi_value channelMasks;
+    napi_create_array_with_length(env, 1, &channelMasks);
+    napi_create_int32(env, deviceInfo.channelMasks_, &value);
+    napi_set_element(env, channelMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
+
+    napi_value channelIndexMasks;
+    napi_create_array_with_length(env, 1, &channelIndexMasks);
+    napi_create_int32(env, deviceInfo.channelIndexMasks_, &value);
+    napi_set_element(env, channelIndexMasks, 0, value);
+    napi_set_named_property(env, valueParam, "channelIndexMasks", channelIndexMasks);
+
+    napi_value encodingTypes;
+    napi_create_array_with_length(env, 1, &encodingTypes);
+    napi_create_int32(env, deviceInfo.audioStreamInfo_.encoding, &value);
+    napi_set_element(env, encodingTypes, 0, value);
+    napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
+}
+
 static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors, napi_env env, napi_value* result,
     int32_t arrayLength, napi_value valueParam)
 {
@@ -402,41 +446,7 @@ static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors
     for (size_t i = 0; i < size; i++) {
         if (deviceDescriptors[i] != nullptr) {
             (void)napi_create_object(env, &valueParam);
-            SetValueInt32(env, "deviceRole", static_cast<int32_t>(
-                deviceDescriptors[i]->deviceRole_), valueParam);
-            SetValueInt32(env, "deviceType", static_cast<int32_t>(
-                deviceDescriptors[i]->deviceType_), valueParam);
-            SetValueInt32(env, "id", static_cast<int32_t>(
-                deviceDescriptors[i]->deviceId_), valueParam);
-            SetValueString(env, "name", deviceDescriptors[i]->deviceName_, valueParam);
-            SetValueString(env, "address", deviceDescriptors[i]->macAddress_, valueParam);
-            SetValueString(env, "networkId", static_cast<std::string>(
-                deviceDescriptors[i]->networkId_), valueParam);
-            SetValueString(env, "displayName", static_cast<std::string>(
-                deviceDescriptors[i]->displayName_), valueParam);
-            SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(
-                deviceDescriptors[i]->interruptGroupId_), valueParam);
-            SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(
-                deviceDescriptors[i]->volumeGroupId_), valueParam);
-
-            napi_value value = nullptr;
-            napi_value sampleRates;
-            napi_create_array_with_length(env, 1, &sampleRates);
-            napi_create_int32(env, deviceDescriptors[i]->audioStreamInfo_.samplingRate, &value);
-            napi_set_element(env, sampleRates, 0, value);
-            napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
-
-            napi_value channelCounts;
-            napi_create_array_with_length(env, 1, &channelCounts);
-            napi_create_int32(env, deviceDescriptors[i]->audioStreamInfo_.channels, &value);
-            napi_set_element(env, channelCounts, 0, value);
-            napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
-
-            napi_value channelMasks;
-            napi_create_array_with_length(env, 1, &channelMasks);
-            napi_create_int32(env, deviceDescriptors[i]->channelMasks_, &value);
-            napi_set_element(env, channelMasks, 0, value);
-            napi_set_named_property(env, valueParam, "channelMasks", channelMasks);
+            SetDeviceDescriptors(env, valueParam, deviceDescriptors[i]);
             napi_set_element(env, result[PARAM1], i, valueParam);
         }
     }

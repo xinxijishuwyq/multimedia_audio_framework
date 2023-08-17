@@ -56,6 +56,7 @@ int32_t PolicyProviderStub::HandleGetProcessDeviceInfo(MessageParcel &data, Mess
     reply.WriteInt32(deviceInfo.deviceRole);
     reply.WriteInt32(deviceInfo.deviceId);
     reply.WriteInt32(deviceInfo.channelMasks);
+    reply.WriteInt32(deviceInfo.channelIndexMasks);
     reply.WriteString(deviceInfo.deviceName);
     reply.WriteString(deviceInfo.macAddress);
 

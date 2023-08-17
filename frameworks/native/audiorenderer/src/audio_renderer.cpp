@@ -647,6 +647,11 @@ int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
 
+void AudioRendererPrivate::SetChannelBlendMode(ChannelBlendMode blendMode)
+{
+    audioStream_->SetChannelBlendMode(blendMode);
+}
+
 AudioRendererInterruptCallbackImpl::AudioRendererInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream,
     const AudioInterrupt &audioInterrupt)
     : audioStream_(audioStream), audioInterrupt_(audioInterrupt)
@@ -956,7 +961,7 @@ int32_t AudioRendererPrivate::RegisterAudioRendererEventListener(const int32_t c
         return ERR_INVALID_PARAM;
     }
 
-    if (GetCurrentOutputDevices(currentDeviceInfo) != SUCCESS) {
+    if (GetCurrentOutputDevices(currentDeviceInfo_) != SUCCESS) {
         AUDIO_ERR_LOG("get current device info failed");
         return ERROR;
     }
@@ -1039,7 +1044,7 @@ void AudioRendererStateChangeCallbackImpl::SaveCallback(
 
 void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
 {
-    renderer = rendererObj;
+    renderer_ = rendererObj;
 }
 
 void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
@@ -1158,11 +1163,11 @@ bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
         return deviceUpdated;
     }
 
-    AUDIO_INFO_LOG("newDeviceInfo type: %{public}d, currentDeviceInfo type: %{public}d ",
-        deviceInfo.deviceType, currentDeviceInfo.deviceType);
-    if (currentDeviceInfo.deviceType != deviceInfo.deviceType) {
-        currentDeviceInfo = deviceInfo;
-        newDeviceInfo = currentDeviceInfo;
+    AUDIO_INFO_LOG("newDeviceInfo type: %{public}d, currentDeviceInfo_ type: %{public}d ",
+        deviceInfo.deviceType, currentDeviceInfo_.deviceType);
+    if (currentDeviceInfo_.deviceType != deviceInfo.deviceType) {
+        currentDeviceInfo_ = deviceInfo;
+        newDeviceInfo = currentDeviceInfo_;
         deviceUpdated = true;
     }
     return deviceUpdated;
@@ -1174,10 +1179,10 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
     std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
     DeviceInfo deviceInfo = {};
-    if (renderer->IsDeviceChanged(deviceInfo)) {
+    if (renderer_->IsDeviceChanged(deviceInfo)) {
         if (deviceInfo.deviceType != DEVICE_TYPE_NONE && deviceInfo.deviceType != DEVICE_TYPE_INVALID) {
             // switch audio channel
-            renderer->SwitchStream(deviceInfo.isLowLatencyDevice);
+            renderer_->SwitchStream(deviceInfo.isLowLatencyDevice);
         }
         if (cb == nullptr) {
             AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
@@ -1204,7 +1209,7 @@ int32_t AudioRendererPrivate::SetAudioEffectMode(AudioEffectMode effectMode) con
 
 void AudioRendererPrivate::SetSelfRendererStateCallback()
 {
-    if (GetCurrentOutputDevices(currentDeviceInfo) != SUCCESS) {
+    if (GetCurrentOutputDevices(currentDeviceInfo_) != SUCCESS) {
         AUDIO_ERR_LOG("get current device info failed");
         return;
     }

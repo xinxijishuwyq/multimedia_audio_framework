@@ -122,6 +122,13 @@ static const std::map<std::string, VolumeAdjustType> volumeAdjustTypeMap = {
     {"VOLUME_DOWN", VOLUME_DOWN},
 };
 
+static const std::map<std::string, ChannelBlendMode> channelBlendModeMap = {
+    {"MODE_DEFAULT", MODE_DEFAULT},
+    {"MODE_BLEND_LR", MODE_BLEND_LR},
+    {"MODE_ALL_LEFT", MODE_ALL_LEFT},
+    {"MODE_ALL_RIGHT", MODE_ALL_RIGHT},
+};
+
 class AudioParametersNapi {
 public:
     AudioParametersNapi();
@@ -161,6 +168,7 @@ private:
     static napi_value CreateDeviceTypeObject(napi_env env);
     static napi_value CreateSourceTypeObject(napi_env env);
     static napi_value CreateVolumeAdjustTypeObject(napi_env env);
+    static napi_value CreateChannelBlendModeObject(napi_env env);
 
     static napi_ref sConstructor_;
     static napi_ref audioChannel_;
