@@ -1880,38 +1880,30 @@ void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
     }
 }
 
+void AudioPolicyServer::ProcessInterrupt(const InterruptHint& hint)
+{
+    InterruptType type = INTERRUPT_TYPE_BEGIN;
+    InterruptForceType forceType = INTERRUPT_SHARE;
+    InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
+    for (auto it : interruptCbsMap_) {
+        if (it.second != nullptr) {
+            it.second->OnInterrupt(interruptEvent);
+        }
+    }
+}
+
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_DEBUG_LOG("AudioPolicyServer: Dump Process Invoked");
-    std::unordered_set<std::u16string> argSets;
-    std::u16string arg1(u"debug_interrupt_resume");
-    std::u16string arg2(u"debug_interrupt_pause");
+    std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
-        argSets.insert(args[index]);
-    }
-
-    std::lock_guard<std::mutex> lock(interruptMutex_);
-    if (argSets.count(arg1) != 0) {
-        InterruptType type = INTERRUPT_TYPE_BEGIN;
-        InterruptForceType forceType = INTERRUPT_SHARE;
-        InterruptHint hint = INTERRUPT_HINT_RESUME;
-        InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-        for (auto it : interruptCbsMap_) {
-            if (it.second != nullptr) {
-                it.second->OnInterrupt(interruptEvent);
-            }
+        if (args[index] == u"debug_interrupt_resume") {
+            ProcessInterrupt(INTERRUPT_HINT_RESUME);
         }
-    }
-    if (argSets.count(arg2) != 0) {
-        InterruptType type = INTERRUPT_TYPE_BEGIN;
-        InterruptForceType forceType = INTERRUPT_SHARE;
-        InterruptHint hint = INTERRUPT_HINT_PAUSE;
-        InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
-        for (auto it : interruptCbsMap_) {
-            if (it.second != nullptr) {
-                it.second->OnInterrupt(interruptEvent);
-            }
+        if (args[index] == u"debug_interrupt_pause") {
+            ProcessInterrupt(INTERRUPT_HINT_PAUSE);
         }
+        argQue.push(args[index]);
     }
     std::string dumpString;
     PolicyData policyData;
@@ -1923,7 +1915,7 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
     }
 
     GetPolicyData(policyData);
-    dumpObj.AudioDataDump(policyData, dumpString);
+    dumpObj.AudioDataDump(policyData, dumpString, argQue);
 
     return write(fd, dumpString.c_str(), dumpString.size());
 }

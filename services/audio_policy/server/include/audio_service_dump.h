@@ -23,6 +23,7 @@
 #include <vector>
 #include <list>
 #include <pwd.h>
+#include <queue>
 #include <map>
 #include "securec.h"
 #include "audio_log.h"
@@ -98,7 +99,8 @@ public:
     AudioServiceDump();
     ~AudioServiceDump();
     int32_t Initialize();
-    void AudioDataDump(PolicyData &policyData, std::string &dumpString);
+    void AudioDataDump(PolicyData &policyData, std::string &dumpString,
+        std::queue<std::u16string>& argQue);
     static bool IsStreamSupported(AudioStreamType streamType);
     virtual void OnTimeOut();
 
@@ -126,8 +128,10 @@ private:
     void GroupInfoDump(std::string& dumpString);
     void EffectManagerInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
+    void ArgDataDump(std::string &dumpString, std::queue<std::u16string>& argQue);
     void StreamVolumeInfosDump(std::string& dumpString);
     void DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos);
+    void HelpInfoDump(std::string& dumpString);
     static const std::string GetStreamName(AudioStreamType streamType);
     static const std::string GetSourceName(SourceType sourceType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);
@@ -144,6 +148,10 @@ private:
     static void PASinkInputInfoCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PASourceInfoCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata);
     static void PASourceOutputInfoCallback(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
+
+    using DumpFunc = void(AudioServiceDump::*)(std::string &dumpString);
+    std::map<std::u16string, DumpFunc> dumpFuncMap;
+    void InitDumpFuncMap();
 };
 } // namespace AudioStandard
 } // namespace OHOS
