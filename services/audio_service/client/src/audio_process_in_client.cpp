@@ -867,10 +867,9 @@ int32_t AudioProcessInClientInner::Release()
     }
     Stop();
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
-    if (streamStatus_->load() != StreamStatus::STREAM_STOPPED ||
-        streamStatus_->load() != StreamStatus::STREAM_IDEL) {
-        AUDIO_ERR_LOG("Process status error:%{public}s", GetStatusInfo(streamStatus_->load()).c_str());
-        return ERR_ILLEGAL_STATE;
+    StreamStatus currentStatus = streamStatus_->load();
+    if (currentStatus != STREAM_STOPPED) {
+        AUDIO_WARNING_LOG("Release in currentStatus:%{public}s", GetStatusInfo(currentStatus).c_str());
     }
 
     if (processProxy_->Release() != SUCCESS) {
