@@ -296,7 +296,7 @@ static void UpdateMinimumLatency(struct userdata *u, pa_sink *sink, bool printMs
     }
 
     if (printMsg) {
-        AUDIO_INFO_LOG("Minimum possible end to end latency: %0.2f ms", (double)u->minimum_latency / PA_USEC_PER_MSEC);
+        AUDIO_DEBUG_LOG("Minimum possible end to end latency: %0.2f ms", (double)u->minimum_latency / PA_USEC_PER_MSEC);
         if (u->latency < u->minimum_latency) {
             AUDIO_WARNING_LOG("Configured latency of %0.2f ms is smaller than minimum latency, using minimum instead",
                 (double)u->latency / PA_USEC_PER_MSEC);
@@ -408,7 +408,7 @@ static void AdjustRates(struct userdata *u)
     /* Allow one underrun per hour */
     if (u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / TIME_HOUR_TO_SECOND_UNIT > runHours) {
         u->underrun_counter = PA_CLIP_SUB(u->underrun_counter, 1u);
-        AUDIO_INFO_LOG("Underrun counter: %u", u->underrun_counter);
+        AUDIO_DEBUG_LOG("Underrun counter: %u", u->underrun_counter);
     }
 
     /* Calculate real adjust time if source or sink did not change and if the system has
@@ -569,13 +569,13 @@ static void MemblockqAdjust(struct userdata *u, int64_t latencyOffsetUsec, bool 
     if (currentMemblockqLength > requestedMemblockqLength) {
         /* Drop audio from queue */
         bufferCorrection = currentMemblockqLength - requestedMemblockqLength;
-        AUDIO_INFO_LOG("Dropping %" PRIu64 " usec of audio from queue",
+        AUDIO_DEBUG_LOG("Dropping %" PRIu64 " usec of audio from queue",
             pa_bytes_to_usec(bufferCorrection, &u->sink_input->sample_spec));
         pa_memblockq_drop(u->memblockq, bufferCorrection);
     } else if (currentMemblockqLength < requestedMemblockqLength && allowPush) {
         /* Add silence to queue */
         bufferCorrection = requestedMemblockqLength - currentMemblockqLength;
-        AUDIO_INFO_LOG("Adding %" PRIu64 " usec of silence to queue",
+        AUDIO_DEBUG_LOG("Adding %" PRIu64 " usec of silence to queue",
             pa_bytes_to_usec(bufferCorrection, &u->sink_input->sample_spec));
         pa_memblockq_seek(u->memblockq, (int64_t)bufferCorrection, PA_SEEK_RELATIVE, true);
     }
@@ -1059,7 +1059,7 @@ static void SinkInputUpdateMaxRequestCb(pa_sink_input *i, size_t nbytes)
     pa_assert_se(u = i->userdata);
 
     pa_memblockq_set_prebuf(u->memblockq, nbytes * MULTIPLE_FACTOR);
-    AUDIO_INFO_LOG("Max request changed");
+    AUDIO_DEBUG_LOG("Max request changed");
 }
 
 /* Called from main thread */
@@ -1432,11 +1432,11 @@ static int CreateSourceOutput(pa_module *m, pa_modargs *ma, struct userdata *u, 
     pa_source_output_new_data_set_channel_map(&sourceOutputData, &map);
     sourceOutputData.flags = PA_SOURCE_OUTPUT_START_CORKED | PA_SOURCE_OUTPUT_DONT_MOVE;
 
-    AUDIO_INFO_LOG("sourceOutputData.driver:%{public}s, module:%{pulic}s, source_output addr:%{public}p",
+    AUDIO_DEBUG_LOG("sourceOutputData.driver:%{public}s, module:%{pulic}s, source_output addr:%{public}p",
         sourceOutputData.driver, sourceOutputData.module->name, &u->source_output);
 
     pa_source_output_new(&u->source_output, m->core, &sourceOutputData);
-    AUDIO_INFO_LOG("pa_source_output_new DONE");
+    AUDIO_DEBUG_LOG("pa_source_output_new DONE");
     pa_source_output_new_data_done(&sourceOutputData);
 
     if (!u->source_output) {
