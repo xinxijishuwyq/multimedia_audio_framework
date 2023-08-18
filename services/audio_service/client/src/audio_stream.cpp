@@ -45,7 +45,8 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isReadyToWrite_(false),
       isReadyToRead_(false),
       isFirstRead_(false),
-      isFirstWrite_(false)
+      isFirstWrite_(false),
+      pfd_(nullptr)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -77,7 +78,10 @@ AudioStream::~AudioStream()
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo, capturerInfo);
     }
 
-    pfd_ = nullptr;
+    if (pfd_ != nullptr) {
+        fclose(pfd_);
+        pfd_ = nullptr;
+    }
 }
 
 void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
