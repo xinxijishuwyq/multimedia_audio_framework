@@ -95,10 +95,10 @@ uint32_t AudioPolicyUnitTest::GetSessionId(std::shared_ptr<AudioStream> &audioSt
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetMicrophoneMuteAudioConfig_001 via illegal state
-* @tc.number: Audio_Policy_SetMicrophoneMuteAudioConfig_001
-* @tc.desc  : Test SetMicrophoneMuteAudioConfig interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_SetMicrophoneMuteAudioConfig_001 via illegal state
+ * @tc.number: Audio_Policy_SetMicrophoneMuteAudioConfig_001
+ * @tc.desc  : Test SetMicrophoneMuteAudioConfig interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -112,10 +112,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestS
 
 #ifdef FEATURE_DTMF_TONE
 /**
-* @tc.name  : Test Audio_Policy_GetSupportedTones_001 via legal state
-* @tc.number: Audio_Policy_GetSupportedTones_001
-* @tc.desc  : Test GetSupportedTones interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_GetSupportedTones_001 via legal state
+ * @tc.number: Audio_Policy_GetSupportedTones_001
+ * @tc.desc  : Test GetSupportedTones interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -126,10 +126,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_GetToneConfig_001 via legal state
-* @tc.number: Audio_Policy_GetToneConfig_001
-* @tc.desc  : Test GetToneConfig interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_GetToneConfig_001 via legal state
+ * @tc.number: Audio_Policy_GetToneConfig_001
+ * @tc.desc  : Test GetToneConfig interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -143,10 +143,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
 #endif
 
 /**
-* @tc.name  : Test Audio_Policy_IsStreamActive_001 via legal state
-* @tc.number: Audio_Policy_IsStreamActive_001
-* @tc.desc  : Test IsStreamActive interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_IsStreamActive_001 via legal state
+ * @tc.number: Audio_Policy_IsStreamActive_001
+ * @tc.desc  : Test IsStreamActive interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -159,10 +159,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SelectInputDevice_001 via illegal state
-* @tc.number: Audio_Policy_SelectInputDevice_001
-* @tc.desc  : Test SelectInputDevice interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_SelectInputDevice_001 via illegal state
+ * @tc.number: Audio_Policy_SelectInputDevice_001
+ * @tc.desc  : Test SelectInputDevice interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -182,10 +182,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_DeviceChangeCallback_001 via illegal state
-* @tc.number: Audio_Policy_DeviceChangeCallback_001
-* @tc.desc  : Test SetDeviceChangeCallback and UnsetDeviceChangeCallback interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_DeviceChangeCallback_001 via illegal state
+ * @tc.number: Audio_Policy_DeviceChangeCallback_001
+ * @tc.desc  : Test SetDeviceChangeCallback and UnsetDeviceChangeCallback interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -208,10 +208,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test Audio_Policy_GetStreamInFocus_001 via legal state
-* @tc.number: Audio_Policy_GetStreamInFocus_001
-* @tc.desc  : Test GetStreamInFocus interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_GetStreamInFocus_001 via legal state
+ * @tc.number: Audio_Policy_GetStreamInFocus_001
+ * @tc.desc  : Test GetStreamInFocus interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -222,10 +222,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_IsAudioRendererLowLatencySupported_001 via legal state
-* @tc.number: Audio_Policy_IsAudioRendererLowLatencySupported_001
-* @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_IsAudioRendererLowLatencySupported_001 via legal state
+ * @tc.number: Audio_Policy_IsAudioRendererLowLatencySupported_001
+ * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -242,10 +242,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001,
 }
 
 /**
-* @tc.name  : Test Audio_Policy_RegisterAudioRendererEventListener_001 via illegal state
-* @tc.number: Audio_Policy_RegisterAudioRendererEventListener_001
-* @tc.desc  : Test RegisterAudioRendererEventListener interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_RegisterAudioRendererEventListener_001 via illegal state
+ * @tc.number: Audio_Policy_RegisterAudioRendererEventListener_001
+ * @tc.desc  : Test RegisterAudioRendererEventListener interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioRendererEventListener_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -263,10 +263,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioRendererEventListener_001,
 }
 
 /**
-* @tc.name  : Test Audio_Policy_RegisterAudioCapturerEventListener_001 via illegal state
-* @tc.number: Audio_Policy_RegisterAudioCapturerEventListener_001
-* @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_RegisterAudioCapturerEventListener_001 via illegal state
+ * @tc.number: Audio_Policy_RegisterAudioCapturerEventListener_001
+ * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioCapturerEventListener_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -285,10 +285,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterAudioCapturerEventListener_001,
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
-* @tc.number: Audio_Policy_Manager_IsStreamActive_001
-* @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
+ * @tc.number: Audio_Policy_Manager_IsStreamActive_001
+ * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Level1)
 {
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioStreamType::STREAM_MUSIC);
@@ -296,10 +296,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Le
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001 via legal state
-* @tc.number: Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001
-* @tc.desc  : Test SetMicrophoneMuteAudioConfig interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001 via legal state
+ * @tc.number: Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001
+ * @tc.desc  : Test SetMicrophoneMuteAudioConfig interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001, TestSize.Level1)
 {
     bool isMute = true;
@@ -309,20 +309,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_00
 
 #ifdef FEATURE_DTMF_TONE
 /**
-* @tc.name  : Test Audio_Policy_Manager_GetSupportedTones_001 via legal state
-* @tc.number: Audio_Policy_Manager_GetSupportedTones_001
-* @tc.desc  : Test GetSupportedTones interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_GetSupportedTones_001 via legal state
+ * @tc.number: Audio_Policy_Manager_GetSupportedTones_001
+ * @tc.desc  : Test GetSupportedTones interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSupportedTones_001, TestSize.Level1)
 {
     AudioPolicyManager::GetInstance().GetSupportedTones();
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_GetToneConfig_001 via legal state
-* @tc.number: Audio_Policy_Manager_GetToneConfig_001
-* @tc.desc  : Test GetToneConfig interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_GetToneConfig_001 via legal state
+ * @tc.number: Audio_Policy_Manager_GetToneConfig_001
+ * @tc.desc  : Test GetToneConfig interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetToneConfig_001, TestSize.Level1)
 {
     int32_t ltonetype = 0;
@@ -332,10 +332,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetToneConfig_001, TestSize.Lev
 #endif
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_001 via legal state
-* @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_001
-* @tc.desc  : Test SetDeviceChangeCallback interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_001 via legal state
+ * @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_001
+ * @tc.desc  : Test SetDeviceChangeCallback interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
@@ -351,20 +351,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_001, Te
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_GetStreamInFocus_001 via legal state
-* @tc.number: Audio_Policy_Manager_GetStreamInFocus_001
-* @tc.desc  : Test GetStreamInFocus interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_GetStreamInFocus_001 via legal state
+ * @tc.number: Audio_Policy_Manager_GetStreamInFocus_001
+ * @tc.desc  : Test GetStreamInFocus interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetStreamInFocus_001, TestSize.Level1)
 {
     AudioPolicyManager::GetInstance().GetStreamInFocus();
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_GetSessionInfoInFocus_001 via legal state
-* @tc.number: Audio_Policy_Manager_GetSessionInfoInFocus_001
-* @tc.desc  : Test GetSessionInfoInFocus interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_GetSessionInfoInFocus_001 via legal state
+ * @tc.number: Audio_Policy_Manager_GetSessionInfoInFocus_001
+ * @tc.desc  : Test GetSessionInfoInFocus interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt;
@@ -383,10 +383,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, Test
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_RegisterAudioRendererEventListener_001 via legal state
-* @tc.number: Audio_Policy_Manager_RegisterAudioRendererEventListener_001
-* @tc.desc  : Test registerAudioRendererEventListener interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_RegisterAudioRendererEventListener_001 via legal state
+ * @tc.number: Audio_Policy_Manager_RegisterAudioRendererEventListener_001
+ * @tc.desc  : Test registerAudioRendererEventListener interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListener_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
@@ -400,10 +400,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListe
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_RegisterAudioCapturerEventListener_001 via legal state
-* @tc.number: Audio_Policy_Manager_RegisterAudioCapturerEventListener_001
-* @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_RegisterAudioCapturerEventListener_001 via legal state
+ * @tc.number: Audio_Policy_Manager_RegisterAudioCapturerEventListener_001
+ * @tc.desc  : Test RegisterAudioCapturerEventListener interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListener_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
@@ -421,10 +421,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioCapturerEventListe
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001 via legal state
-* @tc.number: Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001
-* @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001 via legal state
+ * @tc.number: Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001
+ * @tc.desc  : Test IsAudioRendererLowLatencySupported interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
 {
     AudioStreamInfo audioStreamInfo;
@@ -437,10 +437,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySuppor
 }
 
 /**
-* @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_001 via legal state
-* @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_001
-* @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_001 via legal state
+ * @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_001
+ * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -452,12 +452,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001
     EXPECT_EQ(true, deviceInfo.size() >= 0);
 }
 
-
 /**
-* @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_001 via legal state
-* @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_001
-* @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_001 via legal state
+ * @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_001
+ * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -470,10 +469,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001,
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_001 via legal state
-* @tc.number: Audio_Policy_SetMicStateChangeCallback_001
-* @tc.desc  : Test SetMicStateChangeCallback interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_001 via legal state
+ * @tc.number: Audio_Policy_SetMicStateChangeCallback_001
+ * @tc.desc  : Test SetMicStateChangeCallback interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -492,10 +491,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_001, TestSize
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_002 via illegal state
-* @tc.number: Audio_Policy_SetMicStateChangeCallback_002
-* @tc.desc  : Test SetMicStateChangeCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_SetMicStateChangeCallback_002 via illegal state
+ * @tc.number: Audio_Policy_SetMicStateChangeCallback_002
+ * @tc.desc  : Test SetMicStateChangeCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_002, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -509,10 +508,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicStateChangeCallback_002, TestSize
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetAudioInterruptCallback_001 via illegal state
-* @tc.number: Audio_Policy_SetAudioInterruptCallback_001
-* @tc.desc  : Test SetAudioInterruptCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_SetAudioInterruptCallback_001 via illegal state
+ * @tc.number: Audio_Policy_SetAudioInterruptCallback_001
+ * @tc.desc  : Test SetAudioInterruptCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -535,10 +534,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetAudioManagerInterruptCallback_001 via illegal state
-* @tc.number: Audio_Policy_SetAudioManagerInterruptCallback_001
-* @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_SetAudioManagerInterruptCallback_001 via illegal state
+ * @tc.number: Audio_Policy_SetAudioManagerInterruptCallback_001
+ * @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -552,10 +551,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, T
 }
 
 /**
-* @tc.name  : Test Audio_Policy_RegisterTracker_001 via illegal state
-* @tc.number: Audio_Policy_RegisterTracker_001
-* @tc.desc  : Test RegisterTracker interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_RegisterTracker_001 via illegal state
+ * @tc.number: Audio_Policy_RegisterTracker_001
+ * @tc.desc  : Test RegisterTracker interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterTracker_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -570,10 +569,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterTracker_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetRingerModeCallback_001 via illegal state
-* @tc.number: Audio_Policy_Manager_SetRingerModeCallback_001
-* @tc.desc  : Test SetRingerModeCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetRingerModeCallback_001 via illegal state
+ * @tc.number: Audio_Policy_Manager_SetRingerModeCallback_001
+ * @tc.desc  : Test SetRingerModeCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetRingerModeCallback_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
@@ -586,10 +585,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetRingerModeCallback_001, Test
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_002 via illegal state
-* @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_002
-* @tc.desc  : Test SetDeviceChangeCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_002 via illegal state
+ * @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_002
+ * @tc.desc  : Test SetDeviceChangeCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_002, TestSize.Level1)
 {
     int32_t clientId = getpid();
@@ -600,10 +599,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_002, Te
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetAudioInterruptCallback_001 via illegal state
-* @tc.number: Audio_Policy_Manager_SetAudioInterruptCallback_001
-* @tc.desc  : Test SetAudioInterruptCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetAudioInterruptCallback_001 via illegal state
+ * @tc.number: Audio_Policy_Manager_SetAudioInterruptCallback_001
+ * @tc.desc  : Test SetAudioInterruptCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioInterruptCallback_001, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt;
@@ -622,10 +621,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioInterruptCallback_001, 
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetAudioManagerInterruptCallback_001 via illegal state
-* @tc.number: Audio_Policy_Manager_SetAudioManagerInterruptCallback_001
-* @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetAudioManagerInterruptCallback_001 via illegal state
+ * @tc.number: Audio_Policy_Manager_SetAudioManagerInterruptCallback_001
+ * @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioManagerInterruptCallback_001, TestSize.Level1)
 {
     int32_t clientId = getpid();
@@ -635,10 +634,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioManagerInterruptCallbac
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_SetVolumeKeyEventCallback_001 via illegal state
-* @tc.number: Audio_Policy_Manager_SetVolumeKeyEventCallback_001
-* @tc.desc  : Test SetVolumeKeyEventCallback interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_SetVolumeKeyEventCallback_001 via illegal state
+ * @tc.number: Audio_Policy_Manager_SetVolumeKeyEventCallback_001
+ * @tc.desc  : Test SetVolumeKeyEventCallback interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetVolumeKeyEventCallback_001, TestSize.Level1)
 {
     int32_t clientPid = getpid();
@@ -661,10 +660,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterAudioRendererEventListe
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001 via illegal state
-* @tc.number: Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001
-* @tc.desc  : Test GetCurrentCapturerChangeInfos interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001 via illegal state
+ * @tc.number: Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001
+ * @tc.desc  : Test GetCurrentCapturerChangeInfos interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetCurrentCapturerChangeInfos_001, TestSize.Level1)
 {
     vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -674,10 +673,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetCurrentCapturerChangeInfos_0
 }
 
 /**
-* @tc.name  : Test Audio_Capturer_State_Change_001 via legal state
-* @tc.number: Audio_Capturer_State_Change_001
-* @tc.desc  : Test AudioCapturerStateChangeListenerStub interface. Returns invalid.
-*/
+ * @tc.name  : Test Audio_Capturer_State_Change_001 via legal state
+ * @tc.number: Audio_Capturer_State_Change_001
+ * @tc.desc  : Test AudioCapturerStateChangeListenerStub interface. Returns invalid.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
 {
     std::shared_ptr<AudioCapturerStateChangeListenerStub> capturerStub =
@@ -702,10 +701,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Capturer_State_Change_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Renderer_State_Change_001 via legal state
-* @tc.number: Audio_Renderer_State_Change_001
-* @tc.desc  : Test AudioRendererStateChangeListenerStub interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Renderer_State_Change_001 via legal state
+ * @tc.number: Audio_Renderer_State_Change_001
+ * @tc.desc  : Test AudioRendererStateChangeListenerStub interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
 {
     std::shared_ptr<AudioRendererStateChangeListenerStub> rendererStub =
@@ -730,10 +729,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Renderer_State_Change_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Ringermode_Update_Listener_001 via legal state
-* @tc.number: Audio_Ringermode_Update_Listener_001
-* @tc.desc  : Test AudioRingerModeUpdateListenerStub interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Ringermode_Update_Listener_001 via legal state
+ * @tc.number: Audio_Ringermode_Update_Listener_001
+ * @tc.desc  : Test AudioRingerModeUpdateListenerStub interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level1)
 {
     std::shared_ptr<AudioRingerModeUpdateListenerStub> ringermodeStub =
@@ -759,10 +758,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Ringermode_Update_Listener_001, TestSize.Level
 }
 
 /**
-* @tc.name  : Test Audio_Rounting_Manager_Listener_001 via legal state
-* @tc.number: Audio_Rounting_Manager_Listener_001
-* @tc.desc  : Test AudioRoutingManagerListenerStub interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Rounting_Manager_Listener_001 via legal state
+ * @tc.number: Audio_Rounting_Manager_Listener_001
+ * @tc.desc  : Test AudioRoutingManagerListenerStub interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1)
 {
     std::shared_ptr<AudioRoutingManagerListenerStub> routingManagerStub =
@@ -790,10 +789,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Rounting_Manager_Listener_001, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test Audio_Volume_Group_Info_001 via legal state
-* @tc.number: Audio_Volume_Group_Info_001
-* @tc.desc  : Test VolumeGroupInfo interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Volume_Group_Info_001 via legal state
+ * @tc.number: Audio_Volume_Group_Info_001
+ * @tc.desc  : Test VolumeGroupInfo interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Volume_Group_Info_001, TestSize.Level1)
 {
     int32_t volumeGroupId = 1;
@@ -811,10 +810,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Volume_Group_Info_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Client_Tracker_Callback_Stub_001 via legal state
-* @tc.number: Audio_Client_Tracker_Callback_Stub_001
-* @tc.desc  : Test AudioClientTrackerCallbackStub interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Client_Tracker_Callback_Stub_001 via legal state
+ * @tc.number: Audio_Client_Tracker_Callback_Stub_001
+ * @tc.desc  : Test AudioClientTrackerCallbackStub interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Level1)
 {
     std::shared_ptr<AudioClientTrackerCallbackStub> audioClientTrackerCallbackStub =
@@ -845,10 +844,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Lev
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetRingerMode_001 via legal state
-* @tc.number: Audio_Policy_SetRingerMode_001
-* @tc.desc  : Test SetRingerMode interface. Returns success.
-*/
+ * @tc.name  : Test Audio_Policy_SetRingerMode_001 via legal state
+ * @tc.number: Audio_Policy_SetRingerMode_001
+ * @tc.desc  : Test SetRingerMode interface. Returns success.
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -877,10 +876,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetRingerMode_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_Callback via illegal state
-* @tc.number: Audio_Policy_SetCallback_001
-* @tc.desc  : Test set callback interface when object is nullptr
-*/
+ * @tc.name  : Test Audio_Policy_Callback via illegal state
+ * @tc.number: Audio_Policy_SetCallback_001
+ * @tc.desc  : Test set callback interface when object is nullptr
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
@@ -913,10 +912,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetCallback_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test Audio_Policy_SetSystemSoundUri_001
-* @tc.number: Audio_Policy_SetSystemSoundUri_001
-* @tc.desc  : Test audio policy instance
-*/
+ * @tc.name  : Test Audio_Policy_SetSystemSoundUri_001
+ * @tc.number: Audio_Policy_SetSystemSoundUri_001
+ * @tc.desc  : Test audio policy instance
+ */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetSystemSoundUri_001, TestSize.Level1)
 {
     int32_t ret = -1;
