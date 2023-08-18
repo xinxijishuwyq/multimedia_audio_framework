@@ -1259,6 +1259,8 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
 #endif
 
     WriteToProcessBuffers(readBuf);
+    ret = memset_s(readBuf.buffer, readBuf.bufLength, 0, readBuf.bufLength);
+    CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s reset buffer fail, ret %{public}d.", __func__, ret);
     curReadSpan->readDoneTime = ClockTime::GetCurNano();
     curReadSpan->spanStatus.store(SpanStatus::SPAN_READ_DONE);
     return SUCCESS;
