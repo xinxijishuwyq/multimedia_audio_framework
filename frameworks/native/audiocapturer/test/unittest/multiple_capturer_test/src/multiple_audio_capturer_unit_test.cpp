@@ -54,7 +54,7 @@ void MultipleAudioCapturerUnitTest::AudioCapUnitTestFunc(unique_ptr<AudioCapture
 void MultipleAudioCapturerUnitTest::TestUnitFunc(SourceType s1, SourceType s2, FOCUS_RULING exp1,
     SourceType s3, FOCUS_RULING exp2)
 {
-    constexpr uint32_t SLEEP_TIME = 1000;
+    constexpr uint32_t SLEEP_TIME = 300000;
     unique_ptr<AudioCapturer> audioCapturer1 = nullptr;
     shared_ptr<MultipleAudioCapturerCallbackTest> cb1 = nullptr;
     unique_ptr<AudioCapturer> audioCapturer2 = nullptr;
