@@ -307,7 +307,7 @@ napi_value AudioCapturerNapi::CreateAudioCapturer(napi_env env, napi_callback_in
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -602,7 +602,7 @@ napi_value AudioCapturerNapi::GetCapturerInfo(napi_env env, napi_callback_info i
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -659,7 +659,7 @@ napi_value AudioCapturerNapi::GetStreamInfo(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -719,7 +719,7 @@ napi_value AudioCapturerNapi::GetAudioStreamId(napi_env env, napi_callback_info 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -776,7 +776,7 @@ napi_value AudioCapturerNapi::Start(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -867,7 +867,7 @@ napi_value AudioCapturerNapi::Read(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -924,7 +924,7 @@ napi_value AudioCapturerNapi::GetAudioTime(napi_env env, napi_callback_info info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -980,7 +980,7 @@ napi_value AudioCapturerNapi::Stop(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1036,7 +1036,7 @@ napi_value AudioCapturerNapi::Release(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1290,7 +1290,7 @@ napi_value AudioCapturerNapi::GetBufferSize(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {

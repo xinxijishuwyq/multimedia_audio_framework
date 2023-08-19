@@ -645,7 +645,7 @@ napi_value AudioRendererNapi::CreateAudioRenderer(napi_env env, napi_callback_in
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -733,7 +733,7 @@ void AudioRendererNapi::WriteAsyncCallbackComplete(napi_env env, napi_status sta
         // queue the next write request from internal queue to napi queue
         if (!asyncContext->objectInfo->doNotScheduleWrite_ && !asyncContext->objectInfo->isDrainWriteQInProgress_) {
             if (!asyncContext->objectInfo->writeRequestQ_.empty()) {
-                napi_queue_async_work(env, asyncContext->objectInfo->writeRequestQ_.front());
+                napi_queue_async_work_with_qos(env, asyncContext->objectInfo->writeRequestQ_.front(), napi_qos_default);
                 asyncContext->objectInfo->writeRequestQ_.pop();
             } else {
                 asyncContext->objectInfo->scheduleFromApiCall_ = true;
@@ -793,7 +793,7 @@ void AudioRendererNapi::PauseAsyncCallbackComplete(napi_env env, napi_status sta
         if (!asyncContext->isTrue) {
             HiLog::Info(LABEL, "PauseAsyncCallbackComplete: Pasue failed, Continue Write");
             if (!asyncContext->objectInfo->writeRequestQ_.empty()) {
-                napi_queue_async_work(env, asyncContext->objectInfo->writeRequestQ_.front());
+                napi_queue_async_work_with_qos(env, asyncContext->objectInfo->writeRequestQ_.front(), napi_qos_default);
                 asyncContext->objectInfo->writeRequestQ_.pop();
             } else {
                 asyncContext->objectInfo->scheduleFromApiCall_ = true;
@@ -851,7 +851,7 @@ void AudioRendererNapi::StartAsyncCallbackComplete(napi_env env, napi_status sta
         if (asyncContext->isTrue) {
             asyncContext->objectInfo->doNotScheduleWrite_ = false;
             if (!asyncContext->objectInfo->writeRequestQ_.empty()) {
-                napi_queue_async_work(env, asyncContext->objectInfo->writeRequestQ_.front());
+                napi_queue_async_work_with_qos(env, asyncContext->objectInfo->writeRequestQ_.front(), napi_qos_default);
                 asyncContext->objectInfo->writeRequestQ_.pop();
             } else {
                 asyncContext->objectInfo->scheduleFromApiCall_ = true;
@@ -1210,7 +1210,7 @@ napi_value AudioRendererNapi::SetRenderRate(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1284,7 +1284,7 @@ napi_value AudioRendererNapi::SetRendererSamplingRate(napi_env env, napi_callbac
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -1337,7 +1337,7 @@ napi_value AudioRendererNapi::GetRenderRate(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1391,7 +1391,7 @@ napi_value AudioRendererNapi::GetRendererSamplingRate(napi_env env, napi_callbac
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1447,7 +1447,7 @@ napi_value AudioRendererNapi::Start(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1540,7 +1540,7 @@ napi_value AudioRendererNapi::Write(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else if (asyncContext->objectInfo->scheduleFromApiCall_) {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext->objectInfo->scheduleFromApiCall_ = false;
                 asyncContext.release();
@@ -1605,7 +1605,7 @@ napi_value AudioRendererNapi::GetAudioTime(napi_env env, napi_callback_info info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1671,12 +1671,12 @@ void AudioRendererNapi::JudgeFuncDrain(napi_env &env, napi_value &result,
         if (!asyncContext->objectInfo->doNotScheduleWrite_) {
             asyncContext->objectInfo->isDrainWriteQInProgress_ = true;
             while (!asyncContext->objectInfo->writeRequestQ_.empty()) {
-                napi_queue_async_work(env, asyncContext->objectInfo->writeRequestQ_.front());
+                napi_queue_async_work_with_qos(env, asyncContext->objectInfo->writeRequestQ_.front(), napi_qos_default);
                 asyncContext->objectInfo->writeRequestQ_.pop();
             }
             asyncContext->objectInfo->isDrainWriteQInProgress_ = false;
         }
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -1728,7 +1728,7 @@ napi_value AudioRendererNapi::Pause(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext->objectInfo->doNotScheduleWrite_ = true;
                 asyncContext.release();
@@ -1784,7 +1784,7 @@ napi_value AudioRendererNapi::Stop(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1843,7 +1843,7 @@ napi_value AudioRendererNapi::Release(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1901,7 +1901,7 @@ napi_value AudioRendererNapi::GetBufferSize(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1973,7 +1973,7 @@ void AudioRendererNapi::JudgeFuncGetAudioStreamId(napi_env &env, napi_value &res
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -2042,7 +2042,7 @@ napi_value AudioRendererNapi::SetVolume(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2104,7 +2104,7 @@ napi_value AudioRendererNapi::GetRendererInfo(napi_env env, napi_callback_info i
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2165,7 +2165,7 @@ napi_value AudioRendererNapi::GetStreamInfo(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2214,7 +2214,7 @@ napi_value AudioRendererNapi::GetAudioEffectMode(napi_env env, napi_callback_inf
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -2300,7 +2300,7 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -2727,7 +2727,7 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2781,7 +2781,7 @@ napi_value AudioRendererNapi::GetMinStreamVolume(napi_env env, napi_callback_inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2834,7 +2834,7 @@ napi_value AudioRendererNapi::GetMaxStreamVolume(napi_env env, napi_callback_inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2894,7 +2894,7 @@ napi_value AudioRendererNapi::GetCurrentOutputDevices(napi_env env, napi_callbac
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2947,7 +2947,7 @@ napi_value AudioRendererNapi::GetUnderflowCount(napi_env env, napi_callback_info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {

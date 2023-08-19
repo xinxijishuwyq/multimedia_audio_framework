@@ -285,7 +285,7 @@ napi_value TonePlayerNapi::CreateTonePlayer(napi_env env, napi_callback_info inf
         napi_delete_reference(env, asyncContext->callbackRef);
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -444,7 +444,7 @@ napi_value TonePlayerNapi::Load(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -501,7 +501,7 @@ napi_value TonePlayerNapi::Start(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -558,7 +558,7 @@ napi_value TonePlayerNapi::Stop(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -615,7 +615,7 @@ napi_value TonePlayerNapi::Release(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
