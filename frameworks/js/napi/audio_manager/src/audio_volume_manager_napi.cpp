@@ -357,6 +357,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfosSync(napi_env env, napi_ca
     }
 
     napi_value valueParam = nullptr;
+    napi_create_array_with_length(env, volumeGroupInfos.size(), &result);
     for (size_t i = 0; i < volumeGroupInfos.size(); i++) {
         if (volumeGroupInfos[i] != nullptr) {
             (void)napi_create_object(env, &valueParam);

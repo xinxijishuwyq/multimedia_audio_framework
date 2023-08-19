@@ -396,18 +396,6 @@ static void SetValueString(const napi_env& env, const std::string& fieldStr, con
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
-static void SetDeviceDescriptors(const napi_env &env, napi_value result, napi_value &valueParam,
-    const vector<sptr<AudioDeviceDescriptor>> deviceDescriptors)
-{
-    for (size_t i = 0; i < deviceDescriptors.size(); i++) {
-        if (deviceDescriptors[i] != nullptr) {
-            (void)napi_create_object(env, &valueParam);
-            SetDeviceDescriptor(env, valueParam, deviceDescriptors[i]);
-            napi_set_element(env, result, i, valueParam);
-        }
-    }
-}
-
 static void SetDeviceDescriptor(const napi_env& env, napi_value &valueParam, const AudioDeviceDescriptor &deviceInfo)
 {
     SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole_), valueParam);
@@ -452,6 +440,19 @@ static void SetDeviceDescriptor(const napi_env& env, napi_value &valueParam, con
     napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
 }
 
+static void SetDeviceDescriptors(const napi_env &env, napi_value &result, napi_value &valueParam,
+    const vector<sptr<AudioDeviceDescriptor>> deviceDescriptors)
+{
+    napi_create_array_with_length(env, deviceDescriptors.size(), &result);
+    for (size_t i = 0; i < deviceDescriptors.size(); i++) {
+        if (deviceDescriptors[i] != nullptr) {
+            (void)napi_create_object(env, &valueParam);
+            SetDeviceDescriptor(env, valueParam, deviceDescriptors[i]);
+            napi_set_element(env, result, i, valueParam);
+        }
+    }
+}
+
 static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors, napi_env env, napi_value* result,
     int32_t arrayLength, napi_value valueParam)
 {
@@ -459,13 +460,11 @@ static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors
     HiLog::Info(LABEL, "number of devices = %{public}zu", size);
 
     if (arrayLength > PARAM1) {
-        napi_create_array_with_length(env, size, &result[PARAM1]);
+        SetDeviceDescriptors(env, result[PARAM1], valueParam, deviceDescriptors);
     } else {
         HiLog::Error(LABEL, "ERROR: Array access out of bounds, result size is %{public}d", arrayLength);
         return;
     }
-
-    SetDeviceDescriptors(env, result, valueParam, deviceDescriptors);
 }
 
 static void GetDevicesAsyncCallbackComplete(napi_env env, napi_status status, void* data)

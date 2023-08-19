@@ -408,6 +408,7 @@ napi_value AudioRendererNapi::CreateAudioPrivacyTypeObject(napi_env env)
 
 static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const DeviceInfo &deviceInfo)
 {
+    (void)napi_create_object(env, &valueParam);
     SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole), valueParam);
     SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType), valueParam);
     SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.deviceId), valueParam);
@@ -1132,7 +1133,6 @@ void AudioRendererNapi::GetDeviceInfoAsyncCallbackComplete(napi_env env, napi_st
 
     if (asyncContext != nullptr) {
         if (!asyncContext->status) {
-            (void)napi_create_object(env, &valueParam);
             SetDeviceDescriptors(env, valueParam, asyncContext->deviceInfo);
             asyncContext->status = AudioRendererNapi::isConstructSuccess_;
             AudioRendererNapi::isConstructSuccess_ = SUCCESS;
