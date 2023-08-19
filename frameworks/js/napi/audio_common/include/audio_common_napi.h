@@ -76,6 +76,7 @@ public:
     static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
     static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
+    static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
 private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
