@@ -174,7 +174,7 @@ void AudioRendererStateCallbackNapi::OnJsCallbackRendererState(std::unique_ptr<A
 
     work->data = reinterpret_cast<void *>(jsCb.get());
 
-    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
+    int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
         // Js Thread
         AudioRendererStateJsCallback *event = reinterpret_cast<AudioRendererStateJsCallback *>(work->data);
         if (event == nullptr || event->callback == nullptr) {
@@ -203,7 +203,7 @@ void AudioRendererStateCallbackNapi::OnJsCallbackRendererState(std::unique_ptr<A
         } while (0);
         delete event;
         delete work;
-    });
+    }, uv_qos_default);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;

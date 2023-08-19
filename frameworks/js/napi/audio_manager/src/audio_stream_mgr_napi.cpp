@@ -581,7 +581,7 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioRendererInfos(napi_env env, napi_c
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -647,7 +647,7 @@ napi_value AudioStreamMgrNapi::GetCurrentAudioCapturerInfos(napi_env env, napi_c
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -714,7 +714,7 @@ napi_value AudioStreamMgrNapi::IsAudioRendererLowLatencySupported(napi_env env, 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -881,7 +881,7 @@ napi_value AudioStreamMgrNapi::IsStreamActive(napi_env env, napi_callback_info i
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -949,7 +949,7 @@ void AudioStreamMgrNapi::GetEffectInfoArrayResult(napi_env env, unique_ptr<Audio
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
         if (status == napi_ok) {
             asyncContext.release();
         } else {

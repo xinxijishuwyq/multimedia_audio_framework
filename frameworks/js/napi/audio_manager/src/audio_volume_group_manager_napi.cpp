@@ -399,7 +399,7 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -474,7 +474,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -546,7 +546,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -618,7 +618,7 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -688,7 +688,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -758,7 +758,7 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -828,7 +828,7 @@ napi_value AudioVolumeGroupManagerNapi::SetRingerMode(napi_env env, napi_callbac
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -884,7 +884,7 @@ napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callbac
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -949,7 +949,7 @@ napi_value AudioVolumeGroupManagerNapi::SetMicrophoneMute(napi_env env, napi_cal
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1003,7 +1003,7 @@ napi_value AudioVolumeGroupManagerNapi::IsMicrophoneMute(napi_env env, napi_call
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1191,7 +1191,7 @@ napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_ca
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        NAPI_CALL(env, napi_queue_async_work(env, asyncContext->work));
+        NAPI_CALL(env, napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default));
         asyncContext.release();
     }
 
@@ -1282,7 +1282,7 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        NAPI_CALL(env, napi_queue_async_work(env, asyncContext->work));
+        NAPI_CALL(env, napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default));
         asyncContext.release();
     }
 
@@ -1374,7 +1374,7 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_c
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        NAPI_CALL(env, napi_queue_async_work(env, asyncContext->work));
+        NAPI_CALL(env, napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default));
         asyncContext.release();
     }
 

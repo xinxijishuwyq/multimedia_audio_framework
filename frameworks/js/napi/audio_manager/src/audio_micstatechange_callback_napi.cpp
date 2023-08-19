@@ -101,14 +101,14 @@ void AudioManagerMicStateChangeCallbackNapi::OnJsCallbackMicStateChange
 
     work->data = reinterpret_cast<void *>(jsCb.get());
 
-    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
+    int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
         // Js Thread
         AudioManagerMicStateChangeJsCallback *event =
             reinterpret_cast<AudioManagerMicStateChangeJsCallback *>(work->data);
         std::string request = event->callbackName;
         napi_env env = event->callback->env_;
         napi_ref callback = event->callback->cb_;
-        AUDIO_DEBUG_LOG("AudioManagerCallbackNapi: JsCallBack %{public}s, uv_queue_work start", request.c_str());
+        AUDIO_DEBUG_LOG("JsCallBack %{public}s, uv_queue_work_with_qos start", request.c_str());
         do {
             CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
 
@@ -131,7 +131,7 @@ void AudioManagerMicStateChangeCallbackNapi::OnJsCallbackMicStateChange
         } while (0);
         delete event;
         delete work;
-    });
+    }, uv_qos_default);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;

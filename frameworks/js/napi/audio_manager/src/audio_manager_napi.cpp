@@ -822,7 +822,7 @@ napi_value AudioManagerNapi::RequestIndependentInterrupt(napi_env env, napi_call
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -886,7 +886,7 @@ napi_value AudioManagerNapi::AbandonIndependentInterrupt(napi_env env, napi_call
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -951,7 +951,7 @@ napi_value AudioManagerNapi::SetMicrophoneMute(napi_env env, napi_callback_info 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1006,7 +1006,7 @@ napi_value AudioManagerNapi::IsMicrophoneMute(napi_env env, napi_callback_info i
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1076,7 +1076,7 @@ napi_value AudioManagerNapi::SetRingerMode(napi_env env, napi_callback_info info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1132,7 +1132,7 @@ napi_value AudioManagerNapi::GetRingerMode(napi_env env, napi_callback_info info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1204,7 +1204,7 @@ napi_value AudioManagerNapi::SetAudioScene(napi_env env, napi_callback_info info
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
         if (status == napi_ok) {
             asyncContext.release();
         } else {
@@ -1258,7 +1258,7 @@ napi_value AudioManagerNapi::GetAudioScene(napi_env env, napi_callback_info info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1330,7 +1330,7 @@ napi_value AudioManagerNapi::SetStreamMute(napi_env env, napi_callback_info info
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1402,7 +1402,7 @@ napi_value AudioManagerNapi::IsStreamMute(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1474,7 +1474,7 @@ napi_value AudioManagerNapi::IsStreamActive(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1546,7 +1546,7 @@ napi_value AudioManagerNapi::SetDeviceActive(napi_env env, napi_callback_info in
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1618,7 +1618,7 @@ napi_value AudioManagerNapi::IsDeviceActive(napi_env env, napi_callback_info inf
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1686,7 +1686,7 @@ napi_value AudioManagerNapi::SetAudioParameter(napi_env env, napi_callback_info 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1751,7 +1751,7 @@ napi_value AudioManagerNapi::GetAudioParameter(napi_env env, napi_callback_info 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1828,7 +1828,7 @@ napi_value AudioManagerNapi::SetVolume(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1900,7 +1900,7 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1972,7 +1972,7 @@ napi_value AudioManagerNapi::GetMaxVolume(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2044,7 +2044,7 @@ napi_value AudioManagerNapi::GetMinVolume(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -2202,7 +2202,7 @@ napi_value AudioManagerNapi::GetDevices(napi_env env, napi_callback_info info)
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {

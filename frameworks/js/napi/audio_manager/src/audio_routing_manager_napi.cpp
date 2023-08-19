@@ -502,7 +502,7 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -608,7 +608,7 @@ napi_value AudioRoutingManagerNapi::SelectOutputDevice(napi_env env, napi_callba
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -681,7 +681,7 @@ napi_value AudioRoutingManagerNapi::GetActiveOutputDeviceDescriptors(napi_env en
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -777,7 +777,7 @@ napi_value AudioRoutingManagerNapi::GetPreferredOutputDeviceForRendererInfo(napi
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -883,7 +883,7 @@ napi_value AudioRoutingManagerNapi::GetPreferredInputDeviceForCapturerInfo(napi_
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -956,7 +956,7 @@ napi_value AudioRoutingManagerNapi::SelectOutputDeviceByFilter(napi_env env, nap
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1056,7 +1056,7 @@ napi_value AudioRoutingManagerNapi::SelectInputDevice(napi_env env, napi_callbac
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1135,7 +1135,7 @@ napi_value AudioRoutingManagerNapi::SelectInputDeviceByFilter(napi_env env, napi
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1508,7 +1508,7 @@ napi_value AudioRoutingManagerNapi::SetCommunicationDevice(napi_env env, napi_ca
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -1579,7 +1579,7 @@ napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActive(napi_env env, na
         if (status != napi_ok) {
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {

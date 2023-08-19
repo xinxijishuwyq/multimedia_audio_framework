@@ -300,7 +300,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupInfos(napi_env env, napi_callba
             AudioCommonNapi::throwError(env, NAPI_ERR_SYSTEM);
             result = nullptr;
         } else {
-            status = napi_queue_async_work(env, asyncContext->work);
+            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
             if (status == napi_ok) {
                 asyncContext.release();
             } else {
@@ -379,7 +379,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupManager(napi_env env, napi_call
     if (status != napi_ok) {
         result = nullptr;
     } else {
-        status = napi_queue_async_work(env, asyncContext->work);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
         if (status == napi_ok) {
             asyncContext.release();
         } else {

@@ -242,7 +242,7 @@ void AudioRendererDeviceChangeCallbackNapi::OnJsCallbackRendererDeviceInfo(napi_
         AUDIO_ERR_LOG("OnJsCallbackRendererDeviceInfo failed: No memory");
     }
     AUDIO_ERR_LOG("OnJsCallbackRendererDeviceInfo");
-    int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted);
+    int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted, uv_qos_default);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
