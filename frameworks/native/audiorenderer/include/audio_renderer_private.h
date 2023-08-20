@@ -141,6 +141,7 @@ private:
     DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
+    mutable std::mutex switchStreamMutex_;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
