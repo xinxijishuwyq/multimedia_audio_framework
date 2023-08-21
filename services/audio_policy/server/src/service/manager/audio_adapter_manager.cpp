@@ -405,10 +405,7 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
             return audioServiceAdapter_->SetDefaultSink(name);
         }
         case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
-        case InternalDeviceType::DEVICE_TYPE_MIC: {
-            AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
-            return audioServiceAdapter_->SetDefaultSource(name);
-        }
+        case InternalDeviceType::DEVICE_TYPE_MIC:
         case InternalDeviceType::DEVICE_TYPE_WAKEUP: {
             AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
             return audioServiceAdapter_->SetDefaultSource(name);
@@ -694,10 +691,11 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
             type = "wired";
             break;
         default:
-            AUDIO_ERR_LOG("GetVolumeKeyForKvStore: deivice %{public}d is not supported for kvStore", deviceType);
+            AUDIO_ERR_LOG("GetVolumeKeyForKvStore: device %{public}d is not supported for kvStore", deviceType);
             return "";
     }
 
@@ -1079,6 +1077,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
             type = "wired";
             break;
         default:

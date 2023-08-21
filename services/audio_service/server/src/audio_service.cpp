@@ -195,7 +195,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo deviceInfo)
 {
-    // temp method to get deivce key
+    // temp method to get device key
     std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId);
     if (endpointList_.find(deviceKey) != endpointList_.end()) {
         AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());

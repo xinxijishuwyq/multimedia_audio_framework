@@ -358,7 +358,9 @@ private:
 
     DeviceRole GetDeviceRole(const std::string &role);
 
-    int32_t SelectNewDevice(DeviceRole deviceRole, DeviceType deviceType);
+    int32_t SelectNewDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t HandleActiveDevice(DeviceType deviceType);
 
@@ -410,11 +412,11 @@ private:
 
     void AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType);
 
-    void OnPreferredOutputDeviceUpdated(DeviceType devType, std::string networkId);
+    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
 
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
 
-    void OnPreferredDeviceUpdated(DeviceType activeOutputDevice, DeviceType activeInputDevice);
+    void OnPreferredDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor, DeviceType activeInputDevice);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
@@ -423,6 +425,10 @@ private:
     void SetVolumeForSwitchDevice(DeviceType deviceType);
 
     void SetVoiceCallVolume(int32_t volume);
+
+    std::string GetVolumeGroupType(DeviceType deviceType);
+
+    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -437,6 +443,8 @@ private:
         const AudioStreamInfo& streamInfo);
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
+
+    void UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress, bool& isActiveA2dpDevice);
 
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
@@ -473,7 +481,7 @@ private:
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
-    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
     DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
     std::string localDevicesType_ = "";

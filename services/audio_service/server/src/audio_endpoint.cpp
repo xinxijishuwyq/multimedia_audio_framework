@@ -202,7 +202,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type) : endpointType_(type)
 
 std::string AudioEndpointInner::GetEndpointName()
 {
-    // temp method to get deivce key, should be same with AudioService::GetAudioEndpointForDevice.
+    // temp method to get device key, should be same with AudioService::GetAudioEndpointForDevice.
     return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId);
 }
 

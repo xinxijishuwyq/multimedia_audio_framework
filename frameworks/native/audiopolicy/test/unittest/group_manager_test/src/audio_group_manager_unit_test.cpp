@@ -626,7 +626,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 /**
 * @tc.name  : Test GetSystemVolumeInDb API
 * @tc.number: Audio_Group_Manager_GetSystemVolumeInDb_001
-* @tc.desc  : Test get volume db with alarm streamtype and speaker divicetype when volume is 3
+* @tc.desc  : Test get volume db with alarm streamtype and speaker devicetype when volume is 3
 * @tc.require: issueI5M1XV
 */
 HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, TestSize.Level0)

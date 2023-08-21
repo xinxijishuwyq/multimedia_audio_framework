@@ -34,12 +34,14 @@ AudioHfpListener AudioHfpManager::hfpListener_;
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
 bool AudioA2dpManager::bluetoothSinkLoaded_ = false;
 BluetoothRemoteDevice AudioA2dpManager::bluetoothRemoteDevice_;
+std::vector<BluetoothRemoteDevice> AudioA2dpManager::connectedA2dpDevices_;
 HdfRemoteService *g_hdiService = nullptr;
 HdfRemoteService *g_audioSessionService = nullptr;
 constexpr const char *AUDIO_BLUETOOTH_SERVICE_NAME = "audio_bluetooth_hdi_service";
 
 std::mutex g_deviceLock;
 std::mutex g_a2dpInstanceLock;
+std::mutex g_a2dpDeviceListLock;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -165,6 +167,79 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
     a2dpListener_.OnConnectionStateChanged(bluetoothRemoteDevice_, connectionState);
 }
 
+int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
+{
+    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+    a2dpInstance_ = A2dpSource::GetProfile();
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
+
+    std::lock_guard<std::mutex> a2dpDeviceListLock(g_a2dpDeviceListLock);
+    // Make sure that the target BluetoothRemoteDevice is connected.
+    auto isPresent = [&macAddress](const BluetoothRemoteDevice& device) {
+        return device.GetDeviceAddr() == macAddress;
+    };
+    auto iter = std::find_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent);
+    if (iter == connectedA2dpDevices_.end()) {
+        AUDIO_ERR_LOG("SetActiveA2dpDevice: fail to find the target a2dp device");
+        return ERROR;
+    }
+
+    int32_t ret = a2dpInstance_->SetActiveSinkDevice(*iter);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "SetActiveA2dpDevice failed. result: %{public}d", ret);
+    return SUCCESS;
+}
+
+void AudioA2dpManager::UpdateDeviceListWhenConnecting(const BluetoothRemoteDevice& device)
+{
+    std::lock_guard<std::mutex> a2dpDeviceListLock(g_a2dpDeviceListLock);
+
+    // Make sure that the target BluetoothRemoteDevice is new.
+    auto isPresent = [&device](const BluetoothRemoteDevice& connectedA2dpDevice) {
+        return connectedA2dpDevice.GetDeviceAddr() == device.GetDeviceAddr();
+    };
+    auto iter = std::find_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent);
+    if (iter != connectedA2dpDevices_.end()) {
+        AUDIO_ERR_LOG("UpdateDeviceListWhenConnecting: the connecting A2DP device already exists.");
+        return;
+    }
+
+    connectedA2dpDevices_.push_back(device);
+}
+
+void AudioA2dpManager::UpdateDeviceListWhenDisconnecting(const BluetoothRemoteDevice& device)
+{
+    std::lock_guard<std::mutex> a2dpDeviceListLock(g_a2dpDeviceListLock);
+
+    // Make sure that the target BluetoothRemoteDevice is connected.
+    auto isPresent = [&device](const BluetoothRemoteDevice& connectedA2dpDevice) {
+        return connectedA2dpDevice.GetDeviceAddr() == device.GetDeviceAddr();
+    };
+    auto iter = std::find_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent);
+    if (iter == connectedA2dpDevices_.end()) {
+        AUDIO_ERR_LOG("UpdateDeviceListWhenDisconnecting: the disconnecting A2DP device doesn't exist.");
+        return;
+    }
+
+    connectedA2dpDevices_.erase(iter);
+}
+
+void AudioA2dpManager::UpdateDeviceListForConfiguration(const BluetoothRemoteDevice& device)
+{
+    std::lock_guard<std::mutex> a2dpDeviceListLock(g_a2dpDeviceListLock);
+
+    // Make sure that the target BluetoothRemoteDevice is connected.
+    auto isPresent = [&device](const BluetoothRemoteDevice& connectedA2dpDevice) {
+        return connectedA2dpDevice.GetDeviceAddr() == device.GetDeviceAddr();
+    };
+    auto iter = std::find_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent);
+    if (iter == connectedA2dpDevices_.end()) {
+        AUDIO_ERR_LOG("UpdateDeviceListForConfiguration: the configuring A2DP device doesn't exist.");
+        return;
+    }
+
+    std::replace_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent, device);
+}
+
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("OnConnectionStateChanged: state: %{public}d", state);
@@ -173,6 +248,7 @@ void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &de
     AudioA2dpManager::SetConnectionState(state);
     if (state == static_cast<int>(BTConnectState::CONNECTED)) {
         AudioA2dpManager::SetBluetoothRemoteDevice(device);
+        AudioA2dpManager::UpdateDeviceListWhenConnecting(device);
 
         struct HDIServiceManager *serviceMgr = HDIServiceManagerGet();
         if (serviceMgr == nullptr) {
@@ -190,6 +266,8 @@ void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &de
 
     // Currently disconnect need to be done in OnConnectionStateChanged instead of hdi service stopped
     if (state == static_cast<int>(BTConnectState::DISCONNECTED)) {
+        AudioA2dpManager::UpdateDeviceListWhenDisconnecting(device);
+
         std::lock_guard<std::mutex> deviceLock(g_deviceLock);
 
         if (g_deviceObserver == nullptr) {
@@ -209,6 +287,8 @@ void AudioA2dpListener::OnConfigurationChanged(const BluetoothRemoteDevice &devi
 {
     AUDIO_INFO_LOG("OnConfigurationChanged: sampleRate: %{public}d, channels: %{public}d, format: %{public}d",
         codecInfo.sampleRate, codecInfo.channelMode, codecInfo.bitsPerSample);
+
+    AudioA2dpManager::UpdateDeviceListForConfiguration(device);
 
     std::lock_guard<std::mutex> deviceLock(g_deviceLock);
 
