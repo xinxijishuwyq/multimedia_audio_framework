@@ -1114,17 +1114,18 @@ napi_value AudioVolumeGroupManagerNapi::IsVolumeUnadjustable(napi_env env, napi_
     return result;
 }
 
-void GetArgvForAdjustVolumeByStep(napi_env env, size_t argc, napi_value* argv,
+bool GetArgvForAdjustVolumeByStep(napi_env env, size_t argc, napi_value* argv,
     unique_ptr<AudioVolumeGroupManagerAsyncContext> &asyncContext)
 {
     const int32_t refCount = 1;
 
     if (argv == nullptr) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
-        return;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
     }
     if (argc < ARGS_ONE) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
     }
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
@@ -1141,9 +1142,12 @@ void GetArgvForAdjustVolumeByStep(napi_env env, size_t argc, napi_value* argv,
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return false;
         }
     }
+
+    return true;
 }
 
 napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_callback_info info)
@@ -1160,7 +1164,9 @@ napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_ca
         return nullptr;
     }
 
-    GetArgvForAdjustVolumeByStep(env, argc, argv, asyncContext);
+    if (!GetArgvForAdjustVolumeByStep(env, argc, argv, asyncContext)) {
+        return nullptr;
+    }
 
     if (asyncContext->callbackRef == nullptr) {
         napi_create_promise(env, &asyncContext->deferred, &result);
@@ -1199,16 +1205,17 @@ napi_value AudioVolumeGroupManagerNapi::AdjustVolumeByStep(napi_env env, napi_ca
     return result;
 }
 
-void GetArgvForAdjustSystemVolumeByStep(napi_env env, size_t argc, napi_value* argv,
+bool GetArgvForAdjustSystemVolumeByStep(napi_env env, size_t argc, napi_value* argv,
     unique_ptr<AudioVolumeGroupManagerAsyncContext> &asyncContext)
 {
     const int32_t refCount = 1;
     if (argv == nullptr) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
-        return;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
     }
     if (argc < ARGS_ONE) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return false;
     }
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
@@ -1231,9 +1238,12 @@ void GetArgvForAdjustSystemVolumeByStep(napi_env env, size_t argc, napi_value* a
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return false;
         }
     }
+
+    return true;
 }
 
 napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, napi_callback_info info)
@@ -1250,7 +1260,9 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
         return nullptr;
     }
 
-    GetArgvForAdjustSystemVolumeByStep(env, argc, argv, asyncContext);
+    if (!GetArgvForAdjustSystemVolumeByStep(env, argc, argv, asyncContext)) {
+        return nullptr;
+    }
 
     if (asyncContext->callbackRef == nullptr) {
         napi_create_promise(env, &asyncContext->deferred, &result);

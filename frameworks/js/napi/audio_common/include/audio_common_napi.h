@@ -118,6 +118,7 @@ const std::string NAPI_ERR_UNSUPPORTED_INFO = "unsupported option";
 const std::string NAPI_ERR_TIMEOUT_INFO = "time out";
 const std::string NAPI_ERR_STREAM_LIMIT_INFO = "stream number limited";
 const std::string NAPI_ERR_SYSTEM_INFO = "system error";
+const std::string NAPI_ERR_NO_PERMISSION_INFO = "permission denied";
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_COMMON_NAPI_H_
