@@ -62,6 +62,7 @@ constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
 constexpr uid_t UID_ROOT = 0;
 constexpr uid_t UID_MSDP_SA = 6699;
 constexpr uid_t UID_INTELLIGENT_VOICE_SA = 1042;
+constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_CAAS_SA = 5527;
 constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
@@ -93,7 +94,8 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
 };
 
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
-    UID_MEDIA_SA
+    UID_MEDIA_SA,
+    UID_CAST_ENGINE_SA
 };
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
