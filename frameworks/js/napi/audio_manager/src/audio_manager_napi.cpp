@@ -2366,6 +2366,7 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
                     SetAudioManagerInterruptCallback(managerNapi->interruptCallbackNapi_);
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "SetAudioManagerInterruptCallback Failed");
             }
+            std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
             std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
                 std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
             cb->SaveCallbackReference(callbackName, args[PARAM2]);
@@ -2515,6 +2516,7 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
                 "Off UnsetAudioManagerInterruptCallback Failed");
             if (managerNapi->interruptCallbackNapi_ != nullptr) {
+                std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
                 managerNapi->interruptCallbackNapi_.reset();
                 managerNapi->interruptCallbackNapi_ = nullptr;
             }

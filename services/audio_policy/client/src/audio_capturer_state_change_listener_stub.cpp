@@ -108,7 +108,9 @@ void AudioCapturerStateChangeListenerStub::OnCapturerStateChange(
     if (cb == nullptr) {
         AUDIO_ERR_LOG("AudioCapturerStateChangeListenerStub: callback_ is nullptr");
     } else {
+        cb->cbMutex_.lock();
         cb->OnCapturerStateChange(audioCapturerChangeInfos);
+        cb->cbMutex_.unlock();
     }
     return;
 }

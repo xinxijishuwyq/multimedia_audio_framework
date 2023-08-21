@@ -44,6 +44,7 @@ public:
      */
     virtual void OnCapturerStateChange(
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
+    std::mutex cbMutex_;
 };
 
 class AudioClientTracker {
@@ -123,7 +124,7 @@ public:
      * @since 9
      */
     int32_t RegisterAudioCapturerEventListener(const int32_t clientPid,
-                                              const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
+        const std::shared_ptr<AudioCapturerStateChangeCallback> &callback);
 
     /**
      * @brief Unregisters the capturer event callback listener.
