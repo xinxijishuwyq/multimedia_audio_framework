@@ -31,7 +31,7 @@ namespace AudioStandard {
 
 static const int32_t MAX_VOLUME_LEVEL = 15;
 static const int32_t CONST_FACTOR = 100;
-static const std::vector<StreamUsage> NEED_VERFITY_PERMISSION_STREAMS = {
+static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
     STREAM_USAGE_ENFORCED_TONE,
@@ -47,9 +47,9 @@ static float VolumeToDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
-static bool isNeedVerfityPermission(const StreamUsage streamUsage)
+static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
 {
-    for (const auto& item : NEED_VERFITY_PERMISSION_STREAMS) {
+    for (const auto& item : NEED_VERIFY_PERMISSION_STREAMS) {
         if (streamUsage == item) {
             return true;
         }
@@ -142,7 +142,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
         streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
-    if (contentType == CONTENT_TYPE_ULTRASONIC || isNeedVerfityPermission(streamUsage)) {
+    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
                 "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
