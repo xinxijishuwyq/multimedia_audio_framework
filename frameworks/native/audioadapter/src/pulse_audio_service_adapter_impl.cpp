@@ -1080,7 +1080,8 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         uint32_t sessionID = sourceIndexSessionIDMap[idx];
         AUDIO_ERR_LOG("[ProcessSourceOutputEvent] sessionID: %{public}d removed", sessionID);
         g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
-        if (idx == g_playbackCapturerSourceOutputIndex) {
+        if (g_playbackCapturerSourceOutputIndex >= 0 &&
+            idx == static_cast<uint32_t>(g_playbackCapturerSourceOutputIndex)) {
             g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
             g_playbackCapturerSourceOutputIndex = -1;
         }

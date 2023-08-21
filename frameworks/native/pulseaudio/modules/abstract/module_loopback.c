@@ -355,7 +355,7 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
     AUDIO_DEBUG_LOG("Loopback latency at base rate is %0.2f ms", (double)latencyAtOptimumRate / PA_USEC_PER_MSEC);
 
     /* Drop or insert samples if fast_adjust_threshold_msec was specified and the latency difference is too large. */
-    if (u->fast_adjust_threshold > 0 && abs((*latencyDifference)) > u->fast_adjust_threshold) {
+    if (u->fast_adjust_threshold > 0 && ((pa_usec_t)(abs(*latencyDifference))) > u->fast_adjust_threshold) {
         AUDIO_DEBUG_LOG ("Latency difference larger than %" PRIu64 " msec, skipping or inserting samples.",
             u->fast_adjust_threshold / PA_USEC_PER_MSEC);
 
@@ -1275,11 +1275,6 @@ static void InitUserData(struct userdata *u)
     fastAdjustThreshold = 0;
     maxLatencyMsec = 0;
 
-    if (maxLatencyMsec < latencyMsec) {
-        AUDIO_WARNING_LOG("Configured maximum latency is smaller than latency, using latency instead");
-        maxLatencyMsec = latencyMsec;
-    }
-
     u->latency = (pa_usec_t) latencyMsec * PA_USEC_PER_MSEC;
     u->max_latency = (pa_usec_t) maxLatencyMsec * PA_USEC_PER_MSEC;
     u->output_thread_info.pop_called = false;
@@ -1339,24 +1334,29 @@ static int CreateSinkInput(pa_module *m, pa_modargs *ma, struct userdata *u, pa_
     return 0;
 }
 
-static int ConfigSinkInput(struct userdata *u, pa_source *source)
+static void AssignmentParameterUserdata(struct userdata *userdata)
+{
+    userdata->sink_input->parent.process_msg = SinkInputProcessMsgCb;
+    userdata->sink_input->pop = SinkInputPopCb;
+    userdata->sink_input->process_rewind = SinkInputProcessRewindCb;
+    userdata->sink_input->kill = SinkInputKillCb;
+    userdata->sink_input->state_change = SinkInputStateChangeCb;
+    userdata->sink_input->attach = SinkInputAttachCb;
+    userdata->sink_input->detach = SinkInputDetachCb;
+    userdata->sink_input->update_max_rewind = SinkInputUpdateMaxRewindCb;
+    userdata->sink_input->update_max_request = SinkInputUpdateMaxRequestCb;
+    userdata->sink_input->suspend = SinkInputSuspendCb;
+    userdata->sink_input->update_sink_latency_range = UpdateSinkLatencyRangeCb;
+    userdata->sink_input->update_sink_fixed_latency = UpdateSinkLatencyRangeCb;
+    userdata->sink_input->userdata = userdata;
+}
+
+static int ConfigSinkInput(struct userdata *u, const pa_source *source)
 {
     const char *n;
     pa_memchunk silence;
 
-    u->sink_input->parent.process_msg = SinkInputProcessMsgCb;
-    u->sink_input->pop = SinkInputPopCb;
-    u->sink_input->process_rewind = SinkInputProcessRewindCb;
-    u->sink_input->kill = SinkInputKillCb;
-    u->sink_input->state_change = SinkInputStateChangeCb;
-    u->sink_input->attach = SinkInputAttachCb;
-    u->sink_input->detach = SinkInputDetachCb;
-    u->sink_input->update_max_rewind = SinkInputUpdateMaxRewindCb;
-    u->sink_input->update_max_request = SinkInputUpdateMaxRequestCb;
-    u->sink_input->suspend = SinkInputSuspendCb;
-    u->sink_input->update_sink_latency_range = UpdateSinkLatencyRangeCb;
-    u->sink_input->update_sink_fixed_latency = UpdateSinkLatencyRangeCb;
-    u->sink_input->userdata = u;
+    AssignmentParameterUserdata(u);
 
     UpdateLatencyBoundaries(u, u->source_output->source, u->sink_input->sink);
     SetSinkInputLatency(u, u->sink_input->sink);
