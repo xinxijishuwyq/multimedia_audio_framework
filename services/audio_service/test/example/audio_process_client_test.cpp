@@ -394,7 +394,8 @@ inline AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
     }
 }
 
-void AudioProcessTest::SelectDevice(DeviceRole deviceRole) {
+void AudioProcessTest::SelectDevice(DeviceRole deviceRole)
+{
     AudioSystemManager *manager = AudioSystemManager::GetInstance();
     if (manager == nullptr) {
         std::cout << "Get AudioSystemManager failed" << std::endl;
@@ -423,6 +424,8 @@ void AudioProcessTest::SelectDevice(DeviceRole deviceRole) {
     } else {
         sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
         filter->uid = getuid();
+        filter->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+        filter->capturerInfo.capturerFlags = STREAM_FLAG_FAST;
         ret = manager->SelectInputDevice(filter, devices);
     }
 
@@ -564,7 +567,9 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    (void)isRemote;
+    if (isRemote) {
+        SelectDevice(INPUT_DEVICE);
+    }
 
     micProcessClient_ = AudioProcessInClient::Create(config);
     CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, ERR_INVALID_HANDLE,

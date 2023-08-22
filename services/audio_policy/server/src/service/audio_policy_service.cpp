@@ -500,7 +500,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
 
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
-        AUDIO_INFO_LOG("SelectOutputDevice for fast stream");
         return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
     }
 
@@ -517,35 +516,15 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return SelectNewDevice(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors[0]);
     }
 
-    int32_t targetUid = audioRendererFilter->uid;
-    AudioStreamType targetStreamType = audioRendererFilter->streamType;
     // move all sink-input.
-    bool moveAll = false;
-    if (targetUid == -1) {
+    bool moveAll = audioRendererFilter->uid == -1 ? true : false;
+    if (moveAll) {
         AUDIO_INFO_LOG("Move all sink inputs.");
-        moveAll = true;
         std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_.clear();
     }
 
-    // find sink-input id with audioRendererFilter
-    std::vector<SinkInput> targetSinkInputs = {};
-    vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
-
-    for (size_t i = 0; i < sinkInputs.size(); i++) {
-        if (sinkInputs[i].uid == dAudioClientUid) {
-            AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
-            continue;
-        }
-        if (sinkInputs[i].streamType == STREAM_DEFAULT) {
-            AUDIO_INFO_LOG("Sink-input[%{public}zu] of effect sink, don't move", i);
-            continue;
-        }
-        AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
-        if (moveAll || (targetUid == sinkInputs[i].uid && targetStreamType == sinkInputs[i].streamType)) {
-            targetSinkInputs.push_back(sinkInputs[i]);
-        }
-    }
+    std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(audioRendererFilter, moveAll);
 
     // move target uid, but no stream played yet, record the routing info for first start.
     if (!moveAll && targetSinkInputs.size() == 0) {
@@ -563,15 +542,41 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
 int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
+    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
+        deviceDescriptor->networkId_.c_str());
     // note: check if stream is already running
     // if is running, call moveProcessToEndpoint.
 
     // otherwises, keep router info in the map
     std::lock_guard<std::mutex> lock(routerMapMutex_);
-    routerMap_[audioRendererFilter->uid] = std::pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
-    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
-        deviceDescriptor->networkId_.c_str());
+    fastRouterMap_[audioRendererFilter->uid] = std::make_pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
     return SUCCESS;
+}
+
+std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(sptr<AudioRendererFilter> audioRendererFilter,
+    bool moveAll)
+{
+    int32_t targetUid = audioRendererFilter->uid;
+    AudioStreamType targetStreamType = audioRendererFilter->streamType;
+    // find sink-input id with audioRendererFilter
+    std::vector<SinkInput> targetSinkInputs = {};
+    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+
+    for (size_t i = 0; i < sinkInputs.size(); i++) {
+        if (sinkInputs[i].uid == dAudioClientUid) {
+            AUDIO_INFO_LOG("Find sink-input with daudio[%{public}d]", sinkInputs[i].pid);
+            continue;
+        }
+        if (sinkInputs[i].streamType == STREAM_DEFAULT) {
+            AUDIO_INFO_LOG("Sink-input[%{public}zu] of effect sink, don't move", i);
+            continue;
+        }
+        AUDIO_DEBUG_LOG("sinkinput[%{public}zu]:%{public}s", i, PrintSinkInput(sinkInputs[i]).c_str());
+        if (moveAll || (targetUid == sinkInputs[i].uid && targetStreamType == sinkInputs[i].streamType)) {
+            targetSinkInputs.push_back(sinkInputs[i]);
+        }
+    }
+    return targetSinkInputs;
 }
 
 int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
@@ -721,6 +726,20 @@ inline std::string PrintSourceOutput(SourceOutput sourceOutput)
     return value.str();
 }
 
+int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    // note: check if stream is already running
+    // if is running, call moveProcessToEndpoint.
+
+    // otherwises, keep router info in the map
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    fastRouterMap_[audioCapturerFilter->uid] = std::make_pair(deviceDescriptor->networkId_, INPUT_DEVICE);
+    AUDIO_INFO_LOG("SelectFastInputDevice for uid[%{public}d] device[%{public}s]", audioCapturerFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
@@ -729,6 +748,10 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, audioDeviceDescriptors);
     if (res != SUCCESS) {
         return res;
+    }
+
+    if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && audioDeviceDescriptors.size() == 1) {
+        return SelectFastInputDevice(audioCapturerFilter, audioDeviceDescriptors[0]);
     }
 
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
@@ -3736,7 +3759,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     deviceInfo.audioStreamInfo = targetStreamInfo;
     deviceInfo.deviceName = "mmap_device";
     std::lock_guard<std::mutex> lock(routerMapMutex_);
-    if (fastRouterMap_.count(config.appInfo.appUid) && fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
+    if (fastRouterMap_.count(config.appInfo.appUid) &&
+        fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
         deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
         AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", deviceInfo.networkId.c_str());
     }

@@ -97,6 +97,8 @@ public:
 
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
@@ -322,6 +324,8 @@ private:
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
+    std::vector<SinkInput> FilterSinkInputs(sptr<AudioRendererFilter> audioRendererFilter, bool moveAll);
+
     int32_t MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
@@ -493,7 +497,7 @@ private:
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
-    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, DeviceRole>
+    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
 #ifdef FEATURE_DTMF_TONE
