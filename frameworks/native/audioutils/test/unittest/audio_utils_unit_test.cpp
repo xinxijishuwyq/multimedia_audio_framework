@@ -117,6 +117,13 @@ HWTEST(AudioUtilsUnitTest, AdjustStereoToMonoForPCM_001, TestSize.Level1)
 {
     uint64_t len = 2;
 
+    const int8_t BitRET = 1;
+    int8_t arr1[2] = {1, 2};
+    int8_t *data1 = &arr1[0];
+    AdjustStereoToMonoForPCM8Bit(data1, len);
+    EXPECT_EQ(BitRET, data1[0]);
+    EXPECT_EQ(BitRET, data1[1]);
+
     const int16_t Bit16RET = 1;
     int16_t arr2[2] = {1, 2};
     int16_t *data2 = &arr2[0];
@@ -189,6 +196,32 @@ HWTEST(AudioUtilsUnitTest, AdjustAudioBalanceForPCM_001, TestSize.Level1)
     AdjustAudioBalanceForPCM32Bit(data4, len, left, right);
     EXPECT_EQ(Bit32RET, data4[0]);
     EXPECT_EQ(Bit32RET*2, data4[1]);
+}
+
+/**
+* @tc.name  : Test GetSysPara API
+* @tc.type  : FUNC
+* @tc.number: GetSysPara_001
+* @tc.desc  : Test GetSysPara interface.
+*/
+HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
+{
+    const char *invaildKey = nullptr;
+    int32_t value32 = 2;
+    bool result = GetSysPara(invaildKey, value32);
+    EXPECT_EQ(false, result);
+    const char *key = "debug.audio_service.testmodeon";
+    bool result1 = GetSysPara(key, value32);
+    EXPECT_EQ(true, result1);
+    uint32_t valueU32 = 3;
+    bool result2 = GetSysPara(key, valueU32);
+    EXPECT_EQ(true, result2);
+    int64_t value64 = 0;
+    bool result3 = GetSysPara(key, value64);
+    EXPECT_EQ(true, result3);
+    std::string strValue = "100";
+    bool result4 = GetSysPara(key, strValue);
+    EXPECT_EQ(true, result4);
 }
 } // namespace AudioStandard
 } // namespace OHOS
