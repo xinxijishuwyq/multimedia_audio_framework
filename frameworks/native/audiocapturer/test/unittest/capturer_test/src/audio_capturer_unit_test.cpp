@@ -3216,5 +3216,25 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerCallback_001, TestSize
     EXPECT_LT(ret, 0);
     audioCapturer->Release();
 }
+
+/**
+ * @tc.name  : Test GetFramesRead API stability.
+ * @tc.number: Audio_Capturer_GetFramesRead_001
+ * @tc.desc  : Test GetFramesRead interface stability.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFramesRead_001, TestSize.Level1)
+{
+    int64_t ret = -1;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->GetFramesRead();
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioCapturer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS

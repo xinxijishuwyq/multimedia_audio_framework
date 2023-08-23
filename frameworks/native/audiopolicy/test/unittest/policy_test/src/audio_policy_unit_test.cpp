@@ -931,6 +931,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetSystemSoundUri_001, TestSize.Level1)
     const std::string uri = "testuri";
     ret = AudioPolicyManager::GetInstance().SetSystemSoundUri(key, uri);
     EXPECT_EQ(SUCCESS, ret);
+
+    std::string systemSoundUri = AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
+    EXPECT_NE(systemSoundUri, "");
 }
 } // namespace AudioStandard
 } // namespace OHOS

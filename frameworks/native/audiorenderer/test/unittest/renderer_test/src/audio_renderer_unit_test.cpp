@@ -5600,5 +5600,25 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
 
     audioRenderer->Release();
 }
+
+/**
+ * @tc.name  : Test GetFramesWritten API after calling create
+ * @tc.number: Audio_Renderer_GetFramesWritten_001
+ * @tc.desc  : Test GetFramesWritten interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFramesWritten_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->GetFramesWritten();
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS

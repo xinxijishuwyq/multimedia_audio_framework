@@ -1509,5 +1509,26 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateChan
     g_audioManagerInstance->UnregisterAudioCapturerEventListener(getpid());
     std::this_thread::sleep_for(std::chrono::seconds(10));
 }
+
+/**
+* @tc.name  : Test IsAudioRendererLowLatencySupported API
+* @tc.number: Audio_Stream_IsAudioRendererLowLatencySupported_001
+* @tc.desc  : Test IsAudioRendererLowLatencySupported interface
+*/
+HWTEST(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioStreamManagerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioStreamInfo audioStreamInfo;
+    bool ret = AudioStreamManager::GetInstance()->IsAudioRendererLowLatencySupported(audioStreamInfo);
+    EXPECT_EQ(true, ret);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
 } // namespace AudioStandard
 } // namespace OHOS
