@@ -21,6 +21,7 @@
 #include <string>
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 #include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
@@ -546,7 +547,10 @@ private:
 
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
+
     std::mutex deviceClassInfoMutex_;
+
+    std::shared_mutex deviceStatusUpdateSharedMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
