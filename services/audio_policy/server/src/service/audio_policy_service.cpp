@@ -1601,13 +1601,16 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
         return result;
     }
 
-    std::string portName = GetSinkPortName(deviceType);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
     bool isVolumeSwitched = false;
     if (isUpdateRouteSupported_ && !isSceneActivation) {
         if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
             int32_t muteDuration = 1200000; // us
-            std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
+            std::string sinkPortName = GetSinkPortName(deviceType);
+            CHECK_AND_RETURN_RET_LOG(sinkPortName != PORT_NONE,
+                ERR_OPERATION_FAILED,
+                "Invalid port %{public}s",
+                sinkPortName.c_str());
+            std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, sinkPortName, deviceType);
             switchThread.detach();
             int32_t beforSwitchDelay = 300000; // 300 ms
             usleep(beforSwitchDelay);
