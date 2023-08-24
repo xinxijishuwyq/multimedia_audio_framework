@@ -91,11 +91,15 @@ public:
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
@@ -321,6 +325,8 @@ private:
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
+    std::vector<SinkInput> FilterSinkInputs(sptr<AudioRendererFilter> audioRendererFilter, bool moveAll);
+
     int32_t MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
@@ -433,6 +439,8 @@ private:
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
+    void RemoveDeviceInFastRouterMap(std::string networkId);
+
     void UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor);
 
     void RegisterRemoteDevStatusCallback();
@@ -490,6 +498,7 @@ private:
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
+    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
     Parser& configParser_;
 #ifdef FEATURE_DTMF_TONE

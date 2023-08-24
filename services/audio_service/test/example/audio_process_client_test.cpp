@@ -31,6 +31,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_process_in_client.h"
+#include "audio_system_manager.h"
 #include "parameter.h"
 #include "pcm2wav.h"
 
@@ -291,6 +292,7 @@ public:
     bool StopMic();
     bool ReleaseMic();
 
+    void SelectDevice(DeviceRole deviceRole);
 private:
     std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
     std::shared_ptr<AudioProcessInClient> micProcessClient_ = nullptr;
@@ -308,12 +310,14 @@ int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
     size_t cnt = fwrite(bufDesc.buffer, 1, bufDesc.bufLength, g_micPcmFile);
     CHECK_AND_RETURN_RET_LOG(cnt == bufDesc.bufLength, ERR_WRITE_FAILED,
         "%{public}s fwrite fail, cnt %{public}zu, bufLength %{public}zu.", __func__, cnt, bufDesc.bufLength);
-    int ret = memcpy_s(static_cast<void *>(g_cacheBuffer.buffer), bufDesc.bufLength,
-        static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-    if (ret != EOK) {
-        AUDIO_WARNING_LOG("memcpy_s failed.");
+    if (g_testMode == RENDER_MIC_LOOP_DATA) {
+        int ret = memcpy_s(static_cast<void *>(g_cacheBuffer.buffer), bufDesc.bufLength,
+            static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+        if (ret != EOK) {
+            AUDIO_WARNING_LOG("memcpy_s failed.");
+        }
+        g_stampTime = ClockTime::GetCurNano();
     }
-    g_stampTime = ClockTime::GetCurNano();
     return SUCCESS;
 }
 
@@ -390,6 +394,48 @@ inline AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
     }
 }
 
+void AudioProcessTest::SelectDevice(DeviceRole deviceRole)
+{
+    AudioSystemManager *manager = AudioSystemManager::GetInstance();
+    if (manager == nullptr) {
+        std::cout << "Get AudioSystemManager failed" << std::endl;
+        return;
+    }
+
+    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    if (deviceRole == OUTPUT_DEVICE) {
+        devices = manager->GetDevices(DISTRIBUTED_OUTPUT_DEVICES_FLAG);
+    } else {
+        devices = manager->GetDevices(DISTRIBUTED_INPUT_DEVICES_FLAG);
+    }
+    if (devices.size() != 1) {
+        std::cout << "GetDevices failed, unsupported size:" << devices.size() << std::endl;
+        return;
+    }
+
+    std::cout << "using device:" << devices[0]->networkId_ << std::endl;
+
+    int32_t ret = 0;
+    if (deviceRole == OUTPUT_DEVICE) {
+        sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+        filter->uid = getuid();
+        filter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+        ret = manager->SelectOutputDevice(filter, devices);
+    } else {
+        sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
+        filter->uid = getuid();
+        filter->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+        filter->capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+        ret = manager->SelectInputDevice(filter, devices);
+    }
+
+    if (ret == SUCCESS) {
+        std::cout << "SelectDevice seccess" << std::endl;
+    } else {
+        std::cout << "SelectDevice failed, ret:" << ret << std::endl;
+    }
+}
+
 int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
 {
     if (loopCount < 0) {
@@ -398,6 +444,9 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
         loopCount_ = -1; // infinite loop
     } else {
         loopCount_ = loopCount;
+    }
+    if (isRemote) {
+        SelectDevice(OUTPUT_DEVICE);
     }
 
     AudioProcessConfig config;
@@ -518,7 +567,9 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    (void)isRemote;
+    if (isRemote) {
+        SelectDevice(INPUT_DEVICE);
+    }
 
     micProcessClient_ = AudioProcessInClient::Create(config);
     CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, ERR_INVALID_HANDLE,
