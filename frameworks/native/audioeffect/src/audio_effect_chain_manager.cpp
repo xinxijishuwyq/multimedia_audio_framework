@@ -84,13 +84,6 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
     return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
 }
 
-void IgnoreEffectChangeProcess(bool ignored)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    audioEffectChainManager->IgnoreEffectChain(ignored);
-}
-
 namespace OHOS {
 namespace AudioStandard {
 
@@ -106,7 +99,6 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig.outputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
     ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
-    isEffectIgnored = false;
 }
 
 AudioEffectChain::~AudioEffectChain()
@@ -287,13 +279,7 @@ void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, ui
 bool AudioEffectChain::IsEmptyEffectHandles()
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
-    return isEffectIgnored || standByEffectHandles.size() == 0;
-}
-
-void AudioEffectChain::IgnoreEffect(bool ignored)
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    isEffectIgnored = ignored;
+    return standByEffectHandles.size() == 0;
 }
 
 int32_t FindEffectLib(const std::string &effect,
@@ -586,14 +572,6 @@ void AudioEffectChainManager::Dump()
     for (auto item = SceneTypeToEffectChainMap_.begin(); item != SceneTypeToEffectChainMap_.end(); ++item) {
         AudioEffectChain *audioEffectChain = item->second;
         audioEffectChain->Dump();
-    }
-}
-
-void AudioEffectChainManager::IgnoreEffectChain(bool ignored)
-{
-    for (auto item = SceneTypeToEffectChainMap_.begin(); item != SceneTypeToEffectChainMap_.end(); ++item) {
-        AudioEffectChain *audioEffectChain = item->second;
-        audioEffectChain->IgnoreEffect(ignored);
     }
 }
 

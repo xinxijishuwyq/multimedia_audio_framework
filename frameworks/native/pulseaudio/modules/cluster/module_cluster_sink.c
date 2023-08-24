@@ -231,19 +231,6 @@ static pa_hook_result_t SourceOutputPutCb(pa_core *c, pa_source_output *so, stru
 
     if (IsSourceOutputForInnerCapturer(so, u)) {
         u->isInnerCapturer = true;
-        IgnoreEffectChangeProcess(true);
-    }
-    return PA_HOOK_OK;
-}
-
-static pa_hook_result_t SinkStateChangedCb(pa_core *c, pa_sink *s, struct userdata *u)
-{
-    pa_assert(c);
-    pa_assert(u);
-    pa_assert(s);
-
-    if (pa_safe_streq(s->name, "InnerCapturer") && s->state == PA_SINK_SUSPENDED) {
-        IgnoreEffectChangeProcess(false);
     }
     return PA_HOOK_OK;
 }
@@ -294,8 +281,6 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)ClientProplistChangedCb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_STATE_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SourceOutputStateChangedCb, u);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_STATE_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)SinkStateChangedCb, u);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_PUT], PA_HOOK_LATE,
         (pa_hook_cb_t)SourceOutputPutCb, u);
 
