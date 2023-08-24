@@ -34,6 +34,9 @@ struct SingleInstancePromise {
     }
   }
   private audioRenderer = null
+  private audioEffectMode = null
+  private audioManager = null;
+  private audioStreamManager = null;
   private samplingRateList = []
   @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100"
   private channelsList = []
@@ -46,6 +49,8 @@ struct SingleInstancePromise {
   @State selectedContentTypeKey: string = "CONTENT_TYPE_SPEECH"
   private streamUsageList = []
   @State selectedStreamUsageKey: string = "STREAM_USAGE_VOICE_COMMUNICATION"
+  private AudioEffectModeList = []
+  @State selectedAudioEffectModeKey: string = "EFFECT_DEFAULT"
   @State returnMsg: string = `hello`
   @State bufferSize: number = 0
   @State isBlockingRead: boolean = true
@@ -71,6 +76,13 @@ struct SingleInstancePromise {
     for (let key in audio.StreamUsage) {
       this.streamUsageList.push({ value: key })
     }
+    for (let key in audio.AudioEffectMode) {
+      this.AudioEffectModeList.push({ value: key })
+    }
+
+    this.audioManager = audio.getAudioManager();
+    this.audioStreamManager = this.audioManager.getStreamManager()
+
   }
 
   async onBackPress(){
@@ -94,6 +106,30 @@ struct SingleInstancePromise {
     })
   }
 
+  onAudioRendererChange(){
+    //    if (this.audioRenderer == null) {
+    //      this.returnMsg = `audioRenderer instance had not created,dont‘t allow to start\n`
+    //      return
+    //    }
+
+    let _this = this
+    _this.returnMsg = `onAudioRendererChange 注册成功\n`
+    this.audioStreamManager.on('audioRendererChange',  (AudioRendererChangeInfoArray) => {
+      _this.returnMsg = `AudioRendererChangeInfoArray : ${JSON.stringify(AudioRendererChangeInfoArray)}\n`
+    });
+
+  }
+
+  offAudioRendererChange(){
+    //    if (this.audioRenderer == null) {
+    //      this.returnMsg = `audioRenderer instance had not created,dont‘t allow to start\n`
+    //      return
+    //    }
+    let _this = this
+    this.audioStreamManager.off('audioRendererChange');
+    _this.returnMsg = `off audioRendererChange success \n`
+
+  }
   rendererStart() {
     if (this.audioRenderer == null) {
       this.returnMsg = `audioRenderer instance had not created,dont‘t allow to start\n`
@@ -207,6 +243,33 @@ struct SingleInstancePromise {
         _this.returnMsg = `audioRenderer pause : Error: ${JSON.stringify(err)}\n`
       })
   }
+  setAudioEffectMode() {
+    if (this.audioRenderer == null) {
+      this.returnMsg = `audioRenderer instance had not created,dont‘t allow to setAudioEffectMode\n`
+      return
+    }
+    let _this = this
+
+    _this.audioRenderer.setAudioEffectMode(this.audioEffectMode).then(() => {
+      _this.returnMsg = `audioRenderer setAudioEffectMode : SUCCESS,AudioEffectMode:${this.audioEffectMode}\n`
+    }).catch((err) => {
+      _this.returnMsg = `audioRenderer setAudioEffectMode : Error: ${JSON.stringify(err)}\n`
+    });
+  }
+
+  getAudioEffectMode() {
+    if (this.audioRenderer == null) {
+      this.returnMsg = `audioRenderer instance had not created,dont‘t allow to setAudioEffectMode\n`
+      return
+    }
+    let _this = this
+
+    _this.audioRenderer.getAudioEffectMode().then((effectmode) => {
+      _this.returnMsg = `audioRenderer getAudioEffectMode : SUCCESS,AudioEffectMode:${effectmode}\n`
+    }).catch((err) => {
+      _this.returnMsg = `audioRenderer getAudioEffectMode : Error: ${JSON.stringify(err)}\n`
+    });
+  }
 
   releaseRenderer() {
     if (this.audioRenderer == null) {
@@ -223,6 +286,23 @@ struct SingleInstancePromise {
       .catch(err => {
         _this.returnMsg = `audioRenderer release : Error: ${JSON.stringify(err)}\n`
       })
+  }
+  getCurrentAudioRendererInfoArray(){
+    //    if (this.audioRenderer == null) {
+    //      this.returnMsg += `audioRenderer instance had not created,dont‘t allow to getRendererInfo\n`
+    //      return
+    //    }
+    let _this = this
+    this.audioStreamManager.getCurrentAudioRendererInfoArray(async (err, AudioRendererChangeInfoArray) => {
+      console.info('getCurrentAudioRendererInfoArray **** Get Callback Called ****');
+      if (err) {
+        _this.returnMsg = `getCurrentAudioRendererInfoArray :ERROR: ${err}`;
+      } else {
+        if (AudioRendererChangeInfoArray != null) {
+          _this.returnMsg = `getCurrentAudioRendererInfoArray :SUCCESS: ${JSON.stringify(AudioRendererChangeInfoArray)}`
+        }
+      }
+    });
   }
 
   getRendererInfo() {
@@ -345,6 +425,13 @@ struct SingleInstancePromise {
                 this.audioRendererOptions.rendererInfo.usage = audio.StreamUsage[value]
               })
           }.margin({ top: 10 })
+          Row() {
+            Select(this.AudioEffectModeList).value(this.selectedAudioEffectModeKey)
+              .onSelect((index, value) => {
+                this.selectedAudioEffectModeKey = value
+                this.audioEffectMode = audio.AudioEffectMode[value]
+              })
+          }.margin({ top: 10 })
 
 
           Row() {
@@ -354,6 +441,21 @@ struct SingleInstancePromise {
               this.createAudioRenderer()
             })
           }.margin({ top: 10 }).width('100%')
+
+          Row() {
+            Button() {
+              Text("onAudioRendererChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.onAudioRendererChange()
+            })
+
+            Button() {
+              Text("offAudioRendererChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.offAudioRendererChange()
+            })
+
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Row() {
             Button() {
@@ -401,14 +503,32 @@ struct SingleInstancePromise {
 
           Row() {
             Button() {
+              Text("setAudioEffectMode callback").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.setAudioEffectMode()
+            })
+            Button() {
+              Text("getAudioEffectMode callback").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => this.getAudioEffectMode())
+
+
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+
+          Row() {
+            Button() {
               Text("release callback").fontSize(22).fontColor(Color.White)
-            }.width('100%').height(60).onClick(() => this.releaseRenderer())
+            }.width('49%').height(60).onClick(() => this.releaseRenderer())
+
+            Button() {
+              Text("getCurrentAudioRendererInfoArray").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => this.getCurrentAudioRendererInfoArray())
           }.margin({ top: 10 }).width('100%')
 
 
           Row() {
             Button() {
-              Text("getCapturerInfo callback").fontSize(22).fontColor(Color.White)
+              Text("getRendererInfo callback").fontSize(22).fontColor(Color.White)
             }.width('49%').height(60).onClick(() => this.getRendererInfo())
 
             Button() {

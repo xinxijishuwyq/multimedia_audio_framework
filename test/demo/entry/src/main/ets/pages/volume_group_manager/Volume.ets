@@ -130,6 +130,7 @@ struct Volume {
     },
     'ULTRASONIC': {
       main: {
+        // @ts-ignore
         content: audio.ContentType.CONTENT_TYPE_ULTRASONIC,
         usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
         rendererFlags: 0

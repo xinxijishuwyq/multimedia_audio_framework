@@ -42,9 +42,12 @@ struct OnOff {
   @State path: string = ""
   @State markReachFrame: number = 1000
   @State periodReachFrame: number = 1000
+  private audioManager = null;
+  private audioStreamManager = null;
 
   aboutToAppear() {
-
+    this.audioManager = audio.getAudioManager();
+    this.audioStreamManager = this.audioManager.getStreamManager()
   }
 
   onMarkReach() {
@@ -104,6 +107,21 @@ struct OnOff {
     _this.audioCapturer.on('stateChange', (state) => {
       _this.onReturnMsg = `audio capturer state is: ${state}`
     });
+  }
+
+  onAudioCapturerChange(){
+    let _this = this
+    _this.returnMsg = `onAudioCapturerChange 注册成功\n`
+    this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
+      _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
+    });
+  }
+
+  offAudioCapturerChange(){
+    let _this = this
+
+    this.audioStreamManager.off('audioCapturerChange');
+    _this.returnMsg = `取消AudioCapturerChange监听 成功\n`
   }
 
   createAudioCapturer() {
@@ -319,6 +337,21 @@ struct OnOff {
               this.onStateChange()
             })
           }.margin({ top: 30 }).width('100%')
+
+          Row() {
+            Button() {
+              Text("onAudioCapturerChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.onAudioCapturerChange()
+            })
+
+            Button() {
+              Text("offAudioCapturerChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.offAudioCapturerChange()
+            })
+
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Text(this.onReturnMsg).fontSize(24)
 

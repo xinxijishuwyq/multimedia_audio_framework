@@ -46,7 +46,15 @@ struct AudioCapturer {
           })
 
         }.margin({ bottom: 10 })
+        Row() {
+          Button() {
+            Text("内录").fontSize(22).fontColor(Color.White)
+          }.height(80).width('90%')
+          .onClick(() => {
+            router.push({ url: 'pages/capturer/PlaybackCapturer' })
+          })
 
+        }.margin({ bottom: 10 })
 
         Row() {
           Button() {
