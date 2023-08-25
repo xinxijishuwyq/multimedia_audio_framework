@@ -347,6 +347,10 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
         pa_memblock_release(nchunk.memblock);
         pa_memblock_unref(nchunk.memblock);
     }
+
+    if (!PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
+        return -1;
+    }
     
     size_t targetLength = pa_memblockq_get_tlength(u->bufInQ);
     int iterNum = pa_memblockq_get_length(u->bufInQ) / targetLength;
