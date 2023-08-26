@@ -55,6 +55,7 @@ ohos_shared_library("ohaudio") {
   ]
 
   deps = [
+    "../../../services/audio_service:audio_client",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
   ]

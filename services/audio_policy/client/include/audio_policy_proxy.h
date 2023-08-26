@@ -210,16 +210,8 @@ public:
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
-    void WriteAudioInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
-    void WriteAudioManagerInteruptParams(MessageParcel &parcel, const AudioInterrupt &audioInterrupt);
-    void ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt);
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
         const AudioStreamChangeInfo &streamChangeInfo);
-    void ReadAudioRendererChangeInfo(MessageParcel &reply,
-        std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
-    void ReadAudioCapturerChangeInfo(MessageParcel &reply,
-        std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
-    void WriteAudioStreamInfoParams(MessageParcel &parcel, const AudioStreamInfo &audioStreamInfo);
     void ReadAudioFocusInfo(MessageParcel &reply, std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
 };
 } // namespace AudioStandard
