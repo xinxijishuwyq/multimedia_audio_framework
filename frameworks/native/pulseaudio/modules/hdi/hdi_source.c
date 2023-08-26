@@ -53,6 +53,7 @@
 #define MIN_LATENCY_USEC 500
 #define AUDIO_POINT_NUM  1024
 #define AUDIO_FRAME_NUM_IN_BUF 30
+#define HDI_WAKEUP_BUFFER_TIME (PA_USEC_PER_SEC * 2)
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 
@@ -158,6 +159,9 @@ static int SourceSetStateInIoThreadCb(pa_source *s, pa_source_state_t newState,
     if ((s->thread_info.state == PA_SOURCE_SUSPENDED || s->thread_info.state == PA_SOURCE_INIT) &&
         PA_SOURCE_IS_OPENED(newState)) {
         u->timestamp = pa_rtclock_now();
+        if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
+            u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
+        }
         if (newState == PA_SOURCE_RUNNING && !u->IsCapturerStarted) {
             if (u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper)) {
                 AUDIO_ERR_LOG("HDI capturer start failed");
@@ -230,7 +234,10 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
 
 static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
 {
-    if (!(PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->IsCapturerStarted)) {
+    bool flag = (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) ?
+        (u->source->thread_info.state == PA_SOURCE_RUNNING && u->IsCapturerStarted) :
+        (PA_SOURCE_IS_OPENED(u->source->thread_info.state) && u->IsCapturerStarted);
+    if (!flag) {
         pa_rtpoll_set_timer_disabled(u->rtpoll);
         AUDIO_DEBUG_LOG("HDI Source: pa_rtpoll_set_timer_disabled done ");
         return true;
@@ -271,6 +278,11 @@ static void ThreadFuncCapturerTimer(void *userdata)
 
     pa_thread_mq_install(&u->thread_mq);
     u->timestamp = pa_rtclock_now();
+
+    if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
+        u->timestamp -= HDI_WAKEUP_BUFFER_TIME;
+    }
+
     AUDIO_DEBUG_LOG("HDI Source: u->timestamp : %{public}" PRIu64, u->timestamp);
 
     while (true) {
@@ -342,6 +354,12 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     pa_source_new_data_init(&data);
     data.driver = __FILE__;
     data.module = m;
+
+    //if sourcetype is wakeup, source suspend after init
+    if (u->attrs.sourceType == SOURCE_TYPE_WAKEUP) {
+        data.suspend_cause = PA_SUSPEND_IDLE;
+    }
+
     pa_source_new_data_set_name(&data, pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME));
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING,
         (u->attrs.adapterName ? u->attrs.adapterName : DEFAULT_AUDIO_DEVICE_NAME));
