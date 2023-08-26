@@ -354,10 +354,7 @@ ohos_executable("audio_hdi_device_test") {
 
   cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
 
-  sources = [
-    "../../frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp",
-    "test/example/audio_hdi_device_test.cpp",
-  ]
+  sources = [ "test/example/audio_hdi_device_test.cpp" ]
 
   deps = [
     "../../frameworks/native/audioutils:audio_utils",

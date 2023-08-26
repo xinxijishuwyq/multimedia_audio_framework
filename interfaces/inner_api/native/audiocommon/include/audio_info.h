@@ -1134,7 +1134,7 @@ enum AudioParamKey {
     NONE = 0,
     VOLUME = 1,
     INTERRUPT = 2,
-    RENDER_STATE = 5,
+    PARAM_KEY_STATE = 5,
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
@@ -1181,6 +1181,13 @@ enum DeviceVolumeType {
     EARPIECE_VOLUME_TYPE = 0,
     SPEAKER_VOLUME_TYPE = 1,
     HEADSET_VOLUME_TYPE = 2,
+};
+
+enum AudioDeviceManagerType {
+    DEV_MGR_UNKNOW = 0,
+    LOCAL_DEV_MGR,
+    REMOTE_DEV_MGR,
+    BLUETOOTH_DEV_MGR,
 };
 } // namespace AudioStandard
 } // namespace OHOS

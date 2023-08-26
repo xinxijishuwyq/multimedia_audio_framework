@@ -71,6 +71,11 @@ void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(IAudioSourceCa
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
+void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterParameterCallback in file mode is not supported!");
+}
+
 int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     return SUCCESS;

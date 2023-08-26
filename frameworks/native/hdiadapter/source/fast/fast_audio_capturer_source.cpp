@@ -56,6 +56,7 @@ public:
     uint64_t GetTransactionId() override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -281,6 +282,7 @@ uint32_t FastAudioCapturerSourceInner::PcmFormatToBits(AudioSampleFormat format)
             return PCM_24_BIT;
     }
 }
+
 int32_t FastAudioCapturerSourceInner::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
     uint32_t &byteSizePerFrame)
 {
@@ -519,6 +521,11 @@ void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallb
 void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
 {
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+}
+
+void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterParameterCallback in fast mode is not supported!");
 }
 
 int32_t FastAudioCapturerSourceInner::Stop(void)

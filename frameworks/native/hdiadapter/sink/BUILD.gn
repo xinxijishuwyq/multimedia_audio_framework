@@ -141,6 +141,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
 
   include_dirs = [
     "common",
+    "../devicemanager/interface",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -150,6 +151,7 @@ ohos_shared_library("remote_audio_renderer_sink") {
   deps = [
     "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../audioutils:audio_utils",
+    "../devicemanager:audio_device_manager",
   ]
 
   external_deps = [ "hilog:libhilog" ]
@@ -182,6 +184,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
     "common",
     "fast",
     "remote_fast",
+    "../devicemanager/interface",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -191,6 +194,7 @@ ohos_shared_library("remote_fast_audio_renderer_sink") {
   deps = [
     "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../audioutils:audio_utils",
+    "../devicemanager:audio_device_manager",
   ]
 
   external_deps = [
@@ -259,6 +263,7 @@ ohos_shared_library("renderer_sink_adapter") {
     "file",
     "bluetooth",
     "remote",
+    "../devicemanager/interface",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 

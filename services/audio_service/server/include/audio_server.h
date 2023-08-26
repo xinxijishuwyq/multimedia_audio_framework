@@ -76,12 +76,14 @@ public:
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
 
     // ISinkParameterCallback
-    void OnAudioParameterChange(std::string netWorkId, const AudioParamKey key,
+    void OnAudioSinkParamChange(std::string netWorkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) override;
+
     // IAudioSourceCallback
     void OnWakeupClose() override;
-
     void OnCapturerState(bool isActive) override;
+    void OnAudioSourceParamChange(std::string netWorkId, const AudioParamKey key,
+        const std::string& condition, const std::string& value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
@@ -116,9 +118,9 @@ private:
     int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
-    std::shared_ptr<AudioParameterCallback> audioParameterCallback_;
+    std::shared_ptr<AudioParameterCallback> audioParamCb_;
     std::shared_ptr<WakeUpSourceCallback> wakeupCallback_;
-    std::mutex setParameterCallbackMutex_;
+    std::mutex audioParamCbMtx_;
     std::mutex setWakeupCloseCallbackMutex_;
     std::mutex audioParameterMutex_;
     std::mutex wakeupCloseMutex_;
