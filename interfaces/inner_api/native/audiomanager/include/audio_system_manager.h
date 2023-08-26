@@ -171,6 +171,7 @@ public:
     virtual ~AudioCapturerFilter();
 
     int32_t uid = -1;
+    AudioCapturerInfo capturerInfo = {SOURCE_TYPE_INVALID, 0};
 
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);

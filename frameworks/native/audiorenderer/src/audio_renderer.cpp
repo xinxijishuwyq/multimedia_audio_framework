@@ -279,9 +279,14 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
             AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
             streamClass = IAudioStream::FAST_STREAM;
             isFastRenderer_ = true;
+            DeviceType deviceType = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+            if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+                streamClass = IAudioStream::PA_STREAM;
+            }
         } else {
             AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
             streamClass = IAudioStream::PA_STREAM;
+            isFastRenderer_ = false;
         }
     }
     // check AudioStreamParams for fast stream
@@ -301,6 +306,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
 
     SetAudioPrivacyType(privacyType_);
+
+    audioStream_->SetStreamTrackerState(false);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     if (ret) {

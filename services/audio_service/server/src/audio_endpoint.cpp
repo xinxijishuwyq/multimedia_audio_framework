@@ -336,6 +336,9 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     endpointWorkThread_ = std::thread(&AudioEndpointInner::RecordEndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
 
+    updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
+    pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
+
 #ifdef DUMP_PROCESS_FILE
     dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
     if (dump_hdi_ == nullptr) {
@@ -354,7 +357,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
         return ConfigInputPoint(deviceInfo);
     }
 
-    fastSink_ = deviceInfo.networkId == REMOTE_NETWORK_ID ?
+    fastSink_ = deviceInfo.networkId != LOCAL_NETWORK_ID ?
         RemoteFastAudioRendererSink::GetInstance(deviceInfo.networkId) : FastAudioRendererSink::GetInstance();
     IAudioSinkAttr attr = {};
     attr.adapterName = "primary";
@@ -387,7 +390,6 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     endpointWorkThread_ = std::thread(&AudioEndpointInner::EndpointWorkLoopFuc, this);
     pthread_setname_np(endpointWorkThread_.native_handle(), "AudioEndpointLoop");
 
-    // note: add this in record.
     updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
     pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
@@ -993,11 +995,13 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     uint32_t startPeriodCnt = 20;
     uint32_t oneBigPeriodCnt = 40;
     if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
-        // todo sleep random little time but less than nextHdiReadTime - 2ms
-        uint64_t writeFrame = 0;
-        int64_t writeTime = 0;
-        if (GetDeviceHandleInfo(writeFrame, writeTime)) {
-            writeTimeModel_.UpdataFrameStamp(writeFrame, writeTime);
+        updateThreadCV_.notify_all();
+    }
+    uint64_t writeFrame = 0;
+    int64_t writetime = 0;
+    if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
+        if (writeFrame != posInFrame_) {
+            writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
         }
     }
     int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);

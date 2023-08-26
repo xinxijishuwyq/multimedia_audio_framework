@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2022 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -94,9 +94,16 @@ ohos_shared_library("remote_audio_capturer_source") {
 
   include_dirs = [
     "common",
+    "../devicemanager/interface",
+    "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
   include_dirs += [ multimedia_audio_framework_drivers ]
+
+  deps = [
+    "../../audioutils:audio_utils",
+    "../devicemanager:audio_device_manager",
+  ]
 
   external_deps = [ "hilog:libhilog" ]
   defines = []
@@ -124,13 +131,17 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 
   include_dirs = [
     "common",
+    "../devicemanager/interface",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_drivers ]
 
-  deps = [ "../../audioutils:audio_utils" ]
+  deps = [
+    "../../audioutils:audio_utils",
+    "../devicemanager:audio_device_manager",
+  ]
 
   external_deps = [
     "c_utils:utils",
@@ -199,6 +210,7 @@ ohos_shared_library("capturer_source_adapter") {
     "file",
     "primary",
     "remote",
+    "../devicemanager/interface",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 

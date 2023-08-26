@@ -32,7 +32,6 @@ namespace AudioStandard {
 const std::string AUDIO_HDI_SERVICE_NAME = "audio_manager_service";
 const std::string AUDIO_HDI_PNP_SERVICE_NAME = "audio_hdi_pnp_service";
 const std::string AUDIO_BLUETOOTH_HDI_SERVICE_NAME = "audio_bluetooth_hdi_service";
-
 const std::string DAUDIO_HDI_SERVICE_NAME = "daudio_primary_service";
 const uint8_t EVENT_PARAMS = 2;
 const uint8_t D_EVENT_PARAMS = 5;

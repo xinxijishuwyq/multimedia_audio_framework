@@ -210,7 +210,9 @@ AudioCapturerFilter::~AudioCapturerFilter()
 
 bool AudioCapturerFilter::Marshalling(Parcel &parcel) const
 {
-    return parcel.WriteInt32(uid);
+    return parcel.WriteInt32(uid)
+        && parcel.WriteInt32(static_cast<int32_t>(capturerInfo.sourceType))
+        && parcel.WriteInt32(capturerInfo.capturerFlags);
 }
 
 sptr<AudioCapturerFilter> AudioCapturerFilter::Unmarshalling(Parcel &in)
@@ -221,6 +223,8 @@ sptr<AudioCapturerFilter> AudioCapturerFilter::Unmarshalling(Parcel &in)
     }
 
     audioCapturerFilter->uid = in.ReadInt32();
+    audioCapturerFilter->capturerInfo.sourceType = static_cast<SourceType>(in.ReadInt32());
+    audioCapturerFilter->capturerInfo.capturerFlags = in.ReadInt32();
 
     return audioCapturerFilter;
 }

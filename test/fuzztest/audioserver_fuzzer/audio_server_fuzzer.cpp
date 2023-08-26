@@ -81,7 +81,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
     std::string condition(reinterpret_cast<const char*>(rawData), size - 1);
     std::string value(reinterpret_cast<const char*>(rawData), size - 1);
-    AudioServerPtr->OnAudioParameterChange(netWorkId, key, condition, value);
+    AudioServerPtr->OnAudioSinkParamChange(netWorkId, key, condition, value);
 }
 
 void AudioServerCaptureSilentlyFuzzTest(const uint8_t *rawData, size_t size)

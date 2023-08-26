@@ -681,15 +681,30 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
     return ret;
 }
 
-void AudioServer::OnAudioParameterChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
+void AudioServer::OnAudioSinkParamChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
     const std::string& value)
 {
-    std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
-    AUDIO_INFO_LOG("OnAudioParameterChange Callback from networkId: %s", netWorkId.c_str());
-
-    if (audioParameterCallback_ != nullptr) {
-        audioParameterCallback_->OnAudioParameterChange(netWorkId, key, condition, value);
+    std::shared_ptr<AudioParameterCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockSet(audioParamCbMtx_);
+        AUDIO_INFO_LOG("OnAudioSinkParamChange Callback from networkId: %s", netWorkId.c_str());
+        CHECK_AND_RETURN_LOG(audioParamCb_ != nullptr, "OnAudioSinkParamChange: audio param allback is null.");
+        callback = audioParamCb_;
     }
+    callback->OnAudioParameterChange(netWorkId, key, condition, value);
+}
+
+void AudioServer::OnAudioSourceParamChange(std::string netWorkId, const AudioParamKey key,
+    const std::string& condition, const std::string& value)
+{
+    std::shared_ptr<AudioParameterCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockSet(audioParamCbMtx_);
+        AUDIO_INFO_LOG("OnAudioSourceParamChange Callback from networkId: %s", netWorkId.c_str());
+        CHECK_AND_RETURN_LOG(audioParamCb_ != nullptr, "OnAudioSourceParamChange: audio param allback is null.");
+        callback = audioParamCb_;
+    }
+    callback->OnAudioParameterChange(netWorkId, key, condition, value);
 }
 
 void AudioServer::OnWakeupClose()
@@ -698,12 +713,8 @@ void AudioServer::OnWakeupClose()
     std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
-        if (wakeupCallback_ == nullptr) {
-            AUDIO_ERR_LOG("OnWakeupClose callback is nullptr.");
-            return;
-        } else {
-            callback = wakeupCallback_;
-        }
+        CHECK_AND_RETURN_LOG(wakeupCallback_ != nullptr, "OnWakeupClose callback is nullptr.");
+        callback = wakeupCallback_;
     }
     callback->OnWakeupClose();
 }
@@ -714,12 +725,8 @@ void AudioServer::OnCapturerState(bool isActive)
     std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
-        if (wakeupCallback_ == nullptr) {
-            AUDIO_ERR_LOG("OnCapturerState callback is nullptr.");
-            return;
-        } else {
-            callback = wakeupCallback_;
-        }
+        CHECK_AND_RETURN_LOG(wakeupCallback_ != nullptr, "OnCapturerState callback is nullptr.");
+        callback = wakeupCallback_;
     }
     callback->OnCapturerState(isActive);
 }
@@ -731,7 +738,7 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
         AUDIO_ERR_LOG("SetParameterCallback refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
-    std::lock_guard<std::mutex> lockSet(setParameterCallbackMutex_);
+    std::lock_guard<std::mutex> lock(audioParamCbMtx_);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
 
     sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
@@ -741,7 +748,7 @@ int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
     std::shared_ptr<AudioParameterCallback> callback = std::make_shared<AudioManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
 
-    audioParameterCallback_ = callback;
+    audioParamCb_ = callback;
     AUDIO_INFO_LOG("AudioServer:: SetParameterCallback  done");
 
     return SUCCESS;

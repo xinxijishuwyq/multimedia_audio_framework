@@ -303,6 +303,7 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
 {
     switch (streamType) {
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_MESSAGE:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -315,6 +316,7 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
         case STREAM_MOVIE:
         case STREAM_GAME:
         case STREAM_SPEECH:
+        case STREAM_NAVIGATION:
             return STREAM_MUSIC;
         case STREAM_VOICE_ASSISTANT:
             return STREAM_VOICE_ASSISTANT;
@@ -650,6 +652,12 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFla
 
 int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("SetWakeUpAudioCapturer: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
     bool hasManageIntellgentPermission = VerifyPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION);
     if (!hasManageIntellgentPermission) {
         AUDIO_ERR_LOG("SetWakeUpAudioCapturer: No permission");
@@ -660,6 +668,12 @@ int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions o
 
 int32_t AudioPolicyServer::CloseWakeUpAudioCapturer()
 {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
     bool hasManageIntellgentPermission = VerifyPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION);
     if (!hasManageIntellgentPermission) {
         AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: No permission");
@@ -1791,7 +1805,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.callStatus = GetAudioScene();
 
     // Get stream volumes
-    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_ULTRASONIC; stream++) {
+    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_TYPE_MAX; stream++) {
         AudioStreamType streamType = (AudioStreamType)stream;
 
         if (AudioServiceDump::IsStreamSupported(streamType)) {
@@ -2167,7 +2181,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
         case INTERRUPT:
             InterruptOnChange(networkId, condition);
             break;
-        case RENDER_STATE:
+        case PARAM_KEY_STATE:
             StateOnChange(networkId, condition, value);
             break;
         default:
@@ -2231,11 +2245,22 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
     char contentDes[RENDER_STATE_CONTENT_DES_SIZE];
     if (sscanf_s(condition.c_str(), "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes,
         RENDER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
-        AUDIO_ERR_LOG("[StateOnChange]: Failed parse condition");
+        AUDIO_ERR_LOG("StateOnChange: Failed parse condition");
         return;
     }
-    if (!strcmp(eventDes, "ERR_EVENT")) {
+    CHECK_AND_RETURN_LOG(strcmp(eventDes, "ERR_EVENT") == 0,
+        "StateOnChange: Event %{public}s is not supported.", eventDes);
+
+    std::string devTypeKey = "DEVICE_TYPE=";
+    int32_t devTypeKeyPos =  std::string(contentDes).find(devTypeKey);
+    CHECK_AND_RETURN_LOG(devTypeKeyPos != std::string::npos,
+        "StateOnChange: Not find daudio device type info, contentDes %{public}s.", contentDes);
+    if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_SPK) {
         server_->mPolicyService.NotifyRemoteRenderState(networkId, condition, value);
+    } else if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_MIC) {
+        AUDIO_INFO_LOG("StateOnChange: ERR_EVENT of DAUDIO_DEV_TYPE_MIC.");
+    } else {
+        AUDIO_ERR_LOG("StateOnChange: Device type is not supported, contentDes %{public}s.", contentDes);
     }
 }
 

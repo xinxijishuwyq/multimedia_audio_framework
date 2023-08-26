@@ -6,6 +6,8 @@ src:*frameworks/native/hdiadapter/sink/remote/remote_audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/source/remote/remote_audio_capturer_source.cpp
 src:*frameworks/native/opensles/src/adapter/readorwritecallback_adapter.cpp
 src:*services/audio_service/server/src/audio_server.cpp
+src:*frameworks/native/hdiadapter/devicemanager/src/audio_device_adapter_impl.cpp
+src:*frameworks/native/hdiadapter/devicemanager/src/audio_device_manager_impl.cpp
 src:*frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp

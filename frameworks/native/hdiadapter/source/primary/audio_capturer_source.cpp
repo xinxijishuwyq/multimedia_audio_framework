@@ -57,6 +57,7 @@ public:
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
 
     explicit AudioCapturerSourceInner(const std::string halName = "primary");
     ~AudioCapturerSourceInner();
@@ -127,6 +128,7 @@ public:
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
 
     AudioCapturerSourceWakeup() = default;
     ~AudioCapturerSourceWakeup() = default;
@@ -938,6 +940,11 @@ void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceC
     audioCapturerSourceCallback_ = callback;
 }
 
+void AudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("RegisterParameterCallback is not supported!");
+}
+
 int32_t AudioCapturerSourceWakeup::Init(IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> lock(wakeupMutex_);
@@ -1084,5 +1091,9 @@ void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSource
     audioCapturerSource_.RegisterAudioCapturerSourceCallback(callback);
 }
 
+void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback* callback)
+{
+    AUDIO_ERR_LOG("AudioCapturerSourceWakeup: RegisterParameterCallback is not supported!");
+}
 } // namespace AudioStandard
 } // namesapce OHOS

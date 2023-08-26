@@ -72,6 +72,9 @@ std::string AudioCommonNapi::getMessageByCode(int32_t &code)
             err_message = NAPI_ERROR_PERMISSION_DENIED_INFO;
             code = NAPI_ERR_PERMISSION_DENIED;
             break;
+        case NAPI_ERR_NO_PERMISSION:
+            err_message = NAPI_ERR_NO_PERMISSION_INFO;
+            break;
         default:
             err_message = NAPI_ERR_SYSTEM_INFO;
             code = NAPI_ERR_SYSTEM;

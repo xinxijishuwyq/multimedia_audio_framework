@@ -499,6 +499,10 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
 
+    if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
+        return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
+    }
+
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
 
@@ -512,20 +516,51 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return SelectNewDevice(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors[0]);
     }
 
-    int32_t targetUid = audioRendererFilter->uid;
-    AudioStreamType targetStreamType = audioRendererFilter->streamType;
     // move all sink-input.
-    bool moveAll = false;
-    if (targetUid == -1) {
+    bool moveAll = audioRendererFilter->uid == -1 ? true : false;
+    if (moveAll) {
         AUDIO_INFO_LOG("Move all sink inputs.");
-        moveAll = true;
         std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_.clear();
     }
 
+    std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(audioRendererFilter, moveAll);
+
+    // move target uid, but no stream played yet, record the routing info for first start.
+    if (!moveAll && targetSinkInputs.size() == 0) {
+        return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
+    }
+
+    auto ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
+                                                 MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
+    UpdateTrackerDeviceChange(audioDeviceDescriptors);
+    OnPreferredOutputDeviceUpdated(currentActiveDevice_);
+    AUDIO_DEBUG_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
+    return ret;
+}
+
+int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    // note: check if stream is already running
+    // if is running, call moveProcessToEndpoint.
+
+    // otherwises, keep router info in the map
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    fastRouterMap_[audioRendererFilter->uid] = std::make_pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
+    return SUCCESS;
+}
+
+std::vector<SinkInput> AudioPolicyService::FilterSinkInputs(sptr<AudioRendererFilter> audioRendererFilter,
+    bool moveAll)
+{
+    int32_t targetUid = audioRendererFilter->uid;
+    AudioStreamType targetStreamType = audioRendererFilter->streamType;
     // find sink-input id with audioRendererFilter
     std::vector<SinkInput> targetSinkInputs = {};
-    vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
 
     for (size_t i = 0; i < sinkInputs.size(); i++) {
         if (sinkInputs[i].uid == dAudioClientUid) {
@@ -541,20 +576,8 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             targetSinkInputs.push_back(sinkInputs[i]);
         }
     }
-
-    // move target uid, but no stream played yet, record the routing info for first start.
-    if (!moveAll && targetSinkInputs.size() == 0) {
-        return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
-    }
-
-    auto ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
-                                                 MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
-    UpdateTrackerDeviceChange(audioDeviceDescriptors);
-    OnPreferredOutputDeviceUpdated(currentActiveDevice_);
-    AUDIO_DEBUG_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
-    return ret;
+    return targetSinkInputs;
 }
-
 
 int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioRendererFilter,
     sptr<AudioDeviceDescriptor> deviceDescriptor)
@@ -703,6 +726,20 @@ inline std::string PrintSourceOutput(SourceOutput sourceOutput)
     return value.str();
 }
 
+int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+    sptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    // note: check if stream is already running
+    // if is running, call moveProcessToEndpoint.
+
+    // otherwises, keep router info in the map
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    fastRouterMap_[audioCapturerFilter->uid] = std::make_pair(deviceDescriptor->networkId_, INPUT_DEVICE);
+    AUDIO_INFO_LOG("SelectFastInputDevice for uid[%{public}d] device[%{public}s]", audioCapturerFilter->uid,
+        deviceDescriptor->networkId_.c_str());
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
@@ -711,6 +748,10 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     int32_t res = DeviceParamsCheck(DeviceRole::INPUT_DEVICE, audioDeviceDescriptors);
     if (res != SUCCESS) {
         return res;
+    }
+
+    if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && audioDeviceDescriptors.size() == 1) {
+        return SelectFastInputDevice(audioCapturerFilter, audioDeviceDescriptors[0]);
     }
 
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
@@ -746,12 +787,9 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
         }
     }
 
-    int32_t ret = SUCCESS;
-    if (LOCAL_NETWORK_ID == networkId) {
-        ret = MoveToLocalInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
-    } else {
-        ret = MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
-    }
+    int32_t ret = LOCAL_NETWORK_ID == networkId ?
+        MoveToLocalInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]) :
+        MoveToRemoteInputDevice(targetSourceOutputIds, audioDeviceDescriptors[0]);
 
     OnPreferredInputDeviceUpdated(activeInputDevice_, LOCAL_NETWORK_ID);
     AUDIO_DEBUG_LOG("SelectInputDevice result[%{public}d]", ret);
@@ -1002,7 +1040,7 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudi
             wakeupCount_ = 0;
         }
         if (wakeupCount_ >= WAKEUP_LIMIT) {
-            return -1;
+            return ERROR;
         }
         wakeupNo = wakeupCount_;
         wakeupCount_++;
@@ -1054,6 +1092,9 @@ int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevices(DeviceFlag deviceFlag)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+
+    std::shared_lock<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
+
     std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
 
     if (deviceFlag < DeviceFlag::OUTPUT_DEVICES_FLAG || deviceFlag > DeviceFlag::ALL_L_D_DEVICES_FLAG) {
@@ -1598,13 +1639,16 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
         return result;
     }
 
-    std::string portName = GetSinkPortName(deviceType);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_OPERATION_FAILED, "Invalid port %{public}s", portName.c_str());
     bool isVolumeSwitched = false;
     if (isUpdateRouteSupported_ && !isSceneActivation) {
         if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
             int32_t muteDuration = 1200000; // us
-            std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
+            std::string sinkPortName = GetSinkPortName(deviceType);
+            CHECK_AND_RETURN_RET_LOG(sinkPortName != PORT_NONE,
+                ERR_OPERATION_FAILED,
+                "Invalid port %{public}s",
+                sinkPortName.c_str());
+            std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, sinkPortName, deviceType);
             switchThread.detach();
             int32_t beforSwitchDelay = 300000; // 300 ms
             usleep(beforSwitchDelay);
@@ -2173,6 +2217,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 {
     AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
 
+    std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
+
     int32_t result = ERROR;
     result = handleSpecialDeviceType(devType, isConnected);
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
@@ -2310,6 +2356,19 @@ void AudioPolicyService::RemoveDeviceInRouterMap(std::string networkId)
     }
 }
 
+void AudioPolicyService::RemoveDeviceInFastRouterMap(std::string networkId)
+{
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    std::unordered_map<int32_t, std::pair<std::string, DeviceRole>>::iterator it;
+    for (it = fastRouterMap_.begin();it != fastRouterMap_.end();) {
+        if (it->second.first == networkId) {
+            fastRouterMap_.erase(it++);
+        } else {
+            it++;
+        }
+    }
+}
+
 void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
 {
     for (const auto& deviceInfo : connectedDevices_) {
@@ -2421,6 +2480,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
 {
     AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
         statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
+
+    std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
+
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
@@ -2461,6 +2523,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
             IOHandles_.erase(moduleName);
         }
         RemoveDeviceInRouterMap(moduleName);
+        RemoveDeviceInFastRouterMap(networkId);
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
@@ -3672,7 +3735,9 @@ void AudioPolicyService::RegiestPolicy()
         AUDIO_ERR_LOG("RegiestPolicy g_adProxy null");
         return;
     }
-    sptr<IRemoteObject> object = this->AsObject();
+    sptr<PolicyProviderWrapper> wrapper = new(std::nothrow) PolicyProviderWrapper(this);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "Get null PolicyProviderWrapper");
+    sptr<IRemoteObject> object = wrapper->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegiestPolicy AsObject is nullptr");
         return;
@@ -3703,6 +3768,12 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
     deviceInfo.audioStreamInfo = targetStreamInfo;
     deviceInfo.deviceName = "mmap_device";
+    std::lock_guard<std::mutex> lock(routerMapMutex_);
+    if (fastRouterMap_.count(config.appInfo.appUid) &&
+        fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
+        deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
+        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", deviceInfo.networkId.c_str());
+    }
     return SUCCESS;
 }
 
@@ -3755,7 +3826,7 @@ bool AudioPolicyService::SetSharedVolume(AudioStreamType streamType, DeviceType 
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Enter SetParameterCallback");
-    auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStub> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
     if (parameterChangeCbStub == nullptr) {
         AUDIO_ERR_LOG("SetParameterCallback parameterChangeCbStub null");
         return;
