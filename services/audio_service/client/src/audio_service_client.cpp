@@ -526,6 +526,7 @@ AudioServiceClient::AudioServiceClient()
 
     mPrivacyType = PRIVACY_TYPE_PUBLIC;
     mStreamUsage = STREAM_USAGE_UNKNOWN;
+    streamClass_ = IAudioStream::StreamClass::PA_STREAM;
 }
 
 void AudioServiceClient::ResetPAAudioClient()
