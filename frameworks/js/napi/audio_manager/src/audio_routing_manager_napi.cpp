@@ -102,7 +102,8 @@ napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getActiveOutputDeviceDescriptors", GetActiveOutputDeviceDescriptors),
         DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfo", GetPreferredOutputDeviceForRendererInfo),
         DECLARE_NAPI_FUNCTION("getPreferOutputDeviceForRendererInfo", GetPreferOutputDeviceForRendererInfo),
-        DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfoSync", GetPreferredOutputDeviceForRendererInfoSync),
+        DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfoSync",
+            GetPreferredOutputDeviceForRendererInfoSync),
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceForCapturerInfo", GetPreferredInputDeviceForCapturerInfo),
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceForCapturerInfoSync", GetPreferredInputDeviceForCapturerInfoSync),
     };

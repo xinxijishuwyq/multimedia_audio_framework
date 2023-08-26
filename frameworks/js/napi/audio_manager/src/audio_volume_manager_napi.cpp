@@ -472,7 +472,7 @@ napi_value AudioVolumeManagerNapi::GetVolumeGroupManagerSync(napi_env env, napi_
     int32_t groupId;
     napi_get_value_int32(env, argv[PARAM0], &groupId);
 
-    return AudioVolumeGroupManagerNapi::CreateAudioVolumeGroupManagerWrapper(env, groupId);;
+    return AudioVolumeGroupManagerNapi::CreateAudioVolumeGroupManagerWrapper(env, groupId);
 }
 
 napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)

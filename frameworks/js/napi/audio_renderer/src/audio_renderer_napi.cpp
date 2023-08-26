@@ -2522,7 +2522,7 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
 
     GET_PARAMS(env, info, ARGS_TWO);
     unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
-    THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INVALID_PARAM);
+    THROW_ERROR_ASSERT(env, argc >= ARGS_ONE, NAPI_ERR_INPUT_INVALID);
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&asyncContext->objectInfo));
     if (status != napi_ok || asyncContext->objectInfo == nullptr) {
@@ -2545,7 +2545,8 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return;
         }
     }
 
