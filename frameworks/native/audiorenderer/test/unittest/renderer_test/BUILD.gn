@@ -38,7 +38,10 @@ ohos_unittest("audio_renderer_unit_test") {
     "-Werror",
   ]
 
-  sources = [ "src/audio_renderer_unit_test.cpp" ]
+  sources = [
+    "src/audio_fast_renderer_unit_test.cpp",
+    "src/audio_renderer_unit_test.cpp",
+  ]
 
   deps = [
     "$pulseaudio_build_path/src/pulse:pulse",
