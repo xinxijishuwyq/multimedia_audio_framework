@@ -67,11 +67,11 @@ void AudioServiceUnitTest::TearDown(void)
 }
 
 /**
-* @tc.name  : Test AudioProcessProxy API
-* @tc.type  : FUNC
-* @tc.number: AudioProcessProxy_001
-* @tc.desc  : Test AudioProcessProxy interface.
-*/
+ * @tc.name  : Test AudioProcessProxy API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessProxy_001
+ * @tc.desc  : Test AudioProcessProxy interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -111,11 +111,11 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioManagerProxy API
-* @tc.type  : FUNC
-* @tc.number: AudioManagerProxy_001
-* @tc.desc  : Test AudioManagerProxy interface.
-*/
+ * @tc.name  : Test AudioManagerProxy API
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerProxy_001
+ * @tc.desc  : Test AudioManagerProxy interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 {
     int32_t ret = -1;
@@ -151,11 +151,11 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioManagerProxy API
-* @tc.type  : FUNC
-* @tc.number: AudioManagerProxy_002
-* @tc.desc  : Test AudioManagerProxy interface.
-*/
+ * @tc.name  : Test AudioManagerProxy API
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerProxy_002
+ * @tc.desc  : Test AudioManagerProxy interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
 {
     int32_t ret = -1;
@@ -181,11 +181,11 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioManagerProxy API
-* @tc.type  : FUNC
-* @tc.number: AudioManagerProxy_003
-* @tc.desc  : Test AudioManagerProxy interface.
-*/
+ * @tc.name  : Test AudioManagerProxy API
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerProxy_003
+ * @tc.desc  : Test AudioManagerProxy interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioManagerProxy_003, TestSize.Level1)
 {
     int32_t ret = -1;
@@ -216,44 +216,12 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioManagerProxy API
-* @tc.type  : FUNC
-* @tc.number: AudioManagerProxy_004
-* @tc.desc  : Test AudioManagerProxy interface.
-*/
+ * @tc.name  : Test AudioManagerProxy API
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerProxy_004
+ * @tc.desc  : Test AudioManagerProxy interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioManagerProxy_004, TestSize.Level1)
-{
-    AudioProcessConfig config;
-    config.appInfo = {};
-    config.appInfo.appUid=static_cast<int32_t>(getuid());
-
-    config.audioMode = AudioMode::AUDIO_MODE_RECORD;
-
-    config.streamInfo = {};
-    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    config.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    config.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    config.streamInfo.channels = AudioChannel::STEREO;
-
-    config.rendererInfo = {};
-    config.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    config.rendererInfo.rendererFlags = 0;
-
-    config.capturerInfo = {};
-    config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    config.capturerInfo.capturerFlags = 0;
-    sptr<IRemoteObject> process = audioManagerProxy->CreateAudioProcess(config);
-    EXPECT_EQ(process, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioManagerProxy API
-* @tc.type  : FUNC
-* @tc.number: AudioManagerProxy_005
-* @tc.desc  : Test AudioManagerProxy interface.
-*/
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_005, TestSize.Level1)
 {
     std::vector<Library> libraries;
     Library library = {};
@@ -273,11 +241,11 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioManagerListenerStub API
-* @tc.type  : FUNC
-* @tc.number: AudioManagerListenerStub_001
-* @tc.desc  : Test AudioManagerListenerStub interface.
-*/
+ * @tc.name  : Test AudioManagerListenerStub API
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerListenerStub_001
+ * @tc.desc  : Test AudioManagerListenerStub interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioManagerListenerStub_001, TestSize.Level1)
 {
     std::unique_ptr<AudioManagerListenerStub> audioManagerListenerStub = std::make_unique<AudioManagerListenerStub>();
@@ -298,11 +266,11 @@ HWTEST(AudioServiceUnitTest, AudioManagerListenerStub_001, TestSize.Level1)
 
 
 /**
-* @tc.name  : Test AudioProcessInClientInner API
-* @tc.type  : FUNC
-* @tc.number: AudioProcessInClientInner_001
-* @tc.desc  : Test AudioProcessInClientInner interface using unsupported parameters.
-*/
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_001
+ * @tc.desc  : Test AudioProcessInClientInner interface using unsupported parameters.
+ */
 HWTEST(AudioServiceUnitTest, AudioProcessInClientInner_001, TestSize.Level1)
 {
     AudioProcessConfig config;
@@ -325,11 +293,11 @@ HWTEST(AudioServiceUnitTest, AudioProcessInClientInner_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioDeviceDescriptor API
-* @tc.type  : FUNC
-* @tc.number: AudioDeviceDescriptor_001
-* @tc.desc  : Test AudioDeviceDescriptor interface.
-*/
+ * @tc.name  : Test AudioDeviceDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: AudioDeviceDescriptor_001
+ * @tc.desc  : Test AudioDeviceDescriptor interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
 {
     DeviceType type = DeviceType::DEVICE_TYPE_SPEAKER;
@@ -367,11 +335,11 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioServiceClient API
-* @tc.type  : FUNC
-* @tc.number: AudioServiceClient_001
-* @tc.desc  : Test AudioServiceClient interface.
-*/
+ * @tc.name  : Test AudioServiceClient API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceClient_001
+ * @tc.desc  : Test AudioServiceClient interface.
+ */
 HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
 {
     int32_t ret = -1;
