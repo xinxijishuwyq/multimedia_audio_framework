@@ -89,6 +89,7 @@ napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
 
     napi_property_descriptor audio_routing_manager_properties[] = {
         DECLARE_NAPI_FUNCTION("getDevices", GetDevices),
+        DECLARE_NAPI_FUNCTION("getDevicesSync", GetDevicesSync),
         DECLARE_NAPI_FUNCTION("on", AudioRoutingManagerNapi::On),
         DECLARE_NAPI_FUNCTION("off", AudioRoutingManagerNapi::Off),
         DECLARE_NAPI_FUNCTION("selectOutputDevice", SelectOutputDevice),
@@ -97,10 +98,14 @@ napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectInputDeviceByFilter", SelectInputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("setCommunicationDevice", SetCommunicationDevice),
         DECLARE_NAPI_FUNCTION("isCommunicationDeviceActive", IsCommunicationDeviceActive),
+        DECLARE_NAPI_FUNCTION("isCommunicationDeviceActiveSync", IsCommunicationDeviceActiveSync),
         DECLARE_NAPI_FUNCTION("getActiveOutputDeviceDescriptors", GetActiveOutputDeviceDescriptors),
         DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfo", GetPreferredOutputDeviceForRendererInfo),
         DECLARE_NAPI_FUNCTION("getPreferOutputDeviceForRendererInfo", GetPreferOutputDeviceForRendererInfo),
+        DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfoSync",
+            GetPreferredOutputDeviceForRendererInfoSync),
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceForCapturerInfo", GetPreferredInputDeviceForCapturerInfo),
+        DECLARE_NAPI_FUNCTION("getPreferredInputDeviceForCapturerInfoSync", GetPreferredInputDeviceForCapturerInfoSync),
     };
 
     status = napi_define_class(env, AUDIO_ROUTING_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -246,12 +251,12 @@ static void ParseAudioRendererInfo(napi_env env, napi_value root, AudioRendererI
     napi_value tempValue = nullptr;
     int32_t intValue = {0};
 
-    if (napi_get_named_property(env, root, "contentType", &tempValue) == napi_ok) {
+    if (napi_get_named_property(env, root, "content", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         rendererInfo->contentType = static_cast<ContentType>(intValue);
     }
 
-    if (napi_get_named_property(env, root, "streamUsage", &tempValue) == napi_ok) {
+    if (napi_get_named_property(env, root, "usage", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
         rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
     }
@@ -392,7 +397,7 @@ static void SetValueString(const napi_env& env, const std::string& fieldStr, con
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
-static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const AudioDeviceDescriptor &deviceInfo)
+static void SetDeviceDescriptor(const napi_env& env, napi_value &valueParam, const AudioDeviceDescriptor &deviceInfo)
 {
     SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole_), valueParam);
     SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType_), valueParam);
@@ -436,6 +441,19 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, co
     napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
 }
 
+static void SetDeviceDescriptors(const napi_env &env, napi_value &result, napi_value &valueParam,
+    const vector<sptr<AudioDeviceDescriptor>> deviceDescriptors)
+{
+    napi_create_array_with_length(env, deviceDescriptors.size(), &result);
+    for (size_t i = 0; i < deviceDescriptors.size(); i++) {
+        if (deviceDescriptors[i] != nullptr) {
+            (void)napi_create_object(env, &valueParam);
+            SetDeviceDescriptor(env, valueParam, deviceDescriptors[i]);
+            napi_set_element(env, result, i, valueParam);
+        }
+    }
+}
+
 static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors, napi_env env, napi_value* result,
     int32_t arrayLength, napi_value valueParam)
 {
@@ -443,17 +461,10 @@ static void SetDevicesInfo(vector<sptr<AudioDeviceDescriptor>> deviceDescriptors
     HiLog::Info(LABEL, "number of devices = %{public}zu", size);
 
     if (arrayLength > PARAM1) {
-        napi_create_array_with_length(env, size, &result[PARAM1]);
+        SetDeviceDescriptors(env, result[PARAM1], valueParam, deviceDescriptors);
     } else {
         HiLog::Error(LABEL, "ERROR: Array access out of bounds, result size is %{public}d", arrayLength);
         return;
-    }
-    for (size_t i = 0; i < size; i++) {
-        if (deviceDescriptors[i] != nullptr) {
-            (void)napi_create_object(env, &valueParam);
-            SetDeviceDescriptors(env, valueParam, deviceDescriptors[i]);
-            napi_set_element(env, result[PARAM1], i, valueParam);
-        }
     }
 }
 
@@ -515,6 +526,49 @@ napi_value AudioRoutingManagerNapi::GetDevices(napi_env env, napi_callback_info 
             }
         }
     }
+
+    return result;
+}
+
+napi_value AudioRoutingManagerNapi::GetDevicesSync(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRoutingManagerNapi = reinterpret_cast<AudioRoutingManagerNapi *>(native);
+    if (status != napi_ok || audioRoutingManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("GetDevicesSync unwrap failure!");
+        return result;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    if (valueType != napi_number) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    int32_t deviceFlag;
+    napi_get_value_int32(env, argv[PARAM0], &deviceFlag);
+    if (!AudioCommonNapi::IsLegalInputArgumentDeviceFlag(deviceFlag)) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
+    vector<sptr<AudioDeviceDescriptor>> deviceDescriptors = audioRoutingManagerNapi->audioMngr_->GetDevices(
+        static_cast<DeviceFlag>(deviceFlag));
+
+    napi_value valueParam = nullptr;
+    SetDeviceDescriptors(env, result, valueParam, deviceDescriptors);
 
     return result;
 }
@@ -793,6 +847,46 @@ napi_value AudioRoutingManagerNapi::GetPreferredOutputDeviceForRendererInfo(napi
     return result;
 }
 
+napi_value AudioRoutingManagerNapi::GetPreferredOutputDeviceForRendererInfoSync(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRoutingManagerNapi = reinterpret_cast<AudioRoutingManagerNapi *>(native);
+    if (status != napi_ok || audioRoutingManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("GetPreferredOutputDeviceForRendererInfoSync unwrap failure!");
+        return result;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    if (valueType != napi_object) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    AudioRendererInfo rendererInfo;
+    ParseAudioRendererInfo(env, argv[PARAM0], &rendererInfo);
+
+    vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    audioRoutingManagerNapi->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
+        rendererInfo, outDeviceDescriptors);
+
+    napi_value valueParam = nullptr;
+    SetDeviceDescriptors(env, result, valueParam, outDeviceDescriptors);
+
+    return result;
+}
+
 static void ParseAudioCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *capturerInfo)
 {
     napi_value tempValue = nullptr;
@@ -896,6 +990,46 @@ napi_value AudioRoutingManagerNapi::GetPreferredInputDeviceForCapturerInfo(napi_
             }
         }
     }
+    return result;
+}
+
+napi_value AudioRoutingManagerNapi::GetPreferredInputDeviceForCapturerInfoSync(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRoutingManagerNapi = reinterpret_cast<AudioRoutingManagerNapi *>(native);
+    if (status != napi_ok || audioRoutingManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("GetPreferredInputDeviceForCapturerInfoSync unwrap failure!");
+        return result;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    if (valueType != napi_object) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    AudioCapturerInfo capturerInfo;
+    ParseAudioCapturerInfo(env, argv[PARAM0], &capturerInfo);
+
+    vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    audioRoutingManagerNapi->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
+        capturerInfo, outDeviceDescriptors);
+
+    napi_value valueParam = nullptr;
+    SetDeviceDescriptors(env, result, valueParam, outDeviceDescriptors);
+
     return result;
 }
 
@@ -1592,6 +1726,46 @@ napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActive(napi_env env, na
             }
         }
     }
+
+    return result;
+}
+
+napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActiveSync(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRoutingManagerNapi = reinterpret_cast<AudioRoutingManagerNapi *>(native);
+    if (status != napi_ok || audioRoutingManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("IsCommunicationDeviceActiveSync unwrap failure!");
+        return result;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    if (valueType != napi_number) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    int32_t deviceType;
+    napi_get_value_int32(env, argv[PARAM0], &deviceType);
+    if (!AudioCommonNapi::IsLegalInputArgumentActiveDeviceType(deviceType)) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
+    bool isActive = audioRoutingManagerNapi->audioMngr_->IsDeviceActive(static_cast<ActiveDeviceType>(deviceType));
+    napi_get_boolean(env, isActive, &result);
 
     return result;
 }
