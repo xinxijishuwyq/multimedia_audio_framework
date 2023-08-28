@@ -49,6 +49,32 @@ public:
     virtual void OnReadData(size_t length) {};
 };
 
+class AudioCapturerDeviceChangeCallbackTest : public AudioCapturerDeviceChangeCallback {
+public:
+    virtual ~AudioCapturerDeviceChangeCallbackTest() = default;
+
+    /**
+     * Called when capturer device is updated.
+     *
+     * @param state Indicates updated device of the capturer.
+     * since 11
+     */
+    virtual void OnStateChange(const DeviceInfo &deviceInfo) override {};
+};
+
+class AudioCapturerInfoChangeCallbackTest : public AudioCapturerInfoChangeCallback {
+public:
+    virtual ~AudioCapturerInfoChangeCallbackTest() = default;
+
+    /**
+     * Called when capturer info is updated.
+     *
+     * @param state Indicates info of the capturer.
+     * since 11
+     */
+    virtual void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) override {};
+};
+
 class AudioCapturerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
