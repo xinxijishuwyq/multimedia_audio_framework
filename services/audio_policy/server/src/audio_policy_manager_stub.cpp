@@ -1058,7 +1058,7 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
         reply.WriteInt32(ERROR);
         return;
     }
-    for (int32_t i = 0; i < ss; i++) {
+    for (uint32_t i = 0; i < ss; i++) {
         int32_t tmp_usage = data.ReadInt32();
         if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
             AUDIO_SUPPORTED_STREAM_USAGES.end()) {
