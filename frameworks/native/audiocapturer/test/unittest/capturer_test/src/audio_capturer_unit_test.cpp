@@ -3236,5 +3236,107 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFramesRead_001, TestSize.Level1)
 
     audioCapturer->Release();
 }
+
+/**
+ * @tc.name  : Test SetApplicationCachePath API stability.
+ * @tc.number: Audio_Capturer_SetApplicationCachePath_001
+ * @tc.desc  : Test SetApplicationCachePath interface stability.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetApplicationCachePath_001, TestSize.Level1)
+{
+    string cachePath = "/data/storage/el2/base/temp";
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+
+    audioCapturer->SetApplicationCachePath(cachePath.c_str());
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetCurrentInputDevices API stability.
+ * @tc.number: Audio_Capturer_GetCurrentInputDevices_001
+ * @tc.desc  : Test GetCurrentInputDevices interface stability.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    DeviceInfo deviceInfo;
+    ret = audioCapturer->GetCurrentInputDevices(deviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioCapturerChangeInfo changeInfo;
+    ret = audioCapturer->GetCurrentCapturerChangeInfo(changeInfo);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer ->SetAudioCapturerDeviceChangeCallback(nullptr);
+    EXPECT_EQ(ERROR, ret);
+    shared_ptr<AudioCapturerDeviceChangeCallback> callback =
+        make_shared<AudioCapturerDeviceChangeCallbackTest>();
+    ret = audioCapturer ->SetAudioCapturerDeviceChangeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer ->RemoveAudioCapturerDeviceChangeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AppInfo appInfo = {};
+    std::unique_ptr<AudioCapturerPrivate> audioCapturerPrivate =
+        std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    bool isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
+    EXPECT_EQ(false, isDeviceChanged);
+
+    deviceInfo.deviceType = DEVICE_TYPE_EARPIECE;
+    isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
+    EXPECT_EQ(false, isDeviceChanged);
+
+    audioCapturerPrivate->Release();
+    audioCapturer->Release();
+}
+
+/**
+ * @tc.name  : Test RegisterAudioCapturerEventListener API stability.
+ * @tc.number: Audio_Capturer_RegisterAudioCapturerEventListener_001
+ * @tc.desc  : Test RegisterAudioCapturerEventListener interface stability.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    ret = audioCapturer->RegisterAudioCapturerEventListener();
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer->UnregisterAudioCapturerEventListener();
+    EXPECT_EQ(SUCCESS, ret);
+
+    shared_ptr<AudioCapturerInfoChangeCallback> callback =
+        make_shared<AudioCapturerInfoChangeCallbackTest>();
+    ret = audioCapturer->SetAudioCapturerInfoChangeCallback(nullptr);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = audioCapturer->SetAudioCapturerInfoChangeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioCapturer->RemoveAudioCapturerInfoChangeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioCapturer->SetValid(true);
+    audioCapturer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS
