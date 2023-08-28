@@ -316,13 +316,6 @@ struct BufferDesc {
     size_t dataLength;
 };
 
-struct AudioStreamData {
-    AudioStreamInfo streamInfo;
-    BufferDesc bufferDesc;
-    int32_t volumeStart;
-    int32_t volumeEnd;
-};
-
 class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
@@ -347,6 +340,13 @@ public:
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
     }
+};
+
+struct AudioStreamData {
+    AudioStreamInfo streamInfo;
+    BufferDesc bufferDesc;
+    int32_t volumeStart;
+    int32_t volumeEnd;
 };
 } // namespace AudioStandard
 } // namespace OHOS

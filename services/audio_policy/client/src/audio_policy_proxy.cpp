@@ -1201,7 +1201,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     }
 
     data.WriteInt32(clientId);
-    audioInterrupt.Marshalling(data)
+    audioInterrupt.Marshalling(data);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS), data, reply, option);
@@ -1224,7 +1224,7 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
         return -1;
     }
     data.WriteInt32(clientId);
-    audioInterrupt.Marshalling(data)
+    audioInterrupt.Marshalling(data);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
