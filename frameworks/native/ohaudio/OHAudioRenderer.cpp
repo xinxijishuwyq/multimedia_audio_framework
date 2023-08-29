@@ -17,7 +17,7 @@
 
 using OHOS::AudioStandard::Timestamp;
 
-const int64_t SECOND_TO_NANOSECOND = 1000000000;
+static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer* renderer)
 {
