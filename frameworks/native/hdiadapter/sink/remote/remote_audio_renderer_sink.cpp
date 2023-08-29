@@ -50,8 +50,7 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
 }
-class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback,
-    public std::enable_shared_from_this<RemoteAudioRendererSinkInner> {
+class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteAudioRendererSinkInner(const std::string &deviceNetworkId);
     ~RemoteAudioRendererSinkInner();
@@ -169,7 +168,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
     audioAdapter_ = nullptr;
 
     if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(attr_.adapterName);
+        audioManager_->UnloadAdapter(attr_.deviceNetworkId);
     }
     audioManager_ = nullptr;
 
@@ -221,7 +220,7 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
 
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.adapterName, false);
+    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.deviceNetworkId, false);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->portNum; port++) {
         if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
@@ -234,7 +233,7 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
         }
     }
 
-    audioAdapter_ = audioManager_->LoadAdapters(attr_.adapterName, false);
+    audioAdapter_ = audioManager_->LoadAdapters(attr_.deviceNetworkId, false);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
 
     int32_t ret = audioAdapter_->Init();
@@ -274,7 +273,7 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
     deviceDesc.desc = nullptr;
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, shared_from_this());
+    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, this);
     if (ret != SUCCESS || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender fail, ret %{public}d.", ret);
         return ret;

@@ -28,8 +28,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class RemoteFastAudioCapturerSourceInner : public RemoteFastAudioCapturerSource, public IAudioDeviceAdapterCallback,
-    public std::enable_shared_from_this<RemoteFastAudioCapturerSourceInner> {
+class RemoteFastAudioCapturerSourceInner : public RemoteFastAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteFastAudioCapturerSourceInner(const std::string& deviceNetworkId);
     ~RemoteFastAudioCapturerSourceInner();
@@ -191,7 +190,7 @@ void RemoteFastAudioCapturerSourceInner::ClearCapture()
     audioAdapter_ = nullptr;
 
     if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(attr_.adapterName);
+        audioManager_->UnloadAdapter(attr_.deviceNetworkId);
     }
     audioManager_ = nullptr;
 
@@ -220,7 +219,7 @@ int32_t RemoteFastAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
 
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.adapterName, true);
+    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.deviceNetworkId, true);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->portNum; port++) {
         if (desc->ports[port].portId == PIN_IN_MIC) {
@@ -233,9 +232,7 @@ int32_t RemoteFastAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
         }
     }
 
-    // The two adapterName params are equal when getting remote fast sink attr from policy server
-    attr_.adapterName = desc->adapterName;
-    audioAdapter_ = audioManager_->LoadAdapters(attr_.adapterName, true);
+    audioAdapter_ = audioManager_->LoadAdapters(attr_.deviceNetworkId, true);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
 
     int32_t ret = audioAdapter_->Init();
@@ -263,24 +260,24 @@ int32_t RemoteFastAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
 int32_t RemoteFastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capturePort)
 {
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: audio adapter is null.");
-    struct AudioSampleAttributes captureAttr;
-    InitAttrs(captureAttr);
+    struct AudioSampleAttributes param;
+    InitAttrs(param);
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     deviceDesc.pins = PIN_IN_MIC;
     deviceDesc.desc = nullptr;
-    int32_t ret = audioAdapter_->CreateCapture(&deviceDesc, &captureAttr, &audioCapture_, shared_from_this());
+    int32_t ret = audioAdapter_->CreateCapture(&deviceDesc, &param, &audioCapture_, this);
     if (ret != SUCCESS || audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("Create capture fail, ret %{public}d.", ret);
         return ret;
     }
-    if (captureAttr.type == AUDIO_MMAP_NOIRQ) {
-        InitAshmem(captureAttr); // The remote fast source first start
+    if (param.type == AUDIO_MMAP_NOIRQ) {
+        InitAshmem(param); // The remote fast source first start
     }
 
     isCapturerCreated_.store(true);
-    AUDIO_INFO_LOG("Create capture end, capture format: %{public}d.", captureAttr.format);
+    AUDIO_INFO_LOG("Create capture end, capture format: %{public}d.", param.format);
     return SUCCESS;
 }
 

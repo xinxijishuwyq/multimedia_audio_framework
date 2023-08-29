@@ -58,12 +58,12 @@ int32_t AudioDeviceAdapterImpl::HandleRenderParamEvent(AudioDeviceAdapterImpl* d
         return ERR_INVALID_HANDLE;
     }
 
-    std::shared_ptr<IAudioDeviceAdapterCallback> sink = nullptr;
+    IAudioDeviceAdapterCallback *sink = nullptr;
     {
         std::lock_guard<std::mutex> lock(devAdapter->renderPortsMtx_);
         CHECK_AND_BREAK_LOG(devAdapter->renderPorts_.size() == 1, "Please check renderId or other infos.");
         for (auto i = devAdapter->renderPorts_.begin(); i != devAdapter->renderPorts_.end();) {
-            sink = i->second.devAdpCb.lock();
+            sink = i->second.devAdpCb;
             if (sink == nullptr) {
                 AUDIO_ERR_LOG("HandleStateChangeEvent: Device adapter sink callback is null.");
                 devAdapter->renderPorts_.erase(i++);
@@ -87,12 +87,12 @@ int32_t AudioDeviceAdapterImpl::HandleCaptureParamEvent(AudioDeviceAdapterImpl* 
         return ERR_INVALID_HANDLE;
     }
 
-    std::shared_ptr<IAudioDeviceAdapterCallback> source = nullptr;
+    IAudioDeviceAdapterCallback *source = nullptr;
     {
         std::lock_guard<std::mutex> lock(devAdapter->capturePortsMtx_);
         CHECK_AND_BREAK_LOG(devAdapter->capturePorts_.size() == 1, "Please check captureId or other infos.");
         for (auto j = devAdapter->capturePorts_.begin(); j != devAdapter->capturePorts_.end();) {
-            source = j->second.devAdpCb.lock();
+            source = j->second.devAdpCb;
             if (source == nullptr) {
                 AUDIO_ERR_LOG("HandleStateChangeEvent: Device adapter source callback is null.");
                 devAdapter->capturePorts_.erase(j++);
@@ -198,7 +198,7 @@ int32_t AudioDeviceAdapterImpl::RegExtraParamObserver()
 
 int32_t AudioDeviceAdapterImpl::CreateRender(const struct AudioDeviceDescriptor *devDesc,
     const struct AudioSampleAttributes *attr, struct AudioRender **audioRender,
-    const std::shared_ptr<IAudioDeviceAdapterCallback> &renderCb)
+    IAudioDeviceAdapterCallback *renderCb)
 {
     AUDIO_INFO_LOG("Create render start.");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
@@ -246,7 +246,7 @@ void AudioDeviceAdapterImpl::DestroyRender(struct AudioRender *audioRender)
 
 int32_t AudioDeviceAdapterImpl::CreateCapture(const struct AudioDeviceDescriptor *devDesc,
     const struct AudioSampleAttributes *attr, struct AudioCapture **audioCapture,
-    const std::shared_ptr<IAudioDeviceAdapterCallback> &captureCb)
+    IAudioDeviceAdapterCallback *captureCb)
 {
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "CreateRender: audio adapter is null.");
@@ -345,7 +345,7 @@ int32_t AudioDeviceAdapterImpl::Release()
 
     size_t capturePortsNum = GetCapturePortsNum();
     size_t renderPortsNum = GetRenderPortsNum();
-    if (GetCapturePortsNum() + GetRenderPortsNum() != 0) {
+    if (capturePortsNum + renderPortsNum != 0) {
         AUDIO_ERR_LOG("Audio adapter has some ports busy, capturePortsNum %zu, renderPortsNum %zu.",
             capturePortsNum, renderPortsNum);
         return ERR_ILLEGAL_STATE;

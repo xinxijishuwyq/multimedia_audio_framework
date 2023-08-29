@@ -32,8 +32,7 @@ namespace AudioStandard {
 const char *g_audioOutTestFilePath = "/data/local/tmp/remote_audio_capture.pcm";
 #endif // DEBUG_CAPTURE_DUMP
 
-class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback,
-    public std::enable_shared_from_this<RemoteAudioCapturerSourceInner> {
+class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteAudioCapturerSourceInner(std::string deviceNetworkId);
     ~RemoteAudioCapturerSourceInner();
@@ -140,7 +139,7 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     audioAdapter_ = nullptr;
 
     if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(attr_.adapterName);
+        audioManager_->UnloadAdapter(attr_.deviceNetworkId);
     }
     audioManager_ = nullptr;
 
@@ -175,7 +174,7 @@ int32_t RemoteAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
 
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.adapterName, false);
+    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.deviceNetworkId, false);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->portNum; port++) {
         if (desc->ports[port].portId == PIN_IN_MIC) {
@@ -188,7 +187,7 @@ int32_t RemoteAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
         }
     }
 
-    audioAdapter_ = audioManager_->LoadAdapters(attr_.adapterName, false);
+    audioAdapter_ = audioManager_->LoadAdapters(attr_.deviceNetworkId, false);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
 
     int32_t ret = audioAdapter_->Init();
@@ -235,7 +234,7 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(struct AudioPort &captureP
     deviceDesc.desc = nullptr;
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateCapture(&deviceDesc, &param, &audioCapture_, shared_from_this());
+    int32_t ret = audioAdapter_->CreateCapture(&deviceDesc, &param, &audioCapture_, this);
     if (ret != SUCCESS || audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("Create capture failed, ret %{public}d.", ret);
         return ret;
