@@ -155,9 +155,7 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
     AUDIO_INFO_LOG("OnJsCallbackVolumeEvent");
     uv_loop_s *loop = nullptr;
     napi_get_uv_event_loop(env_, &loop);
-    if (loop == nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(loop != nullptr, "loop is mull");
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
     if (work == nullptr) {
@@ -191,6 +189,8 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
             NativeVolumeEventToJsObj(env, args[0], event->volumeEvent);
             CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
                 "%{public}s fail to create Interrupt callback", request.c_str());
+            AUDIO_DEBUG_LOG("NativeVolumeEventToJsObj type: %{public}d, volume: %{public}d",
+                event->volumeEvent.volumeType, event->volumeEvent.volume);
 
             const size_t argCount = 1;
             napi_value result = nullptr;
@@ -199,7 +199,7 @@ void AudioVolumeKeyEventNapi::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
         } while (0);
         delete event;
         delete work;
-    }, uv_qos_default);
+    }, uv_qos_user_initiated);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
         delete work;
