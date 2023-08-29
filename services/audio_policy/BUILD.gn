@@ -91,14 +91,12 @@ ohos_shared_library("audio_dump") {
     blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
-  sources = [
-    "../audio_service/client/src/audio_info.cpp",
-    "server/src/service/dump/audio_service_dump.cpp",
-  ]
+  sources = [ "server/src/service/dump/audio_service_dump.cpp" ]
 
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
+    "../audio_policy:audio_policy_client",
     "$pulseaudio_build_path/src/pulse:pulse",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
@@ -138,7 +136,6 @@ ohos_shared_library("audio_policy_service") {
   }
   install_enable = true
   sources = [
-    "../audio_service/client/src/audio_info.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
     "server/src/audio_capturer_state_change_listener_proxy.cpp",
@@ -179,6 +176,7 @@ ohos_shared_library("audio_policy_service") {
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
     "../audio_policy:audio_dump",
+    "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
     "../audio_service:audio_common",
     "//third_party/libxml2:xml2",
