@@ -22,7 +22,6 @@ config("audio_toneplayer_config") {
     "../audiostream/include",
     "../audioutils/include",
     "../audiorenderer/include",
-    "../../../frameworks/native/audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",

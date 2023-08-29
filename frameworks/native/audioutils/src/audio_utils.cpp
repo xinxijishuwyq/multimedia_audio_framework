@@ -299,18 +299,18 @@ template bool GetSysPara(const char *key, std::string &value);
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};
 
-FILE *DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, AudioDumpFileType fileType)
+FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType)
 {
     std::string filePath;
     switch (fileType) {
         case AUDIO_APP:
-            filePath = "/data/storage/el2/base/temp/" + fileName;
+            filePath = DUMP_APP_DIR + fileName;
             break;
         case AUDIO_SERVICE:
-            filePath = "/data/local/tmp/" + fileName;
+            filePath = DUMP_SERVICE_DIR + fileName;
             break;
         case AUDIO_PULSE:
-            filePath = "/data/data/.pulse_dir/" + fileName;
+            filePath = DUMP_PULSE_DIR + fileName;
             break;
         default:
             AUDIO_ERR_LOG("Invalid AudioDumpFileType");
@@ -342,18 +342,20 @@ FILE *DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, AudioDu
     return dumpFile;
 }
 
-int32_t DumpFileUtil::WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize)
+void DumpFileUtil::WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize)
 {
-    if (dumpFile == nullptr || buffer == nullptr) {
+    if (dumpFile == nullptr) {
+        return;
+    }
+    if (buffer == nullptr) {
         AUDIO_ERR_LOG("Invalid write param");
-        return ERROR;
+        return;
     }
     size_t writeResult = fwrite(buffer, 1, bufferSize, dumpFile);
     if (writeResult != bufferSize) {
         AUDIO_ERR_LOG("Failed to write the file.");
-        return ERROR;
+        return;
     }
-    return SUCCESS;
 }
 
 void DumpFileUtil::CloseDumpFile(FILE **dumpFile)
@@ -364,16 +366,15 @@ void DumpFileUtil::CloseDumpFile(FILE **dumpFile)
     }
 }
 
-int32_t DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::string filePath,
-    AudioDumpFileType fileType)
+void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::string filePath)
 {
     if (*dumpFile == nullptr) {
         AUDIO_ERR_LOG("Invalid file para");
-        return ERROR;
+        return;
     }
     if (g_lastPara[para] != "w" && g_lastPara[para] != "a") {
         AUDIO_ERR_LOG("Invalid input para");
-        return ERROR;
+        return;
     }
     std::string dumpPara;
     bool res = GetSysPara(para.c_str(), dumpPara);
@@ -381,11 +382,27 @@ int32_t DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std
         AUDIO_INFO_LOG("get %{public}s fail", para.c_str());
     }
     if (g_lastPara[para] == "w" && dumpPara == "w") {
-        return SUCCESS;
+        return;
     }
     CloseDumpFile(dumpFile);
-    *dumpFile = OpenDumpFile(para, filePath, fileType);
-    return SUCCESS;
+    OpenDumpFile(para, filePath, dumpFile);
 }
+
+void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **file)
+{
+    if (*file != nullptr) {
+        DumpFileUtil::ChangeDumpFileState(para, file, fileName);
+        return;
+    }
+    if (para == DUMP_SERVER_PARA) {
+        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
+    } else {
+        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_APP);
+        if (*file == nullptr) {
+            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
+        }
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

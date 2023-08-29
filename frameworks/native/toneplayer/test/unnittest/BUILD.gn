@@ -19,6 +19,7 @@ ohos_unittest("audio_toneplayer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "../../include",
+    "../../../audioutils/include",
     "./../../../../../interfaces/inner_api/native/audiocommon/include",
     "./../../../../../interfaces/inner_api/native/audiorenderer/include",
   ]

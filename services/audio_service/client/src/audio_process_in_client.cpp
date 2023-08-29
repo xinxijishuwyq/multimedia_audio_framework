@@ -533,13 +533,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
-    if (dumpFile_) {
-        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer),
-            spanSizeInByte_);
-        if (res != SUCCESS) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
     CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s reset buffer fail, ret %{public}d.", __func__, ret);
@@ -697,13 +691,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
         }
 
-        if (dumpFile_) {
-            int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer),
-                clientSpanSizeInByte_);
-            if (res != SUCCESS) {
-                AUDIO_ERR_LOG("Failed to write the file.");
-            }
-        }
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), clientSpanSizeInByte_);
     }
 
     CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) == EOK,
@@ -729,20 +717,7 @@ int32_t AudioProcessInClientInner::Start()
     Trace traceWithLog("AudioProcessInClient::Start", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    std::string audioOutTestFileName = "dump_process_client_audio.pcm";
-    if (dumpFile_ == nullptr) {
-        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", audioOutTestFileName,
-            AUDIO_SERVICE);
-        if (dumpFile_ == nullptr) {
-            AUDIO_INFO_LOG("Failed to open dump file.");
-        }
-    } else {
-        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writeclient.enable", &dumpFile_,
-            audioOutTestFileName, AUDIO_SERVICE);
-        if (res == ERROR) {
-            AUDIO_ERR_LOG("Failed to change file status.");
-        }
-    }
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_PROCESS_IN_CLIENT_FILENAME, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     if (streamStatus_->load() == StreamStatus::STREAM_RUNNING) {

@@ -71,7 +71,6 @@ private:
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
-    void OpenDumpFile();
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -518,23 +517,6 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     return SUCCESS;
 }
 
-void AudioCapturerSourceInner::OpenDumpFile()
-{
-    if (dumpFile_ == nullptr) {
-        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writehdi.enable", "dump_capture_audiosource.pcm",
-            AUDIO_PULSE);
-        if (dumpFile_ == nullptr) {
-            AUDIO_INFO_LOG("Failed to open dump file.");
-        }
-    } else {
-        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writehdi.enable", &dumpFile_,
-            "dump_capture_audiosource.pcm", AUDIO_PULSE);
-        if (res == ERROR) {
-            AUDIO_ERR_LOG("Failed to change file status.");
-        }
-    }
-}
-
 int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     int64_t stamp = ClockTime::GetCurNano();
@@ -551,12 +533,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
         return ERR_READ_FAILED;
     }
 
-    if (dumpFile_) {
-        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        if (res != SUCCESS) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
+    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
@@ -584,7 +561,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
     }
-    OpenDumpFile();
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_CAPTURER_SOURCE_FILENAME, &dumpFile_);
 
     int32_t ret;
     if (!started_) {

@@ -69,14 +69,27 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
+const std::string DUMP_SERVER_PARA = "sys.audio.dump.writehdi.enable";
+const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
+const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
+const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
+const std::string DUMP_APP_DIR = "/data/storage/el2/base/temp/";
+const std::string DUMP_AUDIO_RENDERER_FILENAME = "dump_client_audio.pcm";
+const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
+const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
+const std::string DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
+const std::string DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
+
 class DumpFileUtil {
 public:
-    static FILE *OpenDumpFile(std::string para, std::string fileName, AudioDumpFileType fileType);
-    static int32_t WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
+    static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
-    static int32_t ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName,
-        AudioDumpFileType fileType);
     static std::map<std::string, std::string> g_lastPara;
+    static void OpenDumpFile(std::string para, std::string fileName, FILE **file);
+private:
+    static FILE *OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType);
+    static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName);
 };
 } // namespace AudioStandard
 } // namespace OHOS

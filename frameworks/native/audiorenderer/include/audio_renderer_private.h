@@ -124,7 +124,6 @@ private:
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
     void SetSelfRendererStateCallback();
-    void InitDumpInfo();
 
     std::shared_ptr<IAudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
@@ -135,7 +134,6 @@ private:
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
     FILE *dumpFile_ = nullptr;
-    AudioDumpFileType fileType = AUDIO_APP;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};

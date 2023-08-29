@@ -225,31 +225,8 @@ bool TonePlayerPrivate::LoadTone(ToneType toneType)
     result = TonePlayerStateHandler(PLAYER_EVENT_LOAD);
     mutexLock_.unlock();
 
-    InitDumpInfo();
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_TONEPLAYER_FILENAME, &dumpFile_);
     return result;
-}
-
-void TonePlayerPrivate::InitDumpInfo()
-{
-    if (dumpFile_ == nullptr) {
-        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", "dump_toneplayer_audio.pcm",
-            AUDIO_APP);
-        fileType = AUDIO_APP;
-        if (dumpFile_ == nullptr) {
-            dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", "dump_toneplayer_audio.pcm",
-                AUDIO_SERVICE);
-            fileType = AUDIO_SERVICE;
-        }
-        if (dumpFile_ == nullptr) {
-            AUDIO_INFO_LOG("Failed to open dump file.");
-        }
-    } else {
-        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writeclient.enable", &dumpFile_,
-            "dump_toneplayer_audio.pcm", fileType);
-        if (res == ERROR) {
-            AUDIO_ERR_LOG("Failed to change file status.");
-        }
-    }
 }
 
 bool TonePlayerPrivate::StartTone()
@@ -597,10 +574,7 @@ void TonePlayerPrivate::AudioToneDataThreadFunc()
         AUDIO_INFO_LOG("Exiting the AudioToneDataThreadFunc: %{public}zu,tonePlayerState_: %{public}d",
             bufDesc.dataLength, tonePlayerState_);
         if (bufDesc.dataLength) {
-            if (dumpFile_) {
-                (void)DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer),
-                    bufDesc.dataLength);
-            }
+            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.dataLength);
             mutexLock_.lock();
             if (audioRenderer_ != nullptr) {
                 audioRenderer_->Enqueue(bufDesc);

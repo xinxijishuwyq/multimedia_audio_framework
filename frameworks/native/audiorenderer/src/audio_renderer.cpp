@@ -313,32 +313,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     if (isFastRenderer_) {
         SetSelfRendererStateCallback();
     }
-    InitDumpInfo();
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
 
     return InitAudioInterruptCallback();
-}
-
-void AudioRendererPrivate::InitDumpInfo()
-{
-    std::string dumpPatch = "dump_client_audio.pcm";
-    AUDIO_INFO_LOG("Client dump using path: %{public}s", dumpPatch.c_str());
-    if (dumpFile_ == nullptr) {
-        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", dumpPatch, AUDIO_APP);
-        fileType = AUDIO_APP;
-        if (dumpFile_ == nullptr) {
-            dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", dumpPatch, AUDIO_SERVICE);
-            fileType = AUDIO_SERVICE;
-        }
-        if (dumpFile_ == nullptr) {
-            AUDIO_INFO_LOG("Failed to open dump file.");
-        }
-    } else {
-        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writeclient.enable", &dumpFile_,
-            dumpPatch, fileType);
-        if (res == ERROR) {
-            AUDIO_ERR_LOG("Failed to change file status.");
-        }
-    }
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
@@ -490,12 +467,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
-    if (dumpFile_) {
-        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), bufferSize);
-        if (res != SUCCESS) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), bufferSize);
     return audioStream_->Write(buffer, bufferSize);
 }
 
@@ -854,12 +826,7 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
-    if (dumpFile_) {
-        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-        if (res != SUCCESS) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
     std::lock_guard<std::mutex> lock(switchStreamMutex_);
     return audioStream_->Enqueue(bufDesc);
 }
