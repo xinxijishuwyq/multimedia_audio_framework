@@ -97,9 +97,9 @@ void MultipleAudioCapturerUnitTest::TestUnitFunc(SourceType s1, SourceType s2, F
         EXPECT_EQ(START_NORMAL, exp1);
     }
 
-    audioCapturer1->Release();
-    audioCapturer2->Release();
-    audioCapturer3->Release();
+    if (audioCapturer1 != nullptr) audioCapturer1->Release();
+    if (audioCapturer2 != nullptr) audioCapturer2->Release();
+    if (audioCapturer2 != nullptr) audioCapturer3->Release();
 }
 
 /**
