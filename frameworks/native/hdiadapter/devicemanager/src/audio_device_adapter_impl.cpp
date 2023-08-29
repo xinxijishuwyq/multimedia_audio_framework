@@ -211,8 +211,7 @@ int32_t AudioDeviceAdapterImpl::CreateRender(const struct AudioDeviceDescriptor 
 
     std::lock_guard<std::mutex> lock(renderPortsMtx_);
     if (renderPorts_.find(*audioRender) != renderPorts_.end()) {
-        AUDIO_INFO_LOG("Audio render already exit in renderPorts.");
-        return SUCCESS;
+        AUDIO_INFO_LOG("Audio render already exit in renderPorts, will replace new port info.");
     }
 
     DevicePortInfo renderPortInfo = {
@@ -258,8 +257,7 @@ int32_t AudioDeviceAdapterImpl::CreateCapture(const struct AudioDeviceDescriptor
 
     std::lock_guard<std::mutex> lock(capturePortsMtx_);
     if (capturePorts_.find(*audioCapture) != capturePorts_.end()) {
-        AUDIO_INFO_LOG("Audio capture already exit in capturePorts.");
-        return SUCCESS;
+        AUDIO_INFO_LOG("Audio capture already exit in capturePorts, will replace new port info.");
     }
 
     DevicePortInfo capturePortInfo = {

@@ -139,7 +139,7 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     audioAdapter_ = nullptr;
 
     if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(attr_.deviceNetworkId);
+        audioManager_->UnloadAdapter(deviceNetworkId_);
     }
     audioManager_ = nullptr;
 
@@ -174,7 +174,7 @@ int32_t RemoteAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
 
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.deviceNetworkId, false);
+    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(deviceNetworkId_, false);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->portNum; port++) {
         if (desc->ports[port].portId == PIN_IN_MIC) {
@@ -187,11 +187,11 @@ int32_t RemoteAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
         }
     }
 
-    audioAdapter_ = audioManager_->LoadAdapters(attr_.deviceNetworkId, false);
+    audioAdapter_ = audioManager_->LoadAdapters(deviceNetworkId_, false);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
 
     int32_t ret = audioAdapter_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{publid}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
 
     capturerInited_.store(true);
 #ifdef DEBUG_CAPTURE_DUMP
@@ -246,7 +246,7 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(struct AudioPort &captureP
 
 int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "Audio capture Handle is nullptr!");
+    CHECK_AND_RETURN_RET_LOG((audioCapture_ != nullptr), ERR_INVALID_HANDLE, "CaptureFrame: Audio capture is null.");
     int32_t ret = audioCapture_->CaptureFrame(audioCapture_, frame, requestBytes, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_FAILED, "Capture frame fail, ret %{public}x.", ret);
 

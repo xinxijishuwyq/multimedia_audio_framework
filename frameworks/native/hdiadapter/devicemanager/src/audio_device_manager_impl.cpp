@@ -33,12 +33,12 @@ int32_t AudioDeviceManagerFactory::DestoryDeviceManager(const AudioDeviceManager
 {
     std::lock_guard<std::mutex> lock(devMgrFactoryMtx_);
     if (allHdiDevMgr_.find(audioMgrType) == allHdiDevMgr_.end()) {
-        AUDIO_INFO_LOG("Audio manager is already destoried, audioMgrType %{publid}d.", audioMgrType);
+        AUDIO_INFO_LOG("Audio manager is already destoried, audioMgrType %{public}d.", audioMgrType);
         return SUCCESS;
     }
 
     int32_t ret = allHdiDevMgr_[audioMgrType]->Release();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio manager is busy, audioMgrType %{publid}d.", audioMgrType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio manager is busy, audioMgrType %{public}d.", audioMgrType);
 
     allHdiDevMgr_.erase(audioMgrType);
     return SUCCESS;
@@ -63,12 +63,12 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::CreatDeviceManag
             audioDevMgr = InitBluetoothAudioMgr();
             break;
         default:
-            AUDIO_ERR_LOG("Get audio manager of audioMgrType %{publid}d is not supported.", audioMgrType);
+            AUDIO_ERR_LOG("Get audio manager of audioMgrType %{public}d is not supported.", audioMgrType);
             return nullptr;
     }
 
     if (audioDevMgr == nullptr) {
-        AUDIO_ERR_LOG("Get audio manager of audioMgrType %{publid}d fail.", audioMgrType);
+        AUDIO_ERR_LOG("Get audio manager of audioMgrType %{public}d fail.", audioMgrType);
         return nullptr;
     }
     allHdiDevMgr_[audioMgrType] = audioDevMgr;
@@ -123,10 +123,10 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::InitBluetoothAud
 int32_t AudioDeviceManagerImpl::GetAllAdapters(AudioAdapterDescriptor **descs, int32_t *size)
 {
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr), ERR_INVALID_HANDLE,
-        "GetAllAdapters: Audio manager is null, audioMgrType %{publid}d.", audioMgrType_);
+        "GetAllAdapters: Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
     int32_t ret = audioMgr_->GetAllAdapters(audioMgr_, descs, size);
     if (ret != 0 || size == 0 || descs == nullptr) {
-        AUDIO_ERR_LOG("Audio manager proxy get all adapters fail, ret %{publid}d.", ret);
+        AUDIO_ERR_LOG("Audio manager proxy get all adapters fail, ret %{public}d.", ret);
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
@@ -139,8 +139,8 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
     struct AudioAdapterDescriptor *descs = nullptr;
     int32_t ret = GetAllAdapters(&descs, &size);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr,
-        "Get all adapters fail, audioMgrType %{publid}d, ret %{publid}d.", audioMgrType_, ret);
-    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{publid}d, audioMgrType %{publid}d, isMmap %{publid}d.",
+        "Get all adapters fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}d, audioMgrType %{public}d, isMmap %{public}d.",
         size, audioMgrType_, isMmap);
 
     int32_t targetIdx = INVALID_INDEX;
@@ -174,16 +174,16 @@ std::shared_ptr<IAudioDeviceAdapter> AudioDeviceManagerImpl::LoadAdapters(const 
     }
 
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr), nullptr,
-        "LoadAdapters: Audio manager is null, audioMgrType %{publid}d.", audioMgrType_);
+        "LoadAdapters: Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
     struct AudioAdapter *audioAdapter = nullptr;
     int32_t ret = audioMgr_->LoadAdapter(audioMgr_, desc, &audioAdapter);
     if (ret != 0 || audioAdapter == nullptr) {
-        AUDIO_ERR_LOG("Load audio adapter fail, audioMgrType %{publid}d, ret %{publid}d.", audioMgrType_, ret);
+        AUDIO_ERR_LOG("Load audio adapter fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
         return nullptr;
     }
     auto audioDevAdp = std::make_shared<AudioDeviceAdapterImpl>(std::string(desc->adapterName), audioAdapter);
     ret = audioDevAdp->Init();
-    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), nullptr, "LoadAdapters: Init all ports fail, ret %{publid}d.", ret);
+    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), nullptr, "LoadAdapters: Init all ports fail, ret %{public}d.", ret);
 
     DeviceAdapterInfo adpInfo = {audioDevAdp, audioAdapter};
     enableAdapters_[std::string(desc->adapterName)] = adpInfo;
@@ -193,7 +193,7 @@ std::shared_ptr<IAudioDeviceAdapter> AudioDeviceManagerImpl::LoadAdapters(const 
 
 int32_t AudioDeviceManagerImpl::UnloadAdapter(const std::string &adapterName)
 {
-    AUDIO_INFO_LOG("Unload adapter, audioMgrType %{publid}d.", audioMgrType_);
+    AUDIO_INFO_LOG("Unload adapter, audioMgrType %{public}d.", audioMgrType_);
     std::lock_guard<std::mutex> lock(mtx_);
     if (enableAdapters_.find(adapterName) == enableAdapters_.end()) {
         AUDIO_INFO_LOG("Adapter is already unloaded.");
@@ -202,11 +202,11 @@ int32_t AudioDeviceManagerImpl::UnloadAdapter(const std::string &adapterName)
 
     auto adpInfo = enableAdapters_[adapterName];
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr && adpInfo.audioAdapter != nullptr), ERR_INVALID_HANDLE,
-        "UnloadAdapter: Audio manager or audio adapter is null, audioMgrType %{publid}d.", audioMgrType_);
+        "UnloadAdapter: Audio manager or audio adapter is null, audioMgrType %{public}d.", audioMgrType_);
     if (adpInfo.devAdp != nullptr) {
         int32_t ret = adpInfo.devAdp->Release();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Adapter release fail, ret %{publid}d.", ret);
-        AUDIO_DEBUG_LOG("Device adapter release OK, audioMgrType %{publid}d.", audioMgrType_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Adapter release fail, ret %{public}d.", ret);
+        AUDIO_DEBUG_LOG("Device adapter release OK, audioMgrType %{public}d.", audioMgrType_);
     }
 
     audioMgr_->UnloadAdapter(audioMgr_, adpInfo.audioAdapter);
@@ -219,7 +219,7 @@ int32_t AudioDeviceManagerImpl::Release()
     AUDIO_INFO_LOG("Release enter.");
     std::lock_guard<std::mutex> lock(mtx_);
     if (!enableAdapters_.empty()) {
-        AUDIO_ERR_LOG("Audio manager has some adapters busy, audioMgrType %{publid}d.", audioMgrType_);
+        AUDIO_ERR_LOG("Audio manager has some adapters busy, audioMgrType %{public}d.", audioMgrType_);
         return ERR_ILLEGAL_STATE;
     }
 
