@@ -15,6 +15,7 @@
 #ifndef AUDIO_INTERRUPT_INFO_H
 #define AUDIO_INTERRUPT_INFO_H
 
+#include <parcel.h>
 #include <audio_stream_info.h>
 #include <audio_source_type.h>
 
@@ -145,6 +146,47 @@ struct AudioFocusType {
     bool operator>(const AudioFocusType &value) const
     {
         return streamType > value.streamType || (streamType == value.streamType && sourceType > value.sourceType);
+    }
+};
+
+class AudioInterrupt : public Parcelable {
+public:
+    StreamUsage streamUsage;
+    ContentType contentType;
+    AudioFocusType audioFocusType;
+    uint32_t sessionID;
+    bool pauseWhenDucked;
+    int32_t pid { -1 };
+    InterruptMode mode { SHARE_MODE };
+
+    AudioInterrupt() {}
+    AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
+        uint32_t sessionID_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
+        sessionID(sessionID_) {}
+    ~AudioInterrupt() {}
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(static_cast<int32_t>(contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(audioFocusType.streamType))
+            && parcel.WriteInt32(static_cast<int32_t>(audioFocusType.sourceType))
+            && parcel.WriteBool(audioFocusType.isPlay)
+            && parcel.WriteUint32(sessionID)
+            && parcel.WriteBool(pauseWhenDucked)
+            && parcel.WriteInt32(pid)
+            && parcel.WriteInt32(static_cast<int32_t>(mode));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        contentType = static_cast<ContentType>(parcel.ReadInt32());
+        audioFocusType.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        audioFocusType.sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        audioFocusType.isPlay = parcel.ReadBool();
+        sessionID = parcel.ReadUint32();
+        pauseWhenDucked = parcel.ReadBool();
+        pid = parcel.ReadInt32();
+        mode = static_cast<InterruptMode>(parcel.ReadInt32());
     }
 };
 } // namespace AudioStandard

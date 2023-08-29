@@ -15,6 +15,7 @@
 #ifndef AUDIO_DEVICE_INFO_H
 #define AUDIO_DEVICE_INFO_H
 
+#include <parcel.h>
 #include <audio_stream_info.h>
 
 namespace OHOS {
@@ -184,7 +185,8 @@ enum AudioDeviceManagerType {
     BLUETOOTH_DEV_MGR,
 };
 
-struct DeviceInfo {
+class DeviceInfo {
+public:
     DeviceType deviceType;
     DeviceRole deviceRole;
     int32_t deviceId;
@@ -198,6 +200,41 @@ struct DeviceInfo {
     int32_t interruptGroupId;
     int32_t volumeGroupId;
     bool isLowLatencyDevice;
+
+    DeviceInfo() = default;
+    ~DeviceInfo() = default;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(deviceType))
+            && parcel.WriteInt32(static_cast<int32_t>(deviceRole))
+            && parcel.WriteInt32(deviceId)
+            && parcel.WriteInt32(channelMasks)
+            && parcel.WriteInt32(channelIndexMasks)
+            && parcel.WriteString(deviceName)
+            && parcel.WriteString(macAddress)
+            && audioStreamInfo.Marshalling(parcel)
+            && parcel.WriteString(networkId)
+            && parcel.WriteString(displayName)
+            && parcel.WriteInt32(interruptGroupId)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteBool(isLowLatencyDevice);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        deviceRole = static_cast<DeviceRole>(parcel.ReadInt32());
+        deviceId = parcel.ReadInt32();
+        channelMasks = parcel.ReadInt32();
+        channelIndexMasks = parcel.ReadInt32();
+        deviceName = parcel.ReadString();
+        macAddress = parcel.ReadString();
+        audioStreamInfo.Unmarshalling(parcel);
+        networkId = parcel.ReadString();
+        displayName = parcel.ReadString();
+        interruptGroupId = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        isLowLatencyDevice = parcel.ReadBool();
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

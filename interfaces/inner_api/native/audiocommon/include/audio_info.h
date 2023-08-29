@@ -78,8 +78,25 @@ public:
     uint16_t waveFreq[TONEINFO_MAX_WAVES+1];
     uint16_t loopCnt;
     uint16_t loopIndx;
-    bool Marshalling(Parcel &parcel) const override;
-    void Unmarshalling(Parcel &parcel);
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteUint32(duration);
+        parcel.WriteUint16(loopCnt);
+        parcel.WriteUint16(loopIndx);
+        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+            parcel.WriteUint16(waveFreq[i]);
+        }
+        return true;
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        duration = parcel.ReadUint32();
+        loopCnt = parcel.ReadUint16();
+        loopIndx = parcel.ReadUint16();
+        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+            waveFreq[i] = parcel.ReadUint16();
+        }
+    }
 };
 
 class ToneInfo : public Parcelable {
@@ -89,8 +106,25 @@ public:
     uint32_t repeatCnt;
     uint32_t repeatSegment;
     ToneInfo() {}
-    bool Marshalling(Parcel &parcel) const override;
-    void Unmarshalling(Parcel &parcel);
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteUint32(segmentCnt);
+        parcel.WriteUint32(repeatCnt);
+        parcel.WriteUint32(repeatSegment);
+        for (uint32_t i = 0; i < segmentCnt; i++) {
+            segments[i].Marshalling(parcel);
+        }
+        return true;
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        segmentCnt = parcel.ReadUint32();
+        repeatCnt = parcel.ReadUint32();
+        repeatSegment = parcel.ReadUint32();
+        for (uint32_t i = 0; i < segmentCnt; i++) {
+            segments[i].Unmarshalling(parcel);
+        }
+    }
 };
 #endif
 
@@ -174,24 +208,6 @@ enum AudioRendererRate {
     RENDER_RATE_HALF = 2,
 };
 
-class AudioInterrupt : public Parcelable {
-public:
-    StreamUsage streamUsage;
-    ContentType contentType;
-    AudioFocusType audioFocusType;
-    uint32_t sessionID;
-    bool pauseWhenDucked;
-    int32_t pid { -1 };
-    InterruptMode mode { SHARE_MODE };
-
-    AudioInterrupt() = default;
-    AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
-        uint32_t sessionID_);
-    ~AudioInterrupt() = default;
-    bool Marshalling(Parcel &parcel) const override;
-    void Unmarshalling(Parcel &parcel);
-};
-
 struct VolumeEvent {
     AudioStreamType volumeType;
     int32_t volume;
@@ -223,11 +239,22 @@ public:
     int32_t capturerFlags = 0;
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
-    AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo);
+    AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
+    {
+        *this = audioCapturerInfo;
+    }
     AudioCapturerInfo() = default;
     ~AudioCapturerInfo()= default;
-    bool Marshalling(Parcel &parcel) const;
-    void Unmarshalling(Parcel &parcel);
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteInt32(capturerFlags);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        capturerFlags = parcel.ReadInt32();
+    }
 };
 
 struct AudioRendererDesc {
@@ -457,14 +484,41 @@ public:
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
 
-    AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo);
+    AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
+    {
+        *this = audioRendererChangeInfo;
+    }
     AudioRendererChangeInfo() = default;
     ~AudioRendererChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const;
-    void Unmarshalling(Parcel &parcel);
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(tokenId)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererState))
+            && WriteDeviceInfo(parcel, outputDeviceInfo);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        createrUID = parcel.ReadInt32();
+        clientUID = parcel.ReadInt32();
+        sessionId = parcel.ReadInt32();
+        tokenId = parcel.ReadInt32();
+
+        rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        rendererInfo.rendererFlags = parcel.ReadInt32();
+
+        rendererState = static_cast<RendererState>(parcel.ReadInt32());
+        ReadDeviceInfo(parcel, outputDeviceInfo);
+    }
 };
 
-class AudioCapturerChangeInfo : Parcelable {
+class AudioCapturerChangeInfo {
 public:
     int32_t createrUID;
     int32_t clientUID;
@@ -474,11 +528,32 @@ public:
     DeviceInfo inputDeviceInfo;
     bool muted;
 
-    AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo);
-    AudioCapturerChangeInfo();
-    ~AudioCapturerChangeInfo();
-    bool Marshalling(Parcel &parcel) const override;
-    void Unmarshalling(Parcel &parcel);
+    AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
+    {
+        *this = audioCapturerChangeInfo;
+    }
+    AudioCapturerChangeInfo() {}
+    ~AudioCapturerChangeInfo() {}
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(sessionId)
+            && capturerInfo.Marshalling(parcel)
+            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
+            && WriteDeviceInfo(parcel, inputDeviceInfo)
+            && parcel.WriteBool(muted);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        createrUID = parcel.ReadInt32();
+        clientUID = parcel.ReadInt32();
+        sessionId = parcel.ReadInt32();
+        capturerInfo.Unmarshalling(parcel);
+        capturerState = static_cast<CapturerState>(parcel.ReadInt32());
+        ReadDeviceInfo(parcel, inputDeviceInfo);
+        muted = parcel.ReadBool();
+    }
 };
 
 struct AudioStreamChangeInfo {

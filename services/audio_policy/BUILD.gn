@@ -97,7 +97,6 @@ ohos_shared_library("audio_dump") {
 
   deps = [
     "$pulseaudio_build_path/src/pulse:pulse",
-    "../audio_policy:audio_policy_client",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
@@ -176,7 +175,6 @@ ohos_shared_library("audio_policy_service") {
     "../audio_policy:audio_config.para",
     "../audio_policy:audio_config.para.dac",
     "../audio_policy:audio_dump",
-    "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
     "../audio_service:audio_common",
     "//third_party/libxml2:xml2",
@@ -331,7 +329,6 @@ ohos_shared_library("audio_policy_client") {
 
   sources = [
     "../audio_service/client/src/audio_device_descriptor.cpp",
-    "../audio_service/client/src/audio_info.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_policy_manager.cpp",
