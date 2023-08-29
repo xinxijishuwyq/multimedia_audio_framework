@@ -96,8 +96,8 @@ ohos_shared_library("audio_dump") {
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
-    "../audio_policy:audio_policy_client",
     "$pulseaudio_build_path/src/pulse:pulse",
+    "../audio_policy:audio_policy_client",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
