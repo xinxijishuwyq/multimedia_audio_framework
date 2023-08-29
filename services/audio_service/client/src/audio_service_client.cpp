@@ -43,9 +43,6 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 
-
-const string PATH_SEPARATOR = "/";
-const string COOKIE_FILE_NAME = "cookie";
 static const string INNER_CAPTURER_SOURCE = "InnerCapturer.monitor";
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -694,26 +691,6 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     }
 
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
-
-    if (!cachePath_.empty()) {
-        AUDIO_DEBUG_LOG("abilityContext not null");
-        int32_t size = 0;
-
-        const char *cookieData = mAudioSystemMgr->RetrieveCookie(size);
-        if (size <= 0) {
-            AUDIO_ERR_LOG("Error retrieving cookie");
-            return AUDIO_CLIENT_INIT_ERR;
-        }
-
-        appCookiePath = cachePath_ + PATH_SEPARATOR + COOKIE_FILE_NAME;
-
-        ofstream cookieCache(appCookiePath.c_str(), std::ofstream::binary);
-        cookieCache.write(cookieData, size);
-        cookieCache.flush();
-        cookieCache.close();
-
-        pa_context_load_cookie_from_file(context, appCookiePath.c_str());
-    }
 
     if (pa_context_connect(context, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
         error = pa_context_errno(context);
