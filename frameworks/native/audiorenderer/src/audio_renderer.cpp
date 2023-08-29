@@ -21,7 +21,6 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_utils.h"
 #ifdef OHCORE
 #include "audio_renderer_gateway.h"
 #endif
@@ -71,12 +70,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
         // Unregister the renderer event callaback in policy server
         (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
     }
-#ifdef DUMP_CLIENT_PCM
-    if (dcp_) {
-        fclose(dcp_);
-        dcp_ = nullptr;
-    }
-#endif
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 int32_t AudioRenderer::CheckMaxRendererInstances()
@@ -326,21 +320,25 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
 void AudioRendererPrivate::InitDumpInfo()
 {
-#ifdef DUMP_CLIENT_PCM
-    uint32_t streamId = 0;
-    GetAudioStreamId(streamId);
-    std::stringstream strStream;
-    std::string dumpPatch;
-    strStream << "/data/storage/el2/base/temp/";
-    strStream << "dump_pid" << appInfo_.appPid << "_stream" << streamId << ".pcm";
-    strStream >> dumpPatch;
+    std::string dumpPatch = "dump_client_audio.pcm";
     AUDIO_INFO_LOG("Client dump using path: %{public}s", dumpPatch.c_str());
-
-    dcp_ = fopen(dumpPatch.c_str(), "w+");
-    if (dcp_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
+    if (dumpFile_ == nullptr) {
+        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", dumpPatch, AUDIO_APP);
+        fileType = AUDIO_APP;
+        if (dumpFile_ == nullptr) {
+            dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", dumpPatch, AUDIO_SERVICE);
+            fileType = AUDIO_SERVICE;
+        }
+        if (dumpFile_ == nullptr) {
+            AUDIO_INFO_LOG("Failed to open dump file.");
+        }
+    } else {
+        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writeclient.enable", &dumpFile_,
+            dumpPatch, fileType);
+        if (res == ERROR) {
+            AUDIO_ERR_LOG("Failed to change file status.");
+        }
     }
-#endif
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
@@ -492,11 +490,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
-#ifdef DUMP_CLIENT_PCM
-    if (dcp_ != nullptr) {
-        fwrite((void *)buffer, 1, bufferSize, dcp_);
+    if (dumpFile_) {
+        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), bufferSize);
+        if (res != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
     }
-#endif
     return audioStream_->Write(buffer, bufferSize);
 }
 
@@ -855,11 +854,12 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
-#ifdef DUMP_CLIENT_PCM
-    if (dcp_ != nullptr) {
-        fwrite((void *)(bufDesc.buffer), 1, bufDesc.bufLength, dcp_);
+    if (dumpFile_) {
+        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+        if (res != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to write the file.");
+        }
     }
-#endif
     std::lock_guard<std::mutex> lock(switchStreamMutex_);
     return audioStream_->Enqueue(bufDesc);
 }

@@ -24,6 +24,7 @@
 #include "audio_policy_manager.h"
 #include "tone_player_private.h"
 #include "audio_utils.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,10 +36,6 @@ constexpr int32_t CDOUBLE = 2;
 constexpr int32_t AMPLITUDE = 16000;
 constexpr int32_t BIT8 = 8;
 }
-
-#ifdef DUMPFILE
-const char *g_tonePlayerTestFilePath = "/data/local/tmp/toneplayer_test.pcm";
-#endif // DUMPFILE
 
 std::shared_ptr<TonePlayer> TonePlayer::Create(const AudioRendererInfo &rendererInfo)
 {
@@ -84,9 +81,6 @@ TonePlayerPrivate::TonePlayerPrivate(const std::string cachePath, const AudioRen
     }
     AUDIO_DEBUG_LOG("TonePlayerPrivate constructor: volume=%{public}f, size=%{public}zu",
         volume_, supportedTones_.size());
-#ifdef DUMPFILE
-    pfd_ = nullptr;
-#endif // DUMPFILE
 }
 
 TonePlayer::~TonePlayer() = default;
@@ -230,13 +224,32 @@ bool TonePlayerPrivate::LoadTone(ToneType toneType)
     }
     result = TonePlayerStateHandler(PLAYER_EVENT_LOAD);
     mutexLock_.unlock();
-#ifdef DUMPFILE
-    pfd_ = fopen(g_tonePlayerTestFilePath, "wb+");
-    if (pfd_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // DUMPFILE
+
+    InitDumpInfo();
     return result;
+}
+
+void TonePlayerPrivate::InitDumpInfo()
+{
+    if (dumpFile_ == nullptr) {
+        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", "dump_toneplayer_audio.pcm",
+            AUDIO_APP);
+        fileType = AUDIO_APP;
+        if (dumpFile_ == nullptr) {
+            dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writeclient.enable", "dump_toneplayer_audio.pcm",
+                AUDIO_SERVICE);
+            fileType = AUDIO_SERVICE;
+        }
+        if (dumpFile_ == nullptr) {
+            AUDIO_INFO_LOG("Failed to open dump file.");
+        }
+    } else {
+        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writeclient.enable", &dumpFile_,
+            "dump_toneplayer_audio.pcm", fileType);
+        if (res == ERROR) {
+            AUDIO_ERR_LOG("Failed to change file status.");
+        }
+    }
 }
 
 bool TonePlayerPrivate::StartTone()
@@ -295,12 +308,9 @@ bool TonePlayerPrivate::StopTone()
         AUDIO_ERR_LOG("StopTone audioRenderer_ is null");
     }
     mutexLock_.unlock();
-#ifdef DUMPFILE
-    if (pfd_) {
-        fclose(pfd_);
-        pfd_ = nullptr;
-    }
-#endif // DUMPFILE
+
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
+
     return retVal;
 }
 
@@ -587,12 +597,10 @@ void TonePlayerPrivate::AudioToneDataThreadFunc()
         AUDIO_INFO_LOG("Exiting the AudioToneDataThreadFunc: %{public}zu,tonePlayerState_: %{public}d",
             bufDesc.dataLength, tonePlayerState_);
         if (bufDesc.dataLength) {
-#ifdef DUMPFILE
-            size_t writeResult = fwrite((void*)bufDesc.buffer, 1, bufDesc.dataLength, pfd_);
-            if (writeResult != bufDesc.dataLength) {
-                AUDIO_ERR_LOG("Failed to write the file.");
+            if (dumpFile_) {
+                (void)DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer),
+                    bufDesc.dataLength);
             }
-#endif // DUMPFILE
             mutexLock_.lock();
             if (audioRenderer_ != nullptr) {
                 audioRenderer_->Enqueue(bufDesc);

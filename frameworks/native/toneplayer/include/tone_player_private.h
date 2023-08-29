@@ -20,6 +20,7 @@
 #include <thread>
 #include "tone_player.h"
 #include "audio_renderer.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -83,9 +84,8 @@ private:
     tone_data_state toneDataState_;
     // to wait for audio rendere callback completion after a change is requested
     float volume_;  // Volume applied to audio Renderer
-#ifdef DUMPFILE
-    FILE *pfd_;
-#endif // DUMPFILE
+    FILE *dumpFile_ = nullptr;
+    AudioDumpFileType fileType = AUDIO_APP;
     uint32_t processSize_;  // In audioRenderer, Size of audio blocks generated at a time
     bool InitAudioRenderer();
     void AudioToneRendererCallback();
@@ -102,6 +102,7 @@ private:
     void GetCurrentSegmentUpdated(std::shared_ptr<ToneInfo> toneDesc);
     bool CheckToneContinuity ();
     bool AudioToneSequenceGen(BufferDesc &bufDesc);
+    void InitDumpInfo();
     std::unique_ptr<std::thread> toneDataGenLoop_ = nullptr;
 };
 } // namespace AudioStandard

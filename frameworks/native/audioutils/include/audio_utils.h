@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <string>
+#include <map>
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
@@ -61,6 +62,22 @@ void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, floa
 
 template <typename T>
 bool GetSysPara(const char *key, T &value);
+
+enum AudioDumpFileType {
+    AUDIO_APP = 0,
+    AUDIO_SERVICE = 1,
+    AUDIO_PULSE = 2,
+};
+
+class DumpFileUtil {
+public:
+    static FILE *OpenDumpFile(std::string para, std::string fileName, AudioDumpFileType fileType);
+    static int32_t WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
+    static void CloseDumpFile(FILE **dumpFile);
+    static int32_t ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName,
+        AudioDumpFileType fileType);
+    static std::map<std::string, std::string> g_lastPara;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

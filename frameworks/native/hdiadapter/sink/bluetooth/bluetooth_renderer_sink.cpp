@@ -54,10 +54,6 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 }
 
-#ifdef BT_DUMPFILE
-const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosink.pcm";
-#endif // BT_DUMPFILE
-
 typedef struct {
     HDI::Audio_Bluetooth::AudioFormat format;
     uint32_t sampleFmt;
@@ -121,9 +117,7 @@ private:
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
-#ifdef BT_DUMPFILE
-    FILE *pfd;
-#endif // DUMPFILE
+    FILE *dumpFile_ = nullptr;
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner()
@@ -132,9 +126,6 @@ BluetoothRendererSinkInner::BluetoothRendererSinkInner()
       audioRender_(nullptr), handle_(nullptr)
 {
     attr_ = {};
-#ifdef BT_DUMPFILE
-    pfd = nullptr;
-#endif // BT_DUMPFILE
 }
 
 BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
@@ -217,12 +208,7 @@ void BluetoothRendererSinkInner::DeInit()
         handle_ = nullptr;
     }
 
-#ifdef BT_DUMPFILE
-    if (pfd) {
-        fclose(pfd);
-        pfd = nullptr;
-    }
-#endif // BT_DUMPFILE
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -426,13 +412,6 @@ int32_t BluetoothRendererSinkInner::Init(IAudioSinkAttr attr)
 
     rendererInited_ = true;
 
-#ifdef BT_DUMPFILE
-    pfd = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // BT_DUMPFILE
-
     return SUCCESS;
 }
 
@@ -452,14 +431,12 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         AdjustAudioBalance(&data, len);
     }
 
-#ifdef BT_DUMPFILE
-    if (pfd) {
-        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-        if (writeResult != len) {
+    if (dumpFile_) {
+        int32_t res = DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        if (res != SUCCESS) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
     }
-#endif // BT_DUMPFILE
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
@@ -496,6 +473,20 @@ int32_t BluetoothRendererSinkInner::Start(void)
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
+    }
+
+    if (dumpFile_ == nullptr) {
+        dumpFile_ = DumpFileUtil::OpenDumpFile("sys.audio.dump.writehdi.enable", "dump_bluetooth_audiosink.pcm",
+            AUDIO_PULSE);
+        if (dumpFile_ == nullptr) {
+            AUDIO_INFO_LOG("Failed to open dump file.");
+        }
+    } else {
+        int32_t res = DumpFileUtil::ChangeDumpFileState("sys.audio.dump.writehdi.enable", &dumpFile_,
+            "dump_bluetooth_audiosink.pcm", AUDIO_PULSE);
+        if (res == ERROR) {
+            AUDIO_ERR_LOG("Failed to change file status.");
+        }
     }
 
     int32_t ret;

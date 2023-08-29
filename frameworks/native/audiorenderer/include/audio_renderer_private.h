@@ -19,6 +19,7 @@
 #include "audio_interrupt_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
+#include "audio_utils.h"
 #include "i_audio_stream.h"
 
 namespace OHOS {
@@ -133,9 +134,8 @@ private:
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
-#ifdef DUMP_CLIENT_PCM
-    FILE *dcp_ = nullptr;
-#endif
+    FILE *dumpFile_ = nullptr;
+    AudioDumpFileType fileType = AUDIO_APP;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
