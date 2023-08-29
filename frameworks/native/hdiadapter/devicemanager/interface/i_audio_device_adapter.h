@@ -38,11 +38,11 @@ public:
     virtual int32_t RegExtraParamObserver() = 0;
     virtual int32_t CreateRender(const struct AudioDeviceDescriptor *devDesc,
         const struct AudioSampleAttributes *attr, struct AudioRender **audioRender,
-        const std::shared_ptr<IAudioDeviceAdapterCallback> &renderCb) = 0;
+        IAudioDeviceAdapterCallback *renderCb) = 0;
     virtual void DestroyRender(struct AudioRender *audioRender) = 0;
     virtual int32_t CreateCapture(const struct AudioDeviceDescriptor *devDesc,
         const struct AudioSampleAttributes *attr, struct AudioCapture **audioCapture,
-        const std::shared_ptr<IAudioDeviceAdapterCallback> &captureCb) = 0;
+        IAudioDeviceAdapterCallback *captureCb) = 0;
     virtual void DestroyCapture(struct AudioCapture *audioCapture) = 0;
     virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition,
         const std::string &value) = 0;

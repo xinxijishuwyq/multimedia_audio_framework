@@ -149,7 +149,7 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
-        if (!isMmap && adapterName.compare(desc->adapterName) != 0) {
+        if (adapterName.compare(desc->adapterName)) {
             AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
             continue;
         }

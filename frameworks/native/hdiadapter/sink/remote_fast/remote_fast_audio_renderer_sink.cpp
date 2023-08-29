@@ -47,8 +47,7 @@ const uint32_t REMOTE_FAST_OUTPUT_STREAM_ID = 37; // 13 + 3 * 8
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int32_t INVALID_FD = -1;
 }
-class RemoteFastAudioRendererSinkInner : public RemoteFastAudioRendererSink, public IAudioDeviceAdapterCallback,
-    public std::enable_shared_from_this<RemoteFastAudioRendererSinkInner> {
+class RemoteFastAudioRendererSinkInner : public RemoteFastAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteFastAudioRendererSinkInner(const std::string &deviceNetworkId);
     ~RemoteFastAudioRendererSinkInner();
@@ -187,7 +186,7 @@ void RemoteFastAudioRendererSinkInner::ClearRender()
     audioAdapter_ = nullptr;
 
     if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(attr_.adapterName);
+        audioManager_->UnloadAdapter(attr_.deviceNetworkId);
     }
     audioManager_ = nullptr;
 
@@ -215,7 +214,7 @@ int32_t RemoteFastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
 
-    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.adapterName, true);
+    struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(attr_.deviceNetworkId, true);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
     for (uint32_t port = 0; port < desc->portNum; port++) {
         if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
@@ -228,9 +227,7 @@ int32_t RemoteFastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
         }
     }
 
-    // The two adapterName params are equal when getting remote fast sink attr from policy server
-    attr_.adapterName = desc->adapterName;
-    audioAdapter_ = audioManager_->LoadAdapters(attr_.adapterName, true);
+    audioAdapter_ = audioManager_->LoadAdapters(attr_.deviceNetworkId, true);
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device adapter failed.");
 
     int32_t ret = audioAdapter_->Init();
@@ -264,7 +261,7 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
     deviceDesc.desc = nullptr;
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, shared_from_this());
+    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, this);
     if (ret != SUCCESS || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
         return ret;

@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 struct DevicePortInfo {
-    std::weak_ptr<IAudioDeviceAdapterCallback> devAdpCb;
+    IAudioDeviceAdapterCallback *devAdpCb;
     uint32_t portId = 0;
 };
 
@@ -43,10 +43,10 @@ public:
     int32_t Init() override;
     int32_t RegExtraParamObserver() override;
     int32_t CreateRender(const struct AudioDeviceDescriptor *devDesc, const struct AudioSampleAttributes *attr,
-        struct AudioRender **audioRender, const std::shared_ptr<IAudioDeviceAdapterCallback> &renderCb) override;
+        struct AudioRender **audioRender, IAudioDeviceAdapterCallback *renderCb) override;
     void DestroyRender(struct AudioRender *audioRender) override;
     int32_t CreateCapture(const struct AudioDeviceDescriptor *devDesc, const struct AudioSampleAttributes *attr,
-        struct AudioCapture **audioCapture, const std::shared_ptr<IAudioDeviceAdapterCallback> &captureCb) override;
+        struct AudioCapture **audioCapture, IAudioDeviceAdapterCallback *captureCb) override;
     void DestroyCapture(struct AudioCapture *audioCapture) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
