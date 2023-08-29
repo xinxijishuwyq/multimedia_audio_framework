@@ -1,6 +1,6 @@
 {
     "app": {
-      "bundleName": "com.example.myapplication",
+      "bundleName": "com.ohos.audiorenderertest",
       "vendor": "example",
       "version": {
         "code": 1,
@@ -13,7 +13,7 @@
     },
     "deviceConfig": {},
     "module": {
-      "package": "com.example.myapplication",
+      "package": "com.ohos.audiorenderertest",
       "name": ".MyApplication",
       "deviceType": [
         "phone",
@@ -37,7 +37,7 @@
               ]
             }
           ],
-          "name": "com.example.myapplication.MainAbility",
+          "name": "com.ohos.audiorenderertest.MainAbility",
           "icon": "$media:icon",
           "description": "$string:mainability_description",
           "label": "MyApplication",

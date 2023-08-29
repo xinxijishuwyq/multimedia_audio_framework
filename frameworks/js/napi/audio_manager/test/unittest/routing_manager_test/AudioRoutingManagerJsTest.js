@@ -894,23 +894,23 @@ describe("AudioRoutingManagerJsTest", function () {
       done();
     } catch(e) {
       console.error(`${TAG} isCommunicationDeviceActiveSync004 ERROR: ${e.message}`);
-      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      expect(e.code).assertEqual(ERROR_INVALID_PARAM);
       done();
       return;
     }
   });
 
   /*
-   * @tc.name:getDeviceSync001
-   * @tc.desc:getDeviceSync success - INPUT_DEVICES_FLAG
+   * @tc.name:getDevicesSync001
+   * @tc.desc:getDevicesSync success - INPUT_DEVICES_FLAG
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getDeviceSync001", 0, async function (done) {
+  it("getDevicesSync001", 0, async function (done) {
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
       let AudioDeviceDescriptors = routingManager.getDevicesSync(audio.DeviceFlag.INPUT_DEVICES_FLAG);
-      console.info(`${TAG} getDeviceSync001 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      console.info(`${TAG} getDevicesSync001 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
       expect(AudioDeviceDescriptors.length).assertLarger(0);
       for (let i = 0; i < AudioDeviceDescriptors.length; i++) {
         expect(AudioDeviceDescriptors[i].displayName!==""
@@ -918,69 +918,69 @@ describe("AudioRoutingManagerJsTest", function () {
       }
       done();
     } catch (e) {
-      console.error(`${TAG} getDeviceSync001 ERROR: ${e.message}`);
+      console.error(`${TAG} getDevicesSync001 ERROR: ${e.message}`);
       expect().assertFail();
       done();
     }
   });
 
   /*
-   * @tc.name:getDeviceSync010
-   * @tc.desc:getDeviceSync fail(401) - Invalid param count : 0
+   * @tc.name:getDevicesSync010
+   * @tc.desc:getDevicesSync fail(401) - Invalid param count : 0
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getDeviceSync010", 0, async function (done) {
+  it("getDevicesSync010", 0, async function (done) {
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
       let AudioDeviceDescriptors = routingManager.getDevicesSync();
-      console.info(`${TAG} getDeviceSync010 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      console.info(`${TAG} getDevicesSync010 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
       expect(false).assertTrue();
       done();
     } catch (e) {
-      console.error(`${TAG} getDeviceSync010 ERROR: ${e.message}`);
+      console.error(`${TAG} getDevicesSync010 ERROR: ${e.message}`);
       expect(e.code).assertEqual(ERROR_INPUT_INVALID);
       done();
     }
   });
 
   /*
-   * @tc.name:getDeviceSync011
-   * @tc.desc:getDeviceSync fail(401) - Invalid param type : "Invalid type"
+   * @tc.name:getDevicesSync011
+   * @tc.desc:getDevicesSync fail(401) - Invalid param type : "Invalid type"
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getDeviceSync011", 0, async function (done) {
+  it("getDevicesSync011", 0, async function (done) {
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
       let AudioDeviceDescriptors = routingManager.getDevicesSync("Invalid type");
-      console.info(`${TAG} getDeviceSync011 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      console.info(`${TAG} getDevicesSync011 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
       expect(false).assertTrue();
       done();
     } catch (e) {
-      console.error(`${TAG} getDeviceSync011 ERROR: ${e.message}`);
+      console.error(`${TAG} getDevicesSync011 ERROR: ${e.message}`);
       expect(e.code).assertEqual(ERROR_INPUT_INVALID);
       done();
     }
   });
 
   /*
-   * @tc.name:getDeviceSync012
-   * @tc.desc:getDeviceSync fail(6800101) - Invalid param value : 10000
+   * @tc.name:getDevicesSync012
+   * @tc.desc:getDevicesSync fail(6800101) - Invalid param value : 10000
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getDeviceSync012", 0, async function (done) {
+  it("getDevicesSync012", 0, async function (done) {
     let invalidDeviceFlag = 10000;
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
       let AudioDeviceDescriptors = routingManager.getDevicesSync(invalidDeviceFlag);
-      console.info(`${TAG} getDeviceSync012 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      console.info(`${TAG} getDevicesSync012 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
       expect(false).assertTrue();
       done();
     } catch (e) {
-      console.error(`${TAG} getDeviceSync012 ERROR: ${e.message}`);
-      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      console.error(`${TAG} getDevicesSync012 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INVALID_PARAM);
       done();
     }
   });
@@ -999,7 +999,7 @@ describe("AudioRoutingManagerJsTest", function () {
 
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
-      let data = await routingManager.getPreferredInputDeviceForCapturerInfoSync(capturerInfo);
+      let data = routingManager.getPreferredInputDeviceForCapturerInfoSync(capturerInfo);
       console.info(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest001 SUCCESS`+JSON.stringify(data));
       expect(true).assertTrue();
       done();
@@ -1019,13 +1019,13 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredInputDeviceForCapturerInfoSyncTest002", 0, async function (done) {
       try {
         let routingManager = audio.getAudioManager().getRoutingManager();
-        let data = await routingManager.getPreferredInputDeviceForCapturerInfo();
+        let data = routingManager.getPreferredInputDeviceForCapturerInfoSync();
         console.info(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest002 SUCCESS`+JSON.stringify(data));
         expect().assertFail();
         done();
       } catch(e) {
         console.error(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest002 ERROR: ${e.message}`);
-        expect(e.code).assertFail(ERROR_INPUT_INVALID);
+        expect(e.code).assertEqual(ERROR_INPUT_INVALID);
         done();
       }
   })
@@ -1039,13 +1039,13 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredInputDeviceForCapturerInfoSyncTest003", 0, async function (done) {
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
-      let data = await routingManager.getPreferredInputDeviceForCapturerInfo("Invalid type");
+      let data = routingManager.getPreferredInputDeviceForCapturerInfoSync("Invalid type");
       console.info(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest003 SUCCESS`+JSON.stringify(data));
       expect().assertFail();
       done();
     } catch(e) {
       console.error(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest003 ERROR: ${e.message}`);
-      expect(e.code).assertFail(ERROR_INPUT_INVALID);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
       done();
     }
   })
@@ -1064,7 +1064,7 @@ describe("AudioRoutingManagerJsTest", function () {
 
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
-      let data = await routingManager.getPreferredOutputDeviceForRendererInfoSync(rendererInfo);
+      let data = routingManager.getPreferredOutputDeviceForRendererInfoSync(rendererInfo);
       console.info(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest001 SUCCESS`+JSON.stringify(data));
       expect(true).assertTrue();
       done();
@@ -1084,13 +1084,13 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredOutputDeviceForRendererInfoSyncTest002", 0, async function (done) {
       try {
         let routingManager = audio.getAudioManager().getRoutingManager();
-        let data = await routingManager.getPreferredOutputDeviceForRendererInfoSync();
+        let data = routingManager.getPreferredOutputDeviceForRendererInfoSync();
         console.info(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest002 SUCCESS`+JSON.stringify(data));
         expect().assertFail();
         done();
       } catch(e) {
         console.error(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest002 ERROR: ${e.message}`);
-        expect(e.code).assertFail(ERROR_INPUT_INVALID);
+        expect(e.code).assertEqual(ERROR_INPUT_INVALID);
         done();
       }
   })
@@ -1104,13 +1104,13 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredOutputDeviceForRendererInfoSyncTest003", 0, async function (done) {
     try {
       let routingManager = audio.getAudioManager().getRoutingManager();
-      let data = await routingManager.getPreferredOutputDeviceForRendererInfoSync("Invalid type");
+      let data = routingManager.getPreferredOutputDeviceForRendererInfoSync("Invalid type");
       console.info(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest003 SUCCESS`+JSON.stringify(data));
       expect().assertFail();
       done();
     } catch(e) {
       console.error(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest003 ERROR: ${e.message}`);
-      expect(e.code).assertFail(ERROR_INPUT_INVALID);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
       done();
     }
   })
