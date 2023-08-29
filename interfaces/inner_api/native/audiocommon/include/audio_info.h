@@ -500,7 +500,7 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
-            && WriteDeviceInfo(parcel, outputDeviceInfo);
+            && outputDeviceInfo.Marshalling(parcel);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -514,7 +514,7 @@ public:
         rendererInfo.rendererFlags = parcel.ReadInt32();
 
         rendererState = static_cast<RendererState>(parcel.ReadInt32());
-        ReadDeviceInfo(parcel, outputDeviceInfo);
+        outputDeviceInfo.Unmarshalling(parcel);
     }
 };
 
@@ -541,7 +541,7 @@ public:
             && parcel.WriteInt32(sessionId)
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
-            && WriteDeviceInfo(parcel, inputDeviceInfo)
+            && inputDeviceInfo.Marshalling(parcel)
             && parcel.WriteBool(muted);
     }
     void Unmarshalling(Parcel &parcel)
@@ -551,7 +551,7 @@ public:
         sessionId = parcel.ReadInt32();
         capturerInfo.Unmarshalling(parcel);
         capturerState = static_cast<CapturerState>(parcel.ReadInt32());
-        ReadDeviceInfo(parcel, inputDeviceInfo);
+        inputDeviceInfo.Unmarshalling(parcel);
         muted = parcel.ReadBool();
     }
 };
