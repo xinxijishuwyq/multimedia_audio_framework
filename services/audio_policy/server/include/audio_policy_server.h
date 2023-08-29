@@ -51,9 +51,9 @@ public:
     };
 
     const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+        STREAM_MUSIC,
         STREAM_VOICE_CALL,
         STREAM_RING,
-        STREAM_MUSIC,
         STREAM_VOICE_ASSISTANT,
         STREAM_ALARM,
         STREAM_ACCESSIBILITY,

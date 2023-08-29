@@ -492,7 +492,8 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        AUDIO_DEBUG_LOG("SetStreamMute trigger volumeChangeCb clientPid : %{public}d", it->first);
+        AUDIO_DEBUG_LOG("SetStreamMute trigger volumeChangeCb clientPid: %{public}d, type: %{public}d",
+            it->first, streamType);
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
         volumeEvent.volume = GetSystemVolumeLevel(streamType);
