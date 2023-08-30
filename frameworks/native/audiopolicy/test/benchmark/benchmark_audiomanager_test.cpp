@@ -120,6 +120,22 @@ namespace {
             }
         }
     }
+
+    // GetPreferredInputDeviceForCapturerInfo
+    BENCHMARK_F(BenchmarkAudiomanagerTest, GetPreferredInputDeviceForCapturerInfoTestCase)
+    (
+        benchmark::State &state)
+    {
+        while (state.KeepRunning())
+        {
+            int32_t ret = instance->GetPreferredInputDeviceDescriptors();
+            if (ret != SUCCESS)
+            {
+                state.SkipWithError("Get preferred input device for capturer info failed.");
+            }
+        }
+    }
+
 }
 
 // Run the benchmark

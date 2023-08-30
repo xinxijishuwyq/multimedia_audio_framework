@@ -683,6 +683,16 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioSystemManager::GetActiveOutputDevi
     return AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
 }
 
+int32_t AudioSystemManager::GetPreferredInputDeviceDescriptors()
+{
+    AudioCapturerInfo capturerInfo;
+    auto dec = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
+    if (dec.size() <= 0) {
+        return ERROR_INVALID_PARAM;
+    }
+    return SUCCESS;
+}
+
 
 int32_t AudioSystemManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
