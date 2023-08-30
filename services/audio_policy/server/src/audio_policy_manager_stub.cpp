@@ -23,60 +23,15 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-void AudioPolicyManagerStub::ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt)
-{
-    audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    audioInterrupt.contentType = static_cast<ContentType>(data.ReadInt32());
-    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
-    audioInterrupt.audioFocusType.isPlay = data.ReadBool();
-    audioInterrupt.sessionID = data.ReadUint32();
-    audioInterrupt.pid = data.ReadInt32();
-    audioInterrupt.mode = static_cast<InterruptMode>(data.ReadInt32());
-}
-
-void AudioPolicyManagerStub::ReadAudioManagerInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt)
-{
-    audioInterrupt.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    audioInterrupt.contentType = static_cast<ContentType>(data.ReadInt32());
-    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
-    audioInterrupt.audioFocusType.isPlay = data.ReadBool();
-    audioInterrupt.pauseWhenDucked = data.ReadBool();
-    audioInterrupt.pid = data.ReadInt32();
-    audioInterrupt.mode = static_cast<InterruptMode>(data.ReadInt32());
-}
-
-void AudioPolicyManagerStub::WriteAudioInteruptParams(MessageParcel &reply, const AudioInterrupt &audioInterrupt)
-{
-    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
-    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
-    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.streamType));
-    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
-    reply.WriteBool(audioInterrupt.audioFocusType.isPlay);
-    reply.WriteUint32(audioInterrupt.sessionID);
-    reply.WriteInt32(audioInterrupt.pid);
-    reply.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
-}
-
 void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
     AudioStreamChangeInfo &streamChangeInfo)
 {
     if (mode == AUDIO_MODE_PLAYBACK) {
-        streamChangeInfo.audioRendererChangeInfo.sessionId = data.ReadInt32();
-        streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(data.ReadInt32());
-        streamChangeInfo.audioRendererChangeInfo.clientUID = data.ReadInt32();
-        streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType = static_cast<ContentType>(data.ReadInt32());
-        streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-        streamChangeInfo.audioRendererChangeInfo.rendererInfo.rendererFlags = data.ReadInt32();
+        streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
         return;
     } else {
         // mode == AUDIO_MODE_RECORDING
-        streamChangeInfo.audioCapturerChangeInfo.sessionId = data.ReadInt32();
-        streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(data.ReadInt32());
-        streamChangeInfo.audioCapturerChangeInfo.clientUID = data.ReadInt32();
-        streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
-        streamChangeInfo.audioCapturerChangeInfo.capturerInfo.capturerFlags = data.ReadInt32();
+        streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
     }
 }
 
@@ -119,17 +74,7 @@ void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessagePar
         AUDIO_ERR_LOG("AudioPolicyManagerStub: GetToneInfoInternal obj is null");
         return;
     }
-    reply.WriteUint32(ltoneInfo->segmentCnt);
-    reply.WriteUint32(ltoneInfo->repeatCnt);
-    reply.WriteUint32(ltoneInfo->repeatSegment);
-    for (uint32_t i = 0; i < ltoneInfo->segmentCnt; i++) {
-        reply.WriteUint32(ltoneInfo->segments[i].duration);
-        reply.WriteUint16(ltoneInfo->segments[i].loopCnt);
-        reply.WriteUint16(ltoneInfo->segments[i].loopIndx);
-        for (uint32_t j = 0; j < TONEINFO_MAX_WAVES + 1; j++) {
-            reply.WriteUint16(ltoneInfo->segments[i].waveFreq[j]);
-        }
-    }
+    ltoneInfo->Marshalling(data);
 }
 
 void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply)
@@ -287,12 +232,8 @@ void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data,
 {
     AUDIO_DEBUG_LOG("SetWakeUpAudioCapturerInternal AudioManagerStub");
     InternalAudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(data.ReadInt32());
-    capturerOptions.streamInfo.encoding = static_cast<AudioEncodingType>(data.ReadInt32());
-    capturerOptions.streamInfo.format = static_cast<AudioSampleFormat>(data.ReadInt32());
-    capturerOptions.streamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
-    capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(data.ReadInt32());
-    capturerOptions.capturerInfo.capturerFlags = data.ReadInt32();
+    capturerOptions.streamInfo.Unmarshalling(data);
+    capturerOptions.capturerInfo.Unmarshalling(data);
     int32_t result = SetWakeUpAudioCapturer(capturerOptions);
     reply.WriteInt32(result);
 }
@@ -398,15 +339,7 @@ void AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal(Mes
 void AudioPolicyManagerStub::WriteAudioFocusInfo(MessageParcel &reply,
     const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
 {
-    reply.WriteInt32(focusInfo.first.streamUsage);
-    reply.WriteInt32(focusInfo.first.contentType);
-    reply.WriteInt32(focusInfo.first.audioFocusType.streamType);
-    reply.WriteInt32(focusInfo.first.audioFocusType.sourceType);
-    reply.WriteBool(focusInfo.first.audioFocusType.isPlay);
-    reply.WriteInt32(focusInfo.first.sessionID);
-    reply.WriteBool(focusInfo.first.pauseWhenDucked);
-    reply.WriteInt32(focusInfo.first.mode);
-
+    focusInfo.first.Marshalling(reply);
     reply.WriteInt32(focusInfo.second);
 }
 
@@ -585,7 +518,7 @@ void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data,
 void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioInterrupt audioInterrupt = {};
-    ReadAudioInterruptParams(data, audioInterrupt);
+    audioInterrupt.Unmarshalling(data);
     int32_t result = ActivateAudioInterrupt(audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -593,7 +526,7 @@ void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioInterrupt audioInterrupt = {};
-    ReadAudioInterruptParams(data, audioInterrupt);
+    audioInterrupt.Unmarshalling(data);
     int32_t result = DeactivateAudioInterrupt(audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -621,7 +554,7 @@ void AudioPolicyManagerStub::RequestAudioFocusInternal(MessageParcel &data, Mess
 {
     AudioInterrupt audioInterrupt = {};
     int32_t clientId = data.ReadInt32();
-    ReadAudioManagerInterruptParams(data, audioInterrupt);
+    audioInterrupt.Unmarshalling(data);
     int32_t result = RequestAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -630,7 +563,7 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
 {
     AudioInterrupt audioInterrupt = {};
     int32_t clientId = data.ReadInt32();
-    ReadAudioManagerInterruptParams(data, audioInterrupt);
+    audioInterrupt.Unmarshalling(data);
     int32_t result = AbandonAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -647,7 +580,7 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* da
     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
     int32_t ret = GetSessionInfoInFocus(audioInterrupt);
-    WriteAudioInteruptParams(reply, audioInterrupt);
+    audioInterrupt.Marshalling(reply);
     reply.WriteInt32(ret);
 }
 
@@ -806,31 +739,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
             AUDIO_ERR_LOG("AudioPolicyManagerStub:Renderer change info null, something wrong!!");
             continue;
         }
-        reply.WriteInt32(rendererChangeInfo->sessionId);
-        reply.WriteInt32(rendererChangeInfo->rendererState);
-        reply.WriteInt32(rendererChangeInfo->clientUID);
-        reply.WriteInt32(rendererChangeInfo->tokenId);
-
-        reply.WriteInt32(rendererChangeInfo->rendererInfo.contentType);
-        reply.WriteInt32(rendererChangeInfo->rendererInfo.streamUsage);
-        reply.WriteInt32(rendererChangeInfo->rendererInfo.rendererFlags);
-
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceType);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceRole);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceId);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelMasks);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelIndexMasks);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels);
-        reply.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
-        reply.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
-        reply.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
-        reply.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
-        reply.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
-        reply.WriteBool(rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice);
+        rendererChangeInfo->Marshalling(reply);
     }
 
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Renderer change info internal exit");
@@ -855,29 +764,7 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
             AUDIO_ERR_LOG("AudioPolicyManagerStub:Capturer change info null, something wrong!!");
             continue;
         }
-        reply.WriteInt32(capturerChangeInfo->sessionId);
-        reply.WriteInt32(capturerChangeInfo->capturerState);
-        reply.WriteInt32(capturerChangeInfo->clientUID);
-        reply.WriteInt32(capturerChangeInfo->capturerInfo.sourceType);
-        reply.WriteInt32(capturerChangeInfo->capturerInfo.capturerFlags);
-        reply.WriteBool(capturerChangeInfo->muted);
-
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceType);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceRole);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceId);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelMasks);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelIndexMasks);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels);
-        reply.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
-        reply.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
-        reply.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
-        reply.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
-        reply.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
-        reply.WriteBool(capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice);
+        capturerChangeInfo->Marshalling(reply);
     }
     AUDIO_DEBUG_LOG("AudioPolicyManagerStub:Capturer change info internal exit");
 }

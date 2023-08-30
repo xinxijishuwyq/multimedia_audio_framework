@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,7 +25,12 @@
 #include <vector>
 #include <unistd.h>
 #include <unordered_map>
+#include <parcel.h>
 #include <audio_source_type.h>
+#include <audio_device_info.h>
+#include <audio_interrupt_info.h>
+#include <audio_stream_info.h>
+#include <audio_errors.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,21 +72,59 @@ constexpr uint32_t TONEINFO_MAX_WAVES = 3;
 // Maximun number of segments in a tone descriptor
 constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
 constexpr uint32_t TONEINFO_INF = 0xFFFFFFFF;
-class ToneSegment {
+class ToneSegment : public Parcelable {
 public:
     uint32_t duration;
     uint16_t waveFreq[TONEINFO_MAX_WAVES+1];
     uint16_t loopCnt;
     uint16_t loopIndx;
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteUint32(duration);
+        parcel.WriteUint16(loopCnt);
+        parcel.WriteUint16(loopIndx);
+        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+            parcel.WriteUint16(waveFreq[i]);
+        }
+        return true;
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        duration = parcel.ReadUint32();
+        loopCnt = parcel.ReadUint16();
+        loopIndx = parcel.ReadUint16();
+        for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
+            waveFreq[i] = parcel.ReadUint16();
+        }
+    }
 };
 
-class ToneInfo {
+class ToneInfo : public Parcelable {
 public:
     ToneSegment segments[TONEINFO_MAX_SEGMENTS+1];
     uint32_t segmentCnt;
     uint32_t repeatCnt;
     uint32_t repeatSegment;
     ToneInfo() {}
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteUint32(segmentCnt);
+        parcel.WriteUint32(repeatCnt);
+        parcel.WriteUint32(repeatSegment);
+        for (uint32_t i = 0; i < segmentCnt; i++) {
+            segments[i].Marshalling(parcel);
+        }
+        return true;
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        segmentCnt = parcel.ReadUint32();
+        repeatCnt = parcel.ReadUint32();
+        repeatSegment = parcel.ReadUint32();
+        for (uint32_t i = 0; i < segmentCnt; i++) {
+            segments[i].Unmarshalling(parcel);
+        }
+    }
 };
 #endif
 
@@ -115,135 +158,6 @@ enum ChannelBlendMode {
     MODE_ALL_RIGHT = 3,
 };
 
-enum DeviceFlag {
-    /**
-     * Device flag none.
-     */
-    NONE_DEVICES_FLAG = 0,
-    /**
-     * Indicates all output audio devices.
-     */
-    OUTPUT_DEVICES_FLAG = 1,
-    /**
-     * Indicates all input audio devices.
-     */
-    INPUT_DEVICES_FLAG = 2,
-    /**
-     * Indicates all audio devices.
-     */
-    ALL_DEVICES_FLAG = 3,
-    /**
-     * Indicates all distributed output audio devices.
-     */
-    DISTRIBUTED_OUTPUT_DEVICES_FLAG = 4,
-    /**
-     * Indicates all distributed input audio devices.
-     */
-    DISTRIBUTED_INPUT_DEVICES_FLAG = 8,
-    /**
-     * Indicates all distributed audio devices.
-     */
-    ALL_DISTRIBUTED_DEVICES_FLAG = 12,
-    /**
-     * Indicates all local and distributed audio devices.
-     */
-    ALL_L_D_DEVICES_FLAG = 15,
-    /**
-     * Device flag max count.
-     */
-    DEVICE_FLAG_MAX
-};
-
-enum DeviceRole {
-    /**
-     * Device role none.
-     */
-    DEVICE_ROLE_NONE = -1,
-    /**
-     * Input device role.
-     */
-    INPUT_DEVICE = 1,
-    /**
-     * Output device role.
-     */
-    OUTPUT_DEVICE = 2,
-    /**
-     * Device role max count.
-     */
-    DEVICE_ROLE_MAX
-};
-
-enum DeviceType {
-    /**
-     * Indicates device type none.
-     */
-    DEVICE_TYPE_NONE = -1,
-    /**
-     * Indicates invalid device
-     */
-    DEVICE_TYPE_INVALID = 0,
-    /**
-     * Indicates a built-in earpiece device
-     */
-    DEVICE_TYPE_EARPIECE = 1,
-    /**
-     * Indicates a speaker built in a device.
-     */
-    DEVICE_TYPE_SPEAKER = 2,
-    /**
-     * Indicates a headset, which is the combination of a pair of headphones and a microphone.
-     */
-    DEVICE_TYPE_WIRED_HEADSET = 3,
-    /**
-     * Indicates a pair of wired headphones.
-     */
-    DEVICE_TYPE_WIRED_HEADPHONES = 4,
-    /**
-     * Indicates a Bluetooth device used for telephony.
-     */
-    DEVICE_TYPE_BLUETOOTH_SCO = 7,
-    /**
-     * Indicates a Bluetooth device supporting the Advanced Audio Distribution Profile (A2DP).
-     */
-    DEVICE_TYPE_BLUETOOTH_A2DP = 8,
-    /**
-     * Indicates a microphone built in a device.
-     */
-    DEVICE_TYPE_MIC = 15,
-    /**
-     * Indicates a microphone built in a device.
-     */
-    DEVICE_TYPE_WAKEUP = 16,
-    /**
-     * Indicates a microphone built in a device.
-     */
-    DEVICE_TYPE_USB_HEADSET = 22,
-    /**
-     * Indicates a usb-arm device.
-     */
-    DEVICE_TYPE_USB_ARM_HEADSET = 23,
-    /**
-     * Indicates a debug sink device
-     */
-    DEVICE_TYPE_FILE_SINK = 50,
-    /**
-     * Indicates a debug source device
-     */
-    DEVICE_TYPE_FILE_SOURCE = 51,
-    /**
-     * Indicates any headset/headphone for disconnect
-     */
-    DEVICE_TYPE_EXTERN_CABLE = 100,
-    /**
-     * Indicates default device
-     */
-    DEVICE_TYPE_DEFAULT = 1000,
-    /**
-     * Indicates device type max count.
-     */
-    DEVICE_TYPE_MAX
-};
-
 enum ConnectType {
     /**
      * Group connect type of local device
@@ -253,127 +167,6 @@ enum ConnectType {
      * Group connect type of distributed device
      */
     CONNECT_TYPE_DISTRIBUTED
-};
-
-enum ActiveDeviceType {
-    ACTIVE_DEVICE_TYPE_NONE = -1,
-    EARPIECE = 1,
-    SPEAKER = 2,
-    BLUETOOTH_SCO = 7,
-    FILE_SINK_DEVICE = 50,
-    ACTIVE_DEVICE_TYPE_MAX
-};
-
-enum AudioStreamType {
-    /**
-     * Indicates audio streams default.
-     */
-    STREAM_DEFAULT = -1,
-    /**
-     * Indicates audio streams of voices in calls.
-     */
-    STREAM_VOICE_CALL = 0,
-    /**
-     * Indicates audio streams for music.
-     */
-    STREAM_MUSIC = 1,
-    /**
-     * Indicates audio streams for ringtones.
-     */
-    STREAM_RING = 2,
-    /**
-     * Indicates audio streams for media.
-     * Deprecated
-     */
-    STREAM_MEDIA = 3,
-    /**
-     * Indicates audio streams used for voice assistant and text-to-speech (TTS).
-     */
-    STREAM_VOICE_ASSISTANT = 4,
-    /**
-     * Indicates audio streams for system sounds.
-     */
-    STREAM_SYSTEM = 5,
-    /**
-     * Indicates audio streams for alarms.
-     */
-    STREAM_ALARM = 6,
-    /**
-     * Indicates audio streams for notifications.
-     */
-    STREAM_NOTIFICATION = 7,
-    /**
-     * Indicates audio streams for voice calls routed through a connected Bluetooth device.
-     * Deprecated
-     */
-    STREAM_BLUETOOTH_SCO = 8,
-    /**
-     * Indicates audio streams for enforced audible.
-     */
-    STREAM_ENFORCED_AUDIBLE = 9,
-    /**
-     * Indicates audio streams for dual-tone multi-frequency (DTMF) tones.
-     */
-    STREAM_DTMF = 10,
-    /**
-     * Indicates audio streams exclusively transmitted through the speaker (text-to-speech) of a device.
-     * Deprecated
-     */
-    STREAM_TTS =  11,
-    /**
-     * Indicates audio streams used for prompts in terms of accessibility.
-     */
-    STREAM_ACCESSIBILITY = 12,
-    /**
-     * Indicates special scene used for recording.
-     * Deprecated
-     */
-    STREAM_RECORDING = 13,
-    /**
-     * Indicates audio streams for movie.
-     * New
-     */
-    STREAM_MOVIE = 14,
-    /**
-     * Indicates audio streams for game.
-     * New
-     */
-    STREAM_GAME = 15,
-    /**
-     * Indicates audio streams for speech.
-     * New
-     */
-    STREAM_SPEECH = 16,
-    /**
-     * Indicates audio streams for enforced audible.
-     * New
-     */
-    STREAM_SYSTEM_ENFORCED = 17,
-    /**
-     * Indicates audio streams used for ultrasonic ranging.
-     */
-    STREAM_ULTRASONIC = 18,
-    /**
-     * Indicates audio streams for wakeup.
-     */
-    STREAM_WAKEUP = 19,
-    /**
-     * Indicates audio streams for voice message.
-     */
-    STREAM_VOICE_MESSAGE = 20,
-    /**
-     * Indicates audio streams for navigation.
-     */
-    STREAM_NAVIGATION = 21,
-    /**
-     * Indicates the max value of audio stream type (except STREAM_ALL).
-     */
-    STREAM_TYPE_MAX = STREAM_NAVIGATION,
-
-    /**
-     * Indicates audio streams used for only one volume bar of a device.
-     */
-    STREAM_ALL = 100
 };
 
 typedef AudioStreamType AudioVolumeType;
@@ -391,191 +184,12 @@ enum API_VERSION {
     API_9 = 9
 };
 
-enum AudioErrors {
-    /**
-     * Common errors.
-     */
-    ERROR_INVALID_PARAM = 6800101,
-    ERROR_NO_MEMORY     = 6800102,
-    ERROR_ILLEGAL_STATE = 6800103,
-    ERROR_UNSUPPORTED   = 6800104,
-    ERROR_TIMEOUT       = 6800105,
-    /**
-     * Audio specific errors.
-     */
-    ERROR_STREAM_LIMIT  = 6800201,
-    /**
-     * Default error.
-     */
-    ERROR_SYSTEM        = 6800301
-};
-
-enum CommunicationDeviceType {
-    /**
-     * Speaker.
-     * @since 7
-     * @syscap SystemCapability.Multimedia.Audio.Communication
-     */
-    COMMUNICATION_SPEAKER = 2
-};
-
-enum InterruptMode {
-    SHARE_MODE = 0,
-    INDEPENDENT_MODE = 1
-};
-
-enum AudioEncodingType {
-    ENCODING_PCM = 0,
-    ENCODING_INVALID = -1
-};
-
 // Ringer Mode
 enum AudioRingerMode {
     RINGER_MODE_SILENT = 0,
     RINGER_MODE_VIBRATE = 1,
     RINGER_MODE_NORMAL = 2
 };
-
-// format
-enum AudioSampleFormat {
-    SAMPLE_U8 = 0,
-    SAMPLE_S16LE = 1,
-    SAMPLE_S24LE = 2,
-    SAMPLE_S32LE = 3,
-    SAMPLE_F32LE = 4,
-    INVALID_WIDTH = -1
-};
-
-// channel
-enum AudioChannel {
-    MONO = 1,
-    STEREO = 2,
-    CHANNEL_3 = 3,
-    CHANNEL_4 = 4,
-    CHANNEL_5 = 5,
-    CHANNEL_6 = 6,
-    CHANNEL_7 = 7,
-    CHANNEL_8 = 8
-};
-
-
-/**
- * Enumerates the audio interrupt request type.
- */
-enum InterruptRequestType {
-    INTERRUPT_REQUEST_TYPE_DEFAULT = 0,
-};
-
-/**
- * Enumerates audio interrupt request result type.
- */
-enum InterruptRequestResultType {
-    INTERRUPT_REQUEST_GRANT = 0,
-    INTERRUPT_REQUEST_REJECT = 1
-};
-
-// sampling rate
-enum AudioSamplingRate {
-    SAMPLE_RATE_8000 = 8000,
-    SAMPLE_RATE_11025 = 11025,
-    SAMPLE_RATE_12000 = 12000,
-    SAMPLE_RATE_16000 = 16000,
-    SAMPLE_RATE_22050 = 22050,
-    SAMPLE_RATE_24000 = 24000,
-    SAMPLE_RATE_32000 = 32000,
-    SAMPLE_RATE_44100 = 44100,
-    SAMPLE_RATE_48000 = 48000,
-    SAMPLE_RATE_64000 = 64000,
-    SAMPLE_RATE_96000 = 96000
-};
-
-typedef enum {
-    /** Invalid audio source */
-    AUDIO_SOURCE_INVALID = -1,
-    /** Default audio source */
-    AUDIO_SOURCE_DEFAULT = 0,
-    /** Microphone */
-    AUDIO_MIC = 1,
-    /** Uplink voice */
-    AUDIO_VOICE_UPLINK = 2,
-    /** Downlink voice */
-    AUDIO_VOICE_DOWNLINK = 3,
-    /** Voice call */
-    AUDIO_VOICE_CALL = 4,
-    /** Camcorder */
-    AUDIO_CAMCORDER = 5,
-    /** Voice recognition */
-    AUDIO_VOICE_RECOGNITION = 6,
-    /** Voice communication */
-    AUDIO_VOICE_COMMUNICATION = 7,
-    /** Remote submix */
-    AUDIO_REMOTE_SUBMIX = 8,
-    /** Unprocessed audio */
-    AUDIO_UNPROCESSED = 9,
-    /** Voice performance */
-    AUDIO_VOICE_PERFORMANCE = 10,
-    /** Echo reference */
-    AUDIO_ECHO_REFERENCE = 1997,
-    /** Radio tuner */
-    AUDIO_RADIO_TUNER = 1998,
-    /** Hotword */
-    AUDIO_HOTWORD = 1999,
-    /** Extended remote submix */
-    AUDIO_REMOTE_SUBMIX_EXTEND = 10007,
-} AudioSourceType;
-
-struct AudioStreamParams {
-    uint32_t samplingRate;
-    uint8_t encoding;
-    uint8_t format;
-    uint8_t channels;
-};
-
-/**
-* Enumerates the audio content type.
-*/
-enum ContentType {
-    CONTENT_TYPE_UNKNOWN = 0,
-    CONTENT_TYPE_SPEECH = 1,
-    CONTENT_TYPE_MUSIC = 2,
-    CONTENT_TYPE_MOVIE = 3,
-    CONTENT_TYPE_SONIFICATION = 4,
-    CONTENT_TYPE_RINGTONE = 5,
-    // other ContentType
-    CONTENT_TYPE_PROMPT = 6,
-    CONTENT_TYPE_GAME = 7,
-    CONTENT_TYPE_DTMF = 8,
-    CONTENT_TYPE_ULTRASONIC = 9
-};
-
-/**
-* Enumerates the stream usage.
-*/
-enum StreamUsage {
-    STREAM_USAGE_UNKNOWN = 0,
-    STREAM_USAGE_MEDIA = 1,
-    STREAM_USAGE_MUSIC = 1,
-    STREAM_USAGE_VOICE_COMMUNICATION = 2,
-    STREAM_USAGE_VOICE_ASSISTANT = 3,
-    STREAM_USAGE_ALARM = 4,
-    STREAM_USAGE_VOICE_MESSAGE = 5,
-    STREAM_USAGE_NOTIFICATION_RINGTONE = 6,
-    STREAM_USAGE_RINGTONE = 6,
-    STREAM_USAGE_NOTIFICATION = 7,
-    STREAM_USAGE_ACCESSIBILITY = 8,
-    STREAM_USAGE_SYSTEM = 9,
-    STREAM_USAGE_MOVIE = 10,
-    STREAM_USAGE_GAME = 11,
-    STREAM_USAGE_AUDIOBOOK = 12,
-    STREAM_USAGE_NAVIGATION = 13,
-    STREAM_USAGE_DTMF = 14,
-    STREAM_USAGE_ENFORCED_TONE = 15,
-    STREAM_USAGE_ULTRASONIC = 16,
-    //other StreamUsage
-    STREAM_USAGE_RANGING,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
-};
-
 
 /**
  * Enumerates audio stream privacy type for playback capture.
@@ -592,105 +206,6 @@ enum AudioRendererRate {
     RENDER_RATE_NORMAL = 0,
     RENDER_RATE_DOUBLE = 1,
     RENDER_RATE_HALF = 2,
-};
-
-enum InterruptType {
-    INTERRUPT_TYPE_BEGIN = 1,
-    INTERRUPT_TYPE_END = 2,
-};
-
-enum InterruptHint {
-    INTERRUPT_HINT_NONE = 0,
-    INTERRUPT_HINT_RESUME,
-    INTERRUPT_HINT_PAUSE,
-    INTERRUPT_HINT_STOP,
-    INTERRUPT_HINT_DUCK,
-    INTERRUPT_HINT_UNDUCK
-};
-
-enum InterruptForceType {
-    /**
-     * Force type, system change audio state.
-     */
-    INTERRUPT_FORCE = 0,
-    /**
-     * Share type, application change audio state.
-     */
-    INTERRUPT_SHARE
-};
-
-enum ActionTarget {
-    CURRENT = 0,
-    INCOMING,
-    BOTH
-};
-
-enum AudioFocuState {
-    ACTIVE = 0,
-    DUCK,
-    PAUSE,
-    STOP
-};
-
-struct InterruptEvent {
-    /**
-     * Interrupt event type, begin or end
-     */
-    InterruptType eventType;
-    /**
-     * Interrupt force type, force or share
-     */
-    InterruptForceType forceType;
-    /**
-     * Interrupt hint type. In force type, the audio state already changed,
-     * but in share mode, only provide a hint for application to decide.
-     */
-    InterruptHint hintType;
-};
-
-// Used internally only by AudioFramework
-struct InterruptEventInternal {
-    InterruptType eventType;
-    InterruptForceType forceType;
-    InterruptHint hintType;
-    float duckVolume;
-};
-
-struct AudioFocusEntry {
-    InterruptForceType forceType;
-    InterruptHint hintType;
-    ActionTarget actionOn;
-    bool isReject;
-};
-
-struct AudioFocusType {
-    AudioStreamType streamType;
-    SourceType sourceType;
-    bool isPlay;
-    bool operator==(const AudioFocusType &value) const
-    {
-        return streamType == value.streamType && sourceType == value.sourceType && isPlay == value.isPlay;
-    }
-
-    bool operator<(const AudioFocusType &value) const
-    {
-        return streamType < value.streamType || (streamType == value.streamType && sourceType < value.sourceType);
-    }
-
-    bool operator>(const AudioFocusType &value) const
-    {
-        return streamType > value.streamType || (streamType == value.streamType && sourceType > value.sourceType);
-    }
-};
-
-struct AudioInterrupt {
-    StreamUsage streamUsage;
-    ContentType contentType;
-    AudioFocusType audioFocusType;
-    uint32_t sessionID;
-    bool pauseWhenDucked;
-    int32_t pid { -1 };
-    InterruptMode mode { SHARE_MODE };
 };
 
 struct VolumeEvent {
@@ -712,22 +227,34 @@ struct AudioParameters {
     DeviceType deviceType;
 };
 
-struct AudioStreamInfo {
-    AudioSamplingRate samplingRate;
-    AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format;
-    AudioChannel channels;
-};
-
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = 0;
 };
 
-struct AudioCapturerInfo {
+class AudioCapturerInfo {
+public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
+    AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
+        capturerFlags(capturerFlags_) {}
+    AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
+    {
+        *this = audioCapturerInfo;
+    }
+    AudioCapturerInfo() = default;
+    ~AudioCapturerInfo()= default;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteInt32(capturerFlags);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        capturerFlags = parcel.ReadInt32();
+    }
 };
 
 struct AudioRendererDesc {
@@ -743,16 +270,6 @@ struct AudioRendererOptions {
 
 struct MicStateChangeEvent {
     bool mute;
-};
-
-enum DeviceChangeType {
-    CONNECT = 0,
-    DISCONNECT = 1,
-};
-
-enum AudioInterruptChangeType {
-    ACTIVATE_AUDIO_INTERRUPT = 0,
-    DEACTIVATE_AUDIO_INTERRUPT = 1,
 };
 
 enum AudioScene {
@@ -796,96 +313,6 @@ struct AppInfo {
     uint32_t appTokenId { 0 };
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
-};
-
-// Supported audio parameters for both renderer and capturer
-const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
-    SAMPLE_U8,
-    SAMPLE_S16LE,
-    SAMPLE_S24LE,
-    SAMPLE_S32LE
-};
-
-const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
-    MONO,
-    STEREO,
-    CHANNEL_3,
-    CHANNEL_4,
-    CHANNEL_5,
-    CHANNEL_6,
-    CHANNEL_7,
-    CHANNEL_8
-};
-
-const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
-    MONO,
-    STEREO,
-    CHANNEL_3,
-    CHANNEL_4,
-    CHANNEL_5,
-    CHANNEL_6
-};
-
-const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
-    ENCODING_PCM
-};
-
-const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
-    SAMPLE_RATE_8000,
-    SAMPLE_RATE_11025,
-    SAMPLE_RATE_12000,
-    SAMPLE_RATE_16000,
-    SAMPLE_RATE_22050,
-    SAMPLE_RATE_24000,
-    SAMPLE_RATE_32000,
-    SAMPLE_RATE_44100,
-    SAMPLE_RATE_48000,
-    SAMPLE_RATE_64000,
-    SAMPLE_RATE_96000
-};
-
-const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
-    STREAM_USAGE_UNKNOWN,
-    STREAM_USAGE_MEDIA,
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_VOICE_COMMUNICATION,
-    STREAM_USAGE_VOICE_ASSISTANT,
-    STREAM_USAGE_ALARM,
-    STREAM_USAGE_VOICE_MESSAGE,
-    STREAM_USAGE_NOTIFICATION_RINGTONE,
-    STREAM_USAGE_RINGTONE,
-    STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_ACCESSIBILITY,
-    STREAM_USAGE_SYSTEM,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK,
-    STREAM_USAGE_NAVIGATION,
-    STREAM_USAGE_DTMF,
-    STREAM_USAGE_ENFORCED_TONE,
-    STREAM_USAGE_ULTRASONIC,
-    STREAM_USAGE_RANGING,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
-};
-
-// Supported audio parameters for fast audio stream
-const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
-    SAMPLE_RATE_48000,
-};
-
-const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
-    MONO,
-    STEREO,
-};
-
-const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
-    SAMPLE_S16LE,
-    SAMPLE_S32LE
-};
-struct BufferDesc {
-    uint8_t* buffer;
-    size_t bufLength;
-    size_t dataLength;
 };
 
 struct BufferQueueState {
@@ -942,20 +369,6 @@ static inline bool FLOAT_COMPARE_EQ(const float& x, const float& y)
 {
     return (std::abs((x) - (y)) <= (std::numeric_limits<float>::epsilon()));
 }
-
-// Below APIs are added to handle compilation error in call manager
-// Once call manager adapt to new interrupt APIs, this will be removed
-enum InterruptActionType {
-    TYPE_ACTIVATED = 0,
-    TYPE_INTERRUPT = 1
-};
-
-struct InterruptAction {
-    InterruptActionType actionType;
-    InterruptType interruptType;
-    InterruptHint interruptHint;
-    bool activated;
-};
 
 enum AudioServiceIndex {
     HDI_SERVICE_INDEX = 0,
@@ -1045,33 +458,10 @@ struct AudioProcessConfig {
     AudioStreamType streamType;
 };
 
-struct AudioStreamData {
-    AudioStreamInfo streamInfo;
-    BufferDesc bufferDesc;
-    int32_t volumeStart;
-    int32_t volumeEnd;
-};
-
 struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
-};
-
-struct DeviceInfo {
-    DeviceType deviceType;
-    DeviceRole deviceRole;
-    int32_t deviceId;
-    int32_t channelMasks;
-    int32_t channelIndexMasks;
-    std::string deviceName;
-    std::string macAddress;
-    AudioStreamInfo audioStreamInfo;
-    std::string networkId;
-    std::string displayName;
-    int32_t interruptGroupId;
-    int32_t volumeGroupId;
-    bool isLowLatencyDevice;
 };
 
 enum StreamSetState {
@@ -1084,7 +474,8 @@ struct StreamSetStateEventInternal {
     AudioStreamType audioStreamType;
 };
 
-struct AudioRendererChangeInfo {
+class AudioRendererChangeInfo {
+public:
     int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
@@ -1092,9 +483,43 @@ struct AudioRendererChangeInfo {
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
+
+    AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
+    {
+        *this = audioRendererChangeInfo;
+    }
+    AudioRendererChangeInfo() = default;
+    ~AudioRendererChangeInfo() = default;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(tokenId)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererState))
+            && outputDeviceInfo.Marshalling(parcel);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        createrUID = parcel.ReadInt32();
+        clientUID = parcel.ReadInt32();
+        sessionId = parcel.ReadInt32();
+        tokenId = parcel.ReadInt32();
+
+        rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        rendererInfo.rendererFlags = parcel.ReadInt32();
+
+        rendererState = static_cast<RendererState>(parcel.ReadInt32());
+        outputDeviceInfo.Unmarshalling(parcel);
+    }
 };
 
-struct AudioCapturerChangeInfo {
+class AudioCapturerChangeInfo {
+public:
     int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
@@ -1102,6 +527,33 @@ struct AudioCapturerChangeInfo {
     CapturerState capturerState;
     DeviceInfo inputDeviceInfo;
     bool muted;
+
+    AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
+    {
+        *this = audioCapturerChangeInfo;
+    }
+    AudioCapturerChangeInfo() {}
+    ~AudioCapturerChangeInfo() {}
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(sessionId)
+            && capturerInfo.Marshalling(parcel)
+            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
+            && inputDeviceInfo.Marshalling(parcel)
+            && parcel.WriteBool(muted);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        createrUID = parcel.ReadInt32();
+        clientUID = parcel.ReadInt32();
+        sessionId = parcel.ReadInt32();
+        capturerInfo.Unmarshalling(parcel);
+        capturerState = static_cast<CapturerState>(parcel.ReadInt32());
+        inputDeviceInfo.Unmarshalling(parcel);
+        muted = parcel.ReadBool();
+    }
 };
 
 struct AudioStreamChangeInfo {
@@ -1175,19 +627,6 @@ public:
      * @since 10
      */
     virtual void OnAudioPolicyServiceDied() = 0;
-};
-
-enum DeviceVolumeType {
-    EARPIECE_VOLUME_TYPE = 0,
-    SPEAKER_VOLUME_TYPE = 1,
-    HEADSET_VOLUME_TYPE = 2,
-};
-
-enum AudioDeviceManagerType {
-    DEV_MGR_UNKNOW = 0,
-    LOCAL_DEV_MGR,
-    REMOTE_DEV_MGR,
-    BLUETOOTH_DEV_MGR,
 };
 } // namespace AudioStandard
 } // namespace OHOS

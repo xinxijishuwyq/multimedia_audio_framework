@@ -112,9 +112,6 @@ private:
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
 
-    void ReadAudioInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt);
-    void ReadAudioManagerInterruptParams(MessageParcel &data, AudioInterrupt &audioInterrupt);
-    void WriteAudioInteruptParams(MessageParcel &reply, const AudioInterrupt &audioInterrupt);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);

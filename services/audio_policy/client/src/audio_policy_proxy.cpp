@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,67 +26,14 @@ AudioPolicyProxy::AudioPolicyProxy(const sptr<IRemoteObject> &impl)
 {
 }
 
-void AudioPolicyProxy::WriteAudioInteruptParams(MessageParcel &data, const AudioInterrupt &audioInterrupt)
-{
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.streamType));
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
-    data.WriteBool(audioInterrupt.audioFocusType.isPlay);
-    data.WriteUint32(audioInterrupt.sessionID);
-    data.WriteInt32(audioInterrupt.pid);
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
-}
-
-void AudioPolicyProxy::WriteAudioManagerInteruptParams(MessageParcel &data, const AudioInterrupt &audioInterrupt)
-{
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.streamUsage));
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.contentType));
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.streamType));
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.audioFocusType.sourceType));
-    data.WriteBool(audioInterrupt.audioFocusType.isPlay);
-    data.WriteBool(audioInterrupt.pauseWhenDucked);
-    data.WriteInt32(audioInterrupt.pid);
-    data.WriteInt32(static_cast<int32_t>(audioInterrupt.mode));
-}
-
-void AudioPolicyProxy::ReadAudioInterruptParams(MessageParcel &reply, AudioInterrupt &audioInterrupt)
-{
-    audioInterrupt.streamUsage = static_cast<StreamUsage>(reply.ReadInt32());
-    audioInterrupt.contentType = static_cast<ContentType>(reply.ReadInt32());
-    audioInterrupt.audioFocusType.streamType = static_cast<AudioStreamType>(reply.ReadInt32());
-    audioInterrupt.audioFocusType.sourceType = static_cast<SourceType>(reply.ReadInt32());
-    audioInterrupt.audioFocusType.isPlay = reply.ReadBool();
-    audioInterrupt.sessionID = reply.ReadUint32();
-    audioInterrupt.pid = reply.ReadInt32();
-    audioInterrupt.mode = static_cast<InterruptMode>(reply.ReadInt32());
-}
-
 void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data,
     const AudioMode &mode, const AudioStreamChangeInfo &streamChangeInfo)
 {
     if (mode == AUDIO_MODE_PLAYBACK) {
-        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.sessionId);
-        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererState);
-        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.clientUID);
-        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType);
-        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
-        data.WriteInt32(streamChangeInfo.audioRendererChangeInfo.rendererInfo.rendererFlags);
+        streamChangeInfo.audioRendererChangeInfo.Marshalling(data);
     } else {
-        data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.sessionId);
-        data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.capturerState);
-        data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.clientUID);
-        data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
-        data.WriteInt32(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.capturerFlags);
+        streamChangeInfo.audioCapturerChangeInfo.Marshalling(data);
     }
-}
-
-void AudioPolicyProxy::WriteAudioStreamInfoParams(MessageParcel &data, const AudioStreamInfo &audioStreamInfo)
-{
-    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.samplingRate));
-    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.channels));
-    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.format));
-    data.WriteInt32(static_cast<int32_t>(audioStreamInfo.encoding));
 }
 
 int32_t AudioPolicyProxy::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -219,23 +166,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
         AUDIO_ERR_LOG("get toneinfo failed, error: %d", error);
     }
 
-    spToneInfo->segmentCnt = reply.ReadUint32();
-    spToneInfo->repeatCnt = reply.ReadUint32();
-    spToneInfo->repeatSegment = reply.ReadUint32();
-    AUDIO_DEBUG_LOG("segmentCnt: %{public}d, repeatCnt: %{public}d, repeatSegment: %{public}d",
-        spToneInfo->segmentCnt, spToneInfo->repeatCnt, spToneInfo->repeatSegment);
-    for (uint32_t i = 0; i<spToneInfo->segmentCnt; i++) {
-        spToneInfo->segments[i].duration = reply.ReadUint32();
-        spToneInfo->segments[i].loopCnt = reply.ReadUint16();
-        spToneInfo->segments[i].loopIndx = reply.ReadUint16();
-        AUDIO_DEBUG_LOG("seg[%{public}d].duration: %{public}d, seg[%{public}d].loopCnt: %{public}d, \
-            seg[%{public}d].loopIndex: %{public}d", i, spToneInfo->segments[i].duration,
-            i, spToneInfo->segments[i].loopCnt, i, spToneInfo->segments[i].loopIndx);
-        for (uint32_t j = 0; j < TONEINFO_MAX_WAVES+1; j++) {
-            spToneInfo->segments[i].waveFreq[j] = reply.ReadUint16();
-            AUDIO_DEBUG_LOG("wave[%{public}d]: %{public}d", j, spToneInfo->segments[i].waveFreq[j]);
-        }
-    }
+    spToneInfo->Unmarshalling(reply);
     AUDIO_DEBUG_LOG("get rGetToneConfig returned,");
     return spToneInfo;
 }
@@ -541,13 +472,8 @@ int32_t AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions op
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(static_cast<int32_t>(options.streamInfo.samplingRate));
-    data.WriteInt32(static_cast<int32_t>(options.streamInfo.encoding));
-    data.WriteInt32(static_cast<int32_t>(options.streamInfo.format));
-    data.WriteInt32(static_cast<int32_t>(options.streamInfo.channels));
-
-    data.WriteInt32(static_cast<int32_t>(options.capturerInfo.sourceType));
-    data.WriteInt32(options.capturerInfo.capturerFlags);
+    options.streamInfo.Marshalling(data);
+    options.capturerInfo.Marshalling(data);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
     if (error != ERR_NONE) {
@@ -1041,17 +967,8 @@ void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     std::pair<AudioInterrupt, AudioFocuState> focusInfo;
-
-    focusInfo.first.streamUsage = static_cast<StreamUsage>(reply.ReadInt32());
-    focusInfo.first.contentType = static_cast<ContentType>(reply.ReadInt32());
-    focusInfo.first.audioFocusType.streamType = static_cast<AudioStreamType>(reply.ReadInt32());
-    focusInfo.first.audioFocusType.sourceType = static_cast<SourceType>(reply.ReadInt32());
-    focusInfo.first.audioFocusType.isPlay = reply.ReadBool();
-    focusInfo.first.sessionID = reply.ReadInt32();
-    focusInfo.first.pauseWhenDucked = reply.ReadBool();
-    focusInfo.first.mode = static_cast<InterruptMode>(reply.ReadInt32());
+    focusInfo.first.Unmarshalling(reply);
     focusInfo.second = static_cast<AudioFocuState>(reply.ReadInt32());
-
     focusInfoList.push_back(focusInfo);
 }
 
@@ -1191,7 +1108,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    WriteAudioInteruptParams(data, audioInterrupt);
+    audioInterrupt.Marshalling(data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     if (error != ERR_NONE) {
@@ -1212,7 +1129,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    WriteAudioInteruptParams(data, audioInterrupt);
+    audioInterrupt.Marshalling(data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT), data, reply, option);
     if (error != ERR_NONE) {
@@ -1284,7 +1201,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     }
 
     data.WriteInt32(clientId);
-    WriteAudioManagerInteruptParams(data, audioInterrupt);
+    audioInterrupt.Marshalling(data);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS), data, reply, option);
@@ -1307,7 +1224,7 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
         return -1;
     }
     data.WriteInt32(clientId);
-    WriteAudioManagerInteruptParams(data, audioInterrupt);
+    audioInterrupt.Marshalling(data);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
@@ -1352,7 +1269,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy::GetSessionInfoInFocus failed, error: %d", error);
     }
-    ReadAudioInterruptParams(reply, audioInterrupt);
+    audioInterrupt.Unmarshalling(reply);
 
     return reply.ReadInt32();
 }
@@ -1768,68 +1685,6 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     return reply.ReadInt32();
 }
 
-void AudioPolicyProxy::ReadAudioRendererChangeInfo(MessageParcel &reply,
-    unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
-{
-    rendererChangeInfo->sessionId = reply.ReadInt32();
-    rendererChangeInfo->rendererState = static_cast<RendererState>(reply.ReadInt32());
-    rendererChangeInfo->clientUID = reply.ReadInt32();
-    rendererChangeInfo->tokenId = reply.ReadInt32();
-
-    rendererChangeInfo->rendererInfo.contentType = static_cast<ContentType>(reply.ReadInt32());
-    rendererChangeInfo->rendererInfo.streamUsage = static_cast<StreamUsage>(reply.ReadInt32());
-    rendererChangeInfo->rendererInfo.rendererFlags = reply.ReadInt32();
-
-    rendererChangeInfo->outputDeviceInfo.deviceType = static_cast<DeviceType>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.deviceId = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.channelMasks = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.channelIndexMasks = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate
-        = static_cast<AudioSamplingRate>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding
-        = static_cast<AudioEncodingType>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.deviceName = reply.ReadString();
-    rendererChangeInfo->outputDeviceInfo.macAddress = reply.ReadString();
-    rendererChangeInfo->outputDeviceInfo.displayName = reply.ReadString();
-    rendererChangeInfo->outputDeviceInfo.networkId = reply.ReadString();
-    rendererChangeInfo->outputDeviceInfo.interruptGroupId = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.volumeGroupId = reply.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice = reply.ReadBool();
-}
-
-void AudioPolicyProxy::ReadAudioCapturerChangeInfo(MessageParcel &reply,
-    unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
-{
-    capturerChangeInfo->sessionId = reply.ReadInt32();
-    capturerChangeInfo->capturerState = static_cast<CapturerState>(reply.ReadInt32());
-    capturerChangeInfo->clientUID = reply.ReadInt32();
-    capturerChangeInfo->capturerInfo.sourceType = static_cast<SourceType>(reply.ReadInt32());
-    capturerChangeInfo->capturerInfo.capturerFlags = reply.ReadInt32();
-    capturerChangeInfo->muted = reply.ReadBool();
-
-    capturerChangeInfo->inputDeviceInfo.deviceType = static_cast<DeviceType>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.deviceId = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.channelMasks = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.channelIndexMasks = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate
-        = static_cast<AudioSamplingRate>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding
-        = static_cast<AudioEncodingType>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
-    capturerChangeInfo->inputDeviceInfo.deviceName = reply.ReadString();
-    capturerChangeInfo->inputDeviceInfo.macAddress = reply.ReadString();
-    capturerChangeInfo->inputDeviceInfo.displayName = reply.ReadString();
-    capturerChangeInfo->inputDeviceInfo.networkId = reply.ReadString();
-    capturerChangeInfo->inputDeviceInfo.interruptGroupId = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.volumeGroupId = reply.ReadInt32();
-    capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice = reply.ReadBool();
-}
-
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
@@ -1855,7 +1710,7 @@ int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
     while (size > 0) {
         unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
         CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
-        ReadAudioRendererChangeInfo(reply, rendererChangeInfo);
+        rendererChangeInfo->Unmarshalling(reply);
         audioRendererChangeInfos.push_back(move(rendererChangeInfo));
         size--;
     }
@@ -1888,7 +1743,7 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
     while (size > 0) {
         unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
         CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
-        ReadAudioCapturerChangeInfo(reply, capturerChangeInfo);
+        capturerChangeInfo->Unmarshalling(reply);
         audioCapturerChangeInfos.push_back(move(capturerChangeInfo));
         size--;
     }
@@ -1986,7 +1841,7 @@ bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo 
         AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported WriteInterfaceToken failed");
         return IPC_PROXY_ERR;
     }
-    WriteAudioStreamInfoParams(data, audioStreamInfo);
+    audioStreamInfo.Marshalling(data);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED), data, reply, option);
     if (error != ERR_NONE) {
