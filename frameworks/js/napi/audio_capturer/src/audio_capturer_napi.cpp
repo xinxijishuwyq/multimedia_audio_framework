@@ -988,8 +988,11 @@ napi_value AudioCapturerNapi::GetCurrentInputDevices(napi_env env, napi_callback
     }
 
     napi_value jsResult = nullptr;
-    (void)napi_create_object(env, &jsResult);
-    SetDeviceDescriptors(env, jsResult, deviceInfo);
+    napi_value valueParam = nullptr;
+    napi_create_array_with_length(env, 1, &jsResult);
+    (void)napi_create_object(env, &valueParam);
+    SetDeviceDescriptors(env, valueParam, deviceInfo);
+    napi_set_element(env, jsResult, 0, valueParam);
 
     return jsResult;
 }
