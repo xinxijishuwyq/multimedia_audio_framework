@@ -71,7 +71,6 @@ private:
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
-    void OpenDumpFile();
 
     IAudioSourceAttr attr_;
     bool capturerInited_;
@@ -98,9 +97,7 @@ private:
 
     IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
     std::mutex audioCapturerSourceCallbackMutex_;
-#ifdef CAPTURE_DUMP
-    FILE *pfd_;
-#endif
+    FILE *dumpFile_ = nullptr;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -257,9 +254,6 @@ private:
     static inline AudioCapturerSourceInner audioCapturerSource_;
 };
 
-#ifdef CAPTURE_DUMP
-const char *g_audioOutTestFilePath = "/data/data/.pulse_dir/dump_audiosource.pcm";
-#endif // CAPTURE_DUMP
 bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
@@ -269,9 +263,6 @@ AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string halName)
       audioCapture_(nullptr), halName_(halName)
 {
     attr_ = {};
-#ifdef CAPTURE_DUMP
-    pfd_ = nullptr;
-#endif // CAPTURE_DUMP
 }
 
 AudioCapturerSourceInner::~AudioCapturerSourceInner()
@@ -376,12 +367,7 @@ void AudioCapturerSourceInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
-#ifdef CAPTURE_DUMP
-    if (pfd_) {
-        fclose(pfd_);
-        pfd_ = nullptr;
-    }
-#endif // CAPTURE_DUMP
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void AudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes &attrs)
@@ -528,18 +514,7 @@ int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     }
     capturerInited_ = true;
 
-    OpenDumpFile();
     return SUCCESS;
-}
-
-void AudioCapturerSourceInner::OpenDumpFile()
-{
-#ifdef CAPTURE_DUMP
-    pfd_ = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // CAPTURE_DUMP
 }
 
 int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
@@ -558,14 +533,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
         return ERR_READ_FAILED;
     }
 
-#ifdef CAPTURE_DUMP
-    if (pfd_) {
-        size_t writeResult = fwrite(frame, 1, replyBytes, pfd_);
-        if (writeResult != replyBytes) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
-#endif // CAPTURE_DUMP
+    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
@@ -593,6 +561,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
     }
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_CAPTURER_SOURCE_FILENAME, &dumpFile_);
 
     int32_t ret;
     if (!started_) {

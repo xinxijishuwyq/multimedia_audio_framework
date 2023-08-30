@@ -166,9 +166,7 @@ private:
 
     std::atomic<uint32_t> underflowCount_ = 0;
     std::string cachePath_;
-#ifdef DUMP_CLIENT
-    FILE *dcp_ = nullptr;
-#endif
+    FILE *dumpFile_ = nullptr;
 };
 
 std::mutex g_audioServerProxyMutex;
@@ -263,12 +261,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
-#ifdef DUMP_CLIENT
-    if (dcp_) {
-        fclose(dcp_);
-        dcp_ = nullptr;
-    }
-#endif
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 int32_t AudioProcessInClientInner::OnEndpointChange(int32_t status)
@@ -493,17 +486,6 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION * waitThreadStartTime);
     }
 
-#ifdef DUMP_CLIENT
-    std::stringstream strStream;
-    std::string dumpPatch;
-    strStream << "/data/local/tmp/client-" << processConfig_.appInfo.appUid << ".pcm";
-    strStream >> dumpPatch;
-    AUDIO_INFO_LOG("Client dump using path: %{public}s with uid:%{public}d", dumpPatch.c_str(),
-        processConfig_.appInfo.appUid);
-
-    dcp_ = fopen(dumpPatch.c_str(), "a+");
-    CHECK_AND_BREAK_LOG(dcp_ != nullptr, "Error opening pcm test file!");
-#endif
     isInited_ = true;
     return true;
 }
@@ -551,11 +533,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
-#ifdef DUMP_CLIENT
-    if (dcp_ != nullptr) {
-        fwrite(static_cast<void *>(readbufDesc.buffer), 1, spanSizeInByte_, dcp_);
-    }
-#endif
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
     CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s reset buffer fail, ret %{public}d.", __func__, ret);
@@ -713,11 +691,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
         }
 
-#ifdef DUMP_CLIENT
-        if (dcp_ != nullptr) {
-            fwrite(static_cast<void *>(bufDesc.buffer), 1, clientSpanSizeInByte_, dcp_);
-        }
-#endif
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), clientSpanSizeInByte_);
     }
 
     CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) == EOK,
@@ -742,6 +716,8 @@ int32_t AudioProcessInClientInner::Start()
 {
     Trace traceWithLog("AudioProcessInClient::Start", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_PROCESS_IN_CLIENT_FILENAME, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     if (streamStatus_->load() == StreamStatus::STREAM_RUNNING) {
