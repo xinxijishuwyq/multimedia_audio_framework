@@ -21,6 +21,8 @@ const stringParameter = 'stringParameter';
 const numberParameter = 12345678;
 
 describe("AudioRoutingManagerJsTest", function () {
+  const ERROR_INPUT_INVALID = '401';
+  const ERROR_INVALID_PARAM = '6800101';
 
   beforeAll(async function () {
 
@@ -799,4 +801,318 @@ describe("AudioRoutingManagerJsTest", function () {
         done();
     }
   })
+
+  /*
+   * @tc.name:isCommunicationDeviceActiveSync001
+   * @tc.desc:Get isCommunicationDeviceActiveSync success - SPEAKER
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("isCommunicationDeviceActiveSync001", 0, async function (done) {
+    let audioRoutingManager = null;
+
+    try {
+      audioRoutingManager = audio.getAudioManager().getRoutingManager();
+      await audioRoutingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, true);
+      let isActive = audioRoutingManager.isCommunicationDeviceActiveSync(audio.CommunicationDeviceType.SPEAKER);
+      console.info(`The active status of the device is obtained ${isActive}.`);
+      expect(isActive).assertTrue();
+
+      done();
+    } catch(e) {
+      console.error(`${TAG} isCommunicationDeviceActiveSync001 ERROR: ${e.message}`);
+      expect(false).assertTrue();
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:isCommunicationDeviceActiveSync002
+   * @tc.desc:Get isCommunicationDeviceActiveSync fail(401) - Invalid param count : 0
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("isCommunicationDeviceActiveSync002", 0, async function (done) {
+    let audioRoutingManager = null;
+
+    try {
+      audioRoutingManager = audio.getAudioManager().getRoutingManager();
+      let isActive = audioRoutingManager.isCommunicationDeviceActiveSync();
+      console.info(`The active status of the device is obtained ${isActive}.`);
+      expect(false).assertTrue();
+
+      done();
+    } catch(e) {
+      console.error(`${TAG} isCommunicationDeviceActiveSync002 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:isCommunicationDeviceActiveSync003
+   * @tc.desc:Get isCommunicationDeviceActiveSync fail(401) - Invalid param type : "Invalid type"
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("isCommunicationDeviceActiveSync003", 0, async function (done) {
+    let audioRoutingManager = null;
+
+    try {
+      audioRoutingManager = audio.getAudioManager().getRoutingManager();
+      let isActive = audioRoutingManager.isCommunicationDeviceActiveSync("Invalid type");
+      console.info(`The active status of the device is obtained ${isActive}.`);
+      expect(false).assertTrue();
+
+      done();
+    } catch(e) {
+      console.error(`${TAG} isCommunicationDeviceActiveSync003 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:isCommunicationDeviceActiveSync004
+   * @tc.desc:Get isCommunicationDeviceActiveSync fail(6800101) - Invalid param value : 100
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("isCommunicationDeviceActiveSync004", 0, async function (done) {
+    let invalidDeviceType = 100;
+    let audioRoutingManager = null;
+
+    try {
+      audioRoutingManager = audio.getAudioManager().getRoutingManager();
+      let isActive = audioRoutingManager.isCommunicationDeviceActiveSync(invalidDeviceType);
+      console.info(`The active status is obtained ${isActive}.`);
+      expect(false).assertTrue();
+
+      done();
+    } catch(e) {
+      console.error(`${TAG} isCommunicationDeviceActiveSync004 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INVALID_PARAM);
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:getDevicesSync001
+   * @tc.desc:getDevicesSync success - INPUT_DEVICES_FLAG
+   * @tc.type: FUNC
+   * @tc.require: I6C9VA
+   */
+  it("getDevicesSync001", 0, async function (done) {
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let AudioDeviceDescriptors = routingManager.getDevicesSync(audio.DeviceFlag.INPUT_DEVICES_FLAG);
+      console.info(`${TAG} getDevicesSync001 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      expect(AudioDeviceDescriptors.length).assertLarger(0);
+      for (let i = 0; i < AudioDeviceDescriptors.length; i++) {
+        expect(AudioDeviceDescriptors[i].displayName!==""
+        && AudioDeviceDescriptors[i].displayName!==undefined).assertTrue();
+      }
+      done();
+    } catch (e) {
+      console.error(`${TAG} getDevicesSync001 ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:getDevicesSync010
+   * @tc.desc:getDevicesSync fail(401) - Invalid param count : 0
+   * @tc.type: FUNC
+   * @tc.require: I6C9VA
+   */
+  it("getDevicesSync010", 0, async function (done) {
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let AudioDeviceDescriptors = routingManager.getDevicesSync();
+      console.info(`${TAG} getDevicesSync010 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      expect(false).assertTrue();
+      done();
+    } catch (e) {
+      console.error(`${TAG} getDevicesSync010 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:getDevicesSync011
+   * @tc.desc:getDevicesSync fail(401) - Invalid param type : "Invalid type"
+   * @tc.type: FUNC
+   * @tc.require: I6C9VA
+   */
+  it("getDevicesSync011", 0, async function (done) {
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let AudioDeviceDescriptors = routingManager.getDevicesSync("Invalid type");
+      console.info(`${TAG} getDevicesSync011 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      expect(false).assertTrue();
+      done();
+    } catch (e) {
+      console.error(`${TAG} getDevicesSync011 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:getDevicesSync012
+   * @tc.desc:getDevicesSync fail(6800101) - Invalid param value : 10000
+   * @tc.type: FUNC
+   * @tc.require: I6C9VA
+   */
+  it("getDevicesSync012", 0, async function (done) {
+    let invalidDeviceFlag = 10000;
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let AudioDeviceDescriptors = routingManager.getDevicesSync(invalidDeviceFlag);
+      console.info(`${TAG} getDevicesSync012 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
+      expect(false).assertTrue();
+      done();
+    } catch (e) {
+      console.error(`${TAG} getDevicesSync012 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INVALID_PARAM);
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoSyncTest001
+   * @tc.desc:getPreferredInputDeviceForCapturerInfoSync success
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoSyncTest001", 0, async function (done) {
+    let capturerInfo = {
+      content : audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+      capturerFlags : 0 }
+
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let data = routingManager.getPreferredInputDeviceForCapturerInfoSync(capturerInfo);
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest001 SUCCESS`+JSON.stringify(data));
+      expect(true).assertTrue();
+      done();
+    } catch(e) {
+      console.error(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest001 ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoSyncTest002
+   * @tc.desc:getPreferredInputDeviceForCapturerInfoSync fail(401) - Invalid param count : 0
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoSyncTest002", 0, async function (done) {
+      try {
+        let routingManager = audio.getAudioManager().getRoutingManager();
+        let data = routingManager.getPreferredInputDeviceForCapturerInfoSync();
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest002 SUCCESS`+JSON.stringify(data));
+        expect().assertFail();
+        done();
+      } catch(e) {
+        console.error(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest002 ERROR: ${e.message}`);
+        expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+        done();
+      }
+  })
+
+  /*
+   * @tc.name:getPreferredInputDeviceForCapturerInfoSyncTest003
+   * @tc.desc:getPreferredInputDeviceForCapturerInfoSync fail(401) - Invalid param type : "Invalid type"
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredInputDeviceForCapturerInfoSyncTest003", 0, async function (done) {
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let data = routingManager.getPreferredInputDeviceForCapturerInfoSync("Invalid type");
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest003 SUCCESS`+JSON.stringify(data));
+      expect().assertFail();
+      done();
+    } catch(e) {
+      console.error(`${TAG} getPreferredInputDeviceForCapturerInfoSyncTest003 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:getPreferredOutputDeviceForRendererInfoSyncTest001
+   * @tc.desc:getPreferredOutputDeviceForRendererInfoSync success
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredOutputDeviceForRendererInfoSyncTest001", 0, async function (done) {
+    let rendererInfo = {
+      content : audio.ContentType.CONTENT_TYPE_MUSIC,
+      usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+      rendererFlags : 0 }
+
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let data = routingManager.getPreferredOutputDeviceForRendererInfoSync(rendererInfo);
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest001 SUCCESS`+JSON.stringify(data));
+      expect(true).assertTrue();
+      done();
+    } catch(e) {
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest001 ERROR: ${e.message}`);
+      expect().assertFail();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:getPreferredOutputDeviceForRendererInfoSyncTest002
+   * @tc.desc:getPreferredOutputDeviceForRendererInfoSync fail(401) - Invalid param count : 0
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredOutputDeviceForRendererInfoSyncTest002", 0, async function (done) {
+      try {
+        let routingManager = audio.getAudioManager().getRoutingManager();
+        let data = routingManager.getPreferredOutputDeviceForRendererInfoSync();
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest002 SUCCESS`+JSON.stringify(data));
+        expect().assertFail();
+        done();
+      } catch(e) {
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest002 ERROR: ${e.message}`);
+        expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+        done();
+      }
+  })
+
+  /*
+   * @tc.name:getPreferredOutputDeviceForRendererInfoSyncTest003
+   * @tc.desc:getPreferredOutputDeviceForRendererInfoSync fail(401) - Invalid param type : "Invalid type"
+   * @tc.type: FUNC
+   * @tc.require: I7Q56A
+   */
+  it("getPreferredOutputDeviceForRendererInfoSyncTest003", 0, async function (done) {
+    try {
+      let routingManager = audio.getAudioManager().getRoutingManager();
+      let data = routingManager.getPreferredOutputDeviceForRendererInfoSync("Invalid type");
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest003 SUCCESS`+JSON.stringify(data));
+      expect().assertFail();
+      done();
+    } catch(e) {
+      console.error(`${TAG} getPreferredOutputDeviceForRendererInfoSyncTest003 ERROR: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
+  })
+
 })
