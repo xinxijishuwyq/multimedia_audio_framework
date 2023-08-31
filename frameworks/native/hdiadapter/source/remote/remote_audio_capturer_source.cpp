@@ -34,7 +34,7 @@ const char *g_audioOutTestFilePath = "/data/local/tmp/remote_audio_capture.pcm";
 
 class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
-    explicit RemoteAudioCapturerSourceInner(std::string deviceNetworkId);
+    explicit RemoteAudioCapturerSourceInner(const std::string &deviceNetworkId);
     ~RemoteAudioCapturerSourceInner();
 
     int32_t Init(IAudioSourceAttr &attr) override;
@@ -53,7 +53,7 @@ public:
     int32_t SetMute(bool isMute) override;
     int32_t GetMute(bool &isMute) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetInputRoute(DeviceType deviceType) override;
+    int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
@@ -95,7 +95,7 @@ private:
 };
 
 std::map<std::string, RemoteAudioCapturerSource *> allRemoteSources;
-RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(std::string deviceNetworkId)
+RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {
     RemoteAudioCapturerSource *audioCapturer_ = nullptr;
     // check if it is in our map
@@ -110,7 +110,7 @@ RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(std::string de
     return audioCapturer_;
 }
 
-RemoteAudioCapturerSourceInner::RemoteAudioCapturerSourceInner(std::string deviceNetworkId)
+RemoteAudioCapturerSourceInner::RemoteAudioCapturerSourceInner(const std::string &deviceNetworkId)
     : deviceNetworkId_(deviceNetworkId) {}
 
 RemoteAudioCapturerSourceInner::~RemoteAudioCapturerSourceInner()

@@ -371,9 +371,8 @@ bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
 
 bool AudioAdapterManager::IsStreamActiveForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup)
 {
-    bool result = false;
     for (auto &streamType: volumeTypeGroup) {
-        result = audioServiceAdapter_->IsStreamActive(streamType);
+        bool result = audioServiceAdapter_->IsStreamActive(streamType);
         if (result) {
             // An active stream has been found, return true directly.
             return true;
