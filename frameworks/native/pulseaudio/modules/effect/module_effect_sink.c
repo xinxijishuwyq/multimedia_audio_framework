@@ -349,7 +349,15 @@ static int SinkInputPopCb(pa_sink_input *si, size_t nbytes, pa_memchunk *chunk)
     }
 
     if (!PA_SINK_IS_RUNNING(u->sink->thread_info.state)) {
-        return -1;
+        if (u->sceneName == NULL) {
+            const char *capName = pa_sprintf_malloc("%s_CAP", u->sink->name);
+            pa_sink *capSink = pa_namereg_get(u->module->core, capName, PA_NAMEREG_SINK);
+            if (PA_SINK_IS_OPENED(capSink->state)) {
+                return -1;
+            }
+        } else {
+            return -1;
+        }
     }
     
     size_t targetLength = pa_memblockq_get_tlength(u->bufInQ);
