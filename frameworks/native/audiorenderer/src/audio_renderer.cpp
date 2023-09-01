@@ -211,6 +211,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.audioFocusType.streamType = audioStreamType;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.mode = SHARE_MODE;
+    audioInterrupt_.parallelPlayFlag = false;
 }
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
@@ -866,6 +867,13 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
         return;
     }
     audioInterrupt_.mode = mode;
+}
+
+int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate::SetParallelPlayFlag: parallelPlayFlag %{pubilc}d", parallelPlayFlag);
+    audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
+    return SUCCESS;
 }
 
 int32_t AudioRendererPrivate::SetLowPowerVolume(float volume) const

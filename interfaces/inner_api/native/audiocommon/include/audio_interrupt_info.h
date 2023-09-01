@@ -158,6 +158,7 @@ public:
     bool pauseWhenDucked;
     int32_t pid { -1 };
     InterruptMode mode { SHARE_MODE };
+    bool parallelPlayFlag {false};
 
     AudioInterrupt() {}
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -174,7 +175,8 @@ public:
             && parcel.WriteUint32(sessionID)
             && parcel.WriteBool(pauseWhenDucked)
             && parcel.WriteInt32(pid)
-            && parcel.WriteInt32(static_cast<int32_t>(mode));
+            && parcel.WriteInt32(static_cast<int32_t>(mode))
+            && parcel.WriteBool(parallelPlayFlag);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -187,6 +189,7 @@ public:
         pauseWhenDucked = parcel.ReadBool();
         pid = parcel.ReadInt32();
         mode = static_cast<InterruptMode>(parcel.ReadInt32());
+        parallelPlayFlag = parcel.ReadBool();
     }
 };
 } // namespace AudioStandard
