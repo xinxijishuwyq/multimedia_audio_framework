@@ -32,6 +32,7 @@ namespace {
     constexpr int32_t ARGS_COUNT_TWO = 2;
     constexpr int32_t ARGS_COUNT_THREE = 3;
     constexpr int32_t ARGS_COUNT_FOUR = 4;
+    constexpr int32_t SUCCESS = 0;
 #ifndef LATENCY_ACCURACY_TEST
     constexpr int32_t STOP_BUFFER_POSITION = 700000;
     constexpr int32_t PAUSE_BUFFER_POSITION = 1400000;

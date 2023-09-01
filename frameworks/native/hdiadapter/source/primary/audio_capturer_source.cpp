@@ -59,7 +59,7 @@ public:
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
     void RegisterParameterCallback(IAudioSourceCallback* callback) override;
 
-    explicit AudioCapturerSourceInner(const std::string halName = "primary");
+    explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     ~AudioCapturerSourceInner();
 
 private:
@@ -257,7 +257,7 @@ private:
 bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
-AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string halName)
+AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string &halName)
     : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
       rightVolume_(MAX_VOLUME_LEVEL), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr),
       audioCapture_(nullptr), halName_(halName)
@@ -270,7 +270,7 @@ AudioCapturerSourceInner::~AudioCapturerSourceInner()
     AUDIO_ERR_LOG("~AudioCapturerSourceInner");
 }
 
-AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string halName,
+AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName,
     const SourceType sourceType, const char *sourceName)
 {
     if (halName == "usb") {

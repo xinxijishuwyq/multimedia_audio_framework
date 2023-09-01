@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 class RemoteAudioCapturerSource : public IAudioCapturerSource {
 public:
-    static RemoteAudioCapturerSource *GetInstance(std::string deviceNetworkId);
+    static RemoteAudioCapturerSource *GetInstance(const std::string &deviceNetworkId);
 
     RemoteAudioCapturerSource() = default;
     ~RemoteAudioCapturerSource() = default;

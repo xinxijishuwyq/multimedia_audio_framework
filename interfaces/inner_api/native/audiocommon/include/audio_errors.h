@@ -127,25 +127,6 @@ const int32_t  ERR_MEMORY_ALLOC_FAILED = BASE_AUDIO_ERR_OFFSET - 21;
 
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
-
-enum AudioErrors {
-    /**
-     * Common errors.
-     */
-    ERROR_INVALID_PARAM = 6800101,
-    ERROR_NO_MEMORY     = 6800102,
-    ERROR_ILLEGAL_STATE = 6800103,
-    ERROR_UNSUPPORTED   = 6800104,
-    ERROR_TIMEOUT       = 6800105,
-    /**
-     * Audio specific errors.
-     */
-    ERROR_STREAM_LIMIT  = 6800201,
-    /**
-     * Default error.
-     */
-    ERROR_SYSTEM        = 6800301
-};
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

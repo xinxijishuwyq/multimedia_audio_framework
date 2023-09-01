@@ -36,7 +36,7 @@ namespace AudioStandard {
 
 class AudioCapturerSource : public IAudioCapturerSource {
 public:
-    static AudioCapturerSource *GetInstance(const std::string halName = "primary",
+    static AudioCapturerSource *GetInstance(const std::string &halName = "primary",
         const SourceType sourceType = SourceType::SOURCE_TYPE_MIC,
         const char *sourceName = "Built_in_wakeup");
     static AudioCapturerSource *GetMicInstance(void);
