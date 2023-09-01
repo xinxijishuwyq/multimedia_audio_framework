@@ -918,6 +918,14 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetActiveOutputDeviceDescriptors();
 
     /**
+     * @brief Get preferred input device deviceDescriptors
+     *
+     * @return Returns AudioDeviceDescriptor
+     * @since 10
+     */
+    int32_t GetPreferredInputDeviceDescriptors();
+
+    /**
      * @brief Get audio focus info
      *
      * @return Returns success or not
