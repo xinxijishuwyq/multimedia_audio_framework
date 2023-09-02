@@ -96,7 +96,6 @@ ohos_shared_library("audio") {
     "hilog:libhilog",
     "hiview:libxpower_event_js",
     "napi:ace_napi",
-    "resource_management:global_resmgr",
   ]
   relative_install_dir = "module/multimedia"
   part_name = "audio_framework"

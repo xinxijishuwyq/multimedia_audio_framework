@@ -358,11 +358,13 @@ private:
     void GetDeviceInfo(PolicyData &policyData);
     void GetGroupInfo(PolicyData &policyData);
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
     // externel function call
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
     void RegisterVolumeKeyEvents(const int32_t keyType);
     void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
+#endif
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();

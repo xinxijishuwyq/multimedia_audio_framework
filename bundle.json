@@ -60,7 +60,6 @@
             "kv_store",
             "napi",
             "power_manager",
-            "resource_management",
             "resource_schedule_service",
             "safwk",
             "samgr"

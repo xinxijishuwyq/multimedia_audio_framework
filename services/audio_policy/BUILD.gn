@@ -218,7 +218,6 @@ ohos_shared_library("audio_policy_service") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "init:libbegetutil",
-    "input:libmmi-client",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "safwk:system_ability_fwk",
@@ -240,6 +239,11 @@ ohos_shared_library("audio_policy_service") {
     deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
     include_dirs += [ "../../../../foundation/communication/bluetooth/interfaces/inner_api/include" ]
+  }
+
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
   }
 
   subsystem_name = "multimedia"
