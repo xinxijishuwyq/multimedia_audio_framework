@@ -21,9 +21,11 @@
 #include <vector>
 #include <condition_variable>
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
 #include "key_event.h"
 #include "key_option.h"
+#endif
 
 #include "privacy_kit.h"
 #include "accesstoken_kit.h"
@@ -123,7 +125,9 @@ void AudioPolicyServer::OnStart()
     AUDIO_INFO_LOG("AudioPolicyServer OnStart");
     mPolicyService.Init();
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
+#endif
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
@@ -153,10 +157,12 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
 {
     AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
     switch (systemAbilityId) {
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
         case MULTIMODAL_INPUT_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility input service start");
             SubscribeVolumeKeyEvents();
             break;
+#endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
             InitKVStore();
@@ -189,6 +195,7 @@ void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std
     AUDIO_DEBUG_LOG("AudioPolicyServer::OnRemoveSystemAbility systemAbilityId:%{public}d removed", systemAbilityId);
 }
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType,
     const AudioStreamType &streamInFocus)
 {
@@ -220,7 +227,9 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 
     return false;
 }
+#endif
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
     if ((keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN)) {
@@ -267,7 +276,9 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
     }
 }
+#endif
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     MMI::InputManager *im = MMI::InputManager::GetInstance();
@@ -291,13 +302,16 @@ void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
     }
 }
+#endif
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
     RegisterVolumeKeyMuteEvents();
 }
+#endif
 
 AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType streamType)
 {

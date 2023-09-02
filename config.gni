@@ -35,6 +35,13 @@ declare_args() {
     audio_framework_config_policy_enable = false
   }
 
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.multimodalinput_input)) {
+    audio_framework_feature_input = true
+  } else {
+    audio_framework_feature_input = false
+  }
+
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 
   multimedia_audio_framework_pulse_audio_src = "//third_party/pulseaudio/src"
