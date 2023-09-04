@@ -1216,7 +1216,7 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArraySync(napi_env env, napi_callbac
     napi_value jsEffectInofObj = nullptr;
     napi_create_array_with_length(env, audioSceneEffectInfo.mode.size(), &result);
     napi_create_object(env, &jsEffectInofObj);
-    for (int32_t i = 0; i < audioSceneEffectInfo.mode.size(); i++) {
+    for (size_t i = 0; i < audioSceneEffectInfo.mode.size(); i++) {
         napi_create_uint32(env, audioSceneEffectInfo.mode[i], &jsEffectInofObj);
         napi_set_element(env, result, i, jsEffectInofObj);
     }
