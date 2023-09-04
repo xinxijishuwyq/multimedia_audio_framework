@@ -3080,27 +3080,33 @@ static void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescr
     deviceInfo.audioStreamInfo.channels = desc->audioStreamInfo_.channels;
 }
 
-void AudioPolicyService::UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+void AudioPolicyService::UpdateStreamChangeDeviceInfoForPlayback(AudioStreamChangeInfo &streamChangeInfo)
 {
-    if (mode == AUDIO_MODE_PLAYBACK) {
-        std::vector<sptr<AudioDeviceDescriptor>> outputDevices = GetDevices(OUTPUT_DEVICES_FLAG);
-        DeviceType activeDeviceType = currentActiveDevice_.deviceType_;
-        DeviceRole activeDeviceRole = OUTPUT_DEVICE;
-        for (sptr<AudioDeviceDescriptor> desc : outputDevices) {
-            if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
-                UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo, desc, true, true);
-                break;
+    std::vector<sptr<AudioDeviceDescriptor>> outputDevices = GetDevices(OUTPUT_DEVICES_FLAG);
+    DeviceType activeDeviceType = currentActiveDevice_.deviceType_;
+    DeviceRole activeDeviceRole = OUTPUT_DEVICE;
+    for (sptr<AudioDeviceDescriptor> desc : outputDevices) {
+        if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+            if (activeDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                desc->macAddress_ != currentActiveDevice_.macAddress_) {
+                // This A2DP device is not the active A2DP device. Skip it.
+                continue;
             }
+            UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo, desc, true, true);
+            break;
         }
-    } else {
-        std::vector<sptr<AudioDeviceDescriptor>> inputDevices = GetDevices(INPUT_DEVICES_FLAG);
-        DeviceType activeDeviceType = activeInputDevice_;
-        DeviceRole activeDeviceRole = INPUT_DEVICE;
-        for (sptr<AudioDeviceDescriptor> desc : inputDevices) {
-            if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
-                UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo, desc, true, true);
-                break;
-            }
+    }
+}
+
+void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChangeInfo &streamChangeInfo)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> inputDevices = GetDevices(INPUT_DEVICES_FLAG);
+    DeviceType activeDeviceType = activeInputDevice_;
+    DeviceRole activeDeviceRole = INPUT_DEVICE;
+    for (sptr<AudioDeviceDescriptor> desc : inputDevices) {
+        if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+            UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo, desc, true, true);
+            break;
         }
     }
 }
@@ -3108,14 +3114,22 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfo(AudioMode &mode, AudioStre
 int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
-    UpdateStreamChangeDeviceInfo(mode, streamChangeInfo);
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        UpdateStreamChangeDeviceInfoForPlayback(streamChangeInfo);
+    } else if (mode == AUDIO_MODE_RECORD) {
+        UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
+    }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
 int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("Entered AudioPolicyService::%{public}s", __func__);
-    UpdateStreamChangeDeviceInfo(mode, streamChangeInfo);
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        UpdateStreamChangeDeviceInfoForPlayback(streamChangeInfo);
+    } else if (mode == AUDIO_MODE_RECORD) {
+        UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
+    }
     return streamCollector_.UpdateTracker(mode, streamChangeInfo);
 }
 
@@ -3133,6 +3147,11 @@ int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<Audi
     DeviceRole activeDeviceRole = OUTPUT_DEVICE;
     for (sptr<AudioDeviceDescriptor> desc : outputDevices) {
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+            if (activeDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                desc->macAddress_ != currentActiveDevice_.macAddress_) {
+                // This A2DP device is not the active A2DP device. Skip it.
+                continue;
+            }
             size_t rendererInfosSize = audioRendererChangeInfos.size();
             for (size_t i = 0; i < rendererInfosSize; i++) {
                 UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
@@ -3356,15 +3375,28 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
 void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     AUDIO_INFO_LOG("AudioPolicyService::%{public}s IN", __func__);
+
+    DeviceType activeDevice = DEVICE_TYPE_NONE;
+    auto isOutputDevicePresent = [&activeDevice, this] (const sptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        if ((activeDevice == desc->deviceType_) && (OUTPUT_DEVICE == desc->deviceRole_)) {
+            if (activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP) {
+                // If the device type is A2DP, need to compare mac address in addition.
+                return desc->macAddress_ == currentActiveDevice_.macAddress_;
+            }
+            return true;
+        }
+        return false;
+    };
+    auto isInputDevicePresent = [&activeDevice] (const sptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        return ((activeDevice == desc->deviceType_) && (INPUT_DEVICE == desc->deviceRole_));
+    };
+
     for (sptr<AudioDeviceDescriptor> deviceDesc : desc) {
         if (deviceDesc->deviceRole_ == OUTPUT_DEVICE) {
-            DeviceType activeDevice = currentActiveDevice_.deviceType_;
-            auto isPresent = [&activeDevice] (const sptr<AudioDeviceDescriptor> &desc) {
-                CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-                return ((activeDevice == desc->deviceType_) && (OUTPUT_DEVICE == desc->deviceRole_));
-            };
-
-            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+            activeDevice = currentActiveDevice_.deviceType_;
+            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isOutputDevicePresent);
             if (itr != connectedDevices_.end()) {
                 DeviceInfo outputDevice = {};
                 UpdateDeviceInfo(outputDevice, *itr, true, true);
@@ -3373,13 +3405,8 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
         }
 
         if (deviceDesc->deviceRole_ == INPUT_DEVICE) {
-            DeviceType activeDevice = activeInputDevice_;
-            auto isPresent = [&activeDevice] (const sptr<AudioDeviceDescriptor> &desc) {
-                CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-                return ((activeDevice == desc->deviceType_) && (INPUT_DEVICE == desc->deviceRole_));
-            };
-
-            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+            activeDevice = activeInputDevice_;
+            auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isInputDevicePresent);
             if (itr != connectedDevices_.end()) {
                 DeviceInfo inputDevice = {};
                 UpdateDeviceInfo(inputDevice, *itr, true, true);
