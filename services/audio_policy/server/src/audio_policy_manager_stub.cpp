@@ -74,7 +74,7 @@ void AudioPolicyManagerStub::GetToneInfoInternal(MessageParcel &data, MessagePar
         AUDIO_ERR_LOG("AudioPolicyManagerStub: GetToneInfoInternal obj is null");
         return;
     }
-    ltoneInfo->Marshalling(data);
+    ltoneInfo->Marshalling(reply);
 }
 
 void AudioPolicyManagerStub::GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply)
