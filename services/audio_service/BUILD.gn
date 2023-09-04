@@ -96,7 +96,6 @@ config("audio_client_public_config") {
 ohos_shared_library("audio_client") {
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
     integer_overflow = true
     debug = false
     blocklist = "../../cfi_blocklist.txt"
