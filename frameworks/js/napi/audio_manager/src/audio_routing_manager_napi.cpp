@@ -774,7 +774,8 @@ void AudioRoutingManagerNapi::CheckPreferredOutputDeviceForRendererInfo(napi_env
 {
     const int32_t refCount = 1;
     if (argc < ARGS_ONE) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
     }
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
@@ -788,7 +789,8 @@ void AudioRoutingManagerNapi::CheckPreferredOutputDeviceForRendererInfo(napi_env
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return;
         }
     }
 }
@@ -908,7 +910,8 @@ void AudioRoutingManagerNapi::CheckPreferredInputDeviceForCaptureInfo(napi_env e
 {
     const int32_t refCount = 1;
     if (argc < ARGS_ONE) {
-        asyncContext->status = NAPI_ERR_INVALID_PARAM;
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
     }
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
@@ -922,7 +925,8 @@ void AudioRoutingManagerNapi::CheckPreferredInputDeviceForCaptureInfo(napi_env e
             }
             break;
         } else {
-            asyncContext->status = NAPI_ERR_INVALID_PARAM;
+            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+            return;
         }
     }
 }
