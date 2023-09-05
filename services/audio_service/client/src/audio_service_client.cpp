@@ -35,6 +35,7 @@ namespace AudioStandard {
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
+const uint32_t WRITE_TIMEOUT_IN_SEC = 2;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
@@ -1326,7 +1327,14 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
         Trace trace1("PaWriteStream Wait");
         while (!(writableSize = pa_stream_writable_size(paStream))) {
             AUDIO_DEBUG_LOG("PaWriteStream: wait");
+            StartTimer(WRITE_TIMEOUT_IN_SEC);
             pa_threaded_mainloop_wait(mainLoop);
+            StopTimer();
+            if (IsTimeOut()) {
+                AUDIO_ERR_LOG("Write timeout");
+                error = AUDIO_CLIENT_WRITE_STREAM_ERR;
+                return error;
+            }
         }
 
         AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
@@ -1596,6 +1604,7 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
     }
 
     size_t bytesWritten {0};
+    AUDIO_INFO_LOG("RenderPrebuf start");
     while (true) {
         bytesWritten += WriteStream(prebufStream, writeError);
         if (writeError) {
@@ -1617,7 +1626,7 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
 
 void AudioServiceClient::OnTimeOut()
 {
-    AUDIO_ERR_LOG("Inside read timeout callback");
+    AUDIO_ERR_LOG("Inside timeout callback with pid:%{public}d uid:%{public}d", clientPid_, clientUid_);
     if (mainLoop == nullptr) {
         AUDIO_ERR_LOG("OnTimeOut failed: mainLoop == nullptr");
         return;
