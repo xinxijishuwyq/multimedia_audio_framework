@@ -1523,13 +1523,13 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
     return result;
 }
 
-void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
+bool GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
     unique_ptr<AudioVolumeGroupManagerAsyncContext> &asyncContext)
 {
     const int32_t refCount = 1;
     if (argv == nullptr) {
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-        return;
+        return false;
     }
     if (argc > PARAM3) {
         napi_valuetype valueType = napi_undefined;
@@ -1539,7 +1539,7 @@ void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
         }
     } else {
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-        return;
+        return false;
     }
 
     for (size_t i = PARAM0; i < argc; i++) {
@@ -1564,9 +1564,10 @@ void GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
             break;
         } else {
             AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-            return;
+            return false;
         }
     }
+    return true;
 }
 
 napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_callback_info info)
@@ -1582,7 +1583,9 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_c
         return nullptr;
     }
 
-    GetArgvForSystemVolumeInDb(env, argc, argv, asyncContext);
+    if (!GetArgvForSystemVolumeInDb(env, argc, argv, asyncContext)) {
+        return nullptr;
+    }
     if (asyncContext->callbackRef == nullptr) {
         napi_create_promise(env, &asyncContext->deferred, &result);
     } else {

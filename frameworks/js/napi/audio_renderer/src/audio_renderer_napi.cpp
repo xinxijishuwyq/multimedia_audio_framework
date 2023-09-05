@@ -2517,7 +2517,7 @@ void AudioRendererNapi::AsyncSetAudioEffectMode(napi_env env, void *data)
     }
 }
 
-void AudioRendererNapi::GetArgvForSetAudioEffectMode(napi_env env, size_t argc, napi_value* argv,
+bool AudioRendererNapi::GetArgvForSetAudioEffectMode(napi_env env, size_t argc, napi_value* argv,
     unique_ptr<AudioRendererAsyncContext> &asyncContext)
 {
     const int32_t refCount = 1;
@@ -2538,9 +2538,10 @@ void AudioRendererNapi::GetArgvForSetAudioEffectMode(napi_env env, size_t argc, 
             break;
         } else {
             AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-            return;
+            return false;
         }
     }
+    return true;
 }
 
 napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_info info)
@@ -2557,7 +2558,9 @@ napi_value AudioRendererNapi::SetAudioEffectMode(napi_env env, napi_callback_inf
         return result;
     }
 
-    GetArgvForSetAudioEffectMode(env, argc, argv, asyncContext);
+    if (!GetArgvForSetAudioEffectMode(env, argc, argv, asyncContext)) {
+        return nullptr;
+    }
 
     if (asyncContext->callbackRef == nullptr) {
         napi_create_promise(env, &asyncContext->deferred, &result);
