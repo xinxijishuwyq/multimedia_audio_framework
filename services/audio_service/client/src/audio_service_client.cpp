@@ -275,7 +275,8 @@ void AudioServiceClient::PAStreamDrainSuccessCb(pa_stream *stream, int32_t succe
 void AudioServiceClient::PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata)
 {
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    pa_operation *operation = pa_stream_cork(asClient->paStream, 1, asClient->PAStreamCorkSuccessCb, userdata);
+    pa_operation *operation = pa_stream_cork(asClient->paStream, 1,
+        AudioServiceClient::PAStreamAsyncStopSuccessCb, userdata);
     pa_operation_unref(operation);
 
     asClient->streamDrainStatus_ = success;
@@ -1081,7 +1082,12 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
     int error;
     lock_guard<mutex> lockdata(dataMutex_);
     unique_lock<mutex> stoppinglock(stoppingMutex_);
-    dataCv_.wait(stoppinglock, [this] {return state_ != STOPPING;});
+
+    // wait 1 second, timeout return error
+    if (!dataCv_.wait_for(stoppinglock, 1s, [this] {return state_ != STOPPING;})) {
+        AUDIO_ERR_LOG("StartStream: wait stopping timeout");
+        return AUDIO_CLIENT_START_STREAM_ERR;
+    }
     stoppinglock.unlock();
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
@@ -1145,7 +1151,6 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        PAStreamCorkSuccessCb = PAStreamAsyncStopSuccessCb;
         state_ = STOPPING;
         DrainAudioCache();
 

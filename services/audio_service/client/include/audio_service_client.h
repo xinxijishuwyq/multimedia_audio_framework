@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <thread>
 #include <unistd.h>
+#include <chrono>
 #include <pulse/pulseaudio.h>
 #include <pulse/thread-mainloop.h>
 #include <audio_error.h>
