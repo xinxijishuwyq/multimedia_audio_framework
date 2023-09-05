@@ -140,7 +140,7 @@ private:
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
     static void JudgeFuncGetAudioStreamId(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
-    static void GetArgvForSetAudioEffectMode(napi_env env, size_t argc, napi_value* argv,
+    static bool GetArgvForSetAudioEffectMode(napi_env env, size_t argc, napi_value* argv,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
 
     static bool ParseRendererOptions(napi_env env, napi_value root, AudioRendererOptions *opts);
