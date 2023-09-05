@@ -495,7 +495,7 @@ int32_t FastAudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingR
     return ERR_INVALID_OPERATION;
 }
 
-size_t FastAudioStream::Write(uint8_t *buffer, size_t buffer_size)
+int32_t FastAudioStream::Write(uint8_t *buffer, size_t buffer_size)
 {
     AUDIO_ERR_LOG("Unsupported operation: Write");
     return ERR_INVALID_OPERATION;

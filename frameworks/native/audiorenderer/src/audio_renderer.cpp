@@ -468,8 +468,11 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), bufferSize);
-    return audioStream_->Write(buffer, bufferSize);
+    int32_t size = audioStream_->Write(buffer, bufferSize);
+    if (size > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
+    }
+    return size;
 }
 
 RendererState AudioRendererPrivate::GetStatus() const

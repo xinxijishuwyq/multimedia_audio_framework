@@ -80,6 +80,10 @@ const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
 const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
 const std::string DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
 const std::string DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";
+const std::string DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink.pcm";
+const std::string DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_capture_audiosource.pcm";
+const std::string DUMP_ENDPOINT_DCP_FILENAME = "dump_endpoint_dcp_audio.pcm";
+const std::string DUMP_ENDPOINT_HDI_FILENAME = "dump_endpoint_hdi_audio.pcm";
 
 class DumpFileUtil {
 public:

@@ -108,19 +108,13 @@ private:
     struct AudioRender *audioRender_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSinkAttr attr_;
-
-#ifdef DEBUG_DUMP_FILE
-    FILE *pfd;
-#endif // DEBUG_DUMP_FILE
+    FILE *dumpFile_ = nullptr;
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
     :deviceNetworkId_(deviceNetworkId)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner constract.");
-#ifdef DEBUG_DUMP_FILE
-    pfd = nullptr;
-#endif // DEBUG_DUMP_FILE
 }
 
 RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
@@ -173,12 +167,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
     audioManager_ = nullptr;
 
     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
-#ifdef DEBUG_DUMP_FILE
-    if (pfd) {
-        fclose(pfd);
-        pfd = nullptr;
-    }
-#endif // DEBUG_DUMP_FILE
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("Clear remote audio render end.");
 }
 
@@ -240,17 +229,6 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
 
     rendererInited_.store(true);
-#ifdef DEBUG_DUMP_FILE
-    AUDIO_INFO_LOG("dump IAudioSinkAttr:%{public}s", printRemoteAttr(attr_).c_str());
-    std::string fileName = attr_.filePath;
-    std::string filePath = "/data/local/tmp/remote_test_001.pcm";
-    const char *g_audioOutTestFilePath = filePath.c_str();
-    pfd = fopen(g_audioOutTestFilePath, "a+"); // here will not create a file if not exit.
-    AUDIO_ERR_LOG("init dump file[%{public}s]", g_audioOutTestFilePath);
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening remote pcm file[%{public}s]", g_audioOutTestFilePath);
-    }
-#endif // DEBUG_DUMP_FILE
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink: Init end.");
     return SUCCESS;
 }
@@ -333,14 +311,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;
 
-#ifdef DEBUG_DUMP_FILE
-    if (pfd != nullptr) {
-        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-        if (writeResult != len) {
-            AUDIO_ERR_LOG("Failed to write the file.");
-        }
-    }
-#endif // DEBUG_DUMP_FILE
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
 
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
@@ -350,6 +321,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
 int32_t RemoteAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME, &dumpFile_);
     if (!isRenderCreated_.load()) {
         CHECK_AND_RETURN_RET_LOG(CreateRender(audioPort_) == SUCCESS, ERR_NOT_STARTED,
             "Create render fail, audio port %{public}d", audioPort_.portId);

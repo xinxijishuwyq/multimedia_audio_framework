@@ -152,7 +152,7 @@ public:
 
     // Playback related APIs
     virtual bool DrainAudioStream() = 0;
-    virtual size_t Write(uint8_t *buffer, size_t buffer_size) = 0;
+    virtual int32_t Write(uint8_t *buffer, size_t buffer_size) = 0;
 
     // Recording related APIs
     virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
