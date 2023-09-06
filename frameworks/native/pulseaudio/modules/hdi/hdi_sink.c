@@ -24,7 +24,7 @@
 #include <pulsecore/sink.h>
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/thread.h>
-#include <pulseaudio/memblock.c>
+#include <pulsecore/memblock.c>
 #include <pulsecore/mix.h>
 #include <pulse/volume.h>
 
@@ -375,8 +375,9 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *s, size_t *length, pa_mix_i
         }
     }
 
-    if (mixlength > 0)
+    if (mixlength > 0) {
         *length = mixlength;
+    }
 
     return n;
 }
@@ -396,9 +397,9 @@ static void SinkRenderPrimaryMix(pa_sink *s, size_t length, pa_mix_info *info, u
 
         pa_sw_cvolume_multiply(&volume, &s->thread_info.soft_volume, &info[0].volume);
 
-        if (s->thread_info.soft_muted || pa_cvolume_is_muted(&volume))
+        if (s->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
             pa_silence_memchunk(target, &s->sample_spec);
-        else {
+        } else {
             pa_memchunk vchunk;
 
             vchunk = info[0].chunk;
@@ -431,7 +432,7 @@ static void SinkRenderPrimaryMix(pa_sink *s, size_t length, pa_mix_info *info, u
     }
 }
 
-stataic void SinkRenderPrimaryInputsDropCap(pa_sink *s, pa_mix_info *info, unsigned n, pa_memchunk *result)
+static void SinkRenderPrimaryInputsDropCap(pa_sink *s, pa_mix_info *info, unsigned n, pa_memchunk *result)
 {
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -459,7 +460,7 @@ int SinkRenderPrimaryPeekCap(pa_sink *s, pa_memchunk *target)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length, block_size_max;
+    size_t length, blockSizeMax;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -480,9 +481,9 @@ int SinkRenderPrimaryPeekCap(pa_sink *s, pa_memchunk *target)
     pa_sink_ref(s);
 
     length = target->length;
-    block_size_max = pa_mempool_block_size_max(s->core->mempool);
-    if (length > block_size_max)
-        length = pa_frame_align(block_size_max, &s->sample_spec);
+    blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &s->sample_spec);
 
     pa_assert(length > 0);
 
@@ -536,10 +537,10 @@ int SinkRenderPrimaryGetDataCap(pa_sink *s, pa_memchunk *target)
     return nSinkInput;
 }
 
-stataic void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned n, pa_memchunk *result)
+static void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned n, pa_memchunk *result)
 {
     pa_sink_input *sceneSinkInput;
-    unsigned n_unreffed = 0;
+    unsigned nUnreffed = 0;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -549,9 +550,9 @@ stataic void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *m = NULL;
-    for (int k = 0;, k < n; k++){
+    for (int k = 0; k < n; k++){
         sceneSinkInput = info[k].userdata;
-        pa_sink_input_assert_ref(i);
+        pa_sink_input_assert_ref(sceneSinkInput);
 
         /* Drop read data */
         pa_sink_input_drop(sceneSinkInput, result->length);
@@ -565,7 +566,7 @@ stataic void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned
             pa_sink_input_unref(m->userdata);
             m->userdata = NULL;
 
-            n_unreffed += 1;
+            nUnreffed += 1;
         }
     }
     /* Now drop references to entries that are included in the
@@ -622,8 +623,9 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *s, size_t *length, pa_mix_info
         }
     }
 
-    if (mixlength > 0)
+    if (mixlength > 0) {
         *length = mixlength;
+    }
 
     return n;
 }
@@ -632,7 +634,7 @@ int SinkRenderPrimaryPeek(pa_sink *s, pa_memchunk *target, char *sceneType)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length, block_size_max;
+    size_t length, blockSizeMax;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -653,9 +655,9 @@ int SinkRenderPrimaryPeek(pa_sink *s, pa_memchunk *target, char *sceneType)
     pa_sink_ref(s);
 
     length = target->length;
-    block_size_max = pa_mempool_block_size_max(s->core->mempool);
-    if (length > block_size_max)
-        length = pa_frame_align(block_size_max, &s->sample_spec);
+    blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &s->sample_spec);
 
     pa_assert(length > 0);
 
@@ -668,7 +670,7 @@ int SinkRenderPrimaryPeek(pa_sink *s, pa_memchunk *target, char *sceneType)
     return n;
 }
 
-int SinkRenderPrimaryGetDataCap(pa_sink *s, pa_memchunk *target, char *sceneType)
+int SinkRenderPrimaryGetData(pa_sink *s, pa_memchunk *target, char *sceneType)
 {
     pa_memchunk chunk;
     size_t l, d;
@@ -717,7 +719,7 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     capResult.length = length;
     SinkRenderPrimaryGetDataCap(s, &capResult);
 
-    char *sceneTyepSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
+    char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
         "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
     struct Userdata *u;
     pa_assert_se(u = s->userdata);
@@ -731,7 +733,7 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     for (int i = 0; i < SCENE_TYPE_NUM; i++){
         result->index = 0;
         result->length = length;
-        nSinkInput = SinkREnderPrimaryGetData(s, result, sceneTypeSet[i]);
+        nSinkInput = SinkRenderPrimaryGetData(s, result, sceneTypeSet[i]);
         if (nSinkInput == 0){
             continue;
         }
@@ -744,7 +746,7 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
         for (int k = 0; k < frameLen; k++) {
             u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
         }
-        pa_memblock_release(result_memblock);
+        pa_memblock_release(result->memblock);
     }
     void *dst = pa_memblock_acquire_chunk(result);
     for (int i = 0; i < frameLen; i++){
@@ -758,7 +760,8 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     pa_memblock_unref(capResult.memblock);
 }
 
-void SinkRenderPrimary(pa_sink *s, size_t length, pa_memchunk *result) {
+void SinkRenderPrimary(pa_sink *s, size_t length, pa_memchunk *result)
+{
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
@@ -771,7 +774,7 @@ void SinkRenderPrimary(pa_sink *s, size_t length, pa_memchunk *result) {
 
     pa_sink_ref(s);
 
-    size_t block_size_max;
+    size_t blockSizeMax;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -792,9 +795,9 @@ void SinkRenderPrimary(pa_sink *s, size_t length, pa_memchunk *result) {
     if (length <= 0)
         length = pa_frame_align(MIX_BUFFER_LENGTH, &s->sample_spec);
 
-    block_size_max = pa_mempool_block_size_max(s->core->mempool);
-    if (length > block_size_max)
-        length = pa_frame_align(block_size_max, &s->sample_spec);
+    blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
+    if (length > blockSizeMax)
+        length = pa_frame_align(blockSizeMax, &s->sample_spec);
 
     pa_assert(length > 0);
 
