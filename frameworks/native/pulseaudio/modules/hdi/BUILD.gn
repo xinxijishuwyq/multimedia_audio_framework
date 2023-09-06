@@ -84,7 +84,7 @@ ohos_shared_library("module-hdi-sink") {
   ]
 
   external_deps = [ "hilog:libhilog",
-                    "c_utils:utils,
+                    "c_utils:utils",
                      ]
 
   if (ressche_enable == true) {
