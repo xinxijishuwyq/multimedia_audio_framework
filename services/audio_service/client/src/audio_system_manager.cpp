@@ -903,10 +903,12 @@ int32_t AudioSystemManager::SetAudioManagerInterruptCallback(const std::shared_p
     }
 
     if (audioInterruptCallback_ != nullptr) {
+        callback->cbMutex_.lock();
         AUDIO_DEBUG_LOG("AudioSystemManager reset existing callback object");
         AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
         audioInterruptCallback_.reset();
         audioInterruptCallback_ = nullptr;
+        callback->cbMutex_.unlock();
     }
 
     audioInterruptCallback_ = std::make_shared<AudioManagerInterruptCallbackImpl>();
@@ -1026,6 +1028,7 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
 {
     cb_ = callback_.lock();
     if (cb_ != nullptr) {
+        cb_->cbMutex_.lock();
         InterruptAction interruptAction = {};
         interruptAction.actionType = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN)
             ? TYPE_INTERRUPT : TYPE_ACTIVATED;
@@ -1034,6 +1037,7 @@ void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal
         interruptAction.activated = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN) ? false : true;
         cb_->OnInterrupt(interruptAction);
         AUDIO_DEBUG_LOG("AudioManagerInterruptCallbackImpl: OnInterrupt : Notify event to app complete");
+        cb_->cbMutex_.unlock();
     } else {
         AUDIO_ERR_LOG("AudioManagerInterruptCallbackImpl: callback is null");
     }

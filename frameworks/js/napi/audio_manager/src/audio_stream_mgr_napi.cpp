@@ -409,9 +409,10 @@ void AudioStreamMgrNapi::RegisterCapturerStateChangeCallback(napi_env env, napi_
             return;
         }
     }
+    std::lock_guard<std::mutex> lock(streamMgrNapi->capturerStateChangeCallbackNapi_->cbMutex_);
 
     std::shared_ptr<AudioCapturerStateCallbackNapi> cb =
-    std::static_pointer_cast<AudioCapturerStateCallbackNapi>(streamMgrNapi->capturerStateChangeCallbackNapi_);
+        std::static_pointer_cast<AudioCapturerStateCallbackNapi>(streamMgrNapi->capturerStateChangeCallbackNapi_);
     cb->SaveCallbackReference(args[PARAM1]);
 
     AUDIO_INFO_LOG("OnCapturerStateChangeCallback is successful");
@@ -497,6 +498,7 @@ void AudioStreamMgrNapi::UnregisterCallback(napi_env env, napi_value jsThis, con
             return;
         }
         if (streamMgrNapi->capturerStateChangeCallbackNapi_ != nullptr) {
+            std::lock_guard<std::mutex> lock(streamMgrNapi->capturerStateChangeCallbackNapi_->cbMutex_);
             streamMgrNapi->capturerStateChangeCallbackNapi_.reset();
             streamMgrNapi->capturerStateChangeCallbackNapi_ = nullptr;
         }
