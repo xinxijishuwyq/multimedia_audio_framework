@@ -40,7 +40,7 @@ describe("AudioRendererJsUnitTest", function() {
     beforeAll(async function () {
         // input testsuit setup step, setup invoked before all testcases
         try {
-            audioRenderer = audio.createAudioRendererSync(audioRendererOptions);
+            audioRenderer = await audio.createAudioRenderer(audioRendererOptions);
             console.info(`${TAG}: AudioRenderer created SUCCESS, state: ${audioRenderer.state}`);
         } catch (err) {
             console.error(`${TAG}: AudioRenderer created ERROR: ${err.message}`);
@@ -69,25 +69,6 @@ describe("AudioRendererJsUnitTest", function() {
 
         // input testcase teardown step, teardown invoked after each testcases
         console.info(TAG + 'afterEach called')
-    })
-
-    /*
-     * @tc.name:SUB_AUDIO_CREATE_AUDIO_RENDERER_SYNC_001
-     * @tc.desc:createAudioRendererSync success
-     * @tc.type: FUNC
-     * @tc.require: I7V04L
-     */
-    it("SUB_AUDIO_CREATE_AUDIO_RENDERER_SYNC_001", 0, async function (done) {
-        try {
-            let value = audio.createAudioRendererSync(audioRendererOptions);
-            console.info(`SUB_AUDIO_CREATE_AUDIO_RENDERER_SYNC_001 SUCCESS: ${value}.`);
-            expect(typeof value).assertEqual('object');
-            done();
-        } catch (err) {
-            console.error(`SUB_AUDIO_CREATE_AUDIO_RENDERER_SYNC_001 ERROR: ${err}`);
-            expect(false).assertTrue();
-            done();
-        }
     })
 
     /*
@@ -239,7 +220,7 @@ describe("AudioRendererJsUnitTest", function() {
      */
     it('SUB_AUDIO_RENDERER_GET_AUDIO_TIME_SYNC_TEST_001', 0, async function (done) {
         try {
-            let audioRenderer = audio.createAudioRendererSync(audioRendererOptions);
+            let audioRenderer = await audio.createAudioRenderer(audioRendererOptions);
             let data = audioRenderer.getAudioTimeSync();
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_AUDIO_TIME_SYNC_TEST_001 SUCCESS, before start: ${data}`);
             expect(data).assertEqual(0);

@@ -39,7 +39,7 @@ describe("AudioCapturerJsUnitTest", function() {
     beforeAll(async function () {
         // input testsuit setup step, setup invoked before all testcases
         try {
-            audioCapturer = audio.createAudioCapturerSync(audioCapturerOptions);
+            audioCapturer = await audio.createAudioCapturer(audioCapturerOptions);
             console.info(`${TAG}: AudioCapturer created SUCCESS, state: ${audioCapturer.state}`);
         } catch (err) {
             console.error(`${TAG}: AudioCapturer created ERROR: ${err.message}`);
@@ -68,25 +68,6 @@ describe("AudioCapturerJsUnitTest", function() {
 
         // input testcase teardown step, teardown invoked after each testcases
         console.info(TAG + 'afterEach called')
-    })
-
-    /*
-     * @tc.name:SUB_AUDIO_CREATE_AUDIO_CAPUTURER_SYNC_001
-     * @tc.desc:createAudioCapturerSync success
-     * @tc.type: FUNC
-     * @tc.require: I7V04L
-     */
-    it("SUB_AUDIO_CREATE_AUDIO_CAPUTURER_SYNC_001", 0, async function (done) {
-        try {
-            let value = audio.createAudioCapturerSync(audioCapturerOptions);
-            console.info(`SUB_AUDIO_CREATE_AUDIO_CAPUTURER_SYNC_001 SUCCESS: ${value}.`);
-            expect(typeof value).assertEqual('object');
-            done();
-        } catch (err) {
-            console.error(`SUB_AUDIO_CREATE_AUDIO_CAPUTURER_SYNC_001 ERROR: ${err}`);
-            expect(false).assertTrue();
-            done();
-        }
     })
 
     /*
@@ -177,7 +158,7 @@ describe("AudioCapturerJsUnitTest", function() {
      */
     it('SUB_AUDIO_CAPTURER_GET_AUDIO_TIME_SYNC_TEST_001', 0, async function (done) {
         try {
-            let audioCapturer = audio.createAudioCapturerSync(audioCapturerOptions);
+            let audioCapturer = await audio.createAudioCapturer(audioCapturerOptions);
             let data = audioCapturer.getAudioTimeSync();
             console.info(`${TAG}: SUB_AUDIO_CAPTURER_GET_AUDIO_TIME_SYNC_TEST_001 SUCCESS, before start: ${data}`);
             expect(data).assertEqual(0);

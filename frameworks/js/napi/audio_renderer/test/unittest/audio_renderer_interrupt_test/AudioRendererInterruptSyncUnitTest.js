@@ -38,7 +38,7 @@ describe("AudioRendererInterruptSyncUnitTest", function() {
     beforeAll(async function () {
         // input testsuit setup step, setup invoked before all testcases
         try {
-            audioRenderer = audio.createAudioRendererSync(audioRendererOptions);
+            audioRenderer = await audio.createAudioRenderer(audioRendererOptions);
             console.info(`${TAG}: AudioRenderer created SUCCESS, state: ${audioRenderer.state}`);
         } catch (err) {
             console.error(`${TAG}: AudioRenderer created ERROR: ${err.message}`);
