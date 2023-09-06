@@ -30,6 +30,8 @@ typedef struct BufferAttr {
     int numChanIn;
     int numChanOut;
     int frameLen;
+    float *tempBufIn;
+    float *tempBufOut;
 } BufferAttr;
 
 int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr);

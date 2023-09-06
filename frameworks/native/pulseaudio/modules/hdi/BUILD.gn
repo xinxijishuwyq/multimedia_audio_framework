@@ -37,7 +37,9 @@ config("hdi_config") {
     "../../../hdiadapter/source/file",
     "../../../hdiadapter/source/primary",
     "../../../hdiadapter/source/remote",
+    "../../../audioeffect/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "${third_party_path}/bounds_checking_function/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_drivers ]
@@ -78,9 +80,12 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
     "../../../audioschedule:audio_schedule",
     "../../../hdiadapter/sink:renderer_sink_adapter",
+    "../../../audioeffect:audio_effect",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [ "hilog:libhilog",
+                    "c_utils:utils,
+                     ]
 
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]

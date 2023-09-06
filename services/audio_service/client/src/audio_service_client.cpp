@@ -2914,7 +2914,6 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
     pa_proplist_sets(propList, "scene.mode", effectModeName.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
-    pa_stream_flush(paStream, NULL, NULL);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
 

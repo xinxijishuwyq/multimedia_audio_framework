@@ -2582,9 +2582,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
         OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
         audioEffectManager_.SetMasterSinkAvailable();
-        if (audioEffectManager_.CanLoadEffectSinks()) {
-            LoadEffectSinks();
-        }
     }
     RegisterBluetoothListener();
 }
@@ -2744,44 +2741,6 @@ void AudioPolicyService::UnloadLoopback()
     }
 }
 
-void AudioPolicyService::LoadEffectSinks()
-{
-    // Create sink for each effect
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-cluster-sink.z.so";
-    moduleInfo.name = "CLUSTER";
-    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-    CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-    IOHandles_[moduleInfo.name] = ioHandle;
-
-    moduleInfo.lib = "libmodule-effect-sink.z.so";
-    char device[50] = {0};
-    int ret = GetParameter("const.build.product", " ", device, sizeof(device));
-    std::string deviceString(device);
-    if (ret > 0 && deviceString.compare("default") == 0) {
-        moduleInfo.rate = "44100";
-    } else {
-        moduleInfo.rate = "48000";
-    }
-    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
-        ++sceneType) {
-        AUDIO_INFO_LOG("Initial sink for scene name %{public}s", sceneType->second.c_str());
-        moduleInfo.name = sceneType->second;
-        moduleInfo.sceneName.clear();
-        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-        IOHandles_[moduleInfo.name] = ioHandle;
-
-        moduleInfo.name += SINK_NAME_FOR_CAPTURE_SUFFIX;
-        moduleInfo.sceneName = sceneType->second;
-        AUDIO_INFO_LOG("Initial effect sink:%{public}s for capturer", moduleInfo.name.c_str());
-        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "OpenAudioPort failed %{public}d", ioHandle);
-        IOHandles_[moduleInfo.name] = ioHandle;
-    }
-    LoadSinksForCapturer(); // repy on the success of loading effect sink
-}
-
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library
@@ -2812,9 +2771,6 @@ void AudioPolicyService::LoadEffectLibrary()
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
     audioEffectManager_.SetEffectChainManagerAvailable();
-    if (audioEffectManager_.CanLoadEffectSinks()) {
-        LoadEffectSinks();
-    }
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
