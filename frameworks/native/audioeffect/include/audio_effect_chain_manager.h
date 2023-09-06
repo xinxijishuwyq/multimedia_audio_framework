@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <set>
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
@@ -75,8 +76,11 @@ public:
     void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &map,
         std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
-    int32_t CreateAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
-    int32_t SetAudioEffectChain(std::string sceneType, std::string effectChain);
+    bool CheckAndAddSessionID(std::string sessionID);
+    int32_t CreateAudioEffectChainDynamic(std::string sceneType);
+    int32_t SetAudioEffectChainDynamic(std::string sceneType, std::string effectMode);
+    bool CheckAndRemoveSessionID(std::string sessionID);
+    int32_t ReleaseAudioEffectChainDynamic(std::string sceneType);
     bool ExistAudioEffectChain(std::string sceneType, std::string effectMode);
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
@@ -90,10 +94,13 @@ private:
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
     std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap_;
     std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap_;
+    std::map<std::string, int32_t> SceneTypeToEffectChainCountMap_;
+    std::set<std::string> SessionIDSet_;
     uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
+    std::mutex dynamicMutex_;
 };
 
 }  // namespace AudioStandard

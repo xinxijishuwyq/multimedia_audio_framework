@@ -21,6 +21,11 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include <pulsecore/core-util.h>
+#include <pulsecore/core.h>
+#include <pulsecore/namereg.h>
+#include "audio_effect_chain_adapter.h"
+
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSinkFree(pa_sink *s);
 
@@ -69,6 +74,53 @@ static const char * const VALID_MODARGS[] = {
     NULL
 };
 
+static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
+{
+    pa_assert(c);
+
+    const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
+    const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
+    const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
+    if (pa_safe_streq(deviceString, "remote")) {
+        EffectChainManagerReleaseCb(sceneType, sessionID);
+        return PA_HOOK_OK;
+    }
+
+    const char *appUser = pa_proplist_gets(si->proplist, "application.process.user");
+    if (pa_safe_streq(appUser, "daudio")) {
+        return PA_HOOK_OK;
+    }
+
+    const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
+    if (!pa_safe_streq(clientUid, "1003")) {
+        EffectChainManagerCreateCb(sceneType, sessionID);
+    }
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si)
+{
+    pa_assert(c);
+
+    const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
+    const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
+    if (pa_safe_streq(deviceString, "remote")) {
+        return PA_HOOK_OK;
+    }
+
+    const char *appUser = pa_proplist_gets(si->proplist, "application.process.user");
+    if (pa_safe_streq(appUser, "daudio")) {
+        return PA_HOOK_OK;
+    }
+
+    const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
+    if (!pa_safe_streq(clientUid, "1003")) {
+        const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
+        EffectChainManagerReleaseCb(sceneType, sessionID);
+    }
+    return PA_HOOK_OK;
+}
+
 int pa__init(pa_module *m)
 {
     pa_modargs *ma = NULL;
@@ -83,6 +135,10 @@ int pa__init(pa_module *m)
     if (!(m->userdata = PaHdiSinkNew(m, ma, __FILE__))) {
         goto fail;
     }
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PROPLIST_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)SinkInputNewCb, NULL);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_LATE,
+        (pa_hook_cb_t)SinkInputUnlinkCb, NULL);
 
     pa_modargs_free(ma);
 

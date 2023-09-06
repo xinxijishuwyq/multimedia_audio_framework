@@ -34,10 +34,11 @@ typedef struct BufferAttr {
     float *tempBufOut;
 } BufferAttr;
 
-int32_t EffectChainManagerCreate(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerGetFrameLen(void);
 bool EffectChainManagerExist(const char *sceneType, const char *effectMode);
+int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID);
+int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID);
 
 #ifdef __cplusplus
 }

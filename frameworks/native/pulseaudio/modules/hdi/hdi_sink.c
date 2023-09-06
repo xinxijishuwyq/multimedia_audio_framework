@@ -572,7 +572,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned 
     /* Now drop references to entries that are included in the
      * pa_mix_info array but don't exist anymore */
 
-    if (n_unreffed < n) {
+    if (nUnreffed < n) {
         for (; n > 0; info++, n--) {
             if (info->userdata)
                 pa_sink_input_unref(info->userdata);
