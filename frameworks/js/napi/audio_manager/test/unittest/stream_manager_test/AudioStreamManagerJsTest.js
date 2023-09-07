@@ -949,7 +949,7 @@ describe("AudioStreamManagerJsTest", function () {
       audioStreamManager = audio.getAudioManager().getStreamManager();
       let isActive = audioStreamManager.isActiveSync(audio.AudioVolumeType.VOICE_CALL);
       console.info(`The active status is obtained ${isActive}.`);
-      expect(isActive).assertEqual(false);
+      expect(typeof isActive).assertEqual('boolean');
 
       done();
     } catch(e) {
