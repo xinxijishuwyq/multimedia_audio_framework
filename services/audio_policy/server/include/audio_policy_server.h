@@ -37,6 +37,7 @@
 #include "audio_policy_manager_stub.h"
 #include "audio_server_death_recipient.h"
 #include "audio_service_dump.h"
+#include "session_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -186,6 +187,8 @@ public:
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) override;
 
     void OnSessionRemoved(const uint32_t sessionID) override;
+
+    void ProcessSessionRemoved(const uint32_t sessionID);
 
     void OnPlaybackCapturerStop() override;
 
@@ -394,6 +397,9 @@ private:
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+
+    SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
+        this, std::placeholders::_1)};
 };
 } // namespace AudioStandard
 } // namespace OHOS
