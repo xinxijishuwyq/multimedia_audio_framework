@@ -44,7 +44,7 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 
-static const string INNER_CAPTURER_SOURCE = "InnerCapturer.monitor";
+static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},

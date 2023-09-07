@@ -40,6 +40,7 @@
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
 #include "securec.h"
+#include "playback_capturer_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -350,9 +351,25 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *s, size_t *length, pa_mix_i
     pa_assert(info);
 
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
-        const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
+        const char *usageStr = pa_proplist_gets(i->proplist, "stream.usage");
+        const char *privacyTypeStr = pa_proplist_gets(i->proplist, "stream.privacyType");
+        int32_t usage = -1;
+        int32_t privacyType = -1;
+        bool usageSupport = false;
+        bool privacySupport = true;
+
+        if (privacyTypeStr != NULL) {
+            pa_atoi(privacyTypeStr, &privacyType);
+            privacySupport = IsPrivacySupportInnerCapturer(privacyType);
+        }
+
+        if (usageStr != NULL) {
+            pa_atoi(usageStr, &usage);
+            usageSupport = IsStreamSupportInnerCapturer(usage);
+        }
+        bool innerCapturer = privacySupport && usageSupport;
         
-        if (pa_safe_streq(sinkSceneType, "SCENE_MUSIC")) {
+        if (innerCapturer) {
             pa_sink_input_assert_ref(i);
 
             pa_sink_input_peek(i, *length, &info->chunk, &info->volume);
@@ -662,6 +679,7 @@ int SinkRenderPrimaryPeek(pa_sink *s, pa_memchunk *target, char *sceneType)
     pa_assert(length > 0);
 
     n = SinkRenderPrimaryCluster(s, &length, info, MAX_MIX_CHANNELS, sceneType);
+    AUDIO_ERR_LOG("yjy: peek length %{public}zu", length);
     SinkRenderPrimaryMix(s, length, info, n, target);
 
     SinkRenderPrimaryInputsDrop(s, info, n, target);
@@ -719,6 +737,9 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     capResult.length = length;
     SinkRenderPrimaryGetDataCap(s, &capResult);
 
+    if (s->monitor_source && PA_SOURCE_IS_LINKED(s->monitor_source->thread_info.state)){
+        pa_source_post(s->monitor_source, &capResult);    
+    }
     char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
         "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
     struct Userdata *u;
@@ -728,6 +749,7 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
     int bitSize = pa_sample_size_of_format(u->format);
     int frameLen = (int)(length / bitSize);
+    AUDIO_ERR_LOG("yjy: process length %{public}zu bitSize %{public}d framelen %{public}", length, bitSize, frameLen);
     int nSinkInput;
     result->memblock = pa_memblock_new(s->core->mempool, length);
     for (int i = 0; i < SCENE_TYPE_NUM; i++){
@@ -738,6 +760,13 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
             continue;
         }
         void *src = pa_memblock_acquire_chunk(result);
+
+        FILE *fIn;
+        const char *primaryFilePathIn = "/data/data/.pulse_dir/primarySinkIn.pcm";
+        fIn = fopen(primaryFilePathIn, "ab+");
+        fwrite(src, bitSize, frameLen, fIn);
+        fclose(fIn);
+        fIn = NULL;
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
@@ -754,6 +783,14 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
     }
     ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+
+    FILE *fOut;
+    const char *primaryFilePathOut = "/data/data/.pulse_dir/primarySinkOut.pcm";
+    fOut = fopen(primaryFilePathOut, "ab+");
+    fwrite(dst, bitSize, frameLen, fOut);
+    fclose(fOut);
+    fOut = NULL;
+
     result->index = 0;
     result->length = length;
     pa_memblock_release(result->memblock);
