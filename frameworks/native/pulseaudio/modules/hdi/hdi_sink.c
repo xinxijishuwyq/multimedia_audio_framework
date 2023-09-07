@@ -757,14 +757,9 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
         if (nSinkInput == 0) {
             continue;
         }
+        result->index = 0;
+        result->length = length;
         void *src = pa_memblock_acquire_chunk(result);
-
-        FILE *fIn;
-        const char *primaryFilePathIn = "/data/data/.pulse_dir/primarySinkIn.pcm";
-        fIn = fopen(primaryFilePathIn, "ab+");
-        fwrite(src, bitSize, frameLen, fIn);
-        fclose(fIn);
-        fIn = NULL;
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
@@ -781,13 +776,6 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
     }
     ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
-
-    FILE *fOut;
-    const char *primaryFilePathOut = "/data/data/.pulse_dir/primarySinkOut.pcm";
-    fOut = fopen(primaryFilePathOut, "ab+");
-    fwrite(dst, bitSize, frameLen, fOut);
-    fclose(fOut);
-    fOut = NULL;
 
     result->index = 0;
     result->length = length;
