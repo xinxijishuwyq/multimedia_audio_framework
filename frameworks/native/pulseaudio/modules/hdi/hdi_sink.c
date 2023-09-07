@@ -749,7 +749,7 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
     int bitSize = pa_sample_size_of_format(u->format);
     int frameLen = (int)(length / bitSize);
-    AUDIO_ERR_LOG("yjy: process length %{public}zu bitSize %{public}d framelen %{public}", length, bitSize, frameLen);
+    AUDIO_ERR_LOG("yjy: process length %{public}zu bitSize %{public}d framelen %{public}d", length, bitSize, frameLen);
     int nSinkInput;
     result->memblock = pa_memblock_new(s->core->mempool, length);
     for (int i = 0; i < SCENE_TYPE_NUM; i++){
