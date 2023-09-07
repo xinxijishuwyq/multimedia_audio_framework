@@ -1537,7 +1537,7 @@ bool GetArgvForSystemVolumeInDb(napi_env env, size_t argc, napi_value* argv,
         if (valueType == napi_function) {
             napi_create_reference(env, argv[PARAM3], refCount, &asyncContext->callbackRef);
         }
-    } else {
+    } else if (argc < PARAM3) {
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return false;
     }
