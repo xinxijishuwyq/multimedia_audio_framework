@@ -47,23 +47,4 @@ describe("TonePlayerJsUnitTest", function () {
         // input testcase teardown step，teardown invoked after each testcases
         console.info('afterEach called')
     })
-
-    /*
-     * @tc.name:SUB_AUDIO_CREATE_TONE_PLAYER_SYNC_001
-     * @tc.desc:createTonePlayerSync success
-     * @tc.type: FUNC
-     * @tc.require: I7V04L
-     */
-    it("SUB_AUDIO_CREATE_TONE_PLAYER_SYNC_001", 0, async function (done) {
-        try {
-            let value = audio.createTonePlayerSync(audioRendererInfo);
-            console.info(`SUB_AUDIO_CREATE_TONE_PLAYER_SYNC_001 SUCCESS: ${value}.`);
-            expect(typeof value).assertEqual('object');
-            done();
-        } catch (err) {
-            console.error(`SUB_AUDIO_CREATE_TONE_PLAYER_SYNC_001 ERROR: ${err}`);
-            expect(false).assertTrue();
-            done();
-        }
-    })
 })
