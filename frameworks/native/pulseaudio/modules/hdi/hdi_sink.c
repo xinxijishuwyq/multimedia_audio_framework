@@ -53,7 +53,7 @@
 #define MAX_MIX_CHANNELS 32
 #define IN_CHANNEL_NUM_MAX 2
 #define OUT_CHANNEL_NUM_MAX 2
-#define DEFAULT_FRAMELEN 960
+#define DEFAULT_FRAMELEN 2048
 #define SCENE_TYPE_NUM 7
 
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -417,21 +417,21 @@ static void SinkRenderPrimaryMix(pa_sink *s, size_t length, pa_mix_info *info, u
         if (s->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
             pa_silence_memchunk(chunkIn, &s->sample_spec);
         } else {
-            pa_memchunk vchunk;
+            pa_memchunk tmpChunk;
 
-            vchunk = info[0].chunk;
-            pa_memblock_ref(vchunk.memblock);
+            tmpChunk = info[0].chunk;
+            pa_memblock_ref(tmpChunk.memblock);
 
-            if (vchunk.length > length)
-                vchunk.length = length;
+            if (tmpChunk.length > length)
+                tmpChunk.length = length;
 
             if (!pa_cvolume_is_norm(&volume)) {
-                pa_memchunk_make_writable(&vchunk, 0);
-                pa_volume_memchunk(&vchunk, &s->sample_spec, &volume);
+                pa_memchunk_make_writable(&tmpChunk, 0);
+                pa_volume_memchunk(&tmpChunk, &s->sample_spec, &volume);
             }
 
-            pa_memchunk_memcpy(chunkIn, &vchunk);
-            pa_memblock_unref(vchunk.memblock);
+            pa_memchunk_memcpy(chunkIn, &tmpChunk);
+            pa_memblock_unref(tmpChunk.memblock);
         }
     } else {
         void *ptr;
@@ -598,27 +598,27 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *s, pa_mix_info *info, unsigned 
     }
 }
 
-static unsigned SinkRenderPrimaryCluster(pa_sink *s, size_t *length, pa_mix_info *info,
+static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *info,
  unsigned maxinfo, char *sceneType)
 {
-    pa_sink_input *i;
+    pa_sink_input *sinkIn;
     unsigned n = 0;
     void *state = NULL;
     size_t mixlength = *length;
 
-    pa_sink_assert_ref(s);
-    pa_sink_assert_io_context(s);
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
     pa_assert(info);
 
-    while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
-        const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
-        const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+        const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
         if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
             (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
-            pa_sink_input_assert_ref(i);
+            pa_sink_input_assert_ref(sinkIn);
 
-            pa_sink_input_peek(i, *length, &info->chunk, &info->volume);
+            pa_sink_input_peek(sinkIn, *length, &info->chunk, &info->volume);
 
             if (mixlength == 0 || info->chunk.length < mixlength)
                 mixlength = info->chunk.length;
@@ -628,7 +628,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *s, size_t *length, pa_mix_info
                 continue;
             }
 
-            info->userdata = pa_sink_input_ref(i);
+            info->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(info->chunk.memblock);
             pa_assert(info->chunk.length > 0);
 
@@ -677,7 +677,6 @@ int SinkRenderPrimaryPeek(pa_sink *s, pa_memchunk *target, char *sceneType)
     pa_assert(length > 0);
 
     n = SinkRenderPrimaryCluster(s, &length, info, MAX_MIX_CHANNELS, sceneType);
-    AUDIO_ERR_LOG("yjy: peek length %{public}zu", length);
     SinkRenderPrimaryMix(s, length, info, n, target);
 
     SinkRenderPrimaryInputsDrop(s, info, n, target);
@@ -747,7 +746,6 @@ static void SinkRenderPrimaryProcess(pa_sink *s, size_t length, pa_memchunk *res
     memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
     int bitSize = pa_sample_size_of_format(u->format);
     int frameLen = (int)(length / bitSize);
-    AUDIO_ERR_LOG("yjy: process length %{public}zu bitSize %{public}d framelen %{public}d", length, bitSize, frameLen);
     int nSinkInput;
     result->memblock = pa_memblock_new(s->core->mempool, length);
     for (int i = 0; i < SCENE_TYPE_NUM; i++) {
