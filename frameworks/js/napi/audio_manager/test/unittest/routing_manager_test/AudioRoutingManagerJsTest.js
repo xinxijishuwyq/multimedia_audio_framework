@@ -83,7 +83,7 @@ describe("AudioRoutingManagerJsTest", function () {
         console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: ${JSON.stringify(data)}`);
         expect().assertFail();
       } catch(e) {
-        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+        if (e.code != ERROR_INPUT_INVALID) {
           console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
@@ -95,19 +95,19 @@ describe("AudioRoutingManagerJsTest", function () {
   })
 
   /*
-   * @tc.name:getPreferredOutputDeviceForRendererInfoTest004
+   * @tc.name:getPreferredOutputDeviceForRendererInfoTest003
    * @tc.desc:Get prefer output device check number parameter- promise
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getPreferredOutputDeviceForRendererInfoTest004", 0, async function (done) {
+  it("getPreferredOutputDeviceForRendererInfoTest003", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
       let data = await routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter);
       console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -131,7 +131,7 @@ describe("AudioRoutingManagerJsTest", function () {
       console.error(`${TAG} getPreferredOutputDeviceForRendererInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -175,16 +175,17 @@ describe("AudioRoutingManagerJsTest", function () {
    */
   it("getPreferredOutputDeviceForRendererInfoTest006", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
       routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
-        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
-          expect().assertFail();
-          done();
-        }
-        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter PASS`);
-        expect(true).assertTrue();
+        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter ERROR`);
+        expect().assertFail();
         done();
       });
+    } catch (e) {
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter PASS, errorcode ${e.code}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
   })
 
   /*
@@ -195,16 +196,17 @@ describe("AudioRoutingManagerJsTest", function () {
    */
   it("getPreferredOutputDeviceForRendererInfoTest007", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
       routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
-        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${e.message}`);
-          expect().assertFail();
-          done();
-        }
-        console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter PASS`);
-        expect(true).assertTrue();
+        console.error(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter ERROR`);
+        expect().assertFail();
         done();
       });
+    } catch (e) {
+      console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter PASS, errorcode ${e.code}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
   })
 
   /*
@@ -584,7 +586,7 @@ describe("AudioRoutingManagerJsTest", function () {
         console.error(`${TAG} getPreferredInputDeviceForCapturerInfo parameter check ERROR: ${JSON.stringify(data)}`);
         expect().assertFail();
       } catch(e) {
-        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+        if (e.code != ERROR_INPUT_INVALID) {
           console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
           expect().assertFail();
           done();
@@ -608,7 +610,7 @@ describe("AudioRoutingManagerJsTest", function () {
       console.error(`${TAG} getPreferredInputDeviceForCapturerInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -632,7 +634,7 @@ describe("AudioRoutingManagerJsTest", function () {
       console.error(`${TAG} getPreferredInputDeviceForCapturerInfo parameter check ERROR: `+JSON.stringify(data));
       expect().assertFail();
     } catch(e) {
-      if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
+      if (e.code != ERROR_INPUT_INVALID) {
         console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
         expect().assertFail();
         done();
@@ -676,16 +678,17 @@ describe("AudioRoutingManagerJsTest", function () {
    */
   it("getPreferredInputDeviceForCapturerInfoTest006", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
       routingManager.getPreferredInputDeviceForCapturerInfo(numberParameter, (e, data)=>{
-        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
-          expect().assertFail();
-          done();
-        }
-        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check number parameter PASS`);
-        expect(true).assertTrue();
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check number parameter ERROR`);
+        expect().assertFail();
         done();
       });
+    } catch (e) {
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check number parameter PASS, errorcode ${e.code}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
   })
 
   /*
@@ -696,16 +699,17 @@ describe("AudioRoutingManagerJsTest", function () {
    */
   it("getPreferredInputDeviceForCapturerInfoTest007", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
+    try {
       routingManager.getPreferredInputDeviceForCapturerInfo(stringParameter, (e, data)=>{
-        if (e.code != audio.AudioErrors.ERROR_INVALID_PARAM) {
-          console.error(`${TAG} getPreferredInputDeviceForCapturerInfo ERROR: ${e.message}`);
-          expect().assertFail();
-          done();
-        }
-        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check string parameter PASS`);
-        expect(true).assertTrue();
+        console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check string parameter ERROR`);
+        expect().assertFail();
         done();
       });
+    } catch (e) {
+      console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check string parameter PASS, errorcode ${e.code}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+    }
   })
 
   /*
