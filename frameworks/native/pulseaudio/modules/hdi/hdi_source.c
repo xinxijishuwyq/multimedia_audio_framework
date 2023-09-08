@@ -369,6 +369,9 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     pa_source_new_data_set_channel_map(&data, map);
     pa_proplist_setf(data.proplist, PA_PROP_DEVICE_BUFFERING_BUFFER_SIZE, "%lu", (unsigned long)u->buffer_size);
 
+    // set suspend on idle timeout to 0s
+    pa_proplist_setf(data.proplist, "module-suspend-on-idle.timeout", "%d", 0);
+
     if (pa_modargs_get_proplist(ma, "source_properties", data.proplist, PA_UPDATE_REPLACE) < 0) {
         AUDIO_ERR_LOG("Invalid properties");
         pa_source_new_data_done(&data);
