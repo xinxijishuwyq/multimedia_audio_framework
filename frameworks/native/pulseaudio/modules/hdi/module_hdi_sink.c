@@ -92,7 +92,8 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     }
 
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
-    if (!pa_safe_streq(clientUid, "1003")) {
+    const char *bootUpMusic = "1003";
+    if (!pa_safe_streq(clientUid, bootUpMusic)) {
         EffectChainManagerCreateCb(sceneType, sessionID);
     }
     return PA_HOOK_OK;
@@ -114,7 +115,8 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si)
     }
 
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
-    if (!pa_safe_streq(clientUid, "1003")) {
+    const char *bootUpMusic = "1003";
+    if (!pa_safe_streq(clientUid, bootUpMusic)) {
         const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
         EffectChainManagerReleaseCb(sceneType, sessionID);
     }

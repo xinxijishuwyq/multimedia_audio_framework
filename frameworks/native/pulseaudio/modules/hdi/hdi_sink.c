@@ -196,7 +196,7 @@ static void ConvertToFloat(pa_sample_format_t format, unsigned n, void *src, flo
 {
     pa_assert(src);
     pa_assert(dst);
-    int ret;
+    int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
             ConvertFrom16BitToFloat(n, src, dst);
@@ -223,7 +223,7 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
 {
     pa_assert(src);
     pa_assert(dst);
-    int ret;
+    int32_t ret;
     switch (format) {
         case PA_SAMPLE_S16LE:
             ConvertFromFloatTo16Bit(n, src, dst);
@@ -303,7 +303,7 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     p = pa_memblock_acquire(pchunk->memblock);
     pa_assert(p);
 
-    if (*((int*)p) > 0) {
+    if (*((int32_t*)p) > 0) {
         AUDIO_DEBUG_LOG("RenderWrite Write: %{public}d", ++u->writeCount);
     }
     AUDIO_DEBUG_LOG("RenderWrite Write renderCount: %{public}d", ++u->renderCount);
@@ -459,7 +459,7 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     /* We optimize for the case where the order of the inputs has not changed */
 
     pa_mix_info *infoCur = NULL;
-    for (int k = 0; k < n; k++) {
+    for (int32_t k = 0; k < n; k++) {
         infoCur = infoIn + k;
         if (infoCur) {
             if (infoCur->chunk.memblock) {
@@ -472,7 +472,7 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     }
 }
 
-int SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
+int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_mix_info infoIn[MAX_MIX_CHANNELS];
     unsigned n;
@@ -512,11 +512,11 @@ int SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
     return n;
 }
 
-int SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
+int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_memchunk chunk;
     size_t l, d;
-    int nSinkInput;
+    int32_t nSinkInput;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -566,7 +566,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *infoCur = NULL;
-    for (int k = 0; k < n; k++) {
+    for (int32_t k = 0; k < n; k++) {
         sceneSinkInput = infoIn[k].userdata;
         pa_sink_input_assert_ref(sceneSinkInput);
 
@@ -599,7 +599,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 }
 
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
- unsigned maxinfo, char *sceneType)
+    unsigned maxinfo, char *sceneType)
 {
     pa_sink_input *sinkIn;
     unsigned n = 0;
@@ -645,7 +645,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     return n;
 }
 
-int SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
@@ -685,11 +685,11 @@ int SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
     return n;
 }
 
-int SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
 {
     pa_memchunk chunk;
     size_t l, d;
-    int nSinkInput;
+    int32_t nSinkInput;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -744,11 +744,11 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     size_t memsetLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     memset_s(u->bufferAttr->tempBufIn, memsetLen, 0, memsetLen);
     memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
-    int bitSize = pa_sample_size_of_format(u->format);
-    int frameLen = (int)(length / bitSize);
-    int nSinkInput;
+    int32_t bitSize = pa_sample_size_of_format(u->format);
+    int32_t frameLen = (int32_t)(length / bitSize);
+    int32_t nSinkInput;
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length);
-    for (int i = 0; i < SCENE_TYPE_NUM; i++) {
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         chunkIn->index = 0;
         chunkIn->length = length;
         nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneTypeSet[i]);
@@ -763,13 +763,13 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanOut;
         EffectChainManagerProcess(sceneTypeSet[i], u->bufferAttr);
-        for (int k = 0; k < frameLen; k++) {
+        for (int32_t k = 0; k < frameLen; k++) {
             u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
         }
         pa_memblock_release(chunkIn->memblock);
     }
     void *dst = pa_memblock_acquire_chunk(chunkIn);
-    for (int i = 0; i < frameLen; i++) {
+    for (int32_t i = 0; i < frameLen; i++) {
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
     }
@@ -857,7 +857,7 @@ static void ThreadFuncRendererTimer(void *userdata)
 
     while (true) {
         pa_usec_t now = 0;
-        int ret;
+        int32_t ret;
         
         bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
             (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state));
@@ -907,10 +907,10 @@ static void ThreadFuncWriteHDI(void *userdata)
     struct Userdata *u = userdata;
     pa_assert(u);
 
-    int quit = 0;
+    int32_t quit = 0;
 
     do {
-        int code = 0;
+        int32_t code = 0;
         pa_memchunk chunk;
 
         pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
@@ -946,10 +946,10 @@ static void TestModeThreadFuncWriteHDI(void *userdata)
     struct Userdata *u = userdata;
     pa_assert(u);
 
-    int quit = 0;
+    int32_t quit = 0;
 
     do {
-        int code = 0;
+        int32_t code = 0;
         pa_memchunk chunk;
 
         pa_assert_se(pa_asyncmsgq_get(u->dq, NULL, &code, NULL, NULL, &chunk, 1) == 0);
@@ -991,7 +991,7 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
     pa_sink_set_max_request_within_thread(s, nbytes);
 }
 
-static int SinkProcessMsg(pa_msgobject *o, int code, void *data, int64_t offset,
+static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t offset,
                           pa_memchunk *chunk)
 {
     AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
@@ -1045,7 +1045,7 @@ static char *GetStateInfo(pa_sink_state_t state)
     }
 }
 
-static int RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
+static int32_t RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
 {
     struct Userdata *u = s->userdata;
     if (s->thread_info.state == PA_SINK_INIT && newState == PA_SINK_IDLE) {
@@ -1087,7 +1087,7 @@ static int RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
 }
 
 // Called from the IO thread.
-static int SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
+static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
                                     pa_suspend_cause_t newSuspendCause)
 {
     struct Userdata *u = NULL;

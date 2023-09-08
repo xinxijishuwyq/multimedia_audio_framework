@@ -40,7 +40,6 @@ config("hdi_config") {
     "../../../audioeffect/include",
     "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
-    "${third_party_path}/bounds_checking_function/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_drivers ]
@@ -79,6 +78,7 @@ ohos_shared_library("module-hdi-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
+    "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../../audioeffect:audio_effect",
     "../../../audioschedule:audio_schedule",
     "../../../hdiadapter/sink:renderer_sink_adapter",
