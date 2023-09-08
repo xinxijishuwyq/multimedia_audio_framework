@@ -176,7 +176,7 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredOutputDeviceForRendererInfoTest006", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
+      await routingManager.getPreferredOutputDeviceForRendererInfo(numberParameter, (e, data)=>{
         console.info(`${TAG} getPreferredOutputDeviceForRendererInfo check number parameter ERROR`);
         expect().assertFail();
         done();
@@ -197,7 +197,7 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredOutputDeviceForRendererInfoTest007", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
+      await routingManager.getPreferredOutputDeviceForRendererInfo(stringParameter, (e, data)=>{
         console.error(`${TAG} getPreferredOutputDeviceForRendererInfo check string parameter ERROR`);
         expect().assertFail();
         done();
@@ -679,7 +679,7 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredInputDeviceForCapturerInfoTest006", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.getPreferredInputDeviceForCapturerInfo(numberParameter, (e, data)=>{
+      await routingManager.getPreferredInputDeviceForCapturerInfo(numberParameter, (e, data)=>{
         console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check number parameter ERROR`);
         expect().assertFail();
         done();
@@ -700,7 +700,7 @@ describe("AudioRoutingManagerJsTest", function () {
   it("getPreferredInputDeviceForCapturerInfoTest007", 0, async function (done) {
     let routingManager = audio.getAudioManager().getRoutingManager();
     try {
-      routingManager.getPreferredInputDeviceForCapturerInfo(stringParameter, (e, data)=>{
+      await routingManager.getPreferredInputDeviceForCapturerInfo(stringParameter, (e, data)=>{
         console.info(`${TAG} getPreferredInputDeviceForCapturerInfo check string parameter ERROR`);
         expect().assertFail();
         done();
