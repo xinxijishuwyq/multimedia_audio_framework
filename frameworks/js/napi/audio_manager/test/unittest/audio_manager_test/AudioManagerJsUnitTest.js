@@ -95,11 +95,16 @@ describe("AudioManagerJsUnitTest", function () {
                 let value = audioManager.getAudioSceneSync();
                 console.info(`SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_002 SUCCESS: ${value}.`);
                 expect(value).assertEqual(audio.AudioScene.AUDIO_SCENE_RINGING);
-                done();
             } catch (err) {
                 console.error(`SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_002 ERROR: ${err}`);
                 expect(false).assertTrue();
-                done();
+            } finally {
+                audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
+                    if (err) {
+                        console.error(`Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
+                    }
+                    done();
+                })
             }
         })
     })
@@ -125,11 +130,16 @@ describe("AudioManagerJsUnitTest", function () {
                 let value = audioManager.getAudioSceneSync();
                 console.info(`SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_003 SUCCESS: ${value}.`);
                 expect(value).assertEqual(audio.AudioScene.AUDIO_SCENE_PHONE_CALL);
-                done();
             } catch (err) {
                 console.error(`SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_003 ERROR: ${err}`);
                 expect(false).assertTrue();
-                done();
+            } finally {
+                audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
+                    if (err) {
+                        console.error(`Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
+                    }
+                    done();
+                })
             }
         })
     })
@@ -155,11 +165,16 @@ describe("AudioManagerJsUnitTest", function () {
                 let value = audioManager.getAudioSceneSync();
                 console.info(`SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_004 SUCCESS: ${value}.`);
                 expect(value).assertEqual(audio.AudioScene.AUDIO_SCENE_VOICE_CHAT);
-                done();
             } catch (err) {
                 console.error(`SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_004 ERROR: ${err}`);
                 expect(false).assertTrue();
-                done();
+            } finally {
+                audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
+                    if (err) {
+                        console.error(`Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
+                    }
+                    done();
+                })
             }
         })
     })

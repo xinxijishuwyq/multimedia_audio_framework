@@ -388,11 +388,12 @@ describe("AudioRoutingManagerJsTest", function () {
       }
       console.info(`${TAG} setAudioScene success`);
       let routingManager = audioManager.getRoutingManager();
-      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG, (err, value) => {
+      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG, async (err, value) => {
         console.info(`${TAG} getDevices return: ` + JSON.stringify(value));
         if (err) {
           console.error(`${TAG} getDevices ERROR: ${err.message}`);
           expect(false).assertTrue();
+          await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
           done();
           return;
         }
@@ -407,46 +408,53 @@ describe("AudioRoutingManagerJsTest", function () {
         if (!flag) {
           console.error(`${TAG} This device does not have a eapiece`);
           expect(true).assertTrue();
+          await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
           done();
           return;
         }
-        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
+        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, async (err, value) => {
           console.info(`${TAG} getPreferredOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
             console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
+            await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
             done();
             return;
           }
           if (value[0].deviceType != audio.DeviceType.EARPIECE) {
             console.error(`${TAG} getPrefer device is not EARPIECE`);
             expect(false).assertTrue();
+            await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
             done();
             return;
           }
-          routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, false, (err) => {
+          routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, false, async (err) => {
             console.info(`${TAG} setCommunicationDevice enter`);
             if (err) {
               console.error(`${TAG} setCommunicationDevice ERROR: ${err.message}`);
               expect(false).assertTrue();
+              await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
               done();
               return;
             }
-            routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, (err, value) => {
+            routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, async (err, value) => {
               console.info(`${TAG} isCommunicationDeviceActive return: `+ JSON.stringify(value));
               if (err) {
                 console.error(`${TAG} isCommunicationDeviceActive ERROR: ${err.message}`);
                 expect(false).assertTrue();
+                await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
                 done();
                 return;
               }
               if (value) {
                 console.error(`${TAG} isCommunicationDeviceActive reurn true`);
                 expect(false).assertTrue();
+                await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
                 done();
                 return;
               }
               expect(true).assertTrue();
+              await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
               done();
               return;
             });
@@ -480,11 +488,12 @@ describe("AudioRoutingManagerJsTest", function () {
         return;
       }
       let routingManager = audioManager.getRoutingManager();
-      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG, (err, value) => {
+      routingManager.getDevices(audio.DeviceFlag.OUTPUT_DEVICES_FLAG, async (err, value) => {
         console.info(`${TAG} getDevices return: ` + JSON.stringify(value));
         if (err) {
           console.error(`${TAG} getDevices ERROR: ${err.message}`);
           expect(false).assertTrue();
+          await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
           done();
           return;
         }
@@ -499,46 +508,53 @@ describe("AudioRoutingManagerJsTest", function () {
         if (!flag) {
           console.error(`${TAG} This device does not have a earpiece`);
           expect(true).assertTrue();
+          await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
           done();
           return;
         }
-        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, (err, value) => {
+        routingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo, async (err, value) => {
           console.info(`${TAG} getPreferredOutputDeviceForRendererInfo return: ` + JSON.stringify(value));
           if (err) {
             console.error(`${TAG} getPreferredOutputDeviceForRendererInfo ERROR: ${err.message}`);
             expect(false).assertTrue();
+            await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
             done();
             return;
           }
           if (value[0].deviceType != audio.DeviceType.EARPIECE) {
             console.error(`${TAG} getPrefer device is not EARPIECE`);
             expect(false).assertTrue();
+            await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
             done();
             return;
           }
-          routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, true, (err) => {
+          routingManager.setCommunicationDevice(audio.CommunicationDeviceType.SPEAKER, true, async (err) => {
             console.info(`${TAG} setCommunicationDevice enter`);
             if (err) {
               console.error(`${TAG} setCommunicationDevice ERROR: ${err.message}`);
               expect(false).assertTrue();
+              await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
               done();
               return;
             }
-            routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, (err, value) => {
+            routingManager.isCommunicationDeviceActive(audio.CommunicationDeviceType.SPEAKER, async (err, value) => {
               console.info(`${TAG} isCommunicationDeviceActive return: `+ JSON.stringify(value));
               if (err) {
                 console.error(`${TAG} isCommunicationDeviceActive ERROR: ${err.message}`);
                 expect(false).assertTrue();
+                await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
                 done();
                 return;
               }
               if (!value) {
                 console.error(`${TAG} isCommunicationDeviceActive reurn false`);
                 expect(false).assertTrue();
+                await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
                 done();
                 return;
               }
               expect(true).assertTrue();
+              await audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT);
               done();
               return;
             });
