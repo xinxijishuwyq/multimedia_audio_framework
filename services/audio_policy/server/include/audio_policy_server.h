@@ -331,7 +331,7 @@ private:
     void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     void OnAudioFocusInfoChange();
-    void UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType);
+    void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void ProcessInterrupt(const InterruptHint& hint);
 
     // for audio volume and mute status

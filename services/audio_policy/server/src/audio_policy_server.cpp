@@ -1291,9 +1291,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
-        if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
-            UpdateAudioScene(audioInterrupt, ACTIVATE_AUDIO_INTERRUPT);
-        }
+        AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
+        UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
 
@@ -1310,9 +1309,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         OnAudioFocusInfoChange();
-        if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
-            UpdateAudioScene(audioInterrupt, ACTIVATE_AUDIO_INTERRUPT);
-        }
+        AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
+        UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
 
@@ -1322,56 +1320,34 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_ERR_LOG("ActivateAudioInterrupt request rejected");
         return ERR_FOCUS_DENIED;
     }
-    if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
-        UpdateAudioScene(audioInterrupt, ACTIVATE_AUDIO_INTERRUPT);
-    }
+    AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
+    UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
-void AudioPolicyServer::UpdateAudioScene(const AudioInterrupt &audioInterrupt, AudioInterruptChangeType changeType)
+void AudioPolicyServer::UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType)
 {
     AudioScene currentAudioScene = GetAudioScene();
-    AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
-    AUDIO_INFO_LOG("UpdateAudioScene::changeType: %{public}d, currentAudioScene: %{public}d, streamType: %{public}d",
-        changeType, currentAudioScene, streamType);
+    AUDIO_INFO_LOG("UpdateAudioScene: currentAudioScene=%{public}d, audioScene=%{public}d, changeType=%{public}d",
+        currentAudioScene, audioScene, changeType);
+
     switch (changeType) {
         case ACTIVATE_AUDIO_INTERRUPT:
-            if (streamType == STREAM_RING && currentAudioScene == AUDIO_SCENE_DEFAULT) {
-                AUDIO_INFO_LOG("UpdateAudioScene::Ringtone is starting. Change audio scene to RINGING");
-                SetAudioScene(AUDIO_SCENE_RINGING);
-                break;
-            }
-            if (streamType == STREAM_VOICE_CALL) {
-                if (audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION
-                    && currentAudioScene != AUDIO_SCENE_PHONE_CALL) {
-                    AUDIO_INFO_LOG("UpdateAudioScene::Phone_call is starting. Change audio scene to PHONE_CALL");
-                    SetAudioScene(AUDIO_SCENE_PHONE_CALL);
-                    break;
-                }
-                if (currentAudioScene != AUDIO_SCENE_PHONE_CHAT) {
-                    AUDIO_INFO_LOG("UpdateAudioScene::VOIP is starting. Change audio scene to PHONE_CHAT");
-                    SetAudioScene(AUDIO_SCENE_PHONE_CHAT);
-                    break;
-                }
+            if (audioScenePriority.at(audioScene) <= audioScenePriority.at(currentAudioScene)) {
+                return;
             }
             break;
         case DEACTIVATE_AUDIO_INTERRUPT:
-            if (streamType == STREAM_RING && currentAudioScene == AUDIO_SCENE_RINGING) {
-                AUDIO_INFO_LOG("UpdateAudioScene::Ringtone is stopping. Change audio scene to DEFAULT");
-                SetAudioScene(AUDIO_SCENE_DEFAULT);
-                break;
-            }
-            if (streamType == STREAM_VOICE_CALL && (currentAudioScene == AUDIO_SCENE_PHONE_CALL
-                || currentAudioScene == AUDIO_SCENE_PHONE_CHAT)) {
-                AUDIO_INFO_LOG("UpdateAudioScene::Voice_call is stopping. Change audio scene to DEFAULT");
-                SetAudioScene(AUDIO_SCENE_DEFAULT);
-                break;
+            if (audioScenePriority.at(audioScene) >= audioScenePriority.at(currentAudioScene)) {
+                return;
             }
             break;
         default:
-            AUDIO_INFO_LOG("UpdateAudioScene::The audio scene did not change");
-            break;
+            AUDIO_ERR_LOG("Unexpected changeType=%{public}d", changeType);
+            return;
     }
+
+    mPolicyService.SetAudioScene(audioScene);
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::SimulateFocusEntry()
@@ -1480,20 +1456,22 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
-    AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
+        AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
         audioFocusInfoList_.remove_if([&](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
             if ((audioFocusInfo.first).sessionID != exitSessionID) {
+                AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioFocusInfo.first);
+                if (audioScenePriority.at(targetAudioScene) > audioScenePriority.at(highestPriorityAudioScene)) {
+                    highestPriorityAudioScene = targetAudioScene;
+                }
                 return false;
             }
             OnAudioFocusInfoChange();
             return true;
         });
-        if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
-            UpdateAudioScene(audioInterrupt, DEACTIVATE_AUDIO_INTERRUPT);
-        }
+        UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
 
@@ -1507,15 +1485,17 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     bool isInterruptActive = false;
+    AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
     for (auto it = audioFocusInfoList_.begin(); it != audioFocusInfoList_.end();) {
         if ((it->first).sessionID == audioInterrupt.sessionID) {
             it = audioFocusInfoList_.erase(it);
             isInterruptActive = true;
             OnAudioFocusInfoChange();
-            if (streamType == STREAM_VOICE_CALL || streamType == STREAM_RING) {
-                UpdateAudioScene(audioInterrupt, DEACTIVATE_AUDIO_INTERRUPT);
-            }
         } else {
+            AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(it->first);
+            if (audioScenePriority.at(targetAudioScene) > audioScenePriority.at(highestPriorityAudioScene)) {
+                highestPriorityAudioScene = targetAudioScene;
+            }
             ++it;
         }
     }
@@ -1526,6 +1506,9 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
             audioInterrupt.sessionID);
         return SUCCESS;
     }
+
+    UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
+
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList();
 
@@ -2275,7 +2258,7 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
         "StateOnChange: Event %{public}s is not supported.", eventDes);
 
     std::string devTypeKey = "DEVICE_TYPE=";
-    int32_t devTypeKeyPos =  std::string(contentDes).find(devTypeKey);
+    auto devTypeKeyPos =  std::string(contentDes).find(devTypeKey);
     CHECK_AND_RETURN_LOG(devTypeKeyPos != std::string::npos,
         "StateOnChange: Not find daudio device type info, contentDes %{public}s.", contentDes);
     if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_SPK) {
