@@ -1109,11 +1109,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
                 const uint32_t sessionID = sinkIndexSessionIDMap[idx];
                 AUDIO_INFO_LOG("sessionID: %{public}d  removed", sessionID);
-
-                std::thread threadOnSessionRemoved([sessionID] {
-                    g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
-                });
-                threadOnSessionRemoved.detach();
+                g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
             }
             break;
 

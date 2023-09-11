@@ -1518,6 +1518,11 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
 void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
 {
+    sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
+}
+
+void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
+{
     uint32_t removedSessionID = sessionID;
 
     auto isSessionPresent = [&removedSessionID] (const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
