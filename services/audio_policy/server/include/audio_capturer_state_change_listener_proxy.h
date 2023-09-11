@@ -31,8 +31,6 @@ public:
 
 private:
     static inline BrokerDelegator<AudioCapturerStateChangeListenerProxy> delegator_;
-    void WriteCapturerChangeInfo(MessageParcel &data, const std::unique_ptr<AudioCapturerChangeInfo>
-        &capturerChangeInfo);
 };
 
 class AudioCapturerStateChangeListenerCallback : public AudioCapturerStateChangeCallback {

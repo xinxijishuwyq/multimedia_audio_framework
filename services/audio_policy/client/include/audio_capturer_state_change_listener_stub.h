@@ -32,8 +32,6 @@ public:
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void SetCallback(const std::weak_ptr<AudioCapturerStateChangeCallback> &callback);
 private:
-    void ReadAudioCapturerChangeInfo(MessageParcel &data,
-        std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     std::weak_ptr<AudioCapturerStateChangeCallback> callback_;
 };
 } // namespace AudioStandard

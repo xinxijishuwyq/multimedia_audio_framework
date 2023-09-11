@@ -88,15 +88,7 @@ void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &d
 void AudioPolicyManagerListenerProxy::WriteAudioFocusInfo(MessageParcel &data,
     const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
 {
-    data.WriteInt32(focusInfo.first.streamUsage);
-    data.WriteInt32(focusInfo.first.contentType);
-    data.WriteInt32(focusInfo.first.audioFocusType.streamType);
-    data.WriteInt32(focusInfo.first.audioFocusType.sourceType);
-    data.WriteBool(focusInfo.first.audioFocusType.isPlay);
-    data.WriteInt32(focusInfo.first.sessionID);
-    data.WriteBool(focusInfo.first.pauseWhenDucked);
-    data.WriteInt32(focusInfo.first.mode);
-
+    focusInfo.first.Marshalling(data);
     data.WriteInt32(focusInfo.second);
 }
 

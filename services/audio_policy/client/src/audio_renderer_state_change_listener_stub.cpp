@@ -33,50 +33,6 @@ AudioRendererStateChangeListenerStub::~AudioRendererStateChangeListenerStub()
     AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub Instance destroy");
 }
 
-void AudioRendererStateChangeListenerStub::ReadAudioRendererChangeInfo(MessageParcel &data,
-    unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
-{
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub ReadAudioRendererChangeInfo");
-    rendererChangeInfo->sessionId = data.ReadInt32();
-    rendererChangeInfo->rendererState = static_cast<RendererState>(data.ReadInt32());
-    rendererChangeInfo->clientUID = data.ReadInt32();
-    rendererChangeInfo->tokenId = data.ReadInt32();
-
-    rendererChangeInfo->rendererInfo.contentType = static_cast<ContentType>(data.ReadInt32());
-    rendererChangeInfo->rendererInfo.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-    rendererChangeInfo->rendererInfo.rendererFlags = data.ReadInt32();
-
-    rendererChangeInfo->outputDeviceInfo.deviceType = static_cast<DeviceType>(data.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.deviceRole = static_cast<DeviceRole>(data.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.deviceId = data.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.channelMasks = data.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.channelIndexMasks = data.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate
-        = static_cast<AudioSamplingRate>(data.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding
-        = static_cast<AudioEncodingType>(data.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(data.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(data.ReadInt32());
-    rendererChangeInfo->outputDeviceInfo.deviceName = data.ReadString();
-    rendererChangeInfo->outputDeviceInfo.macAddress = data.ReadString();
-    rendererChangeInfo->outputDeviceInfo.displayName = data.ReadString();
-    rendererChangeInfo->outputDeviceInfo.networkId = data.ReadString();
-    rendererChangeInfo->outputDeviceInfo.interruptGroupId = data.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.volumeGroupId = data.ReadInt32();
-    rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice = data.ReadBool();
-
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, sessionid = %{public}d", rendererChangeInfo->sessionId);
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererState = %{public}d",
-        rendererChangeInfo->rendererState);
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, clientUid = %{public}d", rendererChangeInfo->clientUID);
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, contentType = %{public}d",
-        rendererChangeInfo->rendererInfo.contentType);
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, streamUsage = %{public}d",
-        rendererChangeInfo->rendererInfo.streamUsage);
-    AUDIO_DEBUG_LOG("AudioRendererStateChangeListenerStub, rendererFlags = %{public}d",
-        rendererChangeInfo->rendererInfo.rendererFlags);
-}
-
 int AudioRendererStateChangeListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -92,7 +48,7 @@ int AudioRendererStateChangeListenerStub::OnRemoteRequest(
             while (size > 0) {
                 unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
                 CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED, "No memory!!");
-                ReadAudioRendererChangeInfo(data, rendererChangeInfo);
+                rendererChangeInfo->Unmarshalling(data);
                 audioRendererChangeInfos.push_back(move(rendererChangeInfo));
                 size--;
             }

@@ -41,27 +41,7 @@ int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &conf
     int ret = Remote()->SendRequest(IPolicyProviderMsg::GET_DEVICE_INFO, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "GetProcessDeviceInfo failed, error: %{public}d",
         ret);
-
-    deviceInfo.deviceType = static_cast<DeviceType>(reply.ReadInt32());
-    deviceInfo.deviceRole = static_cast<DeviceRole>(reply.ReadInt32());
-    deviceInfo.deviceId = reply.ReadInt32();
-    deviceInfo.channelMasks = reply.ReadInt32();
-    deviceInfo.channelIndexMasks = reply.ReadInt32();
-    deviceInfo.deviceName = reply.ReadString();
-    deviceInfo.macAddress = reply.ReadString();
-
-    // AudioStreamInfo
-    deviceInfo.audioStreamInfo.samplingRate = static_cast<AudioSamplingRate>(reply.ReadInt32());
-    deviceInfo.audioStreamInfo.encoding = static_cast<AudioEncodingType>(reply.ReadInt32());
-    deviceInfo.audioStreamInfo.format = static_cast<AudioSampleFormat>(reply.ReadInt32());
-    deviceInfo.audioStreamInfo.channels = static_cast<AudioChannel>(reply.ReadInt32());
-
-    deviceInfo.networkId = reply.ReadString();
-    deviceInfo.displayName = reply.ReadString();
-    deviceInfo.interruptGroupId = reply.ReadInt32();
-    deviceInfo.volumeGroupId = reply.ReadInt32();
-    deviceInfo.isLowLatencyDevice = reply.ReadBool();
-
+    deviceInfo.Unmarshalling(reply);
     return SUCCESS;
 }
 

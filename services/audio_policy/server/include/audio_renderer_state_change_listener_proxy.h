@@ -31,8 +31,6 @@ public:
 
 private:
     static inline BrokerDelegator<AudioRendererStateChangeListenerProxy> delegator_;
-    void WriteRendererChangeInfo(MessageParcel &data,
-        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 };
 
 class AudioRendererStateChangeListenerCallback : public AudioRendererStateChangeCallback {
