@@ -32,8 +32,6 @@ public:
         &audioRendererChangeInfos) override;
     void SetCallback(const std::weak_ptr<AudioRendererStateChangeCallback> &callback);
 private:
-    void ReadAudioRendererChangeInfo(MessageParcel &data,
-        std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     std::weak_ptr<AudioRendererStateChangeCallback> callback_;
 };
 } // namespace AudioStandard

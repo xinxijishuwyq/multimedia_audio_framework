@@ -62,16 +62,8 @@ void AudioPolicyManagerListenerStub::ReadAudioFocusInfoChangeData(MessageParcel 
     int32_t size = data.ReadInt32();
 
     for (int32_t i = 0; i < size; i++) {
-        focusInfo.first.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
-        focusInfo.first.contentType = static_cast<ContentType>(data.ReadInt32());
-        focusInfo.first.audioFocusType.streamType = static_cast<AudioStreamType>(data.ReadInt32());
-        focusInfo.first.audioFocusType.sourceType = static_cast<SourceType>(data.ReadInt32());
-        focusInfo.first.audioFocusType.isPlay = data.ReadBool();
-        focusInfo.first.sessionID = data.ReadInt32();
-        focusInfo.first.pauseWhenDucked = data.ReadBool();
-        focusInfo.first.mode = static_cast<InterruptMode>(data.ReadInt32());
+        focusInfo.first.Unmarshalling(data);
         focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
-
         focusInfoList.push_back(focusInfo);
     }
 }

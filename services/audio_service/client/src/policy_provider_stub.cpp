@@ -51,27 +51,7 @@ int32_t PolicyProviderStub::HandleGetProcessDeviceInfo(MessageParcel &data, Mess
     DeviceInfo deviceInfo;
     ret = GetProcessDeviceInfo(config, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessDeviceInfo failed %{public}d", ret);
-
-    reply.WriteInt32(deviceInfo.deviceType);
-    reply.WriteInt32(deviceInfo.deviceRole);
-    reply.WriteInt32(deviceInfo.deviceId);
-    reply.WriteInt32(deviceInfo.channelMasks);
-    reply.WriteInt32(deviceInfo.channelIndexMasks);
-    reply.WriteString(deviceInfo.deviceName);
-    reply.WriteString(deviceInfo.macAddress);
-
-    // AudioStreamInfo
-    reply.WriteInt32(deviceInfo.audioStreamInfo.samplingRate);
-    reply.WriteInt32(deviceInfo.audioStreamInfo.encoding);
-    reply.WriteInt32(deviceInfo.audioStreamInfo.format);
-    reply.WriteInt32(deviceInfo.audioStreamInfo.channels);
-
-    reply.WriteString(deviceInfo.networkId);
-    reply.WriteString(deviceInfo.displayName);
-    reply.WriteInt32(deviceInfo.interruptGroupId);
-    reply.WriteInt32(deviceInfo.volumeGroupId);
-    reply.WriteBool(deviceInfo.isLowLatencyDevice);
-
+    deviceInfo.Marshalling(reply);
     return AUDIO_OK;
 }
 

@@ -33,34 +33,6 @@ AudioCapturerStateChangeListenerProxy::~AudioCapturerStateChangeListenerProxy()
     AUDIO_DEBUG_LOG("~AudioCapturerStateChangeListenerProxy: Instance destroy");
 }
 
-void AudioCapturerStateChangeListenerProxy::WriteCapturerChangeInfo(MessageParcel &data,
-    const unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
-{
-    data.WriteInt32(capturerChangeInfo->sessionId);
-    data.WriteInt32(capturerChangeInfo->capturerState);
-    data.WriteInt32(capturerChangeInfo->clientUID);
-    data.WriteInt32(capturerChangeInfo->capturerInfo.sourceType);
-    data.WriteInt32(capturerChangeInfo->capturerInfo.capturerFlags);
-    data.WriteBool(capturerChangeInfo->muted);
-
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceType);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceRole);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.deviceId);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelMasks);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.channelIndexMasks);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.samplingRate);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.encoding);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.format);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.audioStreamInfo.channels);
-    data.WriteString(capturerChangeInfo->inputDeviceInfo.deviceName);
-    data.WriteString(capturerChangeInfo->inputDeviceInfo.macAddress);
-    data.WriteString(capturerChangeInfo->inputDeviceInfo.displayName);
-    data.WriteString(capturerChangeInfo->inputDeviceInfo.networkId);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.interruptGroupId);
-    data.WriteInt32(capturerChangeInfo->inputDeviceInfo.volumeGroupId);
-    data.WriteBool(capturerChangeInfo->inputDeviceInfo.isLowLatencyDevice);
-}
-
 void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
     const vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
@@ -82,7 +54,7 @@ void AudioCapturerStateChangeListenerProxy::OnCapturerStateChange(
             AUDIO_ERR_LOG("Capturer change info null, something wrong!!");
             continue;
         }
-        WriteCapturerChangeInfo(data, capturerChangeInfo);
+        capturerChangeInfo->Marshalling(data);
     }
 
     int error = Remote()->SendRequest(ON_CAPTURERSTATE_CHANGE, data, reply, option);

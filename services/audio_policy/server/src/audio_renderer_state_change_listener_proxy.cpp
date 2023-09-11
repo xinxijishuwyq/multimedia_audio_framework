@@ -33,36 +33,6 @@ AudioRendererStateChangeListenerProxy::~AudioRendererStateChangeListenerProxy()
     AUDIO_DEBUG_LOG("~AudioRendererStateChangeListenerProxy: Instance destroy");
 }
 
-void AudioRendererStateChangeListenerProxy::WriteRendererChangeInfo(MessageParcel &data,
-    const unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
-{
-    data.WriteInt32(rendererChangeInfo->sessionId);
-    data.WriteInt32(rendererChangeInfo->rendererState);
-    data.WriteInt32(rendererChangeInfo->clientUID);
-    data.WriteInt32(rendererChangeInfo->tokenId);
-
-    data.WriteInt32(rendererChangeInfo->rendererInfo.contentType);
-    data.WriteInt32(rendererChangeInfo->rendererInfo.streamUsage);
-    data.WriteInt32(rendererChangeInfo->rendererInfo.rendererFlags);
-
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceType);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceRole);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.deviceId);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelMasks);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.channelIndexMasks);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.samplingRate);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.encoding);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.format);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.audioStreamInfo.channels);
-    data.WriteString(rendererChangeInfo->outputDeviceInfo.deviceName);
-    data.WriteString(rendererChangeInfo->outputDeviceInfo.macAddress);
-    data.WriteString(rendererChangeInfo->outputDeviceInfo.displayName);
-    data.WriteString(rendererChangeInfo->outputDeviceInfo.networkId);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.interruptGroupId);
-    data.WriteInt32(rendererChangeInfo->outputDeviceInfo.volumeGroupId);
-    data.WriteBool(rendererChangeInfo->outputDeviceInfo.isLowLatencyDevice);
-}
-
 void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
     const vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
@@ -84,7 +54,7 @@ void AudioRendererStateChangeListenerProxy::OnRendererStateChange(
             AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
             continue;
         }
-        WriteRendererChangeInfo(data, rendererChangeInfo);
+        rendererChangeInfo->Marshalling(data);
     }
 
     int error = Remote()->SendRequest(ON_RENDERERSTATE_CHANGE, data, reply, option);
