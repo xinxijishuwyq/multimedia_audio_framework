@@ -1456,10 +1456,11 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
+    AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
+
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
-        AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
         audioFocusInfoList_.remove_if([&](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
             if ((audioFocusInfo.first).sessionID != exitSessionID) {
                 AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioFocusInfo.first);
@@ -1485,7 +1486,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     bool isInterruptActive = false;
-    AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
+
     for (auto it = audioFocusInfoList_.begin(); it != audioFocusInfoList_.end();) {
         if ((it->first).sessionID == audioInterrupt.sessionID) {
             it = audioFocusInfoList_.erase(it);
