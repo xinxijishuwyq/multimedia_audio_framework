@@ -487,7 +487,7 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
         return ERR_INVALID_PARAM;
     }
 
-     return SUCCESS;
+    return SUCCESS;
 }
 
 int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
@@ -497,7 +497,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
-    
+
     return SetIORoute(type, flag);
 }
 

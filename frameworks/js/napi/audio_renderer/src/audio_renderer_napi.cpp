@@ -531,7 +531,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
             }
         }
     }
-    
+
     HiLog::Error(LABEL, "Failure in AudioRendererNapi::Init()");
     return result;
 }
@@ -2950,9 +2950,9 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
     napi_status status;
     const int32_t refCount = 1;
     napi_value result = nullptr;
-    
+
     GET_PARAMS(env, info, ARGS_TWO);
-    
+
     unique_ptr<AudioRendererAsyncContext> asyncContext = make_unique<AudioRendererAsyncContext>();
     CHECK_AND_RETURN_RET_LOG(asyncContext != nullptr, nullptr, "AudioRendererAsyncContext object creation failed");
     if (argc < ARGS_ONE) {

@@ -1494,7 +1494,7 @@ int32_t AudioPolicyService::LoadUsbModule(DeviceType deviceType)
             return ERR_OPERATION_FAILED;
         }
         moduleInfoList = usbModulesPos->second;
-    } 
+    }
     for (auto &moduleInfo : moduleInfoList) {
         std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
         if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
@@ -1509,7 +1509,7 @@ int32_t AudioPolicyService::LoadUsbModule(DeviceType deviceType)
     std::string activePort = GetSinkPortName(currentActiveDevice_.deviceType_);
     AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_.deviceType_);
     audioPolicyManager_.SuspendAudioDevice(activePort, true);
-    
+
     return SUCCESS;
 }
 
@@ -2207,7 +2207,7 @@ int32_t AudioPolicyService::handleSpecialDeviceType(DeviceType &devType, bool &i
             return ERROR;
         }
         devType = connectedHeadsetType;
-        isConnected = false;  
+        isConnected = false;
     }
 
     return SUCCESS;
