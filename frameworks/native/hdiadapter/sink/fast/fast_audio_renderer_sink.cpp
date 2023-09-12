@@ -58,7 +58,7 @@ const int INVALID_FD = -1;
 
 class FastAudioRendererSinkInner : public FastAudioRendererSink {
 public:
-    int32_t Init(IAudioSinkAttr attr) override;
+    int32_t Init(const IAudioSinkAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -78,8 +78,8 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetOutputRoute(DeviceType deviceType) override;
 
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
     void SetAudioMonoState(bool audioMono) override;
@@ -448,7 +448,7 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     return SUCCESS;
 }
 
-int32_t FastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
+int32_t FastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init.");
     attr_ = attr;
@@ -711,14 +711,14 @@ int32_t FastAudioRendererSinkInner::SetOutputRoute(DeviceType deviceType)
     return ERR_NOT_SUPPORTED;
 }
 
-void FastAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void FastAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
 {
     AUDIO_ERR_LOG("FastAudioRendererSink SetAudioParameter not supported.");
     return;
 }
 
-std::string FastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string FastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_ERR_LOG("FastAudioRendererSink GetAudioParameter not supported.");
     return "";

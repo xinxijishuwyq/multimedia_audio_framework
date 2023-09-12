@@ -39,7 +39,7 @@ public:
 
 class AudioDeviceManagerFactory {
 public:
-    static AudioDeviceManagerFactory& GetInstance();
+    static AudioDeviceManagerFactory &GetInstance();
     std::shared_ptr<IAudioDeviceManager> CreatDeviceManager(const AudioDeviceManagerType audioMgrType);
     int32_t DestoryDeviceManager(const AudioDeviceManagerType audioMgrType);
 
@@ -47,10 +47,10 @@ private:
     AudioDeviceManagerFactory() = default;
     ~AudioDeviceManagerFactory() = default;
 
-    AudioDeviceManagerFactory(const AudioDeviceManagerFactory&) = delete;
-    AudioDeviceManagerFactory& operator=(const AudioDeviceManagerFactory&) = delete;
-    AudioDeviceManagerFactory(AudioDeviceManagerFactory&&) = delete;
-    AudioDeviceManagerFactory& operator=(AudioDeviceManagerFactory&&) = delete;
+    AudioDeviceManagerFactory(const AudioDeviceManagerFactory &) = delete;
+    AudioDeviceManagerFactory &operator=(const AudioDeviceManagerFactory &) = delete;
+    AudioDeviceManagerFactory(AudioDeviceManagerFactory &&) = delete;
+    AudioDeviceManagerFactory &operator=(AudioDeviceManagerFactory &&) = delete;
 
     std::shared_ptr<IAudioDeviceManager> InitLocalAudioMgr();
     std::shared_ptr<IAudioDeviceManager> InitRemoteAudioMgr();

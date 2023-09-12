@@ -30,7 +30,7 @@ class AudioRendererFileSink  : public IAudioRendererSink {
 public:
     static AudioRendererFileSink *GetInstance(void);
 
-    int32_t Init(IAudioSinkAttr attr) override;
+    int32_t Init(const IAudioSinkAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -51,8 +51,8 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetOutputRoute(DeviceType deviceType) override;
 
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
     void SetAudioMonoState(bool audioMono) override;

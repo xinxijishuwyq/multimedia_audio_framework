@@ -31,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 class FastAudioCapturerSourceInner : public FastAudioCapturerSource {
 public:
-    int32_t Init(IAudioSourceAttr &attr) override;
+    int32_t Init(const IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -54,9 +54,9 @@ public:
     int32_t SetInputRoute(DeviceType inputDevice) override;
 
     uint64_t GetTransactionId() override;
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
+    void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -359,7 +359,7 @@ int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
     return SUCCESS;
 }
 
-int32_t FastAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
+int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     if (InitAudioManager() != 0) {
         AUDIO_ERR_LOG("Init audio manager Fail");
@@ -513,17 +513,17 @@ uint64_t FastAudioCapturerSourceInner::GetTransactionId()
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
-void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
-void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback* callback)
+void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterParameterCallback in fast mode is not supported!");
 }

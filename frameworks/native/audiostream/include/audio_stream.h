@@ -137,7 +137,7 @@ private:
     std::condition_variable bufferQueueCV_;
     AudioStreamParams streamParams_;
     AudioBlend audioBlend_;
-    FILE *pfd_;
+    FILE *pfd_ = nullptr;
 
     bool streamTrackerRegistered_ = false;
 };

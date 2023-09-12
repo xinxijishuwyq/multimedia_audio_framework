@@ -35,8 +35,8 @@ typedef struct {
 
 class IAudioSinkCallback {
 public:
-    virtual void OnAudioSinkParamChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
-        const std::string& value) = 0;
+    virtual void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
+        const std::string &condition, const std::string &value) = 0;
 };
 
 class IAudioRendererSink {
@@ -45,7 +45,7 @@ public:
 
     virtual ~IAudioRendererSink() = default;
 
-    virtual int32_t Init(IAudioSinkAttr attr) = 0;
+    virtual int32_t Init(const IAudioSinkAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
 
@@ -68,8 +68,8 @@ public:
     virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
     virtual int32_t SetOutputRoute(DeviceType deviceType) = 0;
 
-    virtual void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) = 0;
-    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) = 0;
+    virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
+    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
     virtual void RegisterParameterCallback(IAudioSinkCallback* callback) = 0;
 
     virtual void SetAudioMonoState(bool audioMono) = 0;

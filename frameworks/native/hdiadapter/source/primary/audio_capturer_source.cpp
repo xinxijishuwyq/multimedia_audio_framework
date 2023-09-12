@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioCapturerSourceInner : public AudioCapturerSource {
 public:
-    int32_t Init(IAudioSourceAttr &attr) override;
+    int32_t Init(const IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -55,9 +55,9 @@ public:
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
 
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
+    void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     ~AudioCapturerSourceInner();
@@ -102,7 +102,7 @@ private:
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
 public:
-    int32_t Init(IAudioSourceAttr &attr) override;
+    int32_t Init(const IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -123,9 +123,9 @@ public:
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
 
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
+    void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     AudioCapturerSourceWakeup() = default;
     ~AudioCapturerSourceWakeup() = default;
@@ -462,7 +462,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     return 0;
 }
 
-int32_t AudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
+int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     if (InitAudioManager() != 0) {
         AUDIO_ERR_LOG("Init audio manager Fail");
@@ -895,26 +895,26 @@ int32_t AudioCapturerSourceInner::Flush(void)
     return SUCCESS;
 }
 
-void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
     AUDIO_INFO_LOG("Register WakeupClose Callback");
     std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
     wakeupCloseCallback_ = callback;
 }
 
-void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
     AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
     std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
     audioCapturerSourceCallback_ = callback;
 }
 
-void AudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback* callback)
+void AudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterParameterCallback is not supported!");
 }
 
-int32_t AudioCapturerSourceWakeup::Init(IAudioSourceAttr &attr)
+int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> lock(wakeupMutex_);
     int32_t res = SUCCESS;
@@ -1050,17 +1050,17 @@ uint64_t AudioCapturerSourceWakeup::GetTransactionId()
     return audioCapturerSource_.GetTransactionId();
 }
 
-void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
     audioCapturerSource_.RegisterWakeupCloseCallback(callback);
 }
 
-void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
     audioCapturerSource_.RegisterAudioCapturerSourceCallback(callback);
 }
 
-void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback* callback)
+void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("AudioCapturerSourceWakeup: RegisterParameterCallback is not supported!");
 }

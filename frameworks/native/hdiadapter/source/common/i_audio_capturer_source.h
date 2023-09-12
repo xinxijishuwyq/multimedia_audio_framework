@@ -42,15 +42,15 @@ class IAudioSourceCallback {
 public:
     virtual void OnWakeupClose() = 0;
     virtual void OnCapturerState(bool isActive) = 0;
-    virtual void OnAudioSourceParamChange(std::string netWorkId, const AudioParamKey key,
-        const std::string& condition, const std::string& value) = 0;
+    virtual void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
+        const std::string &condition, const std::string &value) = 0;
 };
 
 class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *deviceClass, const char *deviceNetworkId,
            const SourceType sourceType = SourceType::SOURCE_TYPE_MIC, const char *sourceName = "Built_in_wakeup");
-    virtual int32_t Init(IAudioSourceAttr &attr) = 0;
+    virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
 
@@ -69,9 +69,9 @@ public:
     virtual int32_t SetInputRoute(DeviceType deviceType) = 0;
     virtual uint64_t GetTransactionId() = 0;
 
-    virtual void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) = 0;
-    virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) = 0;
-    virtual void RegisterParameterCallback(IAudioSourceCallback* callback) = 0;
+    virtual void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) = 0;
+    virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) = 0;
+    virtual void RegisterParameterCallback(IAudioSourceCallback *callback) = 0;
 
     virtual ~IAudioCapturerSource() = default;
 };

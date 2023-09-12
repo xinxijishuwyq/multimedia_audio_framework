@@ -61,17 +61,17 @@ int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice)
     return SUCCESS;
 }
 
-void AudioCapturerFileSource::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+void AudioCapturerFileSource::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
-void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback* callback)
+void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterParameterCallback in file mode is not supported!");
 }
@@ -121,7 +121,7 @@ void AudioCapturerFileSource::DeInit()
     capturerInited_ = false;
 }
 
-int32_t AudioCapturerFileSource::Init(IAudioSourceAttr &attr)
+int32_t AudioCapturerFileSource::Init(const IAudioSourceAttr &attr)
 {
     const char *filePath = attr.filePath;
     char realPath[PATH_MAX + 1] = {0x00};

@@ -64,7 +64,7 @@ typedef struct {
 
 class BluetoothRendererSinkInner : public BluetoothRendererSink {
 public:
-    int32_t Init(IAudioSinkAttr attr) override;
+    int32_t Init(const IAudioSinkAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
     int32_t Start(void) override;
@@ -84,8 +84,8 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetOutputRoute(DeviceType deviceType) override;
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
     bool GetAudioMonoState();
@@ -160,8 +160,8 @@ int32_t BluetoothRendererSinkInner::SetOutputRoute(DeviceType deviceType)
     return ERR_NOT_SUPPORTED;
 }
 
-void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
 {
     AUDIO_INFO_LOG("SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
@@ -176,7 +176,7 @@ void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
     }
 }
 
-std::string BluetoothRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string BluetoothRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_ERR_LOG("BluetoothRendererSink GetAudioParameter not supported.");
     return "";
@@ -358,7 +358,7 @@ AudioFormat BluetoothRendererSinkInner::ConverToHdiFormat(AudioSampleFormat form
     return hdiFormat;
 }
 
-int32_t BluetoothRendererSinkInner::Init(IAudioSinkAttr attr)
+int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init: %{public}d", attr.format);
 

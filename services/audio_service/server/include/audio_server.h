@@ -76,14 +76,14 @@ public:
     sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) override;
 
     // ISinkParameterCallback
-    void OnAudioSinkParamChange(std::string netWorkId, const AudioParamKey key,
-        const std::string& condition, const std::string& value) override;
+    void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
+        const std::string &condition, const std::string &value) override;
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
     void OnCapturerState(bool isActive) override;
-    void OnAudioSourceParamChange(std::string netWorkId, const AudioParamKey key,
-        const std::string& condition, const std::string& value) override;
+    void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
+        const std::string &condition, const std::string &value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
