@@ -460,7 +460,7 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
     GET_PARAMS(env, info, ARGS_THREE);
 
     unique_ptr<AudioVolumeGroupManagerAsyncContext> asyncContext = make_unique<AudioVolumeGroupManagerAsyncContext>();
-    
+
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&asyncContext->objectInfo));
     if (status == napi_ok && asyncContext->objectInfo != nullptr) {
         if (argc < ARGS_TWO) {

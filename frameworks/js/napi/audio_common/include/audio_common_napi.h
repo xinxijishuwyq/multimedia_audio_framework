@@ -21,12 +21,12 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 
-#define THROW_ERROR_ASSERT(env, assertion, code)        \
-    do {                                                \
-        if (!(assertion)) {                             \
-            AudioCommonNapi::throwError( env, code);    \
-            return nullptr;                             \
-        }                                               \
+#define THROW_ERROR_ASSERT(env, assertion, code)    \
+    do {                                            \
+        if (!(assertion)) {                         \
+            AudioCommonNapi::throwError(env, code); \
+            return nullptr;                         \
+        }                                           \
     } while (0)
 
 #define GET_PARAMS(env, info, num) \
@@ -39,9 +39,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
-    const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
-    const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
+const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
+const std::string AUDIO_INTERRUPT_CALLBACK_NAME = "audioInterrupt";
+const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
 }
 
 class AudioCommonNapi {
@@ -62,7 +62,7 @@ public:
     ~AudioCommonNapi() = delete;
     static std::string GetStringArgument(napi_env env, napi_value value);
     static std::string getMessageByCode(int32_t &code);
-    static void throwError (napi_env env, int32_t code);
+    static void throwError(napi_env env, int32_t code);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t inputType);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t deviceType);
@@ -96,17 +96,17 @@ struct AutoRef {
     napi_ref cb_;
 };
 
-const int32_t  NAPI_ERROR_INVALID_PARAM = 6800101;
-const int32_t  NAPI_ERR_NO_PERMISSION = 201;
-const int32_t  NAPI_ERR_PERMISSION_DENIED = 202;
-const int32_t  NAPI_ERR_INPUT_INVALID = 401;
-const int32_t  NAPI_ERR_INVALID_PARAM = 6800101;
-const int32_t  NAPI_ERR_NO_MEMORY = 6800102;
-const int32_t  NAPI_ERR_ILLEGAL_STATE = 6800103;
-const int32_t  NAPI_ERR_UNSUPPORTED = 6800104;
-const int32_t  NAPI_ERR_TIMEOUT = 6800105;
-const int32_t  NAPI_ERR_STREAM_LIMIT = 6800201;
-const int32_t  NAPI_ERR_SYSTEM = 6800301;
+const int32_t NAPI_ERROR_INVALID_PARAM = 6800101;
+const int32_t NAPI_ERR_NO_PERMISSION = 201;
+const int32_t NAPI_ERR_PERMISSION_DENIED = 202;
+const int32_t NAPI_ERR_INPUT_INVALID = 401;
+const int32_t NAPI_ERR_INVALID_PARAM = 6800101;
+const int32_t NAPI_ERR_NO_MEMORY = 6800102;
+const int32_t NAPI_ERR_ILLEGAL_STATE = 6800103;
+const int32_t NAPI_ERR_UNSUPPORTED = 6800104;
+const int32_t NAPI_ERR_TIMEOUT = 6800105;
+const int32_t NAPI_ERR_STREAM_LIMIT = 6800201;
+const int32_t NAPI_ERR_SYSTEM = 6800301;
 
 const std::string NAPI_ERROR_INVALID_PARAM_INFO = "input parameter value error";
 const std::string NAPI_ERROR_PERMISSION_DENIED_INFO = "not system app";

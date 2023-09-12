@@ -43,27 +43,28 @@ mutex AudioCapturerNapi::createMutex_;
 int32_t AudioCapturerNapi::isConstructSuccess_ = SUCCESS;
 
 namespace {
-    constexpr int ARGS_ONE = 1;
-    constexpr int ARGS_TWO = 2;
-    constexpr int ARGS_THREE = 3;
+constexpr int ARGS_ONE = 1;
+constexpr int ARGS_TWO = 2;
+constexpr int ARGS_THREE = 3;
 
-    constexpr int PARAM0 = 0;
-    constexpr int PARAM1 = 1;
-    constexpr int PARAM2 = 2;
+constexpr int PARAM0 = 0;
+constexpr int PARAM1 = 1;
+constexpr int PARAM2 = 2;
 
-    constexpr int TYPE_COMMUNICATION = 7;
-    constexpr int TYPE_PLAYBACK_CAPTURE = 2;
-    constexpr int TYPE_WAKEUP = 3;
-    constexpr int TYPE_VOICE_RECOGNITION = 1;
-    constexpr int TYPE_MIC = 0;
-    constexpr int TYPE_INVALID = -1;
+constexpr int TYPE_COMMUNICATION = 7;
+constexpr int TYPE_PLAYBACK_CAPTURE = 2;
+constexpr int TYPE_WAKEUP = 3;
+constexpr int TYPE_VOICE_RECOGNITION = 1;
+constexpr int TYPE_MIC = 0;
+constexpr int TYPE_INVALID = -1;
 
-    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioCapturerNapi"};
+constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioCapturerNapi"};
 
-    const std::string MARK_REACH_CALLBACK_NAME = "markReach";
-    const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
-    const std::string INPUTDEVICE_CHANGE_CALLBACK_NAME = "inputDeviceChange";
-    const std::string AUDIO_CAPTURER_CHANGE_CALLBACK_NAME = "audioCapturerChange";
+const std::string MARK_REACH_CALLBACK_NAME = "markReach";
+const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
+const std::string INPUTDEVICE_CHANGE_CALLBACK_NAME = "inputDeviceChange";
+const std::string AUDIO_CAPTURER_CHANGE_CALLBACK_NAME = "audioCapturerChange";
+
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
     napi_value argv[num] = {0};    \
