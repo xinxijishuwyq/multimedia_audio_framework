@@ -1586,6 +1586,9 @@ int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, si
 int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
 {
     Trace trace("RenderPrebuf");
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        return AUDIO_CLIENT_PA_ERR;
+    }
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
     if (bufferAttr == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
