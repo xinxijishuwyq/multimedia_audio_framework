@@ -252,9 +252,24 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
-    deviceDesc.pins = PIN_IN_MIC;
     char desc[] = "";
     deviceDesc.desc = desc;
+
+    switch (static_cast<DeviceType>(attr_.deviceType)) {
+        case DEVICE_TYPE_MIC:
+            deviceDesc.pins = PIN_IN_MIC;
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            deviceDesc.pins = PIN_IN_HS_MIC;
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            deviceDesc.pins = PIN_IN_USB_EXT;
+            break;
+        default:
+            AUDIO_WARNING_LOG("Unsupported device type:%{public}d, use default mic instead", attr_.deviceType);
+            deviceDesc.pins = PIN_IN_MIC;
+            break;
+    }
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
     if (audioCapture_ == nullptr || ret < 0) {

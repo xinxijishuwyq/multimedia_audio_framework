@@ -3742,7 +3742,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.deviceId = 1;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceRole = INPUT_DEVICE;
-        deviceInfo.deviceType = DEVICE_TYPE_MIC;
+        deviceInfo.deviceType = activeInputDevice_;
     } else {
         deviceInfo.deviceId = 6; // 6 for test
         deviceInfo.networkId = LOCAL_NETWORK_ID;
