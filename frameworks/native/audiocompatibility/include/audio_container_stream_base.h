@@ -70,7 +70,7 @@ public:
 
     // Playback related APIs
     bool DrainAudioStream();
-    size_t Write(uint8_t *buffer, size_t buffer_size);
+    int32_t Write(uint8_t *buffer, size_t buffer_size);
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead);

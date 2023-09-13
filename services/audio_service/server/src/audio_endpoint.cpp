@@ -36,7 +36,6 @@
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
 
-// DUMP_PROCESS_FILE // define it for dump file
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -177,10 +176,8 @@ private:
 
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
-#ifdef DUMP_PROCESS_FILE
-    FILE *dcp_ = nullptr;
-    FILE *dump_hdi_ = nullptr;
-#endif
+    FILE *dumpDcp_ = nullptr;
+    FILE *dumpHdi_ = nullptr;
 };
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, const DeviceInfo &deviceInfo)
@@ -253,16 +250,8 @@ void AudioEndpointInner::Release()
         AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
     }
-#ifdef DUMP_PROCESS_FILE
-    if (dcp_) {
-        fclose(dcp_);
-        dcp_ = nullptr;
-    }
-    if (dump_hdi_) {
-        fclose(dump_hdi_);
-        dump_hdi_ = nullptr;
-    }
-#endif
+    DumpFileUtil::CloseDumpFile(&dumpDcp_);
+    DumpFileUtil::CloseDumpFile(&dumpHdi_);
 }
 
 AudioEndpointInner::~AudioEndpointInner()
@@ -339,12 +328,7 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
     pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
-#ifdef DUMP_PROCESS_FILE
-    dump_hdi_ = fopen("/data/data/server-capture-hdi.pcm", "a+");
-    if (dump_hdi_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
     return true;
 }
 
@@ -393,13 +377,8 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     updatePosTimeThread_ = std::thread(&AudioEndpointInner::AsyncGetPosTime, this);
     pthread_setname_np(updatePosTimeThread_.native_handle(), "AudioEndpointUpdate");
 
-#ifdef DUMP_PROCESS_FILE
-    dcp_ = fopen("/data/data/server-read-client.pcm", "a+");
-    dump_hdi_ = fopen("/data/data/server-hdi.pcm", "a+");
-    if (dcp_ == nullptr || dump_hdi_ == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_HDI_FILENAME, &dumpHdi_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_ENDPOINT_DCP_FILENAME, &dumpDcp_);
     return true;
 }
 
@@ -923,11 +902,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
-#ifdef DUMP_PROCESS_FILE
-            if (dcp_ != nullptr) {
-                fwrite(static_cast<void *>(streamData.bufferDesc.buffer), 1, streamData.bufferDesc.bufLength, dcp_);
-            }
-#endif
+            DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
+                streamData.bufferDesc.bufLength);
         }
     }
 }
@@ -960,11 +936,8 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
         ProcessData(audioDataList, dstStreamData);
     }
 
-#ifdef DUMP_PROCESS_FILE
-    if (dump_hdi_ != nullptr) {
-        fwrite(static_cast<void *>(dstStreamData.bufferDesc.buffer), 1, dstStreamData.bufferDesc.bufLength, dump_hdi_);
-    }
-#endif
+    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
+        dstStreamData.bufferDesc.bufLength);
     return true;
 }
 
@@ -1256,11 +1229,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     BufferDesc readBuf;
     int32_t ret = dstAudioBuffer_->GetReadbuffer(curReadPos, readBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s get read buffer fail, ret %{public}d.", __func__, ret);
-#ifdef DUMP_PROCESS_FILE
-    if (dump_hdi_ != nullptr) {
-        fwrite(static_cast<void *>(readBuf.buffer), 1, readBuf.bufLength, dump_hdi_);
-    }
-#endif
+    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(readBuf.buffer), readBuf.bufLength);
 
     WriteToProcessBuffers(readBuf);
     ret = memset_s(readBuf.buffer, readBuf.bufLength, 0, readBuf.bufLength);

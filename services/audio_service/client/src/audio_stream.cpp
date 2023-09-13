@@ -396,7 +396,7 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
     return readLen;
 }
 
-size_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
+int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioStream::Write");
     if (renderMode_ == RENDER_MODE_CALLBACK) {

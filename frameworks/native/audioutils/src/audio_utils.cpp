@@ -395,7 +395,12 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
         return;
     }
     if (para == DUMP_SERVER_PARA) {
-        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
+        if (fileName == DUMP_BLUETOOTH_RENDER_SINK_FILENAME || fileName == DUMP_RENDER_SINK_FILENAME ||
+            fileName == DUMP_CAPTURER_SOURCE_FILENAME) {
+            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
+            return;
+        }
+        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
     } else {
         *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_APP);
         if (*file == nullptr) {

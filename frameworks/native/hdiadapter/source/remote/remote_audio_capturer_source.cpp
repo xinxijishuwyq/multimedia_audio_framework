@@ -21,6 +21,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
 
@@ -28,9 +29,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-#ifdef DEBUG_CAPTURE_DUMP
-const char *g_audioOutTestFilePath = "/data/local/tmp/remote_audio_capture.pcm";
-#endif // DEBUG_CAPTURE_DUMP
 
 class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
@@ -88,10 +86,7 @@ private:
     IAudioSourceCallback* paramCb_ = nullptr;
     struct AudioCapture *audioCapture_ = nullptr;
     struct AudioPort audioPort_;
-
-#ifdef DEBUG_CAPTURE_DUMP
-    FILE *pfd;
-#endif // DEBUG_CAPTURE_DUMP
+    FILE *dumpFile_ = nullptr;
 };
 
 std::map<std::string, RemoteAudioCapturerSource *> allRemoteSources;
@@ -144,12 +139,7 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     audioManager_ = nullptr;
 
     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
-#ifdef DEBUG_CAPTURE_DUMP
-    if (pfd != nullptr) {
-        fclose(pfd);
-        pfd = nullptr;
-    }
-#endif // DEBUG_CAPTURE_DUMP
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("Clear capture end.");
 }
 
@@ -194,12 +184,6 @@ int32_t RemoteAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
 
     capturerInited_.store(true);
-#ifdef DEBUG_CAPTURE_DUMP
-    pfd = fopen(g_audioOutTestFilePath, "rb");
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // DEBUG_CAPTURE_DUMP
     AUDIO_DEBUG_LOG("RemoteAudioCapturerSource: Init end.");
     return SUCCESS;
 }
@@ -250,16 +234,7 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
     int32_t ret = audioCapture_->CaptureFrame(audioCapture_, frame, requestBytes, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_READ_FAILED, "Capture frame fail, ret %{public}x.", ret);
 
-#ifdef DEBUG_CAPTURE_DUMP
-    if (feof(pfd)) {
-        AUDIO_INFO_LOG("End of the file reached, start reading from beginning");
-        rewind(pfd);
-    }
-    size_t writeResult = fread(frame, 1, requestBytes, pfd);
-    if (writeResult != requestBytes) {
-        AUDIO_ERR_LOG("Failed to read the file.");
-    }
-#endif // DEBUG_CAPTURE_DUMP
+    DumpFileUtil::WriteDumpFile(dumpFile_, frame, requestBytes);
 
     return SUCCESS;
 }
@@ -267,6 +242,7 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
 int32_t RemoteAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource :Start enter.");
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
     if (!isCapturerCreated_.load()) {
         CHECK_AND_RETURN_RET_LOG(CreateCapture(audioPort_) == SUCCESS, ERR_NOT_STARTED,
             "Create capture fail, audio port %{public}d", audioPort_.portId);

@@ -388,7 +388,7 @@ int32_t AudioContainerStreamBase::Read(uint8_t &buffer, size_t userSize, bool is
     return readLen;
 }
 
-size_t AudioContainerStreamBase::Write(uint8_t *buffer, size_t buffer_size)
+int32_t AudioContainerStreamBase::Write(uint8_t *buffer, size_t buffer_size)
 {
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("AudioContainerStreamBase::Write not supported. RenderMode is callback");
