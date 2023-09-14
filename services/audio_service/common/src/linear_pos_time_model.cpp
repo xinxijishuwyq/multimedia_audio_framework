@@ -83,7 +83,7 @@ bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
 bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     if (IsReasonable(frame, nanoTime)) {
-        AUDIO_INFO_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
+        AUDIO_DEBUG_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
         stampFrame_ = frame;
         stampNanoTime_ = nanoTime;
         return true;

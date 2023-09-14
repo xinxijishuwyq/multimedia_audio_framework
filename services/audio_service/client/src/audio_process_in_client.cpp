@@ -122,6 +122,7 @@ private:
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
+    static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t MAX_WRITE_COST_DURATION_NANO = 5000000; // 5ms
     static constexpr int64_t MAX_READ_COST_DURATION_NANO = 5000000; // 5ms
     static constexpr int64_t WRITE_BEFORE_DURATION_NANO = 2000000; // 2ms
@@ -870,7 +871,13 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
         return;
     }
 
-    cb->OnHandleData(spanSizeInByte_);
+    int64_t stamp = ClockTime::GetCurNano();
+    cb->OnHandleData(clientSpanSizeInByte_);
+    stamp = ClockTime::GetCurNano() - stamp;
+    if (stamp > THREE_MILLISECOND_DURATION) {
+        AUDIO_WARNING_LOG("Client handle callback too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
+        return;
+    }
 }
 
 void AudioProcessInClientInner::UpdateHandleInfo()
@@ -1013,8 +1020,9 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
             continue;
         }
         int64_t curTime = ClockTime::GetCurNano();
-        if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("%{public}s wake up too late.", __func__);
+        int64_t wakeupCost = curTime - wakeUpTime;
+        if (wakeupCost > ONE_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
             wakeUpTime = curTime;
         }
 
@@ -1210,8 +1218,9 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         threadStatus_ = INRUNNING;
         Trace traceLoop("AudioProcessInClient::InRunning");
         curTime = ClockTime::GetCurNano();
-        if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Wake up too late...");
+        int64_t wakeupCost = curTime - wakeUpTime;
+        if (wakeupCost > ONE_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
             wakeUpTime = curTime;
         }
         curWritePos = audioBuffer_->GetCurWriteFrame();
