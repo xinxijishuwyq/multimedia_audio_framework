@@ -52,6 +52,15 @@ struct Index {
         })
 
         Button() {
+          Text("分布式音频").fontSize(30).fontColor(Color.White)
+        }.width('100%')
+        .margin({ bottom: 40 })
+        .height(60)
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/DistributedAudio' })
+        })
+
+        Button() {
           Text("DTMF播放器").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })

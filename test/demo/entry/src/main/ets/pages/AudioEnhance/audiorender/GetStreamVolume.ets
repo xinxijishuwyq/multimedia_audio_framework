@@ -39,9 +39,246 @@ struct GetStreamVolume {
   @State rate: number = 0
   @State minVolume: number = 0
   @State maxVolume: number = 0
+  private streamTypeSelectList = []
+  @State selectedVolumeTypeKey: string = "请选择"
+  @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC"
+  @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
 
-  async onBackPress(){
+
+  private renderInfo = {
+    'RINGTONE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_RINGTONE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_RINGTONE'
+      }
+    },
+    'MEDIA': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
+    },
+    'VOICE_CALL': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_COMMUNICATION'
+      }
+    },
+    'VOICE_ASSISTANT': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_ASSISTANT'
+      }
+    },
+    'ALL': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
+    },
+    'ALARM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ALARM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ALARM'
+      }
+    },
+    'ACCESSIBILITY': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ACCESSIBILITY'
+      }
+    },
+    'ULTRASONIC': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ULTRASONIC'
+      }
+    },
+    '_MUSIC': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MUSIC'
+      }
+    },
+    '_MESSAGE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_MESSAGE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_MESSAGE'
+      }
+    },
+    '_NOTIFICATION': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_NOTIFICATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_NOTIFICATION'
+      }
+    }
+  ,
+    '_SYSTEM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
+      }
+    },
+    '_MOVIE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MOVIE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MOVIE'
+      }
+    },
+    '_UNKNOWN': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_UNKNOWN,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_UNKNOWN'
+      }
+    }
+  ,
+    '_GAME': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_GAME,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_GAME'
+      }
+    },
+    '_AUDIOBOOK': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_AUDIOBOOK,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_AUDIOBOOK'
+      }
+    },
+    '_NAVIGATION': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_NAVIGATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_NAVIGATION'
+      }
+    }
+  ,
+    '_DTMF': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_DTMF,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_DTMF'
+      }
+    },
+    '_ENFORCED_TONE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ENFORCED_TONE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ENFORCED_TONE'
+      }
+    }
+  }
+    async aboutToAppear() {
+      for (let key in audio.AudioVolumeType) {
+        this.streamTypeSelectList.push({ value: key })
+      }
+      this.streamTypeSelectList.push({ value: '_MUSIC' })
+      this.streamTypeSelectList.push({ value: '_MESSAGE' })
+      this.streamTypeSelectList.push({ value: '_NOTIFICATION' })
+      this.streamTypeSelectList.push({ value: '_SYSTEM' })
+      this.streamTypeSelectList.push({ value: '_MOVIE' })
+      this.streamTypeSelectList.push({ value: '_UNKNOWN' })
+      this.streamTypeSelectList.push({ value: '_GAME' })
+      this.streamTypeSelectList.push({ value: '_AUDIOBOOK' })
+      this.streamTypeSelectList.push({ value: '_NAVIGATION' })
+      this.streamTypeSelectList.push({ value: '_DTMF' })
+      this.streamTypeSelectList.push({ value: '_ENFORCED_TONE' })
+    };
+
+
+    async onBackPress(){
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created\n`
       return
@@ -172,6 +409,22 @@ struct GetStreamVolume {
     }
   }
 
+  async releaseRender() {
+    try {
+      this.audioRenderer.release((err) => {
+        if (err) {
+          console.error('Renderer release failed');
+        } else {
+          this.returnMsg += `audioRenderer release success \n`
+        }
+      });
+
+    } catch (err) {
+      this.returnMsg += `audioRenderer release : Error: ${JSON.stringify(err)}\n`
+      return
+    }
+  }
+
   build() {
     Column() {
       Row() {
@@ -183,6 +436,27 @@ struct GetStreamVolume {
 
       Scroll() {
         Column() {
+          Row() {
+            Select(this.streamTypeSelectList)
+              .value(this.selectedVolumeTypeKey)
+              .onSelect(async(index, value) => {
+//                this.selectedVolumeType = audio.AudioVolumeType[value];
+//                this.selectedVolumeTypeKey = value;
+
+                this.audioRendererOptions.rendererInfo = this.renderInfo[this.selectedVolumeTypeKey].main
+                this.selectedStreamUsageKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedStreamUsageKey
+                this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
+
+//                this.getVolumeRange();
+                if(this.audioRenderer!==null){
+                  await this.audioRenderer.release()
+                  this.audioRenderer = null
+                }
+//                this.renderPlay()
+
+              })
+          }
+
           Row() {
             Button() {
               Text("创建AudioRender").fontSize(22).fontColor(Color.Blue)
@@ -211,6 +485,13 @@ struct GetStreamVolume {
             Button() {
               Text("获取stream最大音量Callback").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).onClick(() => this.getMaxStreamVolumeCallback())
+          }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+          Row() {
+            Button() {
+              Text("release").fontSize(22).fontColor(Color.Blue)
+            }.width('100%').height(60).onClick(() => this.releaseRender())
+
           }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
         }.width('100%')
       }.margin({ top: 230 }).width('100%')

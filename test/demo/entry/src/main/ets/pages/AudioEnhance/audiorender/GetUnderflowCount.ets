@@ -34,8 +34,245 @@ struct GetUnderflowCount {
     }
   }
   private audioRenderer = null
+  @State bufferSize: number = 0
+  private writeArr=0
+  private streamTypeSelectList = []
+  @State selectedVolumeTypeKey: string = "请选择"
+  @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC"
+  @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
   @State returnMsg: string = ``
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
+
+  private renderInfo = {
+    'RINGTONE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_RINGTONE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_RINGTONE'
+      }
+    },
+    'MEDIA': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
+    },
+    'VOICE_CALL': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_COMMUNICATION'
+      }
+    },
+    'VOICE_ASSISTANT': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_ASSISTANT'
+      }
+    },
+    'ALL': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+      }
+    },
+    'ALARM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ALARM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ALARM'
+      }
+    },
+    'ACCESSIBILITY': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ACCESSIBILITY'
+      }
+    },
+    'ULTRASONIC': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ULTRASONIC'
+      }
+    },
+    '_MUSIC': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MUSIC'
+      }
+    },
+    '_MESSAGE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_MESSAGE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_MESSAGE'
+      }
+    },
+    '_NOTIFICATION': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_NOTIFICATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_NOTIFICATION'
+      }
+    }
+  ,
+    '_SYSTEM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
+      }
+    },
+    '_MOVIE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MOVIE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MOVIE'
+      }
+    },
+    '_UNKNOWN': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_UNKNOWN,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_UNKNOWN'
+      }
+    }
+  ,
+    '_GAME': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_GAME,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_GAME'
+      }
+    },
+    '_AUDIOBOOK': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_AUDIOBOOK,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_AUDIOBOOK'
+      }
+    },
+    '_NAVIGATION': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_NAVIGATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_NAVIGATION'
+      }
+    }
+  ,
+    '_DTMF': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_DTMF,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_DTMF'
+      }
+    },
+    '_ENFORCED_TONE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ENFORCED_TONE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ENFORCED_TONE'
+      }
+    }
+  }
+  async aboutToAppear() {
+    for (let key in audio.AudioVolumeType) {
+      this.streamTypeSelectList.push({ value: key })
+    }
+    this.streamTypeSelectList.push({ value: '_MUSIC' })
+    this.streamTypeSelectList.push({ value: '_MESSAGE' })
+    this.streamTypeSelectList.push({ value: '_NOTIFICATION' })
+    this.streamTypeSelectList.push({ value: '_SYSTEM' })
+    this.streamTypeSelectList.push({ value: '_MOVIE' })
+    this.streamTypeSelectList.push({ value: '_UNKNOWN' })
+    this.streamTypeSelectList.push({ value: '_GAME' })
+    this.streamTypeSelectList.push({ value: '_AUDIOBOOK' })
+    this.streamTypeSelectList.push({ value: '_NAVIGATION' })
+    this.streamTypeSelectList.push({ value: '_DTMF' })
+    this.streamTypeSelectList.push({ value: '_ENFORCED_TONE' })
+  };
 
   async onBackPress() {
     if (this.audioRenderer == null) {
@@ -51,13 +288,7 @@ struct GetUnderflowCount {
  }
 
   async renderPlay() {
-    try {
-      this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions)
-      this.returnMsg += `audioRenderer create success \n`
-    } catch (err) {
-      this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
-      return
-    }
+
     let bufferSize
     try {
       bufferSize = await this.audioRenderer.getBufferSize()
@@ -103,6 +334,180 @@ struct GetUnderflowCount {
       this.returnMsg += `audioRenderer write : Error: ${JSON.stringify(err)}\n`
     }
   }
+
+  rendererStart() {
+    if (this.audioRenderer == null) {
+      this.returnMsg = `audioRenderer  instance had not created,dont‘t allow to start\n`
+      return
+    }
+    let _this = this
+    this.audioRenderer.start((err) => {
+      if (err) {
+        _this.returnMsg = `audioRenderer  start : Error: ${JSON.stringify(err)}\n`
+      } else {
+        _this.returnMsg = `audioRenderer  start : SUCCESS,state:${_this.audioRenderer.state}\n`
+      }
+    });
+  }
+
+  getBufferSize() {
+    if (this.audioRenderer == null) {
+      this.returnMsg = `audioRenderer  instance had not created,dont‘t allow to getBufferSize`
+      return
+    }
+    let _this = this
+    _this.audioRenderer.getBufferSize((err, bufferSize) => {
+      if (err) {
+        _this.returnMsg = `audioRenderer  getBufferSize : Error: ${JSON.stringify(err)}\n`
+      } else {
+        _this.returnMsg = `audioRenderer getBufferSize : SUCCESS,bufferSize:${bufferSize},state:${_this.audioRenderer.state}\n`
+        _this.bufferSize = bufferSize
+      }
+    });
+  }
+
+
+
+  async writeRenderer() {
+    if(this.writeArr==1){
+      this.returnMsg += `audioRenderer  write already clicked`
+      return
+    }
+    if (this.audioRenderer == null) {
+      this.returnMsg += `audioRenderer  instance had not created,dont‘t allow to read\n`
+      return
+    }
+    if (this.bufferSize == 0) {
+      this.bufferSize = await this.audioRenderer.getBufferSize()
+    }
+
+    this.writeArr=1
+
+    let _this = this
+    let path = this.path
+    try {
+      let stat = await fs.stat(path);
+      let len = stat.size % this.bufferSize == 0 ? Math.floor(stat.size / this.bufferSize) : Math.floor(stat.size / this.bufferSize + 1);
+      let file = await fs.open(path, 0o0);
+      let buf = new ArrayBuffer(this.bufferSize);
+      this.returnMsg = `audioRenderer  write start.......... \n`;
+      for (let i = 0;i < len; i++) {
+        let options = {
+          offset: i * this.bufferSize,
+          length: this.bufferSize
+        }
+        let readsize = await fs.read(file.fd, buf, options);
+        let writeSize = await new Promise((resolve,reject)=>{
+          _this.audioRenderer.write(buf,(err,writeSize)=>{
+            if(err){
+              reject(err)
+            }else{
+              resolve(writeSize)
+
+                if(i == len -1){
+                  _this.sleep(1000);
+                }
+
+
+            }
+          })
+        })
+      }
+      _this.returnMsg += `audioRenderer  write end, state:${_this.audioRenderer.state}\n`
+    } catch (err) {
+      this.returnMsg += `audioRenderer  write : Error: ${JSON.stringify(err)}\n`
+    }
+  }
+
+  async writeRendererOne() {
+
+
+    let _this = this
+    let path = this.path
+    try {
+//      let stat = await fs.stat(path);
+//      let len = stat.size % this.bufferSize == 0 ? Math.floor(stat.size / this.bufferSize) : Math.floor(stat.size / this.bufferSize + 1);
+//      let file = await fs.open(path, 0o0);
+      let buf = new ArrayBuffer(2048);
+      this.returnMsg = `audioRenderer  write start.......... \n`;
+//      for (let i = 0;i < len; i++) {
+//        let options = {
+//          offset: i * this.bufferSize,
+//          length: this.bufferSize
+//        }
+//        let readsize = await fs.read(file.fd, buf, options);
+//        let writeSize = await new Promise((resolve,reject)=>{
+          _this.audioRenderer.write(buf,(err,len)=>{
+            this.returnMsg = `drr audioRenderer  write len: ${len}`
+
+//            if(err){
+//              reject(err)
+//            }else{
+//              resolve(writeSize)
+//
+//              if(i == len -1){
+//                _this.sleep(1000);
+//              }
+//
+//
+//            }
+          })
+//        })
+//      }
+      _this.returnMsg += `audioRenderer  write end, state:${_this.audioRenderer.state}\n`
+    } catch (err) {
+      this.returnMsg += `audioRenderer  write : Error: ${JSON.stringify(err)}\n`
+    }
+  }
+
+  stopRenderer() {
+    if (this.audioRenderer == null) {
+      this.returnMsg = `audioRenderer  instance had not created,dont‘t allow to stop\n`
+      return
+    }
+    let _this = this
+    _this.audioRenderer.stop((err) => {
+      if (err) {
+        _this.returnMsg = `audioRenderer  stop : Error: ${JSON.stringify(err)}\n`
+      } else {
+        _this.returnMsg = `audioRenderer  stop : SUCCESS,state:${_this.audioRenderer.state}\n`
+      }
+    })
+  }
+
+  pauseRenderer() {
+    if (this.audioRenderer == null) {
+      this.returnMsg = `audioRenderer  instance had not created,dont‘t allow to pause\n`
+      return
+    }
+    let _this = this
+    _this.audioRenderer.pause((err) => {
+      if (err) {
+        _this.returnMsg = `audioRenderer pause : Error: ${JSON.stringify(err)}\n`
+      } else {
+        _this.returnMsg = `audioRenderer pause : SUCCESS,state:${_this.audioRenderer.state}\n`
+      }
+    })
+  }
+
+  releaseRenderer() {
+    if (this.audioRenderer== null) {
+      this.returnMsg = `audioRenderer  instance had not created,dont‘t allow to release\n`
+      return
+    }
+    let _this = this
+    _this.audioRenderer.release((err) => {
+      if (err) {
+        _this.returnMsg = `audioRenderer  release : Error: ${JSON.stringify(err)}\n`
+      } else {
+        _this.returnMsg = `audioRenderer release SUCCESS,state:${_this.audioRenderer.state}\n`
+        _this.audioRenderer = null
+        _this.writeArr=0
+      }
+    })
+  }
+
+
 
   getUnderflowCountPromise() {
     if (this.audioRenderer == null) {
@@ -158,15 +563,66 @@ struct GetUnderflowCount {
       Scroll() {
         Column() {
           Row() {
+            Select(this.streamTypeSelectList)
+              .value(this.selectedVolumeTypeKey)
+              .onSelect(async(index, value) => {
+                //                this.selectedVolumeType = audio.AudioVolumeType[value];
+                //                this.selectedVolumeTypeKey = value;
+
+                this.audioRendererOptions.rendererInfo = this.renderInfo[this.selectedVolumeTypeKey].main
+                this.selectedStreamUsageKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedStreamUsageKey
+                this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
+
+                //                this.getVolumeRange();
+                if(this.audioRenderer!==null){
+                  await this.audioRenderer.release()
+                  this.audioRenderer = null
+                }
+                //                this.renderPlay()
+
+              })
+          }
+
+          Row() {
             Button() {
               Text("创建AudioRender").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).onClick(() => this.createRender()).backgroundColor(Color.Pink)
 
             Button() {
-              Text("播放音乐").fontSize(22).fontColor(Color.Blue)
-            }.width('49%').height(60).onClick(() => this.renderPlay()).backgroundColor(Color.Pink)
+              Text("start").fontSize(22).fontColor(Color.Blue)
+            }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => {
+              this.rendererStart()
+            })
+
+//            Button() {
+//              Text("播放音乐").fontSize(22).fontColor(Color.Blue)
+//            }.width('49%').height(60).onClick(() => this.renderPlay()).backgroundColor(Color.Pink)
 
           }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+          Row() {
+            Button() {
+              Text("write").fontSize(22).fontColor(Color.Blue)
+            }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => {
+              this.writeRenderer()
+            })
+
+            Button() {
+              Text("pause").fontSize(22).fontColor(Color.Blue)
+            }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => {
+              this.pauseRenderer()
+            })
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+          Row() {
+            Button() {
+              Text("stop").fontSize(22).fontColor(Color.Blue)
+            }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.stopRenderer())
+
+            Button() {
+              Text("release").fontSize(22).fontColor(Color.Blue)
+            }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.releaseRenderer())
+          }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Row() {
             Button() {
@@ -176,6 +632,12 @@ struct GetUnderflowCount {
             Button() {
               Text("getUnderflowCount promise").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).onClick(() => this.getUnderflowCountPromise())
+          }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+          Row() {
+            Button() {
+              Text("writeRendererOne").fontSize(22).fontColor(Color.Blue)
+            }.width('100%').height(60).onClick(() => this.writeRendererOne())
           }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
         }.width('100%')

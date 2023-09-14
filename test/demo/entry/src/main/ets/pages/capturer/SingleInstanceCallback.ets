@@ -48,6 +48,8 @@ struct SingleInstanceCallback {
   @State bufferSize: number = 0
   @State isBlockingRead: boolean = true
   @State path: string = ""
+  private audioManager = null;
+  private audioStreamManager = null;
 
   aboutToAppear() {
 
@@ -66,6 +68,8 @@ struct SingleInstanceCallback {
     for (let key in audio.SourceType) {
       this.sourceTypeList.push({ value: key })
     }
+    this.audioManager = audio.getAudioManager();
+    this.audioStreamManager = this.audioManager.getStreamManager()
   }
 
   createAudioCapturer() {
@@ -84,6 +88,35 @@ struct SingleInstanceCallback {
 
       }
     })
+  }
+
+  onAudioCapturerChange(){
+    let _this = this
+    _this.returnMsg = `onAudioCapturerChange 注册成功\n`
+    this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
+      _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
+    });
+  }
+
+  offAudioCapturerChange(){
+    let _this = this
+
+    this.audioStreamManager.off('audioCapturerChange');
+    _this.returnMsg = `取消AudioCapturerChange监听 成功\n`
+  }
+
+  getCurrentAudioCapturerInfoArray(){
+    let _this = this
+    this.audioStreamManager.getCurrentAudioCapturerInfoArray(async (err, AudioCapturerChangeInfoArray) => {
+      console.info('getCurrentAudioCapturerInfoArray **** Get Callback Called ****');
+      if (err) {
+        _this.returnMsg =`getCurrentAudioCapturerInfoArray :ERROR: ${err}`;
+      } else {
+        if (AudioCapturerChangeInfoArray != null) {
+          _this.returnMsg =`getCurrentAudioCapturerInfoArray :Success: ${JSON.stringify(AudioCapturerChangeInfoArray)}`;
+        }
+      }
+    });
   }
 
   capturerStart() {
@@ -398,6 +431,29 @@ struct SingleInstanceCallback {
               this.createAudioCapturer()
             })
           }.margin({ top: 10 }).width('100%')
+
+          Row() {
+            Button() {
+              Text("onAudioCapturerChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.onAudioCapturerChange()
+            })
+
+            Button() {
+              Text("offAudioCapturerChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.offAudioCapturerChange()
+            })
+
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+          Row() {
+            Button() {
+              Text("getCurrentAudioCapturerInfoArray CALLBACK").fontSize(22).fontColor(Color.White)
+            }.width('100%').height(60).onClick(() => {
+              this.getCurrentAudioCapturerInfoArray()
+            })
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
           Row() {
             Button() {

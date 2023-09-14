@@ -40,7 +40,7 @@ struct RendererStream {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      content: audio.ContentType.CONTENT_TYPE_SPEECH,
+      content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
       usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
       rendererFlags: 0
     }
@@ -214,6 +214,40 @@ struct RendererStream {
               _this.onReturnMsg = '监听已取消\n'
             })
           }.width('100%')
+
+          Row() {
+            Button() {
+              Text("getAudioEffectInfoArray callback").fontSize(20).fontColor(Color.White).textAlign(TextAlign.Center)
+            }.width('49%').height(60).margin({ top: 10 })
+            .onClick(() => {
+              let _this = this;
+              this.audioStreamManager.getAudioEffectInfoArray(audio.StreamUsage[this.selectedStreamUsageKey], async (err, audioEffectInfoArray) => {
+                if (err) {
+                  _this.returnMsg = '\n收到回调啦\n' +`getAudioEffectInfoArray :ERROR: ${err}`
+                  return;
+                } else {
+                  _this.returnMsg = '\n收到回调啦\n' +`The effect modes are: ${audioEffectInfoArray}`
+                }
+              });
+
+            })
+
+            Button() {
+              Text("getAudioEffectInfoArray promise").fontSize(20).fontColor(Color.White).textAlign(TextAlign.Center)
+            }.width('49%').height(60).margin({ top: 10 })
+            .onClick(() => {
+              let _this = this;
+              this.audioStreamManager.getAudioEffectInfoArray(audio.StreamUsage[this.selectedStreamUsageKey]).then((audioEffectInfoArray) => {
+
+                _this.returnMsg = '\n收到回调啦\n' +`The effect modes are: ${audioEffectInfoArray}`
+              }).catch((err) => {
+                _this.returnMsg = '\n收到回调啦\n' +`getAudioEffectInfoArray :ERROR: ${err}`
+                return;
+              });
+            })
+          }.width('100%')
+
+
 
           Row() {
             Text(this.onReturnMsg).fontSize(14)

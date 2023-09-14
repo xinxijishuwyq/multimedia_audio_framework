@@ -50,49 +50,53 @@ struct AdjustSystemVolumeByStep {
   @State volumeAdjustzUp: number = 0;
   @State volumeAdjustDown: number = 1;
 
+
+
+
+
   private renderInfo = {
     'RINGTONE': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_RINGTONE,
-        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_RINGTONE,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_RINGTONE',
-        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_RINGTONE'
       }
     },
     'MEDIA': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
         selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
       }
     },
     'VOICE_CALL': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
         selectedStreamUsageKey: 'STREAM_USAGE_VOICE_COMMUNICATION'
       }
     },
     'VOICE_ASSISTANT': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_SPEECH,
-        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
-        selectedStreamUsageKey: 'STREAM_USAGE_MEDIA'
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_ASSISTANT'
       }
     },
     'ALL': {
@@ -108,43 +112,181 @@ struct AdjustSystemVolumeByStep {
     },
     'ALARM': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_ALARM,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_MUSIC',
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
         selectedStreamUsageKey: 'STREAM_USAGE_ALARM'
       }
     },
     'ACCESSIBILITY': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_SPEECH,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_SPEECH',
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
         selectedStreamUsageKey: 'STREAM_USAGE_ACCESSIBILITY'
       }
     },
     'ULTRASONIC': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_ULTRASONIC,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ULTRASONIC'
+      }
+    },
+    '_MUSIC': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MUSIC'
+      }
+    },
+    '_MESSAGE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_VOICE_MESSAGE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_VOICE_MESSAGE'
+      }
+    },
+    '_NOTIFICATION': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_NOTIFICATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_NOTIFICATION'
+      }
+    }
+  ,
+    '_SYSTEM': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_ULTRASONIC',
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
         selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
       }
+    },
+    '_MOVIE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_MOVIE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_MOVIE'
+      }
+    },
+    '_UNKNOWN': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_UNKNOWN,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_UNKNOWN'
+      }
     }
+  ,
+    '_GAME': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_GAME,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_GAME'
+      }
+    },
+    '_AUDIOBOOK': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_AUDIOBOOK,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_AUDIOBOOK'
+      }
+    },
+    '_NAVIGATION': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_NAVIGATION,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_NAVIGATION'
+      }
+    }
+  ,
+    '_DTMF': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_DTMF,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_DTMF'
+      }
+    },
+    '_ENFORCED_TONE': {
+      main: {
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ENFORCED_TONE,
+        rendererFlags: 0
+      },
+      info: {
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ENFORCED_TONE'
+      }
+    }
+
   }
+
 
   async aboutToAppear() {
     for (let key in audio.AudioVolumeType) {
       this.volumeTypeSelectList.push({ value: key })
     }
+    this.volumeTypeSelectList.push({ value: '_MUSIC' })
+    this.volumeTypeSelectList.push({ value: '_MESSAGE' })
+    this.volumeTypeSelectList.push({ value: '_NOTIFICATION' })
+    this.volumeTypeSelectList.push({ value: '_SYSTEM' })
+    this.volumeTypeSelectList.push({ value: '_MOVIE' })
+    this.volumeTypeSelectList.push({ value: '_UNKNOWN' })
+    this.volumeTypeSelectList.push({ value: '_GAME' })
+    this.volumeTypeSelectList.push({ value: '_AUDIOBOOK' })
+    this.volumeTypeSelectList.push({ value: '_NAVIGATION' })
+    this.volumeTypeSelectList.push({ value: '_DTMF' })
+    this.volumeTypeSelectList.push({ value: '_ENFORCED_TONE' })
+
     this.audioManager = audio.getAudioManager();
     this.audioVolumeManager = this.audioManager.getVolumeManager();
     let groupid = audio.DEFAULT_VOLUME_GROUP_ID;

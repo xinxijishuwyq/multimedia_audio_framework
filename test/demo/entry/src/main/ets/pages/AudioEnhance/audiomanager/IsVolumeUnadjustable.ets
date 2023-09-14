@@ -1,4 +1,3 @@
-// @ts-nocheck
 /*
 * Copyright (C) 2023 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -131,13 +130,13 @@ struct IsVolumeUnadjustable {
     },
     'ULTRASONIC': {
       main: {
-        content: audio.ContentType.CONTENT_TYPE_ULTRASONIC,
-        usage: audio.StreamUsage.STREAM_USAGE_SYSTEM,
+       content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        usage: audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
         rendererFlags: 0
       },
       info: {
-        selectedContentTypeKey: 'CONTENT_TYPE_ULTRASONIC',
-        selectedStreamUsageKey: 'STREAM_USAGE_SYSTEM'
+        selectedContentTypeKey: 'CONTENT_TYPE_UNKNOWN',
+        selectedStreamUsageKey: 'STREAM_USAGE_ULTRASONIC'
       }
     }
   }

@@ -33,13 +33,15 @@ struct MultiInstance {
       rendererFlags: 0
     }
   }
-  private audioRenderers = [null,null]
-  private paths=[globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav']
+  private audioRenderers = [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
+  private paths=[globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',
+    globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',
+    globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/test_44100_2.wav']
   @State returnMsg: string = `hello`
 
   @State bufferSize: number = 0
-  private arr=[0,1]
-  private writeArr=[0,0]
+  private arr=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+  private writeArr=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   aboutToAppear() {
 
   }
@@ -50,6 +52,55 @@ struct MultiInstance {
     if (this.audioRenderers[1] !== null) {
        await this.audioRenderers[1].release()
     }
+    if (this.audioRenderers[2] !== null) {
+      await this.audioRenderers[2].release()
+    }
+    if (this.audioRenderers[3] !== null) {
+      await this.audioRenderers[3].release()
+    }
+    if (this.audioRenderers[4] !== null) {
+      await this.audioRenderers[4].release()
+    }
+    if (this.audioRenderers[5] !== null) {
+      await this.audioRenderers[5].release()
+    }
+    if (this.audioRenderers[6] !== null) {
+      await this.audioRenderers[6].release()
+    }
+    if (this.audioRenderers[7] !== null) {
+      await this.audioRenderers[7].release()
+    }
+    if (this.audioRenderers[8] !== null) {
+      await this.audioRenderers[8].release()
+    }
+    if (this.audioRenderers[9] !== null) {
+      await this.audioRenderers[9].release()
+    }
+    if (this.audioRenderers[10] !== null) {
+      await this.audioRenderers[10].release()
+    }
+    if (this.audioRenderers[11] !== null) {
+      await this.audioRenderers[11].release()
+    }
+    if (this.audioRenderers[12] !== null) {
+      await this.audioRenderers[12].release()
+    }
+    if (this.audioRenderers[13] !== null) {
+      await this.audioRenderers[13].release()
+    }
+    if (this.audioRenderers[14] !== null) {
+      await this.audioRenderers[14].release()
+    }
+    if (this.audioRenderers[15] !== null) {
+      await this.audioRenderers[15].release()
+    }
+    if (this.audioRenderers[16] !== null) {
+      await this.audioRenderers[16].release()
+    }
+    if (this.audioRenderers[17] !== null) {
+      await this.audioRenderers[17].release()
+    }
+
   }
   createAudioRenderer(index) {
     if (this.audioRenderers[index] !== null) {
@@ -175,6 +226,45 @@ struct MultiInstance {
     })
   }
 
+  setAudioEffectNone(index) {
+    if (this.audioRenderers[index] == null) {
+      this.returnMsg = `audioRenderer ${index} instance had not created,dont‘t allow to set audioEffectNone\n`
+      return
+    }
+    let _this = this
+    _this.audioRenderers[index].setAudioEffectMode(audio.AudioEffectMode.EFFECT_NONE).then(() => {
+      _this.returnMsg = `audioRenderer ${index} setAudioEffectNone : SUCCESS\n`
+    }).catch((err) => {
+      _this.returnMsg = `audioRenderer ${index} setAudioEffectNone : Error: ${JSON.stringify(err)}\n`
+    });
+  }
+  setAudioEffectDefault(index) {
+    if (this.audioRenderers[index] == null) {
+      this.returnMsg = `audioRenderer ${index} instance had not created,dont‘t allow to set audioEffectNone\n`
+      return
+    }
+    let _this = this
+    _this.audioRenderers[index].setAudioEffectMode(audio.AudioEffectMode.EFFECT_DEFAULT).then(() => {
+      _this.returnMsg = `audioRenderer ${index} setAudioEffectDefault : SUCCESS\n`
+    }).catch((err) => {
+      _this.returnMsg = `audioRenderer ${index} setAudioEffectDefault : Error: ${JSON.stringify(err)}\n`
+    });
+  }
+
+  getAudioEffectMode(index) {
+    if (this.audioRenderers[index] == null) {
+      this.returnMsg = `audioRenderer ${index} instance had not created,dont‘t allow to set audioEffectNone\n`
+      return
+    }
+    let _this = this
+    _this.audioRenderers[index].getAudioEffectMode().then((effectmode) => {
+      _this.returnMsg = `audioRenderer ${index} getAudioEffectMode : SUCCESS,AudioEffectMode:${effectmode}\n`
+    }).catch((err) => {
+      _this.returnMsg = `audioRenderer ${index} getAudioEffectMode : Error: ${JSON.stringify(err)}\n`
+    });
+  }
+
+
   releaseRenderer(index) {
     if (this.audioRenderers[index] == null) {
       this.returnMsg = `audioRenderer ${index} instance had not created,dont‘t allow to release\n`
@@ -232,6 +322,19 @@ struct MultiInstance {
                 this.pauseRenderer(item)
               })
             }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+            Row() {
+              Button() {
+                Text("setAudioEffectNone").fontSize(22).fontColor(Color.Blue)
+              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => {
+                this.setAudioEffectNone(item)
+              })
+
+              Button() {
+                Text("setAudioEffectDefault").fontSize(22).fontColor(Color.Blue)
+              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => {
+                this.setAudioEffectDefault(item)
+              })
+            }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
             Row() {
               Button() {
@@ -239,9 +342,19 @@ struct MultiInstance {
               }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.stopRenderer(item))
 
               Button() {
-                Text("release").fontSize(22).fontColor(Color.Blue)
-              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.releaseRenderer(item))
+                Text("getAudioEffectMode").fontSize(22).fontColor(Color.Blue)
+              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.getAudioEffectMode(item))
             }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
+            Row() {
+              Button() {
+                Text("release").fontSize(22).fontColor(Color.Blue)
+              }.width('100%').height(60).backgroundColor(Color.Pink).onClick(() => {
+                this.releaseRenderer(item)
+              })
+
+
+            }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
             Divider().strokeWidth(10).color(Color.Blue)
           }, (item: number) => item.toString())
         }.width('100%')

@@ -42,6 +42,13 @@ struct OnOff {
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
   @State markReachFrame: number = 1000
   @State periodReachFrame: number = 1000
+  private audioManager = null;
+  private audioStreamManager = null;
+
+  aboutToAppear() {
+    this.audioManager = audio.getAudioManager();
+    this.audioStreamManager = this.audioManager.getStreamManager()
+  }
 
   onMarkReach() {
     if (this.audioRenderer == null) {
@@ -100,6 +107,22 @@ struct OnOff {
     _this.audioRenderer.on('stateChange', (state) => {
       _this.onReturnMsg = `audio capturer state is: ${state}`
     });
+  }
+
+  onAudioRendererChange(){
+    let _this = this
+    _this.returnMsg = `onAudioRendererChange 注册成功\n`
+    this.audioStreamManager.on('audioRendererChange',  (AudioRendererChangeInfoArray) => {
+      _this.returnMsg = `AudioRendererChangeInfoArray : ${JSON.stringify(AudioRendererChangeInfoArray)}\n`
+    });
+
+  }
+
+  offAudioRendererChange(){
+    let _this = this
+    this.audioStreamManager.off('audioRendererChange');
+    _this.returnMsg = `off audioRendererChange success \n`
+
   }
 
   createAudioRenderer() {
@@ -325,7 +348,20 @@ struct OnOff {
             })
           }.margin({ top: 30 }).width('100%')
 
-          Text(this.onReturnMsg).fontSize(24)
+          Row() {
+            Button() {
+              Text("onAudioRendererChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.onAudioRendererChange()
+            })
+
+            Button() {
+              Text("offAudioRendererChange").fontSize(22).fontColor(Color.White)
+            }.width('49%').height(60).onClick(() => {
+              this.offAudioRendererChange()
+            })
+
+          }.margin({ top: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
 
           Row() {
