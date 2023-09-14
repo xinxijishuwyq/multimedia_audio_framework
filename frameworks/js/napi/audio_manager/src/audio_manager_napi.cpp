@@ -2327,7 +2327,7 @@ template<typename T> void AudioManagerNapi::RegisterInterruptCallback(napi_env e
         managerNapi->interruptCallbackNapi_ = std::make_shared<AudioManagerInterruptCallbackNapi>(env);
         int32_t ret = managerNapi->audioMngr_->
             SetAudioManagerInterruptCallback(managerNapi->interruptCallbackNapi_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,, "SetAudioManagerInterruptCallback Failed");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetAudioManagerInterruptCallback Failed");
     }
     std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
     std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
@@ -2336,7 +2336,7 @@ template<typename T> void AudioManagerNapi::RegisterInterruptCallback(napi_env e
     AudioInterrupt audioInterrupt;
     JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
     int32_t ret = managerNapi->audioMngr_->RequestAudioFocus(audioInterrupt);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,, "RequestAudioFocus Failed");
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestAudioFocus Failed");
     AUDIO_INFO_LOG("SetAudioManagerInterruptCallback and RequestAudioFocus is successful");
 }
 
@@ -2503,7 +2503,7 @@ template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env
             AUDIO_ERR_LOG("Off AbandonAudioFocus Failed");
         }
         ret = managerNapi->audioMngr_->UnsetAudioManagerInterruptCallback();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,,
+        CHECK_AND_RETURN_LOG(ret == SUCCESS,
             "Off UnsetAudioManagerInterruptCallback Failed");
         if (managerNapi->interruptCallbackNapi_ != nullptr) {
             std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
