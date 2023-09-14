@@ -2270,7 +2270,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     AudioVolumeType volumeType = GetVolumeTypeFromStreamType(client.mStreamType);
     int32_t systemVolumeLevel = AudioSystemManager::GetInstance()->GetVolume(volumeType);
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
-    float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(client.mStreamType,
+    float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType,
         systemVolumeLevel, deviceType);
     float vol = systemVolumeDb * client.mVolumeFactor * client.mPowerVolumeFactor;
 
