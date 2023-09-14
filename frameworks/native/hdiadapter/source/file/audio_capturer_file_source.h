@@ -27,7 +27,7 @@ class AudioCapturerFileSource : public IAudioCapturerSource {
 public:
     AudioCapturerFileSource();
     ~AudioCapturerFileSource();
-    int32_t Init(IAudioSourceAttr &attr) override;
+    int32_t Init(const IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -45,9 +45,9 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetInputRoute(DeviceType deviceType) override;
     uint64_t GetTransactionId() override;
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
+    void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 private:
     bool capturerInited_ = false;
     FILE *filePtr = nullptr;

@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioDeviceManagerFactory& AudioDeviceManagerFactory::GetInstance()
+AudioDeviceManagerFactory &AudioDeviceManagerFactory::GetInstance()
 {
     static AudioDeviceManagerFactory devMgr;
     return devMgr;
@@ -98,7 +98,7 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::InitRemoteAudioM
         return nullptr;
     }
 
-    GetAudioManagerFuncs = (struct AudioManager *(*)())(dlsym(handle_, "GetAudioManagerFuncs"));
+    GetAudioManagerFuncs = reinterpret_cast<struct AudioManager *(*)()>(dlsym(handle_, "GetAudioManagerFuncs"));
     if (GetAudioManagerFuncs == nullptr) {
         AUDIO_ERR_LOG("Link the GetAudioManagerFuncs symbol in daudio client fail.");
         return nullptr;
@@ -125,7 +125,7 @@ int32_t AudioDeviceManagerImpl::GetAllAdapters(AudioAdapterDescriptor **descs, i
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr), ERR_INVALID_HANDLE,
         "GetAllAdapters: Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
     int32_t ret = audioMgr_->GetAllAdapters(audioMgr_, descs, size);
-    if (ret != 0 || size == 0 || descs == nullptr) {
+    if (ret != 0 || size == nullptr || *size == 0 || descs == nullptr || *descs == nullptr) {
         AUDIO_ERR_LOG("Audio manager proxy get all adapters fail, ret %{public}d.", ret);
         return ERR_OPERATION_FAILED;
     }

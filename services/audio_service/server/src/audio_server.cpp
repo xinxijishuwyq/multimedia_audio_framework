@@ -681,8 +681,8 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
     return ret;
 }
 
-void AudioServer::OnAudioSinkParamChange(std::string netWorkId, const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void AudioServer::OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
+    const std::string &condition, const std::string &value)
 {
     std::shared_ptr<AudioParameterCallback> callback = nullptr;
     {
@@ -694,8 +694,8 @@ void AudioServer::OnAudioSinkParamChange(std::string netWorkId, const AudioParam
     callback->OnAudioParameterChange(netWorkId, key, condition, value);
 }
 
-void AudioServer::OnAudioSourceParamChange(std::string netWorkId, const AudioParamKey key,
-    const std::string& condition, const std::string& value)
+void AudioServer::OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
+    const std::string &condition, const std::string &value)
 {
     std::shared_ptr<AudioParameterCallback> callback = nullptr;
     {

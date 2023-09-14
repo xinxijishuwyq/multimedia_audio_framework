@@ -52,7 +52,7 @@ public:
     explicit RemoteFastAudioRendererSinkInner(const std::string &deviceNetworkId);
     ~RemoteFastAudioRendererSinkInner();
 
-    int32_t Init(IAudioSinkAttr attr) override;
+    int32_t Init(const IAudioSinkAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -71,8 +71,8 @@ public:
     int32_t GetLatency(uint32_t *latency) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetOutputRoute(DeviceType deviceType) override;
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
@@ -125,16 +125,18 @@ std::map<std::string, RemoteFastAudioRendererSinkInner *> allRFSinks;
 IMmapAudioRendererSink *RemoteFastAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
-    RemoteFastAudioRendererSinkInner *audioRenderer = nullptr;
-    // check if it is in our map
+    if (deviceNetworkId.empty()) {
+        AUDIO_ERR_LOG("Remote fast render device networkId is null.");
+        return nullptr;
+    }
+
     if (allRFSinks.count(deviceNetworkId)) {
         return allRFSinks[deviceNetworkId];
-    } else {
-        audioRenderer = new(std::nothrow) RemoteFastAudioRendererSinkInner(deviceNetworkId);
-        AUDIO_DEBUG_LOG("new Daudio device sink:[%{public}s]", deviceNetworkId.c_str());
-        allRFSinks[deviceNetworkId] = audioRenderer;
     }
-    CHECK_AND_RETURN_RET_LOG((audioRenderer != nullptr), nullptr, "null audioRenderer!");
+    RemoteFastAudioRendererSinkInner *audioRenderer =
+        new(std::nothrow) RemoteFastAudioRendererSinkInner(deviceNetworkId);
+    AUDIO_DEBUG_LOG("New daudio remote fast render device networkId: [%{public}s].", deviceNetworkId.c_str());
+    allRFSinks[deviceNetworkId] = audioRenderer;
     return audioRenderer;
 }
 
@@ -207,7 +209,7 @@ void RemoteFastAudioRendererSinkInner::DeInit()
     }
 }
 
-int32_t RemoteFastAudioRendererSinkInner::Init(IAudioSinkAttr attr)
+int32_t RemoteFastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init start.");
     attr_ = attr;
@@ -416,14 +418,14 @@ void RemoteFastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &a
     attrs.silenceThreshold = 0;
 }
 
-inline std::string printRemoteAttr(IAudioSinkAttr attr_)
+inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)
 {
     std::stringstream value;
-    value << "adapterName[" << attr_.adapterName << "] openMicSpeaker[" << attr_.openMicSpeaker << "] ";
-    value << "format[" << static_cast<int32_t>(attr_.format) << "] sampleFmt[" << attr_.sampleFmt << "] ";
-    value << "sampleRate[" << attr_.sampleRate << "] channel[" << attr_.channel << "] ";
-    value << "volume[" << attr_.volume << "] filePath[" << attr_.filePath << "] ";
-    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.deviceType << "]";
+    value << "adapterName[" << attr.adapterName << "] openMicSpeaker[" << attr.openMicSpeaker << "] ";
+    value << "format[" << static_cast<int32_t>(attr.format) << "] sampleFmt[" << attr.sampleFmt << "] ";
+    value << "sampleRate[" << attr.sampleRate << "] channel[" << attr.channel << "] ";
+    value << "volume[" << attr.volume << "] filePath[" << attr.filePath << "] ";
+    value << "deviceNetworkId[" << attr.deviceNetworkId << "] device_type[" << attr.deviceType << "]";
     return value.str();
 }
 
@@ -590,7 +592,7 @@ void RemoteFastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallb
 }
 
 void RemoteFastAudioRendererSinkInner::OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
-    const std::string& condition, const std::string& value)
+    const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("Audio param change event, key:%{public}d, condition:%{public}s, value:%{public}s",
         key, condition.c_str(), value.c_str());
@@ -643,13 +645,13 @@ int32_t RemoteFastAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, D
     return SUCCESS;
 }
 
-void RemoteFastAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void RemoteFastAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
 {
     AUDIO_INFO_LOG("SetAudioParameter not support.");
 }
 
-std::string RemoteFastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string RemoteFastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_INFO_LOG("GetAudioParameter not support.");
     return "";

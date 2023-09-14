@@ -72,7 +72,7 @@ private:
     static constexpr uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
     static constexpr int32_t INVALID_ROUT_HANDLE = -1;
     static constexpr int32_t EVENT_DES_SIZE = 60;
-    static constexpr int32_t STATE_CONTENT_DES_SIZE = 60;
+    static constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
     static constexpr int32_t PARAMS_STATE_NUM = 2;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';

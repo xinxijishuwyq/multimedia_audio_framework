@@ -35,7 +35,7 @@ public:
     explicit RemoteAudioCapturerSourceInner(const std::string &deviceNetworkId);
     ~RemoteAudioCapturerSourceInner();
 
-    int32_t Init(IAudioSourceAttr &attr) override;
+    int32_t Init(const IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -53,9 +53,9 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
+    void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -83,25 +83,27 @@ private:
     int32_t routeHandle_ = -1;
     std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
-    IAudioSourceCallback* paramCb_ = nullptr;
+    IAudioSourceCallback *paramCb_ = nullptr;
     struct AudioCapture *audioCapture_ = nullptr;
     struct AudioPort audioPort_;
     FILE *dumpFile_ = nullptr;
 };
 
-std::map<std::string, RemoteAudioCapturerSource *> allRemoteSources;
+std::map<std::string, RemoteAudioCapturerSourceInner *> allRemoteSources;
 RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {
-    RemoteAudioCapturerSource *audioCapturer_ = nullptr;
-    // check if it is in our map
+    AUDIO_INFO_LOG("GetInstance.");
+    if (deviceNetworkId.empty()) {
+        AUDIO_ERR_LOG("Remote capture device networkId is null.");
+        return nullptr;
+    }
+
     if (allRemoteSources.count(deviceNetworkId)) {
         return allRemoteSources[deviceNetworkId];
-    } else {
-        audioCapturer_ = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
-        AUDIO_DEBUG_LOG("new Daudio device source:[%{public}s]", deviceNetworkId.c_str());
-        allRemoteSources[deviceNetworkId] = audioCapturer_;
     }
-    CHECK_AND_RETURN_RET_LOG((audioCapturer_ != nullptr), nullptr, "null audioCapturer!");
+    RemoteAudioCapturerSourceInner *audioCapturer_ = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
+    AUDIO_DEBUG_LOG("New daudio remote capture device networkId: [%{public}s].", deviceNetworkId.c_str());
+    allRemoteSources[deviceNetworkId] = audioCapturer_;
     return audioCapturer_;
 }
 
@@ -157,7 +159,7 @@ void RemoteAudioCapturerSourceInner::DeInit()
     }
 }
 
-int32_t RemoteAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
+int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioCapturerSource: Init start.");
     attr_ = attr;
@@ -501,17 +503,17 @@ uint64_t RemoteAudioCapturerSourceInner::GetTransactionId()
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
-void RemoteAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+void RemoteAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void RemoteAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+void RemoteAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
-void RemoteAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback* callback)
+void RemoteAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_INFO_LOG("register params callback");
     paramCb_ = callback;
@@ -524,7 +526,7 @@ void RemoteAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallb
 }
 
 void RemoteAudioCapturerSourceInner::OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
-    const std::string& condition, const std::string& value)
+    const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("Audio param change event, key:%{public}d, condition:%{public}s, value:%{public}s",
         key, condition.c_str(), value.c_str());

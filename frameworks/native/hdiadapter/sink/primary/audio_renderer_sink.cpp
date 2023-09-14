@@ -58,7 +58,7 @@ const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 120;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
-    int32_t Init(IAudioSinkAttr attr) override;
+    int32_t Init(const IAudioSinkAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -77,8 +77,8 @@ public:
     int32_t GetTransactionId(uint64_t *transactionId) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
 
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
     void SetAudioMonoState(bool audioMono) override;
@@ -150,8 +150,8 @@ AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
     return &audioRenderer;
 }
 
-void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
 {
     AUDIO_INFO_LOG("SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
@@ -166,7 +166,7 @@ void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const st
     }
 }
 
-std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s", key,
         condition.c_str());
@@ -430,7 +430,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     return 0;
 }
 
-int32_t AudioRendererSinkInner::Init(IAudioSinkAttr attr)
+int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information

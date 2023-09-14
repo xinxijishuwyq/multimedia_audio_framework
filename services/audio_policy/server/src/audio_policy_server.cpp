@@ -60,7 +60,7 @@ constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
 constexpr int32_t EVENT_DES_SIZE = 60;
-constexpr int32_t RENDER_STATE_CONTENT_DES_SIZE = 60;
+constexpr int32_t ADAPTER_STATE_CONTENT_DES_SIZE = 60;
 constexpr uid_t UID_ROOT = 0;
 constexpr uid_t UID_MSDP_SA = 6699;
 constexpr uid_t UID_INTELLIGENT_VOICE_SA = 1042;
@@ -2304,9 +2304,9 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
     const std::string& condition, const std::string& value)
 {
     char eventDes[EVENT_DES_SIZE];
-    char contentDes[RENDER_STATE_CONTENT_DES_SIZE];
+    char contentDes[ADAPTER_STATE_CONTENT_DES_SIZE];
     if (sscanf_s(condition.c_str(), "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes,
-        RENDER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
+        ADAPTER_STATE_CONTENT_DES_SIZE) < PARAMS_RENDER_STATE_NUM) {
         AUDIO_ERR_LOG("StateOnChange: Failed parse condition");
         return;
     }
@@ -2314,15 +2314,20 @@ void AudioPolicyServer::RemoteParameterCallback::StateOnChange(const std::string
         "StateOnChange: Event %{public}s is not supported.", eventDes);
 
     std::string devTypeKey = "DEVICE_TYPE=";
-    auto devTypeKeyPos =  std::string(contentDes).find(devTypeKey);
+    std::string contentDesStr = std::string(contentDes);
+    auto devTypeKeyPos =  contentDesStr.find(devTypeKey);
     CHECK_AND_RETURN_LOG(devTypeKeyPos != std::string::npos,
-        "StateOnChange: Not find daudio device type info, contentDes %{public}s.", contentDes);
-    if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_SPK) {
-        server_->mPolicyService.NotifyRemoteRenderState(networkId, condition, value);
-    } else if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_MIC) {
+        "StateOnChange: Not find daudio device type info, contentDes %{public}s.", contentDesStr.c_str());
+    size_t devTypeValPos = devTypeKeyPos + devTypeKey.length();
+    CHECK_AND_RETURN_LOG(devTypeValPos < contentDesStr.length(),
+        "StateOnChange: Not find daudio device type value, contentDes %{public}s.", contentDesStr.c_str());
+
+    if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_SPK) {
+        server_->mPolicyService.NotifyRemoteRenderState(networkId, contentDesStr, value);
+    } else if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_MIC) {
         AUDIO_INFO_LOG("StateOnChange: ERR_EVENT of DAUDIO_DEV_TYPE_MIC.");
     } else {
-        AUDIO_ERR_LOG("StateOnChange: Device type is not supported, contentDes %{public}s.", contentDes);
+        AUDIO_ERR_LOG("StateOnChange: Device type is not supported, contentDes %{public}s.", contentDesStr.c_str());
     }
 }
 

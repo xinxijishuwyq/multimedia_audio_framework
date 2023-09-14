@@ -55,7 +55,7 @@ public:
     explicit RemoteAudioRendererSinkInner(const std::string &deviceNetworkId);
     ~RemoteAudioRendererSinkInner();
 
-    int32_t Init(IAudioSinkAttr attr) override;
+    int32_t Init(const IAudioSinkAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -74,8 +74,8 @@ public:
     int32_t GetLatency(uint32_t *latency) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetOutputRoute(DeviceType deviceType) override;
-    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
@@ -108,6 +108,7 @@ private:
     struct AudioRender *audioRender_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSinkAttr attr_;
+
     FILE *dumpFile_ = nullptr;
 };
 
@@ -126,23 +127,20 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
 }
 
 std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
-RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const char *deviceNetworkId)
+RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
-    RemoteAudioRendererSinkInner *audioRenderer = nullptr;
-    if (deviceNetworkId == nullptr) {
-        return audioRenderer;
+    if (deviceNetworkId.empty()) {
+        AUDIO_ERR_LOG("Remote render device networkId is null.");
+        return nullptr;
     }
-    // check if it is in our map
-    std::string deviceName = deviceNetworkId;
-    if (allsinks.count(deviceName)) {
-        return allsinks[deviceName];
-    } else {
-        audioRenderer = new(std::nothrow) RemoteAudioRendererSinkInner(deviceName);
-        AUDIO_DEBUG_LOG("new Daudio device sink:[%{public}s]", deviceNetworkId);
-        allsinks[deviceName] = audioRenderer;
+
+    if (allsinks.count(deviceNetworkId)) {
+        return allsinks[deviceNetworkId];
     }
-    CHECK_AND_RETURN_RET_LOG((audioRenderer != nullptr), nullptr, "null audioRenderer!");
+    RemoteAudioRendererSinkInner *audioRenderer = new(std::nothrow) RemoteAudioRendererSinkInner(deviceNetworkId);
+    AUDIO_DEBUG_LOG("New daudio remote render device networkId: [%{public}s].", deviceNetworkId.c_str());
+    allsinks[deviceNetworkId] = audioRenderer;
     return audioRenderer;
 }
 
@@ -186,14 +184,14 @@ void RemoteAudioRendererSinkInner::DeInit()
     AUDIO_INFO_LOG("DeInit end.");
 }
 
-inline std::string printRemoteAttr(IAudioSinkAttr attr_)
+inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)
 {
     std::stringstream value;
-    value << "adapterName[" << attr_.adapterName << "] openMicSpeaker[" << attr_.openMicSpeaker << "] ";
-    value << "format[" << static_cast<int32_t>(attr_.format) << "] sampleFmt[" << attr_.sampleFmt << "] ";
-    value << "sampleRate[" << attr_.sampleRate << "] channel[" << attr_.channel << "] ";
-    value << "volume[" << attr_.volume << "] filePath[" << attr_.filePath << "] ";
-    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.deviceType << "]";
+    value << "adapterName[" << attr.adapterName << "] openMicSpeaker[" << attr.openMicSpeaker << "] ";
+    value << "format[" << static_cast<int32_t>(attr.format) << "] sampleFmt[" << attr.sampleFmt << "] ";
+    value << "sampleRate[" << attr.sampleRate << "] channel[" << attr.channel << "] ";
+    value << "volume[" << attr.volume << "] filePath[" << attr.filePath << "] ";
+    value << "deviceNetworkId[" << attr.deviceNetworkId << "] device_type[" << attr.deviceType << "]";
     return value.str();
 }
 
@@ -202,7 +200,7 @@ bool RemoteAudioRendererSinkInner::IsInited()
     return rendererInited_.load();
 }
 
-int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
+int32_t RemoteAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteAudioRendererSink: Init start.");
     attr_ = attr;
@@ -229,6 +227,7 @@ int32_t RemoteAudioRendererSinkInner::Init(IAudioSinkAttr attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
 
     rendererInited_.store(true);
+
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink: Init end.");
     return SUCCESS;
 }
@@ -561,8 +560,8 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devic
     return SUCCESS;
 }
 
-void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
 {
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("SetParameter: key %{public}d, condition: %{public}s, value: %{public}s",
@@ -573,7 +572,7 @@ void RemoteAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, co
 #endif
 }
 
-std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string RemoteAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s", key, condition.c_str());
@@ -598,7 +597,7 @@ void RemoteAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback*
 }
 
 void RemoteAudioRendererSinkInner::OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
-    const std::string& condition, const std::string& value)
+    const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("Audio param change event, key:%{public}d, condition:%{public}s, value:%{public}s",
         key, condition.c_str(), value.c_str());

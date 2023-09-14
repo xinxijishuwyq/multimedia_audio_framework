@@ -30,10 +30,10 @@ namespace OHOS {
 namespace AudioStandard {
 class RemoteFastAudioCapturerSourceInner : public RemoteFastAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
-    explicit RemoteFastAudioCapturerSourceInner(const std::string& deviceNetworkId);
+    explicit RemoteFastAudioCapturerSourceInner(const std::string &deviceNetworkId);
     ~RemoteFastAudioCapturerSourceInner();
 
-    int32_t Init(IAudioSourceAttr &attr) override;
+    int32_t Init(const IAudioSourceAttr &attr) override;
     bool IsInited(void) override;
     void DeInit(void) override;
 
@@ -51,9 +51,9 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
-    void RegisterWakeupCloseCallback(IAudioSourceCallback* callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback) override;
-    void RegisterParameterCallback(IAudioSourceCallback* callback) override;
+    void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
@@ -105,7 +105,7 @@ private:
     uint32_t eachReadFrameSize_ = 0;
     std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
-    IAudioSourceCallback* paramCb_ = nullptr;
+    IAudioSourceCallback *paramCb_ = nullptr;
     struct AudioCapture *audioCapture_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSourceAttr attr_ = {};
@@ -120,23 +120,26 @@ private:
 #endif // DEBUG_DIRECT_USE_HDI
 };
 
-std::map<std::string, RemoteFastAudioCapturerSource *> allRFSources;
-IMmapAudioCapturerSource *RemoteFastAudioCapturerSource::GetInstance(const std::string& deviceNetworkId)
+std::map<std::string, RemoteFastAudioCapturerSourceInner *> allRFSources;
+IMmapAudioCapturerSource *RemoteFastAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {
-    RemoteFastAudioCapturerSource *rfCapturer = nullptr;
-    // check if it is in our map
+    AUDIO_INFO_LOG("GetInstance.");
+    if (deviceNetworkId.empty()) {
+        AUDIO_ERR_LOG("Remote capture device networkId is null.");
+        return nullptr;
+    }
+
     if (allRFSources.count(deviceNetworkId)) {
         return allRFSources[deviceNetworkId];
-    } else {
-        rfCapturer = new(std::nothrow) RemoteFastAudioCapturerSourceInner(deviceNetworkId);
-        AUDIO_DEBUG_LOG("new Daudio device source: [%{public}s]", deviceNetworkId.c_str());
-        allRFSources[deviceNetworkId] = rfCapturer;
     }
-    CHECK_AND_RETURN_RET_LOG((rfCapturer != nullptr), nullptr, "Remote fast audio capturer is null!");
+    RemoteFastAudioCapturerSourceInner *rfCapturer =
+        new(std::nothrow) RemoteFastAudioCapturerSourceInner(deviceNetworkId);
+    AUDIO_DEBUG_LOG("New daudio remote fast capture device networkId: [%{public}s].", deviceNetworkId.c_str());
+    allRFSources[deviceNetworkId] = rfCapturer;
     return rfCapturer;
 }
 
-RemoteFastAudioCapturerSourceInner::RemoteFastAudioCapturerSourceInner(const std::string& deviceNetworkId)
+RemoteFastAudioCapturerSourceInner::RemoteFastAudioCapturerSourceInner(const std::string &deviceNetworkId)
     : deviceNetworkId_(deviceNetworkId)
 {
     AUDIO_INFO_LOG("RemoteFastAudioCapturerSource Constract.");
@@ -212,7 +215,7 @@ void RemoteFastAudioCapturerSourceInner::DeInit()
     }
 }
 
-int32_t RemoteFastAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
+int32_t RemoteFastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("RemoteFastAudioCapturerSource: Init enter.");
     attr_ = attr;
@@ -245,7 +248,7 @@ int32_t RemoteFastAudioCapturerSourceInner::Init(IAudioSourceAttr &attr)
     capturerInited_.store(true);
 
 #ifdef DEBUG_DIRECT_USE_HDI
-    AUDIO_INFO_LOG("Dump audio source attr: [%{public}s]", printRemoteAttr(attr_).c_str());
+    AUDIO_INFO_LOG("Dump audio source attr: [%{public}s]", PrintRemoteAttr(attr_).c_str());
     pfd_ = fopen(audioFilePath, "a+"); // here will not create a file if not exit.
     AUDIO_INFO_LOG("Init dump file [%{public}s]", audioFilePath);
     if (pfd_ == nullptr) {
@@ -360,14 +363,14 @@ AudioFormat RemoteFastAudioCapturerSourceInner::ConverToHdiFormat(AudioSampleFor
     return hdiFormat;
 }
 
-inline std::string printRemoteAttr(IAudioSourceAttr attr_)
+inline std::string PrintRemoteAttr(const IAudioSourceAttr &attr)
 {
     std::stringstream value;
-    value << "adapterName[" << attr_.adapterName << "] openMicSpeaker[" << attr_.open_mic_speaker << "] ";
-    value << "format[" << static_cast<int32_t>(attr_.format) << "] sampleFmt[" << attr_.sampleFmt << "] ";
-    value << "sampleRate[" << attr_.sampleRate << "] channel[" << attr_.channel << "] ";
-    value << "volume[" << attr_.volume << "] filePath[" << attr_.filePath << "] ";
-    value << "deviceNetworkId[" << attr_.deviceNetworkId << "] device_type[" << attr_.deviceType << "]";
+    value << "adapterName[" << attr.adapterName << "] openMicSpeaker[" << attr.open_mic_speaker << "] ";
+    value << "format[" << static_cast<int32_t>(attr.format) << "] sampleFmt[" << attr.sampleFmt << "] ";
+    value << "sampleRate[" << attr.sampleRate << "] channel[" << attr.channel << "] ";
+    value << "volume[" << attr.volume << "] filePath[" << attr.filePath << "] ";
+    value << "deviceNetworkId[" << attr.deviceNetworkId << "] device_type[" << attr.deviceType << "]";
     return value.str();
 }
 
@@ -716,17 +719,17 @@ uint32_t RemoteFastAudioCapturerSourceInner::PcmFormatToBits(AudioSampleFormat f
     }
 }
 
-void RemoteFastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback* callback)
+void RemoteFastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void RemoteFastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback* callback)
+void RemoteFastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
-void RemoteFastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback* callback)
+void RemoteFastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_INFO_LOG("register params callback");
     paramCb_ = callback;
@@ -739,7 +742,7 @@ void RemoteFastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceC
 }
 
 void RemoteFastAudioCapturerSourceInner::OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
-    const std::string& condition, const std::string& value)
+    const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("Audio param change event, key:%{public}d, condition:%{public}s, value:%{public}s",
         key, condition.c_str(), value.c_str());

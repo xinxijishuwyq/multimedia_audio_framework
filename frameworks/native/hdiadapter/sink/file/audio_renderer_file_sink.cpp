@@ -70,14 +70,14 @@ int32_t AudioRendererFileSink::SetOutputRoute(DeviceType deviceType)
     return ERR_NOT_SUPPORTED;
 }
 
-void AudioRendererFileSink::SetAudioParameter(const AudioParamKey key, const std::string& condition,
-    const std::string& value)
+void AudioRendererFileSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
 {
     AUDIO_ERR_LOG("AudioRendererFileSink SetAudioParameter not supported.");
     return;
 }
 
-std::string AudioRendererFileSink::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string AudioRendererFileSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_ERR_LOG("AudioRendererFileSink GetAudioParameter not supported.");
     return "";
@@ -108,7 +108,7 @@ void AudioRendererFileSink::DeInit()
     }
 }
 
-int32_t AudioRendererFileSink::Init(IAudioSinkAttr attr)
+int32_t AudioRendererFileSink::Init(const IAudioSinkAttr &attr)
 {
     filePath_.assign(attr.filePath);
 

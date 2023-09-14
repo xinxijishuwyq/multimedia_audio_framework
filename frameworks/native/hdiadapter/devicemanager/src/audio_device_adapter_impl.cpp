@@ -117,9 +117,9 @@ int32_t AudioDeviceAdapterImpl::HandleStateChangeEvent(AudioDeviceAdapterImpl* d
     }
 
     char eventDes[EVENT_DES_SIZE];
-    char contentDes[STATE_CONTENT_DES_SIZE];
+    char contentDes[ADAPTER_STATE_CONTENT_DES_SIZE];
     CHECK_AND_RETURN_RET_LOG(
-        sscanf_s(condition, "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes, STATE_CONTENT_DES_SIZE)
+        sscanf_s(condition, "%[^;];%s", eventDes, EVENT_DES_SIZE, contentDes, ADAPTER_STATE_CONTENT_DES_SIZE)
         == PARAMS_STATE_NUM, ERR_INVALID_PARAM, "ParamEventCallback: Failed parse condition");
     CHECK_AND_RETURN_RET_LOG(strcmp(eventDes, "ERR_EVENT") == 0, ERR_NOT_SUPPORTED,
         "HandleStateChangeEvent: Event %{public}s is not supported.", eventDes);
@@ -127,32 +127,38 @@ int32_t AudioDeviceAdapterImpl::HandleStateChangeEvent(AudioDeviceAdapterImpl* d
     AUDIO_INFO_LOG("render state invalid, destroy audioRender");
 
     std::string devTypeKey = "DEVICE_TYPE=";
-    size_t devTypeKeyPos =  std::string(contentDes).find(devTypeKey);
+    std::string contentDesStr = std::string(contentDes);
+    size_t devTypeKeyPos =  contentDesStr.find(devTypeKey);
     CHECK_AND_RETURN_RET_LOG(devTypeKeyPos != std::string::npos, ERR_INVALID_PARAM,
-        "HandleStateChangeEvent: Not find daudio device type info, contentDes %{public}s.", contentDes);
+        "HandleStateChangeEvent: Not find daudio device type info, contentDes %{public}s.", contentDesStr.c_str());
+    size_t devTypeValPos = devTypeKeyPos + devTypeKey.length();
+    CHECK_AND_RETURN_RET_LOG(devTypeValPos < contentDesStr.length(), ERR_INVALID_PARAM,
+        "HandleStateChangeEvent: Not find daudio device type value, contentDes %{public}s.", contentDesStr.c_str());
+
     int32_t ret = SUCCESS;
-    if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_SPK) {
+    if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_SPK) {
         AUDIO_INFO_LOG("HandleStateChangeEvent: ERR_EVENT of DAUDIO_DEV_TYPE_SPK.");
         ret = HandleRenderParamEvent(devAdapter, audioKey, condition, value);
-    } else if (contentDes[devTypeKeyPos + devTypeKey.length()] == DAUDIO_DEV_TYPE_MIC) {
+    } else if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_MIC) {
         AUDIO_INFO_LOG("HandleStateChangeEvent: ERR_EVENT of DAUDIO_DEV_TYPE_MIC.");
         ret = HandleCaptureParamEvent(devAdapter, audioKey, condition, value);
     } else {
-        AUDIO_ERR_LOG("HandleStateChangeEvent: Device type is not supported, contentDes %{public}s.", contentDes);
+        AUDIO_ERR_LOG("HandleStateChangeEvent: Device type is not supported, contentDes %{public}s.",
+            contentDesStr.c_str());
         return ERR_NOT_SUPPORTED;
     }
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "Handle state error change event %{public}s fail.", contentDes);
+        "Handle state error change event %{public}s fail.", contentDesStr.c_str());
     return SUCCESS;
 }
 
-int32_t AudioDeviceAdapterImpl::ParamEventCallback(AudioExtParamKey key, const char* condition, const char* value,
-    void* reserved, void* cookie)
+int32_t AudioDeviceAdapterImpl::ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value,
+    void *reserved, void *cookie)
 {
     AUDIO_INFO_LOG("ParamEventCallback: key %{public}d, condition %{public}s, value %{public}s",
         key, condition, value);
-    AudioDeviceAdapterImpl* devAdapter = reinterpret_cast<AudioDeviceAdapterImpl*>(cookie);
+    AudioDeviceAdapterImpl *devAdapter = reinterpret_cast<AudioDeviceAdapterImpl *>(cookie);
     AudioParamKey audioKey = AudioParamKey(key);
     int32_t ret = SUCCESS;
     switch (audioKey) {
@@ -197,8 +203,7 @@ int32_t AudioDeviceAdapterImpl::RegExtraParamObserver()
 }
 
 int32_t AudioDeviceAdapterImpl::CreateRender(const struct AudioDeviceDescriptor *devDesc,
-    const struct AudioSampleAttributes *attr, struct AudioRender **audioRender,
-    IAudioDeviceAdapterCallback *renderCb)
+    const struct AudioSampleAttributes *attr, struct AudioRender **audioRender, IAudioDeviceAdapterCallback *renderCb)
 {
     AUDIO_INFO_LOG("Create render start.");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
@@ -305,7 +310,7 @@ void AudioDeviceAdapterImpl::SetAudioParameter(const AudioParamKey key, const st
 #endif
 }
 
-std::string AudioDeviceAdapterImpl::GetAudioParameter(const AudioParamKey key, const std::string& condition)
+std::string AudioDeviceAdapterImpl::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("GetParameter: key %{public}d, condition: %{public}s", key,
