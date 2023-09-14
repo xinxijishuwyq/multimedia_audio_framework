@@ -448,17 +448,13 @@ static bool GetEndianInfo(pa_sample_format_t format)
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
-    struct Userdata *u = NULL;
-    pa_sample_spec ss;
-    char *threadName = NULL;
-    pa_channel_map map;
     int ret;
 
     pa_assert(m);
     pa_assert(ma);
 
-    ss = m->core->default_sample_spec;
-    map = m->core->default_channel_map;
+    pa_sample_spec ss = m->core->default_sample_spec;
+    pa_channel_map map = m->core->default_channel_map;
 
     /* Override with modargs if provided */
     if (pa_modargs_get_sample_spec_and_channel_map(ma, &ss, &map, PA_CHANNEL_MAP_DEFAULT) < 0) {
@@ -466,7 +462,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         return NULL;
     }
 
-    u = pa_xnew0(struct Userdata, 1);
+    struct Userdata *u = pa_xnew0(struct Userdata, 1);
     pa_assert(u);
 
     u->core = m->core;
@@ -526,8 +522,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    threadName = "read-hdi";
-    if (!(u->thread = pa_thread_new(threadName, ThreadFuncCapturerTimer, u))) {
+    if (!(u->thread = pa_thread_new("read-hdi", ThreadFuncCapturerTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
         goto fail;
     }

@@ -2307,12 +2307,103 @@ napi_status JsObjToAudioInterrupt(const napi_env& env, const napi_value& object,
     return status;
 }
 
+template<typename T> void AudioManagerNapi::RegisterInterruptCallback(napi_env env, const T &args,
+    AudioManagerNapi *managerNapi)
+{
+    napi_valuetype paramArg1 = napi_undefined;
+    napi_typeof(env, args[PARAM1], &paramArg1);
+    napi_valuetype handler = napi_undefined;
+    if (paramArg1 != napi_object) {
+        AUDIO_ERR_LOG("AudioManagerNapi::On Type mismatch for parameter 2");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
+    }
+    if (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 3");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
+    }
+    if (managerNapi->interruptCallbackNapi_ == nullptr) {
+        managerNapi->interruptCallbackNapi_ = std::make_shared<AudioManagerInterruptCallbackNapi>(env);
+        int32_t ret = managerNapi->audioMngr_->
+            SetAudioManagerInterruptCallback(managerNapi->interruptCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetAudioManagerInterruptCallback Failed");
+    }
+    std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
+    std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
+        std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
+    cb->SaveCallbackReference(INTERRUPT_CALLBACK_NAME, args[PARAM2]);
+    AudioInterrupt audioInterrupt;
+    JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
+    int32_t ret = managerNapi->audioMngr_->RequestAudioFocus(audioInterrupt);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestAudioFocus Failed");
+    AUDIO_INFO_LOG("SetAudioManagerInterruptCallback and RequestAudioFocus is successful");
+}
+
+template<typename T> void AudioManagerNapi::RegisterRingerModeCallback(napi_env env, const T &args,
+    AudioManagerNapi *managerNapi)
+{
+    if (managerNapi->ringerModecallbackNapi_ == nullptr) {
+        managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
+        int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
+            managerNapi->cachedClientId_, managerNapi->ringerModecallbackNapi_);
+        if (ret) {
+            AUDIO_ERR_LOG("SetRingerModeCallback Failed %{public}d", ret);
+            AudioCommonNapi::throwError(env, ret);
+            return;
+        } else {
+            AUDIO_INFO_LOG("SetRingerModeCallback Success");
+        }
+    }
+
+    std::shared_ptr<AudioRingerModeCallbackNapi> cb =
+        std::static_pointer_cast<AudioRingerModeCallbackNapi>(managerNapi->ringerModecallbackNapi_);
+    cb->SaveCallbackReference(RINGERMODE_CALLBACK_NAME, args[PARAM1]);
+}
+
+template<typename T> void AudioManagerNapi::RegisterVolumeChangeCallback(napi_env env, const T &args,
+    AudioManagerNapi *managerNapi)
+{
+    if (managerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
+        managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
+        int32_t ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId_,
+            managerNapi->volumeKeyEventCallbackNapi_, API_8);
+        if (ret) {
+            AUDIO_ERR_LOG("RegisterVolumeKeyEventCallback Failed %{public}d", ret);
+            AudioCommonNapi::throwError(env, ret);
+        } else {
+            AUDIO_DEBUG_LOG("RegisterVolumeKeyEventCallback Success");
+        }
+    }
+    std::shared_ptr<AudioVolumeKeyEventNapi> cb =
+        std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
+    cb->SaveCallbackReference(VOLUME_CHANGE_CALLBACK_NAME, args[PARAM1]);
+}
+
+template<typename T> void AudioManagerNapi::RegisterDeviceChangeCallback(napi_env env, const T &args,
+    AudioManagerNapi *managerNapi)
+{
+    if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
+        managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
+    }
+    int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
+        managerNapi->deviceChangeCallbackNapi_);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed %{public}d", ret);
+        AudioCommonNapi::throwError(env, ret);
+        return;
+    }
+    std::shared_ptr<AudioManagerCallbackNapi> cb =
+    std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
+    cb->SaveAudioManagerDeviceChangeCbRef(DeviceFlag::ALL_DEVICES_FLAG, args[PARAM1]);
+}
+
 napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    const size_t minArgCount = 2;
+    constexpr size_t minArgCount = 2;
     size_t argCount = 3;
     napi_value args[minArgCount + 1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
@@ -2333,7 +2424,6 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
 
     AudioManagerNapi *managerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
-    napi_valuetype handler = napi_undefined;
     if (argCount == minArgCount) {
         napi_valuetype handler = napi_undefined;
         if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
@@ -2341,93 +2431,22 @@ napi_value AudioManagerNapi::On(napi_env env, napi_callback_info info)
             AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }
-    } else {
-        napi_valuetype paramArg1 = napi_undefined;
-        napi_typeof(env, args[PARAM1], &paramArg1);
-        if (!callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
-            if (paramArg1 != napi_object) {
-                AUDIO_ERR_LOG("AudioManagerNapi::On Type mismatch for parameter 2");
-                AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-                return undefinedResult;
-            }
-            if (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function) {
-                AUDIO_ERR_LOG("AudioManagerNapi::On type mismatch for parameter 3");
-                AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-                return undefinedResult;
-            }
-
-            if (managerNapi->interruptCallbackNapi_ == nullptr) {
-                managerNapi->interruptCallbackNapi_ = std::make_shared<AudioManagerInterruptCallbackNapi>(env);
-                int32_t ret = managerNapi->audioMngr_->
-                    SetAudioManagerInterruptCallback(managerNapi->interruptCallbackNapi_);
-                CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "SetAudioManagerInterruptCallback Failed");
-            }
-            std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
-            std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
-                std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
-            cb->SaveCallbackReference(callbackName, args[PARAM2]);
-            AudioInterrupt audioInterrupt;
-            status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
-            int32_t ret = managerNapi->audioMngr_->RequestAudioFocus(audioInterrupt);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "RequestAudioFocus Failed");
-            AUDIO_INFO_LOG("SetAudioManagerInterruptCallback and RequestAudioFocus is successful");
-        }
     }
 
-    if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
-        if (managerNapi->ringerModecallbackNapi_ == nullptr) {
-            managerNapi->ringerModecallbackNapi_ = std::make_shared<AudioRingerModeCallbackNapi>(env);
-            int32_t ret = managerNapi->audioMngr_->SetRingerModeCallback(
-                managerNapi->cachedClientId_, managerNapi->ringerModecallbackNapi_);
-            if (ret) {
-                AUDIO_ERR_LOG("SetRingerModeCallback Failed %{public}d", ret);
-                AudioCommonNapi::throwError(env, ret);
-                return undefinedResult;
-            } else {
-                AUDIO_INFO_LOG("SetRingerModeCallback Success");
-            }
-        }
-
-        std::shared_ptr<AudioRingerModeCallbackNapi> cb =
-            std::static_pointer_cast<AudioRingerModeCallbackNapi>(managerNapi->ringerModecallbackNapi_);
-        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+    if (!callbackName.compare(INTERRUPT_CALLBACK_NAME)) {
+        RegisterInterruptCallback(env, args, managerNapi);
+    } else if (!callbackName.compare(RINGERMODE_CALLBACK_NAME)) {
+        RegisterRingerModeCallback(env, args, managerNapi);
     } else if (!callbackName.compare(VOLUME_CHANGE_CALLBACK_NAME)) {
-        if (managerNapi->volumeKeyEventCallbackNapi_ == nullptr) {
-            managerNapi->volumeKeyEventCallbackNapi_ = std::make_shared<AudioVolumeKeyEventNapi>(env);
-            int32_t ret = managerNapi->audioMngr_->RegisterVolumeKeyEventCallback(managerNapi->cachedClientId_,
-                managerNapi->volumeKeyEventCallbackNapi_, API_8);
-            if (ret) {
-                AUDIO_ERR_LOG("RegisterVolumeKeyEventCallback Failed %{public}d", ret);
-                AudioCommonNapi::throwError(env, ret);
-            } else {
-                AUDIO_DEBUG_LOG("RegisterVolumeKeyEventCallback Success");
-            }
-        }
-
-        std::shared_ptr<AudioVolumeKeyEventNapi> cb =
-            std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
-        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+        RegisterVolumeChangeCallback(env, args, managerNapi);
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
-        if (managerNapi->deviceChangeCallbackNapi_ == nullptr) {
-            managerNapi->deviceChangeCallbackNapi_ = std::make_shared<AudioManagerCallbackNapi>(env);
-        }
-        int32_t ret = managerNapi->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
-            managerNapi->deviceChangeCallbackNapi_);
-        if (ret) {
-            AUDIO_ERR_LOG("AudioManagerNapi: SetDeviceChangeCallback Failed %{public}d", ret);
-            AudioCommonNapi::throwError(env, ret);
-            return undefinedResult;
-        }
-
-        std::shared_ptr<AudioManagerCallbackNapi> cb =
-        std::static_pointer_cast<AudioManagerCallbackNapi>(managerNapi->deviceChangeCallbackNapi_);
-        cb->SaveAudioManagerDeviceChangeCbRef(DeviceFlag::ALL_DEVICES_FLAG, args[PARAM1]);
+        RegisterDeviceChangeCallback(env, args, managerNapi);
     }
     return undefinedResult;
 }
 
 void AudioManagerNapi::UnregisterDeviceChangeCallback(napi_env env, napi_value callback,
-    AudioManagerNapi* audioMgrNapi)
+    AudioManagerNapi *audioMgrNapi)
 {
     if (audioMgrNapi->deviceChangeCallbackNapi_ != nullptr) {
         std::shared_ptr<AudioManagerCallbackNapi> cb =
@@ -2448,12 +2467,59 @@ void AudioManagerNapi::UnregisterDeviceChangeCallback(napi_env env, napi_value c
     }
 }
 
+template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env env, const T &args,
+    const size_t argCount, AudioManagerNapi *managerNapi)
+{
+    napi_valuetype paramArg1 = napi_undefined;
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM1], &paramArg1) != napi_ok || paramArg1 != napi_object) {
+        AUDIO_ERR_LOG("Off type mismatch for parameter 2");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
+    }
+    if ((argCount == ARGS_THREE) &&
+        (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function)) {
+        AUDIO_ERR_LOG("Off type mismatch for parameter 3");
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return;
+    }
+    int32_t callbackCount = 0;
+    if (managerNapi->interruptCallbackNapi_ != nullptr) {
+        std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
+            std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
+        if (argCount == ARGS_TWO) {
+            cb->RemoveAllCallbackReferences(INTERRUPT_CALLBACK_NAME);
+        } else if (argCount == ARGS_THREE) {
+            cb->RemoveCallbackReference(INTERRUPT_CALLBACK_NAME, args[PARAM2]);
+        }
+        callbackCount = cb->GetInterruptCallbackListSize();
+    }
+    AUDIO_INFO_LOG("Remove Callback Reference success");
+    if (callbackCount == 0) {
+        AudioInterrupt audioInterrupt;
+        JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
+        int32_t ret = managerNapi->audioMngr_->AbandonAudioFocus(audioInterrupt);
+        if (ret) {
+            AUDIO_ERR_LOG("Off AbandonAudioFocus Failed");
+        }
+        ret = managerNapi->audioMngr_->UnsetAudioManagerInterruptCallback();
+        CHECK_AND_RETURN_LOG(ret == SUCCESS,
+            "Off UnsetAudioManagerInterruptCallback Failed");
+        if (managerNapi->interruptCallbackNapi_ != nullptr) {
+            std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
+            managerNapi->interruptCallbackNapi_.reset();
+            managerNapi->interruptCallbackNapi_ = nullptr;
+        }
+        AUDIO_INFO_LOG("Off Abandon Focus and UnSetAudioInterruptCallback success");
+    }
+}
+
 napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    const size_t minArgCount = 1;
+    constexpr size_t minArgCount = 1;
     size_t argCount = 3;
     napi_value args[minArgCount + 2] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
@@ -2475,49 +2541,8 @@ napi_value AudioManagerNapi::Off(napi_env env, napi_callback_info info)
     AudioManagerNapi *managerNapi = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&managerNapi));
 
-    napi_valuetype handler = napi_undefined;
     if (!callbackName.compare(INTERRUPT_CALLBACK_NAME) && argCount > ARGS_ONE) {
-        napi_valuetype paramArg1 = napi_undefined;
-        if (napi_typeof(env, args[PARAM1], &paramArg1) != napi_ok || paramArg1 != napi_object) {
-            AUDIO_ERR_LOG("Off type mismatch for parameter 2");
-            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-            return undefinedResult;
-        }
-        if ((argCount == ARGS_THREE) &&
-            (napi_typeof(env, args[PARAM2], &handler) != napi_ok || handler != napi_function)) {
-            AUDIO_ERR_LOG("Off type mismatch for parameter 3");
-            AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
-            return undefinedResult;
-        }
-        int32_t callbackCount = 0;
-        if (managerNapi->interruptCallbackNapi_ != nullptr) {
-            std::shared_ptr<AudioManagerInterruptCallbackNapi> cb =
-                std::static_pointer_cast<AudioManagerInterruptCallbackNapi>(managerNapi->interruptCallbackNapi_);
-            if (argCount == ARGS_TWO) {
-                cb->RemoveAllCallbackReferences(callbackName);
-            } else if (argCount == ARGS_THREE) {
-                cb->RemoveCallbackReference(callbackName, args[PARAM2]);
-            }
-            callbackCount = cb->GetInterruptCallbackListSize();
-        }
-        AUDIO_INFO_LOG("Remove Callback Reference success");
-        if (callbackCount == 0) {
-            AudioInterrupt audioInterrupt;
-            status = JsObjToAudioInterrupt(env, args[PARAM1], audioInterrupt);
-            int32_t ret = managerNapi->audioMngr_->AbandonAudioFocus(audioInterrupt);
-            if (ret) {
-                AUDIO_ERR_LOG("Off AbandonAudioFocus Failed");
-            }
-            ret = managerNapi->audioMngr_->UnsetAudioManagerInterruptCallback();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult,
-                "Off UnsetAudioManagerInterruptCallback Failed");
-            if (managerNapi->interruptCallbackNapi_ != nullptr) {
-                std::lock_guard<std::mutex> lock(managerNapi->interruptCallbackNapi_->cbMutex_);
-                managerNapi->interruptCallbackNapi_.reset();
-                managerNapi->interruptCallbackNapi_ = nullptr;
-            }
-            AUDIO_INFO_LOG("Off Abandon Focus and UnSetAudioInterruptCallback success");
-        }
+        UnregisterInterruptCallback(env, args, argCount, managerNapi);
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterDeviceChangeCallback(env, args[PARAM1], managerNapi);
     } else {
