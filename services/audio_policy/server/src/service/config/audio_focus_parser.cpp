@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 #include "audio_focus_parser.h"
+#ifdef USB_CONFIG_POLICY
+#include "config_policy_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,9 +94,14 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
 {
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-
-    if ((doc = xmlReadFile(AUDIO_FOCUS_CONFIG_FILE, nullptr, 0)) == nullptr) {
-        AUDIO_ERR_LOG("error: could not parse file %s", AUDIO_FOCUS_CONFIG_FILE);
+#ifdef USB_CONFIG_POLICY
+    char buf[MAX_PATH_LEN];
+    char *path = GetOneCfgFile(AUDIO_FOCUS_CONFIG_FILE, buf, MAX_PATH_LEN);
+#else
+    const char *path = AUDIO_FOCUS_CONFIG_FILE;
+#endif
+    if (path == nullptr || *path == '\0' || (doc = xmlReadFile(path, nullptr, 0)) == nullptr) {
+        AUDIO_ERR_LOG("error: could not parse audio_interrupt_policy_config.xml");
         LoadDefaultConfig(focusMap);
         return ERROR;
     }

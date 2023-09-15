@@ -25,7 +25,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+#ifdef USB_CONFIG_POLICY
+static constexpr char AUDIO_FOCUS_CONFIG_FILE[] = "etc/audio/audio_interrupt_policy_config.xml";
+#else
 static constexpr char AUDIO_FOCUS_CONFIG_FILE[] = "system/etc/audio/audio_interrupt_policy_config.xml";
+#endif
 
 class AudioFocusParser {
 public:
