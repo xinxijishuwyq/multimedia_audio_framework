@@ -102,6 +102,7 @@ struct Userdata {
     BufferAttr *bufferAttr;
     int32_t processLen;
     size_t processSize;
+    bool isInnerCapturer;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -339,6 +340,34 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     return count;
 }
 
+bool IsInnerCapturer(pa_sink_input *sinkIn, struct Userdata *u)
+{
+    pa_assert(sinkIn);
+    pa_assert(u);
+
+    if (u != NULL && !u->isInnerCapturer) {
+        return false;
+    }
+
+    const char *usageStr = pa_proplist_gets(sinkIn->proplist, "stream.usage");
+    const char *privacyTypeStr = pa_proplist_gets(sinkIn->proplist, "stream.privacyType");
+    int32_t usage = -1;
+    int32_t privacyType = -1;
+    bool usageSupport = false;
+    bool privacySupport = true;
+
+    if (privacyTypeStr != NULL) {
+        pa_atoi(privacyTypeStr, &privacyType);
+        privacySupport = IsPrivacySupportInnerCapturer(privacyType);
+    }
+
+    if (usageStr != NULL) {
+        pa_atoi(usageStr, &usage);
+        usageSupport = IsStreamSupportInnerCapturer(usage);
+    }
+    return privacySupport && usageSupport;
+}
+
 static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxinfo)
 {
     pa_sink_input *sinkIn;
@@ -350,26 +379,9 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     unsigned n = 0;
     void *state = NULL;
     size_t mixlength = *length;
+    struct Userdata *u = si->userdata;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
-        const char *usageStr = pa_proplist_gets(sinkIn->proplist, "stream.usage");
-        const char *privacyTypeStr = pa_proplist_gets(sinkIn->proplist, "stream.privacyType");
-        int32_t usage = -1;
-        int32_t privacyType = -1;
-        bool usageSupport = false;
-        bool privacySupport = true;
-
-        if (privacyTypeStr != NULL) {
-            pa_atoi(privacyTypeStr, &privacyType);
-            privacySupport = IsPrivacySupportInnerCapturer(privacyType);
-        }
-
-        if (usageStr != NULL) {
-            pa_atoi(usageStr, &usage);
-            usageSupport = IsStreamSupportInnerCapturer(usage);
-        }
-        bool innerCapturer = privacySupport && usageSupport;
-        
-        if (innerCapturer) {
+        if (IsInnerCapturer(sinkIn, u)) {
             pa_sink_input_assert_ref(sinkIn);
 
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -450,6 +462,7 @@ static void SinkRenderPrimaryMix(pa_sink *si, size_t length, pa_mix_info *infoIn
 
 static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
+    pa_sink_input *sceneSinkInput;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(chunkIn);
@@ -459,7 +472,14 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     /* We optimize for the case where the order of the inputs has not changed */
 
     pa_mix_info *infoCur = NULL;
+    bool isCaptureSilently = IsCaptureSilently();
     for (int32_t k = 0; k < n; k++) {
+        if (isCaptureSilently) {
+            sceneSinkInput = infoIn[k].userdata;
+            pa_sink_input_assert_ref(sceneSinkInput);
+            pa_sink_input_drop(sceneSinkInput, chunkIn->length);
+        }
+
         infoCur = infoIn + k;
         if (infoCur) {
             if (infoCur->chunk.memblock) {
@@ -468,6 +488,10 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
             }
 
             pa_sink_input_unref(infoCur->userdata);
+
+            if (isCaptureSilently) {
+                infoCur->userdata = NULL;
+            }
         }
     }
 }
@@ -610,11 +634,15 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
+    struct Userdata *u = si->userdata;
+    bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
-        if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
+        if (IsInnerCapturer(sinkIn, u) && isCaptureSilently) {
+            continue;
+        } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
             (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
 
@@ -745,7 +773,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufIn, memsetLen, 0, memsetLen);
     memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
-    int32_t frameLen = (int32_t)(length / bitSize);
+    int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
     int32_t nSinkInput;
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
@@ -1251,6 +1279,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
+    u->isInnerCapturer = false;
     u->isHDISinkStarted = true;
     AUDIO_DEBUG_LOG("Initialization of HDI rendering device[%{public}s] completed", u->adapterName);
     pa_sink_new_data_init(&data);
@@ -1282,6 +1311,27 @@ fail:
     return NULL;
 }
 
+static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output *so, struct Userdata *u)
+{
+    pa_assert(c);
+    pa_assert(u);
+    pa_assert(so);
+
+    int innerCapturerFlag = 0;
+    const char *flag = pa_proplist_gets(so->proplist, "stream.isInnerCapturer");
+    if (flag != NULL) {
+        pa_atoi(flag, &innerCapturerFlag);
+    }
+
+    if (innerCapturerFlag == 1 && so->state == PA_SOURCE_OUTPUT_RUNNING) {
+        u->isInnerCapturer = true;
+    } else {
+        u->isInnerCapturer = false;
+    }
+
+    return PA_HOOK_OK;
+}
+
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
@@ -1295,6 +1345,9 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     pa_assert(u);
     u->core = m->core;
     u->module = m;
+
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_STATE_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)SourceOutputStateChangedCb, u);
 
     pa_memchunk_reset(&u->memchunk);
     u->rtpoll = pa_rtpoll_new();
