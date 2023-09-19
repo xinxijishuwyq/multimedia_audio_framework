@@ -890,6 +890,22 @@ napi_value AudioRoutingManagerNapi::GetPreferredOutputDeviceForRendererInfoSync(
     return result;
 }
 
+static bool isValidSourceType(int32_t intValue)
+{
+    SourceType sourceTypeValue = static_cast<SourceType>(intValue);
+    switch (sourceTypeValue) {
+        case SourceType::SOURCE_TYPE_MIC:
+        case SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SourceType::SOURCE_TYPE_ULTRASONIC:
+        case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SourceType::SOURCE_TYPE_VOICE_RECOGNITION:
+        case SourceType::SOURCE_TYPE_WAKEUP:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static void ParseAudioCapturerInfo(napi_env env, napi_value root, AudioCapturerInfo *capturerInfo)
 {
     napi_value tempValue = nullptr;
@@ -897,7 +913,11 @@ static void ParseAudioCapturerInfo(napi_env env, napi_value root, AudioCapturerI
 
     if (napi_get_named_property(env, root, "source", &tempValue) == napi_ok) {
         napi_get_value_int32(env, tempValue, &intValue);
-        capturerInfo->sourceType = static_cast<SourceType>(intValue);
+        if (isValidSourceType(intValue)) {
+            capturerInfo->sourceType = static_cast<SourceType>(intValue);
+        } else {
+            capturerInfo->sourceType = SourceType::SOURCE_TYPE_INVALID;
+        }
     }
 
     if (napi_get_named_property(env, root, "capturerFlags", &tempValue) == napi_ok) {
@@ -982,8 +1002,13 @@ napi_value AudioRoutingManagerNapi::GetPreferredInputDeviceForCapturerInfo(napi_
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRoutingManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
-                        context->captureInfo, context->inputDeviceDescriptors);
+                    if (context->captureInfo.sourceType == SourceType::SOURCE_TYPE_INVALID) {
+                        context->status = NAPI_ERR_INVALID_PARAM;
+                    } else {
+                        context->status =
+                            context->objectInfo->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
+                            context->captureInfo, context->inputDeviceDescriptors);
+                    }
                 }
             }, GetPreferredInputDeviceForCapturerInfoAsyncCallbackComplete,
             static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1030,6 +1055,10 @@ napi_value AudioRoutingManagerNapi::GetPreferredInputDeviceForCapturerInfoSync(n
 
     AudioCapturerInfo capturerInfo;
     ParseAudioCapturerInfo(env, argv[PARAM0], &capturerInfo);
+    if (capturerInfo.sourceType == SourceType::SOURCE_TYPE_INVALID) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
 
     vector<sptr<AudioDeviceDescriptor>> outDeviceDescriptors;
     audioRoutingManagerNapi->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
@@ -1383,6 +1412,10 @@ void AudioRoutingManagerNapi::RegisterPreferredInputDeviceChangeCallback(napi_en
 
     AudioCapturerInfo captureInfo;
     ParseAudioCapturerInfo(env, args[PARAM1], &captureInfo);
+    if (captureInfo.sourceType == SourceType::SOURCE_TYPE_INVALID) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return;
+    }
 
     if (!routingMgrNapi->preferredInputDeviceCallbackNapi_) {
         routingMgrNapi->preferredInputDeviceCallbackNapi_ =
