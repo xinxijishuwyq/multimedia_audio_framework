@@ -22,6 +22,7 @@
 #include "audio_manager.h"
 
 #include "audio_info.h"
+#include "audio_utils.h"
 #include "i_audio_device_adapter.h"
 
 namespace OHOS {
@@ -64,11 +65,6 @@ private:
     size_t GetCapturePortsNum();
 
 private:
-#ifdef FEATURE_DISTRIBUTE_AUDIO
-    static constexpr uint32_t PARAM_VALUE_LENTH = 20;
-#else
-    static constexpr uint32_t PARAM_VALUE_LENTH = 10;
-#endif
     static constexpr uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
     static constexpr int32_t INVALID_ROUT_HANDLE = -1;
     static constexpr int32_t EVENT_DES_SIZE = 60;

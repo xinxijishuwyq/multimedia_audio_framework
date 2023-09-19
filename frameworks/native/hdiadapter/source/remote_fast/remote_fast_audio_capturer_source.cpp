@@ -88,9 +88,6 @@ private:
     static constexpr  uint32_t PCM_16_BIT = 16;
     static constexpr  uint32_t PCM_24_BIT = 24;
     static constexpr  uint32_t PCM_32_BIT = 32;
-#ifdef FEATURE_DISTRIBUTE_AUDIO
-    static constexpr uint32_t PARAM_VALUE_LENTH = 20;
-#endif
 
     std::atomic<bool> micMuteState_ = false;
     std::atomic<bool> capturerInited_ = false;
