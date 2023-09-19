@@ -664,7 +664,7 @@ int32_t AudioCapturerPrivate::GetCurrentInputDevices(DeviceInfo &deviceInfo) con
     }
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == sessionId) {
+        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
             deviceInfo = (*it)->inputDeviceInfo;
         }
     }
@@ -688,7 +688,7 @@ int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeIn
     }
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == sessionId) {
+        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
             changeInfo = *(*it);
         }
     }
@@ -884,7 +884,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
     }
 
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
-        if ((*it)->sessionId == sessionId) {
+        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
             capturerChangeInfo = *(*it);
             found = true;
         }
