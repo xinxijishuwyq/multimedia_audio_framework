@@ -96,7 +96,7 @@ public:
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
     void SetStreamTrackerState(bool trackerRegisteredState) override;
     void GetSwitchInfo(SwitchInfo& info) override;
-    void SetChannelBlendMode(ChannelBlendMode blendMode) override;
+    int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
 
 private:
     enum {
@@ -137,8 +137,7 @@ private:
     std::condition_variable bufferQueueCV_;
     AudioStreamParams streamParams_;
     AudioBlend audioBlend_;
-    FILE *pfd_ = nullptr;
-
+    FILE *pfd_;
     bool streamTrackerRegistered_ = false;
 };
 } // namespace AudioStandard

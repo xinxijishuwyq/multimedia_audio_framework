@@ -19,6 +19,7 @@
 #include <iostream>
 #include <map>
 #include "audio_effect.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,6 +186,15 @@ public:
      * @since 9
      */
     bool IsStreamActive(AudioVolumeType volumeType) const;
+
+    /**
+     * @brief Gets sampling rate for hardware output.
+     *
+     * @param AudioDeviceDescriptor Target output device.
+     * @return The sampling rate for output.
+     * @since 11
+     */
+    int32_t GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc);
 };
 
 static const std::map<std::string, AudioEffectMode> effectModeMap = {

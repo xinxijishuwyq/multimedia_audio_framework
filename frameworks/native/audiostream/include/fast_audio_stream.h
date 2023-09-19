@@ -135,7 +135,7 @@ public:
     uint32_t GetRendererSamplingRate() override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
     void SetApplicationCachePath(const std::string cachePath) override;
-    void SetChannelBlendMode(ChannelBlendMode blendMode) override;
+    int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
 
     void SetStreamTrackerState(bool trackerRegisteredState) override;
     void GetSwitchInfo(IAudioStream::SwitchInfo& info) override;

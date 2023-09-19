@@ -122,6 +122,7 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getCurrentInputDevices", GetCurrentInputDevices),
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerChangeInfo", GetCurrentAudioCapturerChangeInfo),
+        DECLARE_NAPI_FUNCTION("getCurrentMicrophones", GetCurrentMicrophones),
         DECLARE_NAPI_GETTER("state", GetState)
     };
 
@@ -190,6 +191,14 @@ static void SetValueBoolean(const napi_env& env, const std::string& fieldStr, co
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
+static void SetValueDouble(const napi_env& env, const std::string& fieldStr, const float floatValue,
+    napi_value &result)
+{
+    napi_value value = nullptr;
+    napi_create_double(env, floatValue, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
 static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const DeviceInfo &deviceInfo)
 {
     SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole), valueParam);
@@ -232,6 +241,29 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, co
     napi_create_int32(env, deviceInfo.audioStreamInfo.encoding, &value);
     napi_set_element(env, encodingTypes, 0, value);
     napi_set_named_property(env, valueParam, "encodingTypes", encodingTypes);
+}
+
+static void SetMicrophoneDescriptors(const napi_env& env, napi_value &valueParam,
+    const sptr<MicrophoneDescriptor> &micDesc)
+{
+    napi_value jsPositionObj = nullptr;
+    napi_value jsOrientationObj = nullptr;
+
+    SetValueInt32(env, "id", micDesc->micId_, valueParam);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(micDesc->deviceType_), valueParam);
+    SetValueInt32(env, "groupId", micDesc->groupId_, valueParam);
+    SetValueInt32(env, "sensitivity", micDesc->sensitivity_, valueParam);
+    napi_create_object(env, &jsPositionObj);
+    SetValueDouble(env, "x", micDesc->position_.x, jsPositionObj);
+    SetValueDouble(env, "y", micDesc->position_.y, jsPositionObj);
+    SetValueDouble(env, "z", micDesc->position_.z, jsPositionObj);
+    napi_set_named_property(env, valueParam, "position", jsPositionObj);
+
+    napi_create_object(env, &jsOrientationObj);
+    SetValueDouble(env, "x", micDesc->orientation_.x, jsOrientationObj);
+    SetValueDouble(env, "y", micDesc->orientation_.y, jsOrientationObj);
+    SetValueDouble(env, "z", micDesc->orientation_.z, jsOrientationObj);
+    napi_set_named_property(env, valueParam, "orientation", jsOrientationObj);
 }
 
 static void SetAudioCapturerChangeInfoDescriptors(const napi_env& env, napi_value &valueParam,
@@ -1025,6 +1057,38 @@ napi_value AudioCapturerNapi::GetCurrentAudioCapturerChangeInfo(napi_env env, na
     napi_value jsResult = nullptr;
     (void)napi_create_object(env, &jsResult);
     SetAudioCapturerChangeInfoDescriptors(env, jsResult, capturerInfo);
+    return jsResult;
+}
+
+napi_value AudioCapturerNapi::GetCurrentMicrophones(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+
+    AudioCapturerNapi *capturerNapi = nullptr;
+    vector<sptr<MicrophoneDescriptor>> micDescs;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&capturerNapi));
+    if (status != napi_ok || capturerNapi == nullptr) {
+        HiLog::Error(LABEL, "Failed to get instance");
+        return nullptr;
+    }
+
+    if (capturerNapi->audioCapturer_ == nullptr) {
+        HiLog::Error(LABEL, "No memory");
+        return nullptr;
+    }
+
+    micDescs = capturerNapi->audioCapturer_->GetCurrentMicrophones();
+
+    napi_value jsResult = nullptr;
+    napi_value valueParam = nullptr;
+    napi_create_array_with_length(env, 1, &jsResult);
+    (void)napi_create_object(env, &valueParam);
+    SetMicrophoneDescriptors(env, valueParam, micDescs[0]);
+    napi_set_element(env, jsResult, 0, valueParam);
+
     return jsResult;
 }
 

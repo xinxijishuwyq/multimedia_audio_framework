@@ -111,7 +111,9 @@ private:
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
-
+    void GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
@@ -203,6 +205,9 @@ private:
         &AudioPolicyManagerStub::GetSystemVolumeInDbInternal,
         &AudioPolicyManagerStub::QueryEffectSceneModeInternal,
         &AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal,
+        &AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal,
+        &AudioPolicyManagerStub::GetAudioCapturerMicrophoneDescriptorsInternal,
+        &AudioPolicyManagerStub::GetAvailableMicrophonesInternal,
     };
 };
 } // namespace AudioStandard

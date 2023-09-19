@@ -116,6 +116,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_system_manager.cpp",
     "client/src/fast_audio_stream.cpp",
     "client/src/i_audio_stream.cpp",
+    "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
   ]
 

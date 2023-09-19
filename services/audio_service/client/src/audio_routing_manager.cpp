@@ -107,5 +107,9 @@ int32_t AudioRoutingManager::UnsetPreferredInputDeviceChangeCallback()
     return AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback();
 }
 
+vector<sptr<MicrophoneDescriptor>> AudioRoutingManager::GetAvailableMicrophones()
+{
+    return AudioPolicyManager::GetInstance().GetAvailableMicrophones();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -87,6 +87,7 @@ private:
     static void AsyncGetEffectInfoArray(napi_env env, void *data);
     static void GetEffectInfoArrayResult(napi_env env, std::unique_ptr<AudioStreamMgrAsyncContext> &asyncContext,
         napi_status status, napi_value &result);
+    static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
     AudioSystemManager *audioMngr_;

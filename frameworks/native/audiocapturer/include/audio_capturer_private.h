@@ -74,6 +74,8 @@ public:
     int32_t RegisterAudioCapturerEventListener() override;
     int32_t UnregisterAudioCapturerEventListener() override;
     bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
+    std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
+
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
     AudioStreamType audioStreamType_;

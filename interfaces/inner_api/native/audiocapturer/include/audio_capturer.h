@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "audio_info.h"
+#include "microphone_descriptor.h"
 #include "timestamp.h"
 
 namespace OHOS {
@@ -618,6 +619,14 @@ public:
      * @since 11
      */
     virtual int32_t GetCurrentCapturerChangeInfo(AudioCapturerChangeInfo &changeInfo) const = 0;
+
+    /**
+     * @brief Obtains microphones this capturer used currently.
+     *
+     * @return Returns Microphone descriptors.
+     * @since 11
+     */
+    virtual std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const = 0;
 
     virtual ~AudioCapturer();
 
