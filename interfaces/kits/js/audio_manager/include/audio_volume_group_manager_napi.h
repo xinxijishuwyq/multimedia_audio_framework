@@ -67,6 +67,9 @@ private:
     static napi_value AdjustSystemVolumeByStep(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDb(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDbSync(napi_env env, napi_callback_info info);
+
+    static void AsyncSetVolume(napi_env env, void *data);
+
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
     int32_t cachedClientId_ = -1;
 
