@@ -54,6 +54,7 @@ void AudioBlend::Process(uint8_t *buffer, size_t bufferSize)
             break;
         case AudioSampleFormat::SAMPLE_S32LE:
             ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer), bufferSize);
+            break;
         default:
             break;
     }
@@ -104,6 +105,7 @@ void AudioBlend::ProcessBlendLRModeWithFormat(T *buffer, size_t count, AudioChan
         switch (channel) {
             case CHANNEL_8:
                 BlendLR(buffer[CHANNEL_SEVEN], buffer[CHANNEL_EIGHT]);
+                [[fallthrough]];
             case CHANNEL_7:
             case CHANNEL_6:
                 BlendLR(buffer[CHANNEL_FIVE], buffer[CHANNEL_SIX]);
@@ -112,6 +114,7 @@ void AudioBlend::ProcessBlendLRModeWithFormat(T *buffer, size_t count, AudioChan
             case CHANNEL_5:
             case CHANNEL_4:
                 BlendLR(buffer[CHANNEL_THREE], buffer[CHANNEL_FOUR]);
+                [[fallthrough]];
             case CHANNEL_3:
             case STEREO:
                 BlendLR(buffer[CHANNEL_ONE], buffer[CHANNEL_TWO]);
@@ -130,6 +133,7 @@ void AudioBlend::ProcessAllLeftModeWithFormat(T *buffer, size_t count, AudioChan
         switch (channel) {
             case CHANNEL_8:
                 buffer[CHANNEL_EIGHT] = buffer[CHANNEL_SEVEN];
+                [[fallthrough]];
             case CHANNEL_7:
             case CHANNEL_6:
                 buffer[CHANNEL_SIX] = buffer[CHANNEL_FIVE];
@@ -138,6 +142,7 @@ void AudioBlend::ProcessAllLeftModeWithFormat(T *buffer, size_t count, AudioChan
             case CHANNEL_5:
             case CHANNEL_4:
                 buffer[CHANNEL_FOUR] = buffer[CHANNEL_THREE];
+                [[fallthrough]];
             case CHANNEL_3:
             case STEREO:
                 buffer[CHANNEL_TWO] = buffer[CHANNEL_ONE];
@@ -156,6 +161,7 @@ void AudioBlend::ProcessAllRightModeWithFormat(T *buffer, size_t count, AudioCha
         switch (channel) {
             case CHANNEL_8:
                 buffer[CHANNEL_SEVEN] = buffer[CHANNEL_EIGHT];
+                [[fallthrough]];
             case CHANNEL_7:
             case CHANNEL_6:
                 buffer[CHANNEL_FIVE] = buffer[CHANNEL_SIX];
@@ -164,6 +170,7 @@ void AudioBlend::ProcessAllRightModeWithFormat(T *buffer, size_t count, AudioCha
             case CHANNEL_5:
             case CHANNEL_4:
                 buffer[CHANNEL_THREE] = buffer[CHANNEL_FOUR];
+                [[fallthrough]];
             case CHANNEL_3:
             case STEREO:
                 buffer[CHANNEL_ONE] = buffer[CHANNEL_TWO];
