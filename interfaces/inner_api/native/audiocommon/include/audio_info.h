@@ -334,6 +334,14 @@ inline const std::unordered_map<const AudioScene, const int> audioScenePriority 
     {AUDIO_SCENE_DEFAULT, 1}
 };
 
+inline int GetAudioScenePriority(const AudioScene audioScene)
+{
+    if (audioScenePriority.count(audioScene) == 0) {
+        return audioScenePriority.at(AUDIO_SCENE_DEFAULT);
+    }
+    return audioScenePriority.at(audioScene);
+}
+
 struct CaptureFilterOptions {
     std::vector<StreamUsage> usages;
 };
