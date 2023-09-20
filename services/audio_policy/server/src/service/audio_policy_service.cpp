@@ -656,6 +656,8 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
     auto isPresent = [&deviceType, &networkId] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == deviceType && descriptor->networkId_ == networkId;
     };
+
+    std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
     connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
         connectedDevices_.end());
     UpdateDisplayName(remoteDeviceDescriptor);
@@ -1872,6 +1874,8 @@ void AudioPolicyService::SetEarpieceState()
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
             return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
         };
+
+        std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
         auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
         if (itr != connectedDevices_.end()) {
             connectedDevices_.erase(itr);
