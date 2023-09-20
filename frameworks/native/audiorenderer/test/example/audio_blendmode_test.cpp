@@ -89,13 +89,11 @@ static int32_t StartRendererPlayback(char *inputPath, int mode)
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
 
-    size_t bytesRead = 0;
-    int32_t bytesWritten = 0;
     size_t minBytes = 4;
 
     while (!feof(wavFile)) {
-        bytesRead = fread(buffer, 1, bufferLen, wavFile);
-        bytesWritten = 0;
+        size_t bytesRead = fread(buffer, 1, bufferLen, wavFile);
+        int32_t bytesWritten = 0;
         while ((static_cast<size_t>(bytesWritten) < bytesRead) &&
             ((static_cast<size_t>(bytesRead) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),

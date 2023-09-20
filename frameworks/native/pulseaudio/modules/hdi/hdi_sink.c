@@ -462,7 +462,6 @@ static void SinkRenderPrimaryMix(pa_sink *si, size_t length, pa_mix_info *infoIn
 
 static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
-    pa_sink_input *sceneSinkInput;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(chunkIn);
@@ -473,6 +472,7 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
 
     pa_mix_info *infoCur = NULL;
     bool isCaptureSilently = IsCaptureSilently();
+    pa_sink_input *sceneSinkInput;
     for (int32_t k = 0; k < n; k++) {
         if (isCaptureSilently) {
             sceneSinkInput = infoIn[k].userdata;
@@ -579,7 +579,6 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 
 static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
-    pa_sink_input *sceneSinkInput;
     unsigned nUnreffed = 0;
 
     pa_sink_assert_ref(si);
@@ -590,6 +589,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *infoCur = NULL;
+    pa_sink_input *sceneSinkInput;
     for (int32_t k = 0; k < n; k++) {
         sceneSinkInput = infoIn[k].userdata;
         pa_sink_input_assert_ref(sceneSinkInput);
@@ -717,7 +717,6 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
 {
     pa_memchunk chunk;
     size_t l, d;
-    int32_t nSinkInput;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -738,6 +737,8 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
 
     l = chunkIn->length;
     d = 0;
+
+    int32_t nSinkInput;
     while (l > 0) {
         chunk = *chunkIn;
         chunk.index += d;
