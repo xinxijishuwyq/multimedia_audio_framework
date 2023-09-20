@@ -913,6 +913,11 @@ AudioRingerMode AudioPolicyServer::GetRingerMode()
 
 int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
 {
+    if (audioScene <= AUDIO_SCENE_INVALID || audioScene >= AUDIO_SCENE_MAX) {
+        AUDIO_ERR_LOG("SetAudioScene: param is invalid");
+        return ERR_INVALID_PARAM;
+    }
+
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetAudioScene: No system permission");
         return ERR_PERMISSION_DENIED;

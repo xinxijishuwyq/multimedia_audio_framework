@@ -290,7 +290,11 @@ struct MicStateChangeEvent {
     bool mute;
 };
 
-enum AudioScene {
+enum AudioScene : int32_t {
+    /**
+     * Invalid
+     */
+    AUDIO_SCENE_INVALID = -1,
     /**
      * Default audio scene
      */
@@ -309,6 +313,10 @@ enum AudioScene {
      * Voice chat audio scene
      */
     AUDIO_SCENE_PHONE_CHAT,
+    /**
+     * Max
+     */
+    AUDIO_SCENE_MAX,
 };
 
 inline AudioScene GetAudioSceneFromStreamType(AudioStreamType streamType, StreamUsage streamUsage)
