@@ -1001,14 +1001,14 @@ napi_value AudioRoutingManagerNapi::GetPreferredInputDeviceForCapturerInfo(napi_
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRoutingManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    if (context->captureInfo.sourceType == SourceType::SOURCE_TYPE_INVALID) {
+                if (context->status != SUCCESS) {
+                    return;
+                }
+                if (context->captureInfo.sourceType == SourceType::SOURCE_TYPE_INVALID) {
                         context->status = NAPI_ERR_INVALID_PARAM;
-                    } else {
-                        context->status =
-                            context->objectInfo->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
-                            context->captureInfo, context->inputDeviceDescriptors);
-                    }
+                } else {
+                    context->status = context->objectInfo->audioRoutingMngr_->GetPreferredInputDeviceForCapturerInfo(
+                        context->captureInfo, context->inputDeviceDescriptors);
                 }
             }, GetPreferredInputDeviceForCapturerInfoAsyncCallbackComplete,
             static_cast<void*>(asyncContext.get()), &asyncContext->work);
