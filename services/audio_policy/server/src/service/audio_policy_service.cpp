@@ -1832,6 +1832,11 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     AUDIO_DEBUG_LOG("Current active device updates: %{public}d", currentActiveDevice_.deviceType_);
     OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
 
+    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
+        // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
+        SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    }
+
     result = gsp->SetAudioScene(audioScene, priorityDev);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
