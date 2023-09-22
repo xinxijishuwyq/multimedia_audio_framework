@@ -102,7 +102,6 @@ struct Userdata {
     BufferAttr *bufferAttr;
     int32_t processLen;
     size_t processSize;
-    bool isInnerCapturer;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -345,7 +344,7 @@ bool IsInnerCapturer(pa_sink_input *sinkIn, struct Userdata *u)
     pa_assert(sinkIn);
     pa_assert(u);
 
-    if (u != NULL && !u->isInnerCapturer) {
+    if (u != NULL && !GetInnerCapturerState()) {
         return false;
     }
 
@@ -1280,7 +1279,6 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
 
-    u->isInnerCapturer = false;
     u->isHDISinkStarted = true;
     AUDIO_DEBUG_LOG("Initialization of HDI rendering device[%{public}s] completed", u->adapterName);
     pa_sink_new_data_init(&data);
@@ -1312,27 +1310,6 @@ fail:
     return NULL;
 }
 
-static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output *so, struct Userdata *u)
-{
-    pa_assert(c);
-    pa_assert(u);
-    pa_assert(so);
-
-    int innerCapturerFlag = 0;
-    const char *flag = pa_proplist_gets(so->proplist, "stream.isInnerCapturer");
-    if (flag != NULL) {
-        pa_atoi(flag, &innerCapturerFlag);
-    }
-
-    if (innerCapturerFlag == 1 && so->state == PA_SOURCE_OUTPUT_RUNNING) {
-        u->isInnerCapturer = true;
-    } else {
-        u->isInnerCapturer = false;
-    }
-
-    return PA_HOOK_OK;
-}
-
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
@@ -1346,9 +1323,6 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     pa_assert(u);
     u->core = m->core;
     u->module = m;
-
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_STATE_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)SourceOutputStateChangedCb, u);
 
     pa_memchunk_reset(&u->memchunk);
     u->rtpoll = pa_rtpoll_new();
