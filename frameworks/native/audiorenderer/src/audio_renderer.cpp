@@ -16,6 +16,7 @@
 #include <sstream>
 
 #include "audio_renderer.h"
+#include "ipc_skeleton.h"
 #include "audio_renderer_private.h"
 
 #include "audio_log.h"
@@ -37,6 +38,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_ULTRASONIC,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
+static constexpr uid_t UID_MSDP_SA = 6699;
 
 static float VolumeToDb(int32_t volumeLevel)
 {
@@ -143,6 +145,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
             return nullptr;
         }
     }
+    CHECK_AND_RETURN_RET_LOG((streamUsage != STREAM_USAGE_ULTRASONIC || IPCSkeleton::GetCallingUid() == UID_MSDP_SA),
+        nullptr, "ULTRASONIC can only create by MSDP");
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(contentType, streamUsage);
 #ifdef OHCORE
