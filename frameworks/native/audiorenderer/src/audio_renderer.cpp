@@ -16,7 +16,6 @@
 #include <sstream>
 
 #include "audio_renderer.h"
-#include "ipc_skeleton.h"
 #include "audio_renderer_private.h"
 
 #include "audio_log.h"
@@ -145,10 +144,11 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
             return nullptr;
         }
     }
-    CHECK_AND_RETURN_RET_LOG((streamUsage != STREAM_USAGE_ULTRASONIC || IPCSkeleton::GetCallingUid() == UID_MSDP_SA),
-        nullptr, "ULTRASONIC can only create by MSDP");
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(contentType, streamUsage);
+    CHECK_AND_RETURN_RET_LOG((audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA),
+        nullptr, "ULTRASONIC can only create by MSDP");
+
 #ifdef OHCORE
     auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
 #else
