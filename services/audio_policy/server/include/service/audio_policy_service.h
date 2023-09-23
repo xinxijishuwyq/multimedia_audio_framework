@@ -252,9 +252,9 @@ public:
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
-    bool GetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol);
+    bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
 
-    bool SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol);
+    bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
 
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid);
