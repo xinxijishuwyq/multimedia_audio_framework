@@ -375,9 +375,11 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t LoadUsbModule(DeviceType deviceType);
+    int32_t LoadUsbModule(string deviceInfo);
 
-    int32_t HandleUsbDevice(DeviceType deviceType);
+    int32_t LoadDefaultUsbModule();
+
+    int32_t HandleArmUsbDevice(DeviceType deviceType);
 
     int32_t HandleFileDevice(DeviceType deviceType);
 
@@ -562,6 +564,8 @@ private:
     std::mutex deviceClassInfoMutex_;
 
     std::shared_mutex deviceStatusUpdateSharedMutex_;
+
+    bool isArmUsbDevice_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

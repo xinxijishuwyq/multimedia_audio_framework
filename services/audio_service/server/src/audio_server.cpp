@@ -205,6 +205,13 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
     int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
         TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
     AUDIO_DEBUG_LOG("server: get audio parameter");
+    if (key == "get_usb_info") {
+        IAudioRendererSink *usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+        if (usbAudioRendererSinkInstance != nullptr) {
+            AudioParamKey parmKey = AudioParamKey::USB_DEVICE;
+            return usbAudioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "get_usb_info");
+        }
+    }
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
         AudioParamKey parmKey = AudioParamKey::NONE;
