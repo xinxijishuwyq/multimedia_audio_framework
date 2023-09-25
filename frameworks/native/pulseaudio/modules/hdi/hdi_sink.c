@@ -588,9 +588,8 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *infoCur = NULL;
-    pa_sink_input *sceneSinkInput;
     for (int32_t k = 0; k < n; k++) {
-        sceneSinkInput = infoIn[k].userdata;
+        pa_sink_input *sceneSinkInput = infoIn[k].userdata;
         pa_sink_input_assert_ref(sceneSinkInput);
 
         /* Drop read data */
@@ -774,12 +773,11 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
-    int32_t nSinkInput;
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         chunkIn->index = 0;
         chunkIn->length = length;
-        nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneTypeSet[i]);
+        int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneTypeSet[i]);
         if (nSinkInput == 0) {
             continue;
         }

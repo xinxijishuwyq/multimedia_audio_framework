@@ -101,10 +101,10 @@ RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::str
     if (allRemoteSources.count(deviceNetworkId)) {
         return allRemoteSources[deviceNetworkId];
     }
-    RemoteAudioCapturerSourceInner *audioCapturer_ = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
+    RemoteAudioCapturerSourceInner *audioCapturer = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
     AUDIO_DEBUG_LOG("New daudio remote capture device networkId: [%{public}s].", deviceNetworkId.c_str());
-    allRemoteSources[deviceNetworkId] = audioCapturer_;
-    return audioCapturer_;
+    allRemoteSources[deviceNetworkId] = audioCapturer;
+    return audioCapturer;
 }
 
 RemoteAudioCapturerSourceInner::RemoteAudioCapturerSourceInner(const std::string &deviceNetworkId)
