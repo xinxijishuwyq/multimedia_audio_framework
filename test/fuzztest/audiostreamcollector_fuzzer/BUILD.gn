@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioStreamCollectorFuzzTest") {
-  module_out_path = "multimedia_audio_framework/audiostreamcollector_fuzzer"
+  module_out_path = "audio_framework/audio_framework"
   fuzz_config_file = "../audiostreamcollector_fuzzer"
 
   include_dirs = [ "../../../services/audio_policy/server/include" ]
