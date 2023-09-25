@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
-  module_out_path = "multimedia_audio_framework/audiopolicyanother_fuzzer"
+  module_out_path = "audio_framework/audio_framework"
   fuzz_config_file = "../audiopolicyanother_fuzzer"
 
   include_dirs = [
