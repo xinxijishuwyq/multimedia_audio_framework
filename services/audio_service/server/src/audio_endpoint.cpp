@@ -888,9 +888,10 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioStreamData streamData;
         Volume vol = {true, 1.0f, 0};
         AudioStreamType streamType = processList_[i]->GetAudioStreamType();
+        AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
-            PolicyHandler::GetInstance().GetSharedVolume(streamType, deviceType, vol)) {
+            PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat);
         } else {
             streamData.volumeStart = curReadSpan->volumeStart;
