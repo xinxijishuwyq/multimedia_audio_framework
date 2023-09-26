@@ -57,6 +57,7 @@ public:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    int32_t CheckPositionTime();
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -417,6 +418,31 @@ int32_t RemoteFastAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t r
     return SUCCESS;
 }
 
+int32_t RemoteFastAudioCapturerSourceInner::CheckPositionTime()
+{
+    int32_t tryCount = 10;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t maxHandleCost = 10000000; // ns
+    int64_t waitTime = 2000000; // 2ms
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(waitTime); // us
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
+            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
+}
+
 int32_t RemoteFastAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("RemoteFastAudioCapturerSource: Start enter.");
@@ -439,24 +465,14 @@ int32_t RemoteFastAudioCapturerSourceInner::Start(void)
         return ERR_NOT_STARTED;
     }
 
-    ClockTime::RelativeSleep(CAPTURE_FIRST_FRIME_WAIT_NANO);
-    uint64_t curHdiWritePos = 0;
-    int64_t timeSec = 0;
-    int64_t timeNanoSec = 0;
-    int64_t writeTime = 0;
-    while (true) {
-        ret = GetMmapHandlePosition(curHdiWritePos, timeSec, timeNanoSec);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start: Get source handle info fail.");
-        writeTime = timeNanoSec + timeSec * SECOND_TO_NANOSECOND;
-        if (writeTime > 0) {
-            break;
-        }
-        ClockTime::RelativeSleep(CAPTURE_RESYNC_SLEEP_NANO);
+    ret = CheckPositionTime();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Remote fast capturer check position time fail, ret %{public}d.", ret);
+        return ERR_NOT_STARTED;
     }
     started_.store(true);
 
-    AUDIO_INFO_LOG("Start OK, curHdiWritePos %{public}" PRIu64", writeTime %{public}" PRId64" ns.",
-        curHdiWritePos, writeTime);
+    AUDIO_INFO_LOG("Start OK.");
     return SUCCESS;
 }
 
