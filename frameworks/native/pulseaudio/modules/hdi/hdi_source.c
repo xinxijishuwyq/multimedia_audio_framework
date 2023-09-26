@@ -347,10 +347,6 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
 {
     pa_source_new_data data;
 
-    if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
-        AUDIO_INFO_LOG("Failed to parse buffer_size argument.");
-        u->buffer_size = DEFAULT_BUFFER_SIZE;
-    }
     pa_source_new_data_init(&data);
     data.driver = __FILE__;
     data.module = m;
@@ -446,6 +442,38 @@ static bool GetEndianInfo(pa_sample_format_t format)
     return isBigEndian;
 }
 
+static void InitAttrs(pa_modargs *ma, struct Userdata *u, const pa_sample_spec *ss)
+{
+    if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.sourceType) < 0) {
+        AUDIO_ERR_LOG("Failed to parse source_type argument");
+    }
+
+    if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
+        AUDIO_INFO_LOG("Failed to parse buffer_size argument.");
+        u->buffer_size = DEFAULT_BUFFER_SIZE;
+    }
+    u->attrs.bufferSize = u->buffer_size;
+
+    u->attrs.sampleRate = ss->rate;
+    u->attrs.filePath = pa_modargs_get_value(ma, "file_path", "");
+    if (pa_modargs_get_value_u32(ma, "open_mic_speaker", &u->open_mic_speaker) < 0) {
+        AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument");
+    }
+    u->attrs.channel = ss->channels;
+    u->attrs.format = ConvertToHDIAudioFormat(ss->format);
+    u->attrs.isBigEndian = GetEndianInfo(ss->format);
+    u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
+    u->attrs.deviceNetworkId = pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID);
+    if (pa_modargs_get_value_s32(ma, "device_type", &u->attrs.deviceType) < 0) {
+        AUDIO_ERR_LOG("Failed to parse deviceType argument");
+    }
+
+    AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
+        "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
+
+    u->attrs.open_mic_speaker = u->open_mic_speaker;
+}
+
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     int ret;
@@ -463,7 +491,6 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     struct Userdata *u = pa_xnew0(struct Userdata, 1);
-    pa_assert(u);
 
     u->core = m->core;
     u->module = m;
@@ -474,50 +501,22 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.sourceType) < 0) {
-        AUDIO_ERR_LOG("Failed to parse source_type argument");
-    }
+    InitAttrs(ma, u, &ss);
 
     ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
-        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID),
-        u->attrs.sourceType,
-        pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME),
-        &u->sourceAdapter);
+        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), u->attrs.sourceType,
+        pa_modargs_get_value(ma, "source_name", DEFAULT_SOURCE_NAME), &u->sourceAdapter);
     if (ret) {
         AUDIO_ERR_LOG("Load adapter failed");
         goto fail;
     }
 
-    u->buffer_size = DEFAULT_BUFFER_SIZE;
-    u->attrs.sampleRate = ss.rate;
-    u->attrs.filePath = pa_modargs_get_value(ma, "file_path", "");
-    if (pa_modargs_get_value_u32(ma, "open_mic_speaker", &u->open_mic_speaker) < 0) {
-        AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument");
-        goto fail;
-    }
-    u->attrs.channel = ss.channels;
-    u->attrs.format = ConvertToHDIAudioFormat(ss.format);
-    u->attrs.isBigEndian = GetEndianInfo(ss.format);
-    u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
-    u->attrs.deviceNetworkId = pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID);
-    if (pa_modargs_get_value_s32(ma, "device_type", &u->attrs.deviceType) < 0) {
-        AUDIO_ERR_LOG("Failed to parse deviceType argument");
-    }
-
-    AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
-        "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
-
-    ret = PaSetSourceProperties(m, ma, &ss, &map, u);
-    if (ret != 0) {
+    if (PaSetSourceProperties(m, ma, &ss, &map, u) != 0) {
         AUDIO_ERR_LOG("Failed to PaSetSourceProperties");
         goto fail;
     }
 
-    u->attrs.bufferSize = u->buffer_size;
-    u->attrs.open_mic_speaker = u->open_mic_speaker;
-
-    ret = PaHdiCapturerInit(u);
-    if (ret != 0) {
+    if (PaHdiCapturerInit(u) != 0) {
         AUDIO_ERR_LOG("Failed to PaHdiCapturerInit");
         goto fail;
     }
