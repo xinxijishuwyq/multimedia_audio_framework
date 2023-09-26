@@ -104,7 +104,6 @@ public:
     uint32_t segmentCnt;
     uint32_t repeatCnt;
     uint32_t repeatSegment;
-    ToneInfo() {}
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteUint32(segmentCnt);
@@ -589,8 +588,8 @@ public:
     {
         *this = audioCapturerChangeInfo;
     }
-    AudioCapturerChangeInfo() {}
-    ~AudioCapturerChangeInfo() {}
+    AudioCapturerChangeInfo() = default;
+    ~AudioCapturerChangeInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(createrUID)
