@@ -999,7 +999,7 @@ void AudioStream::ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize)
 {
     audioBlend_.Process(buffer, bufferSize);
     if (pfd_ != nullptr) {
-        size_t writeResult = fwrite((void*)buffer, 1, bufferSize, pfd_);
+        size_t writeResult = fwrite(reinterpret_cast<void *>(buffer), 1, bufferSize, pfd_);
         if (writeResult != bufferSize) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
