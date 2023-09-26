@@ -1358,24 +1358,24 @@ static string ParseAudioFormat(string format)
 static void GetUsbModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 {
     if (moduleInfo.role == "sink") {
-        auto sinkRate_begin = deviceInfo.find("sink_rate");
+        auto sinkRate_begin = deviceInfo.find("sink_rate:");
         auto sinkRate_end = deviceInfo.find_first_of(";", sinkRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sinkRate_begin + std::strlen("sink_rate"),
-            sinkRate_end - sinkRate_begin - std::strlen("sink_rate"));
-        auto sinkFormat_begin = deviceInfo.find("sink_format");
+        moduleInfo.rate = deviceInfo.substr(sinkRate_begin + std::strlen("sink_rate:"),
+            sinkRate_end - sinkRate_begin - std::strlen("sink_rate:"));
+        auto sinkFormat_begin = deviceInfo.find("sink_format:");
         auto sinkFormat_end = deviceInfo.find_first_of(";", sinkFormat_begin);
-        string format = deviceInfo.substr(sinkFormat_begin + std::strlen("sink_format"),
-            sinkFormat_end - sinkFormat_begin - std::strlen("sink_format"));
+        string format = deviceInfo.substr(sinkFormat_begin + std::strlen("sink_format:"),
+            sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
         moduleInfo.format = ParseAudioFormat(format);
     } else {
-        auto sourceRate_begin = deviceInfo.find("source_rate");
+        auto sourceRate_begin = deviceInfo.find("source_rate:");
         auto sourceRate_end = deviceInfo.find_first_of(";", sourceRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sourceRate_begin + std::strlen("source_rate"),
-            sourceRate_end - sourceRate_begin - std::strlen("source_rate"));
-        auto sourceFormat_begin = deviceInfo.find("source_format");
+        moduleInfo.rate = deviceInfo.substr(sourceRate_begin + std::strlen("source_rate:"),
+            sourceRate_end - sourceRate_begin - std::strlen("source_rate:"));
+        auto sourceFormat_begin = deviceInfo.find("source_format:");
         auto sourceFormat_end = deviceInfo.find_first_of(";", sourceFormat_begin);
-        string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format"),
-            sourceFormat_end - sourceFormat_begin - std::strlen("source_format"));
+        string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format:"),
+            sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
         moduleInfo.format = ParseAudioFormat(format);
     }
 }
