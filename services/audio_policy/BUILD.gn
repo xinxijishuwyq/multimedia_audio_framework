@@ -127,6 +127,7 @@ ohos_shared_library("audio_dump") {
 }
 
 ohos_shared_library("audio_policy_service") {
+  stack_protector_ret = true
   sanitize = {
     cfi = true
     cfi_cross_dso = true

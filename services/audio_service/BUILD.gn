@@ -249,6 +249,7 @@ ohos_shared_library("audio_process_service") {
 }
 
 ohos_shared_library("audio_service") {
+  stack_protector_ret = true
   sanitize = {
     cfi = true
     cfi_cross_dso = true
