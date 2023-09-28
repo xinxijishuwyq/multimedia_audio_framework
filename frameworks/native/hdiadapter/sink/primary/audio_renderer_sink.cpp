@@ -205,14 +205,14 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
         AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
         ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
         if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
-            AUDIO_ERR_LOG("Get adapters Fail when get_usb_info.");
+            AUDIO_ERR_LOG("Get adapters failed when get_usb_info.");
             return "";
         }
         enum AudioPortDirection port = PORT_OUT;
         adapterNameCase_ = "usb";
         int32_t index =
             SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
-        CHECK_AND_RETURN_RET_LOG((index >= 0), "", "Switch Adapter Fail when get_usb_info.");
+        CHECK_AND_RETURN_RET_LOG((index >= 0), "", "Switch Adapter failed when get_usb_info.");
         adapterDesc_ = descs[index];
         CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
             "", "Load Adapter Fail.");
