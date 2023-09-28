@@ -472,7 +472,7 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     pa_mix_info *infoCur = NULL;
     bool isCaptureSilently = IsCaptureSilently();
     pa_sink_input *sceneSinkInput;
-    for (int32_t k = 0; k < n; k++) {
+    for (uint32_t k = 0; k < n; k++) {
         if (isCaptureSilently) {
             sceneSinkInput = infoIn[k].userdata;
             pa_sink_input_assert_ref(sceneSinkInput);
@@ -588,7 +588,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 
     /* We optimize for the case where the order of the inputs has not changed */
     pa_mix_info *infoCur = NULL;
-    for (int32_t k = 0; k < n; k++) {
+    for (uint32_t k = 0; k < n; k++) {
         pa_sink_input *sceneSinkInput = infoIn[k].userdata;
         pa_sink_input_assert_ref(sceneSinkInput);
 
