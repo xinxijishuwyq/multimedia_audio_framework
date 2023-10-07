@@ -108,7 +108,6 @@ private:
     struct AudioRender *audioRender_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSinkAttr attr_;
-
     FILE *dumpFile_ = nullptr;
 };
 
