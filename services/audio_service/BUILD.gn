@@ -157,7 +157,7 @@ ohos_shared_library("audio_client") {
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [
     "platformsdk",
-    "sasdk"
+    "sasdk",
   ]
 
   subsystem_name = "multimedia"
