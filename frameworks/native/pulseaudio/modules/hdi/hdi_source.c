@@ -449,7 +449,7 @@ static void InitAttrs(pa_modargs *ma, struct Userdata *u, const pa_sample_spec *
     }
 
     if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
-        AUDIO_INFO_LOG("Failed to parse buffer_size argument.");
+        AUDIO_ERR_LOG("Failed to parse buffer_size argument.");
         u->buffer_size = DEFAULT_BUFFER_SIZE;
     }
     u->attrs.bufferSize = u->buffer_size;
