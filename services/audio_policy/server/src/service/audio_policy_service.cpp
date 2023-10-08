@@ -1704,7 +1704,9 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     int32_t result = SUCCESS;
 
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = HandleA2dpDevice(deviceType);
+        if (!isSceneActivation) {
+            result = HandleA2dpDevice(deviceType);
+        }
         return result;
     }
 
