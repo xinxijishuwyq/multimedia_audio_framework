@@ -442,7 +442,7 @@ static bool GetEndianInfo(pa_sample_format_t format)
     return isBigEndian;
 }
 
-static void InitAttrs(pa_modargs *ma, struct Userdata *u, const pa_sample_spec *ss)
+static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sample_spec *ss)
 {
     if (pa_modargs_get_value_s32(ma, "source_type", &u->attrs.sourceType) < 0) {
         AUDIO_ERR_LOG("Failed to parse source_type argument");
@@ -501,7 +501,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    InitAttrs(ma, u, &ss);
+    InitUserdataAttrs(ma, u, &ss);
 
     ret = LoadSourceAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
         pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), u->attrs.sourceType,
