@@ -31,7 +31,8 @@ mutex g_apProxyMutex;
 constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 3;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
-std::unordered_map<int32_t, AudioCapturerStateChangeListenerStub*> AudioPolicyManager::capturerStateChangeCBMap_;
+std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>>
+    AudioPolicyManager::capturerStateChangeCBMap_;
 
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
@@ -99,8 +100,11 @@ void AudioPolicyManager::RecoverAudioCapturerEventListener()
     }
 
     for (auto it = capturerStateChangeCBMap_.begin(); it != capturerStateChangeCBMap_.end(); ++it) {
-        sptr<IRemoteObject> object = it->second->AsObject();
-        gsp->RegisterAudioCapturerEventListener(it->first, object);
+        sptr<AudioCapturerStateChangeListenerStub> listenerStub = it->second.promote();
+        if (listenerStub != nullptr) {
+            sptr<IRemoteObject> object = listenerStub->AsObject();
+            gsp->RegisterAudioCapturerEventListener(it->first, object);
+        }
     }
 }
 
