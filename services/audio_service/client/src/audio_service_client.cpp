@@ -2364,7 +2364,11 @@ int32_t AudioServiceClient::SetStreamRenderRate(AudioRendererRate audioRendererR
 
     pa_threaded_mainloop_lock(mainLoop);
     pa_operation *operation = pa_stream_update_sample_rate(paStream, rate, nullptr, nullptr);
-    pa_operation_unref(operation);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("SetStreamRenderRate: operation is nullptr");
+    }
     pa_threaded_mainloop_unlock(mainLoop);
 
     return AUDIO_CLIENT_SUCCESS;
