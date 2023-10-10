@@ -961,6 +961,12 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
 int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("UnregisterAudioCapturerEventListener");
+    std::unique_lock<std::mutex> lock(stateChangelistenerStubMutex_);
+    auto it = capturerStateChangeCBMap_.find(clientPid);
+    if (it != capturerStateChangeCBMap_.end()) {
+        capturerStateChangeCBMap_.erase(it);
+    }
+    lock.unlock();
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener: audio policy manager proxy is NULL.");
