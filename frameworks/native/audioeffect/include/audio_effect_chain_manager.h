@@ -39,9 +39,15 @@ const uint32_t NUM_SET_EFFECT_PARAM = 3;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = 2;
+const uint64_t DEFAULT_NUM_CHANNELLAYOUT = 3;
 const uint32_t FACTOR_TWO = 2;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 
+const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
+    CH_LAYOUT_STEREO, CH_LAYOUT_5POINT1_BACK, CH_LAYOUT_5POINT1POINT2,
+    CH_LAYOUT_7POINT1, CH_LAYOUT_5POINT1POINT4, CH_LAYOUT_7POINT1POINT2,
+    CH_LAYOUT_7POINT1POINT4, CH_LAYOUT_9POINT1POINT4, CH_LAYOUT_9POINT1POINT6
+};
 class AudioEffectChain {
 public:
     AudioEffectChain(std::string scene);
@@ -57,6 +63,8 @@ public:
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
+    void UpdateMultichannelIOBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
+    AudioEffectConfig GetIoBufferConfig();
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -88,6 +96,8 @@ public:
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
+    int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
+        const uint64_t &channelLayout);
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;

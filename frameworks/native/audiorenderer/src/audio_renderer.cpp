@@ -174,6 +174,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     params.sampleRate = rendererOptions.streamInfo.samplingRate;
     params.channelCount = rendererOptions.streamInfo.channels;
     params.encodingType = rendererOptions.streamInfo.encoding;
+    params.channelLayout = rendererOptions.streamInfo.channelLayout;
 
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -332,6 +333,7 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
         params.sampleRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         params.channelCount = static_cast<AudioChannel>(audioStreamParams.channels);
         params.encodingType = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+        params.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     }
 
     return result;
@@ -353,6 +355,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+        streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     }
 
     return result;

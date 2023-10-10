@@ -575,6 +575,7 @@ private:
     float mPowerVolumeFactor;
     AudioStreamType mStreamType;
     AudioSystemManager *mAudioSystemMgr;
+    uint64_t mChannelLayout;
 
     pa_cvolume cvolume;
     uint32_t streamIndex;
@@ -625,6 +626,33 @@ private:
     std::map<uint32_t, SinkInputInfo*> sinkInputs;
     std::map<uint32_t, SourceOutputInfo*> sourceOutputs;
     std::map<uint32_t, ClientInfo*> clientInfo;
+    std::map<AudioChannelSet, pa_channel_position> chsetToPapositionMap_ = {
+        {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+        {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
+        {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},
+        {BACK_LEFT, PA_CHANNEL_POSITION_REAR_LEFT}, {BACK_RIGHT, PA_CHANNEL_POSITION_REAR_RIGHT},
+        {FRONT_LEFT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER},
+        {FRONT_RIGHT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER},
+        {BACK_CENTER, PA_CHANNEL_POSITION_REAR_CENTER}, {TOP_CENTER, PA_CHANNEL_POSITION_TOP_CENTER},
+        {TOP_FRONT_LEFT, PA_CHANNEL_POSITION_TOP_FRONT_LEFT}, {TOP_FRONT_CENTER, PA_CHANNEL_POSITION_TOP_FRONT_CENTER},
+        {TOP_FRONT_RIGHT, PA_CHANNEL_POSITION_TOP_FRONT_RIGHT}, {TOP_BACK_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT},
+        {TOP_BACK_CENTER, PA_CHANNEL_POSITION_TOP_REAR_CENTER}, {TOP_BACK_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
+        /** Channel layout positions below do not have precise mapped pulseaudio positions */
+        {STEREO_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {STEREO_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+        {WIDE_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {WIDE_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+        {SURROUND_DIRECT_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SURROUND_DIRECT_RIGHT, PA_CHANNEL_POSITION_SIDE_LEFT},
+        {BOTTOM_FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER},
+        {BOTTOM_FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {BOTTOM_FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+        {TOP_SIDE_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT}, {TOP_SIDE_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
+        {LOW_FREQUENCY_2, PA_CHANNEL_POSITION_LFE},
+    };
+
+    std::map<uint8_t, AudioChannelLayout> defaultCHcountToLayoutMap_ = {
+        {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
+        {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
+        {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {10, CH_LAYOUT_7POINT1POINT2},
+        {12, CH_LAYOUT_7POINT1POINT4}, {14, CH_LAYOUT_9POINT1POINT4}, {16, CH_LAYOUT_9POINT1POINT6}
+    };
 
     IAudioStream::StreamClass streamClass_;
 
@@ -668,6 +696,7 @@ private:
     static pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
     static AudioStreamParams ConvertFromPAAudioParams(pa_sample_spec paSampleSpec);
     static const std::string GetEffectModeName(AudioEffectMode effectMode);
+    uint32_t ConvertCHlayoutToPACHmap(const uint64_t &channelLayout, pa_channel_map &PA_map);
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
