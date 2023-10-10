@@ -37,7 +37,7 @@ struct Index {
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/' })
+          router.pushUrl({ url: 'pages/AudioEnhance/AudioCapturerEnhance' })
         })
 
         Button() {
@@ -49,14 +49,6 @@ struct Index {
           router.pushUrl({ url: 'pages/AudioEnhance/AudioManagerEnhance' })
         })
 
-        Button() {
-          Text("麦克风信息管理").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/' })
-        })
       }.width('90%')
       .margin('5%')
 

@@ -28,7 +28,7 @@ struct Index {
           Text("音频流获取最大最小音量").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
-        .height(60)
+        .height(55)
         .onClick(() => {
           router.pushUrl({ url: 'pages/AudioEnhance/audiorender/GetStreamVolume' })
         })
@@ -37,7 +37,7 @@ struct Index {
           Text("获取当次播放欠载音频帧数量").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
-        .height(60)
+        .height(55)
         .onClick(() => {
           router.pushUrl({ url: 'pages/AudioEnhance/audiorender/GetUnderflowCount' })
         })
@@ -46,7 +46,7 @@ struct Index {
           Text("支持设置和读取播放速率和音调").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
-        .height(60)
+        .height(55)
         .onClick(() => {
           router.pushUrl({ url: 'pages/AudioEnhance/audiorender/SetAndGetStreamSamplingRate' })
         })
@@ -55,7 +55,7 @@ struct Index {
           Text("获取音频流输出设备描述符").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
-        .height(60)
+        .height(55)
         .onClick(() => {
           router.pushUrl({ url: 'pages/AudioEnhance/audiorender/GetCurrentOutputDevices' })
         })
@@ -64,16 +64,25 @@ struct Index {
           Text("注册和去注册音频设备监听").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
-        .height(60)
+        .height(55)
         .onClick(() => {
           router.pushUrl({ url: 'pages/AudioEnhance/audiorender/DeviceChangeCallback' })
+        })
+
+        Button() {
+          Text("设置播放声道数据处理").fontSize(30).fontColor(Color.White)
+        }.width('100%')
+        .margin({ bottom: 40 })
+        .height(55)
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/SetChannelBlendMode' })
         })
 
         Button() {
           Text("多实例").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
-        .height(60)
+        .height(55)
         .onClick(() => {
           router.pushUrl({ url: 'pages/AudioEnhance/audiorender/AudioRenderMultiInstance' })
         })

@@ -130,7 +130,7 @@ struct IsVolumeUnadjustable {
     },
     'ULTRASONIC': {
       main: {
-       content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
         rendererFlags: 0
       },
@@ -308,13 +308,12 @@ struct IsVolumeUnadjustable {
               }.width('90%').height(60).margin({ right: 10 })
               .onClick(() => {
                 let _this = this;
-                this.audioVolumeGroupManager.isVolumeUnadjustable()
-                  .then(value => {
-                    _this.returnMsg = `isVolumeUnadjustable : Success, 返回值  ${value}`
-                  })
-                  .catch((err) => {
-                    _this.returnMsg = `IsVolumeUnadjustable err: ${JSON.stringify(err)}`
-                  })
+                try {
+                  let value = _this.audioVolumeGroupManager.isVolumeUnadjustable();
+                  _this.returnMsg = `isVolumeUnadjustable : Success, 返回值  ${value}`
+                }catch(err){
+                  _this.returnMsg = `IsVolumeUnadjustable err: ${JSON.stringify(err)}`
+                }
               })
             }.margin({ top: 10 })
             Row(){
