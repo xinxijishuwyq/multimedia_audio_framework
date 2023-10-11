@@ -22,6 +22,7 @@
 #include "audio_info.h"
 #include "audio_stream.h"
 #include "audio_capturer_private.h"
+#include "refbase.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -3336,6 +3337,31 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_
     EXPECT_EQ(SUCCESS, ret);
 
     audioCapturer->SetValid(true);
+    audioCapturer->Release();
+}
+
+/**
+ * @tc.name  : Test GetCurrentMicrophones API.
+ * @tc.number: Audio_Capturer_GetCurrentMicrophones_001
+ * @tc.desc  : Test GetCurrentMicrophones interface.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentMicrophones_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    vector<sptr<MicrophoneDescriptor>> microphoneDescriptors;
+    microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
+    EXPECT_EQ(true, microphoneDescriptors.size() >= 0);
+    for (auto microphoneDescriptor : microphoneDescriptors) {
+            if (microphoneDescriptor != nullptr) {
+                cout << "microphoneDescriptor: deviceType_" << microphoneDescriptor->deviceType_ << endl;
+                EXPECT_EQ(15, microphoneDescriptor->deviceType_);
+            }
+    }
     audioCapturer->Release();
 }
 } // namespace AudioStandard

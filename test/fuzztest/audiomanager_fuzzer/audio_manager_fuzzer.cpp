@@ -104,6 +104,7 @@ void AudioRoutingManagerFuzzTest(const uint8_t* data, size_t size)
     AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
     AudioRoutingManager::GetInstance()->SetPreferredInputDeviceChangeCallback(capturerInfo, preferredInputCallbackFuzz);
     AudioRoutingManager::GetInstance()->UnsetPreferredInputDeviceChangeCallback();
+    AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
 }
 
 void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
@@ -127,6 +128,11 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
 
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+
+    sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(data);
+    deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(data);
+    AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(deviceDescriptor);
 }
 
 void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)

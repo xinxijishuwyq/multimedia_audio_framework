@@ -107,5 +107,22 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceCh
     EXPECT_EQ(SUCCESS, ret);
 }
 
+/**
+ * @tc.name  : Test Audio_Routing_Manager_GetAvailableMicrophones_001 via legal state
+ * @tc.number: Audio_Routing_Manager_GetAvailableMicrophones_001
+ * @tc.desc  : Test GetAvailableMicrophones interface.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophones_001, TestSize.Level1)
+{
+    vector<sptr<MicrophoneDescriptor>> desc;
+    desc = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
+    for (auto microphoneDescriptor : desc) {
+        if (microphoneDescriptor != nullptr) {
+            cout << "microphoneDescriptor: deviceType_" << microphoneDescriptor->deviceType_ << endl;
+            EXPECT_EQ(15, microphoneDescriptor->deviceType_);
+        }
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
