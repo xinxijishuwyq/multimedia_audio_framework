@@ -140,7 +140,8 @@ struct GetCurrentAudioCapturerChangeInfo {
     for (let j = 0; j < Info.deviceDescriptors.length; j++) {
       let descriptor = Info.deviceDescriptors[j];
       str += `__deviceDescriptors_${j}\n`;
-      str += `Id: ${descriptor.id}, Type:${descriptor.deviceType}, Role: ${descriptor.deviceRole}, Name: ${descriptor.name}, Address: ${descriptor.address}, SampleRates: ${descriptor.sampleRates[0]}, ChannelCounts: ${descriptor.channelCounts[0]}, ChannelMask: ${descriptor.channelMasks}, EncodingType:${descriptor.encodingTypes}\n`;
+      str += `Id: ${descriptor.id}, Type:${descriptor.deviceType}, Role: ${descriptor.deviceRole}, Name: ${descriptor.name}, Address: ${descriptor.address}, SampleRates: ${descriptor.sampleRates[0]}, 
+      ChannelCounts: ${descriptor.channelCounts[0]}, ChannelMask: ${descriptor.channelMasks[0]}, EncodingType:${descriptor.encodingTypes[0]}\n`;
     }
     return str;
   }

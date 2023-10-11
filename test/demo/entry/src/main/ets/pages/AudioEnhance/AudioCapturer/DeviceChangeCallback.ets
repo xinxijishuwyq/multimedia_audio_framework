@@ -73,7 +73,7 @@ struct DeviceChangeCallback {
       let descriptor = DeviceChangeInfo[i];
       str += `第${i}条\n Id:${descriptor.id},\nType:${descriptor.deviceType},\nRole:${descriptor.deviceRole},\nName:${descriptor.name},
       Address:${descriptor.address},\nSampleRates:${descriptor.sampleRates[0]},\nChannelCounts:${descriptor.channelCounts[0]},
-      ChannelMask:${descriptor.channelMasks},\nEncodingType:${descriptor.encodingTypes}\n`;
+      ChannelMask:${descriptor.channelMasks[0]},\nEncodingType:${descriptor.encodingTypes[0]}\n`;
     }
     return str;
   }

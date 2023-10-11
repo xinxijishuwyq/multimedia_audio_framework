@@ -240,7 +240,7 @@ struct AudioCapturerMultiInstance {
       let descriptor = deviceInfo[i];
       str += `第${i}条\nId:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole}, Name:${descriptor.name},
       Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]}, ChannelCounts:${descriptor.channelCounts[0]},
-      ChannelMask:${descriptor.channelMasks}, EncodingType:${descriptor.encodingTypes}\n`;
+      ChannelMask:${descriptor.channelMasks[0]}, EncodingType:${descriptor.encodingTypes[0]}\n`;
     }
     return str;
   }
@@ -268,8 +268,8 @@ struct AudioCapturerMultiInstance {
       str += `__deviceDescriptors_${j}\n`;
       str += `Id: ${descriptor.id}, Type:${descriptor.deviceType}, Role: ${descriptor.deviceRole},
               Name: ${descriptor.name}, Address: ${descriptor.address}, SampleRates: ${descriptor.sampleRates[0]},
-              ChannelCounts: ${descriptor.channelCounts[0]}, ChannelMask: ${descriptor.channelMasks},
-              EncodingType:${descriptor.encodingTypes}\n`;
+              ChannelCounts: ${descriptor.channelCounts[0]}, ChannelMask: ${descriptor.channelMasks[0]},
+              EncodingType:${descriptor.encodingTypes[0]}\n`;
     }
     return str;
   }

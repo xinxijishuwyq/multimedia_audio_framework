@@ -56,7 +56,7 @@ struct DeviceChangeCallback {
   getDeviceChangeInfo(DeviceChangeInfo) {
     let str = ``;
     let descriptor = DeviceChangeInfo;
-    str += `Id:${descriptor.id},\nType:${descriptor.deviceType},\nRole:${descriptor.deviceRole},\nName:${descriptor.name},\nAddress:${descriptor.address},\nSampleRates:${descriptor.sampleRates[0]},\nChannelCounts:${descriptor.channelCounts[0]},\nChannelMask:${descriptor.channelMasks}\n`;
+    str += `Id:${descriptor.id},\nType:${descriptor.deviceType},\nRole:${descriptor.deviceRole},\nName:${descriptor.name},\nAddress:${descriptor.address},\nSampleRates:${descriptor.sampleRates[0]},\nChannelCounts:${descriptor.channelCounts[0]},\nChannelMask:${descriptor.channelMasks[0]}\n`;
     return str;
   }
 
