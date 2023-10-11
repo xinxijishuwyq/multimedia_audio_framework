@@ -28,6 +28,8 @@
 #include "ipc_skeleton.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
+#include "xcollie/xcollie.h"
+#include "xcollie/xcollie_define.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
 
@@ -126,6 +128,30 @@ void Trace::End()
 Trace::~Trace()
 {
     End();
+}
+
+AudioXCollie::AudioXCollie(const std::string &tag, uint32_t timeoutSeconds)
+{
+    AUDIO_DEBUG_LOG("Start AudioXCollie, tag: %{public}s, timeoutSeconds: %{public}u",
+        tag.c_str(), timeoutSeconds);
+    id_ = HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds,
+        nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
+    tag_ = tag;
+    isCanceled_ = false;
+}
+
+AudioXCollie::~AudioXCollie()
+{
+    CancelXCollieTimer();
+}
+
+void AudioXCollie::CancelXCollieTimer()
+{
+    if (!isCanceled_) {
+        HiviewDFX::XCollie::GetInstance().CancelTimer(id_);
+        isCanceled_ = true;
+        AUDIO_DEBUG_LOG("CancelXCollieTimer: cancel timer %{public}s", tag_.c_str());
+    }
 }
 
 bool PermissionUtil::VerifyIsSystemApp()
