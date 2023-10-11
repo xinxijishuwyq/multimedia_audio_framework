@@ -1703,12 +1703,14 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
     int32_t result = SUCCESS;
 
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = HandleA2dpDevice(deviceType);
-        return result;
+    if (currentActiveDevice_.deviceType_ == deviceType) {
+        if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
+            return result;
+        }
     }
 
-    if (currentActiveDevice_.deviceType_ == deviceType) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
         return result;
     }
 
