@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import audio from '@ohos.multimedia.audio'
 import fs from '@ohos.file.fs';
 
@@ -41,18 +41,18 @@ struct GetCurrentAudioCapturerChangeInfo {
     }
   }
 
-  async onBackPress(){
-    if(this.audioCapturer!==null){
+  async onBackPress() {
+    if (this.audioCapturer !== null) {
       await this.audioCapturer.release()
     }
   }
 
   async createCapturer() {
     this.returnMsg = ``
-    if(this.audioCapturer != null){
+    if (this.audioCapturer != null) {
       this.returnMsg += `audioCapturer instance had created, Do not click repeatedly\n`
       return
-    }else{
+    } else {
       try {
         this.audioCapturer = await audio.createAudioCapturer(this.audioCapturerOptions)
         this.returnMsg += `audioCapturer create success \n`
@@ -126,8 +126,8 @@ struct GetCurrentAudioCapturerChangeInfo {
     }
     let _this = this
     try {
-        let changeInfo = this.audioCapturer.getCurrentAudioCapturerChangeInfo();
-        _this.returnMsg = `getCurrentAudioCapturerChangeInfo : 返回值:` + _this.getCapturerChangeInfo(changeInfo);
+      let changeInfo = this.audioCapturer.getCurrentAudioCapturerChangeInfo();
+      _this.returnMsg = `getCurrentAudioCapturerChangeInfo : 返回值:` + _this.getCapturerChangeInfo(changeInfo);
     } catch (error) {
       _this.returnMsg = `audioCapturer getCurrentAudioCapturerChangeInfo callback : Error: ${JSON.stringify(error)}\n`
     }
@@ -170,6 +170,7 @@ struct GetCurrentAudioCapturerChangeInfo {
             Button() {
               Text("创建AudioCapturer").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).onClick(() => this.createCapturer()).backgroundColor(Color.Pink)
+
             Button() {
               Text("release capturer").fontSize(22).fontColor(Color.White)
             }.width('49%').height(60).onClick(() => this.releaseCapturer())
@@ -182,6 +183,7 @@ struct GetCurrentAudioCapturerChangeInfo {
             }.width('49%').height(60).onClick(() => {
               this.capturerStart()
             })
+
             Button() {
               Text("stop promise").fontSize(22).fontColor(Color.White)
             }.width('49%').height(60).onClick(() => this.stopCapturer())

@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -32,20 +32,20 @@ struct AudioCapturerMultiInstance {
       capturerFlags: 0
     }
   }
-  private audioCapturers = [null,null]
-  private audioRenderers=[null,null]
-  private paths=["",""]
+  private audioCapturers = [null, null]
+  private audioRenderers = [null, null]
+  private paths = ["", ""]
   @State returnMsg: string = `hello`
-
   @State bufferSize: number = 0
   @State isBlockingRead: boolean = true
-
   @State markReachFrame: number = 1000
   @State periodReachFrame: number = 1000
-  private arr=[0,1]
+  private arr = [0, 1]
+
   aboutToAppear() {
 
   }
+
   createAudioCapturer(index) {
     if (this.audioCapturers[index] !== null) {
       this.returnMsg = `AudioCapturer ${index} Created already,don't create anymore`
@@ -173,7 +173,7 @@ struct AudioCapturerMultiInstance {
   }
 
   async renderPlay(index) {
-    if(this.paths[index]==""){
+    if (this.paths[index] == "") {
       this.returnMsg += `AudioCapturer ${index} 尚未录音\n`
       return
     }
@@ -236,7 +236,7 @@ struct AudioCapturerMultiInstance {
 
   getInfoArray(deviceInfo) {
     let str = ``;
-    for (let i = 0; i < deviceInfo.length; i++){
+    for (let i = 0; i < deviceInfo.length; i++) {
       let descriptor = deviceInfo[i];
       str += `第${i}条\nId:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole}, Name:${descriptor.name},
       Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]}, ChannelCounts:${descriptor.channelCounts[0]},
@@ -244,6 +244,7 @@ struct AudioCapturerMultiInstance {
     }
     return str;
   }
+
   getCurrentInputDevices(index) {
     if (this.audioCapturers[index] == null) {
       this.returnMsg = `AudioCapturer ${index} instance had not created,dont‘t allow to release\n`
@@ -273,6 +274,7 @@ struct AudioCapturerMultiInstance {
     }
     return str;
   }
+
   getCurrentAudioCapturerChangeInfo(index) {
     if (this.audioCapturers[index] == null) {
       this.returnMsg = `AudioCapturer ${index} instance had not created,dont‘t allow to release\n`
@@ -336,7 +338,7 @@ struct AudioCapturerMultiInstance {
               Button() {
                 Text("播放录音数据").fontSize(22).fontColor(Color.Blue)
               }.width('100%').height(60).backgroundColor(Color.Pink)
-              .onClick(()=>this.renderPlay(item))
+              .onClick(() => this.renderPlay(item))
 
             }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
@@ -344,14 +346,14 @@ struct AudioCapturerMultiInstance {
               Button() {
                 Text("getCurrentInputDevices 同步接口").fontSize(22).fontColor(Color.Blue)
               }.width('100%').height(60).backgroundColor(Color.Pink)
-              .onClick(()=>this.getCurrentInputDevices(item))
+              .onClick(() => this.getCurrentInputDevices(item))
             }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
             Row() {
               Button() {
                 Text("getCurrentAudioCapturerChangeInfo 同步接口").fontSize(22).fontColor(Color.Blue)
               }.width('100%').height(60).backgroundColor(Color.Pink)
-              .onClick(()=>this.getCurrentAudioCapturerChangeInfo(item))
+              .onClick(() => this.getCurrentAudioCapturerChangeInfo(item))
             }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
             Divider().strokeWidth(10).color(Color.Blue)

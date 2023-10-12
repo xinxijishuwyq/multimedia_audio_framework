@@ -17,7 +17,7 @@ import fs from '@ohos.file.fs';
 
 @Entry
 @Component
-struct GetCurrentInputDevices {
+struct GetAvailableMicrophones {
   private audioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
@@ -31,6 +31,8 @@ struct GetCurrentInputDevices {
     }
   }
   private audioCapturer = null
+  private audioRoutingManager = null;
+  private audioManager = null;
   @State returnMsg: string = ``
   @State volume: number = 0
   @State rate: number = 0
@@ -38,6 +40,17 @@ struct GetCurrentInputDevices {
   @State maxVolume: number = 0
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
   @State isWrite: boolean = false
+
+  async aboutToAppear() {
+    this.audioManager = audio.getAudioManager();
+    if (this.audioManager != null) {
+      this.returnMsg = `getAudioManger : PASS`;
+      this.audioRoutingManager = this.audioManager.getRoutingManager();
+      this.returnMsg += `getRoutingManager : PASS`;
+    } else {
+      this.returnMsg += `getAudioManger : FAIL`;
+    }
+  }
 
   async onBackPress() {
     if (this.audioCapturer !== null) {
@@ -61,27 +74,23 @@ struct GetCurrentInputDevices {
     }
   }
 
-  getCurrentInputDevices() {
-    if (this.audioCapturer == null) {
-      this.returnMsg += `audioCapturer instance had not created,dont‘t allow to getCurrentInputDevices\n`
-      return
-    }
+  getAvailableMicrophones() {
     let _this = this
     try {
-      let deviceInfo = this.audioCapturer.getCurrentInputDevices();
-      _this.returnMsg = `audioCapturer getCurrentInputDevices : 返回值：` + _this.getInfoArray(deviceInfo)
+      let microphoneInfo = this.audioRoutingManager.getAvailableMicrophones();
+      _this.returnMsg = `audioCapturer getAvailableMicrophones : 返回值：` + _this.getMicrophoneInfoArray(microphoneInfo)
     } catch (error) {
-      _this.returnMsg = `audioCapturer getCurrentInputDevices : Error: ${JSON.stringify(error)}\n`
+      _this.returnMsg = `audioCapturer getAvailableMicrophones : Error: ${JSON.stringify(error)}\n`
     }
   }
 
-  getInfoArray(deviceInfo) {
+  getMicrophoneInfoArray(microphoneInfo) {
     let str = ``;
-    for (let i = 0; i < deviceInfo.length; i++) {
-      let descriptor = deviceInfo[i];
-      str += `第${i}条\nId:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole}, Name:${descriptor.name},
-      Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]}, ChannelCounts:${descriptor.channelCounts[0]},
-      ChannelMask:${descriptor.channelMasks[0]}, EncodingType:${descriptor.encodingTypes[0]}\n`;
+    for (let i = 0; i < microphoneInfo.length; i++) {
+      let descriptor = microphoneInfo[i];
+      str += `descriptor_${i}_  Id:${descriptor.id}, Type:${descriptor.deviceType}, GroupId:${descriptor.groupId}, Sensitivity:${descriptor.sensitivity},
+          Position.x:${descriptor.position.x}, Position.y:${descriptor.position.y}, Position.z:${descriptor.position.z},
+          Orientation.x:${descriptor.orientation.x}, Orientation.y:${descriptor.orientation.y}, Orientation.z:${descriptor.orientation.z} `;
     }
     return str;
   }
@@ -105,8 +114,8 @@ struct GetCurrentInputDevices {
 
           Row() {
             Button() {
-              Text("getCurrentInputDevices 同步接口").fontSize(22).fontColor(Color.Blue)
-            }.width('98%').height(60).onClick(() => this.getCurrentInputDevices())
+              Text("getCurrentMicrophones 同步接口").fontSize(22).fontColor(Color.Blue)
+            }.width('98%').height(60).onClick(() => this.getAvailableMicrophones())
           }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
         }.width('100%')

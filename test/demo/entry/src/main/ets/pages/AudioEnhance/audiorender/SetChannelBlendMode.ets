@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -38,11 +38,10 @@ struct SetChannelBlendMode {
   private channelBlendModeList = []
   @State channelBlendMode: number = 0
   @State selectedChannelBlendModeKey: string = 'MODE_DEFAULT'
-
   public pathValueList = []
   public pathList: string[] = ['/2ch_16bit.wav', '/3ch_16bit.wav', '/4ch_16bit.wav', '/5ch_16bit.wav', '/6ch_16bit.wav', '/7ch_16bit.wav', '/8ch_16bit.wav']
   @State selectedPathKey: string = "/2ch_16bit.wav"
-  public selectedpath: string = globalThis.pathDir +  '/2ch_16bit.wav'
+  public selectedpath: string = globalThis.pathDir + '/2ch_16bit.wav'
 
   async sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -73,7 +72,7 @@ struct SetChannelBlendMode {
       this.returnMsg = `audioRenderer instance had created,dont‘t allow to create\n`
       return
     }
-    audio.createAudioRenderer(this.audioRendererOptions,(err, data) => {
+    audio.createAudioRenderer(this.audioRendererOptions, (err, data) => {
       if (err) {
         this.returnMsg = `audioRenderer create : Error: ${JSON.stringify(err)}\n`
       } else {
@@ -93,7 +92,7 @@ struct SetChannelBlendMode {
       this.returnMsg += `fd:${file.fd}\n`; //open file
       await this.sleep(1000);
 
-      await this.audioRenderer.start((err)=>{
+      await this.audioRenderer.start((err) => {
         if (err) {
           this.returnMsg += `audioRenderer start : Error: ${JSON.stringify(err)}\n`
         } else {
@@ -102,7 +101,7 @@ struct SetChannelBlendMode {
       })
 
       let bufferSize
-      await this.audioRenderer.getBufferSize((err, data)=> {
+      await this.audioRenderer.getBufferSize((err, data) => {
         if (err) {
           this.returnMsg += `audioRenderer getBufferSize : Error: ${JSON.stringify(err)}\n`
         } else {
@@ -131,7 +130,7 @@ struct SetChannelBlendMode {
           this.returnMsg = `audioRenderer drain : SUCCESS\n`
         }
       })
-    } catch(error) {
+    } catch (error) {
       this.returnMsg += `callbackPlay err ${JSON.stringify(error)} \n`
     }
   }
@@ -169,7 +168,7 @@ struct SetChannelBlendMode {
     try {
       this.audioRenderer.setChannelBlendMode(this.channelBlendMode);
       this.returnMsg += `audioRenderer setChannelBlendMode SUCCESS\n`
-    }catch (error) {
+    } catch (error) {
       this.returnMsg += `audioRenderer setChannelBlendMode : Error: ${JSON.stringify(error)}\n`
     }
   }
@@ -182,17 +181,17 @@ struct SetChannelBlendMode {
       this.returnMsg += `stat:${JSON.stringify(stat)}\n`;
       let file = await fs.open(path, 0o0);
       this.returnMsg += `fd:${file.fd}\n`; //open file
-      await audio.createAudioRenderer(this.audioRendererOptions).then((data)=> {
+      await audio.createAudioRenderer(this.audioRendererOptions).then((data) => {
         this.audioRenderer = data;
         this.returnMsg += `audioRenderer createAudioRenderer success \n`
-      }). catch((err)=>{
+      }).catch((err) => {
         console.info(`audioRenderer create err ${JSON.stringify(err)}`);
       })
 
       await this.setChannelBlendMode();
       await this.sleep(1000);
 
-      await this.audioRenderer.start((err)=>{
+      await this.audioRenderer.start((err) => {
         if (err) {
           this.returnMsg += `audioRenderer start : Error: ${JSON.stringify(err)}\n`
         } else {
@@ -200,7 +199,7 @@ struct SetChannelBlendMode {
         }
       })
       let bufferSize
-      await this.audioRenderer.getBufferSize((err, data)=> {
+      await this.audioRenderer.getBufferSize((err, data) => {
         if (err) {
           this.returnMsg += `audioRenderer getBufferSize : Error: ${JSON.stringify(err)}\n`
         } else {
@@ -244,7 +243,7 @@ struct SetChannelBlendMode {
           this.returnMsg += `audioRenderer release : SUCCESS\n`
         }
       })
-    } catch(error) {
+    } catch (error) {
       this.returnMsg += `callbackPlay err ${JSON.stringify(error)} \n`
     }
   }
@@ -298,6 +297,7 @@ struct SetChannelBlendMode {
             Button() {
               Text("create").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.createRenderer())
+
             Button() {
               Text("start").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.startRenderer())

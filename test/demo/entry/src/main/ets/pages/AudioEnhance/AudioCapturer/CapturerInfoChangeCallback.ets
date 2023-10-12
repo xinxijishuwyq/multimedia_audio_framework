@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -31,23 +31,22 @@ struct CapturerInfoChangeCallback {
       capturerFlags: 0
     }
   }
-
   private audioCapturer = null
   @State returnMsg: string = `hello`
   @State onReturnMsg: string = `hello`
-  @State Callback1Status: string = `未注册`
-  @State Callback2Status: string = `未注册`
-  @State returnCallback1Msg: string = ``
-  @State returnCallback2Msg: string = ``
+  @State CallbackStatus1: string = `未注册`
+  @State CallbackStatus2: string = `未注册`
+  @State returnCallbackMsg1: string = ``
+  @State returnCallbackMsg2: string = ``
   private audioVolumeGroupManager = null;
 
-  async onBackPress(){
+  async onBackPress() {
     if (this.audioCapturer == null) {
       this.returnMsg += `audioCapturer instance had not created\n`
       return
     }
     await this.audioCapturer.release()
-    this.audioCapturer=null
+    this.audioCapturer = null
   }
 
   aboutToAppear() {
@@ -139,23 +138,23 @@ struct CapturerInfoChangeCallback {
   }
 
   getCapturerChangeInfo(CapturerChangeInfo) {
-      let str = ``;
-      let Info = CapturerChangeInfo;
+    let str = ``;
+    let Info = CapturerChangeInfo;
 
-      str += `nStreamId:${Info.streamId}, ClientUid:${Info.clientUid}, State:${Info.capturerState}, Muted:${Info.muted}
+    str += `nStreamId:${Info.streamId}, ClientUid:${Info.clientUid}, State:${Info.capturerState}, Muted:${Info.muted}
               Source:${Info.capturerInfo.source}, Flag:${Info.capturerInfo.capturerFlags},\n`;
-      for (let j = 0; j < Info.deviceDescriptors.length; j++) {
-        let descriptor = Info.deviceDescriptors[j];
-        str += `__deviceDescriptors_${j}\n`;
-        str += `Id:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole},
+    for (let j = 0; j < Info.deviceDescriptors.length; j++) {
+      let descriptor = Info.deviceDescriptors[j];
+      str += `__deviceDescriptors_${j}\n`;
+      str += `Id:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole},
                 Name:${descriptor.name}, Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]},
                 ChannelCounts:${descriptor.channelCounts[0]}, ChannelMask:${descriptor.channelMasks[0]},
                 EncodingType:${descriptor.encodingTypes[0]}\n`;
-      }
-      return str;
+    }
+    return str;
   }
 
-  setMicrophoneMute(){
+  setMicrophoneMute() {
     let _this = this;
     this.audioVolumeGroupManager.setMicrophoneMute(true, (err) => {
       if (err) {
@@ -167,11 +166,10 @@ struct CapturerInfoChangeCallback {
   }
 
   callback1 = (callback) => {
-    this.returnCallback1Msg = this.getCapturerChangeInfo(callback);
+    this.returnCallbackMsg1 = this.getCapturerChangeInfo(callback);
   }
-
   callback2 = (callback) => {
-    this.returnCallback2Msg = this.getCapturerChangeInfo(callback);
+    this.returnCallbackMsg2 = this.getCapturerChangeInfo(callback);
   }
 
   build() {
@@ -179,16 +177,16 @@ struct CapturerInfoChangeCallback {
       Row() {
         Column() {
           Text("Callback1状态：").fontWeight(FontWeight.Bolder).position({ x: 10, y: 5 }).fontSize(18)
-          Text(this.Callback1Status).fontWeight(FontWeight.Bolder).position({ x: 145, y: 5 }).fontSize(18)
+          Text(this.CallbackStatus1).fontWeight(FontWeight.Bolder).position({ x: 145, y: 5 }).fontSize(18)
           Text("Callback2状态：").fontWeight(FontWeight.Bolder).position({ x: 10, y: 30 }).fontSize(18)
-          Text(this.Callback2Status).fontWeight(FontWeight.Bolder).position({ x: 145, y: 30 }).fontSize(18)
+          Text(this.CallbackStatus2).fontWeight(FontWeight.Bolder).position({ x: 145, y: 30 }).fontSize(18)
         }.width('98%').height(65).backgroundColor(Color.Green).position({ x: '1%' })
 
         Column() {
           Text("Callback1返回值：").fontWeight(FontWeight.Bolder).position({ x: 10, y: 5 }).fontSize(18)
-          Text(this.returnCallback1Msg).position({ x: 10, y: 30 }).fontSize(14)
+          Text(this.returnCallbackMsg1).position({ x: 10, y: 30 }).fontSize(14)
           Text("Callback2返回值：").fontWeight(FontWeight.Bolder).position({ x: 10, y: 200 }).fontSize(18)
-          Text(this.returnCallback2Msg).position({ x: 10, y: 230 }).fontSize(14)
+          Text(this.returnCallbackMsg2).position({ x: 10, y: 230 }).fontSize(14)
           Text(this.returnMsg).fontWeight(FontWeight.Bolder).position({ x: 10, y: 370 }).fontSize(18)
         }.width('98%').height(410).backgroundColor(Color.Orange).position({ x: '1%', y: 70 })
       }.position({ x: 0, y: 3 }).width('100%').zIndex(999)
@@ -200,33 +198,37 @@ struct CapturerInfoChangeCallback {
               Text("创建AudioCapturer").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {
               this.createAudioCapturer()
-              this.Callback1Status = '未注册\n'
-              this.Callback2Status = '未注册\n'
-              this.returnCallback1Msg = ''
-              this.returnCallback2Msg = ''
+              this.CallbackStatus1 = '未注册\n'
+              this.CallbackStatus2 = '未注册\n'
+              this.returnCallbackMsg1 = ''
+              this.returnCallbackMsg2 = ''
             }).backgroundColor(Color.Pink)
+
             Button() {
               Text("start AudioCapturer").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {
               this.capturerStart()
             }).backgroundColor(Color.Pink)
           }.margin({ top: 5, bottom: 5 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
           Row() {
             Button() {
               Text("stop AudioCapturer").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {
               this.stopCapturer()
             }).backgroundColor(Color.Pink)
+
             Button() {
               Text("release AudioCapturer").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {
               this.releaseCapturer()
-              this.Callback1Status = '未注册\n'
-              this.Callback2Status = '未注册\n'
-              this.returnCallback1Msg = ''
-              this.returnCallback2Msg = ''
+              this.CallbackStatus1 = '未注册\n'
+              this.CallbackStatus2 = '未注册\n'
+              this.returnCallbackMsg1 = ''
+              this.returnCallbackMsg2 = ''
             }).backgroundColor(Color.Pink)
           }.margin({ top: 5, bottom: 5 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
           Row() {
             Button() {
               Text("监听Callback1").fontSize(20).fontColor(Color.White).textAlign(TextAlign.Center)
@@ -239,7 +241,7 @@ struct CapturerInfoChangeCallback {
 
               let _this = this;
               this.audioCapturer.on('audioCapturerChange', this.callback1);
-              _this.Callback1Status = 'Callback1监听中.....\n'
+              _this.CallbackStatus1 = 'Callback1监听中.....\n'
             })
 
             Button() {
@@ -253,7 +255,7 @@ struct CapturerInfoChangeCallback {
 
               let _this = this;
               this.audioCapturer.on('audioCapturerChange', this.callback2);
-              _this.Callback2Status = 'Callback2监听中.....\n'
+              _this.CallbackStatus2 = 'Callback2监听中.....\n'
             })
           }.margin({ top: 5, bottom: 5 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
@@ -268,8 +270,8 @@ struct CapturerInfoChangeCallback {
               }
               let _this = this;
               this.audioCapturer.off('audioCapturerChange', this.callback1);
-              _this.Callback1Status = '已取消Callback1注册\n'
-              _this.returnCallback1Msg = ''
+              _this.CallbackStatus1 = '已取消Callback1注册\n'
+              _this.returnCallbackMsg1 = ''
             })
 
             Button() {
@@ -282,8 +284,8 @@ struct CapturerInfoChangeCallback {
               }
               let _this = this;
               this.audioCapturer.off('audioCapturerChange', this.callback2);
-              _this.Callback2Status = '已取消Callback2注册\n'
-              _this.returnCallback2Msg = ''
+              _this.CallbackStatus2 = '已取消Callback2注册\n'
+              _this.returnCallbackMsg2 = ''
             })
           }.margin({ top: 5, bottom: 5 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
@@ -298,18 +300,20 @@ struct CapturerInfoChangeCallback {
               }
               let _this = this;
               this.audioCapturer.off('audioCapturerChange');
-              _this.Callback1Status = '未注册\n'
-              _this.Callback2Status = '未注册\n'
-              _this.returnCallback1Msg = ''
-              _this.returnCallback2Msg = ''
+              _this.CallbackStatus1 = '未注册\n'
+              _this.CallbackStatus2 = '未注册\n'
+              _this.returnCallbackMsg1 = ''
+              _this.returnCallbackMsg2 = ''
             })
           }.margin({ top: 5, bottom: 5 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
+
           Row() {
             Button() {
               Text("设置录音静音").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {
               this.setMicrophoneMute()
             }).backgroundColor(Color.Pink)
+
             Button() {
               Text("取消录音静音").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {

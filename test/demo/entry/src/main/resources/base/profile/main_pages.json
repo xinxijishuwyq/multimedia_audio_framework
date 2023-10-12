@@ -60,6 +60,9 @@
     "pages/AudioEnhance/AudioCapturer/GetCurrentAudioCapturerChangeInfo",
     "pages/AudioEnhance/AudioCapturer/DeviceChangeCallback",
     "pages/AudioEnhance/AudioCapturer/CapturerInfoChangeCallback",
-    "pages/AudioEnhance/AudioCapturer/AudioCapturerMultiInstance"
+    "pages/AudioEnhance/AudioCapturer/AudioCapturerMultiInstance",
+    "pages/AudioEnhance/MicrophoneEnhance",
+    "pages/AudioEnhance/Microphone/GetAvailableMicrophones",
+    "pages/AudioEnhance/Microphone/GetCurrentMicrophones"
   ]
 }

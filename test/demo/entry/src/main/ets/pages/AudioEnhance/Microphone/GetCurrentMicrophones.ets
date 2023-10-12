@@ -17,7 +17,7 @@ import fs from '@ohos.file.fs';
 
 @Entry
 @Component
-struct GetCurrentInputDevices {
+struct GetCurrentMicrophones {
   private audioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
@@ -61,27 +61,27 @@ struct GetCurrentInputDevices {
     }
   }
 
-  getCurrentInputDevices() {
+  getCurrentMicrophones() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `audioCapturer instance had not created,dont‘t allow to getCurrentInputDevices\n`
+      this.returnMsg += `audioCapturer instance had not created,dont‘t allow to getCurrentMicrophones\n`
       return
     }
     let _this = this
     try {
-      let deviceInfo = this.audioCapturer.getCurrentInputDevices();
-      _this.returnMsg = `audioCapturer getCurrentInputDevices : 返回值：` + _this.getInfoArray(deviceInfo)
+      let microphoneInfo = this.audioCapturer.getCurrentMicrophones();
+      _this.returnMsg = `audioCapturer getCurrentMicrophones : 返回值：` + _this.getMicrophoneInfoArray(microphoneInfo)
     } catch (error) {
-      _this.returnMsg = `audioCapturer getCurrentInputDevices : Error: ${JSON.stringify(error)}\n`
+      _this.returnMsg = `audioCapturer getCurrentMicrophones : Error: ${JSON.stringify(error)}\n`
     }
   }
 
-  getInfoArray(deviceInfo) {
+  getMicrophoneInfoArray(microphoneInfo) {
     let str = ``;
-    for (let i = 0; i < deviceInfo.length; i++) {
-      let descriptor = deviceInfo[i];
-      str += `第${i}条\nId:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole}, Name:${descriptor.name},
-      Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]}, ChannelCounts:${descriptor.channelCounts[0]},
-      ChannelMask:${descriptor.channelMasks[0]}, EncodingType:${descriptor.encodingTypes[0]}\n`;
+    for (let i = 0; i < microphoneInfo.length; i++) {
+      let descriptor = microphoneInfo[i];
+      str += `descriptor_${i}_\nId:${descriptor.id}, Type:${descriptor.deviceType}, GroupId:${descriptor.groupId}, Sensitivity:${descriptor.sensitivity},
+          Position.x:${descriptor.position.x}, Position.y:${descriptor.position.y}, Position.z:${descriptor.position.z},
+          Orientation.x:${descriptor.orientation.x}, Orientation.y:${descriptor.orientation.y}, Orientation.z:${descriptor.orientation.z}\n`;
     }
     return str;
   }
@@ -105,8 +105,8 @@ struct GetCurrentInputDevices {
 
           Row() {
             Button() {
-              Text("getCurrentInputDevices 同步接口").fontSize(22).fontColor(Color.Blue)
-            }.width('98%').height(60).onClick(() => this.getCurrentInputDevices())
+              Text("getCurrentMicrophones 同步接口").fontSize(22).fontColor(Color.Blue)
+            }.width('98%').height(60).onClick(() => this.getCurrentMicrophones())
           }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
         }.width('100%')
