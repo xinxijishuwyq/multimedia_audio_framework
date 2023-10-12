@@ -74,12 +74,11 @@ struct GetCurrentAudioCapturerChangeInfo {
         .then(() => {
           _this.returnMsg += `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`
         }).catch(err => {
-        _this.returnMsg += `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
+          _this.returnMsg += `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
       })
     } else {
       _this.returnMsg = `AudioCapturer is started, Do not click repeatedly\n`
     }
-
   }
 
   stopCapturer() {

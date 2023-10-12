@@ -35,8 +35,8 @@ struct DeviceChangeCallback {
   private audioCapturer = null
   @State returnMsg: string = `hello`
   @State onReturnMsg: string = `hello`
-  @State CallbackStatus1: string = `未注册`
-  @State CallbackStatus2: string = `未注册`
+  @State callbackStatus1: string = `未注册`
+  @State callbackStatus2: string = `未注册`
   @State returnCallbackMsg1: string = ``
   @State returnCallbackMsg2: string = ``
 
@@ -89,9 +89,9 @@ struct DeviceChangeCallback {
       Row() {
         Column() {
           Text("Callback1状态：").fontWeight(FontWeight.Bolder).position({ x: 10, y: 5 }).fontSize(18)
-          Text(this.CallbackStatus1).fontWeight(FontWeight.Bolder).position({ x: 145, y: 5 }).fontSize(18)
+          Text(this.callbackStatus1).fontWeight(FontWeight.Bolder).position({ x: 145, y: 5 }).fontSize(18)
           Text("Callback2状态：").fontWeight(FontWeight.Bolder).position({ x: 10, y: 30 }).fontSize(18)
-          Text(this.CallbackStatus2).fontWeight(FontWeight.Bolder).position({ x: 145, y: 30 }).fontSize(18)
+          Text(this.callbackStatus2).fontWeight(FontWeight.Bolder).position({ x: 145, y: 30 }).fontSize(18)
         }.width('98%').height(65).backgroundColor(Color.Green).position({ x: '1%' })
 
         Column() {
@@ -110,8 +110,8 @@ struct DeviceChangeCallback {
               Text("创建AudioCapturer").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(40).onClick(() => {
               this.createAudioCapturer()
-              this.CallbackStatus1 = '未注册\n'
-              this.CallbackStatus2 = '未注册\n'
+              this.callbackStatus1 = '未注册\n'
+              this.callbackStatus2 = '未注册\n'
               this.returnCallbackMsg1 = ''
               this.returnCallbackMsg2 = ''
             }).backgroundColor(Color.Pink)
@@ -129,7 +129,7 @@ struct DeviceChangeCallback {
 
               let _this = this;
               this.audioCapturer.on('inputDeviceChange', this.callback1);
-              _this.CallbackStatus1 = 'Callback1监听中.....\n'
+              _this.callbackStatus1 = 'Callback1监听中.....\n'
             })
 
             Button() {
@@ -143,7 +143,7 @@ struct DeviceChangeCallback {
 
               let _this = this;
               this.audioCapturer.on('inputDeviceChange', this.callback2);
-              _this.CallbackStatus2 = 'Callback2监听中.....\n'
+              _this.callbackStatus2 = 'Callback2监听中.....\n'
             })
           }.margin({ top: 5, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
@@ -158,7 +158,7 @@ struct DeviceChangeCallback {
               }
               let _this = this;
               this.audioCapturer.off('inputDeviceChange', this.callback1);
-              _this.CallbackStatus1 = '已取消Callback1注册\n'
+              _this.callbackStatus1 = '已取消Callback1注册\n'
               _this.returnCallbackMsg1 = ''
             })
 
@@ -172,7 +172,7 @@ struct DeviceChangeCallback {
               }
               let _this = this;
               this.audioCapturer.off('inputDeviceChange', this.callback2);
-              _this.CallbackStatus2 = '已取消Callback2注册\n'
+              _this.callbackStatus2 = '已取消Callback2注册\n'
               _this.returnCallbackMsg2 = ''
             })
           }.margin({ top: 5, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
@@ -188,8 +188,8 @@ struct DeviceChangeCallback {
               }
               let _this = this;
               this.audioCapturer.off('inputDeviceChange');
-              _this.CallbackStatus1 = '未注册\n'
-              _this.CallbackStatus2 = '未注册\n'
+              _this.callbackStatus1 = '未注册\n'
+              _this.callbackStatus2 = '未注册\n'
               _this.returnCallbackMsg1 = ''
               _this.returnCallbackMsg2 = ''
             })

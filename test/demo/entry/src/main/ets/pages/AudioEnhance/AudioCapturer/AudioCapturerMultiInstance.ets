@@ -87,7 +87,7 @@ struct AudioCapturerMultiInstance {
     }
 
     let _this = this
-    //READ 5S
+    // READ 5S
     let start = new Date().getTime()
     let end = new Date().getTime()
     let buffer = null

@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -20,7 +20,7 @@ import fs from '@ohos.file.fs';
 @Entry
 @Component
 struct DeviceChangeCallback {
-  private audioRendererOptions  = {
+  private audioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -43,14 +43,13 @@ struct DeviceChangeCallback {
   @State rate: number = 0
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
 
-
-  async onBackPress(){
+  async onBackPress() {
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created\n`
       return
     }
     await this.audioRenderer.release()
-    this.audioRenderer=null
+    this.audioRenderer = null
   }
 
   getDeviceChangeInfo(DeviceChangeInfo) {
@@ -121,7 +120,6 @@ struct DeviceChangeCallback {
   callback1 = (callback) => {
     this.returnCallback1Msg = this.getDeviceChangeInfo(callback);
   }
-
   callback2 = (callback) => {
     this.returnCallback2Msg = this.getDeviceChangeInfo(callback);
   }

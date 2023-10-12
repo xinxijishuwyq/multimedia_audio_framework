@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -49,7 +49,6 @@ struct AdjustVolumeByStep {
   @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
   @State volumeAdjustzUp: number = 0;
   @State volumeAdjustDown: number = 1;
-
   private renderInfo = {
     'RINGTONE': {
       main: {
@@ -392,7 +391,7 @@ struct AdjustVolumeByStep {
             Row() {
               Select(this.volumeTypeSelectList)
                 .value(this.selectedVolumeTypeKey)
-                .onSelect(async(index, value) => {
+                .onSelect(async (index, value) => {
                   this.selectedVolumeType = audio.AudioVolumeType[value];
                   this.selectedVolumeTypeKey = value;
 
@@ -401,7 +400,7 @@ struct AdjustVolumeByStep {
                   this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
 
                   this.getVolumeRange();
-                  if(this.audioRenderer!==null){
+                  if (this.audioRenderer !== null) {
                     await this.audioRenderer.release()
                     this.audioRenderer = null
                   }
@@ -495,6 +494,7 @@ struct AdjustVolumeByStep {
                   _this.returnMsg = "AdjustVolumeByStep_UP Callback:SUCCESS 返回值 " + value;
                 })
               })
+
               Button() {
                 Text("AdjustVolumeByStep_UP Promise").fontSize(20).fontColor(Color.White)
               }.width('49%').height(60).margin({ right: 10 })
@@ -524,6 +524,7 @@ struct AdjustVolumeByStep {
                   _this.returnMsg = "AdjustVolumeByStep_DOWN Callback:SUCCESS 返回值 " + value;
                 })
               })
+
               Button() {
                 Text("AdjustVolumeByStep_DOWN Promise").fontSize(20).fontColor(Color.White)
               }.width('49%').height(60).margin({ right: 10 })
