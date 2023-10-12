@@ -83,7 +83,7 @@ struct CapturerInfoChangeCallback {
 
   capturerStart() {
     if (this.audioCapturer == null) {
-      this.returnMsg = `AudioCapturer instance had not created,dont‘t allow to start\n`
+      this.returnMsg = `AudioCapturer instance had not created,dont allow to start\n`
       return
     }
     let _this = this
@@ -91,13 +91,13 @@ struct CapturerInfoChangeCallback {
       this.audioCapturer.start()
         .then(() => {
           _this.returnMsg = `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`
-        }).catch(err => {
+        })
+        .catch(err => {
           _this.returnMsg = `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
-      })
+        })
     } else {
       _this.returnMsg = `AudioCapturer is started, Do not click repeatedly\n`
     }
-
   }
 
   stopCapturer() {
@@ -110,9 +110,10 @@ struct CapturerInfoChangeCallback {
       _this.audioCapturer.stop()
         .then(() => {
           _this.returnMsg = `AudioCapturer stop : SUCCESS,state:${_this.audioCapturer.state}\n`
-        }).catch(err => {
-        _this.returnMsg = `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
-      })
+        })
+        .catch(err => {
+          _this.returnMsg = `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
+        })
     } else {
       _this.returnMsg = `AudioCapturer is stopped, Do not click repeatedly\n`
     }
@@ -129,9 +130,10 @@ struct CapturerInfoChangeCallback {
         .then(() => {
           _this.returnMsg = `AudioCapturer release SUCCESS,state:${_this.audioCapturer.state}\n`
           _this.audioCapturer = null
-        }).catch(err => {
-        _this.returnMsg = `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
-      })
+        })
+        .catch(err => {
+          _this.returnMsg = `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
+        })
     } else {
       _this.returnMsg = `AudioCapturer is released, Do not click repeatedly\n`
     }
