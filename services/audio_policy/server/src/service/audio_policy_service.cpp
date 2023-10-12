@@ -60,6 +60,7 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
@@ -231,7 +232,20 @@ int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
 
 int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
 {
-    int32_t result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
+    int32_t result = SUCCESS;
+    // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
+    // its absolute volume value.
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
+            return result;
+        }
+        // set to avrcp device
+        return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
+    }
+
+    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
     if (result == SUCCESS && streamType == STREAM_VOICE_CALL) {
         SetVoiceCallVolume(volumeLevel);
     }
@@ -300,6 +314,20 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
 
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
 {
+    {
+        // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, get
+        // its absolute volume value.
+        std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
+            if (configInfoPos != connectedA2dpDeviceMap_.end()
+                && configInfoPos->second.absVolumeSupport) {
+                return configInfoPos->second.volumeLevel;
+            } else {
+                AUDIO_ERR_LOG("Get absolute volume failed for activeBTDevice :[%{public}s]", activeBTDevice_.c_str());
+            }
+        }
+    }
     return audioPolicyManager_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
 }
 
@@ -2015,12 +2043,13 @@ void AudioPolicyService::OnUpdateRouteSupport(bool isSupported)
 
 bool AudioPolicyService::GetActiveDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
+    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        auto streamInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
-        if (streamInfoPos != connectedA2dpDeviceMap_.end()) {
-            streamInfo.samplingRate = streamInfoPos->second.samplingRate;
-            streamInfo.format = streamInfoPos->second.format;
-            streamInfo.channels = streamInfoPos->second.channels;
+        auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
+        if (configInfoPos != connectedA2dpDeviceMap_.end()) {
+            streamInfo.samplingRate = configInfoPos->second.streamInfo.samplingRate;
+            streamInfo.format = configInfoPos->second.streamInfo.format;
+            streamInfo.channels = configInfoPos->second.streamInfo.channels;
             return true;
         }
     }
@@ -2161,9 +2190,13 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
     const std::string& deviceName, const AudioStreamInfo& streamInfo)
 {
     AUDIO_INFO_LOG("[%{public}s], macAddress:[%{public}s]", __func__, macAddress.c_str());
-    if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        connectedA2dpDeviceMap_.insert(make_pair(macAddress, streamInfo));
-        activeBTDevice_ = macAddress;
+    {
+        std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            A2dpDeviceConfigInfo configInfo = {streamInfo, false};
+            connectedA2dpDeviceMap_.insert(make_pair(macAddress, configInfo));
+            activeBTDevice_ = macAddress;
+        }
     }
 
     // new device found. If connected, add into active device list
@@ -2229,6 +2262,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
 void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress,
     bool& isActiveA2dpDevice)
 {
+    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     connectedA2dpDeviceMap_.erase(macAddress);
 
     if (connectedA2dpDeviceMap_.size() == 0) {
@@ -2335,9 +2369,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
             AUDIO_INFO_LOG("A2DP device should be used in non-call mode [%{public}d]", GetAudioScene());
-            connectedA2dpDeviceMap_.insert(make_pair(macAddress, streamInfo));
+            A2dpDeviceConfigInfo configInfo = {streamInfo, false};
+            connectedA2dpDeviceMap_.insert(make_pair(macAddress, configInfo));
             activeBTDevice_ = macAddress;
-
             TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
             UpdateTrackerDeviceChange(deviceChangeDescriptor);
             return;
@@ -2394,7 +2428,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
             = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
                 * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
         AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
-        connectedA2dpDeviceMap_[macAddress] = streamInfo;
+        connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
 
         auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
         if (a2dpModulesPos != deviceClassInfo_.end()) {
@@ -3558,6 +3592,48 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDes
             desc = copyDesc;
         }
     }
+}
+
+int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+{
+    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+    // Maximum number of attempts, preventing situations where a2dp device has not yet finished coming online.
+    int maxRetries = 3;
+    int retryCount = 0;
+    while (retryCount < maxRetries) {
+        retryCount++;
+        auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
+        if (configInfoPos != connectedA2dpDeviceMap_.end()) {
+            configInfoPos->second.absVolumeSupport = support;
+            
+            audioPolicyManager_.SetAbsVolumeScene(true);
+            break;
+        }
+        if (retryCount == maxRetries) {
+            AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported failed, can't find device for macAddress:[%{public}s]",
+                macAddress.c_str());
+            return ERROR;
+        }
+        usleep(ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS);
+    }
+
+    AUDIO_INFO_LOG("SetDeviceAbsVolumeSupported success for macAddress:[%{public}s], support: %{public}d",
+        macAddress.c_str(), support);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel)
+{
+    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+    auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
+    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
+        AUDIO_ERR_LOG("SetA2dpDeviceVolume failed for macAddress:[%{public}s]", macAddress.c_str());
+        return ERROR;
+    }
+    configInfoPos->second.volumeLevel = volumeLevel;
+    AUDIO_INFO_LOG("SetA2dpDeviceVolume success for macaddress:[%{public}s], volume value:[%{public}d]",
+        macAddress.c_str(), volumeLevel);
+    return SUCCESS;
 }
 
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)

@@ -244,6 +244,12 @@ struct AudioParameters {
     DeviceType deviceType;
 };
 
+struct A2dpDeviceConfigInfo {
+    AudioStreamInfo streamInfo;
+    bool absVolumeSupport;
+    int32_t volumeLevel;
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;

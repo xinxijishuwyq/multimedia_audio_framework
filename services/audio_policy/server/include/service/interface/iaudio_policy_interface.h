@@ -106,6 +106,10 @@ public:
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
+    virtual void SetAbsVolumeScene(bool isAbsVolumeScene) = 0;
+
+    virtual bool GetAbsVolumeScene() const = 0;
+
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 };
 } // namespace AudioStandard

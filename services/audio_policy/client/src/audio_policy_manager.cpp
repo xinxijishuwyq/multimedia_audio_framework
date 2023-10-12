@@ -1300,5 +1300,26 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
     }
     return gsp->GetAvailableMicrophones();
 }
+
+int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->SetDeviceAbsVolumeSupported(macAddress, support);
+}
+
+int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
+    const bool updateUi)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetA2dpDeviceVolume: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->SetA2dpDeviceVolume(macAddress, volume, updateUi);
+}
 } // namespace AudioStandard
 } // namespace OHOS

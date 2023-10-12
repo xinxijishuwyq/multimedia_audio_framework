@@ -1426,5 +1426,15 @@ DeviceType AudioAdapterManager::GetActiveDevice()
 {
     return currentActiveDevice_;
 }
+
+void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
+{
+    isAbsVolumeScene_ = isAbsVolumeScene;
+}
+
+bool AudioAdapterManager::GetAbsVolumeScene() const
+{
+    return isAbsVolumeScene_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

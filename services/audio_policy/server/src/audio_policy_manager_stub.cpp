@@ -992,6 +992,23 @@ void AudioPolicyManagerStub::GetAvailableMicrophonesInternal(MessageParcel &data
     }
 }
 
+void AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    bool support = data.ReadBool();
+    int32_t result = SetDeviceAbsVolumeSupported(macAddress, support);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    int32_t volume = data.ReadInt32();
+    bool updateUi = data.ReadBool();
+    int32_t result = SetA2dpDeviceVolume(macAddress, volume, updateUi);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
