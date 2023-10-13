@@ -167,7 +167,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
-
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     AudioRendererParams params;
     params.sampleFormat = rendererOptions.streamInfo.format;
@@ -179,7 +178,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;
-        return nullptr;
     }
 
     return audioRenderer;

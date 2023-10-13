@@ -626,7 +626,7 @@ private:
     std::map<uint32_t, SinkInputInfo*> sinkInputs;
     std::map<uint32_t, SourceOutputInfo*> sourceOutputs;
     std::map<uint32_t, ClientInfo*> clientInfo;
-    std::map<AudioChannelSet, pa_channel_position> chsetToPapositionMap_ = {
+    std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap_ = {
         {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
         {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
         {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},
@@ -647,7 +647,7 @@ private:
         {LOW_FREQUENCY_2, PA_CHANNEL_POSITION_LFE},
     };
 
-    std::map<uint8_t, AudioChannelLayout> defaultCHcountToLayoutMap_ = {
+    std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap_ = {
         {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
         {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
         {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {10, CH_LAYOUT_7POINT1POINT2},
@@ -696,7 +696,7 @@ private:
     static pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
     static AudioStreamParams ConvertFromPAAudioParams(pa_sample_spec paSampleSpec);
     static const std::string GetEffectModeName(AudioEffectMode effectMode);
-    uint32_t ConvertCHlayoutToPACHmap(const uint64_t &channelLayout, pa_channel_map &PA_map);
+    uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;

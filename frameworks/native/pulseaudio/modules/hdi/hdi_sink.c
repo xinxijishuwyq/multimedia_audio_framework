@@ -368,7 +368,7 @@ bool IsInnerCapturer(pa_sink_input *sinkIn, struct Userdata *u)
     return privacySupport && usageSupport;
 }
 
-static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxinfo)
+static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxInfo)
 {
     pa_sink_input *sinkIn;
 
@@ -380,7 +380,7 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     void *state = NULL;
     size_t mixlength = *length;
     struct Userdata *u = si->userdata;
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         if (IsInnerCapturer(sinkIn, u)) {
             pa_sink_input_assert_ref(sinkIn);
 
@@ -400,7 +400,7 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
 
             infoIn++;
             n++;
-            maxinfo--;
+            maxInfo--;
         }
     }
 
@@ -622,7 +622,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 }
 
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
-    unsigned maxinfo, char *sceneType)
+    unsigned maxInfo, char *sceneType)
 {
     pa_sink_input *sinkIn;
     unsigned n = 0;
@@ -635,7 +635,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
     struct Userdata *u = si->userdata;
     bool isCaptureSilently = IsCaptureSilently();
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
@@ -661,7 +661,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
             infoIn++;
             n++;
-            maxinfo--;
+            maxInfo--;
         }
     }
 
@@ -776,30 +776,29 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
 
     pa_sink_input *sinkIn;
     void *state = NULL;
-    unsigned maxinfo = MAX_MIX_CHANNELS;
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+    unsigned maxInfo = MAX_MIX_CHANNELS;
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const uint8_t sinkChannels = sinkIn->sample_spec.channels;
         const char *sinkChannelLayout = pa_proplist_gets(sinkIn->proplist, "stream.channelLayout");
-        if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout)){
+        if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout)) {
             sinkIn->thread_info.resampler->map_required = true;
             continue;
         }
         for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
             if (!strcmp(sinkSceneType, sceneTypeSet[i])) {
                 sceneTypeLenRef[i] = sinkIn->sample_spec.channels;
-                sinkIn->thread_info.resampler->map_required = false;
-                // it takes one sink type to playback one type of multichannel stream(include stereo stream). 
+                sinkIn->thread_info.resampler->map_required = false; 
             }
         }
-        maxinfo--;
+        maxInfo--;
     }
 
-    size_t memsetLenIn = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
-    size_t memsetLenOut = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
-    memset_s(u->bufferAttr->tempBufIn, memsetLenIn, 0, memsetLenIn);
-    memset_s(u->bufferAttr->tempBufOut, memsetLenOut, 0, memsetLenOut);
+    size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
+    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
+    memset_s(u->bufferAttr->tempBufIn, memsetInLen, 0, u->processSize);
+    memset_s(u->bufferAttr->tempBufOut, memsetOutLen, 0, u->processSize);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;

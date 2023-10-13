@@ -114,7 +114,8 @@ static void SetValueInt32(const napi_env& env, const std::string& fieldStr, cons
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
-static void SetValueInt64(const napi_env& env, const std::string& fieldStr, const int64_t int64Value, napi_value &result)
+static void SetValueInt64(const napi_env& env, const std::string& fieldStr, const int64_t int64Value,
+    napi_value &result)
 {
     napi_value value = nullptr;
     napi_create_int64(env, int64Value, &value);

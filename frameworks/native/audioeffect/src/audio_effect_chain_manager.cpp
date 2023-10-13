@@ -118,14 +118,14 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType, const uint32
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string sceneTypeString = "";
-    uint64_t channelLayout_num;
+    uint64_t channelLayoutNum;
     if (sceneType) {
         sceneTypeString = sceneType;
     }
     if (channelLayout) {
-        channelLayout_num = std::strtoull(channelLayout, nullptr, 10);
+        channelLayoutNum = std::strtoull(channelLayout, nullptr, 10);
     }
-    if (audioEffectChainManager->UpdateMultichannelConfig(sceneTypeString, channels, channelLayout_num) != SUCCESS) {
+    if (audioEffectChainManager->UpdateMultichannelConfig(sceneTypeString, channels, channelLayoutNum) != SUCCESS) {
         return ERROR;
     }
     return SUCCESS;
@@ -133,31 +133,25 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType, const uint32
 
 bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 {
-    bool isHVSSupported;
-    isHVSSupported = (find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(),
-        channelLayout) != HVS_SUPPORTED_CHANNELLAYOUTS.end());
-    return isHVSSupported;
+    return find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(),
+        channelLayout) != HVS_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
-bool  NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
+bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
     const char *sinkChannelLayout)
 {
     if (sinkChannels == DEFAULT_NUM_CHANNEL) {
-        AUDIO_INFO_LOG("Stereo streams do not need remap.");
         return false;
     }
-    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode)){
-        AUDIO_INFO_LOG("Stream needs remap if it is going to be rederered later.");
+    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode)) {
         return true;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager->GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP"){
-        AUDIO_INFO_LOG("Stream needs remap if it is not played through bluetooth.");
+    if (audioEffectChainManager->GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP") {
         return true;
     }
-    uint64_t sinkChannelLayout_num = std::strtoull(sinkChannelLayout, nullptr, 10);
-    if (!IsChannelLayoutHVSSupported(sinkChannelLayout_num)){
-        AUDIO_INFO_LOG("Stream needs remap if its channel layout is not HVS-supported.");
+    uint64_t sinkChannelLayoutNum = std::strtoull(sinkChannelLayout, nullptr, 10);
+    if (!IsChannelLayoutHVSSupported(sinkChannelLayoutNum)){
         return true;
     }
     return false;
@@ -362,25 +356,23 @@ bool AudioEffectChain::IsEmptyEffectHandles()
     return standByEffectHandles.size() == 0;
 }
 
-void AudioEffectChain::UpdateMultichannelIOBufferConfig(const uint32_t &channels, const uint64_t &channelLayout)
+void AudioEffectChain::UpdateMultichannelIOBufferConfig(const uint32_t &channels, const uint64_t &channelLayout,
+    const std::string &deviceName)
 {
+    std::lock_guard<std::mutex> lock(reloadMutex);
     if (ioBufferConfig.inputCfg.channels == channels && ioBufferConfig.inputCfg.channelLayout == channelLayout) {
-        AUDIO_INFO_LOG("No changes in channel count or channel layout.");
         return;
     }
     ioBufferConfig.inputCfg.channels = channels;
     ioBufferConfig.inputCfg.channelLayout = channelLayout;
-    AudioEffectConfig tmpioBufferConfig = ioBufferConfig;
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager->GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP" ||
-        !IsChannelLayoutHVSSupported(channelLayout)) {
-        tmpioBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
-        tmpioBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        AUDIO_INFO_LOG("The effect chain should process the stream as stereo stream.");
+    AudioEffectConfig tmpIoBufferConfig = ioBufferConfig;
+    if (deviceName != "DEVICE_TYPE_BLUETOOTH_A2DP" || !IsChannelLayoutHVSSupported(channelLayout)) {
+        tmpIoBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
+        tmpIoBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     }
     int32_t ret;
     int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpioBufferConfig};
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     for (AudioEffectHandle handle: standByEffectHandles) {
         ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -472,9 +464,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
         return SUCCESS;
     }
 
-    if (deviceType_ == (DeviceType)device) {
-        return SUCCESS;
-    }
+    if (deviceType_ == (DeviceType)device) { return SUCCESS; }
 
     deviceType_ = (DeviceType)device;
     deviceSink_ = sinkName;
@@ -483,10 +473,10 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
         keys.push_back(it->first);
     }
+    std::string deviceName = GetDeviceTypeName();
     for (auto key: keys) {
-        size_t pos = key.find("_&_");
-        std::string sceneType = key.substr(0, pos);
-        std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+        std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
+        std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
         if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
             SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
         } else {
@@ -517,7 +507,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
             AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
         }
         audioEffectChain->UpdateMultichannelIOBufferConfig(ioBufferConfig.inputCfg.channels,
-            ioBufferConfig.inputCfg.channelLayout);
+            ioBufferConfig.inputCfg.channelLayout, deviceName);
     }
     return SUCCESS;
 }
@@ -791,9 +781,16 @@ void AudioEffectChainManager::Dump()
 int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
         const uint64_t &channelLayout)
 {
-    std::string sceneTypeAndDeviceKey = sceneTypeString + "_&_" + GetDeviceTypeName();
+    std::string deviceName = GetDeviceTypeName();
+    std::string sceneTypeAndDeviceKey = sceneTypeString + "_&_" + deviceName;
+    if (SceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey) == SceneTypeToEffectChainMap_.end()) {
+        return ERROR;
+    }
     auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    audioEffectChain->UpdateMultichannelIOBufferConfig(channels, channelLayout);
+    if (audioEffectChain == nullptr) {
+        return ERROR;
+    }
+    audioEffectChain->UpdateMultichannelIOBufferConfig(channels, channelLayout, deviceName);
     return SUCCESS; 
 }
 }
