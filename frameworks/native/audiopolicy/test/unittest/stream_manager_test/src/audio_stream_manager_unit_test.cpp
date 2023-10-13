@@ -1533,11 +1533,11 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupport
 }
 
 /**
-* @tc.name  : Test GetHardwareOutputSamplingRate API
-* @tc.type  : FUNC
-* @tc.number: GetHardwareOutputSamplingRate_001
-* @tc.desc  : Test GetHardwareOutputSamplingRate interface.
-*/
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_001
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
+ */
 HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
 {
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
@@ -1549,11 +1549,11 @@ HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetHardwareOutputSamplingRate API
-* @tc.type  : FUNC
-* @tc.number: GetHardwareOutputSamplingRate_002
-* @tc.desc  : Test GetHardwareOutputSamplingRate interface.
-*/
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_002
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
+ */
 HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
 {
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
@@ -1563,11 +1563,11 @@ HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetHardwareOutputSamplingRate API
-* @tc.type  : FUNC
-* @tc.number: GetHardwareOutputSamplingRate_003
-* @tc.desc  : Test GetHardwareOutputSamplingRate interface.
-*/
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_003
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
+ */
 HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
 {
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
@@ -1579,11 +1579,11 @@ HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetHardwareOutputSamplingRate API
-* @tc.type  : FUNC
-* @tc.number: GetHardwareOutputSamplingRate_004
-* @tc.desc  : Test GetHardwareOutputSamplingRate interface.
-*/
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_004
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
+ */
 HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_004, TestSize.Level1)
 {
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();

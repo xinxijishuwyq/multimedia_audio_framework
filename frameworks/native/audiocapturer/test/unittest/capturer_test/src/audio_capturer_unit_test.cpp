@@ -3357,10 +3357,10 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentMicrophones_001, TestSize
     microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
     EXPECT_EQ(true, microphoneDescriptors.size() >= 0);
     for (auto microphoneDescriptor : microphoneDescriptors) {
-            if (microphoneDescriptor != nullptr) {
-                cout << "microphoneDescriptor: deviceType_" << microphoneDescriptor->deviceType_ << endl;
-                EXPECT_EQ(15, microphoneDescriptor->deviceType_);
-            }
+        if (microphoneDescriptor != nullptr) {
+            cout << "microphoneDescriptor: deviceType_" << microphoneDescriptor->deviceType_ << endl;
+            EXPECT_EQ(15, microphoneDescriptor->deviceType_);
+        }
     }
     audioCapturer->Release();
 }
