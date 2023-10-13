@@ -39,6 +39,17 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
 
+static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
+{
+    AudioRendererParams params;
+    params.sampleFormat = streamInfo.format;
+    params.sampleRate = streamInfo.samplingRate;
+    params.channelCount = streamInfo.channels;
+    params.encodingType = streamInfo.encoding;
+    params.channelLayout = streamInfo.channelLayout;
+    return params;
+}
+
 static float VolumeToDb(int32_t volumeLevel)
 {
     float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
@@ -167,18 +178,11 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
-
     audioRenderer->privacyType_ = rendererOptions.privacyType;
-    AudioRendererParams params;
-    params.sampleFormat = rendererOptions.streamInfo.format;
-    params.sampleRate = rendererOptions.streamInfo.samplingRate;
-    params.channelCount = rendererOptions.streamInfo.channels;
-    params.encodingType = rendererOptions.streamInfo.encoding;
-
+    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;
-        return nullptr;
     }
 
     return audioRenderer;
@@ -332,6 +336,7 @@ int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
         params.sampleRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         params.channelCount = static_cast<AudioChannel>(audioStreamParams.channels);
         params.encodingType = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+        params.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     }
 
     return result;
@@ -353,6 +358,7 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         streamInfo.channels = static_cast<AudioChannel>(audioStreamParams.channels);
         streamInfo.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+        streamInfo.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     }
 
     return result;

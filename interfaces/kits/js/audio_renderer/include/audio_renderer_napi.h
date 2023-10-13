@@ -83,6 +83,7 @@ private:
         AudioSamplingRate samplingRate;
         AudioChannel channelCount;
         AudioEncodingType encodingType;
+        AudioChannelLayout channelLayout;
         ContentType contentType;
         StreamUsage usage;
         DeviceRole deviceRole;

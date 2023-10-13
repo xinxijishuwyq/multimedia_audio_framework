@@ -233,6 +233,15 @@ bool IsSamplingRateValid(uint32_t samplingRate)
     return isValidSamplingRate;
 }
 
+bool IsRendererChannelLayoutValid(uint64_t channelLayout)
+{
+    bool isValidRendererChannelLayout = (find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
+        RENDERER_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != RENDERER_SUPPORTED_CHANNELLAYOUTS.end());
+    AUDIO_DEBUG_LOG("AudioStream: isValidRendererChannelLayout: %{public}s",
+        isValidRendererChannelLayout ? "true" : "false");
+    return isValidRendererChannelLayout;
+}
+
 int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 {
     AUDIO_INFO_LOG("AudioStream: GetAudioStreamInfo");
@@ -278,6 +287,10 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
             AUDIO_DEBUG_LOG("AudioStream: Initialize playback");
             if (!IsRendererChannelValid(info.channels)) {
                 AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", info.channels);
+                return ERR_NOT_SUPPORTED;
+            }
+            if (!IsRendererChannelLayoutValid(info.channelLayout)) {
+                AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
                 return ERR_NOT_SUPPORTED;
             }
             ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);

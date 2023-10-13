@@ -82,6 +82,8 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
     const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
     const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
+    const uint32_t channels = si->sample_spec.channels;
+    const char *channelLayout = pa_proplist_gets(si->proplist, "stream.channelLayout");
     if (pa_safe_streq(deviceString, "remote")) {
         EffectChainManagerReleaseCb(sceneType, sessionID);
         return PA_HOOK_OK;
@@ -96,6 +98,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     const char *bootUpMusic = "1003";
     if (!pa_safe_streq(clientUid, bootUpMusic)) {
         EffectChainManagerCreateCb(sceneType, sessionID);
+        EffectChainManagerMultichannelUpdate(sceneType, channels, channelLayout);
     }
     return PA_HOOK_OK;
 }
