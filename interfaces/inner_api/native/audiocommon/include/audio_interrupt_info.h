@@ -160,11 +160,11 @@ public:
     InterruptMode mode { SHARE_MODE };
     bool parallelPlayFlag {false};
 
-    AudioInterrupt() {}
+    AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
         uint32_t sessionID_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
         sessionID(sessionID_) {}
-    ~AudioInterrupt() {}
+    ~AudioInterrupt() = default;
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(streamUsage))

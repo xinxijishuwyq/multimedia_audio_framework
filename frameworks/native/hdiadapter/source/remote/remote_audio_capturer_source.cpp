@@ -101,10 +101,10 @@ RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::str
     if (allRemoteSources.count(deviceNetworkId)) {
         return allRemoteSources[deviceNetworkId];
     }
-    RemoteAudioCapturerSourceInner *audioCapturer_ = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
+    RemoteAudioCapturerSourceInner *audioCapturer = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
     AUDIO_DEBUG_LOG("New daudio remote capture device networkId: [%{public}s].", deviceNetworkId.c_str());
-    allRemoteSources[deviceNetworkId] = audioCapturer_;
-    return audioCapturer_;
+    allRemoteSources[deviceNetworkId] = audioCapturer;
+    return audioCapturer;
 }
 
 RemoteAudioCapturerSourceInner::RemoteAudioCapturerSourceInner(const std::string &deviceNetworkId)
@@ -339,15 +339,15 @@ int32_t RemoteAudioCapturerSourceInner::SetVolume(float left, float right)
     float volume = 0.5;
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "SetVolume: Audio capture is null.");
 
-    float leftVolume_ = left;
-    float rightVolume_ = right;
+    float leftVolume = left;
+    float rightVolume = right;
     float half = 0.5;
-    if ((leftVolume_ == 0) && (rightVolume_ != 0)) {
-        volume = rightVolume_;
-    } else if ((leftVolume_ != 0) && (rightVolume_ == 0)) {
-        volume = leftVolume_;
+    if ((leftVolume == 0) && (rightVolume != 0)) {
+        volume = rightVolume;
+    } else if ((leftVolume != 0) && (rightVolume == 0)) {
+        volume = leftVolume;
     } else {
-        volume = (leftVolume_ + rightVolume_) * half;
+        volume = (leftVolume + rightVolume) * half;
     }
 
     int32_t ret = audioCapture_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioCapture_), volume);

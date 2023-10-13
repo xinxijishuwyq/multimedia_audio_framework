@@ -156,7 +156,10 @@ ohos_shared_library("audio_client") {
   ]
 
   version_script = "../../audio_framework.versionscript"
-  innerapi_tags = [ "platformsdk" ]
+  innerapi_tags = [
+    "platformsdk",
+    "sasdk",
+  ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -250,6 +253,7 @@ ohos_shared_library("audio_process_service") {
 }
 
 ohos_shared_library("audio_service") {
+  stack_protector_ret = true
   sanitize = {
     cfi = true
     cfi_cross_dso = true

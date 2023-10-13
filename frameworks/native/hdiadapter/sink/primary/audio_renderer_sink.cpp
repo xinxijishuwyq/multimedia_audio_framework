@@ -51,7 +51,6 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
-const uint32_t PARAM_VALUE_LENTH = 10;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 120;
@@ -86,7 +85,7 @@ public:
     int32_t SetOutputRoute(DeviceType outputDevice) override;
 
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
-    explicit AudioRendererSinkInner(const std::string halName = "primary");
+    explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
     IAudioSinkAttr attr_;
@@ -127,7 +126,7 @@ private:
     FILE *dumpFile_ = nullptr;
 };
 
-AudioRendererSinkInner::AudioRendererSinkInner(const std::string halName)
+AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
       audioRender_(nullptr), halName_(halName)
@@ -150,6 +149,32 @@ AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
     return &audioRenderer;
 }
 
+static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string adapterNameCase,
+    enum AudioPortDirection portFlag, struct AudioPort &renderPort, uint32_t size)
+{
+    if (descs == nullptr) {
+        return ERROR;
+    }
+    for (uint32_t index = 0; index < size; index++) {
+        struct AudioAdapterDescriptor *desc = &descs[index];
+        if (desc == nullptr || desc->adapterName == nullptr) {
+            continue;
+        }
+        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
+            for (uint32_t port = 0; port < desc->portsLen; port++) {
+                // Only find out the port of out in the sound card
+                if (desc->ports[port].dir == portFlag) {
+                    renderPort = desc->ports[port];
+                    return index;
+                }
+            }
+        }
+    }
+    AUDIO_ERR_LOG("SwitchAdapterRender Fail");
+
+    return ERR_INVALID_INDEX;
+}
+
 void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
@@ -170,6 +195,30 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
 {
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s", key,
         condition.c_str());
+    if (condition == "get_usb_info") {
+        if (InitAudioManager() != 0) {
+            AUDIO_ERR_LOG("Init audio manager Fail.");
+            return "";
+        }
+        uint32_t size = MAX_AUDIO_ADAPTER_NUM;
+        int32_t ret;
+        AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
+        ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
+        if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
+            AUDIO_ERR_LOG("Get adapters failed when get_usb_info.");
+            return "";
+        }
+        enum AudioPortDirection port = PORT_OUT;
+        adapterNameCase_ = "usb";
+        int32_t index =
+            SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
+        CHECK_AND_RETURN_RET_LOG((index >= 0), "", "Switch Adapter failed when get_usb_info.");
+        adapterDesc_ = descs[index];
+        CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
+            "", "Load Adapter Fail.");
+        CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), "", "Load audio device failed when get_usb_info.");
+    }
+
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
     if (audioAdapter_ == nullptr) {
@@ -321,32 +370,6 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.isSignedData = true;
     attrs.stopThreshold = INT_32_MAX;
     attrs.silenceThreshold = 0;
-}
-
-static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string adapterNameCase,
-    enum AudioPortDirection portFlag, struct AudioPort &renderPort, uint32_t size)
-{
-    if (descs == nullptr) {
-        return ERROR;
-    }
-    for (uint32_t index = 0; index < size; index++) {
-        struct AudioAdapterDescriptor *desc = &descs[index];
-        if (desc == nullptr || desc->adapterName == nullptr) {
-            continue;
-        }
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portsLen; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    return index;
-                }
-            }
-        }
-    }
-    AUDIO_ERR_LOG("SwitchAdapterRender Fail");
-
-    return ERR_INVALID_INDEX;
 }
 
 int32_t AudioRendererSinkInner::InitAudioManager()

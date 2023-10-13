@@ -63,7 +63,10 @@ public:
 
     explicit AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate = true);
 
-    virtual ~AudioPolicyServer() = default;
+    virtual ~AudioPolicyServer()
+    {
+        AUDIO_WARNING_LOG("AudioPolicyServer destroyed");
+    };
 
     void OnDump() override;
     void OnStart() override;

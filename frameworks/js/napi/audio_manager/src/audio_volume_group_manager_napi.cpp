@@ -28,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_groupmanagerConstructor = nullptr;
 int32_t AudioVolumeGroupManagerNapi::isConstructSuccess_ = SUCCESS;
+std::mutex AudioVolumeGroupManagerNapi::volumeGroupManagerMutex_;
+
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
     napi_value argv[num] = {0};    \
@@ -272,6 +274,8 @@ static void IsTrueAsyncCallbackComplete(napi_env env, napi_status status, void *
 // Constructor callback
 napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_info info)
 {
+    std::lock_guard<mutex> lock(volumeGroupManagerMutex_);
+
     napi_status status;
     napi_value jsThis;
     napi_value undefinedResult = nullptr;
@@ -309,6 +313,8 @@ napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_in
 
 void AudioVolumeGroupManagerNapi::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
 {
+    std::lock_guard<mutex> lock(volumeGroupManagerMutex_);
+
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioVolumeGroupManagerNapi*>(nativeObject);
         delete obj;
@@ -498,28 +504,26 @@ napi_value AudioVolumeGroupManagerNapi::SetVolume(napi_env env, napi_callback_in
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioGroupMngr_->SetVolume(GetNativeAudioVolumeType(
-                        context->volType), context->volLevel);
-                }
-            }, SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
+        status = napi_create_async_work(env, nullptr, resource, AsyncSetVolume,
+            SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_create_async_work failed.");
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_queue_async_work_with_qos failed.");
+        asyncContext.release();
     }
 
     return result;
+}
+
+void AudioVolumeGroupManagerNapi::AsyncSetVolume(napi_env env, void *data)
+{
+    std::lock_guard<mutex> lock(volumeGroupManagerMutex_);
+    auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
+    if (context->status == SUCCESS) {
+        auto &audioGroupManager = context->objectInfo->audioGroupMngr_;
+        context->status = (audioGroupManager == nullptr) ? NAPI_ERR_SYSTEM :
+            audioGroupManager->SetVolume(GetNativeAudioVolumeType(context->volType), context->volLevel);
+    }
 }
 
 napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback_info info)

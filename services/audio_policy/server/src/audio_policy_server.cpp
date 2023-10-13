@@ -913,6 +913,11 @@ AudioRingerMode AudioPolicyServer::GetRingerMode()
 
 int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
 {
+    if (audioScene <= AUDIO_SCENE_INVALID || audioScene >= AUDIO_SCENE_MAX) {
+        AUDIO_ERR_LOG("SetAudioScene: param is invalid");
+        return ERR_INVALID_PARAM;
+    }
+
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetAudioScene: No system permission");
         return ERR_PERMISSION_DENIED;
@@ -1383,12 +1388,12 @@ void AudioPolicyServer::UpdateAudioScene(const AudioScene audioScene, AudioInter
 
     switch (changeType) {
         case ACTIVATE_AUDIO_INTERRUPT:
-            if (audioScenePriority.at(audioScene) <= audioScenePriority.at(currentAudioScene)) {
+            if (GetAudioScenePriority(audioScene) <= GetAudioScenePriority(currentAudioScene)) {
                 return;
             }
             break;
         case DEACTIVATE_AUDIO_INTERRUPT:
-            if (audioScenePriority.at(audioScene) >= audioScenePriority.at(currentAudioScene)) {
+            if (GetAudioScenePriority(audioScene) >= GetAudioScenePriority(currentAudioScene)) {
                 return;
             }
             break;
@@ -1514,7 +1519,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         audioFocusInfoList_.remove_if([&](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
             if ((audioFocusInfo.first).sessionID != exitSessionID) {
                 AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioFocusInfo.first);
-                if (audioScenePriority.at(targetAudioScene) > audioScenePriority.at(highestPriorityAudioScene)) {
+                if (GetAudioScenePriority(targetAudioScene) > GetAudioScenePriority(highestPriorityAudioScene)) {
                     highestPriorityAudioScene = targetAudioScene;
                 }
                 return false;
@@ -1544,7 +1549,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
             OnAudioFocusInfoChange();
         } else {
             AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(it->first);
-            if (audioScenePriority.at(targetAudioScene) > audioScenePriority.at(highestPriorityAudioScene)) {
+            if (GetAudioScenePriority(targetAudioScene) > GetAudioScenePriority(highestPriorityAudioScene)) {
                 highestPriorityAudioScene = targetAudioScene;
             }
             ++it;

@@ -252,9 +252,9 @@ public:
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
-    bool GetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol);
+    bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
 
-    bool SetSharedVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol);
+    bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
 
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid);
@@ -380,9 +380,11 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t LoadUsbModule(DeviceType deviceType);
+    int32_t LoadUsbModule(string deviceInfo);
 
-    int32_t HandleUsbDevice(DeviceType deviceType);
+    int32_t LoadDefaultUsbModule();
+
+    int32_t HandleArmUsbDevice(DeviceType deviceType);
 
     int32_t HandleFileDevice(DeviceType deviceType);
 
@@ -582,6 +584,8 @@ private:
 
     std::shared_mutex deviceStatusUpdateSharedMutex_;
     std::mutex microphonesMutex_;
+
+    bool isArmUsbDevice_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

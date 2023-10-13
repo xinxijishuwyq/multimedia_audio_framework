@@ -32,7 +32,7 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
 } // namespace
 
-AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
+static AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
 {
     switch (wavSampleFormat) {
         case SAMPLE_FORMAT_U8:
@@ -48,7 +48,7 @@ AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
     }
 }
 
-unique_ptr<AudioRenderer> CreateAudioRenderer(wav_hdr &wavHeader)
+static unique_ptr<AudioRenderer> CreateAudioRenderer(wav_hdr &wavHeader)
 {
     AudioRendererOptions rendererOptions;
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
@@ -61,7 +61,7 @@ unique_ptr<AudioRenderer> CreateAudioRenderer(wav_hdr &wavHeader)
     return AudioRenderer::Create(rendererOptions);
 }
 
-int32_t StartRendererPlayback(char *inputPath, int mode)
+static int32_t StartRendererPlayback(char *inputPath, int mode)
 {
     AUDIO_INFO_LOG("================PLAYBACK STARTED==================");
     wav_hdr wavHeader;
@@ -89,13 +89,11 @@ int32_t StartRendererPlayback(char *inputPath, int mode)
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
 
-    size_t bytesRead = 0;
-    int32_t bytesWritten = 0;
     size_t minBytes = 4;
 
     while (!feof(wavFile)) {
-        bytesRead = fread(buffer, 1, bufferLen, wavFile);
-        bytesWritten = 0;
+        size_t bytesRead = fread(buffer, 1, bufferLen, wavFile);
+        int32_t bytesWritten = 0;
         while ((static_cast<size_t>(bytesWritten) < bytesRead) &&
             ((static_cast<size_t>(bytesRead) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
@@ -117,7 +115,7 @@ int32_t StartRendererPlayback(char *inputPath, int mode)
     return 0;
 }
 
-void PrintUsage()
+static void PrintUsage()
 {
     cout << "[Audio BlendMode Test App]" << endl << endl;
     cout << "Supported Functionalities:" << endl;

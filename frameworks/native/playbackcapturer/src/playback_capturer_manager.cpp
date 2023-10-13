@@ -61,6 +61,28 @@ bool IsCaptureSilently()
     return playbackCapturerMgr->IsCaptureSilently();
 }
 
+bool GetInnerCapturerState()
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    if (playbackCapturerMgr == nullptr) {
+        AUDIO_ERR_LOG("IsCaptureSilently return false for null manager.");
+        return false;
+    }
+
+    return playbackCapturerMgr->GetInnerCapturerState();
+}
+
+void SetInnerCapturerState(bool state)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    if (playbackCapturerMgr == nullptr) {
+        AUDIO_ERR_LOG("IsCaptureSilently return false for null manager.");
+        return;
+    }
+
+    playbackCapturerMgr->SetInnerCapturerState(state);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -107,6 +129,16 @@ void PlaybackCapturerManager::SetCaptureSilentState(bool state)
 bool PlaybackCapturerManager::IsCaptureSilently()
 {
     return isCaptureSilently_;
+}
+
+void PlaybackCapturerManager::SetInnerCapturerState(bool state)
+{
+    isInnerCapturerRunning_ = state;
+}
+
+bool PlaybackCapturerManager::GetInnerCapturerState()
+{
+    return isInnerCapturerRunning_;
 }
 } // namespace OHOS
 } // namespace AudioStandard

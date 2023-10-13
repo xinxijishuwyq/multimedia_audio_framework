@@ -80,6 +80,7 @@ public:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    int32_t CheckPositionTime();
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -435,6 +436,31 @@ int32_t RemoteFastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, 
     return SUCCESS;
 }
 
+int32_t RemoteFastAudioRendererSinkInner::CheckPositionTime()
+{
+    int32_t tryCount = 10;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int64_t maxHandleCost = 10000000; // ns
+    int64_t waitTime = 2000000; // 2ms
+    while (tryCount-- > 0) {
+        ClockTime::RelativeSleep(waitTime); // us
+        int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t curSec = curTime / AUDIO_NS_PER_SECOND;
+        int64_t curNanoSec = curTime - curSec * AUDIO_NS_PER_SECOND;
+        if (ret != SUCCESS || curSec != timeSec || curNanoSec - timeNanoSec > maxHandleCost) {
+            AUDIO_WARNING_LOG("CheckPositionTime[%{public}d]:ret %{public}d", tryCount, ret);
+            continue;
+        } else {
+            AUDIO_INFO_LOG("CheckPositionTime end, position and time is ok.");
+            return SUCCESS;
+        }
+    }
+    return ERROR;
+}
+
 int32_t RemoteFastAudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
@@ -450,7 +476,9 @@ int32_t RemoteFastAudioRendererSinkInner::Start(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Start: Audio render is null.");
     int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
+    ret = CheckPositionTime();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed, ret %{public}d.", ret);
     started_.store(true);
     AUDIO_INFO_LOG("Start Ok.");
     return SUCCESS;
@@ -466,7 +494,7 @@ int32_t RemoteFastAudioRendererSinkInner::Stop(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Stop: Audio render is null.");
     int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     started_.store(false);
     AUDIO_DEBUG_LOG("Stop ok.");
     return SUCCESS;
@@ -484,7 +512,7 @@ int32_t RemoteFastAudioRendererSinkInner::Pause(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Pause: Audio render is null.");
     int32_t ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     paused_.store(true);
     return SUCCESS;
 }
@@ -501,7 +529,7 @@ int32_t RemoteFastAudioRendererSinkInner::Resume(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Resume: Audio render is null.");
     int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
     paused_.store(false);
     return SUCCESS;
 }
@@ -513,7 +541,7 @@ int32_t RemoteFastAudioRendererSinkInner::Reset(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Reset: Audio render is null.");
     int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
     return SUCCESS;
 }
 
@@ -524,7 +552,7 @@ int32_t RemoteFastAudioRendererSinkInner::Flush(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio render is null.");
     int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
     return SUCCESS;
 }
 

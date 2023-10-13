@@ -104,7 +104,6 @@ public:
     uint32_t segmentCnt;
     uint32_t repeatCnt;
     uint32_t repeatSegment;
-    ToneInfo() {}
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteUint32(segmentCnt);
@@ -290,7 +289,11 @@ struct MicStateChangeEvent {
     bool mute;
 };
 
-enum AudioScene {
+enum AudioScene : int32_t {
+    /**
+     * Invalid
+     */
+    AUDIO_SCENE_INVALID = -1,
     /**
      * Default audio scene
      */
@@ -309,6 +312,10 @@ enum AudioScene {
      * Voice chat audio scene
      */
     AUDIO_SCENE_PHONE_CHAT,
+    /**
+     * Max
+     */
+    AUDIO_SCENE_MAX,
 };
 
 inline AudioScene GetAudioSceneFromStreamType(AudioStreamType streamType, StreamUsage streamUsage)
@@ -333,6 +340,14 @@ inline const std::unordered_map<const AudioScene, const int> audioScenePriority 
     {AUDIO_SCENE_RINGING, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };
+
+inline int GetAudioScenePriority(const AudioScene audioScene)
+{
+    if (audioScenePriority.count(audioScene) == 0) {
+        return audioScenePriority.at(AUDIO_SCENE_DEFAULT);
+    }
+    return audioScenePriority.at(audioScene);
+}
 
 struct CaptureFilterOptions {
     std::vector<StreamUsage> usages;
@@ -573,8 +588,8 @@ public:
     {
         *this = audioCapturerChangeInfo;
     }
-    AudioCapturerChangeInfo() {}
-    ~AudioCapturerChangeInfo() {}
+    AudioCapturerChangeInfo() = default;
+    ~AudioCapturerChangeInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(createrUID)
