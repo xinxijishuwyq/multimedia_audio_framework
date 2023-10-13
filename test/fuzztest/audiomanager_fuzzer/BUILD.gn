@@ -16,7 +16,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../config.gni")
 ##############################fuzztest##########################################
-ohos_fuzztest("AudioManagerFuzzTest_audio") {
+ohos_fuzztest("AudioManagerFuzzTest") {
   module_out_path = "audio_framework/audio_framework"
   fuzz_config_file = "../audiomanager_fuzzer"
 
@@ -42,6 +42,6 @@ ohos_fuzztest("AudioManagerFuzzTest_audio") {
 ###############################################################################
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioManagerFuzzTest_audio" ]
+  deps = [ ":AudioManagerFuzzTest" ]
 }
 ###############################################################################
