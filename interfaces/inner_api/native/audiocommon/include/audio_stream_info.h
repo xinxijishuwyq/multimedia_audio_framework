@@ -352,7 +352,7 @@ enum AudioChannelLayout: uint64_t {
 };
 
 const std::vector<AudioChannelLayout> RENDERER_SUPPORTED_CHANNELLAYOUTS {
-    CH_LAYOUT_UNKNOWN, 
+    CH_LAYOUT_UNKNOWN,
     CH_LAYOUT_MONO,
     CH_LAYOUT_STEREO,
     CH_LAYOUT_2POINT1, CH_LAYOUT_2_1, CH_LAYOUT_SURROUND,

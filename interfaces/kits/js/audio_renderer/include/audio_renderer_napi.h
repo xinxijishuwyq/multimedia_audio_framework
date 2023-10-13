@@ -55,7 +55,7 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     void DestroyCallbacks();
     void DestroyNAPICallbacks();
-private:
+    private:
     struct AudioRendererAsyncContext {
         napi_env env;
         napi_async_work work;

@@ -41,6 +41,7 @@ const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint32_t FACTOR_TWO = 2;
+const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
@@ -69,8 +70,9 @@ public:
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
-    void UpdateMultichannelIOBufferConfig(const uint32_t &channels, const uint64_t &channelLayout,
+    void UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout,
         const std::string &deviceName);
+    void StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig);
     AudioEffectConfig GetIoBufferConfig();
 private:
     std::mutex reloadMutex;

@@ -1000,7 +1000,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
     paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, &map, propList);
-
     if (!paStream) {
         error = pa_context_errno(context);
         AUDIO_ERR_LOG("create stream Failed, error: %{public}d", error);

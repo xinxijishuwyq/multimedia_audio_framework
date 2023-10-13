@@ -577,6 +577,17 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
+static void SinkRenderCapProcess(pa_sink *si, size_t length, pa_memchunk *capResult) {
+    capResult->memblock = pa_memblock_new(si->core->mempool, length);
+    capResult->index = 0;
+    capResult->length = length;
+    SinkRenderPrimaryGetDataCap(si, capResult);
+    if (si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state)) {
+        pa_source_post(si->monitor_source, capResult);
+    }
+    return;
+}
+
 static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
     unsigned nUnreffed = 0;
@@ -754,26 +765,13 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
     return nSinkInput;
 }
 
-static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
 {
-    pa_memchunk capResult;
-    capResult.memblock = pa_memblock_new(si->core->mempool, length);
-    capResult.index = 0;
-    capResult.length = length;
-    SinkRenderPrimaryGetDataCap(si, &capResult);
-
-    if (si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state)) {
-        pa_source_post(si->monitor_source, &capResult);
-    }
     char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
         "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
-    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         sceneTypeLenRef[i] = DEFAULT_IN_CHANNEL_NUM;
     }
-    struct Userdata *u;
-    pa_assert_se(u = si->userdata);
-
     pa_sink_input *sinkIn;
     void *state = NULL;
     unsigned maxInfo = MAX_MIX_CHANNELS;
@@ -789,12 +787,25 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
             if (!strcmp(sinkSceneType, sceneTypeSet[i])) {
                 sceneTypeLenRef[i] = sinkIn->sample_spec.channels;
-                sinkIn->thread_info.resampler->map_required = false; 
+                sinkIn->thread_info.resampler->map_required = false;
             }
         }
         maxInfo--;
     }
+}
 
+static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+{
+    pa_memchunk capResult;
+    SinkRenderCapProcess(si, length, &capResult);
+   
+    char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
+        "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
+    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    AdjustProcessParamsBeforeGetData(si, sceneTypeLenRef);
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
     memset_s(u->bufferAttr->tempBufIn, memsetInLen, 0, u->processSize);
@@ -806,9 +817,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneTypeSet[i]);
-        if (nSinkInput == 0) {
-            continue;
-        }
+        if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
