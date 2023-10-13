@@ -390,8 +390,8 @@ AudioEffectConfig AudioEffectChain::GetIoBufferConfig()
 
 void AudioEffectChain::StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig)
 {
-    sceneMode = audioEffectChain->GetEffectMode();
-    ioBufferConfig = audioEffectChain->GetIoBufferConfig();
+    sceneMode = GetEffectMode();
+    ioBufferConfig = GetIoBufferConfig();
     return;
 }
 
