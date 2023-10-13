@@ -180,7 +180,6 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
-
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;

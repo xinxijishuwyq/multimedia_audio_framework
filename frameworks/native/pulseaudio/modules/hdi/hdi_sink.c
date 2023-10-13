@@ -577,7 +577,8 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
-static void SinkRenderCapProcess(pa_sink *si, size_t length, pa_memchunk *capResult) {
+static void SinkRenderCapProcess(pa_sink *si, size_t length, pa_memchunk *capResult)
+{
     capResult->memblock = pa_memblock_new(si->core->mempool, length);
     capResult->index = 0;
     capResult->length = length;
@@ -808,8 +809,8 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     AdjustProcessParamsBeforeGetData(si, sceneTypeLenRef);
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
-    memset_s(u->bufferAttr->tempBufIn, memsetInLen, 0, u->processSize);
-    memset_s(u->bufferAttr->tempBufOut, memsetOutLen, 0, u->processSize);
+    memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
+    memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;

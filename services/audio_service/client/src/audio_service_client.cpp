@@ -2955,13 +2955,14 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
     uint32_t channelNum = 0;
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {
-        case 0:
+        case 0: {
             for (auto bit = chSetToPaPositionMap_.begin(); bit != chSetToPaPositionMap_.end(); ++bit) {
                 if ((channelLayout & (bit->first)) != 0) {
                     paMap.map[channelNum++] = bit->second;
                 }
             }
             break;
+        }
         case 1: {
             uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
             channelNum = (order + 1) * (order + 1);
