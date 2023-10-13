@@ -37,6 +37,17 @@ private:
     bool isFinished_;
 };
 
+class AudioXCollie {
+public:
+    AudioXCollie(const std::string &tag, uint32_t timeoutSeconds);
+    ~AudioXCollie();
+    void CancelXCollieTimer();
+private:
+    int32_t id_;
+    std::string tag_;
+    bool isCanceled_;
+};
+
 class ClockTime {
 public:
     static int64_t GetCurNano();

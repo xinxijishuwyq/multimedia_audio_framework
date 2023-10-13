@@ -24,8 +24,6 @@
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include "xcollie/xcollie.h"
-#include "xcollie/xcollie_define.h"
 
 #include "audio_capturer_source.h"
 #include "audio_errors.h"
@@ -133,12 +131,10 @@ void AudioServer::OnStop()
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioParameter",
-        TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
+    AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS);
     AUDIO_DEBUG_LOG("server: set audio parameter");
     if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
         AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
 
@@ -151,19 +147,16 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         IAudioRendererSink* bluetoothSinkInstance = IAudioRendererSink::GetInstance("a2dp", "");
         if (bluetoothSinkInstance == nullptr) {
             AUDIO_ERR_LOG("has no valid sink");
-            HiviewDFX::XCollie::GetInstance().CancelTimer(id);
             return;
         }
         std::string renderValue = key + "=" + value + ";";
         bluetoothSinkInstance->SetAudioParameter(parmKey, "", renderValue);
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
 
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("has no valid sink");
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
 
@@ -175,11 +168,9 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::BT_WBS;
     } else {
         AUDIO_ERR_LOG("SetAudioParameter: key %{publbic}s is invalid for hdi interface", key.c_str());
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return;
     }
     audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    HiviewDFX::XCollie::GetInstance().CancelTimer(id);
 }
 
 void AudioServer::SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
@@ -202,8 +193,7 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::GetAudioParameter",
-        TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
+    AudioXCollie audioXCollie("AudioServer::GetAudioParameter", TIME_OUT_SECONDS);
     AUDIO_DEBUG_LOG("server: get audio parameter");
     if (key == "get_usb_info") {
         IAudioRendererSink *usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
@@ -217,7 +207,6 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         AudioParamKey parmKey = AudioParamKey::NONE;
         if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
             parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
-            HiviewDFX::XCollie::GetInstance().CancelTimer(id);
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "");
         }
         if (key == "need_change_usb_device") {
@@ -227,10 +216,8 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
     }
 
     if (AudioServer::audioParameters.count(key)) {
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return AudioServer::audioParameters[key];
     } else {
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id);
         return "";
     }
 }
@@ -429,8 +416,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
-    int32_t id = HiviewDFX::XCollie::GetInstance().SetTimer("AudioServer::SetAudioScene",
-        TIME_OUT_SECONDS, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
+    AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
 
@@ -447,7 +433,6 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     }
 
     audioScene_ = audioScene;
-    HiviewDFX::XCollie::GetInstance().CancelTimer(id);
     return SUCCESS;
 }
 
