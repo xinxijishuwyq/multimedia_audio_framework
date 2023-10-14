@@ -150,7 +150,7 @@ private:
         AudioCapturerNapi *capturerNapi);
     static std::shared_ptr<AudioCapturerInfoChangeCallbackNapi> GetCapturerInfoChangeNapiCallback(napi_value argv,
         AudioCapturerNapi *capturerNapi);
-
+    static napi_value GetCurrentMicrophones(napi_env env, napi_callback_info info);
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioCapturerOptions> sCapturerOptions_;
     static std::mutex createMutex_;

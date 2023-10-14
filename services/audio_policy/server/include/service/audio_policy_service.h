@@ -227,7 +227,7 @@ public:
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
         bool hasBTPermission, bool hasSystemPermission);
 
-    void RegisteredTrackerClientDied(pid_t pid);
+    void RegisteredTrackerClientDied(pid_t uid);
 
     void RegisteredStreamListenerClientDied(pid_t pid);
 
@@ -300,6 +300,11 @@ public:
 
     void UpdateOutputDeviceSelectedByCalling(DeviceType deviceType);
 
+    int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
+
+    vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+
+    vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -477,6 +482,18 @@ private:
 
     void RegisterNameMonitorHelper();
 
+    bool IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc);
+
+    void AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void RemoveMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void AddAudioCapturerMicrophoneDescriptor(int32_t sessionId, DeviceType devType);
+
+    void UpdateAudioCapturerMicrophoneDescriptor(DeviceType devType);
+
+    void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -514,6 +531,8 @@ private:
 #endif
     std::unique_ptr<DeviceStatusListener> deviceStatusListener_;
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
+    std::vector<sptr<MicrophoneDescriptor>> connectedMicrophones_;
+    std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
     std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
@@ -564,6 +583,7 @@ private:
     std::mutex deviceClassInfoMutex_;
 
     std::shared_mutex deviceStatusUpdateSharedMutex_;
+    std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
 };

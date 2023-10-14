@@ -16,6 +16,7 @@
 #include "audio_policy_manager.h"
 #include "audio_log.h"
 #include "audio_policy_proxy.h"
+#include "microphone_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -2094,5 +2095,87 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCapt
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("GetHardwareOutputSamplingRate: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    if (!desc->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioDeviceDescriptor Marshalling() failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_HARDWARE_OUTPUT_SAMPLING_RATE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetHardwareOutputSamplingRate event failed , error: %d", error);
+        return ERROR;
+    }
+
+    return reply.ReadInt32();
+}
+
+std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrophoneDescriptors(
+    int32_t sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<MicrophoneDescriptor>> micDescs;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return micDescs;
+    }
+
+    data.WriteInt32(sessionId);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_CAPTURER_MICROPHONE_DESCRIPTORS),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get audio capturer microphonedescriptors failed, error: %d", error);
+        return micDescs;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        micDescs.push_back(MicrophoneDescriptor::Unmarshalling(reply));
+    }
+
+    return micDescs;
+}
+
+std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAvailableMicrophones()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<MicrophoneDescriptor>> micDescs;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return micDescs;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_MICROPHONE_DESCRIPTORS), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Get available microphonedescriptors failed, error: %d", error);
+        return micDescs;
+    }
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        micDescs.push_back(MicrophoneDescriptor::Unmarshalling(reply));
+    }
+
+    return micDescs;
+}
 } // namespace AudioStandard
 } // namespace OHOS

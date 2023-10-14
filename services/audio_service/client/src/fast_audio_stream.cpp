@@ -647,9 +647,10 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
     captureCallback_->OnReadData(length);
 }
 
-void FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
+int32_t FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     AUDIO_ERR_LOG("SetChannelBlendMode is not supported");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

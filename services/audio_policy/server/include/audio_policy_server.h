@@ -231,7 +231,7 @@ public:
 
     void RegisterClientDeathRecipient(const sptr<IRemoteObject> &object, DeathRecipientId id);
 
-    void RegisteredTrackerClientDied(int pid);
+    void RegisteredTrackerClientDied(int uid);
 
     void RegisteredStreamListenerClientDied(int pid);
 
@@ -272,6 +272,12 @@ public:
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
         uint32_t appTokenId) override;
+
+    int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
+
+    vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
+
+    vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

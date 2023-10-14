@@ -79,6 +79,8 @@ private:
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
+    static napi_value GetAvailableMicrophones(napi_env env, napi_callback_info info);
+
     AudioSystemManager *audioMngr_;
     AudioRoutingManager *audioRoutingMngr_;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;

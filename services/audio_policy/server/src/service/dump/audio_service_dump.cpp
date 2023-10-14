@@ -63,6 +63,7 @@ void AudioServiceDump::InitDumpFuncMap()
     dumpFuncMap[u"-g"] = &AudioServiceDump::GroupInfoDump;
     dumpFuncMap[u"-e"] = &AudioServiceDump::EffectManagerInfoDump;
     dumpFuncMap[u"-vi"] = &AudioServiceDump::StreamVolumeInfosDump;
+    dumpFuncMap[u"-md"] = &AudioServiceDump::MicrophoneDescriptorsDump;
 }
 
 void AudioServiceDump::ResetPAAudioDump()
@@ -712,6 +713,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     GroupInfoDump(dumpString);
     EffectManagerInfoDump(dumpString);
     StreamVolumeInfosDump(dumpString);
+    MicrophoneDescriptorsDump(dumpString);
 }
 
 void AudioServiceDump::ArgDataDump(std::string &dumpString, std::queue<std::u16string>& argQue)
@@ -754,6 +756,7 @@ void AudioServiceDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -g\t\t\t|dump group info\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump effect manager info\n");
     AppendFormat(dumpString, "  -vi\t\t\t|dump volume config of streams\n");
+    AppendFormat(dumpString, "  -md\t\t\t|dump available microphone descriptors\n");
 }
 
 void AudioServiceDump::AudioDataDump(PolicyData &policyData, string &dumpString,
@@ -1040,6 +1043,23 @@ void AudioServiceDump::StreamVolumeInfosDump(std::string& dumpString)
         AppendFormat(dumpString, "maxLevel = %d  ", streamVolumeInfo->maxLevel);
         AppendFormat(dumpString, "defaultLevel = %d\n", streamVolumeInfo->defaultLevel);
         DeviceVolumeInfosDump(dumpString, streamVolumeInfo->deviceVolumeInfos);
+    }
+}
+
+void AudioServiceDump::MicrophoneDescriptorsDump(std::string& dumpString)
+{
+    dumpString += "\nAvailable MicrophoneDescriptors:\n";
+
+    for (auto it = audioData_.policyData.availableMicrophones.begin();
+        it != audioData_.policyData.availableMicrophones.end(); ++it) {
+        AppendFormat(dumpString, "id:%d \n", (*it)->micId_);
+        AppendFormat(dumpString, "device type:%d  \n", (*it)->deviceType_);
+        AppendFormat(dumpString, "group id:%d  \n", (*it)->groupId_);
+        AppendFormat(dumpString, "sensitivity:%d  \n", (*it)->sensitivity_);
+        AppendFormat(dumpString, "position:%f %f %f (x, y, z)\n",
+            (*it)->position_.x, (*it)->position_.y, (*it)->position_.z);
+        AppendFormat(dumpString, "orientation:%f %f %f (x, y, z)\n",
+            (*it)->orientation_.x, (*it)->orientation_.y, (*it)->orientation_.z);
     }
 }
 } // namespace AudioStandard

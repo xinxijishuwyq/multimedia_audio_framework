@@ -106,6 +106,7 @@ napi_value AudioRoutingManagerNapi::Init(napi_env env, napi_value exports)
             GetPreferredOutputDeviceForRendererInfoSync),
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceForCapturerInfo", GetPreferredInputDeviceForCapturerInfo),
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceForCapturerInfoSync", GetPreferredInputDeviceForCapturerInfoSync),
+        DECLARE_NAPI_FUNCTION("getAvailableMicrophones", GetAvailableMicrophones),
     };
 
     status = napi_define_class(env, AUDIO_ROUTING_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -1811,5 +1812,64 @@ napi_value AudioRoutingManagerNapi::IsCommunicationDeviceActiveSync(napi_env env
     return result;
 }
 
+static void SetValueDouble(const napi_env& env, const std::string& fieldStr, const int intValue, napi_value &result)
+{
+    napi_value value = nullptr;
+    napi_create_double(env, intValue, &value);
+    napi_set_named_property(env, result, fieldStr.c_str(), value);
+}
+
+static void SetMicrophoneDescriptors(const napi_env& env, napi_value &valueParam,
+    const sptr<MicrophoneDescriptor> &micDesc)
+{
+    napi_value jsPositionObj = nullptr;
+    napi_value jsorientationObj = nullptr;
+
+    SetValueInt32(env, "id", micDesc->micId_, valueParam);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(micDesc->deviceType_), valueParam);
+    SetValueInt32(env, "groupId", static_cast<int32_t>(micDesc->groupId_), valueParam);
+    SetValueInt32(env, "sensitivity", static_cast<int32_t>(micDesc->sensitivity_), valueParam);
+    napi_create_object(env, &jsPositionObj);
+    SetValueDouble(env, "x", micDesc->position_.x, jsPositionObj);
+    SetValueDouble(env, "y", micDesc->position_.y, jsPositionObj);
+    SetValueDouble(env, "z", micDesc->position_.z, jsPositionObj);
+    napi_set_named_property(env, valueParam, "position", jsPositionObj);
+
+    napi_create_object(env, &jsorientationObj);
+    SetValueDouble(env, "x", micDesc->orientation_.x, jsorientationObj);
+    SetValueDouble(env, "y", micDesc->orientation_.y, jsorientationObj);
+    SetValueDouble(env, "z", micDesc->orientation_.z, jsorientationObj);
+    napi_set_named_property(env, valueParam, "orientation", jsorientationObj);
+}
+
+napi_value AudioRoutingManagerNapi::GetAvailableMicrophones(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRoutingManagerNapi = reinterpret_cast<AudioRoutingManagerNapi *>(native);
+    if (status != napi_ok || audioRoutingManagerNapi == nullptr) {
+        AUDIO_ERR_LOG("GetAvailableMicrophones unwrap failure!");
+        return result;
+    }
+
+    vector<sptr<MicrophoneDescriptor>> micDescs =
+        audioRoutingManagerNapi->audioRoutingMngr_->GetAvailableMicrophones();
+
+    napi_value jsResult = nullptr;
+    napi_value valueParam = nullptr;
+    napi_create_array_with_length(env, micDescs.size(), &jsResult);
+    for (size_t i = 0; i < micDescs.size(); i++) {
+        (void)napi_create_object(env, &valueParam);
+        SetMicrophoneDescriptors(env, valueParam, micDescs[i]);
+        napi_set_element(env, jsResult, i, valueParam);
+    }
+
+    return jsResult;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1268,5 +1268,37 @@ int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
 
     return gsp->SetPlaybackCapturerFilterInfos(config, appTokenId);
 }
+
+int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetHardwareOutputSamplingRate: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->GetHardwareOutputSamplingRate(desc);
+}
+
+vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAudioCapturerMicrophoneDescriptors(int32_t sessionID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetAudioCapturerMicrophoneDescriptors: audio policy manager proxy is NULL.");
+        std::vector<sptr<MicrophoneDescriptor>> descs;
+        return descs;
+    }
+    return gsp->GetAudioCapturerMicrophoneDescriptors(sessionID);
+}
+
+vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetAvailableMicrophones: audio policy manager proxy is NULL.");
+        std::vector<sptr<MicrophoneDescriptor>> descs;
+        return descs;
+    }
+    return gsp->GetAvailableMicrophones();
+}
 } // namespace AudioStandard
 } // namespace OHOS

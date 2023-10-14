@@ -30,6 +30,7 @@
 #include "nocopyable.h"
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
+#include "microphone_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -85,6 +86,7 @@ typedef struct {
     OriginalEffectConfig oriEffectConfig;
     std::vector<Effect> availableEffects;
     StreamVolumeInfoMap streamVolumeInfos;
+    std::vector<sptr<MicrophoneDescriptor>> availableMicrophones;
 } PolicyData;
 
 typedef struct {
@@ -132,6 +134,7 @@ private:
     void StreamVolumeInfosDump(std::string& dumpString);
     void DeviceVolumeInfosDump(std::string& dumpString, DeviceVolumeInfoMap &deviceVolumeInfos);
     void HelpInfoDump(std::string& dumpString);
+    void MicrophoneDescriptorsDump(std::string& dumpString);
     static const std::string GetStreamName(AudioStreamType streamType);
     static const std::string GetSourceName(SourceType sourceType);
     static const std::string GetStreamUsgaeName(StreamUsage streamUsage);

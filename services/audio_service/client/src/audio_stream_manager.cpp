@@ -159,5 +159,19 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
     AudioStreamType StreamVolType = (AudioStreamType)volumeType;
     return AudioPolicyManager::GetInstance().IsStreamActive(StreamVolType);
 }
+
+int32_t AudioStreamManager::GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc)
+{
+    int32_t result = 0;
+
+    if (desc == nullptr) {
+        sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor();
+        desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+        desc->deviceRole_ = OUTPUT_DEVICE;
+    }
+
+    result = AudioPolicyManager::GetInstance().GetHardwareOutputSamplingRate(desc);
+    return result;
+}
 } // namespace AudioStandard
 } // namespace OHOS

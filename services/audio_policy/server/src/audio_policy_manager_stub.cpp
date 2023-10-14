@@ -959,6 +959,39 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);
+    if (audioDeviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("Unmarshalling fail.");
+        return;
+    }
+
+    int32_t result =  GetHardwareOutputSamplingRate(audioDeviceDescriptor);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionId = data.ReadInt32();
+    std::vector<sptr<MicrophoneDescriptor>> descs = GetAudioCapturerMicrophoneDescriptors(sessionId);
+    int32_t size = static_cast<int32_t>(descs.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        descs[i]->Marshalling(reply);
+    }
+}
+
+void AudioPolicyManagerStub::GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<sptr<MicrophoneDescriptor>> descs = GetAvailableMicrophones();
+    int32_t size = static_cast<int32_t>(descs.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        descs[i]->Marshalling(reply);
+    }
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

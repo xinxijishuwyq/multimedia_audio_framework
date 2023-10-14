@@ -443,7 +443,6 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     }
 
     ProcessDataByAudioBlend(buffer, bufferSize);
-
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
@@ -984,9 +983,13 @@ int64_t AudioStream::GetFramesRead()
     return GetStreamFramesRead();
 }
 
-void AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
+int32_t AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
+    if ((state_ != PREPARED) && (state_ != NEW)) {
+        return ERR_ILLEGAL_STATE;
+    }
     audioBlend_.SetParams(blendMode, streamParams_.format, streamParams_.channels);
+    return SUCCESS;
 }
 
 void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)

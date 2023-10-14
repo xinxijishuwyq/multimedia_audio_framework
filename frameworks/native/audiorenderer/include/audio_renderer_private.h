@@ -91,7 +91,7 @@ public:
     AudioEffectMode GetAudioEffectMode() const override;
     int64_t GetFramesWritten() const override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
-    void SetChannelBlendMode(ChannelBlendMode blendMode) override;
+    int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)

@@ -20,6 +20,7 @@
 #include "audio_policy_base.h"
 #include "audio_info.h"
 #include "audio_errors.h"
+#include "microphone_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -208,6 +209,12 @@ public:
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) override;
+
+    int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
+
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
+
+    std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

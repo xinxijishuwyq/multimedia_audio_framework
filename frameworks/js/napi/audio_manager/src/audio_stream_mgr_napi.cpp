@@ -298,6 +298,7 @@ napi_value AudioStreamMgrNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("isActiveSync", IsStreamActiveSync),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
+        DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -1226,6 +1227,59 @@ napi_value AudioStreamMgrNapi::GetEffectInfoArraySync(napi_env env, napi_callbac
         napi_set_element(env, result, static_cast<uint32_t>(i), jsEffectInofObj);
     }
 
+    return result;
+}
+
+napi_value AudioStreamMgrNapi::GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    napi_value tempValue = nullptr;
+    void *native = nullptr;
+    int32_t intValue = {0};
+    sptr<AudioDeviceDescriptor> deviceDescriptor = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioStreamMgrNapi = reinterpret_cast<AudioStreamMgrNapi*>(native);
+    if (status != napi_ok || audioStreamMgrNapi == nullptr) {
+        AUDIO_ERR_LOG("GetHardwareOutputSamplingRate unwrap failure!");
+        return result;
+    }
+
+    if (argc < ARGS_ONE) {
+        int32_t rate = audioStreamMgrNapi->audioStreamMngr_->GetHardwareOutputSamplingRate(deviceDescriptor);
+        napi_create_int32(env, rate, &result);
+        return result;
+    }
+
+    deviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();
+    if (deviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("AudioDeviceDescriptor alloc failed!");
+        return result;
+    }
+
+    if (napi_get_named_property(env, argv[PARAM0], "deviceRole", &tempValue) == napi_ok) {
+        napi_get_value_int32(env, tempValue, &intValue);
+        if (intValue != static_cast<int32_t>(DeviceRole::OUTPUT_DEVICE)) {
+            AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+            return result;
+        }
+        deviceDescriptor->deviceRole_ = static_cast<DeviceRole>(intValue);
+    }
+
+    if (napi_get_named_property(env, argv[PARAM0], "deviceType", &tempValue) == napi_ok) {
+        napi_get_value_int32(env, tempValue, &intValue);
+        if (!AudioCommonNapi::IsLegalOutputDeviceType(intValue)) {
+            AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+            return result;
+        }
+        deviceDescriptor->deviceType_ = static_cast<DeviceType>(intValue);
+    }
+
+    int32_t rate = audioStreamMgrNapi->audioStreamMngr_->GetHardwareOutputSamplingRate(deviceDescriptor);
+    napi_create_int32(env, rate, &result);
     return result;
 }
 } // namespace AudioStandard

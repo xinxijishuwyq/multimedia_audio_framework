@@ -809,7 +809,7 @@ public:
      * @param Channel blend mode
      * @since 11
      */
-    virtual void SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
+    virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
 
     virtual ~AudioRenderer();
 private:

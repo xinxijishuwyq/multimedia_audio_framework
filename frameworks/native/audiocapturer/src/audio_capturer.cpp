@@ -695,6 +695,13 @@ int32_t AudioCapturerPrivate::GetCurrentCapturerChangeInfo(AudioCapturerChangeIn
     return SUCCESS;
 }
 
+std::vector<sptr<MicrophoneDescriptor>> AudioCapturerPrivate::GetCurrentMicrophones() const
+{
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    GetAudioStreamId(sessionId);
+    return AudioPolicyManager::GetInstance().GetAudioCapturerMicrophoneDescriptors(sessionId);
+}
+
 int32_t AudioCapturerPrivate::SetAudioCapturerDeviceChangeCallback(
     const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
 {

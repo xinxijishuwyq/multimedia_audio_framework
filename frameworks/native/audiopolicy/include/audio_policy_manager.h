@@ -34,6 +34,7 @@
 #include "i_standard_capturer_state_change_listener.h"
 #include "i_standard_client_tracker.h"
 #include "audio_log.h"
+#include "microphone_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -239,7 +240,13 @@ public:
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
 
+    int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
+
     static void RecoverAudioCapturerEventListener();
+
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionID);
+
+    std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
 private:
     AudioPolicyManager()

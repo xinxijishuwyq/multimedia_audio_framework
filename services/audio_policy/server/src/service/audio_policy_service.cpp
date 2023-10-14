@@ -68,6 +68,7 @@ static sptr<IStandardAudioService> g_adProxy = nullptr;
 static sptr<IStandardAudioService> g_btProxy = nullptr;
 #endif
 static int32_t startDeviceId = 1;
+static int32_t startMicrophoneId = 1;
 mutex g_adProxyMutex;
 mutex g_dataShareHelperMutex;
 #ifdef BLUETOOTH_ENABLE
@@ -662,6 +663,7 @@ int32_t AudioPolicyService::OpenRemoteAudioDevice(std::string networkId, DeviceR
         connectedDevices_.end());
     UpdateDisplayName(remoteDeviceDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), remoteDeviceDescriptor);
+    AddMicrophoneDescriptor(remoteDeviceDescriptor);
     return SUCCESS;
 }
 
@@ -2094,6 +2096,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
         audioDescriptor->deviceId_ = startDeviceId++;
         UpdateDisplayName(audioDescriptor);
         connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+        AddMicrophoneDescriptor(audioDescriptor);
     }
 }
 
@@ -2113,6 +2116,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         }
         return false;
     };
+
     // Remember the disconnected device descriptor and remove it
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
@@ -2121,6 +2125,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
             it = connectedDevices_.erase(it);
         }
     }
+
+    sptr<AudioDeviceDescriptor> devDesc
+        = new (std::nothrow) AudioDeviceDescriptor(deviceDescriptor.deviceType_, deviceDescriptor.deviceRole_);
+    RemoveMicrophoneDescriptor(devDesc);
 }
 
 void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected)
@@ -2892,6 +2900,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
     audioDescriptor->deviceId_ = startDeviceId++;
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+    AddMicrophoneDescriptor(audioDescriptor);
 }
 
 // Parser callbacks
@@ -3150,6 +3159,8 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChange
     for (sptr<AudioDeviceDescriptor> desc : inputDevices) {
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo, desc, true, true);
+            int32_t sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+            AddAudioCapturerMicrophoneDescriptor(sessionId, activeDeviceType);
             break;
         }
     }
@@ -3173,6 +3184,10 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         UpdateStreamChangeDeviceInfoForPlayback(streamChangeInfo);
     } else if (mode == AUDIO_MODE_RECORD) {
         UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
+        std::lock_guard<std::mutex> lock(microphonesMutex_);
+        if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
+            audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+        }
     }
     return streamCollector_.UpdateTracker(mode, streamChangeInfo);
 }
@@ -3236,9 +3251,10 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<unique_ptr<Audi
     return status;
 }
 
-void AudioPolicyService::RegisteredTrackerClientDied(pid_t pid)
+void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
 {
-    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(pid));
+    RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
+    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 }
 
 void AudioPolicyService::RegisteredStreamListenerClientDied(pid_t pid)
@@ -3454,6 +3470,7 @@ void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDevice
             if (itr != connectedDevices_.end()) {
                 DeviceInfo inputDevice = {};
                 UpdateDeviceInfo(inputDevice, *itr, true, true);
+                UpdateAudioCapturerMicrophoneDescriptor((*itr)->deviceType_);
                 streamCollector_.UpdateTracker(AUDIO_MODE_RECORD, inputDevice);
             }
         }
@@ -4100,5 +4117,154 @@ void AudioPolicyService::UpdateOutputDeviceSelectedByCalling(DeviceType deviceTy
     outputDeviceSelectedByCalling_[uid] = deviceType;
 }
 
+bool AudioPolicyService::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
+{
+    DeviceType deviceType = desc->deviceType_;
+
+    if (desc->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
+        AUDIO_ERR_LOG("Not output device!");
+        return false;
+    }
+
+    auto isPresent = [&deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        if (deviceType == DEVICE_TYPE_FILE_SINK) {
+            return false;
+        }
+        return ((deviceType == desc->deviceType_) && (desc->deviceRole_ == DeviceRole::OUTPUT_DEVICE));
+    };
+
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (itr == connectedDevices_.end()) {
+        AUDIO_ERR_LOG("Device not available");
+        return false;
+    }
+
+    return true;
+}
+
+int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+{
+    int32_t rate = 48000;
+
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("desc is null!");
+        return -1;
+    }
+
+    if (!IsConnectedOutputDevice(desc)) {
+        return -1;
+    }
+
+    DeviceType clientDevType = desc->deviceType_;
+    for (const auto &device : deviceClassInfo_) {
+        auto moduleInfoList = device.second;
+        for (auto &moduleInfo : moduleInfoList) {
+            auto serverDevType = GetDeviceType(moduleInfo.name);
+            if (clientDevType == serverDevType) {
+                rate = atoi(moduleInfo.rate.c_str());
+                return rate;
+            }
+        }
+    }
+
+    return rate;
+}
+
+void AudioPolicyService::AddMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    std::lock_guard<std::mutex> lock(microphonesMutex_);
+    if (deviceDescriptor->deviceRole_ == INPUT_DEVICE &&
+        deviceDescriptor->deviceType_ != DEVICE_TYPE_FILE_SOURCE) {
+        auto isPresent = [&deviceDescriptor](const sptr<MicrophoneDescriptor> &desc) {
+            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+            return desc->deviceType_ == deviceDescriptor->deviceType_;
+        };
+
+        auto iter = std::find_if(connectedMicrophones_.begin(), connectedMicrophones_.end(), isPresent);
+        if (iter == connectedMicrophones_.end()) {
+            sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor(startMicrophoneId++,
+                deviceDescriptor->deviceType_);
+            connectedMicrophones_.push_back(micDesc);
+        }
+    }
+}
+
+void AudioPolicyService::RemoveMicrophoneDescriptor(sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    std::lock_guard<std::mutex> lock(microphonesMutex_);
+    auto isPresent = [&deviceDescriptor](const sptr<MicrophoneDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        return desc->deviceType_ == deviceDescriptor->deviceType_;
+    };
+
+    auto iter = std::find_if(connectedMicrophones_.begin(), connectedMicrophones_.end(), isPresent);
+    if (iter != connectedMicrophones_.end()) {
+        connectedMicrophones_.erase(iter);
+    }
+}
+
+void AudioPolicyService::AddAudioCapturerMicrophoneDescriptor(int32_t sessionId, DeviceType devType)
+{
+    std::lock_guard<std::mutex> lock(microphonesMutex_);
+    auto isPresent = [&devType] (const sptr<MicrophoneDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid microphone descriptor");
+        return (devType == desc->deviceType_);
+    };
+
+    auto itr = std::find_if(connectedMicrophones_.begin(), connectedMicrophones_.end(), isPresent);
+    if (itr != connectedMicrophones_.end()) {
+        audioCaptureMicrophoneDescriptor_[sessionId] = *itr;
+    }
+}
+
+vector<sptr<MicrophoneDescriptor>> AudioPolicyService::GetAudioCapturerMicrophoneDescriptors(int32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(microphonesMutex_);
+    vector<sptr<MicrophoneDescriptor>> descList = {};
+    const auto desc = audioCaptureMicrophoneDescriptor_.find(sessionId);
+    if (desc != audioCaptureMicrophoneDescriptor_.end()) {
+        sptr<MicrophoneDescriptor> micDesc = new (std::nothrow) MicrophoneDescriptor(desc->second);
+        descList.push_back(micDesc);
+    }
+    return descList;
+}
+
+vector<sptr<MicrophoneDescriptor>> AudioPolicyService::GetAvailableMicrophones()
+{
+    return connectedMicrophones_;
+}
+
+void AudioPolicyService::UpdateAudioCapturerMicrophoneDescriptor(DeviceType devType)
+{
+    std::lock_guard<std::mutex> lock(microphonesMutex_);
+    auto isPresent = [&devType] (const sptr<MicrophoneDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid microphone descriptor");
+        return (devType == desc->deviceType_);
+    };
+
+    auto itr = std::find_if(connectedMicrophones_.begin(), connectedMicrophones_.end(), isPresent);
+    if (itr != connectedMicrophones_.end()) {
+        for (auto& desc : audioCaptureMicrophoneDescriptor_) {
+            if (desc.second->deviceType_ != devType) {
+                desc.second = *itr;
+            }
+        }
+    }
+}
+
+void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(microphonesMutex_);
+    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+
+    for (auto &info : audioCapturerChangeInfos) {
+        if (info->clientUID != uid && info->createrUID != uid) {
+            continue;
+        }
+        audioCaptureMicrophoneDescriptor_.erase(info->sessionId);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

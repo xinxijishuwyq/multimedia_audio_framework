@@ -639,9 +639,9 @@ int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
 
-void AudioRendererPrivate::SetChannelBlendMode(ChannelBlendMode blendMode)
+int32_t AudioRendererPrivate::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
-    audioStream_->SetChannelBlendMode(blendMode);
+    return audioStream_->SetChannelBlendMode(blendMode);
 }
 
 AudioRendererInterruptCallbackImpl::AudioRendererInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream,

@@ -78,7 +78,6 @@ private:
         uint32_t underflowCount;
         void *data;
         int32_t audioEffectMode;
-        int32_t channelBlendMode;
         AudioSampleFormat sampleFormat;
         AudioSamplingRate samplingRate;
         AudioChannel channelCount;
@@ -137,6 +136,7 @@ private:
     static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetChannelBlendMode(napi_env env, napi_callback_info info);
+
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
     static void JudgeFuncGetAudioStreamId(napi_env &env, napi_value &result,
@@ -174,7 +174,6 @@ private:
     static void AsyncGetCurrentOutputDevices(napi_env env, void *data);
     static void AsyncSetAudioEffectMode(napi_env env, void *data);
     static void AsyncGetAudioEffectMode(napi_env env, void *data);
-    static void AsyncSetChannelBlendMode(napi_env env, void *data);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value* argv, const std::string& cbName);

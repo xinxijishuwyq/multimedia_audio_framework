@@ -45,7 +45,7 @@
 #include "audio_ringermode_update_listener_proxy.h"
 #include "audio_volume_key_event_callback_proxy.h"
 #include "i_standard_audio_policy_manager_listener.h"
-
+#include "microphone_descriptor.h"
 #include "parameter.h"
 #include "parameters.h"
 
@@ -1886,7 +1886,7 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     GetDeviceInfo(policyData);
     GetGroupInfo(policyData);
     GetStreamVolumeInfoMap(policyData.streamVolumeInfos);
-
+    policyData.availableMicrophones = GetAvailableMicrophones();
     // Get Audio Effect Manager Information
     mPolicyService.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
 }
@@ -2146,13 +2146,13 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
     }
 }
 
-void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid)
+void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
 {
-    AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", pid);
+    AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
-    mPolicyService.RegisteredTrackerClientDied(pid);
-    auto filter = [&pid](int val) {
-        return pid == val;
+    mPolicyService.RegisteredTrackerClientDied(uid);
+    auto filter = [&uid](int val) {
+        return uid == val;
     };
     clientDiedListenerState_.erase(std::remove_if(clientDiedListenerState_.begin(), clientDiedListenerState_.end(),
         filter), clientDiedListenerState_.end());
@@ -2470,6 +2470,24 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCap
         }
     }
     return mPolicyService.SetPlaybackCapturerFilterInfos(config);
+}
+
+int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
+{
+    return mPolicyService.GetHardwareOutputSamplingRate(desc);
+}
+
+vector<sptr<MicrophoneDescriptor>> AudioPolicyServer::GetAudioCapturerMicrophoneDescriptors(int32_t sessionId)
+{
+    vector<sptr<MicrophoneDescriptor>> micDescs =
+        mPolicyService.GetAudioCapturerMicrophoneDescriptors(sessionId);
+    return micDescs;
+}
+
+vector<sptr<MicrophoneDescriptor>> AudioPolicyServer::GetAvailableMicrophones()
+{
+    vector<sptr<MicrophoneDescriptor>> micDescs = mPolicyService.GetAvailableMicrophones();
+    return micDescs;
 }
 } // namespace AudioStandard
 } // namespace OHOS

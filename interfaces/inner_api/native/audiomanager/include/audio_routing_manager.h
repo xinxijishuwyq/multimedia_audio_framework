@@ -21,6 +21,7 @@
 #include "audio_system_manager.h"
 #include "audio_info.h"
 #include "audio_group_manager.h"
+#include "microphone_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,6 +67,7 @@ public:
     int32_t SetPreferredInputDeviceChangeCallback(AudioCapturerInfo captureInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
     int32_t UnsetPreferredInputDeviceChangeCallback();
+    std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 private:
     uint32_t GetCallingPid();
 };
