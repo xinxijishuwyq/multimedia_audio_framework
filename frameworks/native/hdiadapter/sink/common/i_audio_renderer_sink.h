@@ -74,6 +74,11 @@ public:
 
     virtual void SetAudioMonoState(bool audioMono) = 0;
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
+
+    virtual int32_t Preload(const std::string &usbInfoStr)
+    {
+        return 0;
+    }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {
