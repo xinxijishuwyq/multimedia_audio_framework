@@ -199,7 +199,6 @@ struct AudioBufferConfig {
     uint32_t samplingRate;
     uint32_t channels;
     uint8_t format;
-    uint64_t channelLayout;
 };
 
 struct AudioEffectConfig {
