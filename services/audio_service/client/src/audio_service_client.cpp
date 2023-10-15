@@ -957,7 +957,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
-    mChannelLayout = audioParams.channelLayout;
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -987,19 +986,34 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     }
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
-    if (audioParams.channelLayout == 0) {
-        audioParams.channelLayout = defaultChCountToLayoutMap_[audioParams.channels];
-    }
-    pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
     pa_channel_map map;
-    pa_channel_map_init(&map);
-    map.channels = audioParams.channels;
-    uint32_t channelsInLayout = ConvertChLayoutToPaChMap(audioParams.channelLayout, map);
-    if (channelsInLayout != audioParams.channels || channelsInLayout == 0) {
-        AUDIO_ERR_LOG("Invalid channel Layout");
-        return AUDIO_CLIENT_CREATE_STREAM_ERR;
+    if (audioParams.channels > CHANNEL_6) {
+        pa_channel_map_init(&map);
+        map.channels = audioParams.channels;
+        switch (audioParams.channels) {
+            case CHANNEL_8:
+                map.map[CHANNEL8_IDX] = PA_CHANNEL_POSITION_AUX1;
+                [[fallthrough]];
+            case CHANNEL_7:
+                map.map[CHANNEL1_IDX] = PA_CHANNEL_POSITION_FRONT_LEFT;
+                map.map[CHANNEL2_IDX] = PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER;
+                map.map[CHANNEL3_IDX] = PA_CHANNEL_POSITION_FRONT_CENTER;
+                map.map[CHANNEL4_IDX] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+                map.map[CHANNEL5_IDX] = PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER;
+                map.map[CHANNEL6_IDX] = PA_CHANNEL_POSITION_REAR_CENTER;
+                map.map[CHANNEL7_IDX] = PA_CHANNEL_POSITION_AUX0;
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid channel count");
+                pa_threaded_mainloop_unlock(mainLoop);
+                return AUDIO_CLIENT_CREATE_STREAM_ERR;
+        }
+
+        paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, &map, propList);
+    } else {
+        paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, nullptr, propList);
     }
-    paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, &map, propList);
+
     if (!paStream) {
         error = pa_context_errno(context);
         AUDIO_ERR_LOG("create stream Failed, error: %{public}d", error);
@@ -1909,7 +1923,6 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
     }
 
     audioParams = ConvertFromPAAudioParams(*paSampleSpec);
-    audioParams.channelLayout = mChannelLayout;
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2952,34 +2965,6 @@ void AudioServiceClient::SetWakeupCapturerState(bool isWakeupCapturer)
 {
     AUDIO_DEBUG_LOG("SetWakeupCapturerState: %{public}d", isWakeupCapturer);
     isWakeupCapturerStream_ = isWakeupCapturer;
-}
-
-uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap)
-{
-    uint32_t channelNum = 0;
-    uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
-    switch (mode) {
-        case 0: {
-            for (auto bit = chSetToPaPositionMap_.begin(); bit != chSetToPaPositionMap_.end(); ++bit) {
-                if ((channelLayout & (bit->first)) != 0) {
-                    paMap.map[channelNum++] = bit->second;
-                }
-            }
-            break;
-        }
-        case 1: {
-            uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
-            channelNum = (order + 1) * (order + 1);
-            for (uint32_t i = 0; i < channelNum; ++i) {
-                paMap.map[i] = chSetToPaPositionMap_[FRONT_LEFT];
-            }
-            break;
-        }
-        default:
-            channelNum = 0;
-            break;
-    }
-    return channelNum;
 }
 
 } // namespace AudioStandard
