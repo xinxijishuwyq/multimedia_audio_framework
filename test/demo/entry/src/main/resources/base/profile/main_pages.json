@@ -47,12 +47,22 @@
     "pages/AudioEnhance/audiorender/GetUnderflowCount",
     "pages/AudioEnhance/audiorender/GetCurrentOutputDevices",
     "pages/AudioEnhance/audiorender/DeviceChangeCallback",
+    "pages/AudioEnhance/audiorender/SetChannelBlendMode",
     "pages/AudioEnhance/audiorender/AudioRenderMultiInstance",
     "pages/AudioEnhance/AudioManagerEnhance",
     "pages/AudioEnhance/audiomanager/Configuration",
     "pages/AudioEnhance/audiomanager/IsVolumeUnadjustable",
     "pages/AudioEnhance/audiomanager/AdjustVolumeByStep",
     "pages/AudioEnhance/audiomanager/AdjustSystemVolumeByStep",
-    "pages/AudioEnhance/audiomanager/GetSystemVolumeInDb"
+    "pages/AudioEnhance/audiomanager/GetSystemVolumeInDb",
+    "pages/AudioEnhance/AudioCapturerEnhance",
+    "pages/AudioEnhance/AudioCapturer/GetCurrentInputDevices",
+    "pages/AudioEnhance/AudioCapturer/GetCurrentAudioCapturerChangeInfo",
+    "pages/AudioEnhance/AudioCapturer/DeviceChangeCallback",
+    "pages/AudioEnhance/AudioCapturer/CapturerInfoChangeCallback",
+    "pages/AudioEnhance/AudioCapturer/AudioCapturerMultiInstance",
+    "pages/AudioEnhance/MicrophoneEnhance",
+    "pages/AudioEnhance/Microphone/GetAvailableMicrophones",
+    "pages/AudioEnhance/Microphone/GetCurrentMicrophones"
   ]
 }

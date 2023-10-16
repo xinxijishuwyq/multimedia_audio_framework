@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import audio from '@ohos.multimedia.audio'
 import fs from '@ohos.file.fs';
 
@@ -40,18 +40,18 @@ struct GetCurrentOutputDevices {
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
   @State isWrite: boolean = false
 
-  async onBackPress(){
-    if(this.audioRenderer!==null){
+  async onBackPress() {
+    if (this.audioRenderer !== null) {
       await this.audioRenderer.release()
     }
   }
 
   async createRender() {
     this.returnMsg = ``
-    if(this.audioRenderer != null){
+    if (this.audioRenderer != null) {
       this.returnMsg += `audioRenderer instance had created, Do not click repeatedly\n`
       return
-    }else{
+    } else {
       try {
         this.audioRenderer = await audio.createAudioRenderer(this.audioRendererOptions)
         this.returnMsg += `audioRenderer create success \n`
@@ -64,16 +64,16 @@ struct GetCurrentOutputDevices {
 
   async renderPlay() {
     this.returnMsg = ``
-    if(this.audioRenderer == null) {
+    if (this.audioRenderer == null) {
       await this.createRender()
-    }else{
-      if(this.isWrite == false){
+    } else {
+      if (this.isWrite == false) {
         await this.audioRenderer.release()
         this.audioRenderer = null
         await this.createRender();
       }
     }
-    if(this.isWrite == true){
+    if (this.isWrite == true) {
       this.returnMsg += `不要重复点击 播放音乐 按钮 \n`
       return
     }
@@ -135,7 +135,7 @@ struct GetCurrentOutputDevices {
   getInfoArray(deviceInfo) {
     let str = ``;
     let descriptor = deviceInfo;
-    str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks}\n`;
+    str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks[0]}\n`;
     return str;
   }
 
@@ -169,6 +169,7 @@ struct GetCurrentOutputDevices {
             Button() {
               Text("创建AudioRender").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).onClick(() => this.createRender()).backgroundColor(Color.Pink)
+
             Button() {
               Text("播放音乐").fontSize(22).fontColor(Color.Blue)
             }.width('49%').height(60).onClick(() => this.renderPlay()).backgroundColor(Color.Pink)

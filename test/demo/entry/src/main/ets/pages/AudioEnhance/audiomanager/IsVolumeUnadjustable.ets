@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -49,7 +49,6 @@ struct IsVolumeUnadjustable {
   @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
   @State volumeAdjustzUp: number = 0;
   @State volumeAdjustDown: number = 1;
-
   private renderInfo = {
     'RINGTONE': {
       main: {
@@ -130,7 +129,7 @@ struct IsVolumeUnadjustable {
     },
     'ULTRASONIC': {
       main: {
-       content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
+        content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
         usage: audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
         rendererFlags: 0
       },
@@ -253,7 +252,7 @@ struct IsVolumeUnadjustable {
             Row() {
               Select(this.volumeTypeSelectList)
                 .value(this.selectedVolumeTypeKey)
-                .onSelect(async(index, value) => {
+                .onSelect(async (index, value) => {
                   this.selectedVolumeType = audio.AudioVolumeType[value];
                   this.selectedVolumeTypeKey = value;
 
@@ -262,7 +261,7 @@ struct IsVolumeUnadjustable {
                   this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
 
                   this.getVolumeRange();
-                  if(this.audioRenderer!==null){
+                  if (this.audioRenderer !== null) {
                     await this.audioRenderer.release()
                     this.audioRenderer = null
                   }
@@ -293,6 +292,7 @@ struct IsVolumeUnadjustable {
                   .width('80%')
                 Text(this.selectedVolume.toFixed(0)).fontSize(24)
               }
+
               Text(`${this.selectedContentTypeKey}`).fontSize(16).lineHeight(40)
               Text(`${this.selectedStreamUsageKey}`).fontSize(16).lineHeight(40)
             }
@@ -308,16 +308,16 @@ struct IsVolumeUnadjustable {
               }.width('90%').height(60).margin({ right: 10 })
               .onClick(() => {
                 let _this = this;
-                this.audioVolumeGroupManager.isVolumeUnadjustable()
-                  .then(value => {
-                    _this.returnMsg = `isVolumeUnadjustable : Success, 返回值  ${value}`
-                  })
-                  .catch((err) => {
-                    _this.returnMsg = `IsVolumeUnadjustable err: ${JSON.stringify(err)}`
-                  })
+                try {
+                  let value = _this.audioVolumeGroupManager.isVolumeUnadjustable();
+                  _this.returnMsg = `isVolumeUnadjustable : Success, 返回值  ${value}`
+                } catch (err) {
+                  _this.returnMsg = `IsVolumeUnadjustable err: ${JSON.stringify(err)}`
+                }
               })
             }.margin({ top: 10 })
-            Row(){
+
+            Row() {
               Button() {
                 Text("setVolume callback").fontSize(20).fontColor(Color.White)
               }.width('40%').height(60).margin({ right: 10 })
@@ -356,63 +356,65 @@ struct IsVolumeUnadjustable {
               })
             }.margin({ top: 10 })
 
-          Row() {
-            Button() {
-              Text("AdjustVolumeByStep_UP Callback").fontSize(20).fontColor(Color.White)
-            }.width('49%').height(60).margin({ right: 10 })
-            .onClick(() => {
-              let _this = this;
-              this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustzUp, (err, value) => {
-                if (err) {
-                  _this.returnMsg = 'AdjustVolumeByStep_UP Callback err:' + JSON.stringify(err);
-                  return;
-                }
-                _this.returnMsg = "AdjustVolumeByStep_UP Callback:SUCCESS 返回值 " + value;
+            Row() {
+              Button() {
+                Text("AdjustVolumeByStep_UP Callback").fontSize(20).fontColor(Color.White)
+              }.width('49%').height(60).margin({ right: 10 })
+              .onClick(() => {
+                let _this = this;
+                this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustzUp, (err, value) => {
+                  if (err) {
+                    _this.returnMsg = 'AdjustVolumeByStep_UP Callback err:' + JSON.stringify(err);
+                    return;
+                  }
+                  _this.returnMsg = "AdjustVolumeByStep_UP Callback:SUCCESS 返回值 " + value;
+                })
               })
-            })
-            Button() {
-              Text("AdjustVolumeByStep_UP Promise").fontSize(20).fontColor(Color.White)
-            }.width('49%').height(60).margin({ right: 10 })
-            .onClick(() => {
-              let _this = this;
-              this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustzUp)
-                .then(value => {
-                  _this.returnMsg = "AdjustVolumeByStep_UP Promise:SUCCESS 返回值 " + value;
-                })
-                .catch((err) => {
-                  _this.returnMsg = 'AdjustVolumeByStep_UP Promise err:' + JSON.stringify(err);
-                })
-            })
-          }.margin({ top: 10 })
 
-          Row() {
-            Button() {
-              Text("AdjustVolumeByStep_DOWN Callback").fontSize(20).fontColor(Color.White)
-            }.width('49%').height(60).margin({ right: 10 })
-            .onClick(() => {
-              let _this = this;
-              this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustDown, (err, value) => {
-                if (err) {
-                  _this.returnMsg = 'AdjustVolumeByStep_DOWN Callback err:' + JSON.stringify(err);
-                  return;
-                }
-                _this.returnMsg = "AdjustVolumeByStep_DOWN Callback:SUCCESS 返回值 " + value;
+              Button() {
+                Text("AdjustVolumeByStep_UP Promise").fontSize(20).fontColor(Color.White)
+              }.width('49%').height(60).margin({ right: 10 })
+              .onClick(() => {
+                let _this = this;
+                this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustzUp)
+                  .then(value => {
+                    _this.returnMsg = "AdjustVolumeByStep_UP Promise:SUCCESS 返回值 " + value;
+                  })
+                  .catch((err) => {
+                    _this.returnMsg = 'AdjustVolumeByStep_UP Promise err:' + JSON.stringify(err);
+                  })
               })
-            })
-            Button() {
-              Text("AdjustVolumeByStep_DOWN Promise").fontSize(20).fontColor(Color.White)
-            }.width('49%').height(60).margin({ right: 10 })
-            .onClick(() => {
-              let _this = this;
-              this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustDown)
-                .then(value => {
-                  _this.returnMsg = "AdjustVolumeByStep_DOWN Promise:SUCCESS 返回值 " + value;
+            }.margin({ top: 10 })
+
+            Row() {
+              Button() {
+                Text("AdjustVolumeByStep_DOWN Callback").fontSize(20).fontColor(Color.White)
+              }.width('49%').height(60).margin({ right: 10 })
+              .onClick(() => {
+                let _this = this;
+                this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustDown, (err, value) => {
+                  if (err) {
+                    _this.returnMsg = 'AdjustVolumeByStep_DOWN Callback err:' + JSON.stringify(err);
+                    return;
+                  }
+                  _this.returnMsg = "AdjustVolumeByStep_DOWN Callback:SUCCESS 返回值 " + value;
                 })
-                .catch((err) => {
-                  _this.returnMsg = 'AdjustVolumeByStep_DOWN Promise err:' + JSON.stringify(err);
-                })
-            })
-          }.margin({ top: 10 })
+              })
+
+              Button() {
+                Text("AdjustVolumeByStep_DOWN Promise").fontSize(20).fontColor(Color.White)
+              }.width('49%').height(60).margin({ right: 10 })
+              .onClick(() => {
+                let _this = this;
+                this.audioVolumeGroupManager.adjustVolumeByStep(this.volumeAdjustDown)
+                  .then(value => {
+                    _this.returnMsg = "AdjustVolumeByStep_DOWN Promise:SUCCESS 返回值 " + value;
+                  })
+                  .catch((err) => {
+                    _this.returnMsg = 'AdjustVolumeByStep_DOWN Promise err:' + JSON.stringify(err);
+                  })
+              })
+            }.margin({ top: 10 })
 
             Row() {
               Button() {
@@ -432,6 +434,7 @@ struct IsVolumeUnadjustable {
                   _this.returnMsg = "adjustSystemVolumeByStep_UP Callback:SUCCESS 返回值 " + value;
                 })
               })
+
               Button() {
                 Text("adjustSystemVolumeByStep_UP Promise").fontSize(20).fontColor(Color.White)
               }.width('49%').height(60).margin({ right: 10 })
@@ -469,6 +472,7 @@ struct IsVolumeUnadjustable {
                   _this.returnMsg = "adjustSystemVolumeByStep_DOWN Callback:SUCCESS 返回值 " + value;
                 })
               })
+
               Button() {
                 Text("adjustSystemVolumeByStep_DOWN Promise").fontSize(20).fontColor(Color.White)
               }.width('49%').height(60).margin({ right: 10 })
@@ -492,6 +496,5 @@ struct IsVolumeUnadjustable {
         }
       }.width('100%').margin({ top: 80 })
     }.height('100%').width('100%');
-
   }
 }

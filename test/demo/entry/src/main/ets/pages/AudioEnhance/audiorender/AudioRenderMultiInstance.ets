@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -20,7 +20,7 @@ import fs from '@ohos.file.fs';
 @Entry
 @Component
 struct AudioRenderMultiInstance {
-  private audioRendererOptions  = {
+  private audioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -33,7 +33,7 @@ struct AudioRenderMultiInstance {
       rendererFlags: 0
     }
   }
-  private audioRendererOptions1  = {
+  private audioRendererOptions1 = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -46,7 +46,7 @@ struct AudioRenderMultiInstance {
       rendererFlags: 0
     }
   }
-  private audioRendererOptions2  = {
+  private audioRendererOptions2 = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_8000,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -59,38 +59,37 @@ struct AudioRenderMultiInstance {
       rendererFlags: 0
     }
   }
-
-  private audioRenderers = [null,null,null]
-  private paths=[globalThis.pathDir + '/test_44100_2.wav',globalThis.pathDir + '/safe_and_sound_32.wav',globalThis.pathDir + '/StarWars10s-1C-8000-2SW.wav']
+  private audioRenderers = [null, null, null]
+  private paths = [globalThis.pathDir + '/test_44100_2.wav', globalThis.pathDir + '/safe_and_sound_32.wav', globalThis.pathDir + '/StarWars10s-1C-8000-2SW.wav']
   @State returnMsg: string = `hello`
-
   @State bufferSize: number = 0
-  private arr=[0,1,2]
-  private writeArr=[0,0,0]
+  private arr = [0, 1, 2]
+  private writeArr = [0, 0, 0]
   @State underflowCount: number = 0
   @State maxVolume: number = 0
   @State minVolume: number = 1
-
   private samplingRateList = []
   @State samplerate: number = 44100
   @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100"
+
   aboutToAppear() {
     for (let key in audio.AudioSamplingRate) {
       this.samplingRateList.push({ value: key })
     }
   }
 
-  async onBackPress(){
+  async onBackPress() {
     if (this.audioRenderers[0] !== null) {
-       await this.audioRenderers[0].release()
+      await this.audioRenderers[0].release()
     }
     if (this.audioRenderers[1] !== null) {
-       await this.audioRenderers[1].release()
+      await this.audioRenderers[1].release()
     }
     if (this.audioRenderers[2] !== null) {
       await this.audioRenderers[2].release()
     }
   }
+
   createAudioRenderer(index) {
     if (this.audioRenderers[index] !== null) {
       this.returnMsg = `audioRenderer ${index} Created already,don't create anymore`
@@ -107,7 +106,7 @@ struct AudioRenderMultiInstance {
           _this.returnMsg = `audioRenderer ${index} Created : SUCCESS,state:${_this.audioRenderers[index].state}\n`
         }
       })
-    } else if (index == 1){
+    } else if (index == 1) {
       audio.createAudioRenderer(this.audioRendererOptions1, async (err, data) => {
         if (err) {
           _this.returnMsg = `audioRenderer ${index} Created : Error: ${JSON.stringify(err)}`
@@ -160,12 +159,12 @@ struct AudioRenderMultiInstance {
     });
   }
 
-  async  sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+  async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   async writeRenderer(index) {
-    if(this.writeArr[index]==1){
+    if (this.writeArr[index] == 1) {
       this.returnMsg += `audioRenderer ${index} write already clicked`
       return
     }
@@ -177,7 +176,7 @@ struct AudioRenderMultiInstance {
       this.bufferSize = await this.audioRenderers[index].getBufferSize()
     }
 
-    this.writeArr[index]=1
+    this.writeArr[index] = 1
 
     let _this = this
     let path = this.paths[index]
@@ -187,28 +186,28 @@ struct AudioRenderMultiInstance {
       let file = await fs.open(path, 0o0);
       let buf = new ArrayBuffer(this.bufferSize);
       this.returnMsg = `audioRenderer ${index} write start.......... \n`;
-        for (let i = 0;i < len; i++) {
-          let options = {
-            offset: i * this.bufferSize,
-            length: this.bufferSize
-          }
-          let readsize = await fs.read(file.fd, buf, options);
-          let writeSize = await new Promise((resolve,reject)=>{
-            _this.audioRenderers[index].write(buf,(err,writeSize)=>{
-              if(err){
-                reject(err)
-              }else{
-                resolve(writeSize)
-                if (index == 0){
-                  if(i == len -1){
-                    _this.sleep(1000);
-                  }
-                }
-
-              }
-            })
-          })
+      for (let i = 0;i < len; i++) {
+        let options = {
+          offset: i * this.bufferSize,
+          length: this.bufferSize
         }
+        let readsize = await fs.read(file.fd, buf, options);
+        let writeSize = await new Promise((resolve, reject) => {
+          _this.audioRenderers[index].write(buf, (err, writeSize) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(writeSize)
+              if (index == 0) {
+                if (i == len - 1) {
+                  _this.sleep(1000);
+                }
+              }
+
+            }
+          })
+        })
+      }
       _this.returnMsg += `audioRenderer ${index} write end, state:${_this.audioRenderers[index].state}\n`
     } catch (err) {
       this.returnMsg += `audioRenderer ${index} write : Error: ${JSON.stringify(err)}\n`
@@ -257,7 +256,7 @@ struct AudioRenderMultiInstance {
       } else {
         _this.returnMsg = `audioRenderer ${index} release SUCCESS,state:${_this.audioRenderers[index].state}\n`
         _this.audioRenderers[index] = null
-        _this.writeArr[index]=0
+        _this.writeArr[index] = 0
       }
     })
   }
@@ -278,12 +277,13 @@ struct AudioRenderMultiInstance {
     });
   }
 
- getInfoArray(deviceInfo) {
+  getInfoArray(deviceInfo) {
     let str = ``;
     let descriptor = deviceInfo;
-    str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks}\n`;
+    str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks[0]}\n`;
     return str;
   }
+
   getCurrentOutputDevicesRenderer(index) {
     if (this.audioRenderers[index] == null) {
       this.returnMsg = `audioRenderer ${index} instance had not created,dont‘t allow to getBufferSize`
@@ -299,7 +299,7 @@ struct AudioRenderMultiInstance {
     });
   }
 
-  getMaxStreamVolumeRenderer(index){
+  getMaxStreamVolumeRenderer(index) {
     if (this.audioRenderers[index] == null) {
       this.returnMsg = `audioRenderer ${index} instance had not created,dont‘t allow to getBufferSize`
       return
@@ -352,7 +352,7 @@ struct AudioRenderMultiInstance {
       return
     }
     let _this = this
-    _this.audioRenderers[index].getRendererSamplingRate((err,data) => {
+    _this.audioRenderers[index].getRendererSamplingRate((err, data) => {
       if (err) {
         _this.returnMsg = `audioRenderer ${index} getRendererSamplingRate : Error: ${JSON.stringify(err)}\n`
       } else {
@@ -418,7 +418,11 @@ struct AudioRenderMultiInstance {
 
               Button() {
                 Text("getCurrentOutputDevices").fontSize(22).fontColor(Color.Blue)
-              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.getCurrentOutputDevicesRenderer(item))
+              }
+              .width('49%')
+              .height(60)
+              .backgroundColor(Color.Pink)
+              .onClick(() => this.getCurrentOutputDevicesRenderer(item))
             }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
             Row() {
@@ -442,11 +446,19 @@ struct AudioRenderMultiInstance {
             Row() {
               Button() {
                 Text("getRendererSamplingRate").fontSize(22).fontColor(Color.Blue)
-              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.getRendererSamplingRateRenderer(item))
+              }
+              .width('49%')
+              .height(60)
+              .backgroundColor(Color.Pink)
+              .onClick(() => this.getRendererSamplingRateRenderer(item))
 
               Button() {
                 Text("setRendererSamplingRate").fontSize(22).fontColor(Color.Blue)
-              }.width('49%').height(60).backgroundColor(Color.Pink).onClick(() => this.setRendererSamplingRateRenderer(item))
+              }
+              .width('49%')
+              .height(60)
+              .backgroundColor(Color.Pink)
+              .onClick(() => this.setRendererSamplingRateRenderer(item))
             }.margin({ top: 10, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 
             Divider().strokeWidth(10).color(Color.Blue)
