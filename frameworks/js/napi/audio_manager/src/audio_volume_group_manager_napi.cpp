@@ -304,6 +304,8 @@ napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_in
             if (status == napi_ok) {
                 objectInfo.release();
                 return jsThis;
+            } else {
+                ObjectRefMap<AudioVolumeGroupManagerNapi>::Erase(objectInfo.get());
             }
         }
     }
