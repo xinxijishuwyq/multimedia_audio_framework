@@ -42,7 +42,6 @@ namespace {
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
     constexpr int32_t INV_CHANNEL = -1;
-    constexpr int32_t CHANNEL_10 = 10;
     constexpr float DISCOUNT_VOLUME = 0.5;
     constexpr float INVALID_VOLUME = -1.0;
     constexpr float VOLUME_MIN = 0;
