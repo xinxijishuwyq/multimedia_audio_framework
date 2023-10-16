@@ -41,5 +41,5 @@ ohos_unittest("audio_stream_manager_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-   ]
+  ]
 }
