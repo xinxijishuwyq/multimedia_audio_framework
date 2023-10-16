@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "hilog/log.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "xpower_event_js.h"
 
 using namespace std;
@@ -289,19 +290,22 @@ napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_in
     HiLog::Info(LABEL, "Construct() %{public}d", groupId);
 
     if (status == napi_ok) {
-        unique_ptr<AudioVolumeGroupManagerNapi> groupmanagerNapi = make_unique<AudioVolumeGroupManagerNapi>();
-        if (groupmanagerNapi != nullptr) {
-            groupmanagerNapi->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-            if (groupmanagerNapi->audioGroupMngr_ == nullptr) {
+        unique_ptr<AudioVolumeGroupManagerNapi> objectInfo = make_unique<AudioVolumeGroupManagerNapi>();
+        if (objectInfo != nullptr) {
+            ObjectRefMap<AudioVolumeGroupManagerNapi>::Insert(objectInfo.get());
+            objectInfo->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+            if (objectInfo->audioGroupMngr_ == nullptr) {
                 HiLog::Error(LABEL, "Failed in AudioVolumeGroupManagerNapi::Construct()!");
                 AudioVolumeGroupManagerNapi::isConstructSuccess_ = NAPI_ERR_SYSTEM;
             }
-            groupmanagerNapi->cachedClientId_ = getpid();
-            status = napi_wrap(env, jsThis, static_cast<void*>(groupmanagerNapi.get()),
+            objectInfo->cachedClientId_ = getpid();
+            status = napi_wrap(env, jsThis, static_cast<void*>(objectInfo.get()),
                 AudioVolumeGroupManagerNapi::Destructor, nullptr, nullptr);
             if (status == napi_ok) {
-                groupmanagerNapi.release();
+                objectInfo.release();
                 return jsThis;
+            } else {
+                ObjectRefMap<AudioVolumeGroupManagerNapi>::Erase(objectInfo.get());
             }
         }
     }
@@ -317,8 +321,7 @@ void AudioVolumeGroupManagerNapi::Destructor(napi_env env, void *nativeObject, v
 
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioVolumeGroupManagerNapi*>(nativeObject);
-        delete obj;
-        obj = nullptr;
+        ObjectRefMap<AudioVolumeGroupManagerNapi>::DecreaseRef(obj);
         AUDIO_DEBUG_LOG("AudioVolumeGroupManagerNapi::Destructor delete AudioVolumeGroupManagerNapi obj done");
     }
 }
@@ -1040,8 +1043,10 @@ napi_value AudioVolumeGroupManagerNapi::GetRingerMode(napi_env env, napi_callbac
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->ringMode = GetJsAudioRingMode(context->objectInfo->audioGroupMngr_->GetRingerMode());
+                ObjectRefMap objectGuard(context->objectInfo);
+                AudioVolumeGroupManagerNapi *object = objectGuard.GetPtr();
+                if (context->status == SUCCESS && object != nullptr) {
+                    context->ringMode = GetJsAudioRingMode(object->audioGroupMngr_->GetRingerMode());
                     context->intValue = context->ringMode;
                     context->status = 0;
                 }
