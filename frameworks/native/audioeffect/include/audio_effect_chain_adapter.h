@@ -39,6 +39,11 @@ int32_t EffectChainManagerGetFrameLen(void);
 bool EffectChainManagerExist(const char *sceneType, const char *effectMode);
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID);
+int32_t EffectChainManagerMultichannelUpdate(const char *sceneType, const uint32_t channels,
+    const char *channelLayout);
+bool IsChannelLayoutHVSSupported(const uint64_t channelLayout);
+bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
+    const char *sinkChannelLayout);
 
 #ifdef __cplusplus
 }

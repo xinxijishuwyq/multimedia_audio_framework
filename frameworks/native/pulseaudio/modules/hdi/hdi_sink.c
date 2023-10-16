@@ -51,7 +51,8 @@
 #define DEFAULT_WRITE_TIME 1000
 #define MIX_BUFFER_LENGTH (pa_page_size())
 #define MAX_MIX_CHANNELS 32
-#define IN_CHANNEL_NUM_MAX 2
+#define DEFAULT_IN_CHANNEL_NUM 2
+#define IN_CHANNEL_NUM_MAX 16
 #define OUT_CHANNEL_NUM_MAX 2
 #define DEFAULT_FRAMELEN 2048
 #define SCENE_TYPE_NUM 7
@@ -367,7 +368,7 @@ bool IsInnerCapturer(pa_sink_input *sinkIn, struct Userdata *u)
     return privacySupport && usageSupport;
 }
 
-static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxinfo)
+static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxInfo)
 {
     pa_sink_input *sinkIn;
 
@@ -379,7 +380,7 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     void *state = NULL;
     size_t mixlength = *length;
     struct Userdata *u = si->userdata;
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         if (IsInnerCapturer(sinkIn, u)) {
             pa_sink_input_assert_ref(sinkIn);
 
@@ -399,7 +400,7 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
 
             infoIn++;
             n++;
-            maxinfo--;
+            maxInfo--;
         }
     }
 
@@ -576,6 +577,18 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
+static void SinkRenderCapProcess(pa_sink *si, size_t length, pa_memchunk *capResult)
+{
+    capResult->memblock = pa_memblock_new(si->core->mempool, length);
+    capResult->index = 0;
+    capResult->length = length;
+    SinkRenderPrimaryGetDataCap(si, capResult);
+    if (si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state)) {
+        pa_source_post(si->monitor_source, capResult);
+    }
+    return;
+}
+
 static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
     unsigned nUnreffed = 0;
@@ -621,7 +634,7 @@ static void SinkRenderPrimaryInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsign
 }
 
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
-    unsigned maxinfo, char *sceneType)
+    unsigned maxInfo, char *sceneType)
 {
     pa_sink_input *sinkIn;
     unsigned n = 0;
@@ -634,7 +647,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
     struct Userdata *u = si->userdata;
     bool isCaptureSilently = IsCaptureSilently();
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
@@ -660,7 +673,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
             infoIn++;
             n++;
-            maxinfo--;
+            maxInfo--;
         }
     }
 
@@ -753,48 +766,78 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
     return nSinkInput;
 }
 
+static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
+{
+    char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
+        "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        sceneTypeLenRef[i] = DEFAULT_IN_CHANNEL_NUM;
+    }
+    pa_sink_input *sinkIn;
+    void *state = NULL;
+    unsigned maxInfo = MAX_MIX_CHANNELS;
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
+        const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
+        const uint8_t sinkChannels = sinkIn->sample_spec.channels;
+        const char *sinkChannelLayout = pa_proplist_gets(sinkIn->proplist, "stream.channelLayout");
+        if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout)
+            && sinkIn->thread_info.resampler) {
+            sinkIn->thread_info.resampler->map_required = true;
+            continue;
+        }
+        for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+            if (pa_safe_streq(sinkSceneType, sceneTypeSet[i]) && sinkIn->thread_info.resampler) {
+                sceneTypeLenRef[i] = sinkIn->sample_spec.channels;
+                sinkIn->thread_info.resampler->map_required = false;
+            }
+        }
+        maxInfo--;
+    }
+}
+
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     pa_memchunk capResult;
-    capResult.memblock = pa_memblock_new(si->core->mempool, length);
-    capResult.index = 0;
-    capResult.length = length;
-    SinkRenderPrimaryGetDataCap(si, &capResult);
-
-    if (si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state)) {
-        pa_source_post(si->monitor_source, &capResult);
-    }
+    SinkRenderCapProcess(si, length, &capResult);
+   
     char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
         "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
+    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
-    size_t memsetLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
-    memset_s(u->bufferAttr->tempBufIn, memsetLen, 0, memsetLen);
-    memset_s(u->bufferAttr->tempBufOut, memsetLen, 0, memsetLen);
+
+    AdjustProcessParamsBeforeGetData(si, sceneTypeLenRef);
+    size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
+    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
+    memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
+    memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
-    int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
-    chunkIn->memblock = pa_memblock_new(si->core->mempool, length);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
+        chunkIn->memblock = pa_memblock_new(si->core->mempool, tmpLength);
         chunkIn->index = 0;
-        chunkIn->length = length;
+        chunkIn->length = tmpLength;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneTypeSet[i]);
-        if (nSinkInput == 0) {
-            continue;
-        }
+        if (nSinkInput == 0) { continue; }
         chunkIn->index = 0;
-        chunkIn->length = length;
+        chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
+        int32_t frameLen = bitSize > 0 ? (int32_t)(tmpLength / bitSize) : 0;
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
-        u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanOut;
+        u->bufferAttr->numChanIn = sceneTypeLenRef[i];
+        u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         EffectChainManagerProcess(sceneTypeSet[i], u->bufferAttr);
-        for (int32_t k = 0; k < frameLen; k++) {
+        for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
             u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
         }
         pa_memblock_release(chunkIn->memblock);
+        u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     }
     void *dst = pa_memblock_acquire_chunk(chunkIn);
+    int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
     for (int32_t i = 0; i < frameLen; i++) {
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
