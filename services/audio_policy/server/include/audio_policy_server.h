@@ -168,8 +168,6 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) override;
 
-    AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;
-
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
@@ -347,6 +345,7 @@ private:
     void OnAudioFocusInfoChange();
     void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void ProcessInterrupt(const InterruptHint& hint);
+    AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;
 
     // for audio volume and mute status
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
