@@ -340,12 +340,11 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     return count;
 }
 
-bool IsInnerCapturer(pa_sink_input *sinkIn, struct Userdata *u)
+bool IsInnerCapturer(pa_sink_input *sinkIn)
 {
-    pa_assert(sinkIn);
-    pa_assert(u);
+    pa_sink_input_assert_ref(sinkIn);
 
-    if (u != NULL && !GetInnerCapturerState()) {
+    if (!GetInnerCapturerState()) {
         return false;
     }
 
@@ -379,9 +378,8 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     unsigned n = 0;
     void *state = NULL;
     size_t mixlength = *length;
-    struct Userdata *u = si->userdata;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
-        if (IsInnerCapturer(sinkIn, u)) {
+        if (IsInnerCapturer(sinkIn)) {
             pa_sink_input_assert_ref(sinkIn);
 
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -471,8 +469,8 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     /* We optimize for the case where the order of the inputs has not changed */
 
     pa_mix_info *infoCur = NULL;
-    bool isCaptureSilently = IsCaptureSilently();
     pa_sink_input *sceneSinkInput;
+    bool isCaptureSilently = IsCaptureSilently();
     for (uint32_t k = 0; k < n; k++) {
         if (isCaptureSilently) {
             sceneSinkInput = infoIn[k].userdata;
@@ -540,7 +538,6 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_memchunk chunk;
     size_t l, d;
-    int32_t nSinkInput;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -561,6 +558,8 @@ int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 
     l = chunkIn->length;
     d = 0;
+
+    int32_t nSinkInput;
     while (l > 0) {
         chunk = *chunkIn;
         chunk.index += d;
@@ -645,13 +644,12 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    struct Userdata *u = si->userdata;
     bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode);
-        if (IsInnerCapturer(sinkIn, u) && isCaptureSilently) {
+        if (IsInnerCapturer(sinkIn) && isCaptureSilently) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
             (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
@@ -929,7 +927,9 @@ static void ThreadFuncRendererTimer(void *userdata)
         int32_t ret;
         
         bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
-            (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state));
+            (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
+            (u->sink->state == PA_SINK_IDLE && u->sink->monitor_source &&
+            PA_SOURCE_IS_RUNNING(u->sink->monitor_source->thread_info.state));
         if (flag) {
             now = pa_rtclock_now();
         }

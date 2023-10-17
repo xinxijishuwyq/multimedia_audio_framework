@@ -61,7 +61,7 @@ bool IsCaptureSilently()
     return playbackCapturerMgr->IsCaptureSilently();
 }
 
-bool GetInnerCapturerState()
+extern "C" __attribute__((visibility("default"))) bool GetInnerCapturerState()
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
     if (playbackCapturerMgr == nullptr) {
@@ -72,7 +72,7 @@ bool GetInnerCapturerState()
     return playbackCapturerMgr->GetInnerCapturerState();
 }
 
-void SetInnerCapturerState(bool state)
+extern "C" __attribute__((visibility("default"))) void SetInnerCapturerState(bool state)
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
     if (playbackCapturerMgr == nullptr) {
