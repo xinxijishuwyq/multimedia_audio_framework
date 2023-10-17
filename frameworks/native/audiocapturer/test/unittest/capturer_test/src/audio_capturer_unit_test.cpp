@@ -20,6 +20,8 @@
 #include "audio_info.h"
 #include "audio_stream.h"
 #include "audio_capturer_private.h"
+#include "audio_stream_manager.h"
+#include "audio_system_manager.h"
 #include "refbase.h"
 
 using namespace std;
@@ -39,7 +41,6 @@ namespace {
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
-
     constexpr uint64_t BUFFER_DURATION_FIVE = 5;
     constexpr uint64_t BUFFER_DURATION_TEN = 10;
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
@@ -3278,7 +3279,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     AppInfo appInfo = {};
     std::unique_ptr<AudioCapturerPrivate> audioCapturerPrivate =
         std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-
     bool isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
 
@@ -3286,12 +3286,11 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
 
+    vector<sptr<AudioDeviceDescriptor>> inputDeviceDescriptors = 
+        AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     vector<sptr<MicrophoneDescriptor>> microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
-    EXPECT_EQ(true, microphoneDescriptors.size() > 0);
-
-    for (auto microphoneDescriptor : microphoneDescriptors) {
-        EXPECT_EQ(true, microphoneDescriptor != nullptr);
-    }
+    EXPECT_EQ(inputDeviceDescriptors[0]->deviceRole_, microphoneDescriptors[0]->deviceRole_);
+    EXPECT_EQ(inputDeviceDescriptors[0]->deviceType_, microphoneDescriptors[0]->deviceType_);
 
     audioCapturerPrivate->Release();
     audioCapturer->Release();
@@ -3306,7 +3305,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_
 {
     int32_t ret = -1;
     AudioCapturerOptions capturerOptions;
-
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);

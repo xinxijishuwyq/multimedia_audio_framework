@@ -17,6 +17,8 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_routing_manager_unit_test.h"
+#include "audio_stream_manager.h"
+#include "audio_system_manager.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -114,11 +116,11 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceCh
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophones_001, TestSize.Level1)
 {
-
-    vector<sptr<MicrophoneDescriptor>> desc = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
-    for (auto microphoneDescriptor : desc) {
-        EXPECT_EQ(true, microphoneDescriptor != nullptr);
-    }
+    vector<sptr<AudioDeviceDescriptor>> inputDeviceDescriptors = 
+        AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    vector<sptr<MicrophoneDescriptor>> microphoneDescriptors = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
+    EXPECT_EQ(inputDeviceDescriptors[0]->deviceRole_, microphoneDescriptors[0]->deviceRole_);
+    EXPECT_EQ(inputDeviceDescriptors[0]->deviceType_, microphoneDescriptors[0]->deviceType_);
 }
 
 } // namespace AudioStandard
