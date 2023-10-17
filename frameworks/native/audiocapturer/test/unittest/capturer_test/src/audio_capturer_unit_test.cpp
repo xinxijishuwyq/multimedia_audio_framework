@@ -3235,11 +3235,12 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
 
-    vector<sptr<AudioDeviceDescriptor>> inputDeviceDescriptors = 
-        AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    vector<sptr<MicrophoneDescriptor>> microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
-    EXPECT_EQ(inputDeviceDescriptors[0]->deviceRole_, microphoneDescriptors[0]->deviceRole_);
-    EXPECT_EQ(inputDeviceDescriptors[0]->deviceType_, microphoneDescriptors[0]->deviceType_);
+    auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    auto inputDescriptors = inputDeviceDescriptors[0];
+    auto microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
+    auto micDescriptors = microphoneDescriptors[0];
+    EXPECT_EQ(inputDescriptors[0]->deviceRole_, micDescriptors[0]->deviceRole_);
+    EXPECT_EQ(inputDescriptors[0]->deviceType_, micDescriptors[0]->deviceType_);
 
     audioCapturerPrivate->Release();
     audioCapturer->Release();

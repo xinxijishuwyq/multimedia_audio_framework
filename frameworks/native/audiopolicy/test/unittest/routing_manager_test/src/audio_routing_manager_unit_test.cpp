@@ -116,11 +116,12 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceCh
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophones_001, TestSize.Level1)
 {
-    vector<sptr<AudioDeviceDescriptor>> inputDeviceDescriptors = 
-        AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    vector<sptr<MicrophoneDescriptor>> microphoneDescriptors = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
-    EXPECT_EQ(inputDeviceDescriptors[0]->deviceRole_, microphoneDescriptors[0]->deviceRole_);
-    EXPECT_EQ(inputDeviceDescriptors[0]->deviceType_, microphoneDescriptors[0]->deviceType_);
+    auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    auto inputDescriptors = inputDeviceDescriptors[0];
+    auto microphoneDescriptors = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
+    auto micDescriptors = microphoneDescriptors[0];
+    EXPECT_EQ(inputDescriptors[0]->deviceRole_, micDescriptors[0]->deviceRole_);
+    EXPECT_EQ(inputDescriptors[0]->deviceType_, micDescriptors[0]->deviceType_);
 }
 
 } // namespace AudioStandard
