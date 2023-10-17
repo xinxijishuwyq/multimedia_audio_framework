@@ -13,18 +13,21 @@
  * limitations under the License.
  */
 
+#include "audio_capturer_source.h"
+
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
 #include <cinttypes>
+
+#include "securec.h"
 #include "power_mgr_client.h"
 #include "running_lock.h"
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_utils.h"
-#include "audio_capturer_source.h"
 #include "v1_0/iaudio_manager.h"
-#include "securec.h"
+
+#include "audio_log.h"
+#include "audio_errors.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -75,6 +78,7 @@ private:
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
+    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapterAndCapture();
@@ -439,6 +443,30 @@ int32_t AudioCapturerSourceInner::InitAudioManager()
     return 0;
 }
 
+AudioFormat AudioCapturerSourceInner::ConverToHdiFormat(HdiAdapterFormat format)
+{
+    AudioFormat hdiFormat;
+    switch (format) {
+        case SAMPLE_U8:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            break;
+        case SAMPLE_S16:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+        case SAMPLE_S24:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            break;
+        case SAMPLE_S32:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        default:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+    }
+
+    return hdiFormat;
+}
+
 int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 {
     int32_t ret;
@@ -446,7 +474,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     // User needs to set
     InitAttrsCapture(param);
     param.sampleRate = attr_.sampleRate;
-    param.format = (AudioFormat)(attr_.format);
+    param.format = ConverToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
@@ -476,7 +504,7 @@ int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
-    openMic_ = attr_.open_mic_speaker;
+    openMic_ = attr_.openMicSpeaker;
 
     int32_t ret = InitAdapterAndCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter and capture failed");
@@ -896,16 +924,16 @@ int32_t AudioCapturerSourceInner::Preload(const std::string &usbInfoStr)
     return SUCCESS;
 }
 
-static AudioSampleFormat ParseAudioFormat(const std::string &format)
+static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return AudioSampleFormat::SAMPLE_S16LE;
+        return HdiAdapterFormat::SAMPLE_S16LE;
     } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return AudioSampleFormat::SAMPLE_S24LE;
+        return HdiAdapterFormat::SAMPLE_S24LE;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return AudioSampleFormat::SAMPLE_S32LE;
+        return HdiAdapterFormat::SAMPLE_S32LE;
     } else {
-        return AudioSampleFormat::SAMPLE_S16LE;
+        return HdiAdapterFormat::SAMPLE_S16LE;
     }
 }
 
@@ -959,7 +987,8 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
     }
 
     // Get qualified sound card and port
-    int32_t index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs, size, adapterNameCase_, PORT_IN, audioPort_);
+    int32_t index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs,
+        size, adapterNameCase_, PORT_IN, audioPort_);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Capture Fail");
         return ERR_NOT_STARTED;

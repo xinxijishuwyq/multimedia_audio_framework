@@ -13,20 +13,21 @@
  * limitations under the License.
  */
 
+#include "capturer_source_adapter.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "audio_log.h"
-#include "capturer_source_adapter.h"
 #include "i_audio_capturer_source_intf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const int32_t  SUCCESS = 0;
-const int32_t  ERROR = -1;
+const int32_t SUCCESS = 0;
+const int32_t ERROR = -1;
 
 const int32_t CLASS_TYPE_PRIMARY = 0;
 const int32_t CLASS_TYPE_A2DP = 1;
@@ -39,19 +40,6 @@ const char *g_deviceClassUsb = "usb";
 const char *g_deviceClassA2DP = "a2dp";
 const char *g_deviceClassFile = "file_io";
 const char *g_deviceClassRemote = "remote";
-
-int32_t g_deviceClass = -1;
-
-static int32_t CapturerSourceInitInner(void *wapper, const SourceAttr *attr)
-{
-    AUDIO_INFO_LOG("%{public}s: CapturerSourceInitInner", __func__);
-    if (attr == NULL) {
-        AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
-        return ERROR;
-    }
-
-    return IAudioCapturerSourceInit(wapper, (IAudioSourceAttr *)attr);
-}
 
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
         const char *sourceName, struct CapturerSourceAdapter **sourceAdapter)
@@ -89,7 +77,7 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const
     if (!strcmp(device, g_deviceClassRemote)) {
         adapter->deviceClass = CLASS_TYPE_REMOTE;
     }
-    adapter->CapturerSourceInit = CapturerSourceInitInner;
+    adapter->CapturerSourceInit = IAudioCapturerSourceInit;
     adapter->CapturerSourceDeInit = IAudioCapturerSourceDeInit;
     adapter->CapturerSourceStart = IAudioCapturerSourceStart;
     adapter->CapturerSourceStop = IAudioCapturerSourceStop;

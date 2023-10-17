@@ -125,7 +125,7 @@ private:
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
 
@@ -266,16 +266,16 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
             AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case SAMPLE_S16LE: {
+        case SAMPLE_S16: {
             AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
             break;
         }
-        case SAMPLE_S24LE: {
+        case SAMPLE_S24: {
             // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case SAMPLE_S32LE: {
+        case SAMPLE_S32: {
             AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
             break;
         }
@@ -398,20 +398,20 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     }
 }
 
-AudioFormat AudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat AudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -928,16 +928,16 @@ int32_t AudioRendererSinkInner::Preload(const std::string &usbInfoStr)
     return SUCCESS;
 }
 
-static AudioSampleFormat ParseAudioFormat(const std::string &format)
+static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return AudioSampleFormat::SAMPLE_S16LE;
+        return HdiAdapterFormat::SAMPLE_S16;
     } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return AudioSampleFormat::SAMPLE_S24LE;
+        return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return AudioSampleFormat::SAMPLE_S32LE;
+        return HdiAdapterFormat::SAMPLE_S32;
     } else {
-        return AudioSampleFormat::SAMPLE_S16LE;
+        return HdiAdapterFormat::SAMPLE_S16;
     }
 }
 

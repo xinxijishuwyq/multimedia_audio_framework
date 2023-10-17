@@ -65,7 +65,7 @@ public:
 private:
     int32_t CreateCapture(const struct AudioPort &capturePort);
     void InitAttrs(struct AudioSampleAttributes &attrs);
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     int32_t InitAshmem(const struct AudioSampleAttributes &attrs);
     AudioCategory GetAudioCategory(AudioScene audioScene);
     int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
@@ -338,20 +338,20 @@ void RemoteFastAudioCapturerSourceInner::InitAttrs(struct AudioSampleAttributes 
     attrs.streamId = REMOTE_FAST_INPUT_STREAM_ID;
 }
 
-AudioFormat RemoteFastAudioCapturerSourceInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat RemoteFastAudioCapturerSourceInner::ConverToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -364,8 +364,8 @@ AudioFormat RemoteFastAudioCapturerSourceInner::ConverToHdiFormat(AudioSampleFor
 inline std::string PrintRemoteAttr(const IAudioSourceAttr &attr)
 {
     std::stringstream value;
-    value << "adapterName[" << attr.adapterName << "] openMicSpeaker[" << attr.open_mic_speaker << "] ";
-    value << "format[" << static_cast<int32_t>(attr.format) << "] sampleFmt[" << attr.sampleFmt << "] ";
+    value << "adapterName[" << attr.adapterName << "] openMicSpeaker[" << attr.openMicSpeaker << "] ";
+    value << "format[" << static_cast<int32_t>(attr.format) << "]";
     value << "sampleRate[" << attr.sampleRate << "] channel[" << attr.channel << "] ";
     value << "volume[" << attr.volume << "] filePath[" << attr.filePath << "] ";
     value << "deviceNetworkId[" << attr.deviceNetworkId << "] device_type[" << attr.deviceType << "]";

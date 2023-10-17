@@ -89,7 +89,7 @@ public:
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     void InitAttrs(struct AudioSampleAttributes &attrs);
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     int32_t OpenOutput(DeviceType outputDevice);
     void ClearRender();
 
@@ -187,7 +187,7 @@ inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)
 {
     std::stringstream value;
     value << "adapterName[" << attr.adapterName << "] openMicSpeaker[" << attr.openMicSpeaker << "] ";
-    value << "format[" << static_cast<int32_t>(attr.format) << "] sampleFmt[" << attr.sampleFmt << "] ";
+    value << "format[" << static_cast<int32_t>(attr.format) << "] ";
     value << "sampleRate[" << attr.sampleRate << "] channel[" << attr.channel << "] ";
     value << "volume[" << attr.volume << "] filePath[" << attr.filePath << "] ";
     value << "deviceNetworkId[" << attr.deviceNetworkId << "] device_type[" << attr.deviceType << "]";
@@ -276,20 +276,20 @@ void RemoteAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &attrs
     attrs.silenceThreshold = 0;
 }
 
-AudioFormat RemoteAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat RemoteAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:

@@ -17,14 +17,15 @@
 #define I_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
+#include "audio_hdiadapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 typedef struct {
     const char *adapterName;
     uint32_t openMicSpeaker;
-    AudioSampleFormat format;
-    uint32_t sampleFmt;
+    HdiAdapterFormat format;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
