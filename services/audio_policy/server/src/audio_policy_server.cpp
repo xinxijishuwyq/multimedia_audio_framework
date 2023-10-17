@@ -1329,6 +1329,21 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
+AudioScene AudioPolicyServer::GetHighestPriorityAudioSceneFromAudioFocusInfoList() const
+{
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+    int audioScenePriority = GetAudioScenePriority(audioScene);
+    for (const auto&[interrupt, focuState] : audioFocusInfoList_) {
+        AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(interrupt);
+        int itAudioScenePriority = GetAudioScenePriority(itAudioScene);
+        if (itAudioScenePriority > audioScenePriority) {
+            audioScene = itAudioScene;
+            audioScenePriority = itAudioScenePriority;
+        }
+    }
+    return audioScene;
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     std::lock_guard<std::mutex> lock(interruptMutex_);
@@ -1343,24 +1358,10 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         return SUCCESS;
     }
 
-    auto getHighestPriorityAudioSceneFromAudioFocusInfoList = [this] {
-        AudioScene audioScene = AUDIO_SCENE_DEFAULT;
-        int audioScenePriority = GetAudioScenePriority(audioScene);
-        for (const auto&[interrupt, focuState] : audioFocusInfoList_) {
-            AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(interrupt);
-            int itAudioScenePriority = GetAudioScenePriority(itAudioScene);
-            if (itAudioScenePriority > audioScenePriority) {
-                audioScene = itAudioScene;
-                audioScenePriority = itAudioScenePriority;
-            }
-        }
-        return audioScene;
-    };
-
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
-        AudioScene targetAudioScene = getHighestPriorityAudioSceneFromAudioFocusInfoList();
+        AudioScene targetAudioScene = GetHighestPriorityAudioSceneFromAudioFocusInfoList();
         UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
@@ -1378,7 +1379,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
         OnAudioFocusInfoChange();
-        AudioScene targetAudioScene = getHighestPriorityAudioSceneFromAudioFocusInfoList();
+        AudioScene targetAudioScene = GetHighestPriorityAudioSceneFromAudioFocusInfoList();
         UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
@@ -1389,7 +1390,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         AUDIO_ERR_LOG("ActivateAudioInterrupt request rejected");
         return ERR_FOCUS_DENIED;
     }
-    AudioScene targetAudioScene = getHighestPriorityAudioSceneFromAudioFocusInfoList();
+    AudioScene targetAudioScene = GetHighestPriorityAudioSceneFromAudioFocusInfoList();
     UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
