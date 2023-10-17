@@ -41,6 +41,8 @@ struct AudioRendererParams {
     AudioChannel channelCount = MONO;
     /** Encoding Type */
     AudioEncodingType encodingType = ENCODING_PCM;
+    /** Channel Layout */
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
 };
 
 class AudioRendererCallback {

@@ -18,48 +18,32 @@ import router from '@ohos.router';
 @Entry
 @Component
 struct Index {
+  @State message: string = 'Hello World'
+  @State message1: string = 'Hello World1'
 
   build() {
     Row() {
       Column() {
         Button() {
-          Text("音频流播放功能增强").fontSize(30).fontColor(Color.White)
+          Text("获取可用麦克风配置").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance/AudioRendererEnhance' })
+          router.pushUrl({ url: 'pages/AudioEnhance/Microphone/GetAvailableMicrophones' })
         })
 
         Button() {
-          Text("音频流录制功能增强").fontSize(30).fontColor(Color.White)
+          Text("获取当前麦克风配置").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })
         .height(60)
         .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance/AudioCapturerEnhance' })
+          router.pushUrl({ url: 'pages/AudioEnhance/Microphone/GetCurrentMicrophones' })
         })
 
-        Button() {
-          Text("音频策略管理功能增强").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance/AudioManagerEnhance' })
-        })
-
-        Button() {
-          Text("麦克风信息管理").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance/MicrophoneEnhance' })
-        })
       }.width('90%')
       .margin('5%')
-
     }
     .height('100%').width('100%');
 

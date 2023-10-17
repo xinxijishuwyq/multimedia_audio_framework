@@ -1,18 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
 import fs from '@ohos.file.fs';
@@ -35,14 +34,13 @@ struct GetUnderflowCount {
   }
   private audioRenderer = null
   @State bufferSize: number = 0
-  private writeArr=0
+  private writeArr = 0
   private streamTypeSelectList = []
   @State selectedVolumeTypeKey: string = "请选择"
   @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC"
   @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
   @State returnMsg: string = ``
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
-
   private renderInfo = {
     'RINGTONE': {
       main: {
@@ -257,6 +255,7 @@ struct GetUnderflowCount {
       }
     }
   }
+
   async aboutToAppear() {
     for (let key in audio.AudioVolumeType) {
       this.streamTypeSelectList.push({ value: key })
@@ -285,7 +284,7 @@ struct GetUnderflowCount {
 
   async sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
- }
+  }
 
   async renderPlay() {
 
@@ -313,22 +312,22 @@ struct GetUnderflowCount {
 
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer write start.......... \n`;
-     // while(true){
-        for (let i = 0;i < len; i++) {
-          let options = {
-            offset: i * bufferSize,
-            length: bufferSize
-          }
-          let readsize = await fs.read(file.fd, buf, options);
-          let writeSize = await this.audioRenderer.write(buf);
-          if (i == len - 5) {
-            this.sleep(3000);
-          }
-          if (i == len - 1) {
-            this.sleep(1000);
-          }
+      // while(true){
+      for (let i = 0;i < len; i++) {
+        let options = {
+          offset: i * bufferSize,
+          length: bufferSize
+        }
+        let readsize = await fs.read(file.fd, buf, options);
+        let writeSize = await this.audioRenderer.write(buf);
+        if (i == len - 5) {
+          this.sleep(3000);
+        }
+        if (i == len - 1) {
+          this.sleep(1000);
+        }
       }
-     // }
+      // }
       this.returnMsg += `audioRenderer write end. \n`;
     } catch (err) {
       this.returnMsg += `audioRenderer write : Error: ${JSON.stringify(err)}\n`
@@ -366,10 +365,8 @@ struct GetUnderflowCount {
     });
   }
 
-
-
   async writeRenderer() {
-    if(this.writeArr==1){
+    if (this.writeArr == 1) {
       this.returnMsg += `audioRenderer  write already clicked`
       return
     }
@@ -381,7 +378,7 @@ struct GetUnderflowCount {
       this.bufferSize = await this.audioRenderer.getBufferSize()
     }
 
-    this.writeArr=1
+    this.writeArr = 1
 
     let _this = this
     let path = this.path
@@ -397,16 +394,16 @@ struct GetUnderflowCount {
           length: this.bufferSize
         }
         let readsize = await fs.read(file.fd, buf, options);
-        let writeSize = await new Promise((resolve,reject)=>{
-          _this.audioRenderer.write(buf,(err,writeSize)=>{
-            if(err){
+        let writeSize = await new Promise((resolve, reject) => {
+          _this.audioRenderer.write(buf, (err, writeSize) => {
+            if (err) {
               reject(err)
-            }else{
+            } else {
               resolve(writeSize)
 
-                if(i == len -1){
-                  _this.sleep(1000);
-                }
+              if (i == len - 1) {
+                _this.sleep(1000);
+              }
 
 
             }
@@ -425,35 +422,35 @@ struct GetUnderflowCount {
     let _this = this
     let path = this.path
     try {
-//      let stat = await fs.stat(path);
-//      let len = stat.size % this.bufferSize == 0 ? Math.floor(stat.size / this.bufferSize) : Math.floor(stat.size / this.bufferSize + 1);
-//      let file = await fs.open(path, 0o0);
+      //      let stat = await fs.stat(path);
+      //      let len = stat.size % this.bufferSize == 0 ? Math.floor(stat.size / this.bufferSize) : Math.floor(stat.size / this.bufferSize + 1);
+      //      let file = await fs.open(path, 0o0);
       let buf = new ArrayBuffer(2048);
       this.returnMsg = `audioRenderer  write start.......... \n`;
-//      for (let i = 0;i < len; i++) {
-//        let options = {
-//          offset: i * this.bufferSize,
-//          length: this.bufferSize
-//        }
-//        let readsize = await fs.read(file.fd, buf, options);
-//        let writeSize = await new Promise((resolve,reject)=>{
-          _this.audioRenderer.write(buf,(err,len)=>{
-            this.returnMsg = `drr audioRenderer  write len: ${len}`
+      //      for (let i = 0;i < len; i++) {
+      //        let options = {
+      //          offset: i * this.bufferSize,
+      //          length: this.bufferSize
+      //        }
+      //        let readsize = await fs.read(file.fd, buf, options);
+      //        let writeSize = await new Promise((resolve,reject)=>{
+      _this.audioRenderer.write(buf, (err, len) => {
+        this.returnMsg = `drr audioRenderer  write len: ${len}`
 
-//            if(err){
-//              reject(err)
-//            }else{
-//              resolve(writeSize)
-//
-//              if(i == len -1){
-//                _this.sleep(1000);
-//              }
-//
-//
-//            }
-          })
-//        })
-//      }
+        //            if(err){
+        //              reject(err)
+        //            }else{
+        //              resolve(writeSize)
+        //
+        //              if(i == len -1){
+        //                _this.sleep(1000);
+        //              }
+        //
+        //
+        //            }
+      })
+      //        })
+      //      }
       _this.returnMsg += `audioRenderer  write end, state:${_this.audioRenderer.state}\n`
     } catch (err) {
       this.returnMsg += `audioRenderer  write : Error: ${JSON.stringify(err)}\n`
@@ -491,7 +488,7 @@ struct GetUnderflowCount {
   }
 
   releaseRenderer() {
-    if (this.audioRenderer== null) {
+    if (this.audioRenderer == null) {
       this.returnMsg = `audioRenderer  instance had not created,dont‘t allow to release\n`
       return
     }
@@ -502,12 +499,10 @@ struct GetUnderflowCount {
       } else {
         _this.returnMsg = `audioRenderer release SUCCESS,state:${_this.audioRenderer.state}\n`
         _this.audioRenderer = null
-        _this.writeArr=0
+        _this.writeArr = 0
       }
     })
   }
-
-
 
   getUnderflowCountPromise() {
     if (this.audioRenderer == null) {
@@ -565,7 +560,7 @@ struct GetUnderflowCount {
           Row() {
             Select(this.streamTypeSelectList)
               .value(this.selectedVolumeTypeKey)
-              .onSelect(async(index, value) => {
+              .onSelect(async (index, value) => {
                 //                this.selectedVolumeType = audio.AudioVolumeType[value];
                 //                this.selectedVolumeTypeKey = value;
 
@@ -574,7 +569,7 @@ struct GetUnderflowCount {
                 this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
 
                 //                this.getVolumeRange();
-                if(this.audioRenderer!==null){
+                if (this.audioRenderer !== null) {
                   await this.audioRenderer.release()
                   this.audioRenderer = null
                 }
@@ -594,9 +589,9 @@ struct GetUnderflowCount {
               this.rendererStart()
             })
 
-//            Button() {
-//              Text("播放音乐").fontSize(22).fontColor(Color.Blue)
-//            }.width('49%').height(60).onClick(() => this.renderPlay()).backgroundColor(Color.Pink)
+            //            Button() {
+            //              Text("播放音乐").fontSize(22).fontColor(Color.Blue)
+            //            }.width('49%').height(60).onClick(() => this.renderPlay()).backgroundColor(Color.Pink)
 
           }.margin({ top: 20, bottom: 10 }).width('100%').justifyContent(FlexAlign.SpaceBetween)
 

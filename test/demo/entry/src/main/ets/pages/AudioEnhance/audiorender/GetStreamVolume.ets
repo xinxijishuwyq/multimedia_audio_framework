@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import router from '@ohos.router';
 import audio from '@ohos.multimedia.audio'
@@ -20,7 +20,7 @@ import fs from '@ohos.file.fs';
 @Entry
 @Component
 struct GetStreamVolume {
-  private audioRendererOptions  = {
+  private audioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -44,8 +44,6 @@ struct GetStreamVolume {
   @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC"
   @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA"
   @State path: string = globalThis.pathDir + '/test_44100_2.wav';
-
-
   private renderInfo = {
     'RINGTONE': {
       main: {
@@ -260,31 +258,31 @@ struct GetStreamVolume {
       }
     }
   }
-    async aboutToAppear() {
-      for (let key in audio.AudioVolumeType) {
-        this.streamTypeSelectList.push({ value: key })
-      }
-      this.streamTypeSelectList.push({ value: '_MUSIC' })
-      this.streamTypeSelectList.push({ value: '_MESSAGE' })
-      this.streamTypeSelectList.push({ value: '_NOTIFICATION' })
-      this.streamTypeSelectList.push({ value: '_SYSTEM' })
-      this.streamTypeSelectList.push({ value: '_MOVIE' })
-      this.streamTypeSelectList.push({ value: '_UNKNOWN' })
-      this.streamTypeSelectList.push({ value: '_GAME' })
-      this.streamTypeSelectList.push({ value: '_AUDIOBOOK' })
-      this.streamTypeSelectList.push({ value: '_NAVIGATION' })
-      this.streamTypeSelectList.push({ value: '_DTMF' })
-      this.streamTypeSelectList.push({ value: '_ENFORCED_TONE' })
-    };
 
+  async aboutToAppear() {
+    for (let key in audio.AudioVolumeType) {
+      this.streamTypeSelectList.push({ value: key })
+    }
+    this.streamTypeSelectList.push({ value: '_MUSIC' })
+    this.streamTypeSelectList.push({ value: '_MESSAGE' })
+    this.streamTypeSelectList.push({ value: '_NOTIFICATION' })
+    this.streamTypeSelectList.push({ value: '_SYSTEM' })
+    this.streamTypeSelectList.push({ value: '_MOVIE' })
+    this.streamTypeSelectList.push({ value: '_UNKNOWN' })
+    this.streamTypeSelectList.push({ value: '_GAME' })
+    this.streamTypeSelectList.push({ value: '_AUDIOBOOK' })
+    this.streamTypeSelectList.push({ value: '_NAVIGATION' })
+    this.streamTypeSelectList.push({ value: '_DTMF' })
+    this.streamTypeSelectList.push({ value: '_ENFORCED_TONE' })
+  };
 
-    async onBackPress(){
+  async onBackPress() {
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created\n`
       return
     }
     await this.audioRenderer.release()
-    this.audioRenderer=null
+    this.audioRenderer = null
   }
 
   async renderPlay() {
@@ -335,15 +333,15 @@ struct GetStreamVolume {
     }
   }
 
-  getMinStreamVolumeCallback(){
+  getMinStreamVolumeCallback() {
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created,dont‘t allow to getMinStreamVolumeCallback\n`
       return
     }
 
-    let _this=this
+    let _this = this
     this.audioRenderer.getMinStreamVolume((err, minVolume) => {
-      if(err) {
+      if (err) {
         _this.returnMsg = `audioRenderer getMinStreamVolumeCallback : Error: ${JSON.stringify(err)}`
       } else {
         _this.returnMsg = `audioRenderer getMinStreamVolumeCallback : Success, 返回值: ${minVolume}`
@@ -351,15 +349,15 @@ struct GetStreamVolume {
     })
   }
 
-  getMinStreamVolumePromise(){
+  getMinStreamVolumePromise() {
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created,dont‘t allow to getMinStreamVolumePromise\n`
       return
     }
 
-    let _this=this
+    let _this = this
     this.audioRenderer.getMinStreamVolume()
-      .then(minVolume=>{
+      .then(minVolume => {
         _this.returnMsg = `audioRenderer getMinStreamVolumePromise : Success, 返回值: ${minVolume}`
       })
       .catch((err) => {
@@ -367,15 +365,15 @@ struct GetStreamVolume {
       })
   }
 
-  getMaxStreamVolumeCallback(){
+  getMaxStreamVolumeCallback() {
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created,dont‘t allow to getMaxStreamVolumeCallback\n`
       return
     }
 
-    let _this=this
+    let _this = this
     this.audioRenderer.getMaxStreamVolume((err, maxVolume) => {
-      if(err) {
+      if (err) {
         _this.returnMsg = `audioRenderer getMaxStreamVolumeCallback  : Error: ${JSON.stringify(err)}`
       } else {
         _this.returnMsg = `audioRenderer getMaxStreamVolumeCallback  : Success, 返回值: ${maxVolume}`
@@ -383,15 +381,15 @@ struct GetStreamVolume {
     })
   }
 
-  getMaxStreamVolumePromise(){
+  getMaxStreamVolumePromise() {
     if (this.audioRenderer == null) {
       this.returnMsg += `audioRenderer instance had not created,dont‘t allow to getMaxStreamVolumePromise\n`
       return
     }
 
-    let _this=this
+    let _this = this
     this.audioRenderer.getMaxStreamVolume()
-      .then(maxVolume=>{
+      .then(maxVolume => {
         _this.returnMsg = `audioRenderer getMaxStreamVolumePromise : Success, 返回值: ${maxVolume}`
       })
       .catch((err) => {
@@ -439,20 +437,20 @@ struct GetStreamVolume {
           Row() {
             Select(this.streamTypeSelectList)
               .value(this.selectedVolumeTypeKey)
-              .onSelect(async(index, value) => {
-//                this.selectedVolumeType = audio.AudioVolumeType[value];
-//                this.selectedVolumeTypeKey = value;
+              .onSelect(async (index, value) => {
+                //                this.selectedVolumeType = audio.AudioVolumeType[value];
+                //                this.selectedVolumeTypeKey = value;
 
                 this.audioRendererOptions.rendererInfo = this.renderInfo[this.selectedVolumeTypeKey].main
                 this.selectedStreamUsageKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedStreamUsageKey
                 this.selectedContentTypeKey = this.renderInfo[this.selectedVolumeTypeKey].info.selectedContentTypeKey
 
-//                this.getVolumeRange();
-                if(this.audioRenderer!==null){
+                //                this.getVolumeRange();
+                if (this.audioRenderer !== null) {
                   await this.audioRenderer.release()
                   this.audioRenderer = null
                 }
-//                this.renderPlay()
+                //                this.renderPlay()
 
               })
           }
