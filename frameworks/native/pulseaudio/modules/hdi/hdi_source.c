@@ -38,6 +38,7 @@
 
 #include "audio_log.h"
 #include "audio_source_type.h"
+#include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"

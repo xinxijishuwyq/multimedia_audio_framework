@@ -71,11 +71,11 @@ extern "C" {
 using namespace OHOS::AudioStandard;
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
-    const SourceType sourceType, const char *sourceName, void **wapper)
+    const int32_t sourceType, const char *sourceName, void **wapper)
 {
     IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass,
         deviceNetworkId,
-        sourceType,
+        static_cast<SourceType>(sourceType),
         sourceName);
 
     if (iSource != nullptr) {
@@ -87,7 +87,7 @@ int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
 
 IAudioCapturerSource *iAudioCapturerSource = nullptr;
 
-int32_t IAudioCapturerSourceInit(void *wapper, SourceAttr *attr)
+int32_t IAudioCapturerSourceInit(void *wapper, const SourceAttr *attr)
 {
     int32_t ret;
 
@@ -111,7 +111,7 @@ int32_t IAudioCapturerSourceInit(void *wapper, SourceAttr *attr)
     iAttr.deviceType = attr->deviceType;
     iAttr.sourceType = attr->sourceType;
 
-    ret = iAudioCapturerSource->Init(*attr);
+    ret = iAudioCapturerSource->Init(iAttr);
 
     return ret;
 }

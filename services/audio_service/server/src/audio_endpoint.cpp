@@ -317,7 +317,7 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     IAudioSourceAttr attr = {};
     attr.sampleRate = dstStreamInfo_.samplingRate;
     attr.channel = dstStreamInfo_.channels;
-    attr.format = dstStreamInfo_.format;
+    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format);
     attr.deviceNetworkId = deviceInfo.networkId.c_str();
 
     if (deviceInfo.networkId == LOCAL_NETWORK_ID) {

@@ -78,7 +78,7 @@ private:
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapterAndCapture();
@@ -443,7 +443,7 @@ int32_t AudioCapturerSourceInner::InitAudioManager()
     return 0;
 }
 
-AudioFormat AudioCapturerSourceInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat AudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
@@ -474,7 +474,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     // User needs to set
     InitAttrsCapture(param);
     param.sampleRate = attr_.sampleRate;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
@@ -927,13 +927,13 @@ int32_t AudioCapturerSourceInner::Preload(const std::string &usbInfoStr)
 static HdiAdapterFormat ParseAudioFormat(const std::string &format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return HdiAdapterFormat::SAMPLE_S16LE;
+        return HdiAdapterFormat::SAMPLE_S16;
     } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return HdiAdapterFormat::SAMPLE_S24LE;
+        return HdiAdapterFormat::SAMPLE_S24;
     } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return HdiAdapterFormat::SAMPLE_S32LE;
+        return HdiAdapterFormat::SAMPLE_S32;
     } else {
-        return HdiAdapterFormat::SAMPLE_S16LE;
+        return HdiAdapterFormat::SAMPLE_S16;
     }
 }
 

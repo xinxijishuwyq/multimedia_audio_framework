@@ -16,8 +16,6 @@
 #ifndef AUDIO_HDIADAPTER_INFO_H
 #define AUDIO_HDIADAPTER_INFO_H
 
-#include 
-
 // should be same with AudioSampleFormat in audio_info.h
 enum HdiAdapterFormat {
     SAMPLE_U8 = 0,

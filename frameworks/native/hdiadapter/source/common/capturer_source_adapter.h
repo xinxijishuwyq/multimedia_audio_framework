@@ -16,6 +16,7 @@
 #ifndef CAPTURER_SOURCE_ADAPTER_H
 #define CAPTURER_SOURCE_ADAPTER_H
 
+#include <stdio.h>
 #include <stdint.h>
 
 #include "i_audio_capturer_source_intf.h"

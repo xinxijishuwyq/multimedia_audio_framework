@@ -102,7 +102,7 @@ private:
     int32_t CheckPositionTime();
     void PreparePosition();
 
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
 
@@ -378,7 +378,7 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
     return SUCCESS;
 }
 
-AudioFormat FastAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat FastAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
@@ -409,7 +409,7 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(attr_.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
     AUDIO_INFO_LOG("FastAudioRendererSink Create render format: %{public}d and device:%{public}d", param.format,

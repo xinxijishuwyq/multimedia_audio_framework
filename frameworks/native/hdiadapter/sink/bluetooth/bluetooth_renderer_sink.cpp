@@ -115,7 +115,7 @@ private:
     int32_t InitAudioManager();
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     FILE *dumpFile_ = nullptr;
 };
 
@@ -333,7 +333,7 @@ int32_t BluetoothRendererSinkInner::CreateRender(struct AudioPort &renderPort)
     return 0;
 }
 
-AudioFormat BluetoothRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat BluetoothRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {

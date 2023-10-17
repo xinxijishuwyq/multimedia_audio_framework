@@ -65,7 +65,7 @@ private:
     int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
     AudioCategory GetAudioCategory(AudioScene audioScene);
     void ClearCapture();
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
 
 private:
     static constexpr uint32_t REMOTE_INPUT_STREAM_ID = 30; // 14 + 2 * 8
@@ -196,7 +196,7 @@ bool RemoteAudioCapturerSourceInner::IsInited(void)
     return capturerInited_.load();
 }
 
-AudioFormat RemoteAudioCapturerSourceInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat RemoteAudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
@@ -231,7 +231,7 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(struct AudioPort &captureP
     param.silenceThreshold = audioBufferSize;
     // User needs to set
     param.sampleRate = attr_.sampleRate;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;

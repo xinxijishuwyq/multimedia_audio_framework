@@ -16,6 +16,7 @@
 #ifndef I_AUDIO_CAPTURER_SINK_INTF_H
 #define I_AUDIO_CAPTURER_SINK_INTF_H
 
+#include <stdbool.h>
 #include "audio_hdiadapter_info.h"
 
 #ifdef __cplusplus
@@ -54,7 +55,7 @@ struct CapturerSourceAdapter {
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
     const int32_t sourceType, const char *sourceName, void **wapper);
-int32_t IAudioCapturerSourceInit(void *wapper, SourceAttr *attr);
+int32_t IAudioCapturerSourceInit(void *wapper, const SourceAttr *attr);
 void IAudioCapturerSourceDeInit(void *wapper);
 int32_t IAudioCapturerSourceStart(void *wapper);
 int32_t IAudioCapturerSourceStop(void *wapper);

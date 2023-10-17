@@ -89,7 +89,7 @@ public:
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     void InitAttrs(struct AudioSampleAttributes &attrs);
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t OpenOutput(DeviceType outputDevice);
     void ClearRender();
 
@@ -238,7 +238,7 @@ int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &rende
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_INFO_LOG("Create render format: %{public}d", param.format);
@@ -276,7 +276,7 @@ void RemoteAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &attrs
     attrs.silenceThreshold = 0;
 }
 
-AudioFormat RemoteAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat RemoteAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {

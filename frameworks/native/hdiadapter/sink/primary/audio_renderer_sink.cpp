@@ -125,7 +125,7 @@ private:
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
 
@@ -398,7 +398,7 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     }
 }
 
-AudioFormat AudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat AudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
@@ -430,7 +430,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_DEBUG_LOG("Create render format: %{public}d", param.format);

@@ -108,7 +108,7 @@ private:
     int32_t PrepareMmapBuffer();
     int32_t InitAudioManager();
     uint32_t PcmFormatToBits(HdiAdapterFormat format);
-    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CheckPositionTime();
 };
 
@@ -212,7 +212,7 @@ int32_t FastAudioCapturerSourceInner::InitAudioManager()
 }
 
 
-AudioFormat FastAudioCapturerSourceInner::ConverToHdiFormat(HdiAdapterFormat format)
+AudioFormat FastAudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
@@ -243,7 +243,7 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     // User needs to set
     InitAttrsCapture(param);
     param.sampleRate = attr_.sampleRate;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
