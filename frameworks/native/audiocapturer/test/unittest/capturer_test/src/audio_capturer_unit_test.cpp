@@ -2655,7 +2655,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
     AudioStreamInfo streamInfo1;
     ret1 = audioCapturer->GetStreamInfo(streamInfo1);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret1);
     EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_96000, streamInfo.samplingRate);
     EXPECT_EQ(AudioEncodingType::ENCODING_PCM, streamInfo.encoding);
     EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo.format);
@@ -2666,7 +2666,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
 
     AudioStreamInfo streamInfo2;
     ret2 = audioCapturer->GetStreamInfo(streamInfo2);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret2);
 }
 
 /**
@@ -3239,8 +3239,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     auto inputDescriptors = inputDeviceDescriptors[0];
     auto microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
     auto micDescriptors = microphoneDescriptors[0];
-    EXPECT_EQ(inputDescriptors[0]->deviceRole_, micDescriptors[0]->deviceRole_);
-    EXPECT_EQ(inputDescriptors[0]->deviceType_, micDescriptors[0]->deviceType_);
+    EXPECT_EQ(inputDescriptors->deviceRole_, micDescriptors->deviceRole_);
+    EXPECT_EQ(inputDescriptors->deviceType_, micDescriptors->deviceType_);
 
     audioCapturerPrivate->Release();
     audioCapturer->Release();
