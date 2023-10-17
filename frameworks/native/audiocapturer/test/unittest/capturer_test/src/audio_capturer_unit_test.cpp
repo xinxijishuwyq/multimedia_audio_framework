@@ -815,7 +815,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_Stability_001, TestSize.L
         ret = audioCapturer->GetParams(getCapturerParams);
         EXPECT_EQ(SUCCESS, ret);
     }
-
     audioCapturer->Release();
 }
 
@@ -2628,15 +2627,15 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetStreamInfo API after calling stop
+* @tc.name  : Test GetStreamInfo API after calling stop and release
 * @tc.number: Audio_Capturer_GetStreamInfo_003
 * @tc.desc  : Test GetStreamInfo interface. Check whether stream related data is returned correctly
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
 {
-    int32_t ret = -1;
+    int32_t ret1 = -1;
+    int32_t ret2 = -1;
     AudioCapturerOptions capturerOptions;
-
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
@@ -2653,8 +2652,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
 
-    AudioStreamInfo streamInfo;
-    ret = audioCapturer->GetStreamInfo(streamInfo);
+    AudioStreamInfo streamInfo1;
+    ret1 = audioCapturer->GetStreamInfo(streamInfo1);
 
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_96000, streamInfo.samplingRate);
@@ -2662,35 +2661,11 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
     EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo.format);
     EXPECT_EQ(AudioChannel::MONO, streamInfo.channels);
 
-    audioCapturer->Release();
-}
-
-/**
-* @tc.name  : Test GetStreamInfo API after calling release
-* @tc.number: Audio_Capturer_GetStreamInfo_004
-* @tc.desc  : Test GetStreamInfo interface. Check whether stream related data is returned correctly
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_004, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioCapturerOptions capturerOptions;
-
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
-    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
-
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
-
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 
-    AudioStreamInfo streamInfo;
-    ret = audioCapturer->GetStreamInfo(streamInfo);
-
+    AudioStreamInfo streamInfo2;
+    ret2 = audioCapturer->GetStreamInfo(streamInfo2);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
@@ -2725,12 +2700,11 @@ HWTEST(AudioCapturerUnitTest, Audio_Renderer_GetStreamInfo_Stability_001, TestSi
 /**
 * @tc.name  : Test SetBufferDuration API
 * @tc.number: Audio_Capturer_SetBufferDuration_001
-* @tc.desc  : Test SetBufferDuration interface. Check whether valid parameters are accepted.
+* @tc.desc  : Test SetBufferDuration interface. Check whether valid or invalid parameters are accepted or rejected.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_001, TestSize.Level1)
 {
     int32_t ret = -1;
-
     AudioCapturerOptions capturerOptions;
     capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
@@ -2753,27 +2727,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_001, TestSize.Lev
 
     ret = audioCapturer->SetBufferDuration(BUFFER_DURATION_TWENTY);
     EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test SetBufferDuration API
-* @tc.number: Audio_Capturer_SetBufferDuration_002
-* @tc.desc  : Test SetBufferDuration interface. Check whether invalid parameters are rejected.
-*/
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetBufferDuration_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    AudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
-    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
-
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
 
     ret = audioCapturer->SetBufferDuration(VALUE_NEGATIVE);
     EXPECT_NE(SUCCESS, ret);
@@ -3151,7 +3104,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_AudioCapturerInterruptCallbackImpl_
         std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream);
     shared_ptr<AudioCapturerCallbackTest> audioCapturerCB = std::make_shared<AudioCapturerCallbackTest>();
     audioCapturerInterruptCallbackImpl->SaveCallback(audioCapturerCB);
-
     InterruptEventInternal interruptEvent = {};
     interruptEvent.eventType = INTERRUPT_TYPE_END;
     interruptEvent.forceType = INTERRUPT_FORCE;
@@ -3213,7 +3165,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFramesRead_001, TestSize.Level1)
 {
     int64_t ret = -1;
     AudioCapturerOptions capturerOptions;
-
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
@@ -3233,7 +3184,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetApplicationCachePath_001, TestSi
 {
     string cachePath = "/data/storage/el2/base/temp";
     AudioCapturerOptions capturerOptions;
-
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
 
@@ -3261,7 +3211,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     DeviceInfo deviceInfo;
     ret = audioCapturer->GetCurrentInputDevices(deviceInfo);
     EXPECT_EQ(SUCCESS, ret);
-
     AudioCapturerChangeInfo changeInfo;
     ret = audioCapturer->GetCurrentCapturerChangeInfo(changeInfo);
     EXPECT_EQ(SUCCESS, ret);
@@ -3311,7 +3260,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_
 
     ret = audioCapturer->RegisterAudioCapturerEventListener();
     EXPECT_EQ(SUCCESS, ret);
-
     ret = audioCapturer->UnregisterAudioCapturerEventListener();
     EXPECT_EQ(SUCCESS, ret);
 
@@ -3322,7 +3270,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_
 
     ret = audioCapturer->SetAudioCapturerInfoChangeCallback(callback);
     EXPECT_EQ(SUCCESS, ret);
-
     ret = audioCapturer->RemoveAudioCapturerInfoChangeCallback(callback);
     EXPECT_EQ(SUCCESS, ret);
 
