@@ -1349,7 +1349,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         for (const auto&[interrupt, focuState] : audioFocusInfoList_) {
             AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(interrupt);
             int itAudioScenePriority = GetAudioScenePriority(itAudioScene);
-            if(itAudioScenePriority > audioScenePriority) {
+            if (itAudioScenePriority > audioScenePriority) {
                 audioScene = itAudioScene;
                 audioScenePriority = itAudioScenePriority;
             }
