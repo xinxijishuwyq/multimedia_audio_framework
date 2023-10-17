@@ -168,6 +168,8 @@ public:
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) override;
 
+    AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;
+
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
