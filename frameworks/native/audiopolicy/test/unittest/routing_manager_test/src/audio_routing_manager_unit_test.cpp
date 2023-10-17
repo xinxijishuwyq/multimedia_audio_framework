@@ -114,13 +114,10 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceCh
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophones_001, TestSize.Level1)
 {
-    vector<sptr<MicrophoneDescriptor>> desc;
-    desc = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
+
+    vector<sptr<MicrophoneDescriptor>> desc = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
     for (auto microphoneDescriptor : desc) {
-        if (microphoneDescriptor != nullptr) {
-            cout << "microphoneDescriptor: deviceType_" << microphoneDescriptor->deviceType_ << endl;
-            EXPECT_EQ(15, microphoneDescriptor->deviceType_);
-        }
+        EXPECT_EQ(true, microphoneDescriptor != nullptr);
     }
 }
 

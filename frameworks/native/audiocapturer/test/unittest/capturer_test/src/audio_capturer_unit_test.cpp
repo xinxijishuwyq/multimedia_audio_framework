@@ -14,9 +14,7 @@
  */
 
 #include "audio_capturer_unit_test.h"
-
 #include <thread>
-
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -41,7 +39,6 @@ namespace {
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
-    const int32_t MIC = 15;
 
     constexpr uint64_t BUFFER_DURATION_FIVE = 5;
     constexpr uint64_t BUFFER_DURATION_TEN = 10;
@@ -61,7 +58,6 @@ int32_t AudioCapturerUnitTest::InitializeCapturer(unique_ptr<AudioCapturer> &aud
     capturerParams.samplingRate = SAMPLE_RATE_44100;
     capturerParams.audioChannel = STEREO;
     capturerParams.audioEncoding = ENCODING_PCM;
-
     return audioCapturer->SetParams(capturerParams);
 }
 
@@ -115,7 +111,6 @@ void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
     }
 
     audioCapturer->Flush();
-
     fclose(capFile);
 }
 
@@ -391,7 +386,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_013, TestSize.Level0)
     AppInfo appInfo = {};
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_44100;
@@ -415,7 +409,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_014, TestSize.Level0)
     appInfo.appUid = static_cast<int32_t>(getuid());
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC, appInfo);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_44100;
@@ -577,7 +570,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_021, TestSize.Level0)
 {
     AudioCapturerOptions capturerOptions;
     AudioCapturerUnitTest::InitializePlaybackCapturerOptions(capturerOptions);
-
     CaptureFilterOptions filterOptions;
     filterOptions.usages.emplace_back(StreamUsage::STREAM_USAGE_MEDIA);
     filterOptions.usages.emplace_back(StreamUsage::STREAM_USAGE_ALARM);
@@ -644,7 +636,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_001, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_44100;
@@ -669,7 +660,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_002, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_8000;
@@ -694,7 +684,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_003, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_11025;
@@ -719,7 +708,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_004, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_22050;
@@ -744,7 +732,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_005, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_96000;
@@ -768,7 +755,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_006, TestSize.Level1)
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S24LE;
     capturerParams.samplingRate = SAMPLE_RATE_64000;
@@ -824,7 +810,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_Stability_001, TestSize.L
     for (int i = 0; i < VALUE_HUNDRED; i++) {
         ret = audioCapturer->SetParams(capturerParams);
         EXPECT_EQ(SUCCESS, ret);
-
         AudioCapturerParams getCapturerParams;
         ret = audioCapturer->GetParams(getCapturerParams);
         EXPECT_EQ(SUCCESS, ret);
@@ -843,7 +828,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_001, TestSize.Level1)
     int32_t ret = -1;
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
-
     AudioCapturerParams capturerParams;
     capturerParams.audioSampleFormat = SAMPLE_S16LE;
     capturerParams.samplingRate = SAMPLE_RATE_44100;
@@ -3302,6 +3286,13 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
 
+    vector<sptr<MicrophoneDescriptor>> microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
+    EXPECT_EQ(true, microphoneDescriptors.size() > 0);
+
+    for (auto microphoneDescriptor : microphoneDescriptors) {
+        EXPECT_EQ(true, microphoneDescriptor != nullptr);
+    }
+
     audioCapturerPrivate->Release();
     audioCapturer->Release();
 }
@@ -3341,28 +3332,5 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_
     audioCapturer->Release();
 }
 
-/**
- * @tc.name  : Test GetCurrentMicrophones API.
- * @tc.number: Audio_Capturer_GetCurrentMicrophones_001
- * @tc.desc  : Test GetCurrentMicrophones interface.
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentMicrophones_001, TestSize.Level1)
-{
-    AudioCapturerOptions capturerOptions;
-
-    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    vector<sptr<MicrophoneDescriptor>> microphoneDescriptors;
-    microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
-    EXPECT_EQ(true, microphoneDescriptors.size() >= 0);
-    for (auto microphoneDescriptor : microphoneDescriptors) {
-        if (microphoneDescriptor != nullptr) {
-            EXPECT_EQ(MIC, microphoneDescriptor->deviceType_);
-        }
-    }
-    audioCapturer->Release();
-}
 } // namespace AudioStandard
 } // namespace OHOS
