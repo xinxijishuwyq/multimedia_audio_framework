@@ -41,6 +41,7 @@ namespace {
     const int32_t VALUE_HUNDRED = 100;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
+    const int32_t MIC = 15;
 
     constexpr uint64_t BUFFER_DURATION_FIVE = 5;
     constexpr uint64_t BUFFER_DURATION_TEN = 10;
@@ -3358,8 +3359,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentMicrophones_001, TestSize
     EXPECT_EQ(true, microphoneDescriptors.size() >= 0);
     for (auto microphoneDescriptor : microphoneDescriptors) {
         if (microphoneDescriptor != nullptr) {
-            cout << "microphoneDescriptor: deviceType_" << microphoneDescriptor->deviceType_ << endl;
-            EXPECT_EQ(15, microphoneDescriptor->deviceType_);
+            EXPECT_EQ(MIC, microphoneDescriptor->deviceType_);
         }
     }
     audioCapturer->Release();
