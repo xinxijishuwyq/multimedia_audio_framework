@@ -96,7 +96,7 @@ public:
         attr.adapterName = "primary";
         attr.sampleRate = 48000; // 48000hz
         attr.channel = 2;
-        attr.format = SAMPLE_S16LE;
+        attr.format = HdiAdapterFormat::SAMPLE_S16;
 
         hdiRenderSink_->Init(attr);
 
