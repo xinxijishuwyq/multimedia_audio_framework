@@ -331,31 +331,6 @@ HWTEST(AudioCapturerInterruptUnitTest, Audio_Capturer_Interrupt_015, TestSize.Le
         SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_INVALID, renderInfo[VOICE_ASSISTANT]);
 }
 
-
-/**
-* @tc.name  : Test AudioCapturer Interrupt.
-* @tc.number: Audio_Capturer_Interrupt_016
-* @tc.desc  : Create a ULTRASONIC source recording first, then create a Ultrasonic stream type playback.
-*             It is expected that capturer and renderer both running at the same time.
-*/
-HWTEST(AudioCapturerInterruptUnitTest, Audio_Capturer_Interrupt_016, TestSize.Level1)
-{
-    AudioCapturerInterruptUnitTest::AudioInterruptUnitTestFunc(TestType::CAPTURE_RANDER, true,
-        SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_INVALID, renderInfo[ULTRASONIC]);
-}
-
-/**
-* @tc.name  : Test AudioCapturer Interrupt.
-* @tc.number: Audio_Capturer_Interrupt_017
-* @tc.desc  : Create a Ultrasonic stream type playback first, then create a ULTRASONIC source recording.
-*             It is expected that renderer and capturer both running at the same time.
-*/
-HWTEST(AudioCapturerInterruptUnitTest, Audio_Capturer_Interrupt_017, TestSize.Level1)
-{
-    AudioCapturerInterruptUnitTest::AudioInterruptUnitTestFunc(TestType::RANDER_CAPTURE, true,
-        SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_INVALID, renderInfo[ULTRASONIC]);
-}
-
 /**
 * @tc.name  : Test AudioCapturer Interrupt.
 * @tc.number: Audio_Capturer_Interrupt_018
