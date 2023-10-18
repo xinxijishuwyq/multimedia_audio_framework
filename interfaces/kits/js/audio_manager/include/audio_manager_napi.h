@@ -119,6 +119,7 @@ private:
         const size_t argCount, AudioManagerNapi *managerNapi);
     static void AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result);
 
+    static void AsyncSetAudioScene(napi_env env, void *data);
     template<typename T> static napi_value CreatePropertyBase(napi_env env, T& t_map, napi_ref ref);
 
     static napi_ref audioVolumeTypeRef_;
