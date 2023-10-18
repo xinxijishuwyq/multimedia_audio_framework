@@ -25,6 +25,7 @@
 #include "audio_log.h"
 #include "audio_manager_napi.h"
 #include "audio_parameters_napi.h"
+#include "audio_utils.h"
 #include "hilog/log.h"
 #include "napi_base_context.h"
 #include "securec.h"
@@ -87,8 +88,7 @@ void AudioRendererNapi::Destructor(napi_env env, void *nativeObject, void *final
 {
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioRendererNapi *>(nativeObject);
-        delete obj;
-        obj = nullptr;
+        ObjectRefMap<AudioRendererNapi>::DecreaseRef(obj);
     }
     AUDIO_INFO_LOG("Destructor is successful");
 }
@@ -581,6 +581,7 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
 
     unique_ptr<AudioRendererNapi> rendererNapi = make_unique<AudioRendererNapi>();
     CHECK_AND_RETURN_RET_LOG(rendererNapi != nullptr, result, "No memory");
+    ObjectRefMap<AudioRendererNapi>::Insert(rendererNapi.get());
 
     rendererNapi->env_ = env;
     rendererNapi->contentType_ = sRendererOptions_->rendererInfo.contentType;
@@ -623,6 +624,8 @@ napi_value AudioRendererNapi::Construct(napi_env env, napi_callback_info info)
     if (status == napi_ok) {
         rendererNapi.release();
         return thisVar;
+    } else {
+        ObjectRefMap<AudioRendererNapi>::Erase(rendererNapi.get());
     }
 
     HiLog::Error(LABEL, "Failed in AudioRendererNapi::Construct()!");
@@ -1968,15 +1971,13 @@ napi_value AudioRendererNapi::Release(napi_env env, napi_callback_info info)
             env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioRendererAsyncContext *>(data);
-                if (!CheckContextStatus(context)) {
+                ObjectRefMap objectGuard(context->objectInfo);
+                AudioRendererNapi *object = objectGuard.GetPtr();
+                if (!CheckContextStatus(context) || object == nullptr) {
                     return;
                 }
-                context->isTrue = context->objectInfo->audioRenderer_->Release();
-                if (context->isTrue) {
-                    context->status = SUCCESS;
-                } else {
-                    context->status = NAPI_ERR_SYSTEM;
-                }
+                context->isTrue = object->audioRenderer_->Release();
+                context->status = context->isTrue ? SUCCESS : NAPI_ERR_SYSTEM;
             },
             VoidAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
         if (status != napi_ok) {
