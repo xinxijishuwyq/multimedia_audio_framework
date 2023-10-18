@@ -28,6 +28,7 @@
 #include "audio_volume_manager_napi.h"
 #include "audio_volume_group_manager_napi.h"
 #include "audio_interrupt_manager_napi.h"
+#include "audio_utils.h"
 #include "hilog/log.h"
 #include "audio_log.h"
 #ifdef FEATURE_DTMF_TONE
@@ -123,8 +124,7 @@ void AudioManagerNapi::Destructor(napi_env env, void *nativeObject, void *finali
 {
     if (nativeObject != nullptr) {
         auto obj = static_cast<AudioManagerNapi*>(nativeObject);
-        delete obj;
-        obj = nullptr;
+        ObjectRefMap<AudioManagerNapi>::DecreaseRef(obj);
         AUDIO_DEBUG_LOG("AudioManagerNapi::Destructor delete AudioManagerNapi obj done");
     }
 }
@@ -622,6 +622,7 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
     if (status == napi_ok) {
         unique_ptr<AudioManagerNapi> managerNapi = make_unique<AudioManagerNapi>();
         if (managerNapi != nullptr) {
+            ObjectRefMap<AudioManagerNapi>::Insert(managerNapi.get());
             managerNapi->env_ = env;
             managerNapi->audioMngr_ = AudioSystemManager::GetInstance();
             managerNapi->cachedClientId_ = getpid();
@@ -631,6 +632,8 @@ napi_value AudioManagerNapi::Construct(napi_env env, napi_callback_info info)
             if (status == napi_ok) {
                 managerNapi.release();
                 return jsThis;
+            } else {
+                ObjectRefMap<AudioManagerNapi>::Erase(managerNapi.get());
             }
         }
     }
@@ -1196,9 +1199,10 @@ napi_value AudioManagerNapi::SetAudioScene(napi_env env, napi_callback_info info
         env, nullptr, resource,
         [](napi_env env, void *data) {
             auto context = static_cast<AudioManagerAsyncContext*>(data);
-            if (context->status == SUCCESS) {
-                context->status =
-                    context->objectInfo->audioMngr_->SetAudioScene(static_cast<AudioScene>(context->scene));
+            ObjectRefMap objectGuard(context->objectInfo);
+            AudioManagerNapi *object = objectGuard.GetPtr();
+            if (context->status == SUCCESS && object != nullptr) {
+                context->status = object->audioMngr_->SetAudioScene(static_cast<AudioScene>(context->scene));
             }
         },
         SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
