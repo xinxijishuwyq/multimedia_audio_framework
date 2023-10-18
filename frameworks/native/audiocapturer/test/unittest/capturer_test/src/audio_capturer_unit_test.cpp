@@ -2656,10 +2656,10 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStreamInfo_003, TestSize.Level1)
     ret1 = audioCapturer->GetStreamInfo(streamInfo1);
 
     EXPECT_EQ(SUCCESS, ret1);
-    EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_96000, streamInfo.samplingRate);
-    EXPECT_EQ(AudioEncodingType::ENCODING_PCM, streamInfo.encoding);
-    EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo.format);
-    EXPECT_EQ(AudioChannel::MONO, streamInfo.channels);
+    EXPECT_EQ(AudioSamplingRate::SAMPLE_RATE_96000, streamInfo1.samplingRate);
+    EXPECT_EQ(AudioEncodingType::ENCODING_PCM, streamInfo1.encoding);
+    EXPECT_EQ(AudioSampleFormat::SAMPLE_U8, streamInfo1.format);
+    EXPECT_EQ(AudioChannel::MONO, streamInfo1.channels);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
