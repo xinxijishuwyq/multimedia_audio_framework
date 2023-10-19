@@ -1239,15 +1239,13 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
 int32_t AudioSystemManager::SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback)
 {
     audioCapturerSourceCallback_ = callback;
-    return isRemoteWakeUpCallbackRegistered.exchange(true) ? SUCCESS :
-        RegisterWakeupSourceCallback();
+    return RegisterWakeupSourceCallback();
 }
 
 int32_t AudioSystemManager::SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback)
 {
     audioWakeUpSourceCloseCallback_ = callback;
-    return isRemoteWakeUpCallbackRegistered.exchange(true) ? SUCCESS :
-        RegisterWakeupSourceCallback();
+    return RegisterWakeupSourceCallback();
 }
 } // namespace AudioStandard
 } // namespace OHOS
