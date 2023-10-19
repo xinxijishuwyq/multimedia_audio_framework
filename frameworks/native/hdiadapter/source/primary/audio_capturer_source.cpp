@@ -900,6 +900,7 @@ void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback 
     AUDIO_INFO_LOG("Register WakeupClose Callback");
     std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
     wakeupCloseCallback_ = callback;
+    callback->OnCapturerState(started_);
 }
 
 void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)

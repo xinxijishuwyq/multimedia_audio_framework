@@ -1016,7 +1016,6 @@ private:
     std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
 
-    std::atomic_bool isRemoteWakeUpCallbackRegistered = false;
     std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
 };
 } // namespace AudioStandard

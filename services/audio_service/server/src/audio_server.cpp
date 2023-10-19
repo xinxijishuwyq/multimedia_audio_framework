@@ -717,6 +717,7 @@ void AudioServer::OnCapturerState(bool isActive)
     std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
+        isAudioCapturerSourcePrimaryStarted_ = isActive;
         CHECK_AND_RETURN_LOG(wakeupCallback_ != nullptr, "OnCapturerState callback is nullptr.");
         callback = wakeupCallback_;
     }
@@ -769,6 +770,8 @@ int32_t AudioServer::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
         wakeupCallback_ = wakeupCallback;
+
+        wakeupCallback->OnCapturerState(isAudioCapturerSourcePrimaryStarted_);
     }
 
     AUDIO_INFO_LOG("SetWakeupCloseCallback done");

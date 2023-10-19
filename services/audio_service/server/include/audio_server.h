@@ -118,6 +118,7 @@ private:
     int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+    bool isAudioCapturerSourcePrimaryStarted_ = false;
     std::shared_ptr<AudioParameterCallback> audioParamCb_;
     std::shared_ptr<WakeUpSourceCallback> wakeupCallback_;
     std::mutex audioParamCbMtx_;
