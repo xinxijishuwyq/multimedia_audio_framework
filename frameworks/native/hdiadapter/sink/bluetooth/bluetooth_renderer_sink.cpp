@@ -56,7 +56,6 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
 typedef struct {
     HDI::Audio_Bluetooth::AudioFormat format;
-    uint32_t sampleFmt;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
@@ -116,7 +115,7 @@ private:
     int32_t InitAudioManager();
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     FILE *dumpFile_ = nullptr;
 };
 
@@ -334,20 +333,20 @@ int32_t BluetoothRendererSinkInner::CreateRender(struct AudioPort &renderPort)
     return 0;
 }
 
-AudioFormat BluetoothRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat BluetoothRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -362,8 +361,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     AUDIO_INFO_LOG("Init: %{public}d", attr.format);
 
-    attr_.format = ConverToHdiFormat(attr.format);
-    attr_.sampleFmt = attr.sampleFmt;
+    attr_.format = ConvertToHdiFormat(attr.format);
     attr_.sampleRate = attr.sampleRate;
     attr_.channel = attr.channel;
     attr_.volume = attr.volume;

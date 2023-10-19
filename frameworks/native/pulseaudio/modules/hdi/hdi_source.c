@@ -38,6 +38,7 @@
 
 #include "audio_log.h"
 #include "audio_source_type.h"
+#include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
@@ -396,31 +397,31 @@ static int PaSetSourceProperties(pa_module *m, pa_modargs *ma, const pa_sample_s
     return 0;
 }
 
-static enum AudioFormat ConvertToHDIAudioFormat(pa_sample_format_t format)
+static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
-    enum AudioFormat hdiAudioFormat;
+    enum HdiAdapterFormat adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
-            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            adapterFormat = SAMPLE_U8;
             break;
         case PA_SAMPLE_S16LE:
         case PA_SAMPLE_S16BE:
-            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            adapterFormat = SAMPLE_S16;
             break;
         case PA_SAMPLE_S24LE:
         case PA_SAMPLE_S24BE:
-            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            adapterFormat = SAMPLE_S24;
             break;
         case PA_SAMPLE_S32LE:
         case PA_SAMPLE_S32BE:
-            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            adapterFormat = SAMPLE_S32;
             break;
         default:
-            hdiAudioFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            adapterFormat = SAMPLE_S16;
             break;
     }
 
-    return hdiAudioFormat;
+    return adapterFormat;
 }
 
 static bool GetEndianInfo(pa_sample_format_t format)
@@ -460,7 +461,7 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
         AUDIO_ERR_LOG("Failed to parse open_mic_speaker argument");
     }
     u->attrs.channel = ss->channels;
-    u->attrs.format = ConvertToHDIAudioFormat(ss->format);
+    u->attrs.format = ConvertPaToHdiAdapterFormat(ss->format);
     u->attrs.isBigEndian = GetEndianInfo(ss->format);
     u->attrs.adapterName = pa_modargs_get_value(ma, "adapter_name", DEFAULT_DEVICE_CLASS);
     u->attrs.deviceNetworkId = pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID);
@@ -471,7 +472,7 @@ static void InitUserdataAttrs(pa_modargs *ma, struct Userdata *u, const pa_sampl
     AUDIO_DEBUG_LOG("AudioDeviceCreateCapture format: %{public}d, isBigEndian: %{public}d channel: %{public}d,"
         "sampleRate: %{public}d", u->attrs.format, u->attrs.isBigEndian, u->attrs.channel, u->attrs.sampleRate);
 
-    u->attrs.open_mic_speaker = u->open_mic_speaker;
+    u->attrs.openMicSpeaker = u->open_mic_speaker;
 }
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)

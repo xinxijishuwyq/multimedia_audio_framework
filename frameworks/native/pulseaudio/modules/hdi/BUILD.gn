@@ -28,6 +28,7 @@ config("hdi_config") {
     "$pulseaudio_build_path/src",
     "$pulseaudio_build_path/include",
     "../../../audioschedule/include",
+    "../../../hdiadapter/common/include",
     "../../../hdiadapter/sink/bluetooth",
     "../../../hdiadapter/sink/common",
     "../../../hdiadapter/sink/file",

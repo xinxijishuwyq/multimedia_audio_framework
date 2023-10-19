@@ -186,6 +186,7 @@ config("audio_service_config") {
     "../../frameworks/native/audioschedule/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/playbackcapturer/include",
+    "../../frameworks/native/hdiadapter/common/include",
     "../../frameworks/native/hdiadapter/sink/bluetooth",
     "../../frameworks/native/hdiadapter/sink/common",
     "../../frameworks/native/hdiadapter/sink/file",
@@ -348,6 +349,7 @@ ohos_executable("audio_hdi_device_test") {
 
   include_dirs = [
     "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/hdiadapter/common/include",
     "../../frameworks/native/hdiadapter/sink",
     "../../frameworks/native/hdiadapter/sink/common",
     "../../frameworks/native/hdiadapter/sink/fast",

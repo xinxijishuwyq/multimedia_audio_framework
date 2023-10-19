@@ -16,25 +16,17 @@
 #ifndef AUDIO_RENDERER_SINK_INTF_H
 #define AUDIO_RENDERER_SINK_INTF_H
 
+#include "audio_hdiadapter_info.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-// should be same with AudioSampleFormat in audio_info.h
-enum SampleFormat {
-    SAMPLE_U8 = 0,
-    SAMPLE_S16LE = 1,
-    SAMPLE_S24LE = 2,
-    SAMPLE_S32LE = 3,
-    SAMPLE_F32LE = 4,
-    INVALID_WIDTH = -1
-};
 
 // should be same with IAudioSinkAttr in i_audio_renderer_sink.h
 typedef struct {
     const char *adapterName;
     uint32_t openMicSpeaker;
-    enum SampleFormat format;
-    uint32_t sampleFmt;
+    enum HdiAdapterFormat format;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
@@ -68,6 +60,7 @@ int32_t IAudioRendererSinkRenderFrame(struct RendererSinkAdapter *adapter, char 
     uint64_t *writeLen);
 int32_t IAudioRendererSinkSetVolume(struct RendererSinkAdapter *adapter, float left, float right);
 int32_t IAudioRendererSinkGetLatency(struct RendererSinkAdapter *adapter, uint32_t *latency);
+
 #ifdef __cplusplus
 }
 #endif

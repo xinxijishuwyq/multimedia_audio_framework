@@ -35,12 +35,15 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#include "securec.h"
+
 #include "audio_log.h"
 #include "audio_schedule.h"
+#include "audio_hdiadapter_info.h"
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
-#include "securec.h"
 #include "playback_capturer_adapter.h"
+
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -1220,28 +1223,28 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     return 0;
 }
 
-static enum SampleFormat ConvertToFwkFormat(pa_sample_format_t format)
+static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
-    enum SampleFormat fwkFormat;
+    enum HdiAdapterFormat adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
-            fwkFormat = SAMPLE_U8;
+            adapterFormat = SAMPLE_U8;
             break;
         case PA_SAMPLE_S16LE:
-            fwkFormat = SAMPLE_S16LE;
+            adapterFormat = SAMPLE_S16;
             break;
         case PA_SAMPLE_S24LE:
-            fwkFormat = SAMPLE_S24LE;
+            adapterFormat = SAMPLE_S24;
             break;
         case PA_SAMPLE_S32LE:
-            fwkFormat = SAMPLE_S32LE;
+            adapterFormat = SAMPLE_S32;
             break;
         default:
-            fwkFormat = INVALID_WIDTH;
+            adapterFormat = INVALID_WIDTH;
             break;
     }
 
-    return fwkFormat;
+    return adapterFormat;
 }
 
 static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
@@ -1249,10 +1252,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
     SinkAttr sample_attrs;
     int32_t ret;
 
-    enum SampleFormat format = ConvertToFwkFormat(u->ss.format);
-    sample_attrs.format = format;
-    sample_attrs.sampleFmt = format;
-    AUDIO_DEBUG_LOG("audiorenderer format: %d", sample_attrs.format);
+    sample_attrs.format = ConvertPaToHdiAdapterFormat(u->ss.format);
     sample_attrs.adapterName = u->adapterName;
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = u->ss.rate;

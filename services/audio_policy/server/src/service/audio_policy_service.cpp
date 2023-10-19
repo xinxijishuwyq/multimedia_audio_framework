@@ -1640,6 +1640,7 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::HandleArmUsbDevice");
 
+    int32_t handleRes = 0;
     if (deviceType == DEVICE_TYPE_USB_HEADSET) {
         string deviceInfo = "";
         if (g_adProxy != nullptr) {
@@ -1659,17 +1660,14 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), DEVICE_TYPE_USB_ARM_HEADSET);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
+        handleRes = HandleActiveDevice(deviceType);
     } else if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
+        handleRes = HandleActiveDevice(deviceType);
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
-        int32_t muteDuration =  1000000; // us
-        std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, activePort, DEVICE_TYPE_USB_ARM_HEADSET);
-        switchThread.detach();
-        int32_t beforSwitchDelay = 300000;
-        usleep(beforSwitchDelay);
     }
 
-    return HandleActiveDevice(deviceType);
+    return handleRes;
 }
 
 int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)

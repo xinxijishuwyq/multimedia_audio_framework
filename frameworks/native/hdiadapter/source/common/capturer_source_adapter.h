@@ -16,46 +16,20 @@
 #ifndef CAPTURER_SOURCE_ADAPTER_H
 #define CAPTURER_SOURCE_ADAPTER_H
 
+#include <stdio.h>
 #include <stdint.h>
-#include "audio_types.h"
+
+#include "i_audio_capturer_source_intf.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct {
-    const char *adapterName;
-    uint32_t open_mic_speaker;
-    enum AudioFormat format;
-    uint32_t sampleFmt;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-    uint32_t bufferSize;
-    bool isBigEndian;
-    const char *filePath;
-    const char *deviceNetworkId;
-    int32_t deviceType;
-    int32_t sourceType;
-} SourceAttr;
-
-struct CapturerSourceAdapter {
-    int32_t deviceClass;
-    void *wapper;
-    int32_t (*CapturerSourceInit)(void *wapper, const SourceAttr *attr);
-    void (*CapturerSourceDeInit)(void *wapper);
-    int32_t (*CapturerSourceStart)(void *wapper);
-    int32_t (*CapturerSourceSetMute)(void *wapper, bool isMute);
-    bool (*CapturerSourceIsMuteRequired)(void *wapper);
-    int32_t (*CapturerSourceStop)(void *wapper);
-    int32_t (*CapturerSourceFrame)(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
-    int32_t (*CapturerSourceSetVolume)(void *wapper, float left, float right);
-    int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
-};
 
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
     const char *sourceName, struct CapturerSourceAdapter **sourceAdapter);
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter);
 const char *GetDeviceClass(int32_t deviceClass);
+
 #ifdef __cplusplus
 }
 #endif

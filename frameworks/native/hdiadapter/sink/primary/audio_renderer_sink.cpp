@@ -82,14 +82,19 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
 
+    int32_t SetOutputRoute(DeviceType outputDevice) override;
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
+
+    int32_t Preload(const std::string &usbInfoStr) override;
+
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
     IAudioSinkAttr attr_;
-    bool rendererInited_;
+    bool sinkInited_;
+    bool adapterInited_;
+    bool renderInited_;
     bool started_;
     bool paused_;
     float leftVolume_;
@@ -120,16 +125,21 @@ private:
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
+
+    int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
+    int32_t InitAdapter();
+    int32_t InitRender();
+
     FILE *dumpFile_ = nullptr;
 };
 
 AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
-    : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
-      rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioRender_(nullptr), halName_(halName)
+    : sinkInited_(false), adapterInited_(false), renderInited_(false), started_(false), paused_(false),
+      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
+      audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
     attr_ = {};
 }
@@ -196,27 +206,10 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
     AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s", key,
         condition.c_str());
     if (condition == "get_usb_info") {
-        if (InitAudioManager() != 0) {
-            AUDIO_ERR_LOG("Init audio manager Fail.");
-            return "";
-        }
-        uint32_t size = MAX_AUDIO_ADAPTER_NUM;
-        int32_t ret;
-        AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
-        ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
-        if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
-            AUDIO_ERR_LOG("Get adapters failed when get_usb_info.");
-            return "";
-        }
-        enum AudioPortDirection port = PORT_OUT;
+        // Init adapter to get parameter before load sink module (need fix)
         adapterNameCase_ = "usb";
-        int32_t index =
-            SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
-        CHECK_AND_RETURN_RET_LOG((index >= 0), "", "Switch Adapter failed when get_usb_info.");
-        adapterDesc_ = descs[index];
-        CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
-            "", "Load Adapter Fail.");
-        CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), "", "Load audio device failed when get_usb_info.");
+        int32_t ret = InitAdapter();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init adapter failed for get usb info param");
     }
 
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
@@ -273,16 +266,16 @@ void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
             AdjustStereoToMonoForPCM8Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case SAMPLE_S16LE: {
+        case SAMPLE_S16: {
             AdjustStereoToMonoForPCM16Bit(reinterpret_cast<int16_t *>(data), len);
             break;
         }
-        case SAMPLE_S24LE: {
+        case SAMPLE_S24: {
             // this function needs to be further tested for usability
             AdjustStereoToMonoForPCM24Bit(reinterpret_cast<int8_t *>(data), len);
             break;
         }
-        case SAMPLE_S32LE: {
+        case SAMPLE_S32: {
             AdjustStereoToMonoForPCM32Bit(reinterpret_cast<int32_t *>(data), len);
             break;
         }
@@ -331,7 +324,7 @@ void AudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 
 bool AudioRendererSinkInner::IsInited()
 {
-    return rendererInited_;
+    return sinkInited_;
 }
 
 void AudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
@@ -343,17 +336,21 @@ void AudioRendererSinkInner::DeInit()
 {
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
-    rendererInited_ = false;
+    sinkInited_ = false;
+
     if (audioAdapter_ != nullptr) {
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
+    renderInited_ = false;
 
     if (audioManager_ != nullptr) {
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+    adapterInited_ = false;
+
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -401,20 +398,20 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     }
 }
 
-AudioFormat AudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat AudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -433,7 +430,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     AUDIO_DEBUG_LOG("Create render format: %{public}d", param.format);
@@ -456,54 +453,16 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
-    adapterNameCase_ = attr_.adapterName;  // Set sound card information
+    adapterNameCase_ = attr_.adapterName;
     openSpeaker_ = attr_.openMicSpeaker;
-    enum AudioPortDirection port = PORT_OUT; // Set port information
 
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail.");
-        return ERR_NOT_STARTED;
-    }
+    int32_t ret = InitAdapter();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
 
-    uint32_t size = MAX_AUDIO_ADAPTER_NUM;
-    int32_t ret;
-    AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
-    ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail.");
-        return ERR_NOT_STARTED;
-    }
+    ret = InitRender();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init render failed");
 
-    // Get qualified sound card and port
-    int32_t index =
-        SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
-    CHECK_AND_RETURN_RET_LOG((index >= 0), ERR_NOT_STARTED, "Switch Adapter Fail.");
-
-    adapterDesc_ = descs[index];
-    CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
-        ERR_NOT_STARTED, "Load Adapter Fail.");
-
-    CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), ERR_NOT_STARTED, "Load audio device failed.");
-
-    // Initialization port information, can fill through mode and other parameters
-    CHECK_AND_RETURN_RET_LOG((audioAdapter_->InitAllPorts(audioAdapter_) == SUCCESS),
-        ERR_NOT_STARTED, "InitAllPorts failed");
-
-    if (CreateRender(audioPort_) != 0) {
-        AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
-        return ERR_NOT_STARTED;
-    }
-    if (openSpeaker_) {
-        if (halName_ == "usb") {
-            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
-        } else {
-            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
-        }
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-        }
-    }
-    rendererInited_ = true;
+    sinkInited_ = true;
 
     return SUCCESS;
 }
@@ -951,6 +910,132 @@ int32_t AudioRendererSinkInner::Flush(void)
     }
 
     return ERR_OPERATION_FAILED;
+}
+
+int32_t AudioRendererSinkInner::Preload(const std::string &usbInfoStr)
+{
+    CHECK_AND_RETURN_RET_LOG(halName_ == "usb", ERR_INVALID_OPERATION, "Preload only supported for usb");
+
+    int32_t ret = UpdateUsbAttrs(usbInfoStr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Preload failed when init attr");
+
+    ret = InitAdapter();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Preload failed when init adapter");
+
+    ret = InitRender();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Preload failed when init render");
+
+    return SUCCESS;
+}
+
+static HdiAdapterFormat ParseAudioFormat(const std::string &format)
+{
+    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
+        return HdiAdapterFormat::SAMPLE_S16;
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+        return HdiAdapterFormat::SAMPLE_S24;
+    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
+        return HdiAdapterFormat::SAMPLE_S32;
+    } else {
+        return HdiAdapterFormat::SAMPLE_S16;
+    }
+}
+
+int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
+{
+    CHECK_AND_RETURN_RET_LOG(usbInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
+
+    auto sinkRate_begin = usbInfoStr.find("sink_rate:");
+    auto sinkRate_end = usbInfoStr.find_first_of(";", sinkRate_begin);
+    std::string sampleRateStr = usbInfoStr.substr(sinkRate_begin + std::strlen("sink_rate:"),
+        sinkRate_end - sinkRate_begin - std::strlen("sink_rate:"));
+    auto sinkFormat_begin = usbInfoStr.find("sink_format:");
+    auto sinkFormat_end = usbInfoStr.find_first_of(";", sinkFormat_begin);
+    std::string formatStr = usbInfoStr.substr(sinkFormat_begin + std::strlen("sink_format:"),
+        sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
+
+    // usb default config
+    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.channel = STEREO_CHANNEL_COUNT;
+    attr_.format = ParseAudioFormat(formatStr);
+
+    adapterNameCase_ = "usb";
+    openSpeaker_ = 0;
+
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::InitAdapter()
+{
+    AUDIO_INFO_LOG("Init adapter start");
+
+    if (adapterInited_) {
+        AUDIO_INFO_LOG("Adapter already inited");
+        return SUCCESS;
+    }
+
+    if (InitAudioManager() != 0) {
+        AUDIO_ERR_LOG("Init audio manager Fail.");
+        return ERR_NOT_STARTED;
+    }
+
+    AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
+    uint32_t size = MAX_AUDIO_ADAPTER_NUM;
+    int32_t ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
+        AUDIO_ERR_LOG("Get adapters failed");
+        return ERR_NOT_STARTED;
+    }
+
+    enum AudioPortDirection port = PORT_OUT;
+    int32_t index =
+        SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
+    CHECK_AND_RETURN_RET_LOG((index >= 0), ERR_NOT_STARTED, "Switch Adapter failed");
+
+    adapterDesc_ = descs[index];
+    CHECK_AND_RETURN_RET_LOG((audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "Load Adapter Fail.");
+
+    adapterInited_ = true;
+
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::InitRender()
+{
+    AUDIO_INFO_LOG("Init render start");
+
+    if (renderInited_) {
+        AUDIO_INFO_LOG("Render already inited");
+        return SUCCESS;
+    }
+
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_ != nullptr), ERR_NOT_STARTED, "Audio device not loaded");
+
+    // Initialization port information, can fill through mode and other parameters
+    CHECK_AND_RETURN_RET_LOG((audioAdapter_->InitAllPorts(audioAdapter_) == SUCCESS),
+        ERR_NOT_STARTED, "Init ports failed");
+
+    if (CreateRender(audioPort_) != 0) {
+        AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
+        return ERR_NOT_STARTED;
+    }
+
+    if (openSpeaker_) {
+        int32_t ret = SUCCESS;
+        if (halName_ == "usb") {
+            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+        } else {
+            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
+        }
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+        }
+    }
+
+    renderInited_ = true;
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

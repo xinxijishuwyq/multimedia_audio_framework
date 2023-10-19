@@ -107,8 +107,8 @@ private:
     int32_t CreateCapture(const struct AudioPort &capturePort);
     int32_t PrepareMmapBuffer();
     int32_t InitAudioManager();
-    uint32_t PcmFormatToBits(AudioSampleFormat format);
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    uint32_t PcmFormatToBits(HdiAdapterFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CheckPositionTime();
 };
 
@@ -212,20 +212,20 @@ int32_t FastAudioCapturerSourceInner::InitAudioManager()
 }
 
 
-AudioFormat FastAudioCapturerSourceInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat FastAudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -243,7 +243,7 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     // User needs to set
     InitAttrsCapture(param);
     param.sampleRate = attr_.sampleRate;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
@@ -280,7 +280,7 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     return 0;
 }
 
-uint32_t FastAudioCapturerSourceInner::PcmFormatToBits(AudioSampleFormat format)
+uint32_t FastAudioCapturerSourceInner::PcmFormatToBits(HdiAdapterFormat format)
 {
     switch (format) {
         case SAMPLE_U8:
@@ -392,7 +392,7 @@ int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
     }
     // Get qualified sound card and port
     adapterNameCase_ = attr_.adapterName;
-    openMic_ = attr_.open_mic_speaker;
+    openMic_ = attr_.openMicSpeaker;
     index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs, size, adapterNameCase_, PORT_IN, audioPort);
     if (index < 0) {
         AUDIO_ERR_LOG("Switch Adapter Capture Fail");

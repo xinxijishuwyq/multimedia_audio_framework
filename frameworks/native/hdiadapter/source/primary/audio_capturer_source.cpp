@@ -13,18 +13,21 @@
  * limitations under the License.
  */
 
+#include "audio_capturer_source.h"
+
 #include <cstring>
 #include <dlfcn.h>
 #include <string>
 #include <cinttypes>
+
+#include "securec.h"
 #include "power_mgr_client.h"
 #include "running_lock.h"
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "audio_utils.h"
-#include "audio_capturer_source.h"
 #include "v1_0/iaudio_manager.h"
-#include "securec.h"
+
+#include "audio_log.h"
+#include "audio_errors.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -59,6 +62,8 @@ public:
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
+    int32_t Preload(const std::string &usbInfoStr) override;
+
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     ~AudioCapturerSourceInner();
 
@@ -67,13 +72,20 @@ private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr float MAX_VOLUME_LEVEL = 15.0f;
     static constexpr uint32_t PRIMARY_INPUT_STREAM_ID = 14; // 14 + 0 * 8
+    static constexpr uint32_t USB_DEFAULT_BUFFERSIZE = 3840;
+    static constexpr uint32_t STEREO_CHANNEL_COUNT = 2;
 
     int32_t CreateCapture(struct AudioPort &capturePort);
     int32_t InitAudioManager();
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
+
+    int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
+    int32_t InitAdapterAndCapture();
 
     IAudioSourceAttr attr_;
-    bool capturerInited_;
+    bool sourceInited_;
+    bool captureInited_;
     bool started_;
     bool paused_;
     float leftVolume_;
@@ -88,7 +100,7 @@ private:
     struct IAudioCapture *audioCapture_;
     std::string halName_;
     struct AudioAdapterDescriptor adapterDesc_;
-    struct AudioPort audioPort;
+    struct AudioPort audioPort_;
 
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 
@@ -258,9 +270,9 @@ bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
 AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string &halName)
-    : capturerInited_(false), started_(false), paused_(false), leftVolume_(MAX_VOLUME_LEVEL),
-      rightVolume_(MAX_VOLUME_LEVEL), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioCapture_(nullptr), halName_(halName)
+    : sourceInited_(false), captureInited_(false), started_(false), paused_(false),
+      leftVolume_(MAX_VOLUME_LEVEL), rightVolume_(MAX_VOLUME_LEVEL), openMic_(0),
+      audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr), halName_(halName)
 {
     attr_ = {};
 }
@@ -339,17 +351,18 @@ AudioCapturerSource *AudioCapturerSource::GetWakeupInstance(bool isMirror)
 
 bool AudioCapturerSourceInner::IsInited(void)
 {
-    return capturerInited_;
+    return sourceInited_;
 }
 
 void AudioCapturerSourceInner::DeInit()
 {
     started_ = false;
-    capturerInited_ = false;
+    sourceInited_ = false;
 
     if (audioAdapter_ != nullptr) {
         audioAdapter_->DestroyCapture(audioAdapter_, captureId_);
     }
+    captureInited_ = false;
 
     IAudioSourceCallback* callback = nullptr;
     {
@@ -367,6 +380,7 @@ void AudioCapturerSourceInner::DeInit()
     }
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
+
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -429,6 +443,30 @@ int32_t AudioCapturerSourceInner::InitAudioManager()
     return 0;
 }
 
+AudioFormat AudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat format)
+{
+    AudioFormat hdiFormat;
+    switch (format) {
+        case SAMPLE_U8:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            break;
+        case SAMPLE_S16:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+        case SAMPLE_S24:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            break;
+        case SAMPLE_S32:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        default:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            break;
+    }
+
+    return hdiFormat;
+}
+
 int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 {
     int32_t ret;
@@ -436,7 +474,7 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     // User needs to set
     InitAttrsCapture(param);
     param.sampleRate = attr_.sampleRate;
-    param.format = (AudioFormat)(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
@@ -464,55 +502,14 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
 
 int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail");
-        return ERR_INVALID_HANDLE;
-    }
     attr_ = attr;
-    int32_t ret;
-    int32_t index;
-    uint32_t size = MAX_AUDIO_ADAPTER_NUM;
-    AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
-    ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail");
-        return ERR_NOT_STARTED;
-    }
-    // Get qualified sound card and port
     adapterNameCase_ = attr_.adapterName;
-    openMic_ = attr_.open_mic_speaker;
-    index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs, size, adapterNameCase_, PORT_IN, audioPort);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Capture Fail");
-        return ERR_NOT_STARTED;
-    }
-    adapterDesc_ = descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device failed");
+    openMic_ = attr_.openMicSpeaker;
 
-    // Inittialization port information, can fill through mode and other parameters
-    if (audioAdapter_->InitAllPorts(audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("InitAllPorts failed");
-        return ERR_DEVICE_INIT;
-    }
-    if (CreateCapture(audioPort) != 0) {
-        AUDIO_ERR_LOG("Create capture failed");
-        return ERR_NOT_STARTED;
-    }
-    if (openMic_) {
-        if (halName_ == "usb") {
-            ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
-        } else {
-            ret = SetInputRoute(DEVICE_TYPE_MIC);
-        }
-        if (ret < 0) {
-            AUDIO_ERR_LOG("update route FAILED: %{public}d", ret);
-        }
-    }
-    capturerInited_ = true;
+    int32_t ret = InitAdapterAndCapture();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter and capture failed");
+
+    sourceInited_ = true;
 
     return SUCCESS;
 }
@@ -740,7 +737,7 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPor
 
     inputPortPin = source.ext.device.type;
     AUDIO_INFO_LOG("Input PIN is: 0x%{public}X", inputPortPin);
-    source.portId = static_cast<int32_t>(audioPort.portId);
+    source.portId = static_cast<int32_t>(audioPort_.portId);
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;
@@ -913,6 +910,120 @@ void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceC
 void AudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_ERR_LOG("RegisterParameterCallback is not supported!");
+}
+
+int32_t AudioCapturerSourceInner::Preload(const std::string &usbInfoStr)
+{
+    CHECK_AND_RETURN_RET_LOG(halName_ == "usb", ERR_INVALID_OPERATION, "Preload only supported for usb");
+
+    int32_t ret = UpdateUsbAttrs(usbInfoStr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Preload failed when init attr");
+
+    ret = InitAdapterAndCapture();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Preload failed when init adapter and capture");
+
+    return SUCCESS;
+}
+
+static HdiAdapterFormat ParseAudioFormat(const std::string &format)
+{
+    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
+        return HdiAdapterFormat::SAMPLE_S16;
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+        return HdiAdapterFormat::SAMPLE_S24;
+    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
+        return HdiAdapterFormat::SAMPLE_S32;
+    } else {
+        return HdiAdapterFormat::SAMPLE_S16;
+    }
+}
+
+int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
+{
+    CHECK_AND_RETURN_RET_LOG(usbInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
+
+    auto sourceRate_begin = usbInfoStr.find("source_rate:");
+    auto sourceRate_end = usbInfoStr.find_first_of(";", sourceRate_begin);
+    std::string sampleRateStr = usbInfoStr.substr(sourceRate_begin + std::strlen("source_rate:"),
+        sourceRate_end - sourceRate_begin - std::strlen("source_rate:"));
+    auto sourceFormat_begin = usbInfoStr.find("source_format:");
+    auto sourceFormat_end = usbInfoStr.find_first_of(";", sourceFormat_begin);
+    std::string formatStr = usbInfoStr.substr(sourceFormat_begin + std::strlen("source_format:"),
+        sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
+
+    // usb default config
+    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.channel = STEREO_CHANNEL_COUNT;
+    attr_.format = ParseAudioFormat(formatStr);
+    attr_.isBigEndian = false;
+    attr_.bufferSize = USB_DEFAULT_BUFFERSIZE;
+    attr_.sourceType = SOURCE_TYPE_MIC;
+
+    adapterNameCase_ = "usb";
+    openMic_ = 0;
+
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
+{
+    AUDIO_INFO_LOG("Init adapter start");
+
+    if (captureInited_) {
+        AUDIO_INFO_LOG("Adapter already inited");
+        return SUCCESS;
+    }
+
+    if (InitAudioManager() != 0) {
+        AUDIO_ERR_LOG("Init audio manager Fail");
+        return ERR_NOT_STARTED;
+    }
+
+    AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
+    uint32_t size = MAX_AUDIO_ADAPTER_NUM;
+    int32_t ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
+        AUDIO_ERR_LOG("Get adapters Fail");
+        return ERR_NOT_STARTED;
+    }
+
+    // Get qualified sound card and port
+    int32_t index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs,
+        size, adapterNameCase_, PORT_IN, audioPort_);
+    if (index < 0) {
+        AUDIO_ERR_LOG("Switch Adapter Capture Fail");
+        return ERR_NOT_STARTED;
+    }
+    adapterDesc_ = descs[index];
+    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
+        AUDIO_ERR_LOG("Load Adapter Fail");
+        return ERR_NOT_STARTED;
+    }
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device failed");
+
+    // Inittialization port information, can fill through mode and other parameters
+    if (audioAdapter_->InitAllPorts(audioAdapter_) != 0) {
+        AUDIO_ERR_LOG("InitAllPorts failed");
+        return ERR_DEVICE_INIT;
+    }
+    if (CreateCapture(audioPort_) != 0) {
+        AUDIO_ERR_LOG("Create capture failed");
+        return ERR_NOT_STARTED;
+    }
+    if (openMic_) {
+        if (halName_ == "usb") {
+            ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+        } else {
+            ret = SetInputRoute(DEVICE_TYPE_MIC);
+        }
+        if (ret < 0) {
+            AUDIO_ERR_LOG("update route FAILED: %{public}d", ret);
+        }
+    }
+
+    captureInited_ = true;
+
+    return SUCCESS;
 }
 
 int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)

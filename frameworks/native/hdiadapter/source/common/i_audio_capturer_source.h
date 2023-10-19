@@ -19,14 +19,14 @@
 #include <cstdint>
 
 #include "audio_info.h"
+#include "audio_hdiadapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 typedef struct {
     const char *adapterName;
-    uint32_t open_mic_speaker;
-    AudioSampleFormat format;
-    uint32_t sampleFmt;
+    uint32_t openMicSpeaker;
+    HdiAdapterFormat format;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
@@ -50,6 +50,9 @@ class IAudioCapturerSource {
 public:
     static IAudioCapturerSource *GetInstance(const char *deviceClass, const char *deviceNetworkId,
            const SourceType sourceType = SourceType::SOURCE_TYPE_MIC, const char *sourceName = "Built_in_wakeup");
+
+    virtual ~IAudioCapturerSource() = default;
+
     virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
     virtual bool IsInited(void) = 0;
     virtual void DeInit(void) = 0;
@@ -60,7 +63,9 @@ public:
     virtual int32_t Reset(void) = 0;
     virtual int32_t Pause(void) = 0;
     virtual int32_t Resume(void) = 0;
+
     virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) = 0;
+
     virtual int32_t SetVolume(float left, float right) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
     virtual int32_t SetMute(bool isMute) = 0;
@@ -73,7 +78,10 @@ public:
     virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) = 0;
     virtual void RegisterParameterCallback(IAudioSourceCallback *callback) = 0;
 
-    virtual ~IAudioCapturerSource() = default;
+    virtual int32_t Preload(const std::string &usbInfoStr)
+    {
+        return 0;
+    }
 };
 
 class IMmapAudioCapturerSource : public IAudioCapturerSource {

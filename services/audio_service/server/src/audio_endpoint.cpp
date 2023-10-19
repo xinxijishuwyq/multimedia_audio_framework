@@ -45,6 +45,30 @@ namespace {
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
 }
 
+static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
+{
+    enum HdiAdapterFormat adapterFormat;
+    switch (format) {
+        case AudioSampleFormat::SAMPLE_U8:
+            adapterFormat = HdiAdapterFormat::SAMPLE_U8;
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            adapterFormat = HdiAdapterFormat::SAMPLE_S16;
+            break;
+        case AudioSampleFormat::SAMPLE_S24LE:
+            adapterFormat = HdiAdapterFormat::SAMPLE_S24;
+            break;
+        case AudioSampleFormat::SAMPLE_S32LE:
+            adapterFormat = HdiAdapterFormat::SAMPLE_S32;
+            break;
+        default:
+            adapterFormat = HdiAdapterFormat::INVALID_WIDTH;
+            break;
+    }
+
+    return adapterFormat;
+}
+
 class AudioEndpointInner : public AudioEndpoint {
 public:
     explicit AudioEndpointInner(EndpointType type);
@@ -293,7 +317,7 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
     IAudioSourceAttr attr = {};
     attr.sampleRate = dstStreamInfo_.samplingRate;
     attr.channel = dstStreamInfo_.channels;
-    attr.format = dstStreamInfo_.format;
+    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format);
     attr.deviceNetworkId = deviceInfo.networkId.c_str();
 
     if (deviceInfo.networkId == LOCAL_NETWORK_ID) {
@@ -347,8 +371,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     attr.adapterName = "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
-    attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
-    attr.sampleFmt = dstStreamInfo_.format;
+    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
     attr.deviceNetworkId = deviceInfo.networkId.c_str();
     attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType);
 

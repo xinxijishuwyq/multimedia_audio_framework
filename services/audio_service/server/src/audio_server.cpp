@@ -197,9 +197,14 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
     AUDIO_DEBUG_LOG("server: get audio parameter");
     if (key == "get_usb_info") {
         IAudioRendererSink *usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
-        if (usbAudioRendererSinkInstance != nullptr) {
-            AudioParamKey parmKey = AudioParamKey::USB_DEVICE;
-            return usbAudioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "get_usb_info");
+        IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+        if (usbAudioRendererSinkInstance != nullptr && usbAudioCapturerSinkInstance != nullptr) {
+            std::string usbInfoStr =
+                usbAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::USB_DEVICE, "get_usb_info");
+            // Preload usb sink and source, make pa load module faster to avoid blocking client write
+            usbAudioRendererSinkInstance->Preload(usbInfoStr);
+            usbAudioCapturerSinkInstance->Preload(usbInfoStr);
+            return usbInfoStr;
         }
     }
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");

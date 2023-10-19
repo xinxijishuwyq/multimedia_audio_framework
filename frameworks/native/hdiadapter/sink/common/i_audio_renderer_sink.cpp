@@ -100,8 +100,7 @@ int32_t IAudioRendererSinkInit(struct RendererSinkAdapter *adapter, const SinkAt
     IAudioSinkAttr iAttr = {};
     iAttr.adapterName = attr->adapterName;
     iAttr.openMicSpeaker = attr->openMicSpeaker;
-    iAttr.format = static_cast<AudioSampleFormat>(attr->format);
-    iAttr.sampleFmt = attr->sampleFmt;
+    iAttr.format = attr->format;
     iAttr.sampleRate = attr->sampleRate;
     iAttr.channel = attr->channel;
     iAttr.volume = attr->volume;

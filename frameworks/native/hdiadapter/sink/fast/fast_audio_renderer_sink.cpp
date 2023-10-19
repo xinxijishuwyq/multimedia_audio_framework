@@ -102,7 +102,7 @@ private:
     int32_t CheckPositionTime();
     void PreparePosition();
 
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
+    AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
 
@@ -247,7 +247,7 @@ int32_t FastAudioRendererSinkInner::InitAudioManager()
     return 0;
 }
 
-uint32_t PcmFormatToBits(AudioSampleFormat format)
+uint32_t PcmFormatToBits(HdiAdapterFormat format)
 {
     switch (format) {
         case SAMPLE_U8:
@@ -378,20 +378,20 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
     return SUCCESS;
 }
 
-AudioFormat FastAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat FastAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -409,7 +409,7 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    param.format = ConverToHdiFormat(attr_.format);
+    param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(attr_.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
     AUDIO_INFO_LOG("FastAudioRendererSink Create render format: %{public}d and device:%{public}d", param.format,

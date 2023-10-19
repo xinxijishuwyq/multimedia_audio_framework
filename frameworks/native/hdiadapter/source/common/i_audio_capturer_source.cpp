@@ -18,10 +18,11 @@
 #include <cstring>
 #include <string>
 
-#include "audio_capturer_file_source.h"
-#include "audio_capturer_source.h"
-#include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_errors.h"
+#include "i_audio_capturer_source_intf.h"
+#include "audio_capturer_source.h"
+#include "audio_capturer_file_source.h"
 #include "remote_audio_capturer_source.h"
 
 using namespace std;
@@ -70,11 +71,11 @@ extern "C" {
 using namespace OHOS::AudioStandard;
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
-    const SourceType sourceType, const char *sourceName, void **wapper)
+    const int32_t sourceType, const char *sourceName, void **wapper)
 {
     IAudioCapturerSource *iSource = IAudioCapturerSource::GetInstance(deviceClass,
         deviceNetworkId,
-        sourceType,
+        static_cast<SourceType>(sourceType),
         sourceName);
 
     if (iSource != nullptr) {
@@ -86,16 +87,31 @@ int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
 
 IAudioCapturerSource *iAudioCapturerSource = nullptr;
 
-int32_t IAudioCapturerSourceInit(void *wapper, IAudioSourceAttr *attr)
+int32_t IAudioCapturerSourceInit(void *wapper, const SourceAttr *attr)
 {
     int32_t ret;
 
     IAudioCapturerSource *iAudioCapturerSource = static_cast<IAudioCapturerSource *>(wapper);
     CHECK_AND_RETURN_RET_LOG(iAudioCapturerSource != nullptr, ERR_INVALID_HANDLE, "null audioCapturerSource");
-    if (iAudioCapturerSource->IsInited())
+    if (iAudioCapturerSource->IsInited()) {
         return SUCCESS;
+    }
 
-    ret = iAudioCapturerSource->Init(*attr);
+    IAudioSourceAttr iAttr = {};
+    iAttr.adapterName = attr->adapterName;
+    iAttr.openMicSpeaker = attr->openMicSpeaker;
+    iAttr.format = attr->format;
+    iAttr.sampleRate = attr->sampleRate;
+    iAttr.channel = attr->channel;
+    iAttr.volume = attr->volume;
+    iAttr.bufferSize = attr->bufferSize;
+    iAttr.isBigEndian = attr->isBigEndian;
+    iAttr.filePath = attr->filePath;
+    iAttr.deviceNetworkId = attr->deviceNetworkId;
+    iAttr.deviceType = attr->deviceType;
+    iAttr.sourceType = attr->sourceType;
+
+    ret = iAudioCapturerSource->Init(iAttr);
 
     return ret;
 }

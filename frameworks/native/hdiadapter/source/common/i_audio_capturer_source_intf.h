@@ -16,14 +16,18 @@
 #ifndef I_AUDIO_CAPTURER_SINK_INTF_H
 #define I_AUDIO_CAPTURER_SINK_INTF_H
 
+#include <stdbool.h>
+#include "audio_hdiadapter_info.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// should be same with IAudioSourceAttr in i_audio_capturer_source.h
 typedef struct {
     const char *adapterName;
-    uint32_t open_mic_speaker;
-    enum AudioFormat format;
-    uint32_t sampleFmt;
+    uint32_t openMicSpeaker;
+    enum HdiAdapterFormat format;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
@@ -33,11 +37,25 @@ typedef struct {
     const char *deviceNetworkId;
     int32_t deviceType;
     int32_t sourceType;
-} IAudioSourceAttr;
+} SourceAttr;
+
+struct CapturerSourceAdapter {
+    int32_t deviceClass;
+    void *wapper;
+    int32_t (*CapturerSourceInit)(void *wapper, const SourceAttr *attr);
+    void (*CapturerSourceDeInit)(void *wapper);
+    int32_t (*CapturerSourceStart)(void *wapper);
+    int32_t (*CapturerSourceSetMute)(void *wapper, bool isMute);
+    bool (*CapturerSourceIsMuteRequired)(void *wapper);
+    int32_t (*CapturerSourceStop)(void *wapper);
+    int32_t (*CapturerSourceFrame)(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
+    int32_t (*CapturerSourceSetVolume)(void *wapper, float left, float right);
+    int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
+};
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
     const int32_t sourceType, const char *sourceName, void **wapper);
-int32_t IAudioCapturerSourceInit(void *wapper, IAudioSourceAttr *attr);
+int32_t IAudioCapturerSourceInit(void *wapper, const SourceAttr *attr);
 void IAudioCapturerSourceDeInit(void *wapper);
 int32_t IAudioCapturerSourceStart(void *wapper);
 int32_t IAudioCapturerSourceStop(void *wapper);
@@ -46,6 +64,7 @@ int32_t IAudioCapturerSourceSetVolume(void *wapper, float left, float right);
 bool IAudioCapturerSourceIsMuteRequired(void *wapper);
 int32_t IAudioCapturerSourceSetMute(void *wapper, bool isMute);
 int32_t IAudioCapturerSourceGetVolume(void *wapper, float *left, float *right);
+
 #ifdef __cplusplus
 }
 #endif

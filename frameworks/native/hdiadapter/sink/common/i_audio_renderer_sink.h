@@ -17,14 +17,15 @@
 #define I_AUDIO_RENDERER_SINK_H
 
 #include "audio_info.h"
+#include "audio_hdiadapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 typedef struct {
     const char *adapterName;
     uint32_t openMicSpeaker;
-    AudioSampleFormat format;
-    uint32_t sampleFmt;
+    HdiAdapterFormat format;
     uint32_t sampleRate;
     uint32_t channel;
     float volume;
@@ -74,6 +75,11 @@ public:
 
     virtual void SetAudioMonoState(bool audioMono) = 0;
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
+
+    virtual int32_t Preload(const std::string &usbInfoStr)
+    {
+        return 0;
+    }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {
