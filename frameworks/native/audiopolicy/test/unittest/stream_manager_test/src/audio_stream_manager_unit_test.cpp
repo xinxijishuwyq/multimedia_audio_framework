@@ -1546,7 +1546,7 @@ HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
     auto outputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     if (outputDeviceDescriptors.size() > 0) {
         for (auto outputDescriptor : outputDeviceDescriptors) {
-            if (outputDescriptor->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER) {
+            if (outputDescriptor->deviceType_ == DeviceType::DEVICE_TYPE_SPEAKER) {
                     desc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
                     desc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
                     ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
