@@ -24,6 +24,8 @@
 #include "audio_log.h"
 #include "audio_renderer.h"
 #include "audio_stream_manager.h"
+#include "audio_system_manager.h"
+#include "refbase.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -1529,6 +1531,63 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupport
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_001
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
+{
+    int32_t ret = VALUE_NEGATIVE;
+    sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
+    auto outputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    if (outputDeviceDescriptors.size() > 0) {
+        for (auto outputDescriptor : outputDeviceDescriptors) {
+            if (outputDescriptor->deviceType_ == DeviceType::DEVICE_TYPE_SPEAKER) {
+                desc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+                desc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+                ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
+            }
+        }
+        EXPECT_NE(VALUE_NEGATIVE, ret);
+    }
+}
+
+/**
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_002
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
+{
+    sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
+    int32_t ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
+    EXPECT_EQ(VALUE_NEGATIVE, ret);
+}
+
+/**
+ * @tc.name  : Test GetHardwareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardwareOutputSamplingRate_003
+ * @tc.desc  : Test GetHardwareOutputSamplingRate interface for inputdevice.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
+{
+    int32_t ret = VALUE_NEGATIVE;
+    sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
+    auto outputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    if (outputDeviceDescriptors.size() > 0) {
+        for (auto outputDescriptor : outputDeviceDescriptors) {
+            desc->deviceType_ = outputDescriptor->deviceType_;
+            desc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+            ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
+        }
+        EXPECT_EQ(VALUE_NEGATIVE, ret);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

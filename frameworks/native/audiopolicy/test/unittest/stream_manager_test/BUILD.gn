@@ -38,5 +38,8 @@ ohos_unittest("audio_stream_manager_unit_test") {
     "../../../../audiorenderer:audio_renderer",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
 }
