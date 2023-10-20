@@ -3240,9 +3240,9 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     if (inputDeviceDescriptors.size() > 0) {
         auto microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
         EXPECT_EQ(true, microphoneDescriptors.size() > 0);
-        auto micDescriptors = microphoneDescriptors[0];
-        for (auto inputDescriptors : inputDeviceDescriptors) {
-            if (micDescriptors->deviceType_ == inputDescriptors->deviceType_) {
+        auto micDescriptor = microphoneDescriptors[0];
+        for (auto inputDescriptor : inputDeviceDescriptors) {
+            if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
                 ret1 = 0;
             }
         }

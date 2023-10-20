@@ -125,7 +125,7 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophone
     EXPECT_EQ(true, microphoneDescriptors.size() > 0);
     for (auto inputDescriptor : inputDeviceDescriptors) {
         for (auto micDescriptor : microphoneDescriptors) {
-            if (micDescriptors->deviceType_ == inputDescriptors->deviceType_) {
+            if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
                     ret = 0;
             }
         }
