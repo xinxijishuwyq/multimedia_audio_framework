@@ -1539,7 +1539,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_IsAudioRendererLowLatencySupport
  * @tc.number: GetHardwareOutputSamplingRate_001
  * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
  */
-HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
 {
     int32_t ret = VALUE_NEGATIVE;
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
@@ -1562,7 +1562,7 @@ HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
  * @tc.number: GetHardwareOutputSamplingRate_002
  * @tc.desc  : Test GetHardwareOutputSamplingRate interface.
  */
-HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
 {
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
     int32_t ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
@@ -1575,7 +1575,7 @@ HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_002, TestSize.Level1)
  * @tc.number: GetHardwareOutputSamplingRate_003
  * @tc.desc  : Test GetHardwareOutputSamplingRate interface for inputdevice.
  */
-HWTEST(AudioBalanceUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_003, TestSize.Level1)
 {
     int32_t ret = VALUE_NEGATIVE;
     sptr<AudioStandard::AudioDeviceDescriptor> desc = new AudioStandard::AudioDeviceDescriptor();
