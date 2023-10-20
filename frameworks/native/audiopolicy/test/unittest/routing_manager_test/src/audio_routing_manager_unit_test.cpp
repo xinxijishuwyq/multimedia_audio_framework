@@ -118,7 +118,7 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophone
 {
     int32_t ret = -1;
     auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    if (inputDeviceDescriptors.size() = 0) {
+    if (inputDeviceDescriptors.size() == 0) {
         ret = SUCCESS;
         EXPECT_EQ(SUCCESS, ret);
         return;
