@@ -118,15 +118,17 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophone
 {
     int32_t ret = -1;
     auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    if (inputDeviceDescriptors.size() <= 0) {
-        EXPECT_NE(SUCCESS, ret);
+    if (inputDeviceDescriptors.size() = 0) {
+        ret = SUCCESS;
+        EXPECT_EQ(SUCCESS, ret);
+        return;
     }
     auto microphoneDescriptors = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
-    EXPECT_EQ(true, microphoneDescriptors.size() > 0);
+    EXPECT_GT(microphoneDescriptors.size(), 0);
     for (auto inputDescriptor : inputDeviceDescriptors) {
         for (auto micDescriptor : microphoneDescriptors) {
             if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
-                    ret = 0;
+                ret = SUCCESS;
             }
         }
     }

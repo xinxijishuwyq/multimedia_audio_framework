@@ -3263,11 +3263,11 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     if (inputDeviceDescriptors.size() > 0) {
         auto microphoneDescriptors = audioCapturer->GetCurrentMicrophones();
-        EXPECT_EQ(true, microphoneDescriptors.size() > 0);
+        EXPECT_GT(microphoneDescriptors.size(), 0);
         auto micDescriptor = microphoneDescriptors[0];
         for (auto inputDescriptor : inputDeviceDescriptors) {
             if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
-                ret1 = 0;
+                ret1 = SUCCESS;
             }
         }
         EXPECT_EQ(SUCCESS, ret1);

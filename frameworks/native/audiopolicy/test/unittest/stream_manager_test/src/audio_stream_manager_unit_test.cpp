@@ -1547,9 +1547,9 @@ HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.L
     if (outputDeviceDescriptors.size() > 0) {
         for (auto outputDescriptor : outputDeviceDescriptors) {
             if (outputDescriptor->deviceType_ == DeviceType::DEVICE_TYPE_SPEAKER) {
-                    desc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-                    desc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-                    ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
+                desc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+                desc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+                ret = AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
             }
         }
         EXPECT_NE(VALUE_NEGATIVE, ret);
