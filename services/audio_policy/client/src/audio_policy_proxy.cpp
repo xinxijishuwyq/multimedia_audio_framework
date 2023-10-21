@@ -2177,5 +2177,51 @@ std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAvailableMicrophone
 
     return micDescs;
 }
+
+int32_t AudioPolicyProxy::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" SetDeviceAbsVolumeSupported WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteString(macAddress);
+    data.WriteBool(support);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
+    const bool updateUi)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" SetDeviceAbsVolumeSupported WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteString(macAddress);
+    data.WriteInt32(volume);
+    data.WriteBool(updateUi);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_A2DP_DEVICE_VOLUME), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

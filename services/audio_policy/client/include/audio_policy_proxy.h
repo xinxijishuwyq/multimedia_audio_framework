@@ -215,6 +215,10 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
+
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
+
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

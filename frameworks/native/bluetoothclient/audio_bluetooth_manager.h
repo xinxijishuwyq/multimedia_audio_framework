@@ -18,6 +18,7 @@
 
 #include "bluetooth_a2dp_src.h"
 #include "bluetooth_a2dp_codec.h"
+#include "bluetooth_avrcp_tg.h"
 #include "bluetooth_hfp_ag.h"
 #include "idevice_status_observer.h"
 
@@ -53,6 +54,7 @@ public:
     static void UpdateDeviceListWhenConnecting(const BluetoothRemoteDevice& device);
     static void UpdateDeviceListWhenDisconnecting(const BluetoothRemoteDevice& device);
     static void UpdateDeviceListForConfiguration(const BluetoothRemoteDevice& device);
+    static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
 
     static void SetConnectionState(int state)
     {

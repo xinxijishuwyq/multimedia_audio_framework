@@ -305,6 +305,10 @@ public:
     vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
 
     vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
+
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -517,6 +521,7 @@ private:
     std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
+    mutable std::mutex a2dpDeviceMapMutex_;
     std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
@@ -533,7 +538,7 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> connectedDevices_;
     std::vector<sptr<MicrophoneDescriptor>> connectedMicrophones_;
     std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
-    std::unordered_map<std::string, AudioStreamInfo> connectedA2dpDeviceMap_;
+    std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
 
     std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;

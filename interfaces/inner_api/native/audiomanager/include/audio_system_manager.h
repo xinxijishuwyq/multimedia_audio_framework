@@ -963,6 +963,22 @@ public:
 
     int32_t SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback);
 
+    /**
+     * @brief Set whether or not absolute volume is supported for the specified Bluetooth device
+     *
+     * @return Returns success or not
+     * @since 11
+     */
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+
+    /**
+     * @brief Set the absolute volume value for the specified Bluetooth device
+     *
+     * @return Returns success or not
+     * @since 11
+     */
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
+
     static void AudioServerDied(pid_t pid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {

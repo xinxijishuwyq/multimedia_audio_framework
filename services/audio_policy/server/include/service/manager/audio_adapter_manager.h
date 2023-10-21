@@ -132,6 +132,10 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
+
+    void SetAbsVolumeScene(bool isAbsVolumeScene);
+
+    bool GetAbsVolumeScene() const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -222,6 +226,7 @@ private:
     bool testModeOn_ {false};
     float getSystemVolumeInDb_;
     bool useNonlinearAlgo_;
+    bool isAbsVolumeScene_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -243,6 +248,12 @@ public:
         bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
         if (muteStatus) {
             return 0.0f;
+        }
+
+        bool isAbsVolumeScene = audioAdapterManager_->GetAbsVolumeScene();
+        DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
+        if (activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
+            return 1.0f;
         }
 
         int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];

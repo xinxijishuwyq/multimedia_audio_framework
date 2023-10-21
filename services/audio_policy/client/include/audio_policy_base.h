@@ -223,6 +223,10 @@ public:
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) = 0;
 
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() = 0;
+
+    virtual int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) = 0;
+
+    virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -240,6 +240,23 @@ void AudioA2dpManager::UpdateDeviceListForConfiguration(const BluetoothRemoteDev
     std::replace_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent, device);
 }
 
+int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int32_t volume)
+{
+    std::lock_guard<std::mutex> a2dpDeviceListLock(g_a2dpDeviceListLock);
+
+    // Make sure that the target BluetoothRemoteDevice is connected.
+    auto isPresent = [&macAddress](const BluetoothRemoteDevice& connectedA2dpDevice) {
+        return connectedA2dpDevice.GetDeviceAddr() == macAddress;
+    };
+    auto iter = std::find_if(connectedA2dpDevices_.begin(), connectedA2dpDevices_.end(), isPresent);
+    if (iter == connectedA2dpDevices_.end()) {
+        AUDIO_ERR_LOG("SetDeviceAbsVolume: the configuring A2DP device doesn't exist.");
+        return ERROR;
+    }
+
+    return AvrcpTarget::GetProfile()->SetDeviceAbsoluteVolume(*iter, volume);
+}
+
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("OnConnectionStateChanged: state: %{public}d", state);
