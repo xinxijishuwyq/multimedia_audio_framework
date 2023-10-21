@@ -814,9 +814,9 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
     memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
+    chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
-        chunkIn->memblock = pa_memblock_new(si->core->mempool, tmpLength);
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, sceneTypeSet[i]);
