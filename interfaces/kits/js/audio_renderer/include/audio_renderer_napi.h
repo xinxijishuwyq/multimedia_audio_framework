@@ -202,6 +202,8 @@ private:
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
     static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
         AudioRendererNapi *rendererNapi);
+    static void AsyncSetInterruptMode(napi_env env, void *data);
+
     static napi_ref audioRendererRate_;
     static napi_ref interruptEventType_;
     static napi_ref interruptForceType_;

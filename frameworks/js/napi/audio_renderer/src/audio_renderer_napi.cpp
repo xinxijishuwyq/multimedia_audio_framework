@@ -2961,6 +2961,20 @@ napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_pt
     return result;
 }
 
+void AudioRendererNapi::AsyncSetInterruptMode(napi_env env, void *data)
+{
+    auto context = static_cast<AudioRendererAsyncContext*>(data);
+    ObjectRefMap objectGuard(context->objectInfo);
+    AudioRendererNapi *object = objectGuard.GetPtr();
+    if (!CheckContextStatus(context) || object == nullptr || context->status != SUCCESS) {
+        return;
+    }
+    AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
+    object->audioRenderer_->SetInterruptMode(interruptMode_);
+    context->status = SUCCESS;
+    context->intValue = SUCCESS;
+}
+
 napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -3001,31 +3015,12 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext*>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                if (context->status == SUCCESS) {
-                    AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
-                    context->objectInfo->audioRenderer_->SetInterruptMode(interruptMode_);
-                    context->status = SUCCESS;
-                    context->intValue = SUCCESS;
-                }
-            },
+        status = napi_create_async_work(env, nullptr, resource, AsyncSetInterruptMode,
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "SetInterruptMode: status is not ok");
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Napi error, status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
