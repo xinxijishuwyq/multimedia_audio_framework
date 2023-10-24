@@ -93,6 +93,7 @@ public:
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) const override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
+    int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {

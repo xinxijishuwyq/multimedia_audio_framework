@@ -24,6 +24,7 @@
 #include "audio_channel_blend.h"
 #include "audio_service_client.h"
 #include "audio_stream_tracker.h"
+#include "volume_ramp.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,6 +98,7 @@ public:
     void SetStreamTrackerState(bool trackerRegisteredState) override;
     void GetSwitchInfo(SwitchInfo& info) override;
     int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
+    int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
 private:
     enum {
@@ -106,6 +108,8 @@ private:
 
     void OpenDumpFile();
     void ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize);
+    void ProcessDataWithStreamVolume(uint8_t *buffer, size_t bufferSize);
+    void RampStreamVolume();
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -137,8 +141,10 @@ private:
     std::condition_variable bufferQueueCV_;
     AudioStreamParams streamParams_;
     AudioBlend audioBlend_;
+    VolumeRamp volumeRamp_;
     FILE *pfd_;
     bool streamTrackerRegistered_ = false;
+    float streamVolume_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

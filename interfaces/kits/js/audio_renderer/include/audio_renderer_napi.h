@@ -136,6 +136,7 @@ private:
     static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetChannelBlendMode(napi_env env, napi_callback_info info);
+    static napi_value SetVolumeWithRamp(napi_env env, napi_callback_info info);
 
     static void JudgeFuncDrain(napi_env &env, napi_value &result,
         std::unique_ptr<AudioRendererAsyncContext> &asyncContext);
