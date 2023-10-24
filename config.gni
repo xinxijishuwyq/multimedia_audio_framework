@@ -41,7 +41,7 @@ declare_args() {
   } else {
     audio_framework_feature_input = false
   }
-
+  audio_framework_feature_new_napi = true
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 
   multimedia_audio_framework_pulse_audio_src = "//third_party/pulseaudio/src"

@@ -34,6 +34,11 @@ ohos_shared_library("audio") {
     "../../../interfaces/kits/js/audio_renderer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "//third_party/libuv/include",
+    "common",
+    "audiorenderer",
+    "audiorenderer/callback",
+    "audiocapturer",
+    "audiomanager",
   ]
 
   sources = [
@@ -67,6 +72,17 @@ ohos_shared_library("audio") {
     "audio_renderer/src/renderer_period_position_callback_napi.cpp",
     "audio_renderer/src/renderer_position_callback_napi.cpp",
   ]
+
+  if (audio_framework_feature_new_napi) {
+    sources += [
+      "common/napi_async_work.cpp",
+      "common/napi_audio_enum.cpp",
+      "common/napi_audio_error.cpp",
+      "common/napi_param_utils.cpp",
+
+      #"common/napi_audio_entry.cpp",
+    ]
+  }
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",
