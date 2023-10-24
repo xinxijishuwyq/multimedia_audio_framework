@@ -988,7 +988,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
     if (audioParams.channelLayout == 0) {
-        audioParams.channelLayout = defaultChCountToLayoutMap_[audioParams.channels];
+        audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
     }
     pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
     pa_channel_map map;
@@ -2960,7 +2960,7 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {
         case 0: {
-            for (auto bit = chSetToPaPositionMap_.begin(); bit != chSetToPaPositionMap_.end(); ++bit) {
+            for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
                 if ((channelLayout & (bit->first)) != 0) {
                     paMap.map[channelNum++] = bit->second;
                 }
@@ -2971,7 +2971,7 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
             uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
             channelNum = (order + 1) * (order + 1);
             for (uint32_t i = 0; i < channelNum; ++i) {
-                paMap.map[i] = chSetToPaPositionMap_[FRONT_LEFT];
+                paMap.map[i] = chSetToPaPositionMap[FRONT_LEFT];
             }
             break;
         }
