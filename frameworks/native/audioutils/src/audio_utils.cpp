@@ -208,29 +208,42 @@ bool PermissionUtil::VerifySystemPermission()
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
-    for (unsigned i = len >> 1; i > 0; i--) {
+    // the number 2: stereo audio has 2 channels
+    uint64_t count = len / 2;
+
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels
         data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
         data += 2;
+        count--;
     }
 }
 
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len)
 {
-    for (unsigned i = len >> 1; i > 0; i--) {
+    uint64_t count = len / 2 / 2;
+    // first number 2: stereo audio has 2 channels
+    // second number 2: the bit depth of PCM16Bit is 16 bits (2 bytes)
+
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels
         data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
         data += 2;
+        count--;
     }
 }
 
 void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
 {
+    uint64_t count = len / 2 / 3;
+    // first number 2: stereo audio has 2 channels
+    // second number 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
     // int8_t is used for reading data of PCM24BIT here
     // 24 / 8 = 3, so we need repeat the calculation three times in each loop
-    for (unsigned i = len >> 1; i > 0; i--) {
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels, 2 * 3 = 6
         data[0] = data[0] / 2 + data[3] / 2;
         data[3] = data[0];
@@ -239,44 +252,63 @@ void AdjustStereoToMonoForPCM24Bit(int8_t *data, uint64_t len)
         data[2] = data[2] / 2 + data[5] / 2;
         data[5] = data[2];
         data += 6;
+        count--;
     }
 }
 
 void AdjustStereoToMonoForPCM32Bit(int32_t *data, uint64_t len)
 {
-    for (unsigned i = len >> 1; i > 0; i--) {
+    uint64_t count = len / 2 / 4;
+    // first number 2: stereo audio has 2 channels
+    // second number 4: the bit depth of PCM32Bit is 32 bits (4 bytes)
+
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels
         data[0] = data[0] / 2 + data[1] / 2;
         data[1] = data[0];
         data += 2;
+        count--;
     }
 }
 
 void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float right)
 {
-    for (unsigned i = len >> 1; i > 0; i--) {
+    uint64_t count = len / 2;
+    // the number 2: stereo audio has 2 channels
+
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels
         data[0] *= left;
         data[1] *= right;
         data += 2;
+        count--;
     }
 }
 
 void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right)
 {
-    for (unsigned i = len >> 1; i > 0; i--) {
+    uint64_t count = len / 2 / 2;
+    // first number 2: stereo audio has 2 channels
+    // second number 2: the bit depth of PCM16Bit is 16 bits (2 bytes)
+
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels
         data[0] *= left;
         data[1] *= right;
         data += 2;
+        count--;
     }
 }
 
 void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right)
 {
+    uint64_t count = len / 2 / 3;
+    // first number 2: stereo audio has 2 channels
+    // second number 3: the bit depth of PCM24Bit is 24 bits (3 bytes)
+
     // int8_t is used for reading data of PCM24BIT here
     // 24 / 8 = 3, so we need repeat the calculation three times in each loop
-    for (unsigned i = len >> 1; i > 0; i--) {
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels, 2 * 3 = 6
         data[0] *= left;
         data[1] *= left;
@@ -285,16 +317,22 @@ void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float
         data[4] *= right;
         data[5] *= right;
         data += 6;
+        count--;
     }
 }
 
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right)
 {
-    for (unsigned i = len >> 1; i > 0; i--) {
+    uint64_t count = len / 2 / 4;
+    // first number 2: stereo audio has 2 channels
+    // second number 4: the bit depth of PCM32Bit is 32 bits (4 bytes)
+
+    while (count > 0) {
         // the number 2 is the count of stereo audio channels
         data[0] *= left;
         data[1] *= right;
         data += 2;
+        count--;
     }
 }
 
