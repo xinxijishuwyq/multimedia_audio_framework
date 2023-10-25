@@ -32,11 +32,11 @@
 
 using namespace std;
 
-namespace OHOS{
-namespace AudioStandard{
-namespace{
+namespace OHOS {
+namespace AudioStandard {
+namespace {
 const int32_t HALF_FACTOR = 2;
-const int32_t MAX_AUDIO_ADAPTER_NUM =5;
+const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -61,7 +61,7 @@ struct AudioCallbackService {
     OnRenderCallback* renderCallback;
     void* userdata;
     bool registered = false;
-}
+};
 
 class OffloadAudioRendererSinkInner : public OffloadRendererSink {
 public:
@@ -90,7 +90,7 @@ public:
     int32_t GetTransactionId(uint64_t *transactionId) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
 
-    void SetAudioParameter(const AudioParamKey key, const std:string& condition, const std:string& value) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
     int32_t RegisterRenderCallback(OnRenderCallback (*callback), void *userdata) override;
@@ -213,7 +213,7 @@ void OffloadAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
     // reset the balance coefficient value firstly
     leftBalanceCoef_ = 1.0f;
     rightBalanceCoef_ = 1.0f;
-    
+
     if (std::abs(audioBalance - 0.0f) <= std::numeric_limits<float>::epsilon()) {
         // audioBalance is equal to 0.0f
         audioBalanceState_ = false;
@@ -234,7 +234,6 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
         AUDIO_ERR_LOG("Unspport channel number: %{public}d", attr_.channel);
-
         return;
     }
 
@@ -260,7 +259,6 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
         default: {
             // if the audio format is unsupported, the audio data will not be changed
             AUDIO_ERR_LOG("Unsupported audio format: %{public}d", attr_.format);
-
             break;
         }
     }
@@ -271,7 +269,6 @@ void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
         AUDIO_ERR_LOG("Unspport channel number: %{public}d", attr_.channel);
-
         return;
     }
     
@@ -297,7 +294,6 @@ void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         default: {
             // if the audio format is unsupported, the audio data will not be changed
             AUDIO_ERR_LOG("Unsupported audio format: %{public}d", attr_.format);
-
             break;
         }
     }
@@ -318,10 +314,7 @@ typedef int32_t (*RenderCallback)(struct IAudioCallback *self, enum AudioCallbac
 
 int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (*callback), void *userdata)
 {
-
     callbackServ.renderCallback = callback;
-
-
     callbackServ.userdata = userdata;
     if (callbackServ.registered) {
         AUDIO_DEBUG_LOG("update callback");
@@ -335,18 +328,12 @@ int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (
     }
     callbackServ.interface.RenderCallback = renderCallback;
     callbackServ.cookie = this;
-
-
-
-
-
     int32_t ret = audioRender_->RegCallback(audioRender_, &callbackServ.interface, (int8_t)0);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("failed, error code: %{public}d", ret);
     } else {
         callbackServ.registered = true;
     }
-
     return SUCCESS;
 }
 
@@ -354,7 +341,6 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
     void *reserved, void *cookie)
 {
     // reserved and cookie should be null
-
     if (self == nullptr) {
         AUDIO_ERR_LOG("self is null!");
     }
@@ -364,33 +350,24 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
     }
     auto cbType = RenderCallbackType(type);
-
-
-
-
     impl->renderCallback(cbType, impl->userdata);
-
     return 0;
 }
 
 int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-
     int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("failed audioRender_ is NULL");
         return ERR_INVALID_HANDLE;
     }
-
     uint64_t frames_;
     struct AudioTimeStamp timestamp = {};
-    ret = audioRender_->GetRendererPosion(audioRender_, &frames_, &timestamp);
+    ret = audioRender_->GetRendererPosition(audioRender_, &frames_, &timestamp);
     if (ret != 0) {
         AUDIO_ERR_LOG("offload failed");
         return ERR_OPERATION_FAILED;
     }
-
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
     if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
         timestamp.tvNSec > SECOND_TO_NANOSECOND) {
@@ -398,12 +375,9 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
             timestamp.tvNSec);
         return ERR_OPERATION_FAILED;
     }
-
     frames = frames_ * SECOND_TO_MICROSECOND / attr_.sampleRate;
     timeSec = timestamp.tvSec;
     timeNanoSec = timestamp.tvNSec;
-
-
     return ret;
 }
 
@@ -474,19 +448,15 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
         }
     }
     AUDIO_ERR_LOG("switch adapter render fail");
-
     return ERR_INVALID_INDEX;
 }
 
 int32_t OffloadAudioRendererSinkInner::InitAudioManager()
 {
-
-
     audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
-
     return 0;
 }
 
@@ -559,7 +529,6 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
 
 int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
-
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName; // Set sound card information
     openSpeaker_ = attr_.openMicSpeaker;
@@ -575,22 +544,15 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
         AUDIO_ERR_LOG("Init audio manager Fail.");
         return ERR_NOT_STARTED;
     }
-
     uint32_t size = MAX_AUDIO_ADAPTER_NUM, majorVer, minorVer;
     int32_t ret;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
-
-
     ret = audioManager_->GetVersion(audioManager_, &majorVer, &minorVer);
-
     ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
-
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != =) {
+    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail.");
         return ERR_NOT_STARTED;
     }
-
-
 
     // Get qualified sound card and port
     int32_t index =
@@ -601,7 +563,6 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     }
 
     adapterDesc_ = descs[index];
-
     if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
         AUDIO_ERR_LOG("Load Adapter Fail.");
         return ERR_NOT_STARTED;
@@ -611,13 +572,11 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
         return ERR_NOT_STARTED;
     }
 
-
     // Initialization port information, can fill through mode and other parameters
     if (audioAdapter_->InitAllPorts(audioAdapter_) != 0) {
         AUDIO_ERR_LOG("InitAllPorts failed.");
         return ERR_NOT_STARTED;
     }
-
 
     if (CreateRender(audioPort_) != 0) {
         AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
@@ -637,14 +596,11 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
         AUDIO_ERR_LOG("Error opening pcm test file!");
     }
 #endif // DUMPFILE
-
-
     return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-
     if (isFlushing_) {
         AUDIO_ERR_LOG("failed! during flushing");
         return ERR_OPERATION_FAILED;
@@ -677,17 +633,13 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     }
 #endif // DUMPFILE
     Trace trace("RenderFrameOffload");
-
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret != 0) {
         AUDIO_ERR_LOG("failed! ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
-
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-
-
     renderPos += writeLen;
     return SUCCESS;
 }
@@ -695,8 +647,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
     lock_guard<mutex> lock(ctrlMutex_);
-    
-
     Trace trace("Sink::Start");
     if (started_) {
         if (isFlushing_) {
@@ -716,7 +666,6 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 
 int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 {
-
     int32_t ret;
     float volume;
 
@@ -739,15 +688,11 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
     if (ret) {
         AUDIO_ERR_LOG("Set volume failed!");
     }
-
-
     return ret;
 }
 
 int32_t OffloadAudioRendererSinkInner::GetVolume(float &left, float &right)
 {
-
-
     left = leftVolume_;
     right = rightVolume_;
     return SUCCESS;
@@ -765,7 +710,6 @@ int32_t OffloadAudioRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("GetLatency failed audio render null");
         return ERR_INVALID_HANDLE;
@@ -783,31 +727,6 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     } else {
         return ERR_OPERATION_FAILED;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 static AudioCategory GetAudioCategory(AudioScene audioScene)
@@ -922,8 +841,6 @@ int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
 
 int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    
-
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
@@ -956,8 +873,6 @@ int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
 
 int32_t OffloadAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-
-
     if (audioRender_ == nullptr){
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;
@@ -983,7 +898,6 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
     ret = audioRender_->DrainBuffer(audioRender_, (AudioDrainNotifyType*)&type);
     if (!ret) {
-
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("DrainBuffer failed!");
@@ -995,8 +909,6 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
-
-
     int32_t ret;
 
     if (audioRender_ == nullptr) {
@@ -1049,7 +961,6 @@ int32_t OffloadAudioRendererSinkInner::Reset(void)
 int32_t OffloadAudioRendererSinkInner::Flush(void)
 {
     lock_guard<mutex> lock(ctrlMutex_);
-
     if (isFlushing_) {
         AUDIO_ERR_LOG("Failed! call flush during flushing");
         return ERR_OPERATION_FAILED;
@@ -1072,7 +983,6 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             int32_t ret = future.get();
             if (!ret) {
                 started_ = false;
-
             } else {
                 AUDIO_ERR_LOG("Flush failed! ret %{public}d", ret);
             }
@@ -1081,7 +991,6 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
         if (startDuringFlush_) {
             startDuringFlush_ = false;
             Start();
-
         }
     }).detach();
     return SUCCESS;
@@ -1092,7 +1001,6 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
     int32_t ret;
 
     uint32_t size = (int64_t)sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND; // bytewidth is 4
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;
@@ -1100,7 +1008,6 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 
     ret = audioRender_->SetBufferSize(audioRender_, size);
     if (!ret) {
-
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("SetBufferSize failed!");
@@ -1112,10 +1019,7 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 {
-    
-
     if (OffloadKeepRunningLock == nullptr) {
-
         OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
     } else {
@@ -1128,23 +1032,18 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 {
-    
-
     if (OffloadKeepRunningLock == nullptr) {
         OffloadRunningLockInit();
     }
-
     if (OffloadKeepRunningLock != nullptr) {
         if (runninglocked) {
 
             return SUCCESS;
         }
         runninglocked = true;
-
         OffloadKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
-
         return ERR_OPERATION_FAILED;
     }
 
@@ -1153,19 +1052,14 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 {
-
-
     if (OffloadKeepRunningLock != nullptr) {
         if (!runninglocked) {
-
             return SUCCESS;
         }
         runninglocked = false;
-
         OffloadKeepRunningLock->UnLock();
     } else {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
-
         return ERR_OPERATION_FAILED;
     }
 

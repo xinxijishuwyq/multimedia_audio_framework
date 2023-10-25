@@ -82,7 +82,7 @@ int32_t IAudioRendererSinkGetVolume(struct RendererSinkAdapter *adapter, float *
 int32_t IAudioRendererSinkGetLatency(struct RendererSinkAdapter *adapter, uint32_t *latency);
 int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, void *cb, void *userdata);
 int32_t IAudioRendererSinkGetPresentationPosition(struct RendererSinkAdapter *adapter, uint64_t* frames,
-        int64_t* timeSec, int64_t* timeNanoSec);
+    int64_t* timeSec, int64_t* timeNanoSec);
 int32_t IAudioRendererSinkFlush(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkReset(struct RendererSinkAdapter *adapter);
 

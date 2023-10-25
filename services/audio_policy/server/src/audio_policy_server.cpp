@@ -439,6 +439,11 @@ int32_t AudioPolicyServer::GetOffloadStream(uint32_t sessionId)
     return mPolicyService.GetOffloadStream(sessionId);
 }
 
+int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
+{
+    return mPolicyService.ReleaseOffloadStream(sessionId);
+}
+
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* mPolicyServer) : PowerMgr::PowerStateCallbackStub(), mPolicyServer_(mPolicyServer)
 {}
@@ -446,11 +451,6 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
     mPolicyServer_->HandlePowerStateChanged(state);
-}
-
-int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
-{
-    return mPolicyService.ReleaseOffloadStream(sessionId);
 }
 
 void AudioPolicyServer::InitKVStore()

@@ -26,7 +26,6 @@
 #include "remote_audio_renderer_sink.h"
 #include "offload_audio_renderer_sink.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, const char *deviceNetworkId)
