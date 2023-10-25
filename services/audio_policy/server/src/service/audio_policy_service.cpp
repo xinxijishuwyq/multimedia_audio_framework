@@ -2661,6 +2661,35 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     }
 }
 
+bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo)
+{
+    auto devType = GetDeviceType(moduleInfo.name);
+    if (devType != DEVICE_TYPE_MIC) {
+        AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        if (ioHandle == OPEN_PORT_FAILURE) {
+            AUDIO_INFO_LOG("[module_load]::Open port failed");
+            return false;
+        }
+        IOHandles_[moduleInfo.name] = ioHandle;
+        if (devType == DEVICE_TYPE_SPEAKER) {
+            auto result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+            if (result != SUCCESS) {
+                AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
+                return false;
+            }
+        }
+    }
+
+    if (devType == DEVICE_TYPE_MIC) {
+        primaryMicModuleInfo_ = moduleInfo;
+    }
+
+    if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
+        AddAudioDevice(moduleInfo, devType);
+    }
+    return true;
+}
+
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
     AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
@@ -2682,20 +2711,8 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
             for (auto &moduleInfo : moduleInfoList) {
                 AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
                 moduleInfo.sinkLatency = sinkLatencyInMsec_ != 0 ? to_string(sinkLatencyInMsec_) : "";
-                AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                if (ioHandle == OPEN_PORT_FAILURE) {
-                    AUDIO_INFO_LOG("[module_load]::Open port failed");
-                    continue;
-                }
-                IOHandles_[moduleInfo.name] = ioHandle;
-                auto devType = GetDeviceType(moduleInfo.name);
-                if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
-                    result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
-                    if (result != SUCCESS) {
-                        AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
-                        continue;
-                    }
-                    AddAudioDevice(moduleInfo, devType);
+                if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
+                    result = SUCCESS;
                 }
             }
         }

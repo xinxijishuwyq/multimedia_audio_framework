@@ -498,6 +498,8 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
+    bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -591,6 +593,8 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+
+    AudioModuleInfo primaryMicModuleInfo_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS
