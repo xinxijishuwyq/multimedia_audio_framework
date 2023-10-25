@@ -728,7 +728,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         return AUDIO_CLIENT_INIT_ERR;
     }
 
-    CHECK_AND_RETURN_RET_LOG(HandleMainLoopStart() != AUDIO_CLIENT_SUCCESS, AUDIO_CLIENT_INIT_ERR,
+    CHECK_AND_RETURN_RET_LOG(HandleMainLoopStart() == AUDIO_CLIENT_SUCCESS, AUDIO_CLIENT_INIT_ERR,
         "Start main loop failed");
 
     if (appCookiePath.compare("")) {
