@@ -93,6 +93,147 @@ int32_t AudioManagerProxy::SetVoiceVolume(float volume)
     return result;
 }
 
+int32_t AudioManagerProxy::SetVolume(float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteFloat(volume);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOLUME), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetVolume failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::Resume()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::RESUME), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Resume failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::Pause()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::PAUSE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Pause failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::Drain()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::DRAIN), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Drain failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_PRESENTATION_POSITION), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("GetPresentationPosition failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    frames = reply.ReadUint64();
+    timeSec = reply.ReadInt64();
+    timeNanoSec = reply.ReadInt64();
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}lu, sec %{public}ld, Nasec %{public}ld",
+        result, frames, timeSec, timeNanoSec);
+    return result;
+}
+
+int32_t AudioManagerProxy::SetBufferSize(uint32_t sizeMs)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteUint32(sizeMs);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_BUFFER_SIZE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetBufferSize failed, error: %d", error);
+        return false;
+    }
+
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
 int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     MessageParcel data;

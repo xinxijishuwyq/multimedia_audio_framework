@@ -67,6 +67,16 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             reply.WriteFloat(volume);
             return AUDIO_OK;
         }
+        case SETOFFLOADMODE: {
+            int32_t state = data.ReadInt32();
+            bool isAppBack = data.ReadBool();
+            SetOffloadModeImpl(state, isAppBack);
+            return AUDIO_OK;
+        }
+        case UNSETOFFLOADMODE: {
+            UnSetOffloadModeImpl();
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -117,6 +127,28 @@ void AudioClientTrackerCallbackStub::ResumeStreamImpl(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr");
     }
 }
+
+void AudioClientTrackerCallbackStub::SetOffloadModeImpl(int32_t state, bool isAppBack)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub SetOffloadModeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->SetOffloadModeImpl(state, isAppBack);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: SetOffloadModeImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::UnSetOffloadModeImpl()
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub UnSetOffloadModeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->UnSetOffloadModeImpl();
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: UnSetOffloadModeImpl callback_ is nullptr");
+    }
+} 
 
 void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
 {

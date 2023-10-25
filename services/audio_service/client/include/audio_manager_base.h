@@ -51,6 +51,13 @@ public:
      */
     virtual int32_t SetVoiceVolume(float volume) = 0;
 
+    virtual int32_t SetVolume(float volume) = 0;
+    virtual int32_t Resume() = 0;
+    virtual int32_t Pause() = 0;
+    virtual int32_t Drain() = 0;
+    virtual int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
+    virtual int32_t SetBufferSize(uint32_t sizeMs) = 0;
+
     /**
      * Sets Audio modes.
      *
@@ -285,6 +292,12 @@ private:
     int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
+    int HandleSetVolume(MessageParcel &data, MessageParcel &reply);
+    int HandleResume(MessageParcel &data, MessageParcel &reply);
+    int HandlePause(MessageParcel &data, MessageParcel &reply);
+    int HandleDrain(MessageParcel &data, MessageParcel &reply);
+    int HandleGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
+    int HandleSetBufferSize(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -317,6 +330,12 @@ private:
         &AudioManagerStub::HandleRegiestPolicyProvider,
         &AudioManagerStub::HandleSetWakeupSourceCallback,
         &AudioManagerStub::HandleSetCaptureSilentState,
+        &AudioManagerStub::HandleSetVolume,
+        &AudioManagerStub::HandleResume,
+        &AudioManagerStub::HandlePause,
+        &AudioManagerStub::HandleDrain,
+        &AudioManagerStub::HandleGetPresentationPosition,
+        &AudioManagerStub::HandleSetBufferSize,
     };
 };
 } // namespace AudioStandard

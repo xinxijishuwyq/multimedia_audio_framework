@@ -100,6 +100,10 @@ bool AudioAdapterManager::Init()
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
 
+    char offloadEnable[10] = {0}; // 10 for system parameter usage
+    ret = GetParameter("persist.vendor.media.offload.enable", "", offloadEnable, sizeof(offloadEnable));
+    AUDIO_DEBUG_LOG("SetParameter, ret %{public}d, offloadEnable %{public}s", ret, offloadEnable);
+
     return true;
 }
 
@@ -617,6 +621,11 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.OpenMicSpeaker.empty()) {
         args.append(" open_mic_speaker=");
         args.append(audioModuleInfo.OpenMicSpeaker);
+    }
+
+    if (!audioModuleInfo.offloadEnable.empty()) {
+        args.append(" offload_enable=");
+        args.append(audioModuleInfo.offloadEnable);
     }
 }
 

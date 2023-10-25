@@ -26,6 +26,7 @@
 
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
+#include "power_state_callback_stub.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -330,12 +331,30 @@ private:
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
+    static constexpr int RETRY_COUNT_MAX = 100;
+    static constexpr int RETRY_INTERVAL_TIME = 3;
 
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
+    class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
+    public:
+        AudioPolicyServerPowerStateCallback(AudioPolicyServer *mPolicyServer);
+        void OnPowerStateChanged(PowerMgr::PowerState state) override;
+
+    private:
+        AudioPolicyServer *mPolicyServer_;
+    };
+
+    void HandlePowerStateChanged(PowerMgr::PowerState state);
+
+    // offload session
+    int32_t GetOffloadStream(uint32_t sessionId);
+    int32_t ReleaseOffloadStream(uint32_t sessionId);
+    void CheckSubscribePowerStateChange();
+    
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
@@ -384,6 +403,7 @@ private:
     void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
+    void SubscribePowerStateChangeEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
@@ -391,6 +411,7 @@ private:
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
 
+    bool powerStateCallbackRegister;
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
     int32_t volumeStep_;

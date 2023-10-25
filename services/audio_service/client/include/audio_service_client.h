@@ -67,6 +67,7 @@ struct AudioCache {
     uint32_t readIndex;
     uint32_t writeIndex;
     uint32_t totalCacheSize;
+    uint32_t totalCacheSizeTgt;
     bool isFull;
 };
 
@@ -389,6 +390,8 @@ public:
      */
     float GetStreamVolume();
 
+    int32_t SetStreamOffloadMode(int32_t state, bool isAppBack);
+    int32_t UnSetStreamOffloadMode();
     /**
      * @brief Set the render rate
      *
@@ -527,6 +530,7 @@ protected:
     void HandleReadRequestEvent();
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
+    bool offloadEnable = false;
 
 private:
     pa_threaded_mainloop *mainLoop;
@@ -534,6 +538,7 @@ private:
     pa_context *context;
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
+    std::map<AudioOffloadType, pa_buffer_attr> bufferAttrStateMap;
 
     std::mutex dataMutex_;
     std::condition_variable dataCv_;
@@ -613,6 +618,7 @@ private:
 
     std::weak_ptr<AudioStreamCallback> streamCallback_;
     State state_;
+    bool breakingWritePa = false;
     StateChangeCmdType stateChangeCmdType_ = CMD_FROM_CLIENT;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
 
@@ -659,8 +665,19 @@ private:
     ASClientType eAudioClientType;
 
     uint32_t underFlowCount;
+    AudioOffloadType offloadStatePolicy = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadStateTargetPolicy = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadCurrentStatePolicy = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadNextStateTargetPolicy = OFFLOAD_DEFAULT;
+    time_t lastOffloadUpdateFinishTime = 0;
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
+    int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
+    int32_t UpdatebufferAttrOffload(AudioOffloadType statePolicy);
+    int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
+    int32_t InitializePAProbListOffload();
+    int32_t InitializebufferAttrOffload();
+    int32_t CheckOffloadPolicyChanged();
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();
@@ -721,6 +738,7 @@ private:
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAStreamMovedCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
+    static void PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
@@ -735,6 +753,7 @@ private:
     static void PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
+    static void GetSinkInputInfoOffloadCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 

@@ -32,6 +32,8 @@ public:
 
     void SetLowPowerVolumeImpl(float volume);
     void GetLowPowerVolumeImpl(float &volume);
+    void SetOffloadModeImpl(int32_t state, bool isAppBack) {};
+    void UnSetOffloadModeImpl() {};
     void GetSingleStreamVolumeImpl(float &volume);
 
 private:

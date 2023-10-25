@@ -30,6 +30,12 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
+    int32_t SetVolume(float volume) override;
+    int32_t Resume() override;
+    int32_t Pause() override;
+    int32_t Drain() override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+    int32_t SetBufferSize(uint32_t sizeMs) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;

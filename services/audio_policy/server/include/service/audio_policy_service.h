@@ -77,6 +77,14 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) const;
 
+    int32_t GetOffloadStream(uint32_t sessionId, DevicesType devicesType = DEVICE_TYPE_NONE);
+
+    int32_t ReleaseOffloadStream(uint32_t sessionId);
+
+    void setDownByVolumeKeyForTest(const int32_t keyType);
+
+    void HandlePowerStateChanged(PowerMgr::PowerState state);
+
     float GetSingleStreamVolume(int32_t streamId) const;
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute);
@@ -238,6 +246,10 @@ public:
     void OnSinkLatencyParsed(uint32_t latency);
 
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
+
+    AudioStreamType GetStreamType(int32_t sessionId);
+
+    int32_t GetUid(int32_t sessionId);
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
@@ -450,6 +462,8 @@ private:
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
+    void SetOffloadVolume();
+
     void RemoveDeviceInRouterMap(std::string networkId);
 
     void RemoveDeviceInFastRouterMap(std::string networkId);
@@ -498,6 +512,20 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
+    int32_t SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
+
+    int32_t SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
+
+    int32_t SetOffloadMode();
+
+    int32_t UnSetOffloadMode();
+
+    int32_t ReSetOffloadMode();
+
+    int32_t PreSetOffloadMode(DeviceType deviceType);
+
+    bool GetAudioOffloadAvailableFromXml() const;
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -511,6 +539,7 @@ private:
     int32_t maxRendererInstances_ = 16;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
+    bool isOffloadAvailable_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -591,6 +620,11 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+
+    std::optional<uint32_t> offloadSessionID_;
+    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerMgrClient::GetInstance().GetState();
+    bool currentOffloadSessionIsBackground_ = false;
+    std::mutex offloadMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

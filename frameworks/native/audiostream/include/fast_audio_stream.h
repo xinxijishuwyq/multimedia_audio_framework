@@ -94,6 +94,8 @@ public:
 
     int32_t SetLowPowerVolume(float volume) override;
     float GetLowPowerVolume() override;
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
+    int32_t UnSetOffloadMode() override;
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;

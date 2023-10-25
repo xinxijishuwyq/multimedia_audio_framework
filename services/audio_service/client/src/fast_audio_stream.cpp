@@ -343,6 +343,18 @@ float FastAudioStream::GetLowPowerVolume()
     return 1.0f;
 }
 
+int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
+{
+    AUDIO_INFO_LOG("SetOffloadMode in.");
+    return SUCCESS;
+}
+
+int32_t FastAudioStream::UnSetOffloadMode()
+{
+    AUDIO_INFO_LOG("UnSetOffloadMode in.");
+    return SUCCESS;
+}
+
 float FastAudioStream::GetSingleStreamVolume()
 {
     AUDIO_INFO_LOG("GetSingleStreamVolume in.");

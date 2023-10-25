@@ -51,7 +51,13 @@ namespace AudioStandard {
         REGISET_POLICY_PROVIDER = 26,
         SET_WAKEUP_CLOSE_CALLBACK = 27,
         SET_CAPTURE_SILENT_STATE = 28,
-        AUDIO_SERVER_CODE_MAX = SET_CAPTURE_SILENT_STATE,
+        SET_VOLUME = 29,
+        RESUME = 30,
+        PAUSE = 31,
+        DRAIN = 32,
+        GET_PRESENTATION_POSITION = 33,
+        SET_BUFFER_SIZE = 34,
+        AUDIO_SERVER_CODE_MAX = SET_BUFFER_SIZE,
     };
 } // namespace AudioStandard
 } // namespace OHOS
