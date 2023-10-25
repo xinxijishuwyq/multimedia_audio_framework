@@ -124,7 +124,7 @@ private:
     std::mutex audioParamCbMtx_;
     std::mutex setWakeupCloseCallbackMutex_;
     std::mutex audioParameterMutex_;
-    std::mutex wakeupCloseMutex_;
+    std::mutex audioSceneMutex_;
     bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
