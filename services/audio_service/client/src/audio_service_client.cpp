@@ -1193,7 +1193,6 @@ int32_t AudioServiceClient::StopStream()
 
             streamDrainStatus_ = 0;
             pa_operation *operation = pa_stream_drain(paStream, PAStreamDrainInStopCb, (void *)this);
-            AUDIO_MY_LOG("AudioServiceClient::StopStream, 4");
 
             if (operation == nullptr) {
                 pa_threaded_mainloop_unlock(mainLoop);
@@ -1618,7 +1617,6 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
             uint32_t size = (acache_.writeIndex - acache_.readIndex);
             auto* func = memcpy_s;
             if(offset < size) { // overlop
-                AUDIO_MY_LOG("memcpy_s will fail, offset %u, size %u", offset, size);
                 func = memmove_s;
             }
             if (func(cacheBuffer, acache_.totalCacheSize, cacheBuffer + offset, size)) {
@@ -2379,7 +2377,6 @@ int32_t AudioServiceClient::InitializePAProbListOffload()
 
 int32_t AudioServiceClient::UpdatePAProbListOffload(AudioOffloadType statePolicy)
 {
-    AUDIO_MY_LOG("Update statePolicy enter");
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         AUDIO_ERR_LOG("set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
         return AUDIO_CLIENT_PA_ERR;
@@ -2557,41 +2554,10 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 
 int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
 {
-    
-
-
-
-
-
-
-
     AudioOffloadType statePolicy = OFFLOAD_DEFAULT;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     if (state > 1) {
         statePolicy = OFFLOAD_INACTIVE_BACKGROUND;
     } else if (isAppBack) {
-        // statePolicy = OFFLOAD_ACTIVE_BACKGROUND;
         statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
     } else if (!isAppBack) {
         statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
