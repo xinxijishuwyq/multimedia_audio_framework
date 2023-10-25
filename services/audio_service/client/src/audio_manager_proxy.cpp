@@ -205,7 +205,7 @@ int32_t AudioManagerProxy::GetPresentationPosition(uint64_t& frames, int64_t& ti
     frames = reply.ReadUint64();
     timeSec = reply.ReadInt64();
     timeNanoSec = reply.ReadInt64();
-    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}lu, sec %{public}ld, Nasec %{public}ld",
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}llu, sec %{public}lld, Nasec %{public}lld",
         result, frames, timeSec, timeNanoSec);
     return result;
 }
