@@ -1345,7 +1345,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     sizeTgt = u->offload.firstWrite ? sizeFirst : sizeTgt;
     sizeTgt = PA_MIN(blockSizeMax, sizeTgt);
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
-    const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn) &sampleSpecOut);
+    const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
     const size_t bqlAlin = pa_frame_align(bqlResamp + bqlRend, &sampleSpecOut);
 
@@ -1721,7 +1721,7 @@ static void OffloadLock(struct Userdata* u)
 static void OffloadUnlock(struct Userdata* u) 
 {
     if (u->offload.runninglocked) {
-        u->offload.sinkAdapter->RenderSinkOffloadRunningLockUnlok(u->offload.sinkAdapter);
+        u->offload.sinkAdapter->RendererSinkOffloadRunningLockUnlok(u->offload.sinkAdapter);
         u->offload.runninglocked = false;
     } else{
     }
@@ -1761,7 +1761,7 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
 
     char str[SPRINTF_STR_LEN] = {0};
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
-    AUDIO_INFO_LOG("PaInputStateChangeCb, Sink[%s]->SinkInput[%s] state change:[{%public}s]-->[%{public}s]",
+    AUDIO_INFO_LOG("PaInputStateChangeCb, Sink[%s]->SinkInput[%s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass(u->primary.sinkAdapter->deviceClass), str, GetInputStateInfo(i->thread_info.state),
         GetInputStateInfo(state));
 
@@ -1803,10 +1803,10 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
         if (starting) {
             u->primary.timestamp = pa_rtclock_now();
             if (!u->primary.isHDISinkStarted) {
-                AUDIO_INFO_LOG("PaInputStarteChangeCb, Restart with rate:%{public}d,channels:%{public}d",
+                AUDIO_INFO_LOG("PaInputStateChangeCb, Restart with rate:%{public}d,channels:%{public}d",
                     u->ss.rate, u->ss.channels);
                 if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
-                    AUDIO_ERR_LOG("PaInputStarteChangeCb, audiorenderer control start failed!");
+                    AUDIO_ERR_LOG("PaInputStateChangeCb, audiorenderer control start failed!");
                     u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
                 } else{
                     u->primary.isHDISinkStarted = true;
@@ -2721,8 +2721,8 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
             (pa_hook_cb_t)SinkInputMoveFinishCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
             (pa_hook_cb_t)SinkInputStateChangedCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_PUT], PA_HOOK_EARLY,
-            (pa_hook_cb_t)SinkInputMovePutCb, u);
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_INPUT_PUT], PA_HOOK_EARLY,
+            (pa_hook_cb_t)SinkInputPutCb, u);
     }
 
     if (u->test_mode_on) {

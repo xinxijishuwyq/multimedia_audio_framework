@@ -1525,8 +1525,8 @@ size_t AudioServiceClient::WriteToAudioCache(const StreamBuffer &stream)
     size_t inputLen = stream.bufferLen;
     if (acache_.totalCacheSize != acache_.totalCacheSizeTgt) {
         uint32_t tgt = acache_.totalCacheSizeTgt;
-        if (tgt < acache_.totalCacheSize && tgt <acache_writeIndex) {
-            tgt = acache_writeIndex;
+        if (tgt < acache_.totalCacheSize && tgt <acache_.writeIndex) {
+            tgt = acache_.writeIndex;
         }
         acache_.totalCacheSize = tgt;
     }
@@ -2095,7 +2095,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
             if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
                 if (negative) {
                     latency = 0;
-                    pa_threaded_mainloop_unhlock(mainLoop);
+                    pa_threaded_mainloop_unlock(mainLoop);
                     return AUDIO_CLIENT_ERR;
                 }
                 break;
@@ -2632,7 +2632,7 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::UnsetStreamOffloadMode()
+int32_t AudioServiceClient::UnSetStreamOffloadMode()
 {
 
     lastOffloadUpdateFinishTime = 0;
