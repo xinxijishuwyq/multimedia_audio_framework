@@ -199,6 +199,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetInnerCapturerState(true);
     } else if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
         audioStream_->SetWakeupCapturerState(true);
+    } else if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_VOICE_COMMUNICATION) {
+        audioStream_->SetCapturerSource(true);
     }
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);

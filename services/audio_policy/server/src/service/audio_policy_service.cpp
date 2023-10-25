@@ -4357,5 +4357,98 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
         audioCaptureMicrophoneDescriptor_.erase(info->sessionId);
     }
 }
+
+std::pair<SourceType, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo)
+{
+    uint32_t highestSupportedRate = *(primaryMicModuleInfo_.supportedRate_.rbegin());
+    SourceType targetSourceType;
+    uint32_t targetRate;
+    if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        targetSourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+        targetRate = sessionInfo.rate;
+        if (primaryMicModuleInfo_.supportedRate_.count(targetRate) == 0) {
+            AUDIO_INFO_LOG("targetRate: %{public}u is not supported rate, using highestSupportedRate: %{public}u",
+                targetRate, highestSupportedRate);
+            targetRate = highestSupportedRate;
+        }
+    } else {
+        // For normal sourcetype, continue to use the default value
+        targetSourceType = SOURCE_TYPE_MIC;
+        targetRate = highestSupportedRate;
+    }
+    return {targetSourceType, targetRate};
+}
+
+void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
+{
+    if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
+        sessionWithSpecialSourceType_.erase(sessionID);
+        return;
+    }
+
+    if (sessionWithNormalSourceType_.count(sessionID) > 0) {
+        sessionWithNormalSourceType_.erase(sessionID);
+        if (!sessionWithNormalSourceType_.empty()) {
+            return;
+        }
+        AudioIOHandle activateDeviceIOHandle;
+        {
+            std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+            activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
+        }
+        int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+        CHECK_AND_RETURN_LOG(result == SUCCESS, "OnCapturerSessionRemoved: CloseAudioPort failed %{public}d", result);
+        {
+            std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+            IOHandles_.erase(PRIMARY_MIC);
+        }
+    }
+}
+
+void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo)
+{
+    if (sessionIdisRemovedSet_.count(sessionID) > 0) {
+        sessionIdisRemovedSet_.erase(sessionID);
+        AUDIO_INFO_LOG("sessionID: %{public}u had already been removed earlier", sessionID);
+        return;
+    }
+    if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
+        auto [targetSourceType, targetRate] = FetchTargetInfoForSessionAdd(sessionInfo);
+        bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
+        bool needReloadSource = (isSourceLoaded && 
+            ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
+        if (needReloadSource) {
+            AudioIOHandle activateDeviceIOHandle;
+            {
+                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+                activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
+            }
+            int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+            CHECK_AND_RETURN_LOG(result == SUCCESS, "CapturerSessionAdded: CloseAudioPort failed %{public}d", result);
+            {
+                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+                IOHandles_.erase(PRIMARY_MIC);
+            }
+        }
+        if (needReloadSource || !(isSourceLoaded)) {
+            auto moduleInfo = primaryMicModuleInfo_;
+            moduleInfo.rate = std::to_string(targetRate);
+            moduleInfo.sourceType = std::to_string(targetSourceType);
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
+                "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
+            {
+                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+                IOHandles_[PRIMARY_MIC] = ioHandle;
+            }
+            currentRate = targetRate;
+            currentSourceType = targetSourceType;
+        }
+        sessionWithNormalSourceType_[sessionID] = sessionInfo;
+    } else {
+        sessionWithSpecialSourceType_[sessionID] = sessionInfo;
+    }
+    AUDIO_INFO_LOG("sessionID: %{public}u OnCapturerSessionAdded end", sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

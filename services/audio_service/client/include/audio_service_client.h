@@ -548,6 +548,8 @@ public:
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
     int32_t HandleMainLoopStart();
 
+    void SetCapturerSource(int capturerSource) override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -588,6 +590,7 @@ private:
     bool isStreamConnected_;
     bool isInnerCapturerStream_;
     bool isWakeupCapturerStream_ = false;
+    int capturerSource_ = -1;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 

@@ -85,7 +85,7 @@ public:
     // The default rate is the maximun supported rate.
     std::string rate;
 
-    std::set<int> supportedRate_;
+    std::set<uint32_t> supportedRate_;
 
     std::string format;
     std::string channels;
