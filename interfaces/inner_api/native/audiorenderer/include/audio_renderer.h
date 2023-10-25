@@ -811,6 +811,15 @@ public:
      */
     virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
 
+    /**
+     * @brief Changes the volume with ramp for a duration.
+     *
+     * @param Volume to set. The value type is float, form 0.0 to 1.0.
+     * @param Duration for volume ramp.
+     * @since 11
+     */
+    virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
+
     virtual ~AudioRenderer();
 private:
     static std::mutex createRendererMutex_;

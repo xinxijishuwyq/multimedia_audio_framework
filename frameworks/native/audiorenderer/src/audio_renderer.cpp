@@ -1231,5 +1231,10 @@ void AudioRendererPrivate::SetSelfRendererStateCallback()
     audioDeviceChangeCallback_->setAudioRendererObj(this);
     AUDIO_INFO_LOG("AudioRendererPrivate::RegisterAudioRendererEventListener successful!");
 }
+
+int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
+{
+    return audioStream_->SetVolumeWithRamp(volume, duration);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

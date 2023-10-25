@@ -652,5 +652,11 @@ int32_t FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
     AUDIO_ERR_LOG("SetChannelBlendMode is not supported");
     return SUCCESS;
 }
+
+int32_t FastAudioStream::SetVolumeWithRamp(float volume, int32_t duration)
+{
+    AUDIO_ERR_LOG("SetVolumeWithRamp is not supported");
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
