@@ -263,11 +263,11 @@ ohos_shared_library("offload_audio_renderer_sink") {
   include_dirs = [
     "common",
     "../common/include",
-    "../../audioutils/include"
+    "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  deps = ["../../audioutils:audio_utils"]
+  deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
     "drivers_interface_audio:audio_idl_headers",
@@ -316,9 +316,9 @@ ohos_shared_library("renderer_sink_adapter") {
     ":audio_renderer_sink",
     ":bluetooth_renderer_sink",
     ":fast_audio_renderer_sink",
+    ":offload_audio_renderer_sink",
     ":remote_audio_renderer_sink",
     ":remote_fast_audio_renderer_sink",
-    ":offload_audio_renderer_sink",
   ]
 
   external_deps = [ "hilog:libhilog" ]

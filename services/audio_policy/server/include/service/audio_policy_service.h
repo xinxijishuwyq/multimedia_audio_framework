@@ -81,8 +81,6 @@ public:
 
     int32_t ReleaseOffloadStream(uint32_t sessionId);
 
-    void setDownByVolumeKeyForTest(const int32_t keyType);
-
     void HandlePowerStateChanged(PowerMgr::PowerState state);
 
     float GetSingleStreamVolume(int32_t streamId) const;

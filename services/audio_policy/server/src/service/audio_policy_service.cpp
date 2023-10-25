@@ -543,17 +543,6 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
     return SUCCESS;
 }
 
-void AudioPolicyService::setDownByVolumeKeyForTest(const int32_t keyType)
-{
-
-
-
-    if (keyType == 16) { //OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP == 16
-        SetOffloadMode(*offloadSessionID_, 999, 0);
-    } else {
-        SetOffloadMode(*offloadSessionID_, 1000, 0);
-    }
-}
 
 void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
@@ -561,8 +550,6 @@ void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 
         return;
     }
-
-
     currentPowerState_ = state;
     if (offloadSessionID_.has_value()) {
         AUDIO_DEBUG_LOG("SetOffloadMode! offload Power is State = %{public}d", state);

@@ -2550,7 +2550,6 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 
     AUDIO_INFO_LOG("after pa_stream_set_buffer_attr pa_threaded_mainloop_wait");
     pa_operation_unref(operation);
-    // acache_.totalCacheSizeTgt = bufferAttr->minreq;
     printBufAttr(paStream);
 
     return AUDIO_CLIENT_SUCCESS;
