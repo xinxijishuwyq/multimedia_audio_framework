@@ -727,7 +727,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
-
+    isContextConnected_ = true;
     CHECK_AND_RETURN_RET_LOG(HandleMainLoopStart() == AUDIO_CLIENT_SUCCESS, AUDIO_CLIENT_INIT_ERR,
         "Start main loop failed");
 
@@ -743,7 +743,6 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 int32_t AudioServiceClient::HandleMainLoopStart()
 {
     int error = PA_ERR_INTERNAL;
-    isContextConnected_ = true;
     pa_threaded_mainloop_lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
