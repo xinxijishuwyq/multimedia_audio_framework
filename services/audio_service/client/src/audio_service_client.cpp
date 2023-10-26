@@ -1375,9 +1375,8 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 
     if ((lastOffloadUpdateFinishTime != 0) &&
         (chrono::system_clock::to_time_t(chrono::system_clock::now()) > lastOffloadUpdateFinishTime)) {
-            AUDIO_INFO_LOG("PaWriteStream switching curTime %ld, switchTime %ld",
+            AUDIO_INFO_LOG("PaWriteStream switching curTime %lld, switchTime %lld",
                 chrono::system_clock::to_time_t(chrono::system_clock::now()), lastOffloadUpdateFinishTime);
-        
         error = UpdatePolicyOffload(offloadNextStateTargetPolicy);
         lastOffloadUpdateFinishTime = 0;
     }
@@ -1607,7 +1606,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         acache_.isFull = false;
     }
     if (acache_.totalCacheSize < length) {
-        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%lu)", acache_.totalCacheSize, length);
+        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%ld)", acache_.totalCacheSize, length);
     }
 
     if (!error && (length >= 0) && !acache_.isFull) {
