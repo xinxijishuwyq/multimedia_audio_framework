@@ -1322,9 +1322,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 50
     const size_t sizeFirst = size50;
     size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut);  // 20
-    size_t sizeTgt = statePolicy > 1 ? size100 : sizeMin;
-    sizeTgt = u->offload.firstWrite ? sizeFirst : sizeTgt;
-    sizeTgt = PA_MIN(blockSizeMax, sizeTgt);
+    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst : (statePolicy > 1 ? size100 : sizeMin));
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
@@ -1335,13 +1333,8 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
             pa_sink_input_update_max_rewind(i, 0);
         }
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
-        if (u->offload.pos >hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC) { // enough data
-            *wait = true;
-            length = 0;
-        } else {
-            *wait = false;
-            length = sizeMin;
-        }
+        *wait = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? true : false;
+        length = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? 0 : sizeMin;
     } else {
         bool waitable = false;
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
@@ -1350,35 +1343,22 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
             waitable = true;
         }
         length = PA_MIN(bqlAlin, sizeTgt);
-        size_t lengthOri = length;
         *wait = false;
         if (length < sizeTgt) {
             if (u->offload.firstWrite == true) {
                 *wait = true;
                 length = 0;
             } else {
-                if (waitable) {
-                    *wait = true;
-                    length = 0;
-                } else if (length == 0) {
-                    AUDIO_WARNING_LOG("pa_sink_render(offload) no enough data in pulseaudio, render 20ms silent");
-                    length = sizeMin;
-                    *wait = true;
-                }
-                char *str = "just wait";
+                *wait = waitable || length == 0;
+                length = waitable ? 0 : (length == 0 ? sizeMin : length);
                 if (ps->memblockq->missing > 0) {
                     PlaybackStreamRequestBytes(ps);
-                    str = "request_bytes";
                 } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
                     pa_sink_input_send_event(i, "signal_mainloop", NULL);
-                    str = "send event to signal_mainloop";
                 }
-                AUDIO_WARNING_LOG("pa_sink_render(offload) no enough data in pulseaudio %lu<%lu, waitable %d , %s",
-                    lengthOri, sizeTgt, waitable, str);
             }
         }
     }
-    pa_assert(i->sink);
     return length;
 }
 
@@ -2253,9 +2233,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
     pa_assert(s);
     pa_assert_se(u = s->userdata);
 
-    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass(u->primary.sinkAdapter->deviceClass), GetStateInfo(s->thread_info.state),
-        GetStateInfo(newState));
+    AUDIO_INFO_LOG("Sink state change:[%s]-->[%s]", GetStateInfo(s->thread_info.state), GetStateInfo(newState));
 
     if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
         return RemoteSinkStateChange(s, newState);
@@ -2285,7 +2263,6 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             return 0;
         }
 
-        AUDIO_INFO_LOG("Restart with rate:%{public}d,channels:%{public}d", u->ss.rate, u->ss.channels);
         if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
             AUDIO_ERR_LOG("audiorenderer control start failed!");
             u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
@@ -2293,7 +2270,6 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             u->primary.isHDISinkStarted = true;
             u->writeCount = 0;
             u->renderCount = 0;
-            AUDIO_INFO_LOG("Successfully restarted HDI renderer");
         }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
         if (newState != PA_SINK_SUSPENDED) {
@@ -2301,14 +2277,12 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
         }
         // Continuously dropping data (clear counter on entering suspended state.
         if (u->bytes_dropped != 0) {
-            AUDIO_INFO_LOG("HDI-sink continuously dropping data - clear statistics (%zu -> 0 bytes dropped)",
-                           u->bytes_dropped);
+            AUDIO_INFO_LOG("HDI-sink dropping data - clear statistics (%zu -> 0 bytes dropped)", u->bytes_dropped);
             u->bytes_dropped = 0;
         }
 
         if (u->primary.isHDISinkStarted) {
             u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
-            AUDIO_INFO_LOG("Stopped HDI renderer");
             u->primary.isHDISinkStarted = false;
         }
     }
