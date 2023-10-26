@@ -61,6 +61,13 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     }
     return nullptr;
 }
+
+void IAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &allInstance)
+{
+    RemoteAudioCapturerSource::GetAllInstance(allInstance);
+    allInstance.push_back(AudioCapturerSource::GetInstance());
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 

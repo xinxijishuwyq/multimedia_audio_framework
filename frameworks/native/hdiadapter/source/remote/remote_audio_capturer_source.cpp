@@ -79,7 +79,6 @@ private:
     std::atomic<bool> isCapturerCreated_ = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
-    std::atomic<bool> micMuteState_ = false;
 
     int32_t routeHandle_ = -1;
     std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
@@ -88,6 +87,7 @@ private:
     struct AudioCapture *audioCapture_ = nullptr;
     struct AudioPort audioPort_;
     FILE *dumpFile_ = nullptr;
+    bool muteState_ = false;
 };
 
 std::map<std::string, RemoteAudioCapturerSourceInner *> allRemoteSources;
@@ -106,6 +106,13 @@ RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::str
     AUDIO_DEBUG_LOG("New daudio remote capture device networkId: [%{public}s].", deviceNetworkId.c_str());
     allRemoteSources[deviceNetworkId] = audioCapturer;
     return audioCapturer;
+}
+
+void RemoteAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &allInstance)
+{
+    for (auto it = allRemoteSources.begin(); it != allRemoteSources.end(); it++) {
+        allInstance.push_back((*it).second);
+    }
 }
 
 RemoteAudioCapturerSourceInner::RemoteAudioCapturerSourceInner(const std::string &deviceNetworkId)
@@ -127,7 +134,6 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
     isCapturerCreated_.store(false);
     started_.store(false);
     paused_.store(false);
-    micMuteState_.store(false);
 
     if (audioAdapter_ != nullptr) {
         audioAdapter_->DestroyCapture(audioCapture_);
@@ -187,6 +193,9 @@ int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Audio adapter init fail, ret %{public}d.", ret);
 
     capturerInited_.store(true);
+
+    SetMute(muteState_);
+
     AUDIO_DEBUG_LOG("RemoteAudioCapturerSource: Init end.");
     return SUCCESS;
 }
@@ -393,6 +402,13 @@ int32_t RemoteAudioCapturerSourceInner::GetVolume(float &left, float &right)
 
 int32_t RemoteAudioCapturerSourceInner::SetMute(bool isMute)
 {
+    muteState_ = isMute;
+
+    if (!IsInited()) {
+        AUDIO_INFO_LOG("SetMute before init, only record mute state");
+        return SUCCESS;
+    }
+
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "SetMute: Audio capture is null.");
 
     int32_t ret = audioCapture_->volume.SetMute((AudioHandle)audioCapture_, isMute);
@@ -400,12 +416,13 @@ int32_t RemoteAudioCapturerSourceInner::SetMute(bool isMute)
         AUDIO_ERR_LOG("SetMute failed from hdi");
     }
 
-    micMuteState_.store(isMute);
     return SUCCESS;
 }
 
 int32_t RemoteAudioCapturerSourceInner::GetMute(bool &isMute)
 {
+    isMute = muteState_;
+
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "GetMute: Audio capture is null.");
 
     bool isHdiMute = false;
@@ -414,7 +431,6 @@ int32_t RemoteAudioCapturerSourceInner::GetMute(bool &isMute)
         AUDIO_ERR_LOG("AudioCapturerSource::GetMute failed from hdi");
     }
 
-    isMute = micMuteState_.load();
     return SUCCESS;
 }
 
