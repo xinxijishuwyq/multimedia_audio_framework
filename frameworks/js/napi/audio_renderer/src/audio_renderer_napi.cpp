@@ -505,6 +505,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEffectMode", GetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
+        DECLARE_NAPI_FUNCTION("setVolumeWithRamp", SetVolumeWithRamp),
         DECLARE_NAPI_GETTER("state", GetState)
     };
 
@@ -2961,6 +2962,20 @@ napi_value AudioRendererNapi::CreateAudioRendererWrapper(napi_env env, unique_pt
     return result;
 }
 
+void AudioRendererNapi::AsyncSetInterruptMode(napi_env env, void *data)
+{
+    auto context = static_cast<AudioRendererAsyncContext*>(data);
+    ObjectRefMap objectGuard(context->objectInfo);
+    AudioRendererNapi *object = objectGuard.GetPtr();
+    if (!CheckContextStatus(context) || object == nullptr || context->status != SUCCESS) {
+        return;
+    }
+    AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
+    object->audioRenderer_->SetInterruptMode(interruptMode_);
+    context->status = SUCCESS;
+    context->intValue = SUCCESS;
+}
+
 napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -3001,31 +3016,12 @@ napi_value AudioRendererNapi::SetInterruptMode(napi_env env, napi_callback_info 
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "SetInterruptMode", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioRendererAsyncContext*>(data);
-                if (!CheckContextStatus(context)) {
-                    return;
-                }
-                if (context->status == SUCCESS) {
-                    AudioStandard::InterruptMode interruptMode_ = GetNativeInterruptMode(context->interruptMode);
-                    context->objectInfo->audioRenderer_->SetInterruptMode(interruptMode_);
-                    context->status = SUCCESS;
-                    context->intValue = SUCCESS;
-                }
-            },
+        status = napi_create_async_work(env, nullptr, resource, AsyncSetInterruptMode,
             GetIntValueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "SetInterruptMode: status is not ok");
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "Napi error, status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
@@ -3546,6 +3542,53 @@ napi_value AudioRendererNapi::SetChannelBlendMode(napi_env env, napi_callback_in
 
     int32_t ret =
         audioRendererNapi->audioRenderer_->SetChannelBlendMode(static_cast<ChannelBlendMode>(channelBlendMode));
+    if (ret == ERR_ILLEGAL_STATE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_ILLEGAL_STATE);
+    }
+    return result;
+}
+
+napi_value AudioRendererNapi::SetVolumeWithRamp(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_TWO);
+
+    if (argc < ARGS_TWO) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRendererNapi = reinterpret_cast<AudioRendererNapi *>(native);
+    if (status != napi_ok || audioRendererNapi == nullptr) {
+        AUDIO_ERR_LOG("SetVolumeWithRamp unwrap failure!");
+        return result;
+    }
+
+    napi_valuetype volumeType = napi_undefined;
+    napi_valuetype durationType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &volumeType);
+    napi_typeof(env, argv[PARAM1], &durationType);
+    if (volumeType != napi_number || durationType != napi_number) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    double volume;
+    napi_get_value_double(env, argv[PARAM0], &volume);
+    if (volume < MIN_VOLUME_IN_DOUBLE || volume > MAX_VOLUME_IN_DOUBLE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
+    int32_t duration;
+    napi_get_value_int32(env, argv[PARAM1], &duration);
+
+    int32_t ret =
+        audioRendererNapi->audioRenderer_->SetVolumeWithRamp(static_cast<float>(volume), duration);
     if (ret == ERR_ILLEGAL_STATE) {
         AudioCommonNapi::throwError(env, NAPI_ERR_ILLEGAL_STATE);
     }

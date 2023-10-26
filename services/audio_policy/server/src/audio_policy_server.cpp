@@ -1487,6 +1487,10 @@ void AudioPolicyServer::UpdateAudioScene(const AudioScene audioScene, AudioInter
     AUDIO_INFO_LOG("UpdateAudioScene: currentAudioScene=%{public}d, audioScene=%{public}d, changeType=%{public}d",
         currentAudioScene, audioScene, changeType);
 
+    if (currentAudioScene == audioScene) {
+        return;
+    }
+
     switch (changeType) {
         case ACTIVATE_AUDIO_INTERRUPT:
             break;
@@ -1610,7 +1614,6 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     std::lock_guard<std::mutex> lock(interruptMutex_);
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
-
 
     ReleaseOffloadStream(audioInterrupt.sessionID);
     if (!mPolicyService.IsAudioInterruptEnabled()) {

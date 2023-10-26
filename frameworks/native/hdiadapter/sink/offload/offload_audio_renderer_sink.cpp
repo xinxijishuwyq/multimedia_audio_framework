@@ -134,8 +134,8 @@ private:
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
     AudioFormat ConverToHdiFormat(AudioSampleFormat format);
-    void AdjustStereoToMono(char *data, uint64_t len);
-    void AdjustAudioBalance(char *data, uint64_t len);
+    void AdjustStereoToMono(std::string *data, uint64_t len);
+    void AdjustAudioBalance(std::string *data, uint64_t len);
 
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
     bool runninglocked;
@@ -155,7 +155,7 @@ OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
 #ifdef DUMPFILE
     pfd = nullptr;
 #endif // DUMPFILE
-}    
+}
 
 OffloadAudioRendererSinkInner::~OffloadAudioRendererSinkInner()
 {
@@ -229,7 +229,7 @@ void OffloadAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
     }
 }
 
-void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
+void OffloadAudioRendererSinkInner::AdjustStereoToMono(std::string *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
@@ -264,7 +264,7 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
     }
 }
 
-void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
+void OffloadAudioRendererSinkInner::AdjustAudioBalance(std::string *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
@@ -371,8 +371,8 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
     if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
         timestamp.tvNSec > SECOND_TO_NANOSECOND) {
-        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}ld or nanosecond:%{public}ld !", timestamp.tvSec,
-            timestamp.tvNSec);
+        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}ld or nanosecond:%{public}ld !", 
+                      timestamp.tvSec, timestamp.tvNSec);
         return ERR_OPERATION_FAILED;
     }
     frames = frames_ * SECOND_TO_MICROSECOND / attr_.sampleRate;
@@ -515,7 +515,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
 
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = (char *)"";
+    deviceDesc.desc = (std::string *)"";
     deviceDesc.pins = PIN_OUT_SPEAKER;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
@@ -538,7 +538,6 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
         AUDIO_ERR_LOG("Init audio manager Fail.");
         return ERR_NOT_STARTED;
     }
-
 
     if (InitAudioManager() != 0) {
         AUDIO_ERR_LOG("Init audio manager Fail.");
@@ -761,23 +760,23 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     switch (outputDevice) {
         case DEVICE_TYPE_EARPIECE:
             sink.ext.device.type = PIN_OUT_EARPIECE;
-            sink.ext.device.desc = (char *)"pin_out_earpiece";
+            sink.ext.device.desc = (std::string *)"pin_out_earpiece";
             break;
         case DEVICE_TYPE_SPEAKER:
             sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = (char *)"pin_out_speaker";
+            sink.ext.device.desc = (std::string *)"pin_out_speaker";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
             sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = (char *)"pin_out_headset";
+            sink.ext.device.desc = (std::string *)"pin_out_headset";
             break;
         case DEVICE_TYPE_USB_HEADSET:
             sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = (char *)"pin_out_usb_ext";
+            sink.ext.device.desc = (std::string *)"pin_out_usb_ext";
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
             sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
-            sink.ext.device.desc = (char *)"pin_out_bluetooth_sco";
+            sink.ext.device.desc = (std::string *)"pin_out_bluetooth_sco";
             break;
         default:
             ret = ERR_NOT_SUPPORTED;
@@ -811,13 +810,13 @@ int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
     source.ext.mix.streamId = OFFLOAD_OUTPUT_STREAM_ID;
-    source.ext.device.desc = (char *)"";
+    source.ext.device.desc = (std::string *)"";
 
     sink.portId = static_cast<int32_t>(audioPort_.portId);
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (char *)"";
+    sink.ext.device.desc = (std::string *)"";
 
     AudioRoute route = {
         .sources = &source,
@@ -858,7 +857,7 @@ int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
         scene.desc.pins = audioSceneOutPort;
-        scene.desc.desc = (char *)"";
+        scene.desc.desc = (std::string *)"";
 
         ret = audioRender_->SelectScene(audioRender_, &scene);
         if (ret < 0) {
@@ -873,7 +872,7 @@ int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
 
 int32_t OffloadAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    if (audioRender_ == nullptr){
+    if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;
     }
@@ -975,7 +974,8 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
     }
 
     isFlushing_ = true;
-    thread([&] {
+    thread([&]
+           {
         auto future = async(launch::async, [&] { return audioRender_->Flush(audioRender_); });
         if (future.wait_for(250ms) == future_status::timeout) {
             AUDIO_ERR_LOG("Flush failed! timeout of 250ms");
@@ -991,16 +991,17 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
         if (startDuringFlush_) {
             startDuringFlush_ = false;
             Start();
-        }
-    }).detach();
+        } })
+        .detach();
     return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
     int32_t ret;
-
-    uint32_t size = (int64_t)sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND; // bytewidth is 4
+    
+    uint32_t size = (int64_t)sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / 
+                                                                    SECOND_TO_MILLISECOND; // bytewidth is 4
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;
@@ -1037,7 +1038,6 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
     }
     if (OffloadKeepRunningLock != nullptr) {
         if (runninglocked) {
-
             return SUCCESS;
         }
         runninglocked = true;
