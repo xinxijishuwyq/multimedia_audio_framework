@@ -546,6 +546,7 @@ public:
     void GetStreamSwitchInfo(SwitchInfo& info);
 
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
+    int32_t HandleMainLoopStart();
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;

@@ -727,8 +727,22 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         ResetPAAudioClient();
         return AUDIO_CLIENT_INIT_ERR;
     }
-
     isContextConnected_ = true;
+    CHECK_AND_RETURN_RET_LOG(HandleMainLoopStart() == AUDIO_CLIENT_SUCCESS, AUDIO_CLIENT_INIT_ERR,
+        "Start main loop failed");
+
+    if (appCookiePath.compare("")) {
+        remove(appCookiePath.c_str());
+        appCookiePath = "";
+    }
+
+    pa_threaded_mainloop_unlock(mainLoop);
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::HandleMainLoopStart()
+{
+    int error = PA_ERR_INTERNAL;
     pa_threaded_mainloop_lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
@@ -760,13 +774,6 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
             return AUDIO_CLIENT_INIT_ERR;
         }
     }
-
-    if (appCookiePath.compare("")) {
-        remove(appCookiePath.c_str());
-        appCookiePath = "";
-    }
-
-    pa_threaded_mainloop_unlock(mainLoop);
     return AUDIO_CLIENT_SUCCESS;
 }
 
