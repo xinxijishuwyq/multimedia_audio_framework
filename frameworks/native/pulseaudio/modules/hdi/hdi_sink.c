@@ -450,19 +450,6 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_memchunk* pchunk)
     DebugCheckPop(p, length);
 
     uint64_t writeLen = 0;
-    char str[SPRINTF_STR_LEN] = {0};
-    if (length >= 48) { // 48 only for debug
-        int ret = sprintf_s(str, SPRINTF_STR_LEN, "%f %f %f %f %f %f",
-            (float)*(int32_t*)((char*)p + index) / (float)INT32_MAX,
-            (float)*(int32_t*)((char*)p + index + length - 48) / (float)INT32_MAX, // 48 only for debug
-            (float)*(int32_t*)((char*)p + index + length - 40) / (float)INT32_MAX, // 40 only for debug
-            (float)*(int32_t*)((char*)p + index + length - 32) / (float)INT32_MAX, // 32 only for debug
-            (float)*(int32_t*)((char*)p + index + length - 16) / (float)INT32_MAX, // 16 only for debug
-            (float)*(int32_t*)((char*)p + index + length - 8) / (float)INT32_MAX); // 8 only for debug
-        if (ret < 0) {
-            AUDIO_ERR_LOG("sprintf_s fail! ret %d", ret);
-        }
-    }
     uint64_t now = pa_rtclock_now();
     int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
@@ -1515,6 +1502,50 @@ void OffloadReset(struct Userdata* u)
     u->offload.fullTs = 0;
 }
 
+void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoInputs, unsigned nInputs, int32_t* writen)
+{
+    struct Userdata* u = i->sink->userdata;
+
+
+    pa_assert(length != 0);
+    pa_memchunk* chunk = &(u->offload.chunk);
+    chunk->index = 0;
+    chunk->length = length;
+    int64_t l, d;
+    l = chunk->length;
+    d = 0;
+    while (l > 0) {
+        pa_memchunk tchunk;
+        tchunk = *chunk;
+        tchunk.index += d;
+        tchunk.length = length;
+
+        PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
+        d += tchunk.length;
+        l -= tchunk.length;
+    }
+    if (l < 0) {
+        chunk->length += -l;
+    }
+
+    int ret = RenderWriteOffload(u, chunk);
+    *writen = ret == 0 ? chunk->length : 0;
+    if (ret == 1) { // 1 indicates full
+        const int hdistate = pa_atomic_load(&u->offload.hdistate);
+        if (hdistate == 0) {
+            pa_atomic_store(&u->offload.hdistate, 1);
+        }
+        const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy"));
+        if (statePolicy > 1) {
+            u->offload.fullTs = pa_rtclock_now();
+        }
+        pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
+    }
+
+    u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
+    InputsDropFromInputs(NULL, 0, infoInputs, nInputs, NULL);
+}
+
 void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInput, int32_t* writen)
 {
     *wait = true;
@@ -1524,9 +1555,6 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
 
     pa_sink_assert_io_context(s);
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
-
-    pa_assert(!s->thread_info.rewind_requested);
-    pa_assert(s->thread_info.rewind_nbytes == 0);
 
     if (s->thread_info.state == PA_SINK_SUSPENDED) {
         return;
@@ -1554,43 +1582,7 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
     if (u->offload.firstWrite == true) { // first length > 0
         u->offload.firstWrite = false;
     }
-    pa_assert(length != 0);
-    pa_memchunk* chunk = &(u->offload.chunk);
-    chunk->index = 0;
-    chunk->length = length;
-    int64_t l, d;
-    l = chunk->length;
-    d = 0;
-    while (l > 0) {
-        pa_memchunk tchunk;
-        tchunk = *chunk;
-        tchunk.index += d;
-        tchunk.length = length;
-
-        PaSinkRenderIntoOffload(s, infoInputs, nInputs, &tchunk);
-        d += tchunk.length;
-        l -= tchunk.length;
-    }
-    if (l < 0) {
-        chunk->length += -l;
-    }
-
-    int ret = RenderWriteOffload(u, chunk);
-    *writen = ret == 0 ? chunk->length : 0;
-    if (ret == 1) { // 1 indicates full
-        const int hdistate = pa_atomic_load(&u->offload.hdistate);
-        if (hdistate == 0) {
-            pa_atomic_store(&u->offload.hdistate, 1);
-        }
-        const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy"));
-        if (statePolicy > 1) {
-            u->offload.fullTs = pa_rtclock_now();
-        }
-        pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
-    }
-
-    u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
-    InputsDropFromInputs(NULL, 0, infoInputs, nInputs, NULL);
+    RenderWriteOffloadFunc(i, length, infoInputs, nInputs, *writen);
     pa_sink_unref(s);
 }
 
@@ -1712,9 +1704,79 @@ static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
     }
 }
 
+static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa_sink_input_state_t state)
+{
+    const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
+    const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
+    const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+
+    if (starting) {
+        OffloadReset(u);
+        pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
+        StartOffloadHdi(u, i);
+    } else if (corking) {
+        // will remove this log
+        playback_stream* ps;
+        ps = i->userdata;
+        pa_assert(ps);
+        pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
+        OffloadRewindAndFlush(i, true);
+        OffloadUnlock(u);
+    } else if (stopping) {
+        if (u->offload.isHDISinkStarted) {
+            u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
+            AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped offload HDI renderer, due to stop");
+            u->offload.isHDISinkStarted = false;
+        }
+        OffloadUnlock(u);
+    }
+}
+
+static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa_sink_input_state_t state)
+{
+    const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
+    const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+
+    if (starting) {
+        u->primary.timestamp = pa_rtclock_now();
+        if (u->primary.isHDISinkStarted) {
+            return;
+        }
+        AUDIO_INFO_LOG("PaInputStateChangeCb, Restart with rate:%{public}d,channels:%{public}d",
+            u->ss.rate, u->ss.channels);
+        if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
+            AUDIO_ERR_LOG("PaInputStateChangeCb, audiorenderer control start failed!");
+            u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+        } else {
+            u->primary.isHDISinkStarted = true;
+            u->writeCount = 0;
+            u->renderCount = 0;
+            AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
+        }
+    } else if (stopping) {
+        unsigned nPrimary, nOffload, nHd;
+        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+        if (nPrimary > 0) {
+            return;
+        }
+        // Continuously dropping data clear counter on entering suspended state.
+        if (u->bytes_dropped != 0) {
+            AUDIO_INFO_LOG("PaInputStateChangeCb, HDI-sink continuously dropping data - clear statistics "
+                           "(%zu -> 0 bytes dropped)", u->bytes_dropped);
+            u->bytes_dropped = 0;
+        }
+
+        if (u->primary.isHDISinkStarted) {
+            u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+            AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped HDI renderer");
+            u->primary.isHDISinkStarted = false;
+        }
+    }
+}
+
 static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
 {
-    struct Userdata *u = NULL;
+    struct Userdata* u = NULL;
 
     pa_assert(i);
     pa_sink_input_assert_ref(i);
@@ -1741,60 +1803,56 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
     }
 
     if (u->offload.used && InputIsOffload(i)) {
-        if (starting) {
-            OffloadReset(u);
-            pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
-            StartOffloadHdi(u, i);
-        } else if (corking) {
-            // will remove this log
-            playback_stream* ps;
-            ps = i->userdata;
-            pa_assert(ps);
-            pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
-            OffloadRewindAndFlush(i, true);
-            OffloadUnlock(u);
-        } else if (stopping) {
-            if (u->offload.isHDISinkStarted) {
-                u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
-                AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped offload HDI renderer, due to stop");
-                u->offload.isHDISinkStarted = false;
-            }
-            OffloadUnlock(u);
-        }
+        PaInputStateChangeCbOffload(u, i, state);
     } else { // primary
-        if (starting) {
-            u->primary.timestamp = pa_rtclock_now();
-            if (!u->primary.isHDISinkStarted) {
-                AUDIO_INFO_LOG("PaInputStateChangeCb, Restart with rate:%{public}d,channels:%{public}d",
-                    u->ss.rate, u->ss.channels);
-                if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
-                    AUDIO_ERR_LOG("PaInputStateChangeCb, audiorenderer control start failed!");
-                    u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
-                } else {
-                    u->primary.isHDISinkStarted = true;
-                    u->writeCount = 0;
-                    u->renderCount = 0;
-                    AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
-                }
-            }
-        } else if (stopping) {
-            unsigned nPrimary, nOffload, nHd;
-            GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-            if (nPrimary == 0) {
-                // Continuously dropping data clear counter on entering suspended state.
-                if (u->bytes_dropped != 0) {
-                    AUDIO_INFO_LOG("PaInputStateChangeCb, HDI-sink continuously dropping data - clear statistics "
-                                    "(%zu -> 0 bytes dropped)", u->bytes_dropped);
-                    u->bytes_dropped = 0;
-                }
+        PaInputStateChangeCbPrimary(u, i, state);
+    }
+}
 
-                if (u->primary.isHDISinkStarted) {
-                    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
-                    AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped HDI renderer");
-                    u->primary.isHDISinkStarted = false;
-                }
+static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, int64_t* blockTime,
+    int64_t* sleepForUsec)
+{
+    const uint64_t pos = u->offload.pos;
+    const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
+    const uint64_t pw = u->offload.prewrite * 1.1; // 1.1 for 10% redundancy
+    const int32_t size100ms = pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &u->sink->sample_spec); // 100
+
+    int32_t nInput = -1;
+    const int hdistate = (int)pa_atomic_load(&u->offload.hdistate);
+    if (pos <= hdiPos + pw && hdistate == 0) {
+        bool wait;
+        int32_t writen = -1;
+        ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
+        if (wait) {
+            if (u->offload.firstWrite == true) {
+                *blockTime = -1;
+            } else {
+                *blockTime = -1;
+                u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+            }
+        } else {
+            *blockTime = 0;
+            if (writen >= size100ms) {
+                *blockTime = 3 * PA_USEC_PER_MSEC; // 3ms for min wait
             }
         }
+    } else if (hdistate == 1) {
+        *blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
+        if (*blockTime < 0) {
+            *blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
+        }
+        u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+    }
+    if (pos < hdiPos) {
+        AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %lu, hdiPos %lu",
+            pos, hdiPos);
+        if (u->offload.hdiPosTs + 300 * PA_USEC_PER_MSEC < now) { // 300ms for update pos
+            UpdatePresentationPosition(u);
+        }
+    }
+    if (nInput != 0 && *blockTime != -1) {
+        *sleepForUsec = (int64_t)PA_MAX(*blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
+        *sleepForUsec = PA_MAX(*sleepForUsec, 0);
     }
 }
 
@@ -1812,12 +1870,7 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
 
     OffloadReset(u);
 
-    const int pid = (int)getpid();
-    const int tid = (int)gettid();
-
     u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
-
-    const int32_t size100ms = pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &u->sink->sample_spec);
 
     while (true) {
         pa_usec_t now = 0;
@@ -1843,49 +1896,10 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
         }
 
         int64_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        const uint64_t pos = u->offload.pos;
-        const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
-        const uint64_t pw = u->offload.prewrite * 1.1; // 1.1 for 10% redundancy
         int32_t ret;
 
         if (flag) {
-            int32_t nInput = -1;
-            const int hdistate = (int)pa_atomic_load(&u->offload.hdistate);
-            if (pos <= hdiPos + pw && hdistate == 0) {
-                bool wait;
-                int32_t writen = -1;
-                ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
-                if (wait) {
-                    if (u->offload.firstWrite == true) {
-                        blockTime = -1;
-                    } else {
-                        blockTime = -1;
-                        u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
-                    }
-                } else {
-                    blockTime = 0;
-                    if (writen >= size100ms) {
-                        blockTime = 3 * PA_USEC_PER_MSEC; // 3ms for min wait
-                    }
-                }
-            } else if (hdistate == 1) {
-                blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
-                if (blockTime < 0) {
-                    blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
-                }
-                u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
-            }
-            if (pos < hdiPos) {
-                AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %lu, hdiPos %lu",
-                    pos, hdiPos);
-                if (u->offload.hdiPosTs + 300 * PA_USEC_PER_MSEC < now) { // 300ms for update pos
-                    UpdatePresentationPosition(u);
-                }
-            }
-            if (nInput != 0 && blockTime != -1) {
-                sleepForUsec = (int64_t)PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
-                sleepForUsec = PA_MAX(sleepForUsec, 0);
-            }
+            ThreadFuncRendererTimerOffload2(u, now, &blockTime, &sleepForUsec);
         }
         if (u->offload.fullTs != 0) {
             if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
