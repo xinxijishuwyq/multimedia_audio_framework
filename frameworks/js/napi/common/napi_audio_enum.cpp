@@ -366,25 +366,9 @@ napi_value NapiAudioEnum::CreateDefaultInterruptIdObject(napi_env env)
     return defaultInterruptId;
 }
 
-napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
+napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("NapiAudioEnum::Init()");
-    napi_status status;
-    napi_value constructor;
-    napi_value result = nullptr;
-    napi_get_undefined(env, &result);
-
-    napi_property_descriptor audio_parameters_properties[] = {
-        DECLARE_NAPI_GETTER_SETTER("format", GetAudioSampleFormat, SetAudioSampleFormat),
-        DECLARE_NAPI_GETTER_SETTER("channels", GetAudioChannel, SetAudioChannel),
-        DECLARE_NAPI_GETTER_SETTER("samplingRate", GetAudioSamplingRate, SetAudioSamplingRate),
-        DECLARE_NAPI_GETTER_SETTER("encoding", GetAudioEncodingType, SetAudioEncodingType),
-        DECLARE_NAPI_GETTER_SETTER("contentType", GetContentType, SetContentType),
-        DECLARE_NAPI_GETTER_SETTER("usage", GetStreamUsage, SetStreamUsage),
-        DECLARE_NAPI_GETTER_SETTER("deviceRole", GetDeviceRole, SetDeviceRole),
-        DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType)
-    };
-
+    AUDIO_INFO_LOG("NapiAudioEnum::InitAudioEnum()");
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_PROPERTY("AudioChannel", CreateEnumObject(env, audioChannelMap, audioChannel_)),
         DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateEnumObject(env, samplingRateMap, samplingRate_)),
@@ -429,6 +413,30 @@ napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_))
     };
 
+    napi_status status =
+        napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
+    return status;
+}
+
+napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
+{
+    AUDIO_INFO_LOG("NapiAudioEnum::Init()");
+    napi_status status;
+    napi_value constructor;
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+
+    napi_property_descriptor audio_parameters_properties[] = {
+        DECLARE_NAPI_GETTER_SETTER("format", GetAudioSampleFormat, SetAudioSampleFormat),
+        DECLARE_NAPI_GETTER_SETTER("channels", GetAudioChannel, SetAudioChannel),
+        DECLARE_NAPI_GETTER_SETTER("samplingRate", GetAudioSamplingRate, SetAudioSamplingRate),
+        DECLARE_NAPI_GETTER_SETTER("encoding", GetAudioEncodingType, SetAudioEncodingType),
+        DECLARE_NAPI_GETTER_SETTER("contentType", GetContentType, SetContentType),
+        DECLARE_NAPI_GETTER_SETTER("usage", GetStreamUsage, SetStreamUsage),
+        DECLARE_NAPI_GETTER_SETTER("deviceRole", GetDeviceRole, SetDeviceRole),
+        DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType)
+    };
+
     status = napi_define_class(env, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
         nullptr, sizeof(audio_parameters_properties) / sizeof(audio_parameters_properties[0]),
         audio_parameters_properties, &constructor);
@@ -440,8 +448,7 @@ napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
     if (status == napi_ok) {
         status = napi_set_named_property(env, exports, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), constructor);
         if (status == napi_ok) {
-            status = napi_define_properties(env, exports,
-                sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
+            status = InitAudioEnum(env, exports);
             if (status == napi_ok) {
                 return exports;
             }

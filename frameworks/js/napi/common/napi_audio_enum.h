@@ -74,6 +74,7 @@ public:
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
+    static napi_status InitAudioEnum(napi_env env, napi_value exports);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static NapiAudioEnum* SetValue(napi_env env, napi_callback_info info, napi_value *args, napi_value &result);
     static NapiAudioEnum* GetValue(napi_env env, napi_callback_info info);
