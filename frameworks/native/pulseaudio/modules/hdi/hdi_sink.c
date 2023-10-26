@@ -1371,7 +1371,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
         length = PA_MIN(bqlAlin, sizeTgt);
         size_t lengthOri = length;
         *wait = false;
-        if (length <sizeTgt) {
+        if (length < sizeTgt) {
             if (u->offload.firstWrite == true) {
                 *wait = true;
                 length = 0;
@@ -1388,7 +1388,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
                 if (ps->memblockq->missing > 0) {
                     PlaybackStreamRequestBytes(ps);
                     str = "request_bytes";
-                } else if (ps->memblockq->missing<0 && ps->memblockq->requested>(int64_t)ps->memblockq->minreq) {
+                } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
                     pa_sink_input_send_event(i, "signal_mainloop", NULL);
                     str = "send event to signal_mainloop";
                 }
@@ -1410,7 +1410,7 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
     unsigned nUnreffed = 0;
 
     if (result == NULL) {
-        for (; n > 0; info++, n--){
+        for (; n > 0; info++, n--) {
             if (info->userdata) {
                 pa_sink_input_unref(info->userdata);
                 info->userdata = NULL;
@@ -1450,7 +1450,7 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
         /* Drop read data */
         pa_sink_input_drop(i, result->length);
 
-        if(m) {
+        if (m) {
             if (m->chunk.memblock) {
                 pa_memblock_unref(m->chunk.memblock);
                 pa_memchunk_reset(&m->chunk);
@@ -1467,7 +1467,7 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
      * pa_mix_info array but don't exist anymore */
 
     if (nUnreffed < n) {
-        for (; n > 0; info++, n--){
+        for (; n > 0; info++, n--) {
             if (info->userdata)
                 pa_sink_input_unref(info->userdata);
             if (info->chunk.memblock) {
@@ -1498,7 +1498,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
         i = infoInputs[ii].userdata;
         pa_sink_input_assert_ref(i);
 
-        pa_sink_input_peek(i , length, &info[n].chunk, &info[n].volume);
+        pa_sink_input_peek(i, length, &info[n].chunk, &info[n].volume);
 
         if (mixlength == 0 || info[n].chunk.length < mixlength)
             mixlength = info[n].chunk.length;
@@ -1520,7 +1520,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
     }
 
     pa_assert(n == 1 || n == 0);
-    if (n == 0){
+    if (n == 0) {
         if (target->length >length)
             target->length = length;
         
@@ -1617,7 +1617,7 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
     *writen = ret == 0 ? chunk->length : 0;
     if (ret == 1) { // 1 indicates full
         const int hdistate = pa_atomic_load(&u->offload.hdistate);
-        if (hdistate == 0){
+        if (hdistate == 0) {
             pa_atomic_store(&u->offload.hdistate, 1);
         }
         const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy"));
@@ -1656,7 +1656,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
     pa_assert(i->sink);
     pa_assert_se(u = i->sink->userdata);
     playback_stream* ps = i->userdata;
-    pa_assert(ps);
+    pa_assert(ps);else{
     int ret;
 
     ret = UpdatePresentationPosition(u);
@@ -1676,7 +1676,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
             } else if (!afterRender && rewindSize <= ps->memblockq->maxrewind) {
                 pa_memblockq_rewind(ps->memblockq, rewindSize);
                 pa_memblockq_flush_read(i->thread_info.render_memblockq);
-            } else{
+            } else {
                 AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%lu) > maxrewind(%lu), afterRender(%d)",
                 rewindSize, afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind,
                 afterRender);
@@ -1723,7 +1723,7 @@ static void OffloadUnlock(struct Userdata* u)
     if (u->offload.runninglocked) {
         u->offload.sinkAdapter->RendererSinkOffloadRunningLockUnlok(u->offload.sinkAdapter);
         u->offload.runninglocked = false;
-    } else{
+    } else {
     }
 }
 
@@ -1745,7 +1745,7 @@ static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
             u->offload.isHDISinkStarted = true;
             AUDIO_INFO_LOG("StartOffloadHdi, Successfully restarted offload HDI renderer");
             OffloadLock(u);
-            u->offload.sessionID =sessionID;
+            u->offload.sessionID = sessionID;
         }
     }
 }
@@ -1808,7 +1808,7 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
                 if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
                     AUDIO_ERR_LOG("PaInputStateChangeCb, audiorenderer control start failed!");
                     u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
-                } else{
+                } else {
                     u->primary.isHDISinkStarted = true;
                     u->writeCount = 0;
                     u->renderCount = 0;
@@ -1866,7 +1866,7 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
         int64_t sleepForUsec = -1;
         if (flag) {
             int64_t delta = u->offload.minWait - now;
-            if (delta > 0){
+            if (delta > 0) {
                 flag = false;
                 sleepForUsec = delta;
             } else {
@@ -1932,7 +1932,7 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
         if (u->offload.fullTs != 0) {
             if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) {
                 const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
-                sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s , sleepForUsec);
+                sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
             } else {
                 u->offload.fullTs = 0;
                 if (pa_atomic_load(&u->offload.hdistate) == 1) {

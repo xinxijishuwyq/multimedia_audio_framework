@@ -47,7 +47,8 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isFirstRead_(false),
       isFirstWrite_(false),
       isPausing_(false),
-      pfd_(nullptr)
+      pfd_(nullptr),
+      streamVolume_(1.0)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
