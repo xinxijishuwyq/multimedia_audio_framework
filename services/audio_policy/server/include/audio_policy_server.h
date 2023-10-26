@@ -419,7 +419,7 @@ private:
     std::mutex clientDiedListenerStateMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
-            this, std::placeholders::_1),
+        this, std::placeholders::_1),
         std::bind(&AudioPolicyServer::ProcessSessionAdded,
             this, std::placeholders::_1)};
 };

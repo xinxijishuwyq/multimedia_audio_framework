@@ -4415,7 +4415,7 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         auto [targetSourceType, targetRate] = FetchTargetInfoForSessionAdd(sessionInfo);
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
-        bool needReloadSource = (isSourceLoaded && 
+        bool needReloadSource = (isSourceLoaded &&
             ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
         if (needReloadSource) {
             AudioIOHandle activateDeviceIOHandle;

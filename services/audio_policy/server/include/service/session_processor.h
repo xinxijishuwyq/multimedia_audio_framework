@@ -44,8 +44,8 @@ public:
     DISALLOW_COPY_AND_MOVE(SessionProcessor);
 
     SessionProcessor(std::function<void(const uint32_t)> processorSessionRemoved,
-        std::function<void(SessionEvent)> processorSessionAdded) :
-            processorSessionRemoved_(processorSessionRemoved),
+        std::function<void(SessionEvent)> processorSessionAdded)
+            : processorSessionRemoved_(processorSessionRemoved),
             processorSessionAdded_(processorSessionAdded)
     {
         Start();
