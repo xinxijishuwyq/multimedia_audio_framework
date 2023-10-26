@@ -365,9 +365,9 @@ static void DebugCheckPop(void* p, size_t length)
 
 {
     int silentCount = 0;
-    for (int offset = 0; offset <= 4; offset += 4) {
-        for (int i = offset; i < length; i += 8) {
-            if (abs(*(int32_t*)((char*)p + i)) < 10) {
+    for (int offset = 0; offset <= 4; offset += 4) { // 4  is offset size
+        for (int i = offset; i < length; i += 8) { // 8 is size of check length
+            if (abs(*(int32_t*)((char*)p + i)) < 10) { //10 is max count size
                 silentCount++;
             } else {
                 silentCount = 0;
@@ -503,7 +503,7 @@ void OffloadCallback(const enum RenderCallbackType type, void *userdata)
                 UpdatePresentationPosition(u);
                 uint64_t cacheLenInHdi = u->offload.pos > u->offload.hdiPos ? u->offload.pos - u->offload.hdiPos : 0;
                 pa_usec_t now = pa_rtclock_now();
-                if (cacheLenInHdi > 200 * PA_USEC_PER_MSEC) {
+                if (cacheLenInHdi > 200 * PA_USEC_PER_MSEC) { // 200 is min wait length
                     u->offload.minWait = now + 10 * PA_USEC_PER_MSEC; // 10ms for min wait
                 }
             }
@@ -1930,7 +1930,7 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
             }
         }
         if (u->offload.fullTs != 0) {
-            if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) {
+            if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
                 const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
                 sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
             } else {

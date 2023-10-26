@@ -951,7 +951,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
     }
 
     acache_.buffer = make_unique<uint8_t[]>(max((uint32_t)bufferAttr->minreq,
-        (uint32_t)pa_usec_to_bytes(200 * PA_USEC_PER_MSEC, &sampleSpec)));
+        (uint32_t)pa_usec_to_bytes(200 * PA_USEC_PER_MSEC, &sampleSpec))); // 200 is init size
     if (acache_.buffer == nullptr) {
         AUDIO_ERR_LOG("Allocate memory for buffer failed");
         return AUDIO_CLIENT_INIT_ERR;
@@ -1606,7 +1606,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         acache_.isFull = false;
     }
     if (acache_.totalCacheSize < length) {
-        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%ld)", acache_.totalCacheSize, length);
+        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%u)", acache_.totalCacheSize, length);
     }
 
     if (!error && (length >= 0) && !acache_.isFull) {
