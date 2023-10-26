@@ -371,7 +371,7 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
     if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
         timestamp.tvNSec > SECOND_TO_NANOSECOND) {
-        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}ld or nanosecond:%{public}ld !", 
+        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}ld or nanosecond:%{public}ld !",
                       timestamp.tvSec, timestamp.tvNSec);
         return ERR_OPERATION_FAILED;
     }
@@ -974,10 +974,9 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
     }
 
     isFlushing_ = true;
-    thread([&]
-           {
+    thread([&] {
         auto future = async(launch::async, [&] { return audioRender_->Flush(audioRender_); });
-        if (future.wait_for(250ms) == future_status::timeout) {
+        if (future.wait_for(250ms) == future_status::timeout) { // max wait 250ms
             AUDIO_ERR_LOG("Flush failed! timeout of 250ms");
         } else {
             int32_t ret = future.get();
@@ -991,17 +990,17 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
         if (startDuringFlush_) {
             startDuringFlush_ = false;
             Start();
-        } })
-        .detach();
+        }
+    }).detach();
     return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
     int32_t ret;
-    
-    uint32_t size = (int64_t)sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / 
-                                                                    SECOND_TO_MILLISECOND; // bytewidth is 4
+
+    // bytewidth is 4
+    uint32_t size = (int64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND; // 4
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;

@@ -520,7 +520,6 @@ void OffloadCallback(const enum RenderCallbackType type, void *userdata)
         default:
             break;
     }
-
 }
 
 static void RegOffloadCallback(struct Userdata *u)
@@ -1313,24 +1312,16 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     size_t length = u->sink->thread_info.max_request;
     playback_stream* ps = i->userdata;
     const bool b = (bool)ps->sink_input->thread_info.resampler;
-    const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss
-                                            : ps->sink_input->sample_spec;
-    const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss
-                                            : ps->sink_input->sample_spec;
+    const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
+    const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
     const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy"));
-    if (statePolicy > 1) {
-        u->offload.prewrite = OFFLOAD_HDI_CACHE2 * PA_USEC_PER_MSEC;
-    } else {
-        u->offload.prewrite = OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC;
-    }
+    u->offload.prewrite = (statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1) * PA_USEC_PER_MSEC;
     const size_t blockSizeMax = pa_frame_align(pa_mempool_block_size_max(u->sink->core->mempool), &sampleSpecOut);
-    const size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, // 100ms for normal frame size
-        &sampleSpecOut), &sampleSpecOut);
-    const size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, // 50ms for normal frame size
-        &sampleSpecOut), &sampleSpecOut);
+    // 100ms 50ms 20ms for frame size
+    size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 100
+    size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 50
     const size_t sizeFirst = size50;
-    const size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, // 20ms for normal frame size
-        &sampleSpecOut), &sampleSpecOut);
+    size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut);  // 20
     size_t sizeTgt = statePolicy > 1 ? size100 : sizeMin;
     sizeTgt = u->offload.firstWrite ? sizeFirst : sizeTgt;
     sizeTgt = PA_MIN(blockSizeMax, sizeTgt);
@@ -1524,7 +1515,8 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
 
         if (vchunk.length > length)
             vchunk.length = length;
-        pa_memchunk_memcpy(target, &vchunk); // if target lead pa_memblock_new memory leak, fixed chunk length can solve it.   
+        // if target lead pa_memblock_new memory leak, fixed chunk length can solve it.
+        pa_memchunk_memcpy(target, &vchunk);
     }
 
     InputsDropFromInputs(infoInputs, nInputs, info, n, target);

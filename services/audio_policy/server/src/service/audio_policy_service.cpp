@@ -447,7 +447,6 @@ int32_t AudioPolicyService::PreSetOffloadMode(DeviceType deviceType)
 
 int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType deviceType /* = DEVICE_TYPE_NONE */)
 {
-
     if (!GetAudioOffloadAvailableFromXml()) {
         AUDIO_DEBUG_LOG("Offload Not Avaliable!Blocked!");
         return SUCCESS;
@@ -500,7 +499,6 @@ int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType devi
                 current offload stream sessionId[%(public)d]", sessionId, *(offloadSessionID_));
         }
     }
-
 
     return true;
 }

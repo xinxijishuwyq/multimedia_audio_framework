@@ -2428,7 +2428,6 @@ inline size_t GetFormatSize(const AudioStreamParams& info)
 
 int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
 {
-    
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("AudioServiceClient::UpdatePolicyOffload, pa_proplist_new failed");
