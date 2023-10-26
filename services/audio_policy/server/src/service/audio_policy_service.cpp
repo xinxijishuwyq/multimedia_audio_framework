@@ -4402,7 +4402,11 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
             std::lock_guard<std::mutex> lck(ioHandlesMutex_);
             IOHandles_.erase(PRIMARY_MIC);
         }
+        return;
     }
+
+    AUDIO_INFO_LOG("Sessionid:%{public}u not added, directly placed into sessionIdisRemovedSet_", sessionID);
+    sessionIdisRemovedSet_.insert(sessionID);
 }
 
 void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo)
