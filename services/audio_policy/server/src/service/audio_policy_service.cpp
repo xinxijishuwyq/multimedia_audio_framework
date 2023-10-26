@@ -4391,15 +4391,14 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
         if (!sessionWithNormalSourceType_.empty()) {
             return;
         }
-        AudioIOHandle activateDeviceIOHandle;
         {
+            AudioIOHandle activateDeviceIOHandle;
             std::lock_guard<std::mutex> lck(ioHandlesMutex_);
             activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
-        }
-        int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-        CHECK_AND_RETURN_LOG(result == SUCCESS, "OnCapturerSessionRemoved: CloseAudioPort failed %{public}d", result);
-        {
-            std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+
+            int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+            CHECK_AND_RETURN_LOG(result == SUCCESS, "OnCapturerSessionRemoved: CloseAudioPort failed %{public}d", result);
+
             IOHandles_.erase(PRIMARY_MIC);
         }
         return;
@@ -4426,11 +4425,10 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
             {
                 std::lock_guard<std::mutex> lck(ioHandlesMutex_);
                 activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
-            }
-            int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-            CHECK_AND_RETURN_LOG(result == SUCCESS, "CapturerSessionAdded: CloseAudioPort failed %{public}d", result);
-            {
-                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+
+                int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+                CHECK_AND_RETURN_LOG(result == SUCCESS, "CapturerSessionAdded: CloseAudioPort failed %{public}d", result);
+
                 IOHandles_.erase(PRIMARY_MIC);
             }
         }
