@@ -119,7 +119,6 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
 
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-
     if (state_ == STOPPED) {
         return false;
     }
@@ -152,7 +151,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
         timestamp.time.tv_nsec += baseTimestamp_.tv_nsec;
         timestamp.time.tv_sec += (timestamp.time.tv_nsec / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec = (timestamp.time.tv_nsec % TIME_CONVERSION_NS_S);
-
 
         return true;
     }

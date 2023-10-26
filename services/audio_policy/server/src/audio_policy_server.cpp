@@ -1615,7 +1615,6 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
-
     ReleaseOffloadStream(audioInterrupt.sessionID);
     if (!mPolicyService.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");

@@ -148,7 +148,7 @@ void AudioClientTrackerCallbackStub::UnSetOffloadModeImpl()
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: UnSetOffloadModeImpl callback_ is nullptr");
     }
-} 
+}
 
 void AudioClientTrackerCallbackStub::GetLowPowerVolumeImpl(float &volume)
 {

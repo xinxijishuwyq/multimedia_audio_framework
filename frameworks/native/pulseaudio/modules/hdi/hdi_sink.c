@@ -630,7 +630,6 @@ static void log_offload_info(pa_sink *s)
         const char *stateCurrent = safe_proplist_gets(i->proplist, "stream.offload.stateCurrent");
         const char *stateTarget = safe_proplist_gets(i->proplist, "stream.offload.stateTarget");
         const char *statePolicy = safe_proplist_gets(i->proplist, "stream.offload.statePolicy");
-        // const char *sessionID = safe_proplist_gets(i->proplist, "stream.sessionID");
         const char *sinkName = i->sink->name;
         const uint32_t index = i->index;
         char str[SPRINTF_STR_LEN] = {0};
@@ -1300,7 +1299,6 @@ static void PlaybackStreamRequestBytes(playback_stream* s) // from pa playback_s
     size_t m;
 
     m = pa_memblockq_pop_missing(s->memblockq);
-
     if (m <= 0) {
         return;
     }
@@ -1334,14 +1332,6 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     const size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, // 20ms for normal frame size
         &sampleSpecOut), &sampleSpecOut);
     size_t sizeTgt = statePolicy > 1 ? size100 : sizeMin;
-    // if (statePolicy > 1) {
-    //     fix_current_read(ps->memblockq);
-    //     if (ps->memblockq->current_read != NULL && ps->memblockq->current_read->next !=NULL) {
-    //         sizeTgt = size100;
-
-    //     }
-    //     sizeTgt = size100;
-    // }
     sizeTgt = u->offload.firstWrite ? sizeFirst : sizeTgt;
     sizeTgt = PA_MIN(blockSizeMax, sizeTgt);
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
@@ -1384,7 +1374,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
                     length = sizeMin;
                     *wait = true;
                 }
-                char*str = "just wait";
+                char *str = "just wait";
                 if (ps->memblockq->missing > 0) {
                     PlaybackStreamRequestBytes(ps);
                     str = "request_bytes";
@@ -1534,7 +1524,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
 
         if (vchunk.length > length)
             vchunk.length = length;
-        pa_memchunk_memcpy(target, &vchunk); //if target lead pa_memblock_new memory leak, fixed chunk length can solve it.   
+        pa_memchunk_memcpy(target, &vchunk); // if target lead pa_memblock_new memory leak, fixed chunk length can solve it.   
     }
 
     InputsDropFromInputs(infoInputs, nInputs, info, n, target);
@@ -1637,7 +1627,7 @@ static int32_t UpdatePresentationPosition(struct Userdata* u)
     uint64_t frames;
     int64_t timeSec, timeNanoSec;
     int ret = u->offload.sinkAdapter->RendererSinkGetPresentationPosition(
-        u->offload.sinkAdapter,&frames, &timeSec, &timeNanoSec);
+        u->offload.sinkAdapter, &frames, &timeSec, &timeNanoSec);
     if (ret != 0) {
         AUDIO_ERR_LOG("RendererSinkGetPresentationPosition fail, ret %d", ret);
         return ret;
@@ -1656,7 +1646,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
     pa_assert(i->sink);
     pa_assert_se(u = i->sink->userdata);
     playback_stream* ps = i->userdata;
-    pa_assert(ps);else{
+    pa_assert(ps);
     int ret;
 
     ret = UpdatePresentationPosition(u);
@@ -1718,7 +1708,7 @@ static void OffloadLock(struct Userdata* u)
     }
 }
 
-static void OffloadUnlock(struct Userdata* u) 
+static void OffloadUnlock(struct Userdata *u)
 {
     if (u->offload.runninglocked) {
         u->offload.sinkAdapter->RendererSinkOffloadRunningLockUnlok(u->offload.sinkAdapter);
@@ -1833,7 +1823,6 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
                 }
             }
         }
-
     }
 }
 
@@ -1881,7 +1870,6 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
             OffloadUnlock(u);
         }
 
-        // log_offload_info(u->sink);
         int64_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
         const uint64_t pos = u->offload.pos;
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
@@ -1906,13 +1894,11 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
                     blockTime = 0;
                     if (writen >= size100ms) {
                         blockTime = 3 * PA_USEC_PER_MSEC; // 3ms for min wait
-                        // u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
                     }
                 }
             } else if (hdistate == 1) {
                 blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
                 if (blockTime < 0) {
-
                     blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
                 }
                 u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
@@ -1938,16 +1924,12 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
                 if (pa_atomic_load(&u->offload.hdistate) == 1) {
                     u->offload.fullTimes += 1;
                     OffloadUnlock(u);
-                    // if ((u->offload.fullTimes / 4) % 2 == 0) {
-                    //     OffloadUnlock(u);
-                    // }
                 }
             }
         }
         if (sleepForUsec == -1) {
             pa_rtpoll_set_timer_disabled(u->offload.rtpoll); // sleep forever
         } else if (sleepForUsec == 0) {
-            // pa_rtpoll_set_timer_relative(u->offload.rtpoll, 0); // continue
             pa_rtpoll_set_timer_disabled(u->offload.rtpoll);
             continue;
         } else {
@@ -2688,13 +2670,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     paThreadName = "write-pa-bus";
     if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
         AUDIO_ERR_LOG("Failed to write-pa thread.");
-        goto fail;        
+        goto fail;
     }
 
     paThreadName = "write-pa-primary";
     if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
         AUDIO_ERR_LOG("Failed to write-pa-primary thread.");
-        goto fail;   
+        goto fail;
     }
 
     if (!strcmp(u->sink->name, "Speaker") && u->offload_enable) {

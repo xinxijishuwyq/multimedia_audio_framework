@@ -395,12 +395,8 @@ int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, boo
 
 int32_t AudioPolicyService::SetOffloadMode()
 {
-
-
-
-
-    return SetOffloadMode(*offloadSessionID_, (int32_t)currentPowerState_, 
-        currentOffloadSessionIsBackgroud_);
+    return SetOffloadMode(*offloadSessionID_, (int32_t)currentPowerState_,
+                        currentOffloadSessionIsBackgroud_);
 }
 
 int32_t AudioPolicyService::UnSetOffloadMode()
@@ -489,10 +485,6 @@ int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType devi
 
     AUDIO_INFO_LOG("sessionId[%(public)d] UID[%(public)d] StreamType[%(public)d] Getting offload stream",
         sessionId, offloadUID, streamType);
-
-
-
-
     lock_guard<mutex> lock(offloadMutex_);
 
     if (!offloadSessionID_.has_value()) {
@@ -504,8 +496,8 @@ int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType devi
         if (sessionId == *(offloadSessionID_)) {
             AUDIO_DEBUG_LOG("sessionId[%(public)d] is already get offload stream", sessionId);
         } else {
-            AUDIO_DEBUG_LOG("sessionId[%(public)d] is not get offload stream, current offload stream sessionId[%(public)d]",
-                sessionId, *(offloadSessionID_));
+            AUDIO_DEBUG_LOG("sessionId[%(public)d] is not get offload stream, 
+                current offload stream sessionId[%(public)d]", sessionId, *(offloadSessionID_));
         }
     }
 
@@ -515,7 +507,6 @@ int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType devi
 
 int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
 {
-
     if (!GetAudioOffloadAvailableFromXml()) {
         AUDIO_DEBUG_LOG("Offload Not Avaliable!Blocked!");
         return SUCCESS;
@@ -526,16 +517,12 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
     if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
         UnSetOffloadMode();
         offloadSessionID_.reset();
-
         AUDIO_DEBUG_LOG("sessionId[%(public)d] release offload stream", sessionId);
-
     } else {
         if (offloadSessionID_.has_value()) {
-
             AUDIO_DEBUG_LOG("sessionId[%(public)d] stopping stream not get offload stream"
                             "current offload stream sessionId[%(public)d]", sessionId, *offloadSessionID_);
         } else {
-
             AUDIO_DEBUG_LOG("sessionId[%(public)d] stopping stream not get offload stream"
                             "current offload stream is None", sessionId);
         }
@@ -547,7 +534,6 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
 void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
     if (currentPowerState_ == state) {
-
         return;
     }
     currentPowerState_ = state;
@@ -1950,9 +1936,6 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     } else {
         ReSetOffloadMode();
     }
-
-
-    
 
     if (currentActiveDevice_.deviceType_ == deviceType) {
         if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {

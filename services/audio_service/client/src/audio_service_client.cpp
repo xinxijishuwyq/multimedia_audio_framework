@@ -1616,7 +1616,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         if (acache_.writeIndex > acache_.readIndex) {
             uint32_t size = (acache_.writeIndex - acache_.readIndex);
             auto* func = memcpy_s;
-            if(offset < size) { // overlop
+            if (offset < size) { // overlop
                 func = memmove_s;
             }
             if (func(cacheBuffer, acache_.totalCacheSize, cacheBuffer + offset, size)) {
@@ -2102,7 +2102,6 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
             pa_threaded_mainloop_wait(mainLoop);
         }
         pa_threaded_mainloop_unlock(mainLoop);
-
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -2343,12 +2342,12 @@ static void printBufAttr(pa_stream* paStream)
     AUDIO_INFO_LOG("pa_stream_get_buffer_attr: prebuf    %{public}u", bufferAttr->prebuf);
     AUDIO_INFO_LOG("pa_stream_get_buffer_attr: tlength   %{public}u", bufferAttr->tlength);
     AUDIO_INFO_LOG("pa_stream_get_buffer_attr: maxlength %{public}u", bufferAttr->maxlength);
-    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: fragsize  %{public}u", bufferAttr->fragsize );
+    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: fragsize  %{public}u", bufferAttr->fragsize);
 }
 
 int32_t AudioServiceClient::InitializePAProbListOffload()
 {
-    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0){
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         AUDIO_ERR_LOG("set offload mode: invalid stream state");
         AUDIO_INFO_LOG("quit SetStreamOffloadMode, err");
         return AUDIO_CLIENT_PA_ERR;
@@ -2362,7 +2361,7 @@ int32_t AudioServiceClient::InitializePAProbListOffload()
 
     pa_proplist_sets(propList, "stream.offload.statePolicy", "0");
 
-    pa_operation* updatePropOperation = 
+    pa_operation *updatePropOperation =
         pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList, nullptr, nullptr);
     if (updatePropOperation == nullptr) {
         pa_proplist_free(propList);
@@ -2391,7 +2390,7 @@ int32_t AudioServiceClient::UpdatePAProbListOffload(AudioOffloadType statePolicy
         pa_threaded_mainloop_unlock(mainLoop);
         offloadNextStateTargetPolicy = statePolicy; // Fix here if sometimes can't cut into state 3
         return ret;
-    } else {    // Otherwise, hdi_sink.c's times detects the stateTarget change and switches after a certain period of time
+    } else {    // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
                 // this time is checked the PaWriteStream to check if the switch has been made
         AUDIO_DEBUG_LOG("Update statePolicy in 5 seconds: %{public}d -> %{public}d", offloadStatePolicy, statePolicy);
         lastOffloadUpdateFinishTime = chrono::system_clock::to_time_t(
@@ -2455,8 +2454,6 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
     mAudioSystemMgr->SetBufferSize(bufLenMs);
 
-
-
     offloadStatePolicy = statePolicy;
     UpdatebufferAttrOffload(offloadStatePolicy);
 
@@ -2475,7 +2472,6 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
         "STATE", state_,
         "OFFLOADSTATE", statePolicy,
         "DEVICETYPE", deviceType);
-    
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -2599,7 +2595,6 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
 
 int32_t AudioServiceClient::UnSetStreamOffloadMode()
 {
-
     lastOffloadUpdateFinishTime = 0;
     offloadEnable = false;
     pa_threaded_mainloop_lock(mainLoop);
@@ -2653,7 +2648,6 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 void AudioServiceClient::GetSinkInputInfoOffloadCb(pa_context* context, const pa_sink_input_info* info, int eol,
     void* userdata)
 {
-
     AudioServiceClient* thiz = reinterpret_cast<AudioServiceClient*>(userdata);
 
     if (eol < 0) {
