@@ -244,7 +244,7 @@ int32_t IAudioRendererSinkGetLatency(struct RendererSinkAdapter *adapter, uint32
     return ret;
 }
 
-int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, void *cb, void *userdata)
+int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, char *cb, char *userdata)
 {
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
 

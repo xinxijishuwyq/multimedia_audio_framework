@@ -395,8 +395,7 @@ int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, boo
 
 int32_t AudioPolicyService::SetOffloadMode()
 {
-    return SetOffloadMode(*offloadSessionID_, (int32_t)currentPowerState_,
-                        currentOffloadSessionIsBackgroud_);
+    return SetOffloadMode(*offloadSessionID_, (int32_t)currentPowerState_, currentOffloadSessionIsBackground_);
 }
 
 int32_t AudioPolicyService::UnSetOffloadMode()
@@ -495,8 +494,8 @@ int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType devi
         if (sessionId == *(offloadSessionID_)) {
             AUDIO_DEBUG_LOG("sessionId[%(public)d] is already get offload stream", sessionId);
         } else {
-            AUDIO_DEBUG_LOG("sessionId[%(public)d] is not get offload stream, 
-                current offload stream sessionId[%(public)d]", sessionId, *(offloadSessionID_));
+            AUDIO_DEBUG_LOG("sessionId[%(public)d] is not get offload stream, "
+                            "current offload stream sessionId[%(public)d]", sessionId, *(offloadSessionID_));
         }
     }
 

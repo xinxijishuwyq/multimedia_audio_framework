@@ -93,7 +93,7 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
-    int32_t RegisterRenderCallback(OnRenderCallback (*callback), void *userdata) override;
+    int32_t RegisterRenderCallback(OnRenderCallback (*callback), char *userdata) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     static int32_t RenderEventCallback(struct IAudioCallback *self, RenderCallbackType type, void *reserved,
@@ -312,7 +312,7 @@ void OffloadAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback
 typedef int32_t (*RenderCallback)(struct IAudioCallback *self, enum AudioCallbackType type, int8_t* reserved,
     int8_t* cookie);
 
-int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (*callback), void *userdata)
+int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (*callback), char *userdata)
 {
     callbackServ.renderCallback = callback;
     callbackServ.userdata = userdata;
@@ -337,8 +337,8 @@ int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (
     return SUCCESS;
 }
 
-int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback *self, RenderCallbackType type,
-    void *reserved, void *cookie)
+int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback* self, RenderCallbackType type,
+    char* reserved, char* cookie)
 {
     // reserved and cookie should be null
     if (self == nullptr) {

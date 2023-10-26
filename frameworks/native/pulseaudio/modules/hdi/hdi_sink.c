@@ -524,7 +524,7 @@ void OffloadCallback(const enum RenderCallbackType type, void *userdata)
 
 static void RegOffloadCallback(struct Userdata *u)
 {
-    int ret = u->offload.sinkAdapter->RendererRegCallback(u->offload.sinkAdapter, OffloadCallback, u);
+    u->offload.sinkAdapter->RendererRegCallback(u->offload.sinkAdapter, OffloadCallback, u);
 }
 
 static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)

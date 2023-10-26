@@ -2562,9 +2562,9 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
         AUDIO_ERR_LOG("AudioServiceClient::SetStreamOffloadMode, impossible INPUT branch error");
         return AUDIO_CLIENT_ERR;
     }
-    
+
     AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, calling set stream "
-                    "offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
+                   "offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
 
     if (offloadNextStateTargetPolicy == statePolicy) {
         AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, pa_stream_proplist_update NextStatePolicy not "
