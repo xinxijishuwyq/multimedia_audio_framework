@@ -37,7 +37,7 @@ AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t INIT_TIMEOUT_IN_SEC = 3;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
-const uint32_t WRITE_TIMEOUT_IN_SEC = 2;
+const uint32_t WRITE_TIMEOUT_IN_SEC = 5;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
@@ -783,6 +783,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
         StopTimer();
         if (IsTimeOut()) {
             AUDIO_ERR_LOG("Initialize timeout");
+            pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_INIT_ERR;
         }
     }
@@ -1020,7 +1021,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
     if (audioParams.channelLayout == 0) {
-        audioParams.channelLayout = defaultChCountToLayoutMap_[audioParams.channels];
+        audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
     }
     pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
     pa_channel_map map;
@@ -3370,7 +3371,7 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {
         case 0: {
-            for (auto bit = chSetToPaPositionMap_.begin(); bit != chSetToPaPositionMap_.end(); ++bit) {
+            for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
                 if ((channelLayout & (bit->first)) != 0) {
                     paMap.map[channelNum++] = bit->second;
                 }
@@ -3381,7 +3382,7 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
             uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
             channelNum = (order + 1) * (order + 1);
             for (uint32_t i = 0; i < channelNum; ++i) {
-                paMap.map[i] = chSetToPaPositionMap_[FRONT_LEFT];
+                paMap.map[i] = chSetToPaPositionMap[FRONT_LEFT];
             }
             break;
         }

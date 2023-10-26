@@ -1739,10 +1739,6 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
         }
     }
 
-    std::string activePort = GetSinkPortName(currentActiveDevice_.deviceType_);
-    AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_.deviceType_);
-    audioPolicyManager_.SuspendAudioDevice(activePort, true);
-
     return SUCCESS;
 }
 
@@ -1860,6 +1856,10 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::HandleA2dpDevice");
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            std::string activePort = GetSinkPortName(currentActiveDevice_.deviceType_);
+            audioPolicyManager_.SuspendAudioDevice(activePort, true);
+        }
         int32_t ret = LoadA2dpModule(deviceType);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("load A2dp module failed");
