@@ -663,27 +663,27 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
     return SUCCESS;
 }
 
-int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
+int32_t OffloadAudioRendererSinkInner::SetVolume(float theleft, float theright)
 {
     int32_t ret;
-    float volume;
+    float thevolume;
 
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
 
-    leftVolume_ = left;
-    rightVolume_ = right;
+    leftVolume_ = theleft;
+    rightVolume_ = theright;
     if ((leftVolume_ == 0) && (rightVolume_ !=0)) {
-        volume = rightVolume_;
+        thevolume = rightVolume_;
     } else if ((leftVolume_ != 0) && (rightVolume_ ==0)) {
-        volume = leftVolume_;
+        thevolume = leftVolume_;
     } else {
-        volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
+        thevolume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    ret = audioRender_->SetVolume(audioRender_, volume);
+    ret = audioRender_->SetVolume(audioRender_, thevolume);
     if (ret) {
         AUDIO_ERR_LOG("Set volume failed!");
     }
