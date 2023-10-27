@@ -2527,6 +2527,10 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
         AUDIO_ERR_LOG("SetA2dpDeviceVolume: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
+    AudioStreamType streamType = STREAM_MUSIC;
+    if (!IsVolumeLevelValid(streamType, volume)) {
+        return ERR_NOT_SUPPORTED;
+    }
     int32_t ret = mPolicyService.SetA2dpDeviceVolume(macAddress, volume);
     if (ret == SUCCESS) {
         for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
@@ -2538,7 +2542,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
 
             AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
             VolumeEvent volumeEvent;
-            volumeEvent.volumeType = STREAM_MUSIC;
+            volumeEvent.volumeType = streamType;
             volumeEvent.volume = volume;
             volumeEvent.updateUi = updateUi;
             volumeEvent.volumeGroupId = 0;
