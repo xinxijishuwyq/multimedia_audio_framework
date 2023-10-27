@@ -392,20 +392,6 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
     while (true) {
         uint64_t writeLen = 0;
 
-        char str[SPRINTF_STR_LEN] = {0};
-        if (length >= 48) { // 48 only for debug
-            int ret = sprintf_s(str, SPRINTF_STR_LEN, "%f %f %f %f %f %f",
-                (float)*(int32_t*)((char*)p + index) / (float)INT32_MAX,
-                (float)*(int32_t*)((char*)p + index + length - 48) / (float)INT32_MAX, // 48 only for debug
-                (float)*(int32_t*)((char*)p + index + length - 40) / (float)INT32_MAX, // 40 only for debug
-                (float)*(int32_t*)((char*)p + index + length - 32) / (float)INT32_MAX, // 32 only for debug
-                (float)*(int32_t*)((char*)p + index + length - 16) / (float)INT32_MAX, // 16 only for debug
-                (float)*(int32_t*)((char*)p + index + length - 8) / (float)INT32_MAX); // 8 only for debug
-            if (ret < 0) {
-                AUDIO_ERR_LOG("sprintf_s fail! ret %d", ret);
-            }
-        }
-
         int32_t ret = sinkAdapter->RendererRenderFrame(sinkAdapter, ((char*)p + index),
             (uint64_t)length, &writeLen);
         if (writeLen > length) {
@@ -1330,18 +1316,16 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
         }
         length = PA_MIN(bqlAlin, sizeTgt);
         *wait = false;
-        if (length < sizeTgt) {
-            if (u->offload.firstWrite == true) {
-                *wait = true;
-                length = 0;
-            } else {
-                *wait = waitable || length == 0;
-                length = waitable ? 0 : (length == 0 ? sizeMin : length);
-                if (ps->memblockq->missing > 0) {
-                    PlaybackStreamRequestBytes(ps);
-                } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
-                    pa_sink_input_send_event(i, "signal_mainloop", NULL);
-                }
+        if (length < sizeTgt && u->offload.firstWrite == true) {
+            *wait = true;
+            length = 0;
+        } else if (length < sizeTgt) {
+            *wait = waitable || length == 0;
+            length = waitable ? 0 : (length == 0 ? sizeMin : length);
+            if (ps->memblockq->missing > 0) {
+                PlaybackStreamRequestBytes(ps);
+            } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
+                pa_sink_input_send_event(i, "signal_mainloop", NULL);
             }
         }
     }
@@ -1904,11 +1888,11 @@ static void ThreadFuncRendererTimerOffload(void* userdata)
             if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
                 const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
                 sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
+            } else if (pa_atomic_load(&u->offload.hdistate) == 1) {
+                u->offload.fullTs = 0;
+                OffloadUnlock(u);
             } else {
                 u->offload.fullTs = 0;
-                if (pa_atomic_load(&u->offload.hdistate) == 1) {
-                    OffloadUnlock(u);
-                }
             }
         }
         if (sleepForUsec == -1) {
