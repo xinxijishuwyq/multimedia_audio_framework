@@ -4421,10 +4421,10 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
         bool needReloadSource = (isSourceLoaded &&
             ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
+        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
         if (needReloadSource) {
             AudioIOHandle activateDeviceIOHandle;
             {
-                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
                 activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
 
                 int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
@@ -4441,10 +4441,9 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
-            {
-                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-                IOHandles_[PRIMARY_MIC] = ioHandle;
-            }
+
+            IOHandles_[PRIMARY_MIC] = ioHandle;
+
             currentRate = targetRate;
             currentSourceType = targetSourceType;
         }
