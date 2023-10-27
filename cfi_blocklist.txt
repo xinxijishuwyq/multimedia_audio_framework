@@ -11,7 +11,6 @@ src:*frameworks/native/hdiadapter/devicemanager/src/audio_device_manager_impl.cp
 src:*frameworks/native/hdiadapter/sink/bluetooth/bluetooth_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/sink/fast/fast_audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/sink/remote_fast/remote_fast_audio_renderer_sink.cpp
-src:*frameworks/native/hdiadapter/sink/offload/offload_audio_renderer_sink.cpp
 src:*frameworks/native/hdiadapter/source/fast/fast_audio_capturer_source.cpp
 src:*frameworks/native/hdiadapter/source/remote_fast/remote_fast_audio_capturer_source.cpp
 src:*frameworks/native/pulseaudio/modules/hdi/hdi_sink.c
