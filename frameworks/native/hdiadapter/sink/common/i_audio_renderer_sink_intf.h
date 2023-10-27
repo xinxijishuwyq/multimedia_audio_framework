@@ -57,7 +57,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkSetVolume)(struct RendererSinkAdapter *adapter, float left, float right);
     int32_t (*RendererSinkGetVolume)(struct RendererSinkAdapter *adapter, float *left, float *right);
     int32_t (*RendererSinkGetLatency)(struct RendererSinkAdapter *adapter, uint32_t *latency);
-    int32_t (*RendererRegCallback)(struct RendererSinkAdapter *adapter, char *cb, char *userdata);
+    int32_t (*RendererRegCallback)(struct RendererSinkAdapter *adapter, int8_t *cb, int8_t *userdata);
     int32_t (*RendererSinkGetPresentationPosition)(struct RendererSinkAdapter *adapter, uint64_t* frames,
         int64_t* timeSec, int64_t* timeNanoSec);
     int32_t (*RendererSinkFlush)(struct RendererSinkAdapter *adapter);
@@ -80,7 +80,7 @@ int32_t IAudioRendererSinkRenderFrame(struct RendererSinkAdapter *adapter, char 
 int32_t IAudioRendererSinkSetVolume(struct RendererSinkAdapter *adapter, float left, float right);
 int32_t IAudioRendererSinkGetVolume(struct RendererSinkAdapter *adapter, float *left, float *right);
 int32_t IAudioRendererSinkGetLatency(struct RendererSinkAdapter *adapter, uint32_t *latency);
-int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, char *cb, char *userdata);
+int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, int8_t *cb, int8_t *userdata);
 int32_t IAudioRendererSinkGetPresentationPosition(struct RendererSinkAdapter *adapter, uint64_t* frames,
     int64_t* timeSec, int64_t* timeNanoSec);
 int32_t IAudioRendererSinkFlush(struct RendererSinkAdapter *adapter);

@@ -2072,15 +2072,10 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 
     // Get PA latency
     if (offloadEnable) {
-        uint64_t frames;
-        int64_t timeSec, timeNanoSec;
-        mAudioSystemMgr->GetPresentationPosition(frames, timeSec, timeNanoSec);
+        int64_t frames, timeSec, timeNanoSec;
+        mAudioSystemMgr->GetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
         uint64_t writePos = pa_bytes_to_usec(mTotalBytesWritten, &sampleSpec);
-        if (writePos >= frames) {
-            paLatency = writePos - frames;
-        } else {
-            paLatency = 0;
-        }
+        paLatency = writePos >= frames ? writePos - frames : 0;
     } else {
         pa_threaded_mainloop_lock(mainLoop);
         while (true) {
@@ -2116,8 +2111,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         } else {
             latency = fwLatency;
         }
-        AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
-            PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
+        AUDIO_DEBUG_LOG("total latency: %lu, pa latency: %lu, cache latency: %lu", latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         // Get audio read cache latency
         cacheLatency = pa_bytes_to_usec(internalRdBufLen_, &sampleSpec);

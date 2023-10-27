@@ -135,7 +135,6 @@ struct Userdata {
             struct RendererSinkAdapter *sinkAdapter;
             pa_atomic_t hdistate; // 0:need_data 1:wait_consume 2:flushing
             pa_usec_t fullTs;
-            int32_t fullTimes;
             bool runninglocked;
             pa_memchunk chunk;
             pa_usec_t writeTime;
@@ -1354,8 +1353,7 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
     pa_memchunk* result)
 {
     pa_sink_input *i;
-    unsigned p = 0, ii = 0;
-    unsigned nUnreffed = 0;
+    unsigned p = 0, ii = 0, nUnreffed = 0;
 
     if (result == NULL) {
         for (; n > 0; info++, n--) {
@@ -1369,9 +1367,7 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
         }
         return;
     }
-    pa_assert(result);
-    pa_assert(result->memblock);
-    pa_assert(result->length > 0);
+    pa_assert(result) && pa_assert(result->memblock) && pa_assert(result->length > 0);
 
     /* We optimize for the case where the order of the inputs has not changed */
 
@@ -1809,13 +1805,13 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
     }
 }
 
-static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, int64_t* blockTime,
-    int64_t* sleepForUsec)
+static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, int64_t* sleepForUsec)
 {
     const uint64_t pos = u->offload.pos;
     const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
     const uint64_t pw = u->offload.prewrite * 1.1; // 1.1 for 10% redundancy
     const int32_t size100ms = pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &u->sink->sample_spec); // 100
+    int64_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
 
     int32_t nInput = -1;
     const int hdistate = (int)pa_atomic_load(&u->offload.hdistate);
@@ -1825,21 +1821,21 @@ static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, i
         ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
         if (wait) {
             if (u->offload.firstWrite == true) {
-                *blockTime = -1;
+                blockTime = -1;
             } else {
-                *blockTime = -1;
+                blockTime = -1;
                 u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
             }
         } else {
-            *blockTime = 0;
+            blockTime = 0;
             if (writen >= size100ms) {
-                *blockTime = 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+                blockTime = 3 * PA_USEC_PER_MSEC; // 3ms for min wait
             }
         }
     } else if (hdistate == 1) {
-        *blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
-        if (*blockTime < 0) {
-            *blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
+        blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
+        if (blockTime < 0) {
+            blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
         }
         u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
     }
@@ -1850,18 +1846,41 @@ static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, i
             UpdatePresentationPosition(u);
         }
     }
-    if (nInput != 0 && *blockTime != -1) {
-        *sleepForUsec = (int64_t)PA_MAX(*blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
+    if (nInput != 0 && blockTime != -1) {
+        *sleepForUsec = (int64_t)PA_MAX(blockTime, 0) - (int64_t)(pa_rtclock_now() - now);
         *sleepForUsec = PA_MAX(*sleepForUsec, 0);
     }
 }
 
-static void ThreadFuncRendererTimerOffload(void *userdata)
+static void ThreadFuncRendererTimerOffload3(struct Userdata* u, pa_usec_t now, bool* flagOut)
+{
+    bool flag = PA_SINK_IS_RUNNING(u->sink->thread_info.state);
+    int64_t sleepForUsec = -1;
+    if (flag) {
+        int64_t delta = u->offload.minWait - now;
+        if (delta > 0) {
+            flag = false;
+            sleepForUsec = delta;
+        } else {
+            unsigned nPrimary, nOffload, nHd;
+            GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+            if (nOffload == 0) {
+                flag = false;
+                OffloadUnlock(u);
+            }
+        }
+    } else {
+        OffloadUnlock(u);
+    }
+    *flagOut = flag;
+}
+
+static void ThreadFuncRendererTimerOffload(void* userdata)
 {
     // set audio thread priority
     ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
-    struct Userdata *u = userdata;
+    struct Userdata* u = userdata;
 
     pa_assert(u);
 
@@ -1873,33 +1892,13 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
     u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
 
     while (true) {
-        pa_usec_t now = 0;
+        pa_usec_t now = pa_rtclock_now();
 
-        bool flag = PA_SINK_IS_RUNNING(u->sink->thread_info.state);
-        now = pa_rtclock_now();
-        int64_t sleepForUsec = -1;
-        if (flag) {
-            int64_t delta = u->offload.minWait - now;
-            if (delta > 0) {
-                flag = false;
-                sleepForUsec = delta;
-            } else {
-                unsigned nPrimary, nOffload, nHd;
-                GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-                if (nOffload == 0) {
-                    flag = false;
-                    OffloadUnlock(u);
-                }
-            }
-        } else {
-            OffloadUnlock(u);
-        }
-
-        int64_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        int32_t ret;
+        bool flag;
+        ThreadFuncRendererTimerOffload3(u, now, &flag);
 
         if (flag) {
-            ThreadFuncRendererTimerOffload2(u, now, &blockTime, &sleepForUsec);
+            ThreadFuncRendererTimerOffload2(u, now, &sleepForUsec);
         }
         if (u->offload.fullTs != 0) {
             if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
@@ -1908,7 +1907,6 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
             } else {
                 u->offload.fullTs = 0;
                 if (pa_atomic_load(&u->offload.hdistate) == 1) {
-                    u->offload.fullTimes += 1;
                     OffloadUnlock(u);
                 }
             }
@@ -1922,7 +1920,7 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
             pa_rtpoll_set_timer_relative(u->offload.rtpoll, sleepForUsec);
         }
         // just sleep
-        if ((ret = pa_rtpoll_run(u->offload.rtpoll)) < 0) {
+        if (pa_rtpoll_run(u->offload.rtpoll) < 0) {
             AUDIO_INFO_LOG("ThreadFuncRendererTimerOffload fail");
             return;
         }
@@ -2777,9 +2775,7 @@ static void UserdataFree(struct Userdata *u)
         UnLoadSinkAdapter(u->offload.sinkAdapter);
     }
 
-    if (u->offload.chunk.memblock) {
-        pa_memblock_unref(u->offload.chunk.memblock);
-    }
+    u->offload.chunk.memblock && pa_memblock_unref(u->offload.chunk.memblock);
 
     pa_xfree(u);
 }

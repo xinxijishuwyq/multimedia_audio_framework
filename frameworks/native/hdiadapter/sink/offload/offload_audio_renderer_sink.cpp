@@ -93,11 +93,11 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string& condition, const std::string& value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
-    int32_t RegisterRenderCallback(OnRenderCallback (*callback), char *userdata) override;
+    int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
-    static int32_t RenderEventCallback(struct IAudioCallback *self, RenderCallbackType type, void *reserved,
-        void *cookie);
+    static int32_t RenderEventCallback(struct IAudioCallback *self, RenderCallbackType type, int8_t *reserved,
+        int8_t *cookie);
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -312,7 +312,7 @@ void OffloadAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback
 typedef int32_t (*RenderCallback)(struct IAudioCallback *self, enum AudioCallbackType type, int8_t* reserved,
     int8_t* cookie);
 
-int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (*callback), char *userdata)
+int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata)
 {
     callbackServ.renderCallback = callback;
     callbackServ.userdata = userdata;
@@ -338,7 +338,7 @@ int32_t OffloadAudioRendererSinkInner::RegisterRenderCallback(OnRenderCallback (
 }
 
 int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback* self, RenderCallbackType type,
-    char* reserved, char* cookie)
+    int8_t* reserved, int8_t* cookie)
 {
     // reserved and cookie should be null
     if (self == nullptr) {
@@ -437,13 +437,14 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
             continue;
         }
         AUDIO_DEBUG_LOG("index %{public}u, adapterName %{public}s", index, desc->adapterName);
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portsLen; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    return index;
-                }
+        if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portsLen; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].dir == portFlag) {
+                renderPort = desc->ports[port];
+                return index;
             }
         }
     }
@@ -556,20 +557,13 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     // Get qualified sound card and port
     int32_t index =
         SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_, size);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Fail.");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(index < 0, ERR_NOT_STARTED, "Switch Adapter Fail.");
 
     adapterDesc_ = descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail.");
-        return ERR_NOT_STARTED;
-    }
-    if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("Load audio device failed.");
-        return ERR_NOT_STARTED;
-    }
+    ret = audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_);
+    CHECK_AND_RETURN_RET_LOG(ret != 0, ERR_NOT_STARTED, "Load Adapter Fail.");
+
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ == nullptr, ERR_NOT_STARTED, "Load audio device failed.");
 
     // Initialization port information, can fill through mode and other parameters
     if (audioAdapter_->InitAllPorts(audioAdapter_) != 0) {
