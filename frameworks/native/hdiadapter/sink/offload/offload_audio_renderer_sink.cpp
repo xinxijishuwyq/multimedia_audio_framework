@@ -133,9 +133,9 @@ private:
 
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
-    AudioFormat ConverToHdiFormat(AudioSampleFormat format);
-    void AdjustStereoToMono(std::string *data, uint64_t len);
-    void AdjustAudioBalance(std::string *data, uint64_t len);
+    AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
+    void AdjustStereoToMono(char *data, uint64_t len);
+    void AdjustAudioBalance(char *data, uint64_t len);
 
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
     bool runninglocked;
@@ -229,7 +229,7 @@ void OffloadAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
     }
 }
 
-void OffloadAudioRendererSinkInner::AdjustStereoToMono(std::string *data, uint64_t len)
+void OffloadAudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
@@ -264,7 +264,7 @@ void OffloadAudioRendererSinkInner::AdjustStereoToMono(std::string *data, uint64
     }
 }
 
-void OffloadAudioRendererSinkInner::AdjustAudioBalance(std::string *data, uint64_t len)
+void OffloadAudioRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
@@ -350,7 +350,7 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
             impl->registered, impl->cookie == nullptr, impl->renderCallback == nullptr);
     }
     auto cbType = RenderCallbackType(type);
-    impl->renderCallback(cbType, impl->userdata);
+    impl->renderCallback(cbType, reinterpret_cast<int8_t*>(impl->userdata));
     return 0;
 }
 
@@ -363,7 +363,7 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     }
     uint64_t frames_;
     struct AudioTimeStamp timestamp = {};
-    ret = audioRender_->GetRendererPosition(audioRender_, &frames_, &timestamp);
+    ret = audioRender_->GetRenderPosition(audioRender_, &frames_, &timestamp);
     if (ret != 0) {
         AUDIO_ERR_LOG("offload failed");
         return ERR_OPERATION_FAILED;
@@ -478,20 +478,23 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
     }
 }
 
-AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(AudioSampleFormat format)
+AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat format)
 {
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
-        case SAMPLE_S16LE:
+        case SAMPLE_S16:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        case SAMPLE_S24LE:
+        case SAMPLE_S24:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
-        case SAMPLE_S32LE:
+        case SAMPLE_S32:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        case SAMPLE_F32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -516,7 +519,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
 
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = (std::string *)"";
+    deviceDesc.desc = const_cast<char *>"";
     deviceDesc.pins = PIN_OUT_SPEAKER;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
@@ -754,23 +757,27 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     switch (outputDevice) {
         case DEVICE_TYPE_EARPIECE:
             sink.ext.device.type = PIN_OUT_EARPIECE;
-            sink.ext.device.desc = (std::string *)"pin_out_earpiece";
+            sink.ext.device.desc = (char *)"pin_out_earpiece";
             break;
         case DEVICE_TYPE_SPEAKER:
             sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = (std::string *)"pin_out_speaker";
+            sink.ext.device.desc = (char *)"pin_out_speaker";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
             sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = (std::string *)"pin_out_headset";
+            sink.ext.device.desc = (char *)"pin_out_headset";
+            break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            sink.ext.device.type = PIN_OUT_USB_HEADSET;
+            sink.ext.device.desc = (char *)"pin_out_usb_headset";
             break;
         case DEVICE_TYPE_USB_HEADSET:
             sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = (std::string *)"pin_out_usb_ext";
+            sink.ext.device.desc = (char *)"pin_out_usb_ext";
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
             sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
-            sink.ext.device.desc = (std::string *)"pin_out_bluetooth_sco";
+            sink.ext.device.desc = (char *)"pin_out_bluetooth_sco";
             break;
         default:
             ret = ERR_NOT_SUPPORTED;
@@ -804,13 +811,13 @@ int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     source.type = AUDIO_PORT_MIX_TYPE;
     source.ext.mix.moduleId = 0;
     source.ext.mix.streamId = OFFLOAD_OUTPUT_STREAM_ID;
-    source.ext.device.desc = (std::string *)"";
+    source.ext.device.desc = (char *)"";
 
     sink.portId = static_cast<int32_t>(audioPort_.portId);
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_DEVICE_TYPE;
     sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (std::string *)"";
+    sink.ext.device.desc = (char *)"";
 
     AudioRoute route = {
         .sources = &source,
@@ -851,7 +858,7 @@ int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
         scene.desc.pins = audioSceneOutPort;
-        scene.desc.desc = (std::string *)"";
+        scene.desc.desc = (char *)"";
 
         ret = audioRender_->SelectScene(audioRender_, &scene);
         if (ret < 0) {

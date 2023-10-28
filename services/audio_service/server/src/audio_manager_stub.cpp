@@ -381,6 +381,56 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetVolume(MessageParcel &data, MessageParcel &reply)
+{
+    const float volume = data.ReadFloat();
+    int32_t result = SetVolume(volume);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleResume(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = Resume();
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandlePause(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = Pause();
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleDrain(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = Drain();
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetPresentationPosition(MessageParcel &data, MessageParcel &reply)
+{
+    uint64_t frames;
+    int64_t timeSec, timeNanoSec;
+    int32_t result = GetPresentationPosition(frames, timeSec, timeNanoSec);
+    reply.WriteInt32(result);
+    reply.WriteUInt64(frames);
+    reply.WriteInt64(timeSec);
+    reply.WriteInt64(timeNanoSec);
+                    
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetBufferSize(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sizeMs = data.ReadUint32();
+    int32_t result = SetBufferSize(sizeMs);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);

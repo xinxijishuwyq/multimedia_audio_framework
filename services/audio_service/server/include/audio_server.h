@@ -43,6 +43,10 @@ public:
     void OnDump() override;
     void OnStart() override;
     void OnStop() override;
+    int32_t Resume() override;
+    int32_t Pause() override;
+    int32_t Drain() override;
+                
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
@@ -54,6 +58,7 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
+    int32_t SetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     static void *paDaemonThread(void *arg);
@@ -96,6 +101,10 @@ public:
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
     int32_t SetCaptureSilentState(bool state) override;
+    
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+    
+    int32_t SetBufferSize(uint32_t sizeMs) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

@@ -46,8 +46,8 @@ const uint32_t MAX_LENGTH_OFFLOAD = 5000;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
-const int32_t OFFLOAD_HDI_CACHE1 = 100; // ms, should equal with val in hdi_sink.c
-const int32_t OFFLOAD_HDI_CACHE2 = 2000; // ms, should equal with val in hdi_sink.c
+const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
+const int32_t OFFLOAD_HDI_CACHE2 = 5000; // ms, should equal with val in hdi_sink.c
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -995,7 +995,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
     InitializebufferAttrOffload();
-    mChannelLayout = audioParams.channelLayout;
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -1383,7 +1382,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 
     if ((lastOffloadUpdateFinishTime != 0) &&
         (chrono::system_clock::to_time_t(chrono::system_clock::now()) > lastOffloadUpdateFinishTime)) {
-            AUDIO_INFO_LOG("PaWriteStream switching curTime %lld, switchTime %lld",
+            AUDIO_INFO_LOG("PaWriteStream switching curTime %ld, switchTime %ld",
                 chrono::system_clock::to_time_t(chrono::system_clock::now()), lastOffloadUpdateFinishTime);
         error = UpdatePolicyOffload(offloadNextStateTargetPolicy);
         lastOffloadUpdateFinishTime = 0;
@@ -1614,7 +1613,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         acache_.isFull = false;
     }
     if (acache_.totalCacheSize < length) {
-        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%u)", acache_.totalCacheSize, length);
+        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%lu)", acache_.totalCacheSize, length);
     }
 
     if (!error && (length >= 0) && !acache_.isFull) {

@@ -879,7 +879,7 @@ int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec,
     return ERROR;
 }
 
-int32_t AudioServer::SetBufferSize(uint32_t& sizeMs)
+int32_t AudioServer::SetBufferSize(uint32_t sizeMs)
 {
     auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
         "offload", ""));
