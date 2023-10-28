@@ -278,6 +278,17 @@ public:
         }
     }
 
+    void OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo)
+    {
+        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnCapturerSessionAdded: Session ID %{public}d", sessionID);
+        if (audioAdapterManager_->sessionCallback_ == nullptr) {
+            AUDIO_ERR_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
+                "not firing OnCapturerSessionAdded");
+        } else {
+            audioAdapterManager_->sessionCallback_->OnCapturerSessionAdded(sessionID, sessionInfo);
+        }
+    }
+
     void OnPlaybackCapturerStop()
     {
         AUDIO_INFO_LOG("PolicyCallbackImpl OnPlaybackCapturerStop");

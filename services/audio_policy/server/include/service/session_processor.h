@@ -36,14 +36,16 @@ struct SessionEvent {
 
     Type type;
     uint32_t sessionID;
+    SessionInfo sessionInfo_ = {};
 };
 
 class SessionProcessor {
 public:
     DISALLOW_COPY_AND_MOVE(SessionProcessor);
 
-    SessionProcessor(std::function<void(const uint32_t)> processorSessionRemoved)
-        : processorSessionRemoved_(processorSessionRemoved)
+    SessionProcessor(std::function<void(const uint32_t)> processorSessionRemoved,
+        std::function<void(SessionEvent)> processorSessionAdded)
+        : processorSessionRemoved_(processorSessionRemoved), processorSessionAdded_(processorSessionAdded)
     {
         Start();
     }
@@ -96,6 +98,9 @@ private:
             case SessionEvent::Type::REMOVE :
                 processorSessionRemoved_(event.sessionID);
                 break;
+            case SessionEvent::Type::ADD :
+                processorSessionAdded_(event);
+                break;
             default:
                 break;
         }
@@ -127,6 +132,7 @@ private:
     std::condition_variable cv_;
     std::queue<SessionEvent> sessionEvents_;
     std::function<void(const uint32_t)> processorSessionRemoved_;
+    std::function<void(SessionEvent)> processorSessionAdded_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

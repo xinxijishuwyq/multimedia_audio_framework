@@ -102,6 +102,7 @@ public:
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
+    void SetCapturerSource(int capturerSource) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
 
     // Common APIs

@@ -193,6 +193,10 @@ public:
 
     void ProcessSessionRemoved(const uint32_t sessionID);
 
+    void ProcessSessionAdded(SessionEvent sessionEvent);
+
+    void OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo) override;
+
     void OnPlaybackCapturerStop() override;
 
     void OnWakeupCapturerStop() override;
@@ -415,7 +419,9 @@ private:
     std::mutex clientDiedListenerStateMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
-        this, std::placeholders::_1)};
+        this, std::placeholders::_1),
+        std::bind(&AudioPolicyServer::ProcessSessionAdded,
+            this, std::placeholders::_1)};
 };
 } // namespace AudioStandard
 } // namespace OHOS

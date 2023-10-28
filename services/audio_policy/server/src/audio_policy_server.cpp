@@ -1597,6 +1597,7 @@ void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
 
 void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
 {
+    mPolicyService.OnCapturerSessionRemoved(sessionID);
     uint32_t removedSessionID = sessionID;
 
     auto isSessionPresent = [&removedSessionID] (const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
@@ -1619,6 +1620,16 @@ void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
     // Though it is not present in the owners list, check and clear its entry from callback map
     lock.unlock();
     (void)UnsetAudioInterruptCallback(removedSessionID);
+}
+
+void AudioPolicyServer::OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo)
+{
+    sessionProcessor_.Post({SessionEvent::Type::ADD, sessionID, sessionInfo});
+}
+
+void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
+{
+    mPolicyService.OnCapturerSessionAdded(sessionEvent.sessionID, sessionEvent.sessionInfo_);
 }
 
 void AudioPolicyServer::OnPlaybackCapturerStop()
