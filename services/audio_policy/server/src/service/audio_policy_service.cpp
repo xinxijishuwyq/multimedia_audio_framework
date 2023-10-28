@@ -1736,19 +1736,27 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
             return result;
         }
     }
-
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = HandleA2dpDevice(deviceType);
         return result;
     }
-
-    if (isArmUsbDevice_ &&
-        (deviceType == DEVICE_TYPE_USB_HEADSET || currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
+    if (isArmUsbDevice_ && deviceType == DEVICE_TYPE_USB_HEADSET ) {
         result = HandleArmUsbDevice(deviceType);
         return result;
     }
-
-    if (deviceType == DEVICE_TYPE_FILE_SINK || currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
+    if (deviceType == DEVICE_TYPE_FILE_SINK ) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+    if (isArmUsbDevice_ && currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
+        result = HandleArmUsbDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
         result = HandleFileDevice(deviceType);
         return result;
     }
