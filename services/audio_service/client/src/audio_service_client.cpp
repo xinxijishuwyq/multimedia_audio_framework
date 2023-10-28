@@ -944,30 +944,9 @@ int32_t AudioServiceClient::InitializeAudioCache()
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
+int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map &map,
+    AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime)
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::CreateStream");
-    int error;
-    lock_guard<mutex> lockdata(dataMutex_);
-    if (CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR) < 0) {
-        return AUDIO_CLIENT_ERR;
-    }
-
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_CONTROLLER) {
-        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
-    }
-    pa_threaded_mainloop_lock(mainLoop);
-    mStreamType = audioType;
-    const std::string streamName = GetStreamName(audioType);
-
-    auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    const std::string streamStartTime = ctime(&timenow);
-
-    sampleSpec = ConvertToPAAudioParams(audioParams);
-    mFrameSize = pa_frame_size(&sampleSpec);
-    mChannelLayout = audioParams.channelLayout;
-
-    pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
         ResetPAAudioClient();
@@ -1000,7 +979,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
     }
     pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
-    pa_channel_map map;
     pa_channel_map_init(&map);
     map.channels = audioParams.channels;
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(audioParams.channelLayout, map);
@@ -1008,6 +986,39 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         AUDIO_ERR_LOG("Invalid channel Layout");
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
+{
+    AUDIO_INFO_LOG("Enter AudioServiceClient::CreateStream");
+    int error;
+    lock_guard<mutex> lockdata(dataMutex_);
+    if (CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR) < 0) {
+        return AUDIO_CLIENT_ERR;
+    }
+
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_CONTROLLER) {
+        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
+    }
+    pa_threaded_mainloop_lock(mainLoop);
+    mStreamType = audioType;
+    const std::string streamName = GetStreamName(audioType);
+
+    auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());
+    const std::string streamStartTime = ctime(&timenow);
+
+    sampleSpec = ConvertToPAAudioParams(audioParams);
+    mFrameSize = pa_frame_size(&sampleSpec);
+    mChannelLayout = audioParams.channelLayout;
+
+    pa_proplist *propList = pa_proplist_new();
+    pa_channel_map map;
+    int32_t res = SetPaProplist(propList, map, audioParams, streamName, streamStartTime);
+    if (res != AUDIO_CLIENT_SUCCESS) {
+        return res;
+    }
+    
     paStream = pa_stream_new_with_proplist(context, streamName.c_str(), &sampleSpec, &map, propList);
     if (!paStream) {
         error = pa_context_errno(context);
