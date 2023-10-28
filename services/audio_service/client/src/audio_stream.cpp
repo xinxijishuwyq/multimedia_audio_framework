@@ -47,8 +47,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isFirstRead_(false),
       isFirstWrite_(false),
       isPausing_(false),
-      pfd_(nullptr),
-      streamVolume_(1.0)
+      pfd_(nullptr)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
@@ -467,7 +466,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     }
 
     ProcessDataByAudioBlend(buffer, bufferSize);
-    ProcessDataWithStreamVolume(buffer, bufferSize);
+    ProcessDataByVolumeRamp(buffer, bufferSize);
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
@@ -638,13 +637,12 @@ int32_t AudioStream::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
-    streamVolume_ = volume;
-    return SUCCESS;
+    return SetStreamVolume(volume);
 }
 
 float AudioStream::GetVolume()
 {
-    return streamVolume_;
+    return GetStreamVolume();
 }
 
 int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
@@ -907,7 +905,7 @@ void AudioStream::WriteCbTheadLoop()
             }
 
             ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
-            ProcessDataWithStreamVolume(stream.buffer, stream.bufferLen);
+            ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
 
             bytesWritten = WriteStreamInCb(stream, writeError);
             if (writeError != 0) {
@@ -1081,18 +1079,10 @@ int32_t AudioStream::SetVolumeWithRamp(float targetVolume, int32_t duration)
     return SUCCESS;
 }
 
-void AudioStream::RampStreamVolume()
+void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 {
     if (volumeRamp_.IsActive()) {
-        streamVolume_ = volumeRamp_.GetRampVolume();
-    }
-}
-
-void AudioStream::ProcessDataWithStreamVolume(uint8_t *buffer, size_t bufferSize)
-{
-    RampStreamVolume();
-    for (int i = bufferSize; i > 0; i--) {
-        buffer[i] *= streamVolume_;
+        SetStreamVolume(volumeRamp_.GetRampVolume());
     }
 }
 } // namespace AudioStandard

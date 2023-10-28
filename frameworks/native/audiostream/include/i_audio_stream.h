@@ -194,6 +194,8 @@ public:
 
     //for wakeup capturer
     virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
+
+    virtual void SetCapturerSource(int capturerSource) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

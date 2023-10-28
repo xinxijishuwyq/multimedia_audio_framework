@@ -608,7 +608,6 @@
                 <focus_type value="STREAM_ACCESSIBILITY" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
-                <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>nil</private>
         </focus_table>

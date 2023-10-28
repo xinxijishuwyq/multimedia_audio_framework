@@ -739,6 +739,11 @@ struct Vector3D {
      */
     float z;
 };
+
+struct SessionInfo {
+    SourceType sourceType;
+    uint32_t rate;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

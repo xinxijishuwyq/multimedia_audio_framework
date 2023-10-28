@@ -551,6 +551,8 @@ public:
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
     int32_t HandleMainLoopStart();
 
+    void SetCapturerSource(int capturerSource) override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -593,6 +595,7 @@ private:
     bool isStreamConnected_;
     bool isInnerCapturerStream_;
     bool isWakeupCapturerStream_ = false;
+    int capturerSource_ = -1;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
@@ -692,6 +695,9 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
+
+    int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
+        AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
     // Error code used
     static const int32_t AUDIO_CLIENT_SUCCESS = 0;

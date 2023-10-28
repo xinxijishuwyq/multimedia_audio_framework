@@ -201,6 +201,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetWakeupCapturerState(true);
     }
 
+    audioStream_->SetCapturerSource(capturerInfo_.sourceType);
+
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioCapturerPrivate::SetParams SetAudioStreamInfo Failed");
 

@@ -603,6 +603,11 @@ void FastAudioStream::SetWakeupCapturerState(bool isWakeupCapturer)
     AUDIO_ERR_LOG("SetWakeupCapturerState is not supported");
 }
 
+void FastAudioStream::SetCapturerSource(int capturerSource)
+{
+    AUDIO_ERR_LOG("SetCapturerSource is not supported");
+}
+
 void FastAudioStream::SetPrivacyType(AudioPrivacyType privacyType)
 {
     AUDIO_ERR_LOG("SetPrivacyType is not supported");

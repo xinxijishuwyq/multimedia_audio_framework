@@ -17,6 +17,8 @@
 
 #include "xml_parser.h"
 
+#include <regex>
+
 namespace OHOS {
 namespace AudioStandard {
 bool XMLParser::LoadConfiguration()
@@ -128,7 +130,15 @@ void XMLParser::ParseModules(xmlNode &node, std::string &className)
             moduleInfo.name = ExtractPropertyValue("name", *moduleNode);
             moduleInfo.lib = ExtractPropertyValue("lib", *moduleNode);
             moduleInfo.role = ExtractPropertyValue("role", *moduleNode);
-            moduleInfo.rate = ExtractPropertyValue("rate", *moduleNode);
+
+            std::regex regexDelimiter(",");
+            std::string rates = ExtractPropertyValue("rate", *moduleNode);
+            const std::sregex_token_iterator itEnd;
+            for (std::sregex_token_iterator it(rates.begin(), rates.end(), regexDelimiter, -1); it != itEnd; ++it) {
+                moduleInfo.supportedRate_.insert(atoi(it->str().c_str()));
+            }
+            moduleInfo.rate = *(moduleInfo.supportedRate_.rbegin());
+
             moduleInfo.format = ExtractPropertyValue("format", *moduleNode);
             moduleInfo.channels = ExtractPropertyValue("channels", *moduleNode);
             moduleInfo.bufferSize = ExtractPropertyValue("buffer_size", *moduleNode);

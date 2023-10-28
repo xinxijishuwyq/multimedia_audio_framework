@@ -20,6 +20,7 @@
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <mutex>
 #include <shared_mutex>
 #include "audio_group_handle.h"
@@ -320,6 +321,10 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
+
+    void OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo);
+
+    void OnCapturerSessionRemoved(uint32_t sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -524,6 +529,9 @@ private:
     int32_t PreSetOffloadMode(DeviceType deviceType);
 
     bool GetAudioOffloadAvailableFromXml() const;
+    bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
+
+    std::pair<SourceType, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -624,6 +632,22 @@ private:
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerMgrClient::GetInstance().GetState();
     bool currentOffloadSessionIsBackground_ = false;
     std::mutex offloadMutex_;
+    AudioModuleInfo primaryMicModuleInfo_ = {};
+
+    std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
+
+    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+    std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
+    static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+        SOURCE_TYPE_PLAYBACK_CAPTURE,
+        SOURCE_TYPE_WAKEUP,
+        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+    };
+
+    std::unordered_set<uint32_t> sessionIdisRemovedSet_;
+
+    SourceType currentSourceType = SOURCE_TYPE_MIC;
+    uint32_t currentRate = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
