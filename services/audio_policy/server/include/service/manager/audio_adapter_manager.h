@@ -231,14 +231,14 @@ private:
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
 public:
-    explicit PolicyCallbackImpl(std::shared_ptr<AudioAdapterManager> audioAdapterManager)
+    explicit PolicyCallbackImpl(AudioAdapterManager *audioAdapterManager)
     {
         audioAdapterManager_ = audioAdapterManager;
     }
 
     ~PolicyCallbackImpl()
     {
-        audioAdapterManager_ = nullptr;
+        AUDIO_WARNING_LOG("Destructor PolicyCallbackImpl");
     }
 
     float OnGetVolumeDbCb(AudioStreamType streamType)
@@ -309,7 +309,7 @@ public:
         }
     }
 private:
-    std::shared_ptr<AudioAdapterManager> audioAdapterManager_;
+    AudioAdapterManager *audioAdapterManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

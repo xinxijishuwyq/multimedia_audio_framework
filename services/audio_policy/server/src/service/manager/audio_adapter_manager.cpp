@@ -105,8 +105,7 @@ bool AudioAdapterManager::Init()
 
 bool AudioAdapterManager::ConnectServiceAdapter()
 {
-    std::shared_ptr<AudioAdapterManager> audioAdapterManager(this);
-    std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(audioAdapterManager);
+    std::unique_ptr<PolicyCallbackImpl> policyCallbackImpl = std::make_unique<PolicyCallbackImpl>(this);
     audioServiceAdapter_ = AudioServiceAdapter::CreateAudioAdapter(std::move(policyCallbackImpl));
     if (!audioServiceAdapter_) {
         AUDIO_ERR_LOG("[AudioAdapterManager] Error in audio adapter initialization");
