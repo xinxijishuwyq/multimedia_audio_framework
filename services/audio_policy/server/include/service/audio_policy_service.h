@@ -28,6 +28,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "ipc_skeleton.h"
+#include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -77,7 +78,7 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) const;
 
-    int32_t GetOffloadStream(uint32_t sessionId, DevicesType devicesType = DEVICE_TYPE_NONE);
+    int32_t GetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
 
     int32_t ReleaseOffloadStream(uint32_t sessionId);
 

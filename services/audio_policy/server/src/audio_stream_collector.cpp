@@ -685,7 +685,7 @@ int32_t AudioStreamCollector::UnSetOffloadMode(int32_t streamId)
         ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
-    callback->UnSetOffloadModeImpl(state, isAppBack);
+    callback->UnSetOffloadModeImpl();
     return SUCCESS;
 }
 

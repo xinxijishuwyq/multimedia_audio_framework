@@ -122,14 +122,12 @@ void AudioClientTrackerCallbackProxy::SetOffloadModeImpl(int32_t state, bool isA
     }
 
     data.WriteInt32(static_cast<int32_t>(state));
-    data.WriteBool(static_cast<int32_t>(isAppBack));
+    data.WriteBool(static_cast<bool>(isAppBack));
     
     int error = Remote()->SendRequest(SETOFFLOADMODE, data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SETOFFLOADMODE failed, error: %{public}d", error);
     }
-
-    volume = reply.ReadFloat();
 }
 
 void AudioClientTrackerCallbackProxy::UnSetOffloadModeImpl()
@@ -146,8 +144,6 @@ void AudioClientTrackerCallbackProxy::UnSetOffloadModeImpl()
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("UNSETOFFLOADMODE failed, error: %{public}d", error);
     }
-
-    volume = reply.ReadFloat();
 }
 
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)

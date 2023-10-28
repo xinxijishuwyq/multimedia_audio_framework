@@ -414,6 +414,23 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
+int32_t AudioServer::SetVolume(float volume)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+        AUDIO_ERR_LOG("SetOffloadVolume refused for %{public}d", callingUid);
+        return ERR_NOT_SUPPORTED;
+    }
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->SetVolume(volume, 0);
+    }
+    return ERROR;
+}
+
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
@@ -810,6 +827,69 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     }
 
     return true;
+}
+
+int32_t AudioServer::Resume()
+{
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->Resume();
+    }
+    return ERROR;
+}
+
+int32_t AudioServer::Pause()
+{
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->Pause();
+    }
+    return ERROR;
+}
+
+int32_t AudioServer::Drain()
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->Drain(AUDIO_DRAIN_EARLY_NOTIFY);
+    }
+    return ERROR;
+}
+
+int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
+    }
+    return ERROR;
+}
+
+int32_t AudioServer::SetBufferSize(uint32_t& sizeMs)
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_WARNING_LOG("Renderer is null.");
+    } else {
+        return audioRendererSinkInstance->SetBufferSize(sizeMs);
+    }
+    return ERROR;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)
