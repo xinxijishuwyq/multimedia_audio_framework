@@ -944,7 +944,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map &map, 
+int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map &map,
     AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime)
 {
     if (propList == nullptr) {
