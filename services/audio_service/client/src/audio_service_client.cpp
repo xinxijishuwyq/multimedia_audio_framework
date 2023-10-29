@@ -1622,7 +1622,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         acache_.isFull = false;
     }
     if (acache_.totalCacheSize < length) {
-        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%u)", acache_.totalCacheSize, length);
+        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%zu)", acache_.totalCacheSize, length);
     }
 
     if (!error && (length >= 0) && !acache_.isFull) {

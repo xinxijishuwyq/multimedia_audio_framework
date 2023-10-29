@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cinttypes>
 #include "audio_manager_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
@@ -205,7 +206,7 @@ int32_t AudioManagerProxy::GetPresentationPosition(uint64_t& frames, int64_t& ti
     frames = reply.ReadUint64();
     timeSec = reply.ReadInt64();
     timeNanoSec = reply.ReadInt64();
-    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}llu, sec %{public}lld, Nasec %{public}lld",
+    AUDIO_DEBUG_LOG("ret %{public}d, frames %{public}" PRIu64 ", sec %{public}" PRId64 ", Nasec %{public}" PRId64,
         result, frames, timeSec, timeNanoSec);
     return result;
 }

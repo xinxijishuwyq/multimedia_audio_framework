@@ -70,8 +70,8 @@
 #define SCENE_TYPE_NUM 7
 #define HDI_MIN_MS_MAINTAIN 30
 #define OFFLOAD_HDI_CACHE1_ 200 // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE1 (200 * 20 * 5) // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE2 (7000 * 100 * 5) // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE1 (200 + 20 + 5) // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE2 (7000 + 100 + 5) // ms, should equal with val in audio_service_client.cpp
 #define SPRINTF_STR_LEN 100
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
@@ -1561,7 +1561,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
                 pa_memblockq_rewind(ps->memblockq, rewindSize);
                 pa_memblockq_flush_read(i->thread_info.render_memblockq);
             } else {
-                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%lu), afterRender(%d)",
+                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
                 rewindSize, afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind,
                 afterRender);
             }
