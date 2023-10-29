@@ -416,7 +416,7 @@ int AudioManagerStub::HandleGetPresentationPosition(MessageParcel &data, Message
     int64_t timeSec, timeNanoSec;
     int32_t result = GetPresentationPosition(frames, timeSec, timeNanoSec);
     reply.WriteInt32(result);
-    reply.WriteUInt64(frames);
+    reply.WriteInt64((int64_t)frames);
     reply.WriteInt64(timeSec);
     reply.WriteInt64(timeNanoSec);
                     

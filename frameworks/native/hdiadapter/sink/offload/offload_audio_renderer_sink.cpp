@@ -371,7 +371,7 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
     if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
         timestamp.tvNSec > SECOND_TO_NANOSECOND) {
-        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}ld or nanosecond:%{public}ld !",
+        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}lld or nanosecond:%{public}lld !",
                       timestamp.tvSec, timestamp.tvNSec);
         return ERR_OPERATION_FAILED;
     }
@@ -519,7 +519,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
 
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.desc = const_cast<char *>"";
+    deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
