@@ -976,70 +976,46 @@ int32_t AudioServiceClient::InitializeAudioCache()
 int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map &map,
     AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime)
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::CreateStream");
-    int error;
-    lock_guard<mutex> lockdata(dataMutex_);
-    if (CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR) < 0) {
-        return AUDIO_CLIENT_ERR;
-    }
-
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_CONTROLLER) {
-        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
-    }
-    pa_threaded_mainloop_lock(mainLoop);
-    mStreamType = audioType;
-    const std::string streamName = GetStreamName(audioType);
-
-    auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    const std::string streamStartTime = ctime(&timenow);
-
-    sampleSpec = ConvertToPAAudioParams(audioParams);
-    mFrameSize = pa_frame_size(&sampleSpec);
-    InitializebufferAttrOffload();
-
-    pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed");
-        ResetPAAudioClient();
-        pa_threaded_mainloop_unlock(mainLoop);
-        return AUDIO_CLIENT_CREATE_STREAM_ERR;
-    }
-
-    // for remote audio device router filter.
-    pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
-    pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
-
-    pa_proplist_sets(propList, "stream.type", streamName.c_str());
-    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
-    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
-    sessionID_ = pa_context_get_index(context);
-    pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
-    pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
-    offloadEnable = false;
-    pa_proplist_sets(propList, "stream.offload.statePolicy", "0");
-
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream_).c_str());
-        pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(isWakeupCapturerStream_).c_str());
-        pa_proplist_sets(propList, "stream.capturerSource", std::to_string(capturerSource_).c_str());
-    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
-        pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
-    }
-
-    AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
-    if (audioParams.channelLayout == 0) {
-        audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
-    }
-    pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
-    pa_channel_map_init(&map);
-    map.channels = audioParams.channels;
-    uint32_t channelsInLayout = ConvertChLayoutToPaChMap(audioParams.channelLayout, map);
-    if (channelsInLayout != audioParams.channels || channelsInLayout == 0) {
-        AUDIO_ERR_LOG("Invalid channel Layout");
-        return AUDIO_CLIENT_CREATE_STREAM_ERR;
-    }
-    return AUDIO_CLIENT_SUCCESS;
+            AUDIO_ERR_LOG("pa_proplist_new failed");
+            ResetPAAudioClient();
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_CREATE_STREAM_ERR;
+        }
+    
+        // for remote audio device router filter.
+        pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
+        pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
+    
+        pa_proplist_sets(propList, "stream.type", streamName.c_str());
+        pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
+        pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+        sessionID_ = pa_context_get_index(context);
+        pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
+        pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
+    
+        if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
+            pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream_).c_str());
+            pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(isWakeupCapturerStream_).c_str());
+            pa_proplist_sets(propList, "stream.capturerSource", std::to_string(capturerSource_).c_str());
+        } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+            pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
+            pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
+        }
+    
+        AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
+        if (audioParams.channelLayout == 0) {
+            audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
+        }
+        pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
+        pa_channel_map_init(&map);
+        map.channels = audioParams.channels;
+        uint32_t channelsInLayout = ConvertChLayoutToPaChMap(audioParams.channelLayout, map);
+        if (channelsInLayout != audioParams.channels || channelsInLayout == 0) {
+            AUDIO_ERR_LOG("Invalid channel Layout");
+            return AUDIO_CLIENT_CREATE_STREAM_ERR;
+        }
+        return AUDIO_CLIENT_SUCCESS;
 }
 
 int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
