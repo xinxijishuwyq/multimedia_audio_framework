@@ -302,6 +302,20 @@ int32_t IAudioRendererSinkReset(struct RendererSinkAdapter* adapter)
     return audioRendererSink->Reset();
 }
 
+int32_t IAudioRendererSinkSetBufferSize(struct RendererSinkAdapter* adapter, uint32_t sizeMs)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IOffloadAudioRendererSink *audioRendererSink = static_cast<IOffloadAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    if (!audioRendererSink->IsInited()) {
+        AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first, Renderer SetBufferSize failed\n");
+        return ERR_NOT_STARTED;
+    }
+
+    return audioRendererSink->SetBufferSize(sizeMs);
+}
+
 int32_t IAudioRendererSinkOffloadRunningLockInit(struct RendererSinkAdapter* adapter)
 {
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");

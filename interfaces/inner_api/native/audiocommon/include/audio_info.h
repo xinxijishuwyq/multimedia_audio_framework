@@ -675,14 +675,6 @@ enum AudioParamKey {
     PARAM_KEY_LOWPOWER = 1000,
 };
 
-enum RenderCallbackType {
-    CB_NONBLOCK_WRITE_COMPLETED = 0,
-    CB_DRAIN_COMPLETED = 1,
-    CB_FLUSH_COMPLETED = 2,
-    CB_RENDER_FULL = 3,
-    CB_ERROR_OCCUR = 4,
-};
-
 struct DStatusInfo {
     char networkId[NETWORK_ID_SIZE];
     AudioPin hdiPin = AUDIO_PIN_NONE;

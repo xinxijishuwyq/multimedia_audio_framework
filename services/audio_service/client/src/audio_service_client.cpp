@@ -47,7 +47,7 @@ const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
-const int32_t OFFLOAD_HDI_CACHE2 = 5000; // ms, should equal with val in hdi_sink.c
+const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -1412,7 +1412,6 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
             if (!breakingWritePa && state_ == RUNNING) {
                 pa_threaded_mainloop_wait(mainLoop);
             }
-            pa_threaded_mainloop_wait(mainLoop);
             StopTimer();
             if (IsTimeOut()) {
                 AUDIO_ERR_LOG("Write timeout");
@@ -1540,7 +1539,7 @@ size_t AudioServiceClient::WriteToAudioCache(const StreamBuffer &stream)
     size_t inputLen = stream.bufferLen;
     if (acache_.totalCacheSize != acache_.totalCacheSizeTgt) {
         uint32_t tgt = acache_.totalCacheSizeTgt;
-        if (tgt < acache_.totalCacheSize && tgt <acache_.writeIndex) {
+        if (tgt < acache_.totalCacheSize && tgt < acache_.writeIndex) {
             tgt = acache_.writeIndex;
         }
         acache_.totalCacheSize = tgt;
@@ -2498,7 +2497,7 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
     pa_buffer_attr bufferAttrOffloadInactiveBackground;
 
     // perbuf tlength maxlength minreq should same to hdi_sink.c
-    bufferAttrOffloadActiveForeground.fragsize =static_cast<uint32_t>(-1);
+    bufferAttrOffloadActiveForeground.fragsize = static_cast<uint32_t>(-1);
     bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(20, sampleSpec); // 20 for config
     bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(20 * 4, sampleSpec); // 20 * 4 for config
     bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
@@ -2506,7 +2505,7 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
 
     bufferAttrOffloadActiveBackground = bufferAttrOffloadActiveForeground;
 
-    bufferAttrOffloadInactiveBackground.fragsize =static_cast<uint32_t>(-1);
+    bufferAttrOffloadInactiveBackground.fragsize = static_cast<uint32_t>(-1);
     bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(20, sampleSpec); // 20 for config
     // +20 for requested_latency, otherwise requested_latency will set to 500us, that may cause problem
     bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(100 * 3 + 20, sampleSpec); // 100 * 3 + 20 for config
@@ -2542,7 +2541,6 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
     
     if (operation == nullptr) {
         AUDIO_ERR_LOG("pa_stream_set_buffer_attr returned null");
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 

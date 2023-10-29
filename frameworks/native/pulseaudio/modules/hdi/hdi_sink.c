@@ -61,7 +61,7 @@
 #define DEFAULT_WRITE_TIME 1000
 #define MIX_BUFFER_LENGTH (pa_page_size())
 #define MAX_MIX_CHANNELS 32
-#define MAX_REWIND (2000 * PA_USEC_PER_MSEC)
+#define MAX_REWIND (7000 * PA_USEC_PER_MSEC)
 #define USEC_PER_SEC 1000000
 #define DEFAULT_IN_CHANNEL_NUM 2
 #define IN_CHANNEL_NUM_MAX 16
@@ -69,8 +69,9 @@
 #define DEFAULT_FRAMELEN 2048
 #define SCENE_TYPE_NUM 7
 #define HDI_MIN_MS_MAINTAIN 30
+#define OFFLOAD_HDI_CACHE1_ 200 // ms, should equal with val in audio_service_client.cpp
 #define OFFLOAD_HDI_CACHE1 (200 * 20 * 5) // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE2 (5000 * 100 * 5) // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE2 (7000 * 100 * 5) // ms, should equal with val in audio_service_client.cpp
 #define SPRINTF_STR_LEN 100
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
@@ -424,7 +425,7 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_memchunk* pchunk)
     if (writeLen != length && writeLen != 0) {
         AUDIO_ERR_LOG("Error writeLen != actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
             length, writeLen, ret);
-    return -1;
+        return -1;
     }
     if (ret == 0 && u->offload.firstWriteHdi == true) {
         u->offload.firstWriteHdi = false;
@@ -433,6 +434,7 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_memchunk* pchunk)
         float left, right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
+        u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, OFFLOAD_HDI_CACHE1_);
     }
     if (ret == 0 && writeLen == 0) { // is full
         AUDIO_INFO_LOG("RenderWriteOffload, is full, break");
@@ -1559,7 +1561,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
                 pa_memblockq_rewind(ps->memblockq, rewindSize);
                 pa_memblockq_flush_read(i->thread_info.render_memblockq);
             } else {
-                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
+                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%lu), afterRender(%d)",
                 rewindSize, afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind,
                 afterRender);
             }

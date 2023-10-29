@@ -35,14 +35,6 @@ typedef struct {
     int32_t deviceType;
 } SinkAttr;
 
-enum RenderCallbackType {
-    CB_NONBLOCK_WRITE_COMPLETED = 0,
-    CB_DRAIN_COMPLETED = 1,
-    CB_FLUSH_COMPLETED = 2,
-    CB_RENDER_FULL = 3,
-    CB_ERROR_OCCUR = 4,
-};
-
 struct RendererSinkAdapter {
     int32_t deviceClass;
     void* wapper;
@@ -61,7 +53,7 @@ struct RendererSinkAdapter {
         int64_t* timeSec, int64_t* timeNanoSec);
     int32_t (*RendererSinkFlush)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkReset)(struct RendererSinkAdapter *adapter);
-    
+    int32_t (*RendererSinkSetBufferSize)(struct RendererSinkAdapter *adapter, uint32_t sizeMs);
     int32_t (*RendererSinkOffloadRunningLockInit)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkOffloadRunningLockLock)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkOffloadRunningLockUnlock)(struct RendererSinkAdapter *adapter);
@@ -84,7 +76,7 @@ int32_t IAudioRendererSinkGetPresentationPosition(struct RendererSinkAdapter *ad
     int64_t* timeSec, int64_t* timeNanoSec);
 int32_t IAudioRendererSinkFlush(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkReset(struct RendererSinkAdapter *adapter);
-
+int32_t IAudioRendererSinkSetBufferSize(struct RendererSinkAdapter *adapter, uint32_t sizeMs);
 int32_t IAudioRendererSinkOffloadRunningLockInit(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkOffloadRunningLockLock(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkOffloadRunningLockUnlock(struct RendererSinkAdapter *adapter);
