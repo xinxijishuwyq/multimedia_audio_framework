@@ -1559,7 +1559,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
                 pa_memblockq_rewind(ps->memblockq, rewindSize);
                 pa_memblockq_flush_read(i->thread_info.render_memblockq);
             } else {
-                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%llu) > maxrewind(%u), afterRender(%d)",
+                AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
                 rewindSize, afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind,
                 afterRender);
             }
@@ -1769,7 +1769,7 @@ static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, i
         u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
     }
     if (pos < hdiPos) {
-        AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %llu, hdiPos %llu",
+        AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %" PRIu64 ", hdiPos %" PRIu64,
             pos, hdiPos);
         if (u->offload.hdiPosTs + 300 * PA_USEC_PER_MSEC < now) { // 300ms for update pos
             UpdatePresentationPosition(u);

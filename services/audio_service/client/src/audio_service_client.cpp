@@ -1392,8 +1392,8 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 
     if ((lastOffloadUpdateFinishTime != 0) &&
         (chrono::system_clock::to_time_t(chrono::system_clock::now()) > lastOffloadUpdateFinishTime)) {
-            AUDIO_INFO_LOG("PaWriteStream switching curTime %ld, switchTime %ld",
-                chrono::system_clock::to_time_t(chrono::system_clock::now()), lastOffloadUpdateFinishTime);
+        AUDIO_INFO_LOG("PaWriteStream switching curTime %{public}" PRIu64 ", switchTime %{public}" PRIu64,
+            chrono::system_clock::to_time_t(chrono::system_clock::now()), lastOffloadUpdateFinishTime);
         error = UpdatePolicyOffload(offloadNextStateTargetPolicy);
         lastOffloadUpdateFinishTime = 0;
     }
@@ -1623,7 +1623,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         acache_.isFull = false;
     }
     if (acache_.totalCacheSize < length) {
-        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%lu)", acache_.totalCacheSize, length);
+        AUDIO_ERR_LOG("WriteStream totalCacheSize(%u) < length(%u)", acache_.totalCacheSize, length);
     }
 
     if (!error && (length >= 0) && !acache_.isFull) {
@@ -2127,7 +2127,8 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         } else {
             latency = fwLatency;
         }
-        AUDIO_DEBUG_LOG("total latency: %lu, pa latency: %lu, cache latency: %lu", latency, paLatency, cacheLatency);
+        AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64
+            ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         // Get audio read cache latency
         cacheLatency = pa_bytes_to_usec(internalRdBufLen_, &sampleSpec);
