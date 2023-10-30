@@ -1900,6 +1900,20 @@ int32_t AudioServiceClient::GetMinimumFrameCount(uint32_t &frameCount) const
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::GetBufferSizeForCapturer(size_t &bufferSize)
+{
+    bufferSize = pa_usec_to_bytes(DEFAULT_BUFFER_TIME_MS * PA_USEC_PER_MSEC, &sampleSpec);
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::GetFrameCountForCapturer(uint32_t &frameCount)
+{
+    size_t bufferSize;
+    GetBufferSize(bufferSize);
+    frameCount = bufferSize / (sampleSpec.rate * sampleSpec.channels);
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 uint32_t AudioServiceClient::GetSamplingRate() const
 {
     return DEFAULT_SAMPLING_RATE;
