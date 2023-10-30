@@ -51,7 +51,7 @@ public:
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
     int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);
-    int32_t UnSetOffloadMode(int32_t streamId);
+    int32_t UnsetOffloadMode(int32_t streamId);
     float GetSingleStreamVolume(int32_t streamId);
     bool GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo);
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
