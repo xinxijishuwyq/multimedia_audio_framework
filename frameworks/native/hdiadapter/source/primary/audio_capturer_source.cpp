@@ -95,6 +95,7 @@ private:
     uint32_t openMic_;
     uint32_t captureId_ = 0;
     std::string adapterNameCase_;
+
     struct IAudioManager *audioManager_;
     struct IAudioAdapter *audioAdapter_;
     struct IAudioCapture *audioCapture_;
@@ -110,6 +111,7 @@ private:
     IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
     std::mutex audioCapturerSourceCallbackMutex_;
     FILE *dumpFile_ = nullptr;
+    bool muteState_ = false;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -266,7 +268,6 @@ private:
     static inline AudioCapturerSourceInner audioCapturerSource_;
 };
 
-bool AudioCapturerSource::micMuteState_ = false;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 
 AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string &halName)
@@ -511,6 +512,8 @@ int32_t AudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 
     sourceInited_ = true;
 
+    SetMute(muteState_);
+
     return SUCCESS;
 }
 
@@ -616,13 +619,19 @@ int32_t AudioCapturerSourceInner::GetVolume(float &left, float &right)
 
 int32_t AudioCapturerSourceInner::SetMute(bool isMute)
 {
-    int32_t ret;
+    muteState_ = isMute;
+
+    if (!IsInited()) {
+        AUDIO_INFO_LOG("SetMute before init, only record mute state");
+        return SUCCESS;
+    }
+
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("SetMute failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
-    ret = audioCapture_->SetMute(audioCapture_, isMute);
+    int32_t ret = audioCapture_->SetMute(audioCapture_, isMute);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetMute failed from hdi");
     }
@@ -634,26 +643,23 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
         }
     }
 
-    AudioCapturerSource::micMuteState_ = isMute;
-
     return SUCCESS;
 }
 
 int32_t AudioCapturerSourceInner::GetMute(bool &isMute)
 {
-    int32_t ret;
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("GetMute failed audioCapture_ handle is null!");
         return ERR_INVALID_HANDLE;
     }
 
     bool isHdiMute = false;
-    ret = audioCapture_->GetMute(audioCapture_, &isHdiMute);
+    int32_t ret = audioCapture_->GetMute(audioCapture_, &isHdiMute);
     if (ret != 0) {
         AUDIO_ERR_LOG("GetMute failed from hdi");
     }
 
-    isMute = AudioCapturerSource::micMuteState_;
+    isMute = muteState_;
 
     return SUCCESS;
 }
