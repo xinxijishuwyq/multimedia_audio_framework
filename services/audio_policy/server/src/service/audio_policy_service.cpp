@@ -1258,6 +1258,7 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
 void AudioPolicyService::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& activeOutputDevice,
     DeviceType activeInputDevice)
 {
+    ResetOffloadMode();
     OnPreferredOutputDeviceUpdated(activeOutputDevice);
     OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
 }
@@ -2071,7 +2072,6 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     }
 
     currentActiveDevice_.deviceType_ = deviceType;
-    ResetOffloadMode();
     OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
     return result;
 }
@@ -2148,7 +2148,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
 
     currentActiveDevice_.deviceType_ = priorityDev;
-    ResetOffloadMode();
     AUDIO_DEBUG_LOG("Current active device updates: %{public}d", currentActiveDevice_.deviceType_);
     OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
 
