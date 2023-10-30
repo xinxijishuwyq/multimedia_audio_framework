@@ -398,19 +398,19 @@ int32_t AudioPolicyService::SetOffloadMode()
     return SetOffloadMode(*offloadSessionID_, (int32_t)currentPowerState_, currentOffloadSessionIsBackground_);
 }
 
-int32_t AudioPolicyService::UnSetOffloadMode()
+int32_t AudioPolicyService::UnsetOffloadMode()
 {
     AUDIO_DEBUG_LOG("doing Unset offload Mode!");
     if (!offloadSessionID_.has_value()) {
         return SUCCESS;
     }
 
-    int32_t ret = streamCollector_.UnSetOffloadMode(*offloadSessionID_);
+    int32_t ret = streamCollector_.UnsetOffloadMode(*offloadSessionID_);
     offloadSessionID_.reset();
     return ret;
 }
 
-int32_t AudioPolicyService::ReSetOffloadMode()
+int32_t AudioPolicyService::ResetOffloadMode()
 {
     AUDIO_DEBUG_LOG("doing Reset offload Mode!");
 
@@ -428,7 +428,7 @@ int32_t AudioPolicyService::ReSetOffloadMode()
     return SetOffloadStream(runningStreamId);
 }
 
-int32_t AudioPolicyService::PreSetOffloadMode(DeviceType deviceType)
+int32_t AudioPolicyService::PresetOffloadMode(DeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("doing Preset offload Mode!");
     if (deviceType != DEVICE_TYPE_SPEAKER) {
@@ -512,7 +512,7 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
     lock_guard<mutex> lock(offloadMutex_);
 
     if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
-        UnSetOffloadMode();
+        UnsetOffloadMode();
         offloadSessionID_.reset();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
@@ -737,7 +737,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         (currentActiveDevice_.deviceType_ != deviceType || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
         deviceType = (deviceType == DEVICE_TYPE_DEFAULT) ? FetchHighPriorityDevice(true) : deviceType;
         auto ret = SelectNewDevice(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors[0]);
-        ReSetOffloadMode();
+        ResetOffloadMode();
         return ret;
     }
 
@@ -1630,7 +1630,7 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         int32_t muteDuration = 200000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
-        PreSetOffloadMode(deviceDescriptor->deviceType_);
+        PresetOffloadMode(deviceDescriptor->deviceType_);
     }
 
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
@@ -1929,9 +1929,9 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     int32_t result = SUCCESS;
 
     if (deviceType != DEVICE_TYPE_SPEAKER) {
-        UnSetOffloadMode();
+        UnsetOffloadMode();
     } else {
-        ReSetOffloadMode();
+        ResetOffloadMode();
     }
 
     if (currentActiveDevice_.deviceType_ == deviceType) {
@@ -2075,7 +2075,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     }
 
     currentActiveDevice_.deviceType_ = deviceType;
-    ReSetOffloadMode();
+    ResetOffloadMode();
     OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
     return result;
 }
@@ -2152,7 +2152,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "Device activation failed [%{public}d]", result);
 
     currentActiveDevice_.deviceType_ = priorityDev;
-    ReSetOffloadMode();
+    ResetOffloadMode();
     AUDIO_DEBUG_LOG("Current active device updates: %{public}d", currentActiveDevice_.deviceType_);
     OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
 
@@ -2416,7 +2416,7 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
     int32_t result = ActivateNewDevice(devType);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device %{public}d", devType);
     currentActiveDevice_.deviceType_ = devType;
-    ReSetOffloadMode();
+    ResetOffloadMode();
     currentActiveDevice_.macAddress_ = activeBTDevice_;
 
     return result;
@@ -2452,7 +2452,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
         }
 
         currentActiveDevice_.deviceType_ = priorityDev;
-        ReSetOffloadMode();
+        ResetOffloadMode();
         currentActiveDevice_.macAddress_ = (priorityDev == DEVICE_TYPE_BLUETOOTH_A2DP) ? activeBTDevice_ : "";
         UpdateEffectDefaultSink(currentActiveDevice_.deviceType_);
     } else {
@@ -2944,7 +2944,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");
         hasModulesLoaded = true;
         currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
-        ReSetOffloadMode();
+        ResetOffloadMode();
         activeInputDevice_ = DEVICE_TYPE_MIC;
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);

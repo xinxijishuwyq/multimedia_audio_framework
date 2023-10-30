@@ -522,11 +522,11 @@ private:
 
     int32_t SetOffloadMode();
 
-    int32_t UnSetOffloadMode();
+    int32_t UnsetOffloadMode();
 
-    int32_t ReSetOffloadMode();
+    int32_t ResetOffloadMode();
 
-    int32_t PreSetOffloadMode(DeviceType deviceType);
+    int32_t PresetOffloadMode(DeviceType deviceType);
 
     bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);

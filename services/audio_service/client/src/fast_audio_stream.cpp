@@ -345,13 +345,13 @@ float FastAudioStream::GetLowPowerVolume()
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    AUDIO_INFO_LOG("SetOffloadMode in.");
+    AUDIO_WARNING_LOG("SetOffloadMode in.");
     return SUCCESS;
 }
 
 int32_t FastAudioStream::UnSetOffloadMode()
 {
-    AUDIO_INFO_LOG("UnSetOffloadMode in.");
+    AUDIO_WARNING_LOG("UnSetOffloadMode in.");
     return SUCCESS;
 }
 

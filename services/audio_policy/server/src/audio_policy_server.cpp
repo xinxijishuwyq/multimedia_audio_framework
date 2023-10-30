@@ -455,12 +455,12 @@ void InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingSt
 }
 
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
-    AudioPolicyServer* mPolicyServer) : PowerMgr::PowerStateCallbackStub(), mPolicyServer_(mPolicyServer)
+    AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
-    mPolicyServer_->HandlePowerStateChanged(state);
+    policyServer_->HandlePowerStateChanged(state);
 }
 
 void AudioPolicyServer::InitKVStore()

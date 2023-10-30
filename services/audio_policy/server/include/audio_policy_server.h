@@ -345,11 +345,11 @@ private:
 
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
-        AudioPolicyServerPowerStateCallback(AudioPolicyServer *mPolicyServer);
+        AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
         void OnPowerStateChanged(PowerMgr::PowerState state) override;
 
     private:
-        AudioPolicyServer *mPolicyServer_;
+        AudioPolicyServer *policyServer_;
     };
 
     void HandlePowerStateChanged(PowerMgr::PowerState state);
