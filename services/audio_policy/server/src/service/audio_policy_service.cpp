@@ -513,7 +513,6 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
 
     if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
         UnsetOffloadMode();
-        offloadSessionID_.reset();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -1928,11 +1927,7 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
     AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
     int32_t result = SUCCESS;
 
-    if (deviceType != DEVICE_TYPE_SPEAKER) {
-        UnsetOffloadMode();
-    } else {
-        ResetOffloadMode();
-    }
+    ResetOffloadMode();
 
     if (currentActiveDevice_.deviceType_ == deviceType) {
         if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {

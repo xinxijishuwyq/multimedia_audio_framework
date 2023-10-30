@@ -443,7 +443,7 @@ int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
     return mPolicyService.ReleaseOffloadStream(sessionId);
 }
 
-void InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId)
+void AudioPolicyServer::InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId)
 {
     ReleaseOffloadStream(activeSessionId);
     if ((incomingStreamType == AudioStreamType::STREAM_MUSIC)||(incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
