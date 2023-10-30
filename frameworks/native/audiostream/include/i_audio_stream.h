@@ -136,7 +136,7 @@ public:
     virtual float GetLowPowerVolume() = 0;
     virtual float GetSingleStreamVolume() = 0;
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
-    virtual int32_t UnSetOffloadMode() = 0;
+    virtual int32_t UnsetOffloadMode() = 0;
 
     // for effect
     virtual AudioEffectMode GetAudioEffectMode() = 0;

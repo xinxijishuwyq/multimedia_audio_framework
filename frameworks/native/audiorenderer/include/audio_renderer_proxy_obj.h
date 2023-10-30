@@ -32,7 +32,7 @@ public:
     void SetLowPowerVolumeImpl(float volume);
     void GetLowPowerVolumeImpl(float &volume);
     void SetOffloadModeImpl(int32_t state, bool isAppBack);
-    void UnSetOffloadModeImpl();
+    void UnsetOffloadModeImpl();
     void GetSingleStreamVolumeImpl(float &volume);
 private:
     const AudioRenderer *renderer;

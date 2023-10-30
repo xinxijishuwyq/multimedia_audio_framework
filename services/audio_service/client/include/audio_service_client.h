@@ -419,7 +419,7 @@ public:
     float GetStreamVolume();
 
     int32_t SetStreamOffloadMode(int32_t state, bool isAppBack);
-    int32_t UnSetStreamOffloadMode();
+    int32_t UnsetStreamOffloadMode();
     /**
      * @brief Set the render rate
      *

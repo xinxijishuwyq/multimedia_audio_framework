@@ -2611,7 +2611,7 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::UnSetStreamOffloadMode()
+int32_t AudioServiceClient::UnsetStreamOffloadMode()
 {
     lastOffloadUpdateFinishTime = 0;
     offloadEnable = false;

@@ -904,9 +904,9 @@ int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) cons
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
 
-int32_t AudioRendererPrivate::UnSetOffloadMode() const
+int32_t AudioRendererPrivate::UnsetOffloadMode() const
 {
-    return audioStream_->UnSetOffloadMode();
+    return audioStream_->UnsetOffloadMode();
 }
 
 float AudioRendererPrivate::GetSingleStreamVolume() const

@@ -694,7 +694,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    virtual int32_t UnSetOffloadMode() const = 0;
+    virtual int32_t UnsetOffloadMode() const = 0;
 
     /**
      * @brief Get single stream volume.

@@ -130,7 +130,7 @@ void AudioClientTrackerCallbackProxy::SetOffloadModeImpl(int32_t state, bool isA
     }
 }
 
-void AudioClientTrackerCallbackProxy::UnSetOffloadModeImpl()
+void AudioClientTrackerCallbackProxy::UnsetOffloadModeImpl()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -202,10 +202,10 @@ void ClientTrackerCallbackListener::SetOffloadModeImpl(int32_t state, bool isApp
     }
 }
 
-void ClientTrackerCallbackListener::UnSetOffloadModeImpl()
+void ClientTrackerCallbackListener::UnsetOffloadModeImpl()
 {
     if (listener_ != nullptr) {
-        listener_->UnSetOffloadModeImpl();
+        listener_->UnsetOffloadModeImpl();
     }
 }
 } // namespace AudioStandard

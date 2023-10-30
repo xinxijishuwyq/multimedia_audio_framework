@@ -89,10 +89,10 @@ public:
     virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) = 0;
 
     /**
-     * UnSet Stream out of Offload state
+     * Unset Stream out of Offload state
      *
      */
-    virtual void UnSetOffloadModeImpl() = 0;
+    virtual void UnsetOffloadModeImpl() = 0;
 
     /**
      * Get single stream was controlled by system application

@@ -977,9 +977,9 @@ int32_t AudioStream::SetOffloadMode(int32_t state, bool isAppBack)
     return SetStreamOffloadMode(state, isAppBack);
 }
 
-int32_t AudioStream::UnSetOffloadMode()
+int32_t AudioStream::UnsetOffloadMode()
 {
-    return UnSetStreamOffloadMode();
+    return UnsetStreamOffloadMode();
 }
 
 float AudioStream::GetSingleStreamVolume()

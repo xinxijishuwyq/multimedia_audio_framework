@@ -49,9 +49,9 @@ void AudioRendererProxyObj::SetOffloadModeImpl(int32_t state, bool isAppBack)
     renderer->SetOffloadMode(state, isAppBack);
 }
 
-void AudioRendererProxyObj::UnSetOffloadModeImpl()
+void AudioRendererProxyObj::UnsetOffloadModeImpl()
 {
-    renderer->UnSetOffloadMode();
+    renderer->UnsetOffloadMode();
 }
 
 void AudioRendererProxyObj::GetSingleStreamVolumeImpl(float &volume)

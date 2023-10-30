@@ -349,9 +349,9 @@ int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
     return SUCCESS;
 }
 
-int32_t FastAudioStream::UnSetOffloadMode()
+int32_t FastAudioStream::UnsetOffloadMode()
 {
-    AUDIO_WARNING_LOG("UnSetOffloadMode in.");
+    AUDIO_WARNING_LOG("UnsetOffloadMode in.");
     return SUCCESS;
 }
 

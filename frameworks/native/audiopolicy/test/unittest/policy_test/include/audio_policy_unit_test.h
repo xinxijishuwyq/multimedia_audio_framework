@@ -82,7 +82,7 @@ public:
     virtual void GetLowPowerVolumeImpl(float &volume) {};
     virtual void GetSingleStreamVolumeImpl(float &volume) {};
     virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) {};
-    virtual void UnSetOffloadModeImpl() {};
+    virtual void UnsetOffloadModeImpl() {};
 };
 
 class AudioPolicyUnitTest : public testing::Test {

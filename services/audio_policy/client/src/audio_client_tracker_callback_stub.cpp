@@ -74,7 +74,7 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         case UNSETOFFLOADMODE: {
-            UnSetOffloadModeImpl();
+            UnsetOffloadModeImpl();
             return AUDIO_OK;
         }
         default: {
@@ -139,14 +139,14 @@ void AudioClientTrackerCallbackStub::SetOffloadModeImpl(int32_t state, bool isAp
     }
 }
 
-void AudioClientTrackerCallbackStub::UnSetOffloadModeImpl()
+void AudioClientTrackerCallbackStub::UnsetOffloadModeImpl()
 {
-    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub UnSetOffloadModeImpl start");
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub UnsetOffloadModeImpl start");
     std::shared_ptr<AudioClientTracker> cb = callback_.lock();
     if (cb != nullptr) {
-        cb->UnSetOffloadModeImpl();
+        cb->UnsetOffloadModeImpl();
     } else {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: UnSetOffloadModeImpl callback_ is nullptr");
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: UnsetOffloadModeImpl callback_ is nullptr");
     }
 }
 
