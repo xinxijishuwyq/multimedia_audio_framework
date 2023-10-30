@@ -691,6 +691,8 @@ private:
 
     int32_t UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize);
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
+    int32_t WaitWriteable(size_t length, size_t &writableSize);
+    int32_t AdjustAcache(const StreamBuffer &stream, size_t &cachedLen);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
