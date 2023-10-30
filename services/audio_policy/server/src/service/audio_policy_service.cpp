@@ -1726,41 +1726,8 @@ int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
+int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
-    AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
-    int32_t result = SUCCESS;
-
-    if (currentActiveDevice_.deviceType_ == deviceType) {
-        if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
-            return result;
-        }
-    }
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = HandleA2dpDevice(deviceType);
-        return result;
-    }
-    if (isArmUsbDevice_ && deviceType == DEVICE_TYPE_USB_HEADSET ) {
-        result = HandleArmUsbDevice(deviceType);
-        return result;
-    }
-    if (deviceType == DEVICE_TYPE_FILE_SINK ) {
-        result = HandleFileDevice(deviceType);
-        return result;
-    }
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = HandleA2dpDevice(deviceType);
-        return result;
-    }
-    if (isArmUsbDevice_ && currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
-        result = HandleArmUsbDevice(deviceType);
-        return result;
-    }
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
-        result = HandleFileDevice(deviceType);
-        return result;
-    }
-
     bool isVolumeSwitched = false;
     if (isUpdateRouteSupported_ && !isSceneActivation) {
         if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
@@ -1783,15 +1750,48 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
             isVolumeSwitched = true;
         }
     }
-
     if (GetDeviceRole(deviceType) == OUTPUT_DEVICE && !isVolumeSwitched &&
         GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceType)) {
         SetVolumeForSwitchDevice(deviceType);
     }
-
     UpdateInputDeviceInfo(deviceType);
-
     return SUCCESS;
+}
+
+int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
+{
+    AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
+    int32_t result = SUCCESS;
+    if (currentActiveDevice_.deviceType_ == deviceType) {
+        if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
+            return result;
+        }
+    }
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+    if (isArmUsbDevice_ && deviceType == DEVICE_TYPE_USB_HEADSET) {
+        result = HandleArmUsbDevice(deviceType);
+        return result;
+    }
+    if (deviceType == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+    if (isArmUsbDevice_ && currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
+        result = HandleArmUsbDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    return ActivateNormalNewDevice(deviceType, isSceneActivation);
 }
 
 void AudioPolicyService::KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType)
