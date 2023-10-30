@@ -67,20 +67,32 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             reply.WriteFloat(volume);
             return AUDIO_OK;
         }
-        case SETOFFLOADMODE: {
-            int32_t state = data.ReadInt32();
-            bool isAppBack = data.ReadBool();
-            SetOffloadModeImpl(state, isAppBack);
-            return AUDIO_OK;
-        }
+        case SETOFFLOADMODE:
         case UNSETOFFLOADMODE: {
-            UnsetOffloadModeImpl();
-            return AUDIO_OK;
+            return OffloadRemoteRequest(code, data, reply, option);
         }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
+    }
+    
+    return 0;
+}
+
+int AudioClientTrackerCallbackStub::OffloadRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    if(code == SETOFFLOADMODE) {
+        int32_t state = data.ReadInt32();
+        bool isAppBack = data.ReadBool();
+        SetOffloadModeImpl(state, isAppBack);
+        return AUDIO_OK;
+    }
+    
+    if(code == UNSETOFFLOADMODE) {
+        UnsetOffloadModeImpl();
+        return AUDIO_OK;
     }
     
     return 0;
