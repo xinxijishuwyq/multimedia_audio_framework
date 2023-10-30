@@ -209,23 +209,19 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
                 moduleInfo.renderInIdleState = value;
             }
 
-            value = ExtractPropertyValue("open_mic_speaker", *portNode);
-            if (!value.empty()) {
+            if ((value = ExtractPropertyValue("open_mic_speaker", *portNode)) && !value.empty()) {
                 moduleInfo.OpenMicSpeaker = value;
             }
 
-            value = ExtractPropertyValue("source_type", *portNode);
-            if (!value.empty()) {
+            if ((value = ExtractPropertyValue("source_type", *portNode)) && !value.empty()) {
                 moduleInfo.sourceType = value;
             }
 
-            value = ExtractPropertyValue("file", *portNode);
-            if (!value.empty()) {
+            if ((value = ExtractPropertyValue("file", *portNode)) && !value.empty()) {
                 moduleInfo.fileName = value;
             }
 
-            value = ExtractPropertyValue("offload_enable", *portNode);
-            if (!value.empty()) {
+            if ((value = ExtractPropertyValue("offload_enable", *portNode)) && !value.empty()) {
                 moduleInfo.offloadEnable = value;
             }
 

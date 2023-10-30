@@ -1561,8 +1561,8 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
                 pa_memblockq_flush_read(i->thread_info.render_memblockq);
             } else {
                 AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
-                rewindSize, afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind,
-                afterRender);
+                    rewindSize, (uint32_t)(afterRender ? i->thread_info.render_memblockq->maxrewind :
+                                           ps->memblockq->maxrewind), afterRender);
             }
         }
     }

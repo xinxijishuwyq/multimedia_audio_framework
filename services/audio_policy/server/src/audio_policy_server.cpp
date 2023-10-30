@@ -406,7 +406,7 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
     
     int retryCount = 0;
     while (retryCount < RETRY_COUNT_MAX) {
-        bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_); 
+        bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
         if (!RegisterSuccess) {
             AUDIO_DEBUG_LOG("register power state callback failed %{public}d", retryCount);
             retryCount++;
@@ -449,10 +449,12 @@ int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
     return mPolicyService.ReleaseOffloadStream(sessionId);
 }
 
-void AudioPolicyServer::InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId)
+void AudioPolicyServer::InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType,
+    uint32_t incomingSessionId)
 {
     ReleaseOffloadStream(activeSessionId);
-    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC)||(incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
+    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC) ||
+        (incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
         SetOffloadStream(incomingSessionId);
     } else {
         AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingSessionId,
@@ -1360,7 +1362,8 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         if (!iterActiveErased) {
             ++iterActive;
         }
-        InterruptOffloadStream(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
+        InterruptOffloadStream(activeSessionID, incomingInterrupt.audioFocusType.streamType,
+            incomingInterrupt.sessionID);
     }
 }
 

@@ -83,14 +83,14 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
 int AudioClientTrackerCallbackStub::OffloadRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    if(code == SETOFFLOADMODE) {
+    if (code == SETOFFLOADMODE) {
         int32_t state = data.ReadInt32();
         bool isAppBack = data.ReadBool();
         SetOffloadModeImpl(state, isAppBack);
         return AUDIO_OK;
     }
-    
-    if(code == UNSETOFFLOADMODE) {
+
+    if (code == UNSETOFFLOADMODE) {
         UnsetOffloadModeImpl();
         return AUDIO_OK;
     }

@@ -515,7 +515,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     // flush stream after stream paused
-    if (!offloadEnable){
+    if (!offloadEnable) {
         FlushAudioStream();
     }
 
