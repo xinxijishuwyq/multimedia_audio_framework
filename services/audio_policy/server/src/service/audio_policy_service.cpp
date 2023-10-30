@@ -425,7 +425,7 @@ int32_t AudioPolicyService::ReSetOffloadMode()
         AUDIO_DEBUG_LOG("no running Stream, wont reStart");
         return SUCCESS;
     }
-    return GetOffloadStream(runningStreamId);
+    return SetOffloadStream(runningStreamId);
 }
 
 int32_t AudioPolicyService::PreSetOffloadMode(DeviceType deviceType)
@@ -441,10 +441,10 @@ int32_t AudioPolicyService::PreSetOffloadMode(DeviceType deviceType)
         AUDIO_DEBUG_LOG("no running Stream, wont reStart");
         return SUCCESS;
     }
-    return GetOffloadStream(runningStreamId, deviceType);
+    return SetOffloadStream(runningStreamId, deviceType);
 }
 
-int32_t AudioPolicyService::GetOffloadStream(uint32_t sessionId, DeviceType deviceType /* = DEVICE_TYPE_NONE */)
+int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType deviceType /* = DEVICE_TYPE_NONE */)
 {
     if (!GetAudioOffloadAvailableFromXml()) {
         AUDIO_DEBUG_LOG("Offload Not Avaliable!Blocked!");

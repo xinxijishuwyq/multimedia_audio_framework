@@ -432,10 +432,10 @@ void AudioPolicyServer::HandlePowerStateChanged(PowerMgr::PowerState state)
     mPolicyService.HandlePowerStateChanged(state);
 }
 
-int32_t AudioPolicyServer::GetOffloadStream(uint32_t sessionId)
+int32_t AudioPolicyServer::SetOffloadStream(uint32_t sessionId)
 {
     CheckSubscribePowerStateChange();
-    return mPolicyService.GetOffloadStream(sessionId);
+    return mPolicyService.SetOffloadStream(sessionId);
 }
 
 int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
@@ -1346,7 +1346,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         ReleaseOffloadStream(activeSessionID);
         AudioStreamType streamType = incomingInterrupt.audioFocusType.streamType;
         if ((streamType == AudioStreamType::STREAM_MUSIC)||(streamType == AudioStreamType::STREAM_SPEECH)) {
-            GetOffloadStream(incomingInterrupt.sessionID);
+            SetOffloadStream(incomingInterrupt.sessionID);
         } else {
             AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingInterrupt.sessionID,
                 streamType);
@@ -1437,7 +1437,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     }
 
     if ((streamType == AudioStreamType::STREAM_MUSIC) || (streamType == AudioStreamType::STREAM_SPEECH)) {
-        GetOffloadStream(audioInterrupt.sessionID);
+        SetOffloadStream(audioInterrupt.sessionID);
     } else {
         AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", audioInterrupt.sessionID,
             streamType);

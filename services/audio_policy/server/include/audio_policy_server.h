@@ -355,7 +355,7 @@ private:
     void HandlePowerStateChanged(PowerMgr::PowerState state);
 
     // offload session
-    int32_t GetOffloadStream(uint32_t sessionId);
+    int32_t SetOffloadStream(uint32_t sessionId);
     int32_t ReleaseOffloadStream(uint32_t sessionId);
     void CheckSubscribePowerStateChange();
     

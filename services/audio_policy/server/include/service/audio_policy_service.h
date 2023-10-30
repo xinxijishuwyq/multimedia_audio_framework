@@ -79,7 +79,7 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) const;
 
-    int32_t GetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
+    int32_t SetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
 
     int32_t ReleaseOffloadStream(uint32_t sessionId);
 
