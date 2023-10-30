@@ -34,7 +34,6 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
-
     switch (code) {
         case PAUSEDSTREAM: {
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
@@ -82,7 +81,6 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
-
     return 0;
 }
 

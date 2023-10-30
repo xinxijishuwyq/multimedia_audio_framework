@@ -166,7 +166,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case MULTIMODAL_INPUT_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility input service start");
             SubscribeVolumeKeyEvents();
-            SubscribePowerStateChangeEvents();
             break;
 #endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
@@ -189,6 +188,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             SubscribeAccessibilityConfigObserver();
             InitKVStore();
             RegisterDataObserver();
+            break;
+        case POWER_MANAGER_SERVICE_ID:
+            AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
+            SubscribePowerStateChangeEvents();
             break;
         default:
             AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
