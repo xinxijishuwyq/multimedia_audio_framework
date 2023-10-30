@@ -1413,12 +1413,10 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
                 pa_threaded_mainloop_wait(mainLoop);
             }
             StopTimer();
-            if (IsTimeOut()) {
+            if (IsTimeOut() && !offloadEnable) {
                 AUDIO_ERR_LOG("Write timeout");
-                if (!offloadEnable) {
-                    error = AUDIO_CLIENT_WRITE_STREAM_ERR;
-                    return error;
-                }
+                error = AUDIO_CLIENT_WRITE_STREAM_ERR;
+                return error;
             }
             if (breakingWritePa || state_ != RUNNING) {
                 AUDIO_WARNING_LOG("AudioServiceClient::PaWriteStream: breakingWritePa(%d) or state_(%d) not running",
@@ -2100,16 +2098,17 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
             } else {
                 AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
             }
-            if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
-                if (negative) {
-                    latency = 0;
-                    pa_threaded_mainloop_unlock(mainLoop);
-                    return AUDIO_CLIENT_ERR;
-                }
-                break;
+            if (pa_stream_get_latency(paStream, &paLatency, &negative) < 0) {
+                AUDIO_INFO_LOG("waiting for audio latency information");
+                pa_threaded_mainloop_wait(mainLoop);
+                continue;
             }
-            AUDIO_INFO_LOG("waiting for audio latency information");
-            pa_threaded_mainloop_wait(mainLoop);
+            if (negative) {
+                latency = 0;
+                pa_threaded_mainloop_unlock(mainLoop);
+                return AUDIO_CLIENT_ERR;
+            }
+            break;
         }
         pa_threaded_mainloop_unlock(mainLoop);
     }
@@ -2121,11 +2120,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         // Total latency will be sum of audio write cache latency + PA latency
         uint64_t fwLatency = paLatency + cacheLatency;
         uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
-        if (fwLatency > sinkLatency) {
-            latency = fwLatency - sinkLatency;
-        } else {
-            latency = fwLatency;
-        }
+        latency = fwLatency > sinkLatency ? fwLatency - sinkLatency : fwLatency;
         AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64
             ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {

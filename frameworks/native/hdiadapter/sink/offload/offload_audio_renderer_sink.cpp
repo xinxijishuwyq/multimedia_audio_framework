@@ -371,8 +371,9 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
     if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
         timestamp.tvNSec > SECOND_TO_NANOSECOND) {
-        AUDIO_ERR_LOG("Hdi GetRenderPosition get invaild second:%{public}" PRIu64 " or nanosecond:%{public}" PRIu64 " !",
-                      timestamp.tvSec, timestamp.tvNSec);
+        AUDIO_ERR_LOG(
+            "Hdi GetRenderPosition get invaild second:%{public}" PRIu64 " or nanosecond:%{public}" PRIu64 " !",
+            timestamp.tvSec, timestamp.tvNSec);
         return ERR_OPERATION_FAILED;
     }
     frames = frames_ * SECOND_TO_MICROSECOND / attr_.sampleRate;
@@ -538,15 +539,8 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     openSpeaker_ = attr_.openMicSpeaker;
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail.");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED, "Init audio manager Fail.");
 
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail.");
-        return ERR_NOT_STARTED;
-    }
     uint32_t size = MAX_AUDIO_ADAPTER_NUM, majorVer, minorVer;
     int32_t ret;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
