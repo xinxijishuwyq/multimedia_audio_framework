@@ -57,6 +57,8 @@ typedef pa_sink_info          SinkDeviceInfo;
 typedef pa_source_info        SourceDeviceInfo;
 typedef pa_client_info        ClientInfo;
 
+constexpr size_t DEFAULT_BUFFER_TIME_MS = 20;
+
 struct StreamBuffer {
     uint8_t *buffer; // the virtual address of stream
     uint32_t bufferLen; // stream length in bytes
@@ -549,6 +551,10 @@ public:
     int32_t HandleMainLoopStart();
 
     void SetCapturerSource(int capturerSource) override;
+
+    int32_t GetBufferSizeForCapturer(size_t &bufferSize);
+
+    int32_t GetFrameCountForCapturer(uint32_t &frameCount);
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;

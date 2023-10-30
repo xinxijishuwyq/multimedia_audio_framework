@@ -150,6 +150,10 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
 int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 {
     AUDIO_INFO_LOG("AudioStream: Get Buffer size");
+    if (eMode_ == AUDIO_MODE_RECORD) {
+        return GetBufferSizeForCapturer(bufferSize);
+    }
+
     if (GetMinimumBufferSize(bufferSize) != 0) {
         return ERR_OPERATION_FAILED;
     }
@@ -160,6 +164,10 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
 {
     AUDIO_INFO_LOG("AudioStream: Get frame count");
+    if (eMode_ == AUDIO_MODE_RECORD) {
+        return GetFrameCountForCapturer(frameCount);
+    }
+
     if (GetMinimumFrameCount(frameCount) != 0) {
         return ERR_OPERATION_FAILED;
     }
