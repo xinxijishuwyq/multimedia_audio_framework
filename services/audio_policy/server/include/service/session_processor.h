@@ -113,7 +113,9 @@ private:
             while (sessionEvents_.size() > 0) {
                 auto frontEvent = sessionEvents_.front();
                 sessionEvents_.pop();
+                lock.unlock();
                 ProcessSessionEvent(frontEvent);
+                lock.lock();
             }
             cv_.wait(lock, [this] {
                 bool res = (sessionEvents_.size() > 0 || exitLoop_);

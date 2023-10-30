@@ -728,6 +728,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(std::string scen
 
 bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, false, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
     CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
