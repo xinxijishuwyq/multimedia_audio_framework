@@ -443,6 +443,17 @@ int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
     return mPolicyService.ReleaseOffloadStream(sessionId);
 }
 
+void InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId)
+{
+    ReleaseOffloadStream(activeSessionId);
+    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC)||(incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
+        SetOffloadStream(incomingSessionId);
+    } else {
+        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingSessionId,
+            incomingStreamType);
+    }
+}
+
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* mPolicyServer) : PowerMgr::PowerStateCallbackStub(), mPolicyServer_(mPolicyServer)
 {}
@@ -1343,14 +1354,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         if (!iterActiveErased) {
             ++iterActive;
         }
-        ReleaseOffloadStream(activeSessionID);
-        AudioStreamType streamType = incomingInterrupt.audioFocusType.streamType;
-        if ((streamType == AudioStreamType::STREAM_MUSIC)||(streamType == AudioStreamType::STREAM_SPEECH)) {
-            SetOffloadStream(incomingInterrupt.sessionID);
-        } else {
-            AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingInterrupt.sessionID,
-                streamType);
-        }
+        InterruptOffloadStream(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
     }
 }
 
