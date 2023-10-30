@@ -1284,6 +1284,18 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     return length;
 }
 
+static void InputsDropFromInputs2(pa_mix_info* info, unsigned n)
+{
+    for (; n > 0; info++, n--) {
+        if (info->userdata) {
+            pa_sink_input_unref(info->userdata);
+            info->userdata = NULL;
+        }
+        if (info->chunk.memblock) {
+            pa_memblock_unref(info->chunk.memblock);
+        }
+    }
+}
 
 static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_mix_info* info, unsigned n,
     pa_memchunk* result)
@@ -1291,18 +1303,6 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
     pa_sink_input *i;
     unsigned p = 0, ii = 0, nUnreffed = 0;
 
-    if (result == NULL) {
-        for (; n > 0; info++, n--) {
-            if (info->userdata) {
-                pa_sink_input_unref(info->userdata);
-                info->userdata = NULL;
-            }
-            if (info->chunk.memblock) {
-                pa_memblock_unref(info->chunk.memblock);
-            }
-        }
-        return;
-    }
     pa_assert(result && result->memblock && result->length > 0);
 
     /* We optimize for the case where the order of the inputs has not changed */
@@ -1438,7 +1438,6 @@ void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoIn
 {
     struct Userdata* u = i->sink->userdata;
 
-
     pa_assert(length != 0);
     pa_memchunk* chunk = &(u->offload.chunk);
     chunk->index = 0;
@@ -1475,7 +1474,7 @@ void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoIn
     }
 
     u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
-    InputsDropFromInputs(NULL, 0, infoInputs, nInputs, NULL);
+    InputsDropFromInputs2(infoInputs, nInputs);
 }
 
 void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInput, int32_t* writen)
@@ -1507,7 +1506,7 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
     pa_sink_input* i = infoInputs[0].userdata;
     size_t length = GetOffloadRenderLength(u, i, wait);
     if (*wait && length == 0) {
-        InputsDropFromInputs(NULL, 0, infoInputs, nInputs, NULL);
+        InputsDropFromInputs2(infoInputs, nInputs);
         pa_sink_unref(s);
         return;
     }

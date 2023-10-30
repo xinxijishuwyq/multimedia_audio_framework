@@ -253,7 +253,7 @@ int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, int8_
         AUDIO_ERR_LOG("audioRenderer Not Inited! Init the renderer first\n");
         return ERR_NOT_STARTED;
     }
-    auto *callback = (OnRenderCallback *)cb;
+    auto* callback = reinterpret_cast<OnRenderCallback*> (cb);
     audioRendererSink->RegisterRenderCallback(callback, userdata);
     return SUCCESS;
 }
