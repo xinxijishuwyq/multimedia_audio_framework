@@ -1402,29 +1402,12 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
     }
 
     while (length > 0) {
-        size_t writableSize;
+        size_t writableSize = 0;
         size_t origWritableSize = 0;
 
-        Trace trace1("PaWriteStream Wait");
-        while (!(writableSize = pa_stream_writable_size(paStream))) {
-            AUDIO_DEBUG_LOG("PaWriteStream: wait");
-            StartTimer(WRITE_TIMEOUT_IN_SEC);
-            if (!breakingWritePa && state_ == RUNNING) {
-                pa_threaded_mainloop_wait(mainLoop);
-            }
-            StopTimer();
-            if (IsTimeOut() && !offloadEnable) {
-                AUDIO_ERR_LOG("Write timeout");
-                error = AUDIO_CLIENT_WRITE_STREAM_ERR;
-                return error;
-            }
-            if (breakingWritePa || state_ != RUNNING) {
-                AUDIO_WARNING_LOG("AudioServiceClient::PaWriteStream: breakingWritePa(%d) or state_(%d) not running",
-                    breakingWritePa, state_);
-                AUDIO_WARNING_LOG("Writable size: %{public}zu, bytes to write: %{public}zu, return val: %{public}d",
-                    writableSize, length, error);
-                return AUDIO_CLIENT_WRITE_STREAM_ERR;
-            }
+        error = WaitWriteable(length, writableSize);
+        if (error != 0) {
+            return error;
         }
 
         AUDIO_DEBUG_LOG("Write stream: writable size = %{public}zu, length = %{public}zu", writableSize, length);
@@ -1458,6 +1441,30 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
     }
 
     return error;
+}
+
+int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
+{
+    Trace trace1("PaWriteStream WaitWriteable");
+    while (!(writableSize = pa_stream_writable_size(paStream))) {
+        AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable");
+        StartTimer(WRITE_TIMEOUT_IN_SEC);
+        if (!breakingWritePa && state_ == RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
+        StopTimer();
+        if (IsTimeOut() && !offloadEnable) {
+            AUDIO_ERR_LOG("Write timeout");
+            return AUDIO_CLIENT_WRITE_STREAM_ERR;
+        }
+        if (breakingWritePa || state_ != RUNNING) {
+            AUDIO_WARNING_LOG("AudioServiceClient::PaWriteStream: WaitWriteable breakingWritePa(%d) or state_(%d) "
+                              "not running, Writable size: %{public}zu, bytes to write: %{public}zu",
+                breakingWritePa, state_, writableSize, length);
+            return AUDIO_CLIENT_WRITE_STREAM_ERR;
+        }
+    }
+    return 0;
 }
 
 void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
@@ -1588,7 +1595,7 @@ size_t AudioServiceClient::WriteStreamInCb(const StreamBuffer &stream, int32_t &
     return (stream.bufferLen - length);
 }
 
-size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)
+size_t AudioServiceClient::WriteStream(const StreamBuffer& stream, int32_t& pError)
 {
     lock_guard<mutex> lock(dataMutex_);
     int error = 0;
@@ -1610,7 +1617,7 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
         return cachedLen;
     }
 
-    const uint8_t *buffer = acache_.buffer.get();
+    const uint8_t* buffer = acache_.buffer.get();
     size_t length = acache_.totalCacheSize;
 
     error = PaWriteStream(buffer, length);
@@ -1624,41 +1631,49 @@ size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pErr
     }
 
     if (!error && (length >= 0) && !acache_.isFull) {
-        uint8_t *cacheBuffer = acache_.buffer.get();
-        uint32_t offset = acache_.readIndex;
-        if (acache_.writeIndex > acache_.readIndex) {
-            uint32_t size = (acache_.writeIndex - acache_.readIndex);
-            auto* func = memcpy_s;
-            if (offset < size) { // overlop
-                func = memmove_s;
-            }
-            if (func(cacheBuffer, acache_.totalCacheSize, cacheBuffer + offset, size)) {
-                AUDIO_ERR_LOG("Update cache failed, offset %u, size %u", offset, size);
-                pa_threaded_mainloop_unlock(mainLoop);
-                pError = AUDIO_CLIENT_WRITE_STREAM_ERR;
-                return cachedLen;
-            }
-            AUDIO_INFO_LOG("rearranging the audio cache");
-            acache_.readIndex = 0;
-            acache_.writeIndex = size;
-        } else {
-            acache_.readIndex = 0;
-            acache_.writeIndex = 0;
-        }
-
-        if (cachedLen < stream.bufferLen) {
-            StreamBuffer str;
-            str.buffer = stream.buffer + cachedLen;
-            str.bufferLen = stream.bufferLen - cachedLen;
-            AUDIO_DEBUG_LOG("writing pending data to audio cache: %{public}d", str.bufferLen);
-            cachedLen += WriteToAudioCache(str);
-        }
+        error = AdjustAcache(stream, cachedLen);
     }
 
     pa_threaded_mainloop_unlock(mainLoop);
     pError = error;
     return cachedLen;
 }
+
+int32_t AudioServiceClient::AdjustAcache(const StreamBuffer& stream, size_t& cachedLen)
+{
+    if (acache_.isFull) {
+        return 0;
+    }
+    uint8_t* cacheBuffer = acache_.buffer.get();
+    uint32_t offset = acache_.readIndex;
+    if (acache_.writeIndex > acache_.readIndex) {
+        uint32_t size = (acache_.writeIndex - acache_.readIndex);
+        auto* func = memcpy_s;
+        if (offset < size) { // overlop
+            func = memmove_s;
+        }
+        if (func(cacheBuffer, acache_.totalCacheSize, cacheBuffer + offset, size)) {
+            AUDIO_ERR_LOG("Update cache failed, offset %u, size %u", offset, size);
+            return AUDIO_CLIENT_WRITE_STREAM_ERR;
+        }
+        AUDIO_INFO_LOG("rearranging the audio cache");
+        acache_.readIndex = 0;
+        acache_.writeIndex = size;
+    } else {
+        acache_.readIndex = 0;
+        acache_.writeIndex = 0;
+    }
+
+    if (cachedLen < stream.bufferLen) {
+        StreamBuffer str;
+        str.buffer = stream.buffer + cachedLen;
+        str.bufferLen = stream.bufferLen - cachedLen;
+        AUDIO_DEBUG_LOG("writing pending data to audio cache: %{public}d", str.bufferLen);
+        cachedLen += WriteToAudioCache(str);
+    }
+    return 0;
+}
+
 
 int32_t AudioServiceClient::UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize)
 {
