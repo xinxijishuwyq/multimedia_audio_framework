@@ -124,11 +124,11 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
         if (offloadEnable) {
-            if (paTimeStamp < offloadTsLast) {
-                offloadTsOffset += offloadTsLast;
+            if (paTimeStamp < offloadTsLast_) {
+                offloadTsOffset_ += offloadTsLast_;
             }
-            offloadTsLast = paTimeStamp;
-            paTimeStamp += offloadTsOffset;
+            offloadTsLast_ = paTimeStamp;
+            paTimeStamp += offloadTsOffset_;
         }
         if (resetTime_) {
             AUDIO_INFO_LOG("AudioStream::GetAudioTime resetTime_ %{public}d", resetTime_);

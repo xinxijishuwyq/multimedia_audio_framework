@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <memory>
 #include "i_audio_renderer_sink.h"
 #include "i_audio_renderer_sink_intf.h"
 
@@ -25,6 +24,8 @@
 #include "bluetooth_renderer_sink.h"
 #include "remote_audio_renderer_sink.h"
 #include "offload_audio_renderer_sink.h"
+
+#include <memory>
 
 namespace OHOS {
 namespace AudioStandard {
