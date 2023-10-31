@@ -15,16 +15,12 @@
 #ifndef NAPI_AUDIO_ENUM_H_
 #define NAPI_AUDIO_ENUM_H_
 
+#include <map>
+#include <string>
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
-#include "napi_param_utils.h"
-#include "audio_renderer.h"
-#include "audio_errors.h"
-#include "audio_stream_manager.h"
 #include "audio_info.h"
-#include "audio_interrupt_info.h"
-#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

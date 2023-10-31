@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-#include "hilog/log.h"
+#include "audio_renderer.h"
+#include "audio_errors.h"
+#include "audio_stream_manager.h"
+#include "audio_interrupt_info.h"
+#include "audio_device_info.h"
+#include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 
 using namespace std;
