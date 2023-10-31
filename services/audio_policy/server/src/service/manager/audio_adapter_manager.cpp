@@ -100,10 +100,6 @@ bool AudioAdapterManager::Init()
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
 
-    char offloadEnable[10] = {0}; // 10 for system parameter usage
-    ret = GetParameter("persist.vendor.media.offload.enable", "", offloadEnable, sizeof(offloadEnable));
-    AUDIO_DEBUG_LOG("SetParameter, ret %{public}d, offloadEnable %{public}s", ret, offloadEnable);
-
     return true;
 }
 
