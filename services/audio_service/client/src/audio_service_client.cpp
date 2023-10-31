@@ -196,7 +196,6 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
 
 void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    AUDIO_DEBUG_LOG("PAStreamStopSuccessCb in");
     if (!userdata) {
         AUDIO_ERR_LOG("PAStreamStopSuccessCb: userdata is null");
         return;
@@ -212,14 +211,11 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
         streamCb->OnStateChange(asClient->state_);
     }
     asClient->streamCmdStatus_ = success;
-    AUDIO_DEBUG_LOG("PAStreamStopSuccessCb: start signal");
     pa_threaded_mainloop_signal(mainLoop, 0);
-    AUDIO_DEBUG_LOG("PAStreamStopSuccessCb out");
 }
 
 void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb in");
     if (!userdata) {
         AUDIO_ERR_LOG("PAStreamAsyncStopSuccessCb: userdata is null");
         return;
@@ -239,11 +235,9 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
         streamCb->OnStateChange(asClient->state_);
     }
     asClient->streamCmdStatus_ = success;
-    AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb: start signal");
     lockstopping.unlock();
     pa_threaded_mainloop_signal(mainLoop, 0);
     asClient->dataCv_.notify_one();
-    AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb out");
 }
 
 void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata)
@@ -350,7 +344,6 @@ int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
     pa_threaded_mainloop_unlock(mainLoop);
 
     AUDIO_DEBUG_LOG("SetAudioRenderMode end");
-
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -855,7 +848,7 @@ std::pair<const int32_t, const std::string> AudioServiceClient::GetDeviceNameFor
 
 int32_t AudioServiceClient::ConnectStreamToPA()
 {
-    AUDIO_DEBUG_LOG("Enter AudioServiceClient::ConnectStreamToPA");
+    AUDIO_DEBUG_LOG("Enter ConnectStreamToPA");
     int error, result;
 
     if (CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR) < 0) {
@@ -1122,7 +1115,7 @@ int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
 
 int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::StartStream");
+    AUDIO_INFO_LOG("Enter StartStream");
     int error;
     lock_guard<mutex> lockdata(dataMutex_);
     unique_lock<mutex> stoppinglock(stoppingMutex_);
@@ -1170,7 +1163,7 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
 
 int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::PauseStream");
+    AUDIO_INFO_LOG("Enter PauseStream");
     breakingWritePa = true;
     pa_threaded_mainloop_signal(mainLoop, 0);
     lock_guard<mutex> lockdata(dataMutex_);
@@ -1194,7 +1187,7 @@ int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 
 int32_t AudioServiceClient::StopStream()
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::StopStream");
+    AUDIO_INFO_LOG("Enter StopStream");
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -1284,7 +1277,7 @@ int32_t AudioServiceClient::CorkStream()
 
 int32_t AudioServiceClient::FlushStream()
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::FlushStream");
+    AUDIO_INFO_LOG("Enter FlushStream");
     lock_guard<mutex> lock(dataMutex_);
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
@@ -1328,7 +1321,7 @@ int32_t AudioServiceClient::FlushStream()
 
 int32_t AudioServiceClient::DrainStream()
 {
-    AUDIO_INFO_LOG("Enter AudioServiceClient::DrainStream");
+    AUDIO_INFO_LOG("Enter DrainStream");
     int32_t error;
 
     if (eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -2114,7 +2107,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
                 AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
             }
             if (pa_stream_get_latency(paStream, &paLatency, &negative) < 0) {
-                AUDIO_INFO_LOG("waiting for audio latency information");
+                AUDIO_DEBUG_LOG("waiting for audio latency information");
                 pa_threaded_mainloop_wait(mainLoop);
                 continue;
             }
@@ -2358,18 +2351,17 @@ float AudioServiceClient::GetStreamVolume()
 static void printBufAttr(pa_stream* paStream)
 {
     const pa_buffer_attr* bufferAttr = pa_stream_get_buffer_attr(paStream);
-    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: minreq    %{public}u", bufferAttr->minreq);
-    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: prebuf    %{public}u", bufferAttr->prebuf);
-    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: tlength   %{public}u", bufferAttr->tlength);
-    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: maxlength %{public}u", bufferAttr->maxlength);
-    AUDIO_INFO_LOG("pa_stream_get_buffer_attr: fragsize  %{public}u", bufferAttr->fragsize);
+    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: minreq    %{public}u", bufferAttr->minreq);
+    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: prebuf    %{public}u", bufferAttr->prebuf);
+    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: tlength   %{public}u", bufferAttr->tlength);
+    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: maxlength %{public}u", bufferAttr->maxlength);
+    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: fragsize  %{public}u", bufferAttr->fragsize);
 }
 
 int32_t AudioServiceClient::InitializePAProbListOffload()
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         AUDIO_ERR_LOG("set offload mode: invalid stream state");
-        AUDIO_INFO_LOG("quit SetStreamOffloadMode, err");
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -2450,7 +2442,7 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
 {
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
-        AUDIO_ERR_LOG("AudioServiceClient::UpdatePolicyOffload, pa_proplist_new failed");
+        AUDIO_ERR_LOG("UpdatePolicyOffload, pa_proplist_new failed");
         return AUDIO_CLIENT_ERR;
     }
     if (offloadEnable) {
@@ -2463,7 +2455,7 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     pa_operation *updatePropOperation =
         pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList, nullptr, nullptr);
     if (updatePropOperation == nullptr) {
-        AUDIO_ERR_LOG("AudioServiceClient::UpdatePolicyOffload pa_stream_proplist_update failed!");
+        AUDIO_ERR_LOG("UpdatePolicyOffload pa_stream_proplist_update failed!");
         pa_proplist_free(propList);
         return AUDIO_CLIENT_ERR;
     }
@@ -2533,7 +2525,6 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         AUDIO_ERR_LOG("set offload mode: invalid stream state");
-        AUDIO_INFO_LOG("quit SetStreamOffloadMode ,err");
         return AUDIO_CLIENT_PA_ERR;
     }
 
@@ -2542,7 +2533,7 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
     if (bufferAttrStateMap.find(statePolicy)!=bufferAttrStateMap.end()) {
         bufferAttr = &(bufferAttrStateMap[statePolicy]);
     } else {
-        AUDIO_ERR_LOG("impossible bufferAttr branch error in AudioServiceClient::SetStreamOffloadMode");
+        AUDIO_ERR_LOG("impossible bufferAttr branch error in SetStreamOffloadMode");
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2553,13 +2544,11 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
         AUDIO_ERR_LOG("pa_stream_set_buffer_attr returned null");
         return AUDIO_CLIENT_ERR;
     }
-
-    AUDIO_INFO_LOG("after pa_stream_set_buffer_attr");
+    
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
 
-    AUDIO_INFO_LOG("after pa_stream_set_buffer_attr pa_threaded_mainloop_wait");
     pa_operation_unref(operation);
     printBufAttr(paStream);
 
@@ -2578,30 +2567,22 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     }
 
     if (statePolicy == OFFLOAD_DEFAULT) {
-        AUDIO_ERR_LOG("AudioServiceClient::SetStreamOffloadMode, impossible INPUT branch error");
+        AUDIO_ERR_LOG("impossible INPUT branch error");
         return AUDIO_CLIENT_ERR;
     }
 
-    AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, calling set stream "
+    AUDIO_INFO_LOG("calling set stream "
                    "offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
 
     if (offloadNextStateTargetPolicy == statePolicy) {
-        AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, pa_stream_proplist_update NextStatePolicy not "
-                        "change: last(%d) curr(%d)",
-            offloadNextStateTargetPolicy, statePolicy);
         return AUDIO_CLIENT_SUCCESS;
     }
 
     if ((offloadStatePolicy == offloadNextStateTargetPolicy) && (offloadStatePolicy == statePolicy)) {
-        AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, pa_stream_proplist_update StatePolicy not change :"
-                        "last(%d) curr(%d)",
-            offloadStatePolicy, statePolicy);
         return AUDIO_CLIENT_SUCCESS;
     }
-
-    AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, Update statePolicy before ctrlMutex_");
+    
     lock_guard<mutex> lock(ctrlMutex_);
-    AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode, Update statePolicy after ctrlMutex_");
 
     offloadEnable = true;
     if (UpdatePAProbListOffload(statePolicy) != AUDIO_CLIENT_SUCCESS) {
