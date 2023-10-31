@@ -30,6 +30,7 @@ namespace AudioStandard {
 class RemoteAudioCapturerSource : public IAudioCapturerSource {
 public:
     static RemoteAudioCapturerSource *GetInstance(const std::string &deviceNetworkId);
+    static void GetAllInstance(std::vector<IAudioCapturerSource *> &allInstance);
 
     RemoteAudioCapturerSource() = default;
     ~RemoteAudioCapturerSource() = default;

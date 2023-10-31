@@ -150,6 +150,10 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
 int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 {
     AUDIO_INFO_LOG("AudioStream: Get Buffer size");
+    if (eMode_ == AUDIO_MODE_RECORD) {
+        return GetBufferSizeForCapturer(bufferSize);
+    }
+
     if (GetMinimumBufferSize(bufferSize) != 0) {
         return ERR_OPERATION_FAILED;
     }
@@ -160,6 +164,10 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
 {
     AUDIO_INFO_LOG("AudioStream: Get frame count");
+    if (eMode_ == AUDIO_MODE_RECORD) {
+        return GetFrameCountForCapturer(frameCount);
+    }
+
     if (GetMinimumFrameCount(frameCount) != 0) {
         return ERR_OPERATION_FAILED;
     }
@@ -353,9 +361,11 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = true;
         writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCbTheadLoop, this);
+        pthread_setname_np(writeThread_->native_handle(), "AudioWriteCb");
     } else if (captureMode_ == CAPTURE_MODE_CALLBACK) {
         isReadyToRead_ = true;
         readThread_ = std::make_unique<std::thread>(&AudioStream::ReadCbThreadLoop, this);
+        pthread_setname_np(readThread_->native_handle(), "AudioReadCb");
     }
 
     AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
@@ -451,6 +461,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     }
 
     ProcessDataByAudioBlend(buffer, bufferSize);
+    ProcessDataByVolumeRamp(buffer, bufferSize);
     size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
@@ -614,6 +625,9 @@ int32_t AudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
 
 int32_t AudioStream::SetVolume(float volume)
 {
+    if (volumeRamp_.IsActive()) {
+        volumeRamp_.Terminate();
+    }
     return SetStreamVolume(volume);
 }
 
@@ -882,6 +896,7 @@ void AudioStream::WriteCbTheadLoop()
             }
 
             ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
+            ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
 
             bytesWritten = WriteStreamInCb(stream, writeError);
             if (writeError != 0) {
@@ -1027,6 +1042,28 @@ void AudioStream::ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize)
         if (writeResult != bufferSize) {
             AUDIO_ERR_LOG("Failed to write the file.");
         }
+    }
+}
+
+int32_t AudioStream::SetVolumeWithRamp(float targetVolume, int32_t duration)
+{
+    if ((state_ == RELEASED) || (state_ == INVALID) || (state_ == STOPPED)) {
+        return ERR_ILLEGAL_STATE;
+    }
+
+    float currStreamVol = GetVolume();
+    if (currStreamVol == targetVolume) {
+        return SUCCESS;
+    }
+
+    volumeRamp_.SetVolumeRampConfig(targetVolume, currStreamVol, duration);
+    return SUCCESS;
+}
+
+void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
+{
+    if (volumeRamp_.IsActive()) {
+        SetStreamVolume(volumeRamp_.GetRampVolume());
     }
 }
 } // namespace AudioStandard

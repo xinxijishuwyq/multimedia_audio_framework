@@ -591,6 +591,11 @@ void FastAudioStream::SetWakeupCapturerState(bool isWakeupCapturer)
     AUDIO_ERR_LOG("SetWakeupCapturerState is not supported");
 }
 
+void FastAudioStream::SetCapturerSource(int capturerSource)
+{
+    AUDIO_ERR_LOG("SetCapturerSource is not supported");
+}
+
 void FastAudioStream::SetPrivacyType(AudioPrivacyType privacyType)
 {
     AUDIO_ERR_LOG("SetPrivacyType is not supported");
@@ -650,6 +655,12 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
 int32_t FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
     AUDIO_ERR_LOG("SetChannelBlendMode is not supported");
+    return SUCCESS;
+}
+
+int32_t FastAudioStream::SetVolumeWithRamp(float volume, int32_t duration)
+{
+    AUDIO_ERR_LOG("SetVolumeWithRamp is not supported");
     return SUCCESS;
 }
 } // namespace AudioStandard

@@ -1525,10 +1525,6 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
         }
     }
 
-    std::string activePort = GetSinkPortName(currentActiveDevice_.deviceType_);
-    AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), currentActiveDevice_.deviceType_);
-    audioPolicyManager_.SuspendAudioDevice(activePort, true);
-
     return SUCCESS;
 }
 
@@ -1646,6 +1642,10 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::HandleA2dpDevice");
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            std::string activePort = GetSinkPortName(currentActiveDevice_.deviceType_);
+            audioPolicyManager_.SuspendAudioDevice(activePort, true);
+        }
         int32_t ret = LoadA2dpModule(deviceType);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("load A2dp module failed");
@@ -1726,33 +1726,8 @@ int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
+int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
-    AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
-    int32_t result = SUCCESS;
-
-    if (currentActiveDevice_.deviceType_ == deviceType) {
-        if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
-            return result;
-        }
-    }
-
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = HandleA2dpDevice(deviceType);
-        return result;
-    }
-
-    if (isArmUsbDevice_ &&
-        (deviceType == DEVICE_TYPE_USB_HEADSET || currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET)) {
-        result = HandleArmUsbDevice(deviceType);
-        return result;
-    }
-
-    if (deviceType == DEVICE_TYPE_FILE_SINK || currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
-        result = HandleFileDevice(deviceType);
-        return result;
-    }
-
     bool isVolumeSwitched = false;
     if (isUpdateRouteSupported_ && !isSceneActivation) {
         if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
@@ -1775,15 +1750,48 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
             isVolumeSwitched = true;
         }
     }
-
     if (GetDeviceRole(deviceType) == OUTPUT_DEVICE && !isVolumeSwitched &&
         GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceType)) {
         SetVolumeForSwitchDevice(deviceType);
     }
-
     UpdateInputDeviceInfo(deviceType);
-
     return SUCCESS;
+}
+
+int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
+{
+    AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
+    int32_t result = SUCCESS;
+    if (currentActiveDevice_.deviceType_ == deviceType) {
+        if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
+            return result;
+        }
+    }
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+    if (isArmUsbDevice_ && deviceType == DEVICE_TYPE_USB_HEADSET) {
+        result = HandleArmUsbDevice(deviceType);
+        return result;
+    }
+    if (deviceType == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+    if (isArmUsbDevice_ && currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
+        result = HandleArmUsbDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    return ActivateNormalNewDevice(deviceType, isSceneActivation);
 }
 
 void AudioPolicyService::KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType)
@@ -2661,6 +2669,35 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     }
 }
 
+bool AudioPolicyService::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo)
+{
+    auto devType = GetDeviceType(moduleInfo.name);
+    if (devType != DEVICE_TYPE_MIC) {
+        AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+        if (ioHandle == OPEN_PORT_FAILURE) {
+            AUDIO_INFO_LOG("[module_load]::Open port failed");
+            return false;
+        }
+        IOHandles_[moduleInfo.name] = ioHandle;
+        if (devType == DEVICE_TYPE_SPEAKER) {
+            auto result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
+            if (result != SUCCESS) {
+                AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
+                return false;
+            }
+        }
+    }
+
+    if (devType == DEVICE_TYPE_MIC) {
+        primaryMicModuleInfo_ = moduleInfo;
+    }
+
+    if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
+        AddAudioDevice(moduleInfo, devType);
+    }
+    return true;
+}
+
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
     AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
@@ -2682,20 +2719,8 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
             for (auto &moduleInfo : moduleInfoList) {
                 AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
                 moduleInfo.sinkLatency = sinkLatencyInMsec_ != 0 ? to_string(sinkLatencyInMsec_) : "";
-                AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-                if (ioHandle == OPEN_PORT_FAILURE) {
-                    AUDIO_INFO_LOG("[module_load]::Open port failed");
-                    continue;
-                }
-                IOHandles_[moduleInfo.name] = ioHandle;
-                auto devType = GetDeviceType(moduleInfo.name);
-                if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
-                    result = audioPolicyManager_.SetDeviceActive(ioHandle, devType, moduleInfo.name, true);
-                    if (result != SUCCESS) {
-                        AUDIO_ERR_LOG("[module_load]::Device failed %{public}d", devType);
-                        continue;
-                    }
-                    AddAudioDevice(moduleInfo, devType);
+                if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
+                    result = SUCCESS;
                 }
             }
         }
@@ -4339,6 +4364,105 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
         }
         audioCaptureMicrophoneDescriptor_.erase(info->sessionId);
     }
+}
+
+std::pair<SourceType, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo)
+{
+    uint32_t highestSupportedRate = *(primaryMicModuleInfo_.supportedRate_.rbegin());
+    SourceType targetSourceType;
+    uint32_t targetRate;
+    if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        targetSourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+        targetRate = sessionInfo.rate;
+        if (primaryMicModuleInfo_.supportedRate_.count(targetRate) == 0) {
+            AUDIO_INFO_LOG("targetRate: %{public}u is not supported rate, using highestSupportedRate: %{public}u",
+                targetRate, highestSupportedRate);
+            targetRate = highestSupportedRate;
+        }
+    } else {
+        // For normal sourcetype, continue to use the default value
+        targetSourceType = SOURCE_TYPE_MIC;
+        targetRate = highestSupportedRate;
+    }
+    return {targetSourceType, targetRate};
+}
+
+void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
+{
+    if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
+        sessionWithSpecialSourceType_.erase(sessionID);
+        return;
+    }
+
+    if (sessionWithNormalSourceType_.count(sessionID) > 0) {
+        sessionWithNormalSourceType_.erase(sessionID);
+        if (!sessionWithNormalSourceType_.empty()) {
+            return;
+        }
+        {
+            AudioIOHandle activateDeviceIOHandle;
+            std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+            activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
+
+            int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+            CHECK_AND_RETURN_LOG(result == SUCCESS,
+                "OnCapturerSessionRemoved: CloseAudioPort failed %{public}d", result);
+
+            IOHandles_.erase(PRIMARY_MIC);
+        }
+        return;
+    }
+
+    AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into sessionIdisRemovedSet_", sessionID);
+    sessionIdisRemovedSet_.insert(sessionID);
+}
+
+void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo)
+{
+    if (sessionIdisRemovedSet_.count(sessionID) > 0) {
+        sessionIdisRemovedSet_.erase(sessionID);
+        AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
+        return;
+    }
+    if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
+        auto [targetSourceType, targetRate] = FetchTargetInfoForSessionAdd(sessionInfo);
+        bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
+        bool needReloadSource = (isSourceLoaded &&
+            ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
+        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+        if (needReloadSource) {
+            AudioIOHandle activateDeviceIOHandle;
+            {
+                activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
+
+                int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+                CHECK_AND_RETURN_LOG(result == SUCCESS,
+                    "CapturerSessionAdded: CloseAudioPort failed %{public}d", result);
+
+                IOHandles_.erase(PRIMARY_MIC);
+            }
+        }
+        if (needReloadSource || !(isSourceLoaded)) {
+            auto moduleInfo = primaryMicModuleInfo_;
+            moduleInfo.rate = std::to_string(targetRate);
+            moduleInfo.sourceType = std::to_string(targetSourceType);
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
+                "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
+
+            IOHandles_[PRIMARY_MIC] = ioHandle;
+            if (FetchHighPriorityDevice(false) == DEVICE_TYPE_MIC && activeInputDevice_ == DEVICE_TYPE_MIC) {
+                audioPolicyManager_.SetDeviceActive(ioHandle, DEVICE_TYPE_MIC, moduleInfo.name, true);
+            }
+
+            currentRate = targetRate;
+            currentSourceType = targetSourceType;
+        }
+        sessionWithNormalSourceType_[sessionID] = sessionInfo;
+    } else {
+        sessionWithSpecialSourceType_[sessionID] = sessionInfo;
+    }
+    AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " OnCapturerSessionAdded end", sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

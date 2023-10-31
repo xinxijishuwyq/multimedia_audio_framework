@@ -57,6 +57,8 @@ typedef pa_sink_info          SinkDeviceInfo;
 typedef pa_source_info        SourceDeviceInfo;
 typedef pa_client_info        ClientInfo;
 
+constexpr size_t DEFAULT_BUFFER_TIME_MS = 20;
+
 struct StreamBuffer {
     uint8_t *buffer; // the virtual address of stream
     uint32_t bufferLen; // stream length in bytes
@@ -68,6 +70,34 @@ struct AudioCache {
     uint32_t writeIndex;
     uint32_t totalCacheSize;
     bool isFull;
+};
+
+static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
+    {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
+    {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},
+    {BACK_LEFT, PA_CHANNEL_POSITION_REAR_LEFT}, {BACK_RIGHT, PA_CHANNEL_POSITION_REAR_RIGHT},
+    {FRONT_LEFT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER},
+    {FRONT_RIGHT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER},
+    {BACK_CENTER, PA_CHANNEL_POSITION_REAR_CENTER}, {TOP_CENTER, PA_CHANNEL_POSITION_TOP_CENTER},
+    {TOP_FRONT_LEFT, PA_CHANNEL_POSITION_TOP_FRONT_LEFT}, {TOP_FRONT_CENTER, PA_CHANNEL_POSITION_TOP_FRONT_CENTER},
+    {TOP_FRONT_RIGHT, PA_CHANNEL_POSITION_TOP_FRONT_RIGHT}, {TOP_BACK_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT},
+    {TOP_BACK_CENTER, PA_CHANNEL_POSITION_TOP_REAR_CENTER}, {TOP_BACK_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
+    /** Channel layout positions below do not have precise mapped pulseaudio positions */
+    {STEREO_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {STEREO_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {WIDE_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {WIDE_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {SURROUND_DIRECT_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SURROUND_DIRECT_RIGHT, PA_CHANNEL_POSITION_SIDE_LEFT},
+    {BOTTOM_FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER},
+    {BOTTOM_FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {BOTTOM_FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {TOP_SIDE_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT}, {TOP_SIDE_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
+    {LOW_FREQUENCY_2, PA_CHANNEL_POSITION_LFE},
+};
+
+static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
+    {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
+    {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
+    {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {10, CH_LAYOUT_7POINT1POINT2},
+    {12, CH_LAYOUT_7POINT1POINT4}, {14, CH_LAYOUT_9POINT1POINT4}, {16, CH_LAYOUT_9POINT1POINT6}
 };
 
 class AudioRendererCallbacks {
@@ -518,6 +548,13 @@ public:
     void GetStreamSwitchInfo(SwitchInfo& info);
 
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
+    int32_t HandleMainLoopStart();
+
+    void SetCapturerSource(int capturerSource) override;
+
+    int32_t GetBufferSizeForCapturer(size_t &bufferSize);
+
+    int32_t GetFrameCountForCapturer(uint32_t &frameCount);
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -559,6 +596,7 @@ private:
     bool isStreamConnected_;
     bool isInnerCapturerStream_;
     bool isWakeupCapturerStream_ = false;
+    int capturerSource_ = -1;
     AudioPrivacyType mPrivacyType;
     StreamUsage mStreamUsage;
 
@@ -626,33 +664,6 @@ private:
     std::map<uint32_t, SinkInputInfo*> sinkInputs;
     std::map<uint32_t, SourceOutputInfo*> sourceOutputs;
     std::map<uint32_t, ClientInfo*> clientInfo;
-    std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap_ = {
-        {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-        {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
-        {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},
-        {BACK_LEFT, PA_CHANNEL_POSITION_REAR_LEFT}, {BACK_RIGHT, PA_CHANNEL_POSITION_REAR_RIGHT},
-        {FRONT_LEFT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER},
-        {FRONT_RIGHT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER},
-        {BACK_CENTER, PA_CHANNEL_POSITION_REAR_CENTER}, {TOP_CENTER, PA_CHANNEL_POSITION_TOP_CENTER},
-        {TOP_FRONT_LEFT, PA_CHANNEL_POSITION_TOP_FRONT_LEFT}, {TOP_FRONT_CENTER, PA_CHANNEL_POSITION_TOP_FRONT_CENTER},
-        {TOP_FRONT_RIGHT, PA_CHANNEL_POSITION_TOP_FRONT_RIGHT}, {TOP_BACK_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT},
-        {TOP_BACK_CENTER, PA_CHANNEL_POSITION_TOP_REAR_CENTER}, {TOP_BACK_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
-        /** Channel layout positions below do not have precise mapped pulseaudio positions */
-        {STEREO_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {STEREO_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-        {WIDE_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {WIDE_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-        {SURROUND_DIRECT_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SURROUND_DIRECT_RIGHT, PA_CHANNEL_POSITION_SIDE_LEFT},
-        {BOTTOM_FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER},
-        {BOTTOM_FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {BOTTOM_FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-        {TOP_SIDE_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT}, {TOP_SIDE_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
-        {LOW_FREQUENCY_2, PA_CHANNEL_POSITION_LFE},
-    };
-
-    std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap_ = {
-        {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
-        {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
-        {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {10, CH_LAYOUT_7POINT1POINT2},
-        {12, CH_LAYOUT_7POINT1POINT4}, {14, CH_LAYOUT_9POINT1POINT4}, {16, CH_LAYOUT_9POINT1POINT6}
-    };
 
     IAudioStream::StreamClass streamClass_;
 
@@ -673,6 +684,9 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
+
+    int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
+        AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
     // Error code used
     static const int32_t AUDIO_CLIENT_SUCCESS = 0;

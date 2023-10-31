@@ -36,7 +36,9 @@ public:
      */
     virtual float OnGetVolumeDbCb(AudioStreamType streamType) = 0;
 
-    virtual void OnSessionRemoved(const uint32_t sessionID) = 0;
+    virtual void OnSessionRemoved(const uint64_t sessionID) = 0;
+
+    virtual void OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo) = 0;
 
     virtual void OnPlaybackCapturerStop() = 0;
 

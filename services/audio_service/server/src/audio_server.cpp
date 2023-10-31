@@ -26,6 +26,7 @@
 #include "system_ability_definition.h"
 
 #include "audio_capturer_source.h"
+#include "remote_audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_manager_listener_proxy.h"
@@ -364,15 +365,14 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
         AUDIO_ERR_LOG("SetMicrophoneMute refused for %{public}d", callingUid);
         return ERR_PERMISSION_DENIED;
     }
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
 
-    if (!audioCapturerSourceInstance->IsInited()) {
-            AUDIO_INFO_LOG("Capturer is not initialized. Set the flag mute state flag");
-            AudioCapturerSource::micMuteState_ = isMute;
-            return 0;
+    std::vector<IAudioCapturerSource *> allSourcesInstance;
+    IAudioCapturerSource::GetAllInstance(allSourcesInstance);
+    for (auto it = allSourcesInstance.begin(); it != allSourcesInstance.end(); ++it) {
+        (*it)->SetMute(isMute);
     }
 
-    return audioCapturerSourceInstance->SetMute(isMute);
+    return SUCCESS;
 }
 
 bool AudioServer::IsMicrophoneMute()
@@ -380,21 +380,11 @@ bool AudioServer::IsMicrophoneMute()
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
         AUDIO_ERR_LOG("IsMicrophoneMute refused for %{public}d", callingUid);
-        return false;
-    }
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    bool isMute = false;
-
-    if (!audioCapturerSourceInstance->IsInited()) {
-        AUDIO_INFO_LOG("Capturer is not initialized. Get the mic mute state flag value!");
-        return AudioCapturerSource::micMuteState_;
     }
 
-    if (audioCapturerSourceInstance->GetMute(isMute)) {
-        AUDIO_ERR_LOG("GetMute status in capturer returned Error !");
-    }
+    AUDIO_ERR_LOG("unused IsMicrophoneMute func");
 
-    return isMute;
+    return false;
 }
 
 int32_t AudioServer::SetVoiceVolume(float volume)
@@ -416,6 +406,8 @@ int32_t AudioServer::SetVoiceVolume(float volume)
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
+    std::lock_guard<std::mutex> lock(audioSceneMutex_);
+
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
         AUDIO_ERR_LOG("UpdateActiveDeviceRoute refused for %{public}d", callingUid);
@@ -458,6 +450,7 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
         return ERR_INVALID_PARAM;
     }
 
+    std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
             audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
@@ -473,7 +466,8 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            SetAudioScene(audioScene_, type);
+            audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
+            audioRendererSinkInstance->SetAudioScene(audioScene_, type);
         } else {
             audioCapturerSourceInstance->SetInputRoute(type);
             audioRendererSinkInstance->SetOutputRoute(type);

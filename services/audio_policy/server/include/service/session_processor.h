@@ -35,15 +35,17 @@ struct SessionEvent {
     SessionEvent() = delete;
 
     Type type;
-    uint32_t sessionID;
+    uint64_t sessionID;
+    SessionInfo sessionInfo_ = {};
 };
 
 class SessionProcessor {
 public:
     DISALLOW_COPY_AND_MOVE(SessionProcessor);
 
-    SessionProcessor(std::function<void(const uint32_t)> processorSessionRemoved)
-        : processorSessionRemoved_(processorSessionRemoved)
+    SessionProcessor(std::function<void(const uint64_t)> processorSessionRemoved,
+        std::function<void(SessionEvent)> processorSessionAdded)
+        : processorSessionRemoved_(processorSessionRemoved), processorSessionAdded_(processorSessionAdded)
     {
         Start();
     }
@@ -96,6 +98,9 @@ private:
             case SessionEvent::Type::REMOVE :
                 processorSessionRemoved_(event.sessionID);
                 break;
+            case SessionEvent::Type::ADD :
+                processorSessionAdded_(event);
+                break;
             default:
                 break;
         }
@@ -108,7 +113,9 @@ private:
             while (sessionEvents_.size() > 0) {
                 auto frontEvent = sessionEvents_.front();
                 sessionEvents_.pop();
+                lock.unlock();
                 ProcessSessionEvent(frontEvent);
+                lock.lock();
             }
             cv_.wait(lock, [this] {
                 bool res = (sessionEvents_.size() > 0 || exitLoop_);
@@ -126,7 +133,8 @@ private:
     std::mutex mutex_;
     std::condition_variable cv_;
     std::queue<SessionEvent> sessionEvents_;
-    std::function<void(const uint32_t)> processorSessionRemoved_;
+    std::function<void(const uint64_t)> processorSessionRemoved_;
+    std::function<void(SessionEvent)> processorSessionAdded_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

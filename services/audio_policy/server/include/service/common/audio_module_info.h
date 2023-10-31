@@ -17,6 +17,7 @@
 #define ST_AUDIO_CONFIG_H
 
 #include <list>
+#include <set>
 #include <string>
 
 #include "audio_info.h"
@@ -80,7 +81,12 @@ public:
     std::string id;
     std::string lib;
     std::string role;
+
+    // The default rate is the maximun supported rate.
     std::string rate;
+
+    std::set<uint32_t> supportedRate_;
+
     std::string format;
     std::string channels;
     std::string bufferSize;

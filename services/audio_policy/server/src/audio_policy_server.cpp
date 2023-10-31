@@ -1590,13 +1590,14 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     return SUCCESS;
 }
 
-void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
+void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
 {
     sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
 }
 
-void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
+void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID)
 {
+    mPolicyService.OnCapturerSessionRemoved(sessionID);
     uint32_t removedSessionID = sessionID;
 
     auto isSessionPresent = [&removedSessionID] (const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
@@ -1621,6 +1622,16 @@ void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
     (void)UnsetAudioInterruptCallback(removedSessionID);
 }
 
+void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo)
+{
+    sessionProcessor_.Post({SessionEvent::Type::ADD, sessionID, sessionInfo});
+}
+
+void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
+{
+    mPolicyService.OnCapturerSessionAdded(sessionEvent.sessionID, sessionEvent.sessionInfo_);
+}
+
 void AudioPolicyServer::OnPlaybackCapturerStop()
 {
     mPolicyService.UnloadLoopback();
@@ -1629,6 +1640,25 @@ void AudioPolicyServer::OnPlaybackCapturerStop()
 void AudioPolicyServer::OnWakeupCapturerStop()
 {
     mPolicyService.CloseWakeUpAudioCapturer();
+}
+
+void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
+{
+    static std::mutex mtx;
+    static int count = 0;
+    std::lock_guard<std::mutex> {mtx};
+    if (isConnected) {
+        if (count == 0) {
+            sessionProcessor_.Post({SessionEvent::Type::ADD, DSTATUS_SESSION_ID,
+                {SOURCE_TYPE_MIC, DSTATUS_DEFAULT_RATE}});
+        }
+        count++;
+    } else {
+        count--;
+        if (count == 0) {
+            sessionProcessor_.Post({SessionEvent::Type::REMOVE, DSTATUS_SESSION_ID});
+        }
+    }
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus()
@@ -2527,6 +2557,10 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
         AUDIO_ERR_LOG("SetA2dpDeviceVolume: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
+    AudioStreamType streamType = STREAM_MUSIC;
+    if (!IsVolumeLevelValid(streamType, volume)) {
+        return ERR_NOT_SUPPORTED;
+    }
     int32_t ret = mPolicyService.SetA2dpDeviceVolume(macAddress, volume);
     if (ret == SUCCESS) {
         for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
@@ -2538,7 +2572,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
 
             AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
             VolumeEvent volumeEvent;
-            volumeEvent.volumeType = STREAM_MUSIC;
+            volumeEvent.volumeType = streamType;
             volumeEvent.volume = volume;
             volumeEvent.updateUi = updateUi;
             volumeEvent.volumeGroupId = 0;

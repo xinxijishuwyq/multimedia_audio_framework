@@ -25,6 +25,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr uid_t UID_MSDP_SA = 6699;
+
 AudioCapturer::~AudioCapturer() = default;
 AudioCapturerPrivate::~AudioCapturerPrivate() = default;
 
@@ -66,6 +68,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     auto sourceType = capturerOptions.capturerInfo.sourceType;
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX) {
         AUDIO_ERR_LOG("AudioCapturer::Create: Invalid source type %{public}d!", sourceType);
+        return nullptr;
+    }
+
+    if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
+        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
         return nullptr;
     }
 
@@ -193,6 +200,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     } else if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
         audioStream_->SetWakeupCapturerState(true);
     }
+
+    audioStream_->SetCapturerSource(capturerInfo_.sourceType);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioCapturerPrivate::SetParams SetAudioStreamInfo Failed");

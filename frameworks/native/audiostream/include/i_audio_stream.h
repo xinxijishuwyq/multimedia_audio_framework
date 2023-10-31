@@ -184,6 +184,7 @@ public:
     virtual int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) = 0;
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
     virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
+    virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
 
     virtual IAudioStream::StreamClass GetStreamClass() = 0;
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
@@ -191,6 +192,8 @@ public:
 
     //for wakeup capturer
     virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
+
+    virtual void SetCapturerSource(int capturerSource) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
