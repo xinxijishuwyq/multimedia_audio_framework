@@ -69,9 +69,10 @@
 #define DEFAULT_FRAMELEN 2048
 #define SCENE_TYPE_NUM 7
 #define HDI_MIN_MS_MAINTAIN 30
-#define OFFLOAD_HDI_CACHE1_ 200 // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE1 (200 + 20 + 5) // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE2 (7000 + 100 + 5) // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in audio_service_client.cpp
+#define OFFLOAD_HDI_CACHE1_ (OFFLOAD_HDI_CACHE1 + 20 + 5)   // ms, add 1 frame and 5ms to make sure get full
+#define OFFLOAD_HDI_CACHE2_ (OFFLOAD_HDI_CACHE2 + 100 + 5) // ms, add 1 frame and 5ms to make sure get full
 #define SPRINTF_STR_LEN 100
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
@@ -221,6 +222,7 @@ static void OffloadUnlock(struct Userdata *u);
 static int32_t UpdatePresentationPosition(struct Userdata* u);
 static bool InputIsPrimary(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
+static const char *safe_proplist_gets(const pa_proplist *p, const char *key, const char *defstr);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -405,7 +407,7 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
     return count;
 }
 
-static int32_t RenderWriteOffload(struct Userdata* u, pa_memchunk* pchunk)
+static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memchunk* pchunk)
 {
     size_t index, length;
     void* p = NULL;
@@ -434,7 +436,9 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_memchunk* pchunk)
         float left, right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
-        u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, OFFLOAD_HDI_CACHE1_);
+        const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy", "0"));
+        const uint32_t bufSize = (statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+        u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
     }
     if (ret == 0 && writeLen == 0) { // is full
         AUDIO_INFO_LOG("RenderWriteOffload, is full, break");
@@ -1239,7 +1243,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
     const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy", "0"));
-    u->offload.prewrite = (statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1) * PA_USEC_PER_MSEC;
+    u->offload.prewrite = (statePolicy > 1 ? OFFLOAD_HDI_CACHE2_ : OFFLOAD_HDI_CACHE1_) * PA_USEC_PER_MSEC;
     const size_t blockSizeMax = pa_frame_align(pa_mempool_block_size_max(u->sink->core->mempool), &sampleSpecOut);
     // 100ms 50ms 20ms for frame size
     size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 100
@@ -1426,7 +1430,7 @@ void OffloadReset(struct Userdata* u)
     u->offload.pos = 0;
     u->offload.hdiPos = 0;
     u->offload.hdiPosTs = pa_rtclock_now();
-    u->offload.prewrite = OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC;
+    u->offload.prewrite = OFFLOAD_HDI_CACHE1_ * PA_USEC_PER_MSEC;
     u->offload.minWait = 0;
     u->offload.firstWrite = true;
     u->offload.firstWriteHdi = true;
@@ -1459,7 +1463,7 @@ void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoIn
         chunk->length += -l;
     }
 
-    int ret = RenderWriteOffload(u, chunk);
+    int ret = RenderWriteOffload(u, i, chunk);
     *writen = ret == 0 ? chunk->length : 0;
     if (ret == 1) { // 1 indicates full
         const int hdistate = pa_atomic_load(&u->offload.hdistate);
