@@ -2463,10 +2463,56 @@ fail:
     return NULL;
 }
 
+int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
+{
+    char *paThreadName = NULL;
+
+    paThreadName = "write-pa-bus";
+    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
+        AUDIO_ERR_LOG("Failed to write-pa thread.");
+        return -1;
+    }
+
+    paThreadName = "write-pa-primary";
+    if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
+        AUDIO_ERR_LOG("Failed to write-pa-primary thread.");
+        return -1;
+    }
+
+    // offload
+    if (!strcmp(u->sink->name, "Speaker") && u->offload_enable) {
+        int32_t ret = LoadSinkAdapter(DEVICE_CLASS_OFFLOAD, "LocalDevice", &u->offload.sinkAdapter);
+        if (ret) {
+            AUDIO_ERR_LOG("Load adapter failed");
+            return -1;
+        }
+        if (PrepareDeviceOffload(u, u->offload.sinkAdapter, pa_modargs_get_value(ma, "file_path", "")) < 0) {
+            return -1;
+        }
+        paThreadName = "write-pa-offload";
+        if (!(u->offload.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerOffload, u))) {
+            AUDIO_ERR_LOG("Failed to write-pa-offload thread.");
+            return -1;
+        }
+        pa_atomic_store(&u->offload.hdistate, 0);
+        u->offload.used = true;
+        AUDIO_INFO_LOG("PaHdiSinkNew, set offload state 0");
+        u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
+            (pa_hook_cb_t)SinkInputMoveStartCb, u);
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_FINISH], PA_HOOK_LATE,
+            (pa_hook_cb_t)SinkInputMoveFinishCb, u);
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
+            (pa_hook_cb_t)SinkInputStateChangedCb, u);
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
+            (pa_hook_cb_t)SinkInputPutCb, u);
+    }
+    return 0;
+}
+
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
     struct Userdata *u = NULL;
-    char *paThreadName = NULL;
     char *hdiThreadName = NULL;
 
     pa_assert(m);
@@ -2573,44 +2619,10 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 
     u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
 
-    paThreadName = "write-pa-bus";
-    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa thread.");
+    ret = PaHdiSinkNewInitThread(m, ma, u);
+    if (ret) {
+        AUDIO_ERR_LOG("PaHdiSinkNewInitThread failed");
         goto fail;
-    }
-
-    paThreadName = "write-pa-primary";
-    if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa-primary thread.");
-        goto fail;
-    }
-
-    if (!strcmp(u->sink->name, "Speaker") && u->offload_enable) {
-        ret = LoadSinkAdapter(DEVICE_CLASS_OFFLOAD, "LocalDevice", &u->offload.sinkAdapter);
-        if (ret) {
-            AUDIO_ERR_LOG("Load adapter failed");
-            goto fail;
-        }
-        if (PrepareDeviceOffload(u, u->offload.sinkAdapter, pa_modargs_get_value(ma, "file_path", "")) < 0) {
-            goto fail;
-        }
-        paThreadName = "write-pa-offload";
-        if (!(u->offload.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerOffload, u))) {
-            AUDIO_ERR_LOG("Failed to write-pa-offload thread.");
-            goto fail;
-        }
-        pa_atomic_store(&u->offload.hdistate, 0);
-        u->offload.used = true;
-        AUDIO_INFO_LOG("PaHdiSinkNew, set offload state 0");
-        u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
-            (pa_hook_cb_t)SinkInputMoveStartCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_FINISH], PA_HOOK_LATE,
-            (pa_hook_cb_t)SinkInputMoveFinishCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
-            (pa_hook_cb_t)SinkInputStateChangedCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
-            (pa_hook_cb_t)SinkInputPutCb, u);
     }
 
     if (u->test_mode_on) {
