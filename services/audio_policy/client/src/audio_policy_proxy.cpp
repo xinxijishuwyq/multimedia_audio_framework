@@ -2208,7 +2208,7 @@ int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, con
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG(" SetDeviceAbsVolumeSupported WriteInterfaceToken failed");
+        AUDIO_ERR_LOG(" SetA2dpDeviceVolume WriteInterfaceToken failed");
         return ERROR;
     }
     data.WriteString(macAddress);
@@ -2218,7 +2218,7 @@ int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, con
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_A2DP_DEVICE_VOLUME), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported failed, error: %d", error);
+        AUDIO_ERR_LOG("SetA2dpDeviceVolume failed, error: %d", error);
         return ERROR;
     }
     return reply.ReadInt32();
