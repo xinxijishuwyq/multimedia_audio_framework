@@ -4387,7 +4387,7 @@ std::pair<SourceType, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd
     return {targetSourceType, targetRate};
 }
 
-void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
+void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
         sessionWithSpecialSourceType_.erase(sessionID);
@@ -4413,15 +4413,15 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
         return;
     }
 
-    AUDIO_INFO_LOG("Sessionid:%{public}u not added, directly placed into sessionIdisRemovedSet_", sessionID);
+    AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into sessionIdisRemovedSet_", sessionID);
     sessionIdisRemovedSet_.insert(sessionID);
 }
 
-void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo)
+void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo)
 {
     if (sessionIdisRemovedSet_.count(sessionID) > 0) {
         sessionIdisRemovedSet_.erase(sessionID);
-        AUDIO_INFO_LOG("sessionID: %{public}u had already been removed earlier", sessionID);
+        AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
@@ -4451,6 +4451,9 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
 
             IOHandles_[PRIMARY_MIC] = ioHandle;
+            if (FetchHighPriorityDevice(false) == DEVICE_TYPE_MIC && activeInputDevice_ == DEVICE_TYPE_MIC) {
+                audioPolicyManager_.SetDeviceActive(ioHandle, DEVICE_TYPE_MIC, moduleInfo.name, true);
+            }
 
             currentRate = targetRate;
             currentSourceType = targetSourceType;
@@ -4459,7 +4462,7 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
     } else {
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
-    AUDIO_INFO_LOG("sessionID: %{public}u OnCapturerSessionAdded end", sessionID);
+    AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " OnCapturerSessionAdded end", sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS
