@@ -357,7 +357,7 @@ private:
     // offload session
     int32_t SetOffloadStream(uint32_t sessionId);
     int32_t ReleaseOffloadStream(uint32_t sessionId);
-    void InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
+    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
     void CheckSubscribePowerStateChange();
     
     // for audio interrupt

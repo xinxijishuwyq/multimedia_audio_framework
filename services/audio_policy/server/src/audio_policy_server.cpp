@@ -449,7 +449,7 @@ int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
     return mPolicyService.ReleaseOffloadStream(sessionId);
 }
 
-void AudioPolicyServer::InterruptOffloadStream(uint32_t activeSessionId, AudioStreamType incomingStreamType,
+void AudioPolicyServer::InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType,
     uint32_t incomingSessionId)
 {
     ReleaseOffloadStream(activeSessionId);
@@ -1362,8 +1362,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         if (!iterActiveErased) {
             ++iterActive;
         }
-        InterruptOffloadStream(activeSessionID, incomingInterrupt.audioFocusType.streamType,
-            incomingInterrupt.sessionID);
+        InterruptOffload(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
     }
 }
 
