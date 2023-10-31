@@ -311,9 +311,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
-    void OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo);
+    void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
-    void OnCapturerSessionRemoved(uint32_t sessionID);
+    void OnCapturerSessionRemoved(uint64_t sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

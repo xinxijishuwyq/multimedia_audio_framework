@@ -41,6 +41,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
+constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
 class AudioPolicyServer : public SystemAbility, public AudioPolicyManagerStub, public AudioSessionCallback {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 public:
@@ -189,17 +191,19 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientId) override;
 
-    void OnSessionRemoved(const uint32_t sessionID) override;
+    void OnSessionRemoved(const uint64_t sessionID) override;
 
-    void ProcessSessionRemoved(const uint32_t sessionID);
+    void ProcessSessionRemoved(const uint64_t sessionID);
 
     void ProcessSessionAdded(SessionEvent sessionEvent);
 
-    void OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo) override;
+    void OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo) override;
 
     void OnPlaybackCapturerStop() override;
 
     void OnWakeupCapturerStop() override;
+
+    void OnDstatusUpdated(bool isConnected) override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 

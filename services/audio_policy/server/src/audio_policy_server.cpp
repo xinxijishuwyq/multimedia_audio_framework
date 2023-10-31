@@ -1590,12 +1590,12 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     return SUCCESS;
 }
 
-void AudioPolicyServer::OnSessionRemoved(const uint32_t sessionID)
+void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
 {
     sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
 }
 
-void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
+void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID)
 {
     mPolicyService.OnCapturerSessionRemoved(sessionID);
     uint32_t removedSessionID = sessionID;
@@ -1622,7 +1622,7 @@ void AudioPolicyServer::ProcessSessionRemoved(const uint32_t sessionID)
     (void)UnsetAudioInterruptCallback(removedSessionID);
 }
 
-void AudioPolicyServer::OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo)
+void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo)
 {
     sessionProcessor_.Post({SessionEvent::Type::ADD, sessionID, sessionInfo});
 }
@@ -1640,6 +1640,25 @@ void AudioPolicyServer::OnPlaybackCapturerStop()
 void AudioPolicyServer::OnWakeupCapturerStop()
 {
     mPolicyService.CloseWakeUpAudioCapturer();
+}
+
+void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
+{
+    static std::mutex mtx;
+    static int count = 0;
+    std::lock_guard<std::mutex> {mtx};
+    if (isConnected) {
+        if (count == 0) {
+            sessionProcessor_.Post({SessionEvent::Type::ADD, DSTATUS_SESSION_ID,
+                {SOURCE_TYPE_MIC, DSTATUS_DEFAULT_RATE}});
+        }
+        count++;
+    } else {
+        count--;
+        if (count == 0) {
+            sessionProcessor_.Post({SessionEvent::Type::REMOVE, DSTATUS_SESSION_ID});
+        }
+    }
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus()
