@@ -328,25 +328,28 @@ napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<s
     std::string propName;
     napi_value result = nullptr;
     napi_status status = napi_create_object(env, &result);
-    if (status == napi_ok) {
-        for (auto &iter : map) {
-            propName = iter.first;
-            status = NapiParamUtils::SetValueInt32(env, propName, iter.second, result);
-            if (status != napi_ok) {
-                AUDIO_ERR_LOG("Failed to add named prop!");
-                break;
-            }
-            propName.clear();
-        }
-        if (status == napi_ok) {
-            status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &ref);
-        }
+    if (status != napi_ok) {
+        goto error;
     }
 
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("create Enum Object failed");
-        napi_get_undefined(env, &result);
+    for (auto &iter : map) {
+        propName = iter.first;
+        status = NapiParamUtils::SetValueInt32(env, propName, iter.second, result);
+        CHECK_AND_BREAK_LOG(status == napi_ok, "Failed to add named prop!");
+        propName.clear();
     }
+    if (status != napi_ok) {
+        goto error;
+    }
+    status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &ref);
+    if (status != napi_ok) {
+        goto error;
+    }
+    return result;
+
+error:
+    AUDIO_ERR_LOG("create Enum Object failed");
+    napi_get_undefined(env, &result);
     return result;
 }
 
@@ -426,7 +429,6 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
 napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
 {
     AUDIO_INFO_LOG("NapiAudioEnum::Init()");
-    napi_status status;
     napi_value constructor;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -442,51 +444,49 @@ napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType)
     };
 
-    status = napi_define_class(env, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
+    napi_status status = napi_define_class(env, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
         nullptr, sizeof(audio_parameters_properties) / sizeof(audio_parameters_properties[0]),
         audio_parameters_properties, &constructor);
-    if (status != napi_ok) {
-        return result;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_define_class fail");
 
     status = napi_create_reference(env, constructor, REFERENCE_CREATION_COUNT, &sConstructor_);
-    if (status == napi_ok) {
-        status = napi_set_named_property(env, exports, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), constructor);
-        if (status == napi_ok) {
-            status = InitAudioEnum(env, exports);
-            if (status == napi_ok) {
-                return exports;
-            }
-        }
-    }
-    AUDIO_ERR_LOG("Failure in NapiAudioEnum::Init()");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_create_reference fail");
+    status = napi_set_named_property(env, exports, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), constructor);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_set_named_property fail");
+    status = InitAudioEnum(env, exports);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "InitAudioEnum failed");
 
-    return result;
+    return exports;
 }
 
 napi_value NapiAudioEnum::Construct(napi_env env, napi_callback_info info)
 {
-    napi_status status;
     napi_value jsThis = nullptr;
     size_t argCount = 0;
+    unique_ptr<NapiAudioEnum> obj = nullptr;
 
-    status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
-    if (status == napi_ok) {
-        unique_ptr<NapiAudioEnum> obj = make_unique<NapiAudioEnum>();
-        if (obj != nullptr) {
-            obj->env_ = env;
-            obj->audioParameters_ = move(sAudioParameters_);
-            status = napi_wrap(env, jsThis, static_cast<void*>(obj.get()),
-                NapiAudioEnum::Destructor, nullptr, nullptr);
-            if (status == napi_ok) {
-                obj.release();
-                return jsThis;
-            }
-        }
+    napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Construct:napi_get_cb_info failed!");
+        goto error;
     }
-    AUDIO_ERR_LOG("Failed in NapiAudioEnum::Construct()!");
-    napi_get_undefined(env, &jsThis);
 
+    obj = make_unique<NapiAudioEnum>();
+    if (obj == nullptr) {
+        AUDIO_ERR_LOG("obj make_unique failed,no memery.");
+        goto error;
+    }
+    obj->env_ = env;
+    obj->audioParameters_ = move(sAudioParameters_);
+    status = napi_wrap(env, jsThis, static_cast<void*>(obj.get()), NapiAudioEnum::Destructor, nullptr, nullptr);
+    if (status != napi_ok) {
+        goto error;
+    }
+    obj.release();
+    return jsThis;
+
+error:
+    napi_get_undefined(env, &jsThis);
     return jsThis;
 }
 
@@ -504,35 +504,31 @@ NapiAudioEnum* NapiAudioEnum::SetValue(napi_env env, napi_callback_info info, na
     }
 
     status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
-    if (status == napi_ok) {
-        napi_valuetype valueType = napi_undefined;
-        if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
-            AUDIO_ERR_LOG("SetValue fail: wrong data type");
-            return napiAudioEnum;
-        }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napiAudioEnum, "napi_unwrap failed");
+
+    napi_valuetype valueType = napi_undefined;
+    if (napi_typeof(env, args[0], &valueType) != napi_ok || valueType != napi_number) {
+        AUDIO_ERR_LOG("SetValue fail: wrong data type");
     }
     return napiAudioEnum;
 }
 
 NapiAudioEnum* NapiAudioEnum::GetValue(napi_env env, napi_callback_info info)
 {
-    napi_status status;
     NapiAudioEnum *napiAudioEnum = nullptr;
     size_t argc = 0;
     napi_value jsThis = nullptr;
 
-    status = napi_get_cb_info(env, info, &argc, nullptr, &jsThis, nullptr);
+    napi_status status = napi_get_cb_info(env, info, &argc, nullptr, &jsThis, nullptr);
     if (status != napi_ok || jsThis == nullptr) {
         AUDIO_ERR_LOG("GetValue fail to napi_get_cb_info");
         return nullptr;
     }
 
     status = napi_unwrap(env, jsThis, (void **)&napiAudioEnum);
-    if (status == napi_ok) {
-        if (!((napiAudioEnum != nullptr) && (napiAudioEnum->audioParameters_ != nullptr))) {
-            AUDIO_ERR_LOG("GetValue fail to napi_unwrap");
-            return napiAudioEnum;
-        }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napiAudioEnum, "napi_unwrap failed");
+    if (!((napiAudioEnum != nullptr) && (napiAudioEnum->audioParameters_ != nullptr))) {
+        AUDIO_ERR_LOG("GetValue fail to napi_unwrap");
     }
     return napiAudioEnum;
 }
@@ -547,9 +543,7 @@ napi_value NapiAudioEnum::GetAudioSampleFormat(napi_env env, napi_callback_info 
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     audioSampleFormat = napiAudioEnum->audioParameters_->format;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(audioSampleFormat), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetAudioSampleFormat fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetAudioSampleFormat fail");
     return jsResult;
 }
 
@@ -560,11 +554,11 @@ napi_value NapiAudioEnum::SetAudioSampleFormat(napi_env env, napi_callback_info 
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t audioSampleFormat;
     napi_status status = NapiParamUtils::GetValueInt32(env, audioSampleFormat, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->format = static_cast<AudioSampleFormat>(audioSampleFormat);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->format = static_cast<AudioSampleFormat>(audioSampleFormat);
 
     return jsResult;
 }
@@ -579,9 +573,8 @@ napi_value NapiAudioEnum::GetAudioChannel(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     audioChannel = napiAudioEnum->audioParameters_->channels;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(audioChannel), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetAudioChannel fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetAudioChannel fail");
+
     return jsResult;
 }
 
@@ -592,11 +585,11 @@ napi_value NapiAudioEnum::SetAudioChannel(napi_env env, napi_callback_info info)
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t audioChannel;
     napi_status status = NapiParamUtils::GetValueInt32(env, audioChannel, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->channels = static_cast<AudioChannel>(audioChannel);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->channels = static_cast<AudioChannel>(audioChannel);
 
     return jsResult;
 }
@@ -611,9 +604,8 @@ napi_value NapiAudioEnum::GetAudioSamplingRate(napi_env env, napi_callback_info 
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     samplingRate = napiAudioEnum->audioParameters_->samplingRate;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(samplingRate), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetAudioSamplingRate fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetAudioSamplingRate fail");
+
     return jsResult;
 }
 
@@ -624,11 +616,11 @@ napi_value NapiAudioEnum::SetAudioSamplingRate(napi_env env, napi_callback_info 
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t samplingRate;
     napi_status status = NapiParamUtils::GetValueInt32(env, samplingRate, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->samplingRate = static_cast<AudioSamplingRate>(samplingRate);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->samplingRate = static_cast<AudioSamplingRate>(samplingRate);
 
     return jsResult;
 }
@@ -643,9 +635,8 @@ napi_value NapiAudioEnum::GetAudioEncodingType(napi_env env, napi_callback_info 
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     encodingType = napiAudioEnum->audioParameters_->encoding;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(encodingType), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetAudioEncodingType fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetAudioEncodingType fail");
+
     return jsResult;
 }
 
@@ -656,11 +647,11 @@ napi_value NapiAudioEnum::SetAudioEncodingType(napi_env env, napi_callback_info 
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t encodingType;
     napi_status status = NapiParamUtils::GetValueInt32(env, encodingType, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->encoding = static_cast<AudioEncodingType>(encodingType);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->encoding = static_cast<AudioEncodingType>(encodingType);
 
     return jsResult;
 }
@@ -675,9 +666,8 @@ napi_value NapiAudioEnum::GetContentType(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     contentType = napiAudioEnum->audioParameters_->contentType;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(contentType), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetContentType fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetContentType fail");
+
     return jsResult;
 }
 
@@ -688,11 +678,11 @@ napi_value NapiAudioEnum::SetContentType(napi_env env, napi_callback_info info)
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t contentType;
     napi_status status = NapiParamUtils::GetValueInt32(env, contentType, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->contentType = static_cast<ContentType>(contentType);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->contentType = static_cast<ContentType>(contentType);
 
     return jsResult;
 }
@@ -707,9 +697,8 @@ napi_value NapiAudioEnum::GetStreamUsage(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     usage = napiAudioEnum->audioParameters_->usage;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(usage), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetStreamUsage fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetStreamUsage fail");
+
     return jsResult;
 }
 
@@ -720,11 +709,11 @@ napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t usage;
     napi_status status = NapiParamUtils::GetValueInt32(env, usage, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->usage = static_cast<StreamUsage>(usage);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->usage = static_cast<StreamUsage>(usage);
 
     return jsResult;
 }
@@ -739,9 +728,8 @@ napi_value NapiAudioEnum::GetDeviceRole(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     deviceRole = napiAudioEnum->audioParameters_->deviceRole;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(deviceRole), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetDeviceRole fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetDeviceRole fail");
+
     return jsResult;
 }
 
@@ -752,11 +740,11 @@ napi_value NapiAudioEnum::SetDeviceRole(napi_env env, napi_callback_info info)
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t deviceRole;
     napi_status status = NapiParamUtils::GetValueInt32(env, deviceRole, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->deviceRole = static_cast<DeviceRole>(deviceRole);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->deviceRole = static_cast<DeviceRole>(deviceRole);
 
     return jsResult;
 }
@@ -771,9 +759,8 @@ napi_value NapiAudioEnum::GetDeviceType(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
     deviceType = napiAudioEnum->audioParameters_->deviceType;
     napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(deviceType), jsResult);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("GetDeviceType fail");
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetDeviceType fail");
+
     return jsResult;
 }
 
@@ -784,11 +771,11 @@ napi_value NapiAudioEnum::SetDeviceType(napi_env env, napi_callback_info info)
     NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
     int32_t deviceType;
     napi_status status = NapiParamUtils::GetValueInt32(env, deviceType, args[0]);
-    if (status == napi_ok) {
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
-        CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
-        napiAudioEnum->audioParameters_->deviceType = static_cast<DeviceType>(deviceType);
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->deviceType = static_cast<DeviceType>(deviceType);
 
     return jsResult;
 }
