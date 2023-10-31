@@ -284,7 +284,7 @@ const std::string AudioSystemManager::GetAudioParameter(const std::string key)
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     if (gasp == nullptr) {
         AUDIO_ERR_LOG("GetAudioParameter::Audio service unavailable.");
-        return nullptr;
+        return "";
     }
     return gasp->GetAudioParameter(key);
 }
