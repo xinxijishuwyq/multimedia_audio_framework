@@ -27,6 +27,7 @@
 #include "unistd.h"
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "power_mgr_client.h"
 
 using namespace std;
 
@@ -183,7 +184,7 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = RUNNING;
-    asClient->breakingWritePa = false;
+    asClient->breakingWritePa_ = false;
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
@@ -251,7 +252,7 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = PAUSED;
-    asClient->breakingWritePa = false;
+    asClient->breakingWritePa_ = false;
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
@@ -1164,7 +1165,7 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
 int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 {
     AUDIO_INFO_LOG("Enter PauseStream");
-    breakingWritePa = true;
+    breakingWritePa_ = true;
     pa_threaded_mainloop_signal(mainLoop, 0);
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
@@ -1172,7 +1173,7 @@ int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
     stateChangeCmdType_ = cmdType;
 
     int32_t ret = CorkStream();
-    breakingWritePa = false;
+    breakingWritePa_ = false;
     if (ret) {
         return ret;
     }
@@ -1383,12 +1384,12 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
         firstFrame_ = false;
     }
 
-    if ((lastOffloadUpdateFinishTime != 0) &&
-        (chrono::system_clock::to_time_t(chrono::system_clock::now()) > lastOffloadUpdateFinishTime)) {
+    if ((lastOffloadUpdateFinishTime_ != 0) &&
+        (chrono::system_clock::to_time_t(chrono::system_clock::now()) > lastOffloadUpdateFinishTime_)) {
         AUDIO_INFO_LOG("PaWriteStream switching curTime %{public}" PRIu64 ", switchTime %{public}" PRIu64,
-            chrono::system_clock::to_time_t(chrono::system_clock::now()), lastOffloadUpdateFinishTime);
-        error = UpdatePolicyOffload(offloadNextStateTargetPolicy);
-        lastOffloadUpdateFinishTime = 0;
+            chrono::system_clock::to_time_t(chrono::system_clock::now()), lastOffloadUpdateFinishTime_);
+        error = UpdatePolicyOffload(offloadNextStateTargetPolicy_);
+        lastOffloadUpdateFinishTime_ = 0;
     }
     if (error != AUDIO_CLIENT_SUCCESS) {
         return error;
@@ -1442,7 +1443,7 @@ int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
     while (!(writableSize = pa_stream_writable_size(paStream))) {
         AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable");
         StartTimer(WRITE_TIMEOUT_IN_SEC);
-        if (!breakingWritePa && state_ == RUNNING) {
+        if (!breakingWritePa_ && state_ == RUNNING) {
             pa_threaded_mainloop_wait(mainLoop);
         }
         StopTimer();
@@ -1450,10 +1451,10 @@ int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
             AUDIO_ERR_LOG("Write timeout");
             return AUDIO_CLIENT_WRITE_STREAM_ERR;
         }
-        if (breakingWritePa || state_ != RUNNING) {
+        if (breakingWritePa_ || state_ != RUNNING) {
             AUDIO_WARNING_LOG("AudioServiceClient::PaWriteStream: WaitWriteable breakingWritePa(%d) or state_(%d) "
                               "not running, Writable size: %{public}zu, bytes to write: %{public}zu",
-                breakingWritePa, state_, writableSize, length);
+                breakingWritePa_, state_, writableSize, length);
             return AUDIO_CLIENT_WRITE_STREAM_ERR;
         }
     }
@@ -2394,20 +2395,20 @@ int32_t AudioServiceClient::UpdatePAProbListOffload(AudioOffloadType statePolicy
     }
 
     // if possible turn on the buffer immediately(long buffer -> short buffer), turn it at once.
-    if ((statePolicy < offloadStatePolicy) || (offloadStatePolicy == OFFLOAD_DEFAULT)) {
-        AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d", offloadStatePolicy, statePolicy);
-        lastOffloadUpdateFinishTime = 0;
+    if ((statePolicy < offloadStatePolicy_) || (offloadStatePolicy_ == OFFLOAD_DEFAULT)) {
+        AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
+        lastOffloadUpdateFinishTime_ = 0;
         pa_threaded_mainloop_lock(mainLoop);
         int32_t ret = UpdatePolicyOffload(statePolicy);
         pa_threaded_mainloop_unlock(mainLoop);
-        offloadNextStateTargetPolicy = statePolicy; // Fix here if sometimes can't cut into state 3
+        offloadNextStateTargetPolicy_ = statePolicy; // Fix here if sometimes can't cut into state 3
         return ret;
     } else {    // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
                 // this time is checked the PaWriteStream to check if the switch has been made
-        AUDIO_DEBUG_LOG("Update statePolicy in 5 seconds: %{public}d -> %{public}d", offloadStatePolicy, statePolicy);
-        lastOffloadUpdateFinishTime = chrono::system_clock::to_time_t(
+        AUDIO_DEBUG_LOG("Update statePolicy in 5 seconds: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
+        lastOffloadUpdateFinishTime_ = chrono::system_clock::to_time_t(
             chrono::system_clock::now() + std::chrono::seconds(5)); // add 5s latencu to change offload state
-        offloadNextStateTargetPolicy = statePolicy;
+        offloadNextStateTargetPolicy_ = statePolicy;
     }
 
     return AUDIO_CLIENT_SUCCESS;
@@ -2465,8 +2466,8 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
     mAudioSystemMgr->SetBufferSize(bufLenMs);
 
-    offloadStatePolicy = statePolicy;
-    UpdatebufferAttrOffload(offloadStatePolicy);
+    offloadStatePolicy_ = statePolicy;
+    UpdatebufferAttrOffload(offloadStatePolicy_);
 
     uint32_t sessionID = 0;
     GetSessionID(sessionID);
@@ -2514,9 +2515,9 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
     bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
     bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(100, sampleSpec); // 100 for config
 
-    bufferAttrStateMap.emplace(OFFLOAD_ACTIVE_FOREGROUND, bufferAttrOffloadActiveForeground);
-    bufferAttrStateMap.emplace(OFFLOAD_ACTIVE_BACKGROUND, bufferAttrOffloadActiveBackground);
-    bufferAttrStateMap.emplace(OFFLOAD_INACTIVE_BACKGROUND, bufferAttrOffloadInactiveBackground);
+    bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_FOREGROUND, bufferAttrOffloadActiveForeground);
+    bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_BACKGROUND, bufferAttrOffloadActiveBackground);
+    bufferAttrStateMap_.emplace(OFFLOAD_INACTIVE_BACKGROUND, bufferAttrOffloadInactiveBackground);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -2530,8 +2531,8 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 
     pa_buffer_attr* bufferAttr;
     printBufAttr(paStream);
-    if (bufferAttrStateMap.find(statePolicy)!=bufferAttrStateMap.end()) {
-        bufferAttr = &(bufferAttrStateMap[statePolicy]);
+    if (bufferAttrStateMap_.find(statePolicy)!=bufferAttrStateMap_.end()) {
+        bufferAttr = &(bufferAttrStateMap_[statePolicy]);
     } else {
         AUDIO_ERR_LOG("impossible bufferAttr branch error in SetStreamOffloadMode");
         return AUDIO_CLIENT_ERR;
@@ -2558,7 +2559,8 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
 {
     AudioOffloadType statePolicy = OFFLOAD_DEFAULT;
-    if (state > 1) {
+    auto powerState = static_cast<PowerMgr::PowerState>(state);
+    if ((powerState != PowerMgr::PowerState::AWAKE) && (powerState != PowerMgr::PowerState::FREEZE)) {
         statePolicy = OFFLOAD_INACTIVE_BACKGROUND;
     } else if (isAppBack) {
         statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
@@ -2574,11 +2576,11 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     AUDIO_INFO_LOG("calling set stream "
                    "offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
 
-    if (offloadNextStateTargetPolicy == statePolicy) {
+    if (offloadNextStateTargetPolicy_ == statePolicy) {
         return AUDIO_CLIENT_SUCCESS;
     }
 
-    if ((offloadStatePolicy == offloadNextStateTargetPolicy) && (offloadStatePolicy == statePolicy)) {
+    if ((offloadStatePolicy_ == offloadNextStateTargetPolicy_) && (offloadStatePolicy_ == statePolicy)) {
         return AUDIO_CLIENT_SUCCESS;
     }
     
@@ -2594,13 +2596,13 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
 
 int32_t AudioServiceClient::UnsetStreamOffloadMode()
 {
-    lastOffloadUpdateFinishTime = 0;
+    lastOffloadUpdateFinishTime_ = 0;
     offloadEnable = false;
     pa_threaded_mainloop_lock(mainLoop);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     pa_threaded_mainloop_unlock(mainLoop);
-    offloadNextStateTargetPolicy = OFFLOAD_DEFAULT;
-    offloadStatePolicy = OFFLOAD_DEFAULT;
+    offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    offloadStatePolicy_ = OFFLOAD_DEFAULT;
     return ret;
 }
 
@@ -2663,9 +2665,6 @@ void AudioServiceClient::GetSinkInputInfoOffloadCb(pa_context* context, const pa
         AUDIO_ERR_LOG("Invalid prop list for sink input (%{public}d).", info->index);
         return;
     }
-
-    thiz->offloadCurrentStatePolicy = static_cast<AudioOffloadType>(atoi(
-        pa_proplist_gets(info->proplist, "stream.offload.statePolicy")));
     return;
 }
 

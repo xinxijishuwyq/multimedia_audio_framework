@@ -117,7 +117,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
-    powerStateCallbackRegister = false;
+    powerStateCallbackRegister_ = false;
 }
 
 void AudioPolicyServer::OnDump()
@@ -413,7 +413,7 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
             std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL_TIME));
             continue;
         } else {
-            powerStateCallbackRegister = true;
+            powerStateCallbackRegister_ = true;
             AUDIO_INFO_LOG("register power state callback success");
             break;
         }
@@ -422,11 +422,11 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
 
 void AudioPolicyServer::CheckSubscribePowerStateChange()
 {
-    if (!powerStateCallbackRegister) {
+    if (!powerStateCallbackRegister_) {
         SubscribePowerStateChangeEvents();
     }
 
-    if (!powerStateCallbackRegister) {
+    if (!powerStateCallbackRegister_) {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Failed");
     } else {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Success");

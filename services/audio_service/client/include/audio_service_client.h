@@ -569,7 +569,7 @@ private:
     pa_context *context;
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
-    std::map<AudioOffloadType, pa_buffer_attr> bufferAttrStateMap;
+    std::map<AudioOffloadType, pa_buffer_attr> bufferAttrStateMap_;
 
     std::mutex dataMutex_;
     std::condition_variable dataCv_;
@@ -650,7 +650,7 @@ private:
 
     std::weak_ptr<AudioStreamCallback> streamCallback_;
     State state_;
-    bool breakingWritePa = false;
+    bool breakingWritePa_ = false;
     StateChangeCmdType stateChangeCmdType_ = CMD_FROM_CLIENT;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
 
@@ -670,11 +670,9 @@ private:
     ASClientType eAudioClientType;
 
     uint32_t underFlowCount;
-    AudioOffloadType offloadStatePolicy = OFFLOAD_DEFAULT;
-    AudioOffloadType offloadStateTargetPolicy = OFFLOAD_DEFAULT;
-    AudioOffloadType offloadCurrentStatePolicy = OFFLOAD_DEFAULT;
-    AudioOffloadType offloadNextStateTargetPolicy = OFFLOAD_DEFAULT;
-    time_t lastOffloadUpdateFinishTime = 0;
+    AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    time_t lastOffloadUpdateFinishTime_ = 0;
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);

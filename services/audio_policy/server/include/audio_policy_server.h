@@ -416,7 +416,7 @@ private:
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
 
-    bool powerStateCallbackRegister;
+    bool powerStateCallbackRegister_;
     AudioPolicyService& mPolicyService;
     int32_t clientOnFocus_;
     int32_t volumeStep_;
